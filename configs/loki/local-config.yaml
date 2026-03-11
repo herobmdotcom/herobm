@@ -1,3 +1,6 @@
+# WARNING: auth_enabled=false is for LOCAL DEVELOPMENT ONLY.
+# For staging/production, set auth_enabled: true and configure
+# an authentication provider (e.g., reverse proxy with basic auth).
 auth_enabled: false
 
 server:

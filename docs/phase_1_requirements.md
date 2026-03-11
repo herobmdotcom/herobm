@@ -26,6 +26,13 @@ To support early workflow discovery and transition, we will extract:
 *(Note: The exact list of tables to extract has been determined by dynamically profiling the `mpgtrial` database. Full findings are documented in `docs/mpgtrial_data_profile.md`.)*
 
 ## 3. Data Cleansing & Transformation Rules
-*   **Architecture (ELT):** Data extraction handles pure raw syncing using `dlt` (Python) to a `raw_evaluationau` schema in Postgres. `dbt` (SQL) is then responsible for transforming the raw tables into the final unified schema.
+*   **Architecture (ELT):** Data extraction handles pure raw syncing using `dlt` (Python) to a `raw_abm` schema in Postgres. `dbt` (SQL) is then responsible for transforming the raw tables into the final unified schema.
 *   **Referential Integrity:** Enforced and tested during the `dbt` transformation phase. Orphans can be detected via dbt tests.
 *   **Custom Fields:** `dbt` SQL will map `UserField` columns into structured `JSONB` native Postgres columns.
+
+## 4. Data Naming Standards
+*   **Staging layer (`stg_*`):** Uses dbt-community conventions — `snake_case`, entity-prefixed IDs (e.g., `customer_id`, `customer_name`, `created_at`). Purely internal; optimised for readability in SQL.
+*   **Marts layer and above:** Column and entity names MUST converge on established external vocabularies:
+    *   **[Microsoft Common Data Model (CDM)](https://learn.microsoft.com/en-us/common-data-model/)** — preferred for core business entities (customers, products, orders, suppliers).
+    *   **[Schema.org](https://schema.org/)** — used as a fallback where CDM does not cover a concept, or for web-facing data.
+*   **Rationale:** Aligning the marts layer to CDM/Schema.org ensures API field names, UI labels, and downstream integrations (e.g., ERPNext) share a common vocabulary without a costly rename step later.

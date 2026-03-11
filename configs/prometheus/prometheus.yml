@@ -3,6 +3,14 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+  # --- Prometheus self-monitoring ---
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  # --- Custom Distribution Platform API (NestJS) ---
+  # Uncomment when the API service is running and exposing /metrics
+  # - job_name: 'custom-api'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:3001']

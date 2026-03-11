@@ -1,0 +1,38 @@
+
+=== Container Status ===
+  PASS: Container 'postgres-custom' is running
+  PASS: Container 'redis-broker' is running
+  PASS: Container 'prometheus' is running
+  PASS: Container 'loki' is running
+  PASS: Container 'promtail' is running
+  PASS: Container 'grafana' is running
+
+=== Health Checks ===
+  PASS: Container 'postgres-custom' reports healthy
+  PASS: Container 'redis-broker' reports healthy
+  PASS: Container 'prometheus' reports healthy
+  PASS: Container 'grafana' reports healthy
+
+=== PostgreSQL ===
+  PASS: Schema 'raw_evaluationau' exists in custom_app DB
+  PASS: Schema 'public' exists in custom_app DB
+
+=== Redis ===
+  PASS: Redis accepts authenticated PING
+
+=== Prometheus ===
+  PASS: Prometheus API is reachable
+  PASS: Prometheus 'prometheus' job is UP
+
+=== Grafana ===
+  PASS: Grafana API is reachable
+  PASS: Grafana has Prometheus datasource provisioned
+  PASS: Grafana has Prometheus as default datasource
+  PASS: Grafana has Loki datasource provisioned
+
+=== Loki ===
+  PASS: Loki is reachable and responding
+
+=== Results: 20/20 passed ===
+All infrastructure smoke tests passed.
+EXIT_CODE: 0

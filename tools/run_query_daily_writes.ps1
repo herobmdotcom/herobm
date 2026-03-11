@@ -1,7 +1,24 @@
-$server = "localhost"
-$database = "mpgtrial"
-$username = "sa"
-$password = 'P$^1uiuaqQCQh0' 
+# Load credentials from .env file (never hardcode passwords)
+$envFile = Join-Path $PSScriptRoot "..\.env"
+if (-not (Test-Path $envFile)) {
+    Write-Error "FATAL: .env file not found at $envFile. Copy .env.example to .env and fill in credentials."
+    exit 1
+}
+Get-Content $envFile | ForEach-Object {
+    if ($_ -match '^\s*([^#][^=]+?)\s*=\s*(.+)\s*$') {
+        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+    }
+}
+
+$server = $env:ABM_MSSQL_HOST
+$database = $env:ABM_MSSQL_DATABASE
+$username = $env:ABM_MSSQL_USER
+$password = $env:ABM_MSSQL_PASSWORD
+
+if (-not $server -or -not $password) {
+    Write-Error "FATAL: ABM_MSSQL_HOST and ABM_MSSQL_PASSWORD must be set in .env"
+    exit 1
+}
 
 $connectionString = "Server=$server;Database=$database;User Id=$username;Password=$password;TrustServerCertificate=True"
 
