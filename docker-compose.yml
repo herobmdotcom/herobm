@@ -1,72 +1,151 @@
-version: '3.8'
-
 services:
   postgres-custom:
     image: postgres:16-alpine
     container_name: postgres-custom
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-custom_app}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./configs/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
 
   redis-broker:
     image: redis:7-alpine
     container_name: redis-broker
     restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
     volumes:
-      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - monitoring-net
 
   loki:
     image: grafana/loki:latest
     container_name: loki
     restart: unless-stopped
     ports:
-      - "3100:3100"
+      - "127.0.0.1:3100:3100"
     volumes:
-      - ./configs/loki/local-config.yaml:/etc/loki/local-config.yaml
+      - ./configs/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
       - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
+    # Note: Loki image is scratch-based (no sh/wget/curl), so Docker
+    # healthchecks are not possible. We rely on restart policy instead.
+    networks:
+      - monitoring-net
 
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
+    # DEV ONLY: Docker socket mount is used for container log discovery.
+    # For staging/production, use file-based log collection instead.
+    # See ADV-006 for risk analysis.
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./configs/promtail/promtail-config.yaml:/etc/promtail/config.yml
+      - ./configs/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/pipelines:ro
     command: -config.file=/etc/promtail/config.yml
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      loki:
+        condition: service_started
+    networks:
+      - monitoring-net
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
-      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-net
+      - monitoring-net
+
+  # --- ELT Pipeline (on-demand, not started by 'docker compose up') ---
+  abm-extract:
+    build:
+      context: ./pipelines/abm_extract
+      dockerfile: Dockerfile
+    container_name: abm-extract
+    profiles:
+      - pipeline
+    env_file: .env
+    environment:
+      ABM_MSSQL_HOST: ${ABM_MSSQL_HOST}
+      ABM_MSSQL_DATABASE: ${ABM_MSSQL_DATABASE:-mpgtrial}
+      ABM_MSSQL_USER: ${ABM_MSSQL_USER}
+      ABM_MSSQL_PASSWORD: ${ABM_MSSQL_PASSWORD}
+      POSTGRES_HOST: postgres-custom
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-custom_app}
+      PIPELINE_LOG_DIR: /app/logs
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      postgres-custom:
+        condition: service_healthy
+    networks:
+      - app-net
 
 volumes:
   postgres_data:
@@ -74,3 +153,9 @@ volumes:
   prometheus_data:
   loki_data:
   grafana_data:
+
+networks:
+  app-net:
+    driver: bridge
+  monitoring-net:
+    driver: bridge

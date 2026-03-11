@@ -12,3 +12,28 @@ logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Docker
+docker-compose.override.yml
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# dlt
+pipelines/abm_extract/.dlt/
+*.pipeline_data/
+
+# Pipeline logs (Promtail-ingested, not committed)
+logs/
+
+# dbt
+pipelines/abm_transform/target/
+pipelines/abm_transform/dbt_packages/
+pipelines/abm_transform/logs/
