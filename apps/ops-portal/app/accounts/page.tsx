@@ -13,6 +13,13 @@ const columns: ColDef[] = [
   { field: 'emailAddress1', headerName: 'Email', width: 200 },
   { field: 'primaryContactName', headerName: 'Contact', width: 150 },
   { field: 'customerGroup', headerName: 'Group', width: 100 },
+  {
+    field: 'customerDiscount',
+    headerName: 'Discount %',
+    width: 110,
+    type: 'numericColumn',
+    valueFormatter: (p: any) => p.value != null ? `${parseFloat(p.value).toFixed(1)}%` : '—',
+  },
   { field: 'stateCode', headerName: 'Status', width: 80 },
 ];
 

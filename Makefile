@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api dev-portal docs-generate schema-ref
+.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal docs-generate schema-ref migrate migrate-status migrate-dry
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -92,7 +92,27 @@ dev-api:
 test-api:
 	cd apps/api && npm test
 
-# --- Portal ---
+test-api-cov:
+	cd apps/api && npm run test:cov
 
-dev-portal:
-	cd apps/portal && npm run dev
+test-api-e2e:
+	cd apps/api && npm run test:e2e
+
+# --- Portals ---
+
+dev-ops-portal:
+	cd apps/ops-portal && npm run dev
+
+dev-sales-portal:
+	cd apps/sales-portal && npm run dev
+
+# --- Migrations (modbm_core) ---
+
+migrate:
+	"$(VENV_PYTHON)" tools/migrate.py
+
+migrate-status:
+	"$(VENV_PYTHON)" tools/migrate.py --status
+
+migrate-dry:
+	"$(VENV_PYTHON)" tools/migrate.py --dry-run

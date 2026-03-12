@@ -27,8 +27,12 @@ export const accounts = marts.table('mart_accounts', {
   primaryContactPhone: text('primary_contact_phone'),
   customerGroup: text('customer_group'),
   stateCode: text('state_code'),
+  gstPosition: text('gst_position'),
   createdOn: timestamp('created_on'),
   deliveryAddressCount: integer('delivery_address_count'),
+  priceScale: integer('price_scale'),
+  groupDiscount: numeric('group_discount'),
+  customerDiscount: numeric('customer_discount'),
 });
 
 // ---------------------------------------------------------------------------
@@ -42,6 +46,10 @@ export const products = marts.table('mart_products', {
   defaultVendorId: text('default_vendor_id'),
   defaultVendorName: text('default_vendor_name'),
   standardCost: numeric('standard_cost'),
+  listPrice: numeric('list_price'),
+  tradePrice: numeric('trade_price'),
+  priceLevel3: numeric('price_level_3'),
+  priceLevel4: numeric('price_level_4'),
   quantityOnHand: numeric('quantity_on_hand'),
   quantityAvailable: numeric('quantity_available'),
   barcode: text('barcode'),

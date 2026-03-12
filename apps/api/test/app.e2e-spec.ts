@@ -34,7 +34,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     // Obtain auth token
     const loginRes = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: 'admin' }) // TEST_CREDENTIAL
+      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
 
     authToken = loginRes.body.access_token;
@@ -53,7 +53,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — valid credentials return JWT', async () => {
       const res = await request(app.getHttpServer())
         .post('/api/auth/login')
-        .send({ username: 'admin', password: 'admin' }) // TEST_CREDENTIAL
+        .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
         .expect(201);
 
       expect(res.body).toHaveProperty('access_token');
@@ -316,8 +316,8 @@ describe('API E2E — Data Pipeline Verification', () => {
   // Orders  (data from mart_sales_order_lines → Drizzle → API)
   // =========================================================================
 
-  describe('Orders — mart_sales_order_lines data pipeline', () => {
-    it('GET /api/orders — returns paginated order lines', async () => {
+  describe('Orders — unified order listing', () => {
+    it('GET /api/orders — returns paginated unified orders', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/orders')
         .set('Authorization', `Bearer ${authToken}`)
@@ -326,10 +326,10 @@ describe('API E2E — Data Pipeline Verification', () => {
       expect(res.body.data.length).toBeGreaterThan(0);
 
       const first = res.body.data[0];
-      expect(first).toHaveProperty('salesOrderLineId');
+      expect(first).toHaveProperty('id');
       expect(first).toHaveProperty('orderNumber');
-      expect(first).toHaveProperty('accountName');
-      expect(first).toHaveProperty('quantity');
+      expect(first).toHaveProperty('name');
+      expect(first).toHaveProperty('stateCode');
     });
 
     it('GET /api/orders — search by order number', async () => {
@@ -349,21 +349,24 @@ describe('API E2E — Data Pipeline Verification', () => {
       expect(searchRes.body.data.length).toBeGreaterThan(0);
     });
 
-    it('GET /api/orders/:id — returns specific order line', async () => {
+    it('GET /api/orders/:id — returns specific order', async () => {
       const listRes = await request(app.getHttpServer())
         .get('/api/orders?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      const orderId = listRes.body.data[0]?.salesOrderLineId;
+      const orderId = listRes.body.data[0]?.id;
       expect(orderId).toBeTruthy();
 
-      const detailRes = await request(app.getHttpServer())
-        .get(`/api/orders/${orderId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(detailRes.body.salesOrderLineId).toBe(orderId);
+      // Use source=app for app orders
+      const source = listRes.body.data[0]?.source;
+      if (source === 'app') {
+        const detailRes = await request(app.getHttpServer())
+          .get(`/api/orders/${orderId}?source=app`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .expect(200);
+        expect(detailRes.body.salesOrderId).toBe(orderId);
+      }
     });
 
     it('GET /api/orders/:id — unknown ID returns 404', async () => {

@@ -34,7 +34,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-custom_app}
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      JWT_SECRET: ${JWT_SECRET}
+      DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
+      DEV_VIEWER_PASSWORD: ${DEV_VIEWER_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300}
     ports:
       - "127.0.0.1:3001:3001"
     depends_on:

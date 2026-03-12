@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
-import { login, getToken, setToken } from '@/lib/api';
+import { login, getToken } from '@/lib/api';
 
 const AuthContext = createContext<{ authenticated: boolean }>({ authenticated: false });
 
@@ -11,8 +11,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     if (getToken()) {
@@ -45,19 +45,19 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-80 p-8 rounded-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <h2 className="text-xl font-bold mb-1">Operations Portal</h2>
+          <h2 className="text-xl font-bold mb-1">Sales Portal</h2>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Sign in to continue</p>
           <input
-            className="w-full px-3 py-2 rounded-lg mb-3 text-sm outline-none"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            id="sales-login-username"
+            className="input mb-3"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
           />
           <input
-            className="w-full px-3 py-2 rounded-lg mb-4 text-sm outline-none"
-            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+            id="sales-login-password"
+            className="input mb-4"
             type="password"
             placeholder="Password"
             value={password}
@@ -66,9 +66,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
           />
           {error && <p className="text-sm mb-3" style={{ color: 'var(--danger)' }}>{error}</p>}
           <button
+            id="sales-login-submit"
             onClick={handleLogin}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold transition-colors cursor-pointer"
-            style={{ background: 'var(--accent)', color: 'white' }}
+            className="btn btn-primary w-full justify-center"
           >
             Sign In
           </button>

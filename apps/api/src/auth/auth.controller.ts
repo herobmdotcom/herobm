@@ -1,5 +1,6 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { SkipCasbin } from './casbin.guard';
 
 class LoginDto {
   username!: string;
@@ -7,6 +8,7 @@ class LoginDto {
 }
 
 @Controller('auth')
+@SkipCasbin()
 export class AuthController {
   constructor(private authService: AuthService) {}
 

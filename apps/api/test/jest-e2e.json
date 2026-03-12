@@ -23,5 +23,6 @@
       }
     ]
   },
+  "setupFiles": ["./setup-env.ts"],
   "testTimeout": 30000
 }

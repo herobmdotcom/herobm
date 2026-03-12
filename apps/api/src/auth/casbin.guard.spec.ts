@@ -1,0 +1,196 @@
+import { Reflector } from '@nestjs/core';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { CasbinGuard, CASBIN_RESOURCE, CASBIN_ACTION, SKIP_CASBIN } from './casbin.guard';
+
+/**
+ * Helper to build a mock ExecutionContext with configurable metadata and request.
+ */
+function createMockContext(opts: {
+  metadata?: Record<string, any>;
+  user?: { userId: string; username: string; role: string } | null;
+}): ExecutionContext {
+  const handler = jest.fn();
+  const classRef = jest.fn();
+
+  return {
+    getHandler: () => handler,
+    getClass: () => classRef,
+    switchToHttp: () => ({
+      getRequest: () => ({ user: opts.user ?? undefined }),
+      getResponse: jest.fn(),
+      getNext: jest.fn(),
+    }),
+    // Store metadata so Reflector mock can retrieve it
+    __metadata: opts.metadata ?? {},
+    __handler: handler,
+    __classRef: classRef,
+  } as unknown as ExecutionContext & { __metadata: Record<string, any>; __handler: any; __classRef: any };
+}
+
+describe('CasbinGuard', () => {
+  let guard: CasbinGuard;
+  let reflector: Reflector;
+
+  beforeEach(() => {
+    reflector = new Reflector();
+    guard = new CasbinGuard(reflector);
+  });
+
+  describe('SkipCasbin decorator', () => {
+    it('should allow access when @SkipCasbin() is set', async () => {
+      const ctx = createMockContext({ metadata: { [SKIP_CASBIN]: true }, user: null });
+
+      // Mock reflector to return skip_casbin = true
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('Missing decorators (deny-by-default)', () => {
+    it('should throw ForbiddenException when @CasbinResource is missing', async () => {
+      const ctx = createMockContext({
+        metadata: { [CASBIN_ACTION]: 'read' },
+        user: { userId: '1', username: 'admin', role: 'admin' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException when @CasbinAction is missing', async () => {
+      const ctx = createMockContext({
+        metadata: { [CASBIN_RESOURCE]: 'products' },
+        user: { userId: '1', username: 'admin', role: 'admin' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException when both decorators are missing', async () => {
+      const ctx = createMockContext({
+        metadata: {},
+        user: { userId: '1', username: 'admin', role: 'admin' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('Unauthenticated request', () => {
+    it('should throw UnauthorizedException when no user is present', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'products',
+          [CASBIN_ACTION]: 'read',
+        },
+        user: null,
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('Policy enforcement', () => {
+    it('should allow viewer to read products', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'products',
+          [CASBIN_ACTION]: 'read',
+        },
+        user: { userId: '2', username: 'viewer', role: 'viewer' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should deny viewer from writing users', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'users',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '2', username: 'viewer', role: 'viewer' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow admin to write orders', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'orders',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '1', username: 'admin', role: 'admin' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should allow admin to read dashboard', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'dashboard',
+          [CASBIN_ACTION]: 'read',
+        },
+        user: { userId: '1', username: 'admin', role: 'admin' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should deny viewer from writing orders', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'orders',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '2', username: 'viewer', role: 'viewer' },
+      });
+
+      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
+        return (ctx as any).__metadata[key];
+      });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+  });
+});

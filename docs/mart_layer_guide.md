@@ -13,7 +13,7 @@ Mart models use **dbt Model Contracts** (`contract: enforced: true`), meaning ev
 public_staging schema (views + tables)
   │  dbt table materialisation
   ▼
-public_marts schema (5 tables, contract-enforced)
+public_marts schema (8 tables, contract-enforced)
   │
   ▼
 Custom App API / UI
@@ -36,7 +36,8 @@ Mart models generally do **not** filter rows, with one exception: `mart_sales_or
 | Model | Source staging models | Rows | Description |
 |-------|---------------------|------|-------------|
 | `mart_accounts` | `stg_customers`, `stg_contacts`, `stg_delivery_addresses` | 17 | Customer profiles with primary contact person and delivery address count |
-| `mart_products` | `stg_products`, `stg_product_groups` | 14,896 | Product catalogue with group name resolved |
+| `mart_products` | `stg_products`, `stg_product_groups`, `stg_price_list`, `stg_product_kits` | 14,896 | Product catalogue with group name, `price_list_count`, and `is_kit` flag |
+| `mart_suppliers` | `stg_suppliers`, `stg_product_suppliers` | 54 | Supplier/vendor master with `product_count` enrichment |
 
 ### Stock / Warehouse
 
@@ -45,11 +46,13 @@ Mart models generally do **not** filter rows, with one exception: `mart_sales_or
 | `mart_inventory` | `stg_location_details`, `stg_products`, `stg_locations`, `stg_bin_contents`, `stg_bins` | 19,023 | Stock position per product per location, with derived `quantity_available` and enriched `default_bin_number` from bin contents |
 | `mart_bin_contents` | `stg_bin_contents`, `stg_bins`, `stg_products`, `stg_locations` | 5,052 | Bin-level stock for warehouse picking |
 
-### Sales Operations
+### Sales & Purchasing Operations
 
 | Model | Source staging models | Rows | Description |
 |-------|---------------------|------|-------------|
-| `mart_sales_order_lines` | `stg_sales_orders`, `stg_customers`, `stg_products` | ~22k | Sales order line items with customer and product resolved, fulfilment flags. ABM header rows (line 9999) excluded. |
+| `mart_sales_order_lines` | `stg_sales_orders`, `stg_customers`, `stg_products` | ~21k | Sales order line items with customer and product resolved, fulfilment flags. ABM header rows (line 9999) excluded. |
+| `mart_sales_quote_lines` | `stg_sales_quotes`, `stg_customers`, `stg_products` | ~1.6k | Sales quote line items with customer and product resolved. No fulfilment tracking. Header rows excluded. |
+| `mart_purchase_order_lines` | `stg_purchase_orders`, `stg_suppliers`, `stg_products` | ~7.8k | Purchase order line items with supplier and product resolved, fulfilment flags. Header rows excluded. |
 
 ## Constraint enforcement
 
@@ -63,9 +66,12 @@ Every mart has a single-column primary key constraint:
 |-------|----------|
 | `mart_accounts` | `account_id` |
 | `mart_products` | `product_id` |
+| `mart_suppliers` | `vendor_id` |
 | `mart_inventory` | `inventory_level_id` |
 | `mart_bin_contents` | `bin_contents_id` |
 | `mart_sales_order_lines` | `sales_order_line_id` |
+| `mart_sales_quote_lines` | `sales_quote_line_id` |
+| `mart_purchase_order_lines` | `purchase_order_line_id` |
 
 ### Foreign keys
 
@@ -75,17 +81,21 @@ Every mart has a single-column primary key constraint:
 | `mart_bin_contents` | `product_id` | `mart_products` | `product_id` |
 | `mart_sales_order_lines` | `account_id` | `mart_accounts` | `account_id` |
 | `mart_sales_order_lines` | `product_id` | `mart_products` | `product_id` |
+| `mart_sales_quote_lines` | `account_id` | `mart_accounts` | `account_id` |
+| `mart_sales_quote_lines` | `product_id` | `mart_products` | `product_id` |
+| `mart_purchase_order_lines` | `vendor_id` | `mart_suppliers` | `vendor_id` |
+| `mart_purchase_order_lines` | `product_id` | `mart_products` | `product_id` |
 
 FK columns are nullable to handle orphaned references (see [Data anomalies](#data-anomalies) below).
 
 ## Schema tests
 
-Tests are defined in `_marts.yml`. Current coverage (50 tests, of which 12 are mart-specific):
+Tests are defined in `_marts.yml`. Current coverage (56 tests, of which 18 are mart-specific):
 
 - **PK uniqueness** — implied by `primary_key` constraint (contract-enforced)
-- **FK not_null** (warn severity) — on `product_id` in `mart_inventory`, `mart_bin_contents`, `mart_sales_order_lines`, and `account_id` in `mart_sales_order_lines`
+- **FK not_null** (warn severity) — on `product_id` in `mart_inventory`, `mart_bin_contents`, `mart_sales_order_lines`, `mart_sales_quote_lines`, `mart_purchase_order_lines`; on `account_id` in `mart_sales_order_lines`, `mart_sales_quote_lines`; on `vendor_id` in `mart_purchase_order_lines`
 - **`accepted_values`** — on `state_code` in `mart_accounts` and `mart_products`
-- **`not_negative`** — custom generic test on `quantity_on_hand` (inventory) and `quantity` (sales orders)
+- **`not_negative`** — custom generic test on `quantity_on_hand` (inventory) and `quantity` (sales orders, purchase orders, sales quotes)
 - **`not_negative` (warn)** — on `value_on_hand` and `last_in_unit_cost` (inventory). These are warnings because the negatives are sub-cent rounding artifacts and pseudo-product side-effects, not data corruption.
 - **`mart_row_count_sanity`** — singular test verifying every mart's row count matches its source staging model exactly, catching join explosions or data loss
 - **Source freshness** — configured in `_staging.yml` with `loaded_at_field` using dlt's `_dlt_load_id`. Warns after 36 hours, errors after 72 hours. Run with `dbt source freshness`.
@@ -144,9 +154,17 @@ The pseudo-products `Discount`, `GST`, and one fitting have negative last-in cos
 
 **Impact:** `not_negative` test with `severity: warn` — flagged but does not block the pipeline.
 
-### 5. Legacy customer status codes (`A1`, `A2`, `A28`)
+### 5. ABM `state_code` is an internal classification code, not a status flag
 
-The ABM customer master uses status codes beyond the standard `A` (Active), `S` (Suspended), `H` (Hold). Three customers have legacy codes `A1`, `A2`, and `A28` — likely historical classification tiers. These are included in the `accepted_values` test list.
+The `status` column in ABM's CUSTOMERS, PRODUCTS, and SUPPLIERS tables was initially assumed to be a simple status flag (Active/Suspended/Hold). Investigation reveals it is actually an **ABM internal classification or analysis code**:
+
+| Entity | Distinct values | Examples |
+|---|---|---|
+| Products | 1 (`A` only) | All 14,896 products are `A` |
+| Customers | 4 (`A`, `A1`, `A2`, `A28`) | `A2` = main trading customers, `A` = intercompany |
+| Suppliers | 11 (`A` through `A28`) | Codes appear to group suppliers by type or division |
+
+**No codebook exists** in the extracted ABM database. The `BRANCHES` table (which might contain labels) is not currently extracted and may need to be checked via ABM's admin UI. For now, the `accepted_values` test on `mart_accounts` and `mart_products` enumerates the observed values. `mart_suppliers` does not use `accepted_values` because the code space is too wide and arbitrary.
 
 ### 6. `document_date` stored as text in source
 

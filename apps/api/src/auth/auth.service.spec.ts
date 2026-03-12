@@ -1,3 +1,7 @@
+// Set env vars BEFORE anything else — DEV_USERS are evaluated at module-load time
+process.env.DEV_ADMIN_PASSWORD = 'test-admin-pw-xyz';
+process.env.DEV_VIEWER_PASSWORD = 'test-viewer-pw-xyz';
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
@@ -24,14 +28,14 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return a JWT token for valid admin credentials', async () => {
-      const result = await service.login('admin', 'admin');
+      const result = await service.login('admin', 'test-admin-pw-xyz');
       expect(result).toHaveProperty('access_token', 'mock.jwt.token');
       expect(result).toHaveProperty('username', 'admin');
       expect(result).toHaveProperty('role', 'admin');
     });
 
     it('should return a JWT token for valid viewer credentials', async () => {
-      const result = await service.login('viewer', 'viewer');
+      const result = await service.login('viewer', 'test-viewer-pw-xyz');
       expect(result).toHaveProperty('access_token', 'mock.jwt.token');
       expect(result).toHaveProperty('role', 'viewer');
     });

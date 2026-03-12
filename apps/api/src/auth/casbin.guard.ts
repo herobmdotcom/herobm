@@ -18,6 +18,15 @@ export const CasbinResource = (resource: string) =>
 export const CasbinAction = (action: string) =>
   SetMetadata(CASBIN_ACTION, action);
 
+/**
+ * Decorator to explicitly skip Casbin authorization for a handler or controller.
+ * Use only for intentionally public endpoints (e.g. /auth/login).
+ * The /metrics endpoint in main.ts is outside the NestJS pipeline and does not
+ * need this decorator — it is documented as an architectural exception.
+ */
+export const SKIP_CASBIN = 'skip_casbin';
+export const SkipCasbin = () => SetMetadata(SKIP_CASBIN, true);
+
 @Injectable()
 export class CasbinGuard implements CanActivate {
   private enforcer: Enforcer | null = null;
@@ -34,6 +43,15 @@ export class CasbinGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Check for explicit @SkipCasbin() decorator
+    const skipCasbin = this.reflector.getAllAndOverride<boolean>(SKIP_CASBIN, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (skipCasbin) {
+      return true;
+    }
+
     const resource = this.reflector.getAllAndOverride<string>(CASBIN_RESOURCE, [
       context.getHandler(),
       context.getClass(),
@@ -43,9 +61,12 @@ export class CasbinGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    // If no resource/action decorators, allow (e.g. /health, /metrics)
+    // DENY by default if decorators are missing (ADV-026 fix)
     if (!resource || !action) {
-      return true;
+      throw new ForbiddenException(
+        'Endpoint is missing @CasbinResource/@CasbinAction decorators. ' +
+          'Add them or use @SkipCasbin() for intentionally public endpoints.',
+      );
     }
 
     const request = context.switchToHttp().getRequest();
@@ -67,3 +88,4 @@ export class CasbinGuard implements CanActivate {
     return true;
   }
 }
+

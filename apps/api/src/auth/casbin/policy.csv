@@ -7,13 +7,16 @@ p, viewer, products, read
 p, viewer, inventory, read
 p, viewer, orders, read
 p, viewer, dashboard, read
+p, viewer, gst-categories, read
 
-# admin — everything viewer can do, plus user management
+# admin — everything viewer can do, plus user management + order writes
 p, admin, accounts, read
 p, admin, products, read
 p, admin, inventory, read
 p, admin, orders, read
+p, admin, orders, write
 p, admin, dashboard, read
+p, admin, gst-categories, read
 p, admin, users, read
 p, admin, users, write
 

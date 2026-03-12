@@ -1,8 +1,25 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or } from 'drizzle-orm';
+import { eq, ilike, or, desc, sql, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesOrderLines } from '../drizzle/schema';
+import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
+
+/**
+ * Unified order shape returned by findAll — merges ABM legacy and app orders.
+ * At ABM cutover, remove the ABM query from findAll.
+ */
+export interface UnifiedOrderRow {
+  id: string;
+  orderNumber: string;
+  name: string;
+  customerOrderNumber: string;
+  stateCode: string;
+  source: 'abm' | 'app';
+  createdBy: string;
+  createdOn: string | null;
+  totalPrice: string | null;
+}
 
 @Injectable()
 export class OrdersService {
@@ -12,31 +29,120 @@ export class OrdersService {
     return this.db as DrizzleDB;
   }
 
+  /**
+   * Unified order list: unions ABM mart orders + app orders.
+   * ABM mart data is line-level — we SELECT DISTINCT ON document_number
+   * to get one row per order.
+   *
+   * At cutover: remove the ABM query and return only app orders.
+   */
   async findAll(query?: { search?: string; page?: number; limit?: number }) {
     const page = query?.page ?? 1;
     const limit = Math.min(query?.limit ?? 50, 200);
     const offset = (page - 1) * limit;
+    const searchTerm = query?.search ? `%${query.search}%` : null;
 
-    let qb = this.database.select().from(salesOrderLines).$dynamic();
+    // --- ABM legacy orders (deduplicated by document_number) ---
+    let abmQuery = this.database
+      .selectDistinctOn([salesOrderLines.documentNumber], {
+        id: salesOrderLines.salesOrderLineId,
+        orderNumber: salesOrderLines.documentNumber,
+        name: salesOrderLines.accountName,
+        customerOrderNumber: salesOrderLines.customerOrderNumber,
+        stateCode: sql<string>`'legacy'`.as('state_code_unified'),
+        source: sql<string>`'abm'`.as('source'),
+        createdBy: sql<string>`''`.as('created_by'),
+        createdOn: salesOrderLines.documentDate,
+        totalPrice: salesOrderLines.documentTotalIncTax,
+      })
+      .from(salesOrderLines)
+      .$dynamic();
 
-    if (query?.search) {
-      const term = `%${query.search}%`;
-      qb = qb.where(
+    if (searchTerm) {
+      abmQuery = abmQuery.where(
         or(
-          ilike(salesOrderLines.orderNumber, term),
-          ilike(salesOrderLines.accountName, term),
-          ilike(salesOrderLines.productDescription, term),
-          ilike(salesOrderLines.customerOrderNumber, term),
+          ilike(salesOrderLines.documentNumber, searchTerm),
+          ilike(salesOrderLines.accountName, searchTerm),
+          ilike(salesOrderLines.customerOrderNumber, searchTerm),
         ),
       );
     }
 
-    const rows = await qb
-      .orderBy(salesOrderLines.orderNumber)
-      .limit(limit)
-      .offset(offset);
+    // --- App orders ---
+    let appQuery = this.database
+      .select({
+        id: salesOrders.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        name: salesOrders.name,
+        customerOrderNumber: salesOrders.customerOrderNumber,
+        stateCode: salesOrders.stateCode,
+        source: sql<string>`'app'`.as('source'),
+        createdBy: salesOrders.createdBy,
+        createdOn: salesOrders.createdOn,
+      })
+      .from(salesOrders)
+      .$dynamic();
 
-    return { data: rows, page, limit };
+    if (searchTerm) {
+      appQuery = appQuery.where(
+        or(
+          ilike(salesOrders.orderNumber, searchTerm),
+          ilike(salesOrders.name, searchTerm),
+          ilike(salesOrders.customerOrderNumber, searchTerm),
+        ),
+      );
+    }
+
+    // Execute both and merge (app first, then ABM)
+    const [appRows, abmRows] = await Promise.all([appQuery, abmQuery]);
+
+    // --- Aggregate line totals per app order ---
+    const appTotalMap = new Map<string, string>();
+    const appOrderIds = appRows.map((r) => r.id);
+    if (appOrderIds.length > 0) {
+      const totals = await this.database
+        .select({
+          salesOrderId: salesOrderLineItems.salesOrderId,
+          total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
+        })
+        .from(salesOrderLineItems)
+        .where(inArray(salesOrderLineItems.salesOrderId, appOrderIds))
+        .groupBy(salesOrderLineItems.salesOrderId);
+
+      for (const row of totals) {
+        appTotalMap.set(row.salesOrderId, row.total);
+      }
+    }
+
+    const unified: UnifiedOrderRow[] = [
+      ...appRows.map((r) => ({
+        id: r.id,
+        orderNumber: r.orderNumber ?? '',
+        name: r.name ?? '',
+        customerOrderNumber: r.customerOrderNumber ?? '',
+        stateCode: r.stateCode ?? 'draft',
+        source: 'app' as const,
+        createdBy: r.createdBy ?? '',
+        createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
+        totalPrice: appTotalMap.get(r.id) ?? null,
+      })),
+      ...abmRows.map((r) => ({
+        id: r.id,
+        orderNumber: r.orderNumber ?? '',
+        name: r.name ?? '',
+        customerOrderNumber: r.customerOrderNumber ?? '',
+        stateCode: 'legacy',
+        source: 'abm' as const,
+        createdBy: '',
+        createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
+        totalPrice: r.totalPrice ?? null,
+      })),
+    ];
+
+    // Paginate the merged result
+    const paginated = unified.slice(offset, offset + limit);
+
+    return { data: paginated, page, limit, total: unified.length };
   }
 
   async findOne(id: string) {
@@ -50,5 +156,49 @@ export class OrdersService {
       throw new NotFoundException(`Order line '${id}' not found`);
     }
     return rows[0];
+  }
+
+  /**
+   * Look up all lines for an ABM order by document number.
+   * Returns a unified detail shape for the Sales Portal.
+   */
+  async findAbmOrder(documentNumber: string) {
+    const lines = await this.database
+      .select()
+      .from(salesOrderLines)
+      .where(eq(salesOrderLines.documentNumber, documentNumber));
+
+    if (lines.length === 0) {
+      throw new NotFoundException(`ABM order '${documentNumber}' not found`);
+    }
+
+    const first = lines[0];
+    return {
+      salesOrderId: null,
+      orderNumber: first.documentNumber,
+      name: first.accountName,
+      customerId: first.accountId,
+      customerOrderNumber: first.customerOrderNumber,
+      stateCode: 'legacy',
+      notes: null,
+      createdBy: null,
+      createdOn: first.documentDate,
+      modifiedOn: first.documentDate,
+      source: 'abm' as const,
+      lines: lines.map((l, idx) => ({
+        salesOrderLineId: l.salesOrderLineId,
+        lineNumber: l.lineNumber ?? idx + 1,
+        productId: l.productId,
+        productDescription: l.productDescription,
+        quantity: l.quantity,
+        pricePerUnit: l.pricePerUnit,
+        discountPercentage: l.discountPercentage,
+        amount: l.amount,
+        tax: l.tax,
+        totalAmount: l.totalAmount,
+        unitOfMeasure: l.unitOfMeasure,
+      })),
+      events: [],
+    };
   }
 }
