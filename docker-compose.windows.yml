@@ -1,0 +1,20 @@
+# Docker Compose override for Windows / Docker Desktop hosts.
+# Mounts the Docker socket (read-only) because Docker Desktop does not
+# expose container log files to the host filesystem.
+#
+# TRADE-OFF: The socket mount is a known privilege risk (see ADV-023).
+# Mitigations applied:
+#   - Read-only mount (:ro)
+#   - no-new-privileges security option
+#   - All ports bound to 127.0.0.1 (not exposed to network)
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.windows.yml up -d
+
+services:
+  promtail:
+    volumes:
+      - ./configs/promtail/promtail-config-windows.yaml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/pipelines:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true

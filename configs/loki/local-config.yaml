@@ -1,7 +1,6 @@
-# WARNING: auth_enabled=false is for LOCAL DEVELOPMENT ONLY.
-# For staging/production, set auth_enabled: true and configure
-# an authentication provider (e.g., reverse proxy with basic auth).
-auth_enabled: false
+# Multi-tenant auth is enabled. All clients (Promtail, Grafana) must send
+# the X-Scope-OrgID header. See ADV-021 for rationale.
+auth_enabled: true
 
 server:
   http_listen_port: 3100

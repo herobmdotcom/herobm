@@ -5,6 +5,7 @@
 
 # Node modules
 node_modules/
+dist/
 
 # Logs
 logs

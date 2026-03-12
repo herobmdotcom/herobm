@@ -9,8 +9,31 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   # --- Custom Distribution Platform API (NestJS) ---
-  # Uncomment when the API service is running and exposing /metrics
-  # - job_name: 'custom-api'
-  #   metrics_path: '/metrics'
-  #   static_configs:
-  #     - targets: ['host.docker.internal:3001']
+  - job_name: 'custom-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['custom-api:3001']
+
+  # --- Loki (log aggregation) ---
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+  # --- Promtail (log shipper) ---
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+
+  # --- Grafana (dashboards) ---
+  - job_name: 'grafana'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['grafana:3000']
+
+  # EXCEPTION: postgres-custom — Postgres does not expose a /metrics endpoint natively.
+  # Scraping requires a dedicated postgres_exporter sidecar container.
+  # Tracked for future implementation.
+
+  # EXCEPTION: redis-broker — Redis does not expose a /metrics endpoint natively.
+  # Scraping requires a dedicated redis_exporter sidecar container.
+  # Tracked for future implementation.

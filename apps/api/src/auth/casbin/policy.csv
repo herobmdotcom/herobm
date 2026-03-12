@@ -1,0 +1,21 @@
+# Phase 2 RBAC policies
+# Format: p, role, resource, action
+
+# viewer — read access to all data endpoints
+p, viewer, accounts, read
+p, viewer, products, read
+p, viewer, inventory, read
+p, viewer, orders, read
+p, viewer, dashboard, read
+
+# admin — everything viewer can do, plus user management
+p, admin, accounts, read
+p, admin, products, read
+p, admin, inventory, read
+p, admin, orders, read
+p, admin, dashboard, read
+p, admin, users, read
+p, admin, users, write
+
+# Role inheritance: admin inherits viewer
+g, admin, viewer

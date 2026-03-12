@@ -1,29 +1,47 @@
-.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform elt extract-docker extract-docker-dry
+.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api dev-portal docs-generate schema-ref
 
-check-env:
-	@if [ ! -f .env ]; then echo "FATAL: .env file not found. Copy .env.example to .env and fill in credentials." && exit 1; fi
+# Load .env into Make variables and export to subprocesses (dbt, etc.)
+-include .env
+export
 
-up: check-env
-	docker compose up -d
+# --- Platform-specific Compose override ---
+# Promtail needs a platform-specific config for container log collection.
+# See ADV-023 for rationale.
+ifeq ($(OS),Windows_NT)
+  COMPOSE_OVERRIDE = -f docker-compose.windows.yml
+  DBT = $(CURDIR)/.venv/Scripts/dbt
+  VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
+else
+  COMPOSE_OVERRIDE = -f docker-compose.linux.yml
+  DBT = $(CURDIR)/.venv/bin/dbt
+  VENV_PYTHON = $(CURDIR)/.venv/bin/python
+endif
+COMPOSE_CMD = docker compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
+DBT_DIR = pipelines/abm_transform
+
+# --- Docker Stack ---
+
+up:
+	$(COMPOSE_CMD) up -d
 
 down:
-	docker compose down
+	$(COMPOSE_CMD) down
 
 restart: down up
 
 logs:
-	docker compose logs -f
+	$(COMPOSE_CMD) logs -f
 
 status:
-	docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
+	$(COMPOSE_CMD) ps
 
 ps: status
 
 clean:
-	docker compose down -v
+	$(COMPOSE_CMD) down -v
 
 nuke:
-	docker compose down -v --remove-orphans --rmi local
+	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
 
 # --- Infrastructure Tests ---
 
@@ -33,23 +51,48 @@ test-infra:
 # --- ELT Pipeline ---
 
 extract:
-	python pipelines/abm_extract/pipeline.py
+	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py
 
 extract-dry:
-	python pipelines/abm_extract/pipeline.py --dry-run
+	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --dry-run
 
 transform:
-	cd pipelines/abm_transform && dbt run --profiles-dir .
+	"$(DBT)" run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 test-transform:
-	cd pipelines/abm_transform && dbt test --profiles-dir .
+	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt: extract transform
+# Rebuild a single model: make transform-select MODEL=mart_sales_order_lines
+transform-select:
+	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+elt: extract transform schema-ref
+
+# --- Schema Reference ---
+
+docs-generate:
+	"$(VENV_PYTHON)" tools/dbt_docs_generate.py
+
+schema-ref: docs-generate
+	"$(VENV_PYTHON)" tools/generate_schema_reference.py
 
 # --- ELT Pipeline (Docker) ---
 
 extract-docker:
-	docker compose --profile pipeline run --rm abm-extract
+	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract
 
 extract-docker-dry:
-	docker compose --profile pipeline run --rm abm-extract --dry-run
+	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract --dry-run
+
+# --- Custom API ---
+
+dev-api:
+	node --env-file=.env apps/api/dist/main.js
+
+test-api:
+	cd apps/api && npm test
+
+# --- Portal ---
+
+dev-portal:
+	cd apps/portal && npm run dev

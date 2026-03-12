@@ -1,0 +1,12 @@
+# Docker Compose override for Linux hosts.
+# Mounts the Docker container log directory for file-based log collection.
+# No Docker socket is needed.
+#
+# Usage: docker compose -f docker-compose.yml -f docker-compose.linux.yml up -d
+
+services:
+  promtail:
+    volumes:
+      - ./configs/promtail/promtail-config-linux.yaml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/pipelines:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro

@@ -10,11 +10,21 @@ clients:
     tenant_id: modbm
 
 scrape_configs:
-  # Base config: ELT pipeline logs only.
-  # For container log collection, use a platform-specific override:
-  #   - Linux:   docker-compose.linux.yml   (file-based, /var/lib/docker/containers/)
-  #   - Windows: docker-compose.windows.yml (Docker socket discovery)
+  # Container logs via Docker socket discovery (Windows / Docker Desktop).
+  # Required because Docker Desktop does not expose container log files
+  # to the host filesystem. See ADV-023 for risk analysis.
+  - job_name: docker
+    pipeline_stages:
+      - docker: {}
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container'
 
+  # ELT pipeline logs
   - job_name: elt_pipelines
     static_configs:
       - targets:
@@ -32,4 +42,3 @@ scrape_configs:
       - labels:
           level:
           logger:
-

@@ -10,11 +10,25 @@ clients:
     tenant_id: modbm
 
 scrape_configs:
-  # Base config: ELT pipeline logs only.
-  # For container log collection, use a platform-specific override:
-  #   - Linux:   docker-compose.linux.yml   (file-based, /var/lib/docker/containers/)
-  #   - Windows: docker-compose.windows.yml (Docker socket discovery)
+  # Container logs via file-based discovery (Linux).
+  # Docker's json-file driver writes logs to /var/lib/docker/containers/<id>/<id>-json.log
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+      - output:
+          source: log
 
+  # ELT pipeline logs
   - job_name: elt_pipelines
     static_configs:
       - targets:
@@ -32,4 +46,3 @@ scrape_configs:
       - labels:
           level:
           logger:
-
