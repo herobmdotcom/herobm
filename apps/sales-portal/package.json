@@ -12,7 +12,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "ag-grid-react": "^33.2.5",
-    "ag-grid-community": "^33.2.5"
+    "ag-grid-community": "^33.2.5",
+    "@modbm/portal-ui": "file:../../packages/portal-ui"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

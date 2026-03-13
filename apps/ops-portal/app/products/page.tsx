@@ -18,8 +18,6 @@ const columns: ColDef[] = [
     valueFormatter: (p) => p.value && parseFloat(p.value) > 0 ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
   { field: 'priceLevel4', headerName: 'Level 4', width: 100, type: 'numericColumn',
     valueFormatter: (p) => p.value && parseFloat(p.value) > 0 ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-  { field: 'quantityOnHand', headerName: 'On Hand', width: 100, type: 'numericColumn' },
-  { field: 'quantityAvailable', headerName: 'Available', width: 100, type: 'numericColumn' },
   { field: 'barcode', headerName: 'Barcode', width: 130 },
   { field: 'stateCode', headerName: 'Status', width: 90 },
 ];

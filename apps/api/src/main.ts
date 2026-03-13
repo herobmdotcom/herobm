@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
 async function bootstrap() {
   // Prometheus default metrics (CPU, memory, event loop)
@@ -12,6 +13,7 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api');
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // CORS: restrict to explicit origins (ADV-027 fix)
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:4300')

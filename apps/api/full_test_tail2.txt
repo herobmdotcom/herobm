@@ -1,0 +1,10 @@
+PASS src/products/products.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/auth/auth.controller.spec.ts
+
+Test Suites: 18 passed, 18 total
+Tests:       148 passed, 148 total
+Snapshots:   0 total
+Time:        2.367 s
+Ran all test suites.

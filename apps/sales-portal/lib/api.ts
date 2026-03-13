@@ -69,3 +69,30 @@ export async function apiMutate<T = unknown>(
   if (!text) return undefined as T;
   return JSON.parse(text);
 }
+
+/**
+ * Report a client-side error to the PLG stack via the telemetry endpoint.
+ * Also logs to console for local dev visibility.
+ * Fire-and-forget — never throws or blocks the caller.
+ */
+export function reportError(err: unknown, component?: string): void {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  console.error(`[${component ?? 'unknown'}]`, message, err);
+  try {
+    fetch('/api/telemetry/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        stack,
+        component,
+        url: typeof window !== 'undefined' ? window.location.href : undefined,
+      }),
+    }).catch(() => {
+      /* telemetry delivery is best-effort */
+    });
+  } catch {
+    /* guard against environments where fetch is unavailable */
+  }
+}

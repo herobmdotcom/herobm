@@ -133,4 +133,67 @@ describe('OrdersService', () => {
       await expect(service.findOne('NONEXISTENT')).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('findAbmOrder', () => {
+    const mockAbmLines = [
+      {
+        salesOrderLineId: 'SOL001',
+        documentNumber: 'SO-1001',
+        accountName: 'Acme Corp',
+        accountId: 'C001',
+        customerOrderNumber: 'PO-123',
+        documentDate: '2026-01-15',
+        lineNumber: 1,
+        productId: 'P001',
+        productDescription: 'M8 Bolt',
+        quantity: '10',
+        pricePerUnit: '5.00',
+        discountPercentage: '0',
+        amount: '50.00',
+        tax: '5.00',
+        totalAmount: '55.00',
+        unitOfMeasure: 'EA',
+      },
+      {
+        salesOrderLineId: 'SOL002',
+        documentNumber: 'SO-1001',
+        accountName: 'Acme Corp',
+        accountId: 'C001',
+        customerOrderNumber: 'PO-123',
+        documentDate: '2026-01-15',
+        lineNumber: 2,
+        productId: 'P002',
+        productDescription: 'M8 Nut',
+        quantity: '20',
+        pricePerUnit: '2.00',
+        discountPercentage: '0',
+        amount: '40.00',
+        tax: '4.00',
+        totalAmount: '44.00',
+        unitOfMeasure: 'EA',
+      },
+    ];
+
+    it('should return a unified order shape with mapped lines', async () => {
+      const linesQb = createMockQb(mockAbmLines);
+      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(linesQb) });
+
+      const result = await service.findAbmOrder('SO-1001');
+      expect(result.orderNumber).toBe('SO-1001');
+      expect(result.name).toBe('Acme Corp');
+      expect(result.customerId).toBe('C001');
+      expect(result.stateCode).toBe('legacy');
+      expect(result.source).toBe('abm');
+      expect(result.lines).toHaveLength(2);
+      expect(result.lines[0]).toHaveProperty('productId', 'P001');
+      expect(result.lines[1]).toHaveProperty('productId', 'P002');
+    });
+
+    it('should throw NotFoundException for unknown document number', async () => {
+      const emptyQb = createMockQb([]);
+      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(emptyQb) });
+
+      await expect(service.findAbmOrder('NONEXISTENT')).rejects.toThrow(NotFoundException);
+    });
+  });
 });

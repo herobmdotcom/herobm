@@ -55,6 +55,17 @@ describe('InventoryService', () => {
       await service.findAll({ limit: 500 });
       expect(mockQb.limit).toHaveBeenCalledWith(200);
     });
+
+    it('should filter by locationNo', async () => {
+      await service.findAll({ locationNo: 'LOC01' });
+      expect(mockQb.where).toHaveBeenCalled();
+    });
+
+    it('should apply both search and locationNo filters', async () => {
+      await service.findAll({ search: 'bolt', locationNo: 'LOC01' });
+      // where() called twice — once for search, once for locationNo
+      expect(mockQb.where).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('findBins', () => {
@@ -69,6 +80,33 @@ describe('InventoryService', () => {
       mockQb.then = jest.fn().mockImplementation((cb) => cb(mockBinRows));
       await service.findBins({ search: 'A-01' });
       expect(mockQb.where).toHaveBeenCalled();
+    });
+
+    it('should filter by locationNo', async () => {
+      mockQb.then = jest.fn().mockImplementation((cb) => cb(mockBinRows));
+      await service.findBins({ locationNo: 'LOC02' });
+      expect(mockQb.where).toHaveBeenCalled();
+    });
+
+    it('should apply both search and locationNo for bins', async () => {
+      mockQb.then = jest.fn().mockImplementation((cb) => cb(mockBinRows));
+      await service.findBins({ search: 'A-01', locationNo: 'LOC02' });
+      expect(mockQb.where).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('findByProductIds', () => {
+    it('should return inventory rows for given product IDs', async () => {
+      const result = await service.findByProductIds(['P001', 'P002']);
+      expect(result).toHaveProperty('data');
+      expect(mockQb.where).toHaveBeenCalled();
+      expect(mockQb.orderBy).toHaveBeenCalled();
+    });
+
+    it('should return empty data for empty product IDs array', async () => {
+      const result = await service.findByProductIds([]);
+      expect(result).toEqual({ data: [] });
+      expect(mockDb.select).not.toHaveBeenCalled();
     });
   });
 });

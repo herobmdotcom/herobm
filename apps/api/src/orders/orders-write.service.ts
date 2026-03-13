@@ -125,41 +125,78 @@ export class OrdersWriteService {
       totalAmount: (amount + tax).toFixed(2),
     };
   }
+  // ABM gst_category text → our GST category code mapping
+  private static readonly GST_CATEGORY_MAP: Record<string, string> = {
+    '9% gst': 'GST',
+    'zero rated products': 'ZR',
+    'exempt customer': 'EXE',
+  };
 
   /**
-   * Resolve GST category for a customer based on their GST position.
-   * - Exempt customers → Exempt category
-   * - Taxable customers (or unknown) → system default GST category
+   * Resolve the GST category for a single order line.
+   *
+   * Priority:
+   *   1. Explicit per-line override (gstCategoryIdOverride) — manual escape hatch
+   *   2. Customer exempt → EXE (0%) regardless of product
+   *   3. Product's ABM gst_category mapped to our code (GST, ZR, EXE)
+   *   4. System default GST (fallback)
    */
-  private async resolveGstForCustomer(customerId: string): Promise<{ gstCategoryId: string; rate: number }> {
-    // Check customer GST position from mart_accounts
-    const rows = await this.database
+  private async resolveGstForLine(
+    customerId: string,
+    productId?: string,
+    gstCategoryIdOverride?: string,
+  ): Promise<{ gstCategoryId: string; rate: number }> {
+    // 1. Explicit override wins
+    if (gstCategoryIdOverride) {
+      const cat = await this.gstService.getById(gstCategoryIdOverride);
+      return { gstCategoryId: cat.gstCategoryId, rate: parseFloat(cat.rate ?? '0') };
+    }
+
+    // 2. Customer exempt → always 0%
+    const custRows = await this.database
       .select({ gstPosition: accounts.gstPosition })
       .from(accounts)
       .where(eq(accounts.accountId, customerId))
       .limit(1);
 
-    const gstPosition = rows.length > 0 ? rows[0].gstPosition : null;
+    const gstPosition = custRows.length > 0 ? custRows[0].gstPosition : null;
 
     if (gstPosition?.toLowerCase() === 'exempt') {
       const exempt = await this.gstService.getByCode('EXE');
       return { gstCategoryId: exempt.gstCategoryId, rate: parseFloat(exempt.rate ?? '0') };
     }
 
-    // Default: taxable → system default GST
+    // 3. Product's GST category
+    if (productId) {
+      const product = await this.lookupProduct(productId);
+      if (product.gstCategory) {
+        const code = OrdersWriteService.GST_CATEGORY_MAP[product.gstCategory.toLowerCase()];
+        if (code) {
+          const cat = await this.gstService.getByCode(code);
+          return { gstCategoryId: cat.gstCategoryId, rate: parseFloat(cat.rate ?? '0') };
+        }
+      }
+    }
+
+    // 4. Fallback: system default
     const defaultGst = await this.gstService.getDefault();
     return { gstCategoryId: defaultGst.gstCategoryId, rate: parseFloat(defaultGst.rate ?? '0') };
   }
 
   /**
    * Resolve a customer from mart_accounts.
-   * Returns the customer's discount percentage for snapshotting onto the order.
+   * Throws BadRequestException if not found.
+   * Returns the customer discount percentage.
    */
-  private async resolveCustomer(customerId: string): Promise<{ customerDiscount: string }> {
+  private async resolveCustomer(customerId: string): Promise<{
+    customerDiscount: string;
+    currencyCode: string;
+  }> {
     const rows = await this.database
       .select({
         id: accounts.accountId,
         customerDiscount: accounts.customerDiscount,
+        currencyCode: accounts.currencyCode,
       })
       .from(accounts)
       .where(eq(accounts.accountId, customerId))
@@ -168,15 +205,27 @@ export class OrdersWriteService {
     if (rows.length === 0) {
       throw new BadRequestException(`Customer '${customerId}' not found`);
     }
-    return { customerDiscount: rows[0].customerDiscount ?? '0' };
+
+    return {
+      customerDiscount: rows[0].customerDiscount ?? '0',
+      currencyCode: rows[0].currencyCode ?? 'EUR',
+    };
   }
 
   /**
-   * Validate that a product exists in mart_products.
+   * Look up a product from mart_products.
+   * Throws BadRequestException if not found.
+   * Returns productId and gstCategory.
    */
-  private async validateProduct(productId: string): Promise<void> {
+  private async lookupProduct(productId: string): Promise<{
+    productId: string;
+    gstCategory: string | null;
+  }> {
     const rows = await this.database
-      .select({ id: products.productId })
+      .select({
+        productId: products.productId,
+        gstCategory: products.gstCategory,
+      })
       .from(products)
       .where(eq(products.productId, productId))
       .limit(1);
@@ -184,6 +233,15 @@ export class OrdersWriteService {
     if (rows.length === 0) {
       throw new BadRequestException(`Product '${productId}' not found`);
     }
+
+    return rows[0];
+  }
+
+  /**
+   * Validate that a product exists in mart_products.
+   */
+  private async validateProduct(productId: string): Promise<void> {
+    await this.lookupProduct(productId);
   }
 
   /**
@@ -220,7 +278,10 @@ export class OrdersWriteService {
    */
   async create(dto: CreateOrderDto, actor: string) {
     const customer = await this.resolveCustomer(dto.customerId);
-    const gst = await this.resolveGstForCustomer(dto.customerId);
+
+    // Resolve order-level GST from the first line's product, or customer default
+    const firstProductId = dto.lines.length > 0 ? dto.lines[0].productId : undefined;
+    const headerGst = await this.resolveGstForLine(dto.customerId, firstProductId);
 
     for (const line of dto.lines) {
       if (line.productId) {
@@ -241,29 +302,28 @@ export class OrdersWriteService {
           customerOrderNumber: dto.customerOrderNumber,
           stateCode: 'draft',
           customerDiscount: customer.customerDiscount,
-          gstCategoryId: gst.gstCategoryId,
+          gstCategoryId: headerGst.gstCategoryId,
+          currencyCode: customer.currencyCode,
           notes: dto.notes,
           createdBy: actor,
         })
         .returning();
 
-      // Insert line items — resolve GST per line (inherit from order or use per-line override)
+      // Insert line items — resolve GST per line (product × customer)
       const lineValues = [];
       for (let idx = 0; idx < dto.lines.length; idx++) {
         const line = dto.lines[idx];
-        let lineGstId = gst.gstCategoryId;
-        let lineRate = gst.rate;
-        if (line.gstCategoryId) {
-          const lineGst = await this.gstService.getById(line.gstCategoryId);
-          lineGstId = lineGst.gstCategoryId;
-          lineRate = parseFloat(lineGst.rate ?? '0');
-        }
+        const lineGst = await this.resolveGstForLine(
+          dto.customerId,
+          line.productId,
+          line.gstCategoryId,
+        );
         const lineDiscount = line.discountPercentage ?? customer.customerDiscount;
         const computed = this.computeLineAmount(
           line.quantity,
           line.pricePerUnit,
           lineDiscount,
-          lineRate,
+          lineGst.rate,
         );
         lineValues.push({
           salesOrderId: order.salesOrderId,
@@ -273,7 +333,7 @@ export class OrdersWriteService {
           quantity: line.quantity,
           pricePerUnit: line.pricePerUnit,
           discountPercentage: lineDiscount,
-          gstCategoryId: lineGstId,
+          gstCategoryId: lineGst.gstCategoryId,
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -399,18 +459,14 @@ export class OrdersWriteService {
 
     const lineNumber = (maxLine[0]?.max ?? 0) + 1;
 
-    // Resolve GST: use per-line override, or inherit from order
-    let gstCategoryId = dto.gstCategoryId || order.gstCategoryId;
-    let gstRate = 0;
-    if (gstCategoryId) {
-      const gstCat = await this.gstService.getById(gstCategoryId);
-      gstRate = parseFloat(gstCat.rate ?? '0');
-    } else {
-      // Fallback: system default
-      const defaultGst = await this.gstService.getDefault();
-      gstCategoryId = defaultGst.gstCategoryId;
-      gstRate = parseFloat(defaultGst.rate ?? '0');
-    }
+    // Resolve GST: product × customer intersection, with per-line override
+    const lineGst = await this.resolveGstForLine(
+      order.customerId ?? '',
+      dto.productId,
+      dto.gstCategoryId,
+    );
+    const gstCategoryId = lineGst.gstCategoryId;
+    const gstRate = lineGst.rate;
 
     const lineDiscount = dto.discountPercentage ?? order.customerDiscount ?? '0';
 
@@ -477,12 +533,18 @@ export class OrdersWriteService {
 
     const existingLine = await this.findLine(lineId, orderId);
 
-    // Resolve GST category: use dto override, or keep existing, or fallback to order
-    const gstCategoryId = dto.gstCategoryId ?? existingLine.gstCategoryId ?? order.gstCategoryId;
+    // Resolve GST: dto override → existing line category → product-based resolution
+    let gstCategoryId = existingLine.gstCategoryId ?? order.gstCategoryId;
     let gstRate = 0;
-    if (gstCategoryId) {
-      const gstCat = await this.gstService.getById(gstCategoryId);
-      gstRate = parseFloat(gstCat.rate ?? '0');
+    if (dto.gstCategoryId) {
+      // Explicit override via DTO
+      const cat = await this.gstService.getById(dto.gstCategoryId);
+      gstCategoryId = cat.gstCategoryId;
+      gstRate = parseFloat(cat.rate ?? '0');
+    } else if (gstCategoryId) {
+      // Keep existing line or order category
+      const cat = await this.gstService.getById(gstCategoryId);
+      gstRate = parseFloat(cat.rate ?? '0');
     }
 
     const quantity = dto.quantity ?? existingLine.quantity;

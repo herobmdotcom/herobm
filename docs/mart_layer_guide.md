@@ -25,7 +25,7 @@ Each `mart_*` model applies three transformations:
 
 1. **Join** — Resolve foreign keys into human-readable names (e.g. `product_id` → `product_name`, `customer_code` → `account_name`).
 2. **Rename** — Column names follow [Microsoft CDM](https://learn.microsoft.com/en-us/common-data-model/) or [Schema.org](https://schema.org/) vocabulary where applicable (e.g. `customer_id` → `account_id`, `customer_name` → `name`).
-3. **Derive** — Compute business fields not present in staging (e.g. `quantity_available = qty_on_hand - qty_committed`, `is_fully_delivered`).
+3. **Derive** — Compute business fields not present in staging (e.g. `quantity_available = qty_on_hand - qty_committed` in `mart_inventory`, `is_fully_delivered` in order lines).
 
 Mart models generally do **not** filter rows, with one exception: `mart_sales_order_lines` excludes ABM header rows (`line_number = 9999`) that carry document totals but no line-item data. All other marts have a 1:1 row correspondence with their primary source staging model (verified by the row-count sanity test).
 

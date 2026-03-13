@@ -28,6 +28,7 @@ export const accounts = marts.table('mart_accounts', {
   customerGroup: text('customer_group'),
   stateCode: text('state_code'),
   gstPosition: text('gst_position'),
+  currencyCode: text('currency_code'),
   createdOn: timestamp('created_on'),
   deliveryAddressCount: integer('delivery_address_count'),
   priceScale: integer('price_scale'),
@@ -50,10 +51,9 @@ export const products = marts.table('mart_products', {
   tradePrice: numeric('trade_price'),
   priceLevel3: numeric('price_level_3'),
   priceLevel4: numeric('price_level_4'),
-  quantityOnHand: numeric('quantity_on_hand'),
-  quantityAvailable: numeric('quantity_available'),
   barcode: text('barcode'),
   stateCode: text('state_code'),
+  gstCategory: text('gst_category'),
   createdOn: timestamp('created_on'),
 });
 

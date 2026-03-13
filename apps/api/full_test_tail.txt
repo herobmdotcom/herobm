@@ -1,0 +1,20 @@
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/inventory/inventory.service.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/gst/gst-categories.controller.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/auth/auth.controller.spec.ts
+
+Test Suites: 17 passed, 17 total
+Tests:       144 passed, 144 total
+Snapshots:   0 total
+Time:        2.652 s
+Ran all test suites.

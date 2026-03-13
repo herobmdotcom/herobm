@@ -33,6 +33,19 @@ export const gstCategories = modbmCore.table('gst_categories', {
 });
 
 // ---------------------------------------------------------------------------
+// exchange_rates  (Static currency exchange rates)
+// ---------------------------------------------------------------------------
+export const exchangeRates = modbmCore.table('exchange_rates', {
+  exchangeRateId: uuid('exchange_rate_id').primaryKey().defaultRandom(),
+  currencyCode: text('currency_code').notNull().unique(), // ISO 4217
+  currencyName: text('currency_name').notNull(),
+  buyRate: numeric('buy_rate').notNull(),      // units of this currency per 1 EUR
+  sellRate: numeric('sell_rate').notNull(),     // units of this currency per 1 EUR
+  effectiveDate: timestamp('effective_date').defaultNow(),
+  updatedOn: timestamp('updated_on').defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // sales_orders  (CDM: SalesOrder)
 // ---------------------------------------------------------------------------
 export const salesOrders = modbmCore.table('sales_orders', {
@@ -44,6 +57,7 @@ export const salesOrders = modbmCore.table('sales_orders', {
   stateCode: text('state_code').notNull().default('draft'),
   customerDiscount: numeric('customer_discount').default('0'),
   gstCategoryId: uuid('gst_category_id').references(() => gstCategories.gstCategoryId),
+  currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
   customFields: jsonb('custom_fields'),
   createdBy: text('created_by'),

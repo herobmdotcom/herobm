@@ -8,6 +8,7 @@ import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { GstModule } from './gst/gst.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
 import { MetricsInterceptor } from './common/metrics.interceptor';
 
 @Module({
@@ -20,6 +21,7 @@ import { MetricsInterceptor } from './common/metrics.interceptor';
     OrdersModule,
     DashboardModule,
     GstModule,
+    TelemetryModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

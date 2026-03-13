@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, ilike, or, desc, sql, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrderLines } from '../drizzle/schema';
+import { salesOrderLines, accounts } from '../drizzle/schema';
 import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
 
 /**
@@ -13,12 +13,14 @@ export interface UnifiedOrderRow {
   id: string;
   orderNumber: string;
   name: string;
+  customerName: string;
   customerOrderNumber: string;
   stateCode: string;
   source: 'abm' | 'app';
   createdBy: string;
   createdOn: string | null;
   totalPrice: string | null;
+  currencyCode: string | null;
 }
 
 @Injectable()
@@ -68,19 +70,22 @@ export class OrdersService {
       );
     }
 
-    // --- App orders ---
+    // --- App orders (join accounts for customer name) ---
     let appQuery = this.database
       .select({
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
+        customerName: accounts.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         source: sql<string>`'app'`.as('source'),
         createdBy: salesOrders.createdBy,
         createdOn: salesOrders.createdOn,
+        currencyCode: salesOrders.currencyCode,
       })
       .from(salesOrders)
+      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
       .$dynamic();
 
     if (searchTerm) {
@@ -89,6 +94,7 @@ export class OrdersService {
           ilike(salesOrders.orderNumber, searchTerm),
           ilike(salesOrders.name, searchTerm),
           ilike(salesOrders.customerOrderNumber, searchTerm),
+          ilike(accounts.name, searchTerm),
         ),
       );
     }
@@ -119,23 +125,27 @@ export class OrdersService {
         id: r.id,
         orderNumber: r.orderNumber ?? '',
         name: r.name ?? '',
+        customerName: r.customerName ?? '',
         customerOrderNumber: r.customerOrderNumber ?? '',
         stateCode: r.stateCode ?? 'draft',
         source: 'app' as const,
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
+        currencyCode: r.currencyCode ?? 'EUR',
       })),
       ...abmRows.map((r) => ({
         id: r.id,
         orderNumber: r.orderNumber ?? '',
-        name: r.name ?? '',
+        name: '',
+        customerName: r.name ?? '',
         customerOrderNumber: r.customerOrderNumber ?? '',
         stateCode: 'legacy',
         source: 'abm' as const,
         createdBy: '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
         totalPrice: r.totalPrice ?? null,
+        currencyCode: null,
       })),
     ];
 

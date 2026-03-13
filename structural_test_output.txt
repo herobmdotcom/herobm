@@ -1,0 +1,1 @@
+PASS: All portal console.error calls are paired with reportError.

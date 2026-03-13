@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Shell from '@/components/Shell';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 
 interface Summary {
   accounts: number;
@@ -38,7 +38,7 @@ function DashboardContent() {
   useEffect(() => {
     apiFetch<Summary>('/api/dashboard/summary')
       .then(setSummary)
-      .catch(console.error)
+      .catch((err) => reportError(err, 'DashboardPage'))
       .finally(() => setLoading(false));
   }, []);
 

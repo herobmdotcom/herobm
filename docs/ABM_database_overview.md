@@ -130,6 +130,7 @@ The master Creditor/Vendor Entity table.
 The master Catalog and Inventory entity.
 - **Primary Identifier**: `UniqueID` (in `PRODUCTS` table).
 - **Referenced Throughout System As**: `ProductID`
+- **GST/Tax**: `tax_category` (e.g. `9% GST`, `Zero Rated Products`) and `tax_no` (integer: 1=GST, 2=other, 3=zero-rated). Surfaced as `gst_category` in `mart_products`.
 
 **Linked Tables:**
 - **Inventory/Locations**: `PAVAILABILITY`, `PBINCONTENTS`, `PLOCDETAILS`, `STOCKTAKEITEMS`, `TRANSFERITEMS`

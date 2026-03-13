@@ -1,66 +1,91 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
-import { apiFetch } from '@/lib/api';
+import DataGrid from '@/components/DataGrid';
+import { formatAmount } from '@/lib/currency';
+import type { ColDef } from 'ag-grid-community';
 
 interface UnifiedOrder {
   id: string;
   orderNumber: string;
   name: string;
+  customerName: string;
   customerOrderNumber: string;
   stateCode: string;
   source: 'abm' | 'app';
   createdBy: string;
   createdOn: string | null;
   totalPrice: string | null;
+  currencyCode: string | null;
 }
 
-function StateBadge({ state }: { state: string }) {
-  return <span className={`badge badge-${state}`}>{state}</span>;
-}
-
-function SourceBadge({ source }: { source: 'abm' | 'app' }) {
-  return <span className={`badge badge-${source}`}>{source === 'abm' ? 'ABM' : 'App'}</span>;
-}
+const columns: ColDef<UnifiedOrder>[] = [
+  {
+    field: 'orderNumber',
+    headerName: 'Order #',
+    width: 140,
+    pinned: 'left',
+    cellStyle: { fontWeight: 600, color: 'var(--accent)' },
+  },
+  { field: 'customerName', headerName: 'Customer', flex: 1, minWidth: 160 },
+  { field: 'name', headerName: 'Name', width: 160 },
+  {
+    field: 'stateCode',
+    headerName: 'Status',
+    width: 110,
+    cellRenderer: (params: { value: string }) => {
+      if (!params.value) return null;
+      return <span className={`badge badge-${params.value}`}>{params.value}</span>;
+    },
+  },
+  {
+    field: 'source',
+    headerName: 'Source',
+    width: 90,
+    cellRenderer: (params: { value: string }) => {
+      if (!params.value) return null;
+      const label = params.value === 'abm' ? 'ABM' : 'App';
+      return <span className={`badge badge-${params.value}`}>{label}</span>;
+    },
+  },
+  { field: 'customerOrderNumber', headerName: 'Customer PO', width: 140 },
+  {
+    field: 'totalPrice',
+    headerName: 'Total',
+    width: 120,
+    cellDataType: 'number',
+    valueGetter: (params: { data?: UnifiedOrder }) => {
+      if (!params.data?.totalPrice) return null;
+      return parseFloat(params.data.totalPrice);
+    },
+    valueFormatter: (params: { value?: number; data?: UnifiedOrder }) => {
+      if (!params.value || params.value === 0) return '—';
+      return formatAmount(params.value, params.data?.currencyCode || 'EUR');
+    },
+  },
+  {
+    field: 'createdOn',
+    headerName: 'Date',
+    width: 110,
+    valueFormatter: (params: { value: unknown }) => {
+      if (!params.value) return '—';
+      return new Date(params.value as string).toLocaleDateString();
+    },
+  },
+];
 
 export default function OrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<UnifiedOrder[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
 
-  const loadOrders = async () => {
-    setLoading(true);
-    try {
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
-      const data = await apiFetch<{ data: UnifiedOrder[] }>(
-        `/api/orders?limit=100${searchParam}`,
-      );
-      setOrders(data.data);
-    } catch (err) {
-      console.error('Failed to load orders:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadOrders();
-  }, []);
-
-  const handleSearch = () => {
-    loadOrders();
-  };
-
-  const handleRowClick = (order: UnifiedOrder) => {
+  const handleRowClicked = useCallback((order: UnifiedOrder) => {
     if (order.source === 'app') {
       router.push(`/orders/${order.id}?source=app`);
     } else {
       router.push(`/orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
     }
-  };
+  }, [router]);
 
   return (
     <Shell>
@@ -79,86 +104,13 @@ export default function OrdersPage() {
           ➕ New Order
         </button>
       </div>
-
-      {/* Search bar */}
-      <div className="flex gap-3 mb-6">
-        <input
-          id="orders-search"
-          className="input"
-          style={{ maxWidth: 360 }}
-          placeholder="Search orders…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        />
-        <button className="btn btn-secondary" onClick={handleSearch}>
-          Search
-        </button>
-      </div>
-
-      {/* Orders table */}
-      <div className="card scroll-area" style={{ flex: 1 }}>
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <p style={{ color: 'var(--text-muted)' }}>Loading orders…</p>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <p className="text-lg mb-2" style={{ color: 'var(--text-muted)' }}>
-              No orders found
-            </p>
-            <button
-              className="btn btn-primary"
-              onClick={() => router.push('/orders/new')}
-            >
-              ➕ Create Order
-            </button>
-          </div>
-        ) : (
-          <table className="table-lines">
-            <thead>
-              <tr>
-                <th>Order #</th>
-                <th>Customer / Name</th>
-                <th>Status</th>
-                <th>Source</th>
-                <th>Customer PO</th>
-                <th style={{ textAlign: 'right' }}>Total</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr
-                  key={`${order.source}-${order.id}`}
-                  className="cursor-pointer"
-                  onClick={() => handleRowClick(order)}
-                >
-                  <td style={{ fontWeight: 600, color: 'var(--accent)' }}>
-                    {order.orderNumber}
-                  </td>
-                  <td>{order.name || '—'}</td>
-                  <td><StateBadge state={order.stateCode} /></td>
-                  <td><SourceBadge source={order.source} /></td>
-                  <td style={{ color: 'var(--text-secondary)' }}>
-                    {order.customerOrderNumber || '—'}
-                  </td>
-                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
-                    {order.totalPrice && parseFloat(order.totalPrice) !== 0
-                      ? `€${parseFloat(order.totalPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                      : '—'}
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                    {order.createdOn
-                      ? new Date(order.createdOn).toLocaleDateString()
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <DataGrid<UnifiedOrder>
+        endpoint="/api/orders"
+        columns={columns}
+        searchPlaceholder="Search orders…"
+        exportFileName="orders"
+        onRowClicked={handleRowClicked}
+      />
     </Shell>
   );
 }

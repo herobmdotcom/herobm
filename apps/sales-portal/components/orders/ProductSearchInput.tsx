@@ -6,6 +6,9 @@ import { apiFetch } from '@/lib/api';
 /**
  * ProductSearchInput — reusable product search with dropdown autocomplete.
  * Used by both the create and edit order screens for adding line items.
+ *
+ * Stock data (OH / Available) is fetched from the inventory endpoint,
+ * which is the single source of truth for stock levels.
  */
 interface Product {
   productId: string;
@@ -13,6 +16,18 @@ interface Product {
   name: string;
   listPrice: string;
   tradePrice: string;
+}
+
+interface InventoryLevel {
+  productId: string;
+  quantityOnHand: string;
+  quantityAvailable: string;
+}
+
+/** Aggregated stock for display in the dropdown */
+interface ProductStock {
+  onHand: number;
+  available: number;
 }
 
 interface ProductSearchInputProps {
@@ -41,16 +56,37 @@ export default function ProductSearchInput({
 }: ProductSearchInputProps) {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Product[]>([]);
+  const [stockMap, setStockMap] = useState<Record<string, ProductStock>>({});
   const [showDropdown, setShowDropdown] = useState(false);
 
   const searchProducts = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setResults([]); return; }
+    if (!term || term.length < 2) { setResults([]); setStockMap({}); return; }
     try {
       const data = await apiFetch<{ data: Product[] }>(
         `/api/products?search=${encodeURIComponent(term)}&limit=10`,
       );
       setResults(data.data);
-    } catch { setResults([]); }
+
+      // Fetch stock from inventory for these products
+      const ids = data.data.map((p) => p.productId).filter(Boolean);
+      if (ids.length > 0) {
+        try {
+          const inv = await apiFetch<{ data: InventoryLevel[] }>(
+            `/api/inventory/by-products?productIds=${ids.join(',')}`,
+          );
+          // Aggregate per product (sum across locations)
+          const map: Record<string, ProductStock> = {};
+          for (const row of inv.data) {
+            if (!map[row.productId]) map[row.productId] = { onHand: 0, available: 0 };
+            map[row.productId].onHand += parseFloat(row.quantityOnHand || '0');
+            map[row.productId].available += parseFloat(row.quantityAvailable || '0');
+          }
+          setStockMap(map);
+        } catch {
+          setStockMap({});
+        }
+      }
+    } catch { setResults([]); setStockMap({}); }
   }, []);
 
   const debouncedSearch = useDebounce(
@@ -61,6 +97,7 @@ export default function ProductSearchInput({
     setShowDropdown(false);
     setSearch('');
     setResults([]);
+    setStockMap({});
     onSelect(p);
   };
 
@@ -88,21 +125,46 @@ export default function ProductSearchInput({
             boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           }}
         >
-          {results.map((p) => (
+          {results.map((p) => {
+            const stock = stockMap[p.productId];
+            const onHand = stock?.onHand ?? 0;
+            const avail = stock?.available ?? 0;
+            return (
             <div
               key={p.productId}
               className="px-3 py-2 cursor-pointer text-sm"
               style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
               onMouseDown={() => handleSelect(p)}
             >
-              <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                {p.productNumber}
-              </span>
-              <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                {p.name}
-              </span>
+              <div className="flex items-center justify-between">
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                    {p.productNumber}
+                  </span>
+                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
+                    {p.name}
+                  </span>
+                </div>
+                <div className="flex gap-2 ml-3" style={{ flexShrink: 0, fontSize: 11 }}>
+                  <span style={{
+                    color: onHand > 0 ? '#4ade80' : '#f59e0b',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    OH: {onHand}
+                  </span>
+                  <span style={{
+                    color: avail > 0 ? '#4ade80' : '#ef4444',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                  }}>
+                    Avail: {avail}
+                  </span>
+                </div>
+              </div>
             </div>
-          ))}
+            );
+          })}
           {results.length === 0 && (
             <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
               {search.length < 2 ? 'Type at least 2 characters…' : 'No matching products'}

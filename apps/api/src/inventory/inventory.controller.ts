@@ -29,6 +29,15 @@ export class InventoryController {
     });
   }
 
+  @Get('by-products')
+  @CasbinAction('read')
+  findByProductIds(@Query('productIds') productIds?: string) {
+    const ids = productIds
+      ? productIds.split(',').map((id) => id.trim()).filter(Boolean)
+      : [];
+    return this.inventoryService.findByProductIds(ids);
+  }
+
   @Get('bins')
   @CasbinAction('read')
   findBins(

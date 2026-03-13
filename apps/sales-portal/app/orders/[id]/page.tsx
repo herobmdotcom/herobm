@@ -6,7 +6,8 @@ import Shell from '@/components/Shell';
 import OrderTotalsCard from '@/components/orders/OrderTotalsCard';
 import ProductSearchInput from '@/components/orders/ProductSearchInput';
 import type { Product } from '@/components/orders/ProductSearchInput';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { formatAmount } from '@/lib/currency';
 
 interface OrderLine {
   salesOrderLineId: string;
@@ -32,6 +33,13 @@ interface GstCategory {
   isDefault: boolean;
 }
 
+function gstLabel(c: GstCategory): string {
+  if (c.type === 'exempt') return 'Exempt';
+  if (c.type === 'zero_rated') return 'Zero Rated';
+  const pct = parseFloat(c.rate || '0');
+  return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
+}
+
 interface OrderEvent {
   eventId: string;
   eventType: string;
@@ -47,6 +55,9 @@ interface OrderDetail {
   customerId: string | null;
   customerOrderNumber: string | null;
   stateCode: string;
+  currencyCode: string;
+  customerDiscount: string | null;
+  gstCategoryId: string | null;
   notes: string | null;
   createdBy: string | null;
   createdOn: string;
@@ -56,6 +67,19 @@ interface OrderDetail {
   events: OrderEvent[];
 }
 
+interface InventoryLevel {
+  inventoryLevelId: string;
+  productId: string;
+  productNumber: string;
+  productName: string;
+  locationNo: string;
+  locationName: string;
+  quantityOnHand: string;
+  quantityCommitted: string;
+  quantityOnOrder: string;
+  quantityAvailable: string;
+  quantityReserved: string;
+}
 
 
 const STATE_TRANSITIONS: Record<string, string[]> = {
@@ -113,6 +137,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   // GST categories
   const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
 
+  // Tab state for line items / availability
+  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+  const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+
   const loadOrder = async () => {
     setLoading(true);
     try {
@@ -134,8 +163,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     loadOrder();
     // Load GST categories
-    apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch(() => {});
+    apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id, source]);
+
+  // Load inventory when availability tab is selected
+  useEffect(() => {
+    if (activeTab !== 'availability' || !order || order.lines.length === 0) return;
+    const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
+    if (productIds.length === 0) return;
+    setInventoryLoading(true);
+    apiFetch<{ data: InventoryLevel[] }>(
+      `/api/inventory/by-products?productIds=${productIds.join(',')}`,
+    )
+      .then((res) => setInventoryData(res.data))
+      .catch((err) => reportError(err, 'OrderDetailPage'))
+      .finally(() => setInventoryLoading(false));
+  }, [activeTab, order]);
 
   // Only draft app orders are editable
   const isEditable = source === 'app' && order?.stateCode === 'draft';
@@ -372,15 +415,62 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Order Name
+                    Customer
+                    {order.currencyCode && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(59,130,246,0.15)',
+                          color: 'var(--accent)',
+                          fontWeight: 600,
+                          fontSize: 10,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {order.currencyCode}
+                      </span>
+                    )}
+                    {order.gstCategoryId && (() => {
+                      const c = gstCategories.find((g) => g.gstCategoryId === order.gstCategoryId);
+                      return c?.type === 'exempt' ? (
+                        <span
+                          style={{
+                            marginLeft: 4,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: 'rgba(245,158,11,0.15)',
+                            color: '#f59e0b',
+                            fontWeight: 600,
+                            fontSize: 10,
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          EXEMPT
+                        </span>
+                      ) : null;
+                    })()}
+                    {parseFloat(order.customerDiscount || '0') > 0 && (
+                      <span
+                        style={{
+                          marginLeft: 4,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(74,222,128,0.15)',
+                          color: '#4ade80',
+                          fontWeight: 600,
+                          fontSize: 10,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {parseFloat(order.customerDiscount!)}% disc
+                      </span>
+                    )}
                   </label>
-                  <input
-                    className="input"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={saveHeader}
-                    placeholder="Order name"
-                  />
+                  <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    {order.customerId || '—'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -396,11 +486,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer ID
+                    Order Name
                   </label>
-                  <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {order.customerId || '—'}
-                  </p>
+                  <input
+                    className="input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={saveHeader}
+                    placeholder="Order name"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -426,23 +520,77 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             ) : (
               <div className="grid grid-cols-2 gap-y-3 text-sm">
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Customer</span>
-                  <p style={{ fontWeight: 500 }}>{order.name || order.customerId || '—'}</p>
+                  <span style={{ color: 'var(--text-muted)' }}>
+                    Customer
+                    {order.currencyCode && (
+                      <span
+                        style={{
+                          marginLeft: 8,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(59,130,246,0.15)',
+                          color: 'var(--accent)',
+                          fontWeight: 600,
+                          fontSize: 10,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {order.currencyCode}
+                      </span>
+                    )}
+                    {order.gstCategoryId && (() => {
+                      const c = gstCategories.find((g) => g.gstCategoryId === order.gstCategoryId);
+                      return c?.type === 'exempt' ? (
+                        <span
+                          style={{
+                            marginLeft: 4,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: 'rgba(245,158,11,0.15)',
+                            color: '#f59e0b',
+                            fontWeight: 600,
+                            fontSize: 10,
+                            letterSpacing: '0.04em',
+                          }}
+                        >
+                          EXEMPT
+                        </span>
+                      ) : null;
+                    })()}
+                    {parseFloat(order.customerDiscount || '0') > 0 && (
+                      <span
+                        style={{
+                          marginLeft: 4,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: 'rgba(74,222,128,0.15)',
+                          color: '#4ade80',
+                          fontWeight: 600,
+                          fontSize: 10,
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        {parseFloat(order.customerDiscount!)}% disc
+                      </span>
+                    )}
+                  </span>
+                  <p style={{ fontWeight: 500 }}>{order.customerId || '—'}</p>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-muted)' }}>Customer PO</span>
                   <p style={{ fontWeight: 500 }}>{order.customerOrderNumber || '—'}</p>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Created By</span>
-                  <p style={{ fontWeight: 500 }}>{order.createdBy || '—'}</p>
+                  <span style={{ color: 'var(--text-muted)' }}>Order Name</span>
+                  <p style={{ fontWeight: 500 }}>{order.name || '—'}</p>
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Date</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Created</span>
                   <p style={{ fontWeight: 500 }}>
                     {order.createdOn
                       ? new Date(order.createdOn).toLocaleString()
                       : '—'}
+                    {order.createdBy ? ` by ${order.createdBy}` : ''}
                   </p>
                 </div>
                 {order.notes && (
@@ -456,20 +604,43 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* Line items */}
+        {/* Line items / Availability tabs */}
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3
-              className="text-sm font-semibold"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              Line Items
-            </h3>
-            {isEditable && (
+            <div className="flex gap-0">
+              <button
+                className="text-sm font-semibold px-3 py-1.5 rounded-l-lg"
+                style={{
+                  color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
+                  background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setActiveTab('lines')}
+              >
+                Line Items
+              </button>
+              <button
+                className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
+                style={{
+                  color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
+                  background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                  borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setActiveTab('availability')}
+              >
+                📦 Availability
+              </button>
+            </div>
+            {isEditable && activeTab === 'lines' && (
               <ProductSearchInput
                 onSelect={addLineFromProduct}
                 placeholder="Add product… (search)"
@@ -478,6 +649,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             )}
           </div>
 
+          {activeTab === 'lines' ? (
           <table className="table-lines">
             <thead>
               <tr>
@@ -487,7 +659,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
                 <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
                 <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
-                <th style={{ width: 90, textAlign: 'center' }}>GST</th>
+                <th style={{ width: 110, textAlign: 'right' }}>GST</th>
                 <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
                 {isEditable && <th style={{ width: 50 }}></th>}
               </tr>
@@ -561,7 +733,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {line.quantity}
                       </td>
                       <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                        ${parseFloat(line.pricePerUnit || '0').toFixed(2)}
+                        {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
                       </td>
                       <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                         {line.discountPercentage || '0'}%
@@ -569,10 +741,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </>
                   )}
                   {isEditable ? (
-                    <td style={{ textAlign: 'center' }}>
+                    <td style={{ textAlign: 'right' }}>
                       <select
                         className="input"
-                        style={{ width: '100%', fontSize: 12, textAlign: 'center' }}
+                        style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
                         value={line.gstCategoryId || ''}
                         onChange={(e) => {
                           updateLine(line.salesOrderLineId, 'gstCategoryId', e.target.value);
@@ -580,14 +752,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       >
                         {gstCategories.map((c) => (
                           <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                            {c.code}
+                            {gstLabel(c)}
                           </option>
                         ))}
                       </select>
                     </td>
                   ) : (
-                    <td style={{ textAlign: 'center', fontSize: 12 }}>
-                      {gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId)?.code || '—'}
+                    <td style={{ textAlign: 'right', fontSize: 12 }}>
+                      {(() => {
+                        const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+                        if (c) return gstLabel(c);
+                        // ABM legacy: derive effective rate from tax / amount
+                        const amt = parseFloat(line.amount || '0');
+                        const tax = parseFloat(line.tax || '0');
+                        if (amt > 0 && tax > 0) {
+                          const pct = (tax / amt) * 100;
+                          return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                        }
+                        if (amt > 0 && tax === 0) return 'Exempt';
+                        return '—';
+                      })()}
                     </td>
                   )}
                   <td
@@ -597,7 +781,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    ${parseFloat(line.amount || '0').toFixed(2)}
+                    {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
                   </td>
                   {isEditable && (
                     <td>
@@ -624,9 +808,119 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               )}
             </tbody>
           </table>
+          ) : (
+            /* Availability tab */
+            inventoryLoading ? (
+              <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>Loading inventory data…</p>
+            ) : (
+              <table className="table-lines">
+                <thead>
+                  <tr>
+                    <th style={{ width: 40 }}>#</th>
+                    <th>Product</th>
+                    <th>Description</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Ordered</th>
+                    <th style={{ width: 100, textAlign: 'right' }}>Location</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>On Hand</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Committed</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Reserved</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Available</th>
+                    <th style={{ width: 70, textAlign: 'center' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.lines.map((line) => {
+                    const lineInventory = inventoryData.filter(
+                      (inv) => inv.productId === line.productId,
+                    );
+                    const totalAvail = lineInventory.reduce(
+                      (sum, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
+                    );
+                    const orderedQty = parseFloat(line.quantity || '0');
+                    const canFulfil = totalAvail >= orderedQty;
+
+                    if (lineInventory.length === 0) {
+                      return (
+                        <tr key={line.salesOrderLineId}>
+                          <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                          <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
+                            {line.productId?.substring(0, 8) || '—'}
+                          </td>
+                          <td>{line.productDescription || '—'}</td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
+                          <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+                            No inventory data
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⚠</span>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return lineInventory.map((inv, idx) => {
+                      const avail = parseFloat(inv.quantityAvailable || '0');
+                      return (
+                        <tr key={`${line.salesOrderLineId}-${inv.inventoryLevelId}`}>
+                          {idx === 0 && (
+                            <>
+                              <td style={{ color: 'var(--text-muted)' }} rowSpan={lineInventory.length}>{line.lineNumber}</td>
+                              <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }} rowSpan={lineInventory.length}>
+                                {line.productId?.substring(0, 8) || '—'}
+                              </td>
+                              <td rowSpan={lineInventory.length}>{line.productDescription || '—'}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }} rowSpan={lineInventory.length}>
+                                {line.quantity}
+                              </td>
+                            </>
+                          )}
+                          <td style={{ textAlign: 'right', fontSize: 12 }}>{inv.locationName || inv.locationNo}</td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {parseFloat(inv.quantityOnHand || '0')}
+                          </td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {parseFloat(inv.quantityCommitted || '0')}
+                          </td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {parseFloat(inv.quantityReserved || '0')}
+                          </td>
+                          <td style={{
+                            textAlign: 'right',
+                            fontVariantNumeric: 'tabular-nums',
+                            fontWeight: 600,
+                            color: avail > 0 ? '#4ade80' : '#ef4444',
+                          }}>
+                            {avail}
+                          </td>
+                          {idx === 0 && (
+                            <td style={{ textAlign: 'center' }} rowSpan={lineInventory.length}>
+                              <span style={{
+                                color: canFulfil ? '#4ade80' : '#ef4444',
+                                fontWeight: 700,
+                                fontSize: 11,
+                              }}>
+                                {canFulfil ? '✓' : '✗'}
+                              </span>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    });
+                  })}
+                  {order.lines.length === 0 && (
+                    <tr>
+                      <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                        No line items
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )
+          )}
         </div>
 
-        <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} />
+        <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} currencyCode={order.currencyCode || 'EUR'} />
 
         {/* Audit timeline — only for app orders */}
         {source === 'app' && (
@@ -642,44 +936,61 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               Activity Timeline
             </h3>
             <div className="space-y-3">
-              {order.events.map((event) => (
-                <div
-                  key={event.eventId}
-                  className="flex gap-3 text-sm"
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(30,58,95,0.3)',
-                  }}
-                >
-                  <EventIcon type={event.eventType} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
+              {[...order.events].reverse().map((event) => {
+                const hasPayload = event.payload && Object.keys(event.payload).length > 0;
+                return (
+                  <details
+                    key={event.eventId}
+                    className="text-sm"
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid rgba(30,58,95,0.3)',
+                    }}
+                  >
+                    <summary
+                      className="flex items-center gap-3"
+                      style={{ cursor: hasPayload ? 'pointer' : 'default', userSelect: 'none', listStyle: 'none' }}
+                    >
+                      <EventIcon type={event.eventType} />
                       <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
                         {event.eventType.replace(/_/g, ' ')}
                       </span>
                       <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
                         by {event.actor}
                       </span>
-                    </div>
-                    {event.payload && (
-                      <pre
-                        className="mt-1 text-xs overflow-x-auto"
-                        style={{ color: 'var(--text-secondary)' }}
+                      <span className="ml-auto text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                        {new Date(event.createdOn).toLocaleString()}
+                      </span>
+                      {hasPayload && (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>▶</span>
+                      )}
+                    </summary>
+                    {hasPayload && (
+                      <div
+                        className="mt-2 text-xs grid gap-y-1"
+                        style={{ marginLeft: 28, color: 'var(--text-secondary)' }}
                       >
-                        {JSON.stringify(event.payload, null, 2)}
-                      </pre>
+                        {Object.entries(event.payload).map(([key, value]) => (
+                          <div key={key} className="flex gap-2">
+                            <span style={{ color: 'var(--text-muted)', minWidth: 100, fontWeight: 500 }}>
+                              {key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                            <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                              {typeof value === 'object' && value !== null
+                                ? Object.entries(value as Record<string, unknown>)
+                                    .map(([k, v]) => `${k}: ${v}`)
+                                    .join(', ')
+                                : String(value)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                  </div>
-                  <span
-                    className="text-xs whitespace-nowrap"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    {new Date(event.createdOn).toLocaleString()}
-                  </span>
-                </div>
-              ))}
+                  </details>
+                );
+              })}
               {order.events.length === 0 && (
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   No events recorded

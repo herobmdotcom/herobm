@@ -4,21 +4,34 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import OrderTotalsCard from '@/components/orders/OrderTotalsCard';
-import { apiFetch, apiMutate } from '@/lib/api';
+import ProductSearchInput from '@/components/orders/ProductSearchInput';
+import type { Product } from '@/components/orders/ProductSearchInput';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { formatAmount } from '@/lib/currency';
 
 interface Account {
   accountId: string;
   accountNumber: string;
   name: string;
   customerDiscount: string | null;
+  currencyCode: string | null;
+  gstPosition: string | null;
 }
 
-interface Product {
-  productId: string;
-  productNumber: string;
-  name: string;
-  listPrice: string;
-  tradePrice: string;
+interface GstCategory {
+  gstCategoryId: string;
+  code: string;
+  title: string;
+  type: string;
+  rate: string;
+  isDefault: boolean;
+}
+
+function gstLabel(c: GstCategory): string {
+  if (c.type === 'exempt') return 'Exempt';
+  if (c.type === 'zero_rated') return 'Zero Rated';
+  const pct = parseFloat(c.rate || '0');
+  return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
 }
 
 interface LineItem {
@@ -29,12 +42,13 @@ interface LineItem {
   quantity: string;
   pricePerUnit: string;
   discountPercentage: string;
+  gstCategoryId: string;
   unitOfMeasure: string;
 }
 
 let lineKey = 0;
 
-function emptyLine(defaultDiscount = '0'): LineItem {
+function emptyLine(defaultDiscount = '0', defaultGstCategoryId = ''): LineItem {
   return {
     key: ++lineKey,
     productId: '',
@@ -43,6 +57,7 @@ function emptyLine(defaultDiscount = '0'): LineItem {
     quantity: '1',
     pricePerUnit: '0',
     discountPercentage: defaultDiscount,
+    gstCategoryId: defaultGstCategoryId,
     unitOfMeasure: 'EA',
   };
 }
@@ -58,23 +73,43 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
 export default function NewOrderPage() {
   const router = useRouter();
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
 
   const [customerId, setCustomerId] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerDiscount, setCustomerDiscount] = useState('0');
+  const [currencyCode, setCurrencyCode] = useState('EUR');
+  const [customerGstPosition, setCustomerGstPosition] = useState<string | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
   const [notes, setNotes] = useState('');
-  const [lines, setLines] = useState<LineItem[]>([emptyLine()]);
 
-  const [productSearch, setProductSearch] = useState('');
-  const [activeLine, setActiveLine] = useState<number | null>(null);
-  const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+  const defaultGstCategoryId = gstCategories.find((c) => c.isDefault)?.gstCategoryId || '';
+  const exemptGstCategoryId = gstCategories.find((c) => c.type === 'exempt')?.gstCategoryId || '';
+  const isCustomerExempt = customerGstPosition?.toLowerCase() === 'exempt';
+  // Exempt customers always get the exempt GST category
+  const effectiveGstCategoryId = isCustomerExempt ? exemptGstCategoryId : defaultGstCategoryId;
+
+  const [lines, setLines] = useState<LineItem[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Load GST categories on mount
+  useEffect(() => {
+    apiFetch<GstCategory[]>('/api/gst-categories')
+      .then(setGstCategories)
+      .catch((err) => reportError(err, 'NewOrderPage'));
+  }, []);
+
+  // When GST categories load or customer changes, backfill effective GST onto lines missing one
+  useEffect(() => {
+    if (!effectiveGstCategoryId) return;
+    setLines((prev) =>
+      prev.map((l) => (l.gstCategoryId ? l : { ...l, gstCategoryId: effectiveGstCategoryId })),
+    );
+  }, [effectiveGstCategoryId]);
 
   // Debounced server-side search for customers (300ms)
   const searchAccounts = useCallback(async (term: string) => {
@@ -91,52 +126,45 @@ export default function NewOrderPage() {
     (term: unknown) => searchAccounts(term as string), 300,
   );
 
-  // Debounced server-side search for products (300ms)
-  const searchProducts = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setFilteredProducts([]); return; }
-    try {
-      const data = await apiFetch<{ data: Product[] }>(
-        `/api/products?search=${encodeURIComponent(term)}&limit=10`,
-      );
-      setFilteredProducts(data.data);
-    } catch { setFilteredProducts([]); }
-  }, []);
-
-  const debouncedProductSearch = useDebounce(
-    (term: unknown) => searchProducts(term as string), 300,
-  );
-
   const selectCustomer = (a: Account) => {
     setCustomerId(a.accountId);
     setCustomerSearch(`${a.accountNumber} — ${a.name}`);
     setShowCustomerDropdown(false);
     const disc = a.customerDiscount ?? '0';
     setCustomerDiscount(disc);
-    // Update discount on all existing lines that still have default '0'
+    const resolvedCurrency = a.currencyCode || 'EUR';
+    setCurrencyCode(resolvedCurrency);
+    setCustomerGstPosition(a.gstPosition);
+
+    // Resolve the GST category: exempt customers force all lines to exempt
+    const custExempt = a.gstPosition?.toLowerCase() === 'exempt';
+    const lineGstId = custExempt ? exemptGstCategoryId : defaultGstCategoryId;
+
+    // Update discount + GST on all existing lines
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
         discountPercentage: l.discountPercentage === '0' ? disc : l.discountPercentage,
+        gstCategoryId: custExempt ? lineGstId : l.gstCategoryId,
       })),
     );
   };
 
-  const selectProduct = (p: Product, lineIdx: number) => {
-    setLines((prev) =>
-      prev.map((l, i) =>
-        i === lineIdx
-          ? {
-              ...l,
-              productId: p.productId,
-              productNumber: p.productNumber,
-              productDescription: p.name,
-              pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
-            }
-          : l,
-      ),
-    );
-    setShowProductDropdown(false);
-    setProductSearch('');
+  const addLineFromProduct = (p: Product) => {
+    setLines((prev) => [
+      ...prev,
+      {
+        key: ++lineKey,
+        productId: p.productId,
+        productNumber: p.productNumber,
+        productDescription: p.name,
+        quantity: '1',
+        pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
+        discountPercentage: customerDiscount,
+        gstCategoryId: effectiveGstCategoryId,
+        unitOfMeasure: 'EA',
+      },
+    ]);
   };
 
   const updateLine = (idx: number, field: keyof LineItem, value: string) => {
@@ -150,7 +178,7 @@ export default function NewOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine(customerDiscount)]);
+    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveGstCategoryId)]);
   };
 
   const computeAmount = (line: LineItem) => {
@@ -158,6 +186,13 @@ export default function NewOrderPage() {
     const price = parseFloat(line.pricePerUnit) || 0;
     const disc = parseFloat(line.discountPercentage) || 0;
     return qty * price * (1 - disc / 100);
+  };
+
+  const computeTax = (line: LineItem) => {
+    const amount = computeAmount(line);
+    const cat = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+    const rate = cat ? parseFloat(cat.rate || '0') : 0;
+    return amount * (rate / 100);
   };
 
   const handleSubmit = async () => {
@@ -187,6 +222,7 @@ export default function NewOrderPage() {
             quantity: l.quantity,
             pricePerUnit: l.pricePerUnit,
             discountPercentage: l.discountPercentage,
+            gstCategoryId: l.gstCategoryId || undefined,
             unitOfMeasure: l.unitOfMeasure,
           })),
       });
@@ -197,6 +233,9 @@ export default function NewOrderPage() {
       setSubmitting(false);
     }
   };
+
+  const subtotal = lines.reduce((sum, l) => sum + computeAmount(l), 0);
+  const totalTax = lines.reduce((sum, l) => sum + computeTax(l), 0);
 
   return (
     <Shell>
@@ -252,10 +291,59 @@ export default function NewOrderPage() {
                 style={{ color: 'var(--text-muted)' }}
               >
                 Customer *
+                {customerId && (
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: 'rgba(59,130,246,0.15)',
+                      color: 'var(--accent)',
+                      fontWeight: 600,
+                      fontSize: 10,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {currencyCode}
+                  </span>
+                )}
+                {isCustomerExempt && (
+                  <span
+                    style={{
+                      marginLeft: 4,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: 'rgba(245,158,11,0.15)',
+                      color: '#f59e0b',
+                      fontWeight: 600,
+                      fontSize: 10,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    EXEMPT
+                  </span>
+                )}
+                {customerId && parseFloat(customerDiscount) > 0 && (
+                  <span
+                    style={{
+                      marginLeft: 4,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: 'rgba(74,222,128,0.15)',
+                      color: '#4ade80',
+                      fontWeight: 600,
+                      fontSize: 10,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {parseFloat(customerDiscount)}% disc
+                  </span>
+                )}
               </label>
               <input
                 id="order-customer"
                 className="input"
+                autoComplete="off"
                 placeholder="Search customer…"
                 value={customerSearch}
                 onChange={(e) => {
@@ -346,9 +434,16 @@ export default function NewOrderPage() {
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Line Items
             </h3>
-            <button className="btn btn-secondary btn-sm" onClick={addLine}>
-              ➕ Add Line
-            </button>
+            <div className="flex items-center gap-3">
+              <ProductSearchInput
+                onSelect={addLineFromProduct}
+                placeholder="Add product… (search)"
+                style={{ width: 240 }}
+              />
+              <button className="btn btn-secondary btn-sm" onClick={addLine}>
+                ➕ Blank Line
+              </button>
+            </div>
           </div>
 
           <table className="table-lines">
@@ -356,10 +451,12 @@ export default function NewOrderPage() {
               <tr>
                 <th style={{ width: 40 }}>#</th>
                 <th>Product</th>
-                <th style={{ width: 90 }}>Qty</th>
-                <th style={{ width: 110 }}>Unit Price</th>
-                <th style={{ width: 80 }}>Disc %</th>
-                <th style={{ width: 110 }}>Amount</th>
+                <th>Description</th>
+                <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
+                <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
+                <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
+                <th style={{ width: 110, textAlign: 'right' }}>GST</th>
+                <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
                 <th style={{ width: 50 }}></th>
               </tr>
             </thead>
@@ -367,92 +464,45 @@ export default function NewOrderPage() {
               {lines.map((line, idx) => (
                 <tr key={line.key}>
                   <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
-                  <td>
-                    <div className="relative">
-                      {line.productId ? (
-                        <div className="flex items-center gap-2">
-                          <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
-                            {line.productNumber}
-                          </span>
-                          <span className="text-sm">{line.productDescription}</span>
-                          <button
-                            className="text-xs cursor-pointer"
-                            style={{ color: 'var(--text-muted)' }}
-                            onClick={() => {
-                              updateLine(idx, 'productId', '');
-                              updateLine(idx, 'productNumber', '');
-                              updateLine(idx, 'productDescription', '');
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <input
-                            className="input"
-                            placeholder="Search product…"
-                            value={activeLine === idx ? productSearch : ''}
-                            onChange={(e) => {
-                              setProductSearch(e.target.value);
-                              setActiveLine(idx);
-                              setShowProductDropdown(true);
-                              debouncedProductSearch(e.target.value);
-                            }}
-                            onFocus={() => {
-                              setActiveLine(idx);
-                              setShowProductDropdown(true);
-                            }}
-                            onBlur={() =>
-                              setTimeout(() => setShowProductDropdown(false), 200)
-                            }
-                          />
-                          {showProductDropdown && activeLine === idx && productSearch && (
-                            <div
-                              className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-40 scroll-area"
-                              style={{
-                                background: 'var(--bg-card)',
-                                border: '1px solid var(--border)',
-                                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                              }}
-                            >
-                              {filteredProducts.slice(0, 8).map((p) => (
-                                <div
-                                  key={p.productId}
-                                  className="px-3 py-2 cursor-pointer text-sm"
-                                  style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
-                                  onMouseDown={() => selectProduct(p, idx)}
-                                >
-                                  <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                    {p.productNumber}
-                                  </span>
-                                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                                    {p.name}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
+                  <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
+                    {line.productId ? (
+                      <div className="flex items-center gap-2">
+                        <span>{line.productNumber}</span>
+                        <button
+                          className="text-xs cursor-pointer"
+                          style={{ color: 'var(--text-muted)' }}
+                          onClick={() => {
+                            updateLine(idx, 'productId', '');
+                            updateLine(idx, 'productNumber', '');
+                            updateLine(idx, 'productDescription', '');
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
+                    )}
                   </td>
-                  <td>
+                  <td>{line.productDescription || '—'}</td>
+                  <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
                       type="number"
                       min="0"
                       step="1"
+                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.quantity}
                       onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
                     />
                   </td>
-                  <td>
+                  <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
                       type="number"
                       min="0"
                       step="0.01"
+                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.pricePerUnit}
                       onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
                       onBlur={(e) => {
@@ -461,19 +511,40 @@ export default function NewOrderPage() {
                       }}
                     />
                   </td>
-                  <td>
+                  <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
                       type="number"
                       min="0"
                       max="100"
                       step="0.1"
+                      style={{ width: '100%', textAlign: 'right' }}
                       value={line.discountPercentage}
                       onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
                     />
                   </td>
-                  <td style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                    ${computeAmount(line).toFixed(2)}
+                  <td style={{ textAlign: 'right' }}>
+                    <select
+                      className="input"
+                      style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                      value={line.gstCategoryId}
+                      onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
+                    >
+                      {gstCategories.map((c) => (
+                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
+                          {gstLabel(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td
+                    style={{
+                      textAlign: 'right',
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {formatAmount(computeAmount(line), currencyCode)}
                   </td>
                   <td>
                     {lines.length > 1 && (
@@ -487,13 +558,24 @@ export default function NewOrderPage() {
                   </td>
                 </tr>
               ))}
+              {lines.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
+                  >
+                    No line items — use the search above to add products
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         <OrderTotalsCard
-          subtotal={lines.reduce((sum, l) => sum + computeAmount(l), 0)}
-          totalTax={0}
+          subtotal={subtotal}
+          totalTax={totalTax}
+          currencyCode={currencyCode}
         />
       </div>
     </Shell>

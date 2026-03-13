@@ -1,7 +1,7 @@
 # Schema Reference
 
 > Auto-generated from dbt metadata. Only documents the **mart layer**.
-> Last generated: 2026-03-12 17:13 UTC
+> Last generated: 2026-03-13 14:07 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `public_marts`
@@ -9,7 +9,7 @@
 All mart tables use **dbt Model Contracts** (🔒) with enforced data types and database-level constraints.
 
 **Source freshness:**
- Last raw data load: `2026-03-12 14:34:18.570382+00`
+ Last raw data load: `2026-03-12 21:05:05.845235+00`
  Freshness checks: warn after 36h, error after 72h
 
 ## Models
@@ -34,6 +34,7 @@ graph LR
     stg_bin_contents["stg_bin_contents"]
     stg_bins["stg_bins"]
     stg_contacts["stg_contacts"]
+    stg_customer_groups["stg_customer_groups"]
     stg_customers["stg_customers"]
     stg_delivery_addresses["stg_delivery_addresses"]
     stg_location_details["stg_location_details"]
@@ -58,6 +59,7 @@ graph LR
     stg_customers --> mart_accounts
     stg_contacts --> mart_accounts
     stg_delivery_addresses --> mart_accounts
+    stg_customer_groups --> mart_accounts
     stg_bin_contents --> mart_bin_contents
     stg_bins --> mart_bin_contents
     stg_products --> mart_bin_contents
@@ -114,7 +116,7 @@ graph LR
 
 Customer accounts with primary contact and delivery address count. CDM entity: Account.
 
-**Staging sources:** `stg_customers`, `stg_contacts`, `stg_delivery_addresses`
+**Staging sources:** `stg_customers`, `stg_contacts`, `stg_delivery_addresses`, `stg_customer_groups`
 
 **Model tests:** `mart_row_count_sanity`
 
@@ -137,8 +139,13 @@ Customer accounts with primary contact and delivery address count. CDM entity: A
 | 15 | `primary_contact_phone` | `text` |  |  |  |
 | 16 | `customer_group` | `text` |  |  |  |
 | 17 | `state_code` | `text` |  | accepted_values('', 'A', 'S', 'H', 'A1', 'A2', 'A28') |  |
-| 18 | `created_on` | `timestamp with time zone` |  |  |  |
-| 19 | `delivery_address_count` | `bigint` |  |  |  |
+| 18 | `gst_position` | `text` |  | accepted_values('exempt', 'taxable') | Customer GST position (exempt or taxable) |
+| 19 | `currency_code` | `text` |  | not_null | ISO 4217 currency code (mapped from ABM country code) |
+| 20 | `created_on` | `timestamp with time zone` |  |  |  |
+| 21 | `delivery_address_count` | `bigint` |  |  |  |
+| 22 | `price_scale` | `integer` |  | not_null, accepted_values(1, 2, 3, 4, 5, 6) | ABM price tier (1-4): maps to products price{N}1 columns |
+| 23 | `group_discount` | `numeric` |  | not_negative (warn) | Group-level default discount percentage |
+| 24 | `customer_discount` | `numeric` |  | not_negative (warn) | Per-customer discount percentage (overrides group if set) |
 
 > [!NOTE]
 > **Data quirks:**
@@ -222,14 +229,19 @@ Product catalogue with group name resolved. CDM entity: Product.
 | 4 | `product_group_name` | `text` |  |  |  |
 | 5 | `default_vendor_id` | `text` |  |  |  |
 | 6 | `default_vendor_name` | `text` |  |  |  |
-| 7 | `standard_cost` | `numeric` |  |  |  |
-| 8 | `quantity_on_hand` | `numeric` |  |  |  |
-| 9 | `quantity_available` | `numeric` |  |  |  |
-| 10 | `barcode` | `text` |  |  |  |
-| 11 | `state_code` | `text` |  | accepted_values('', 'A', 'S', 'H', 'D') |  |
-| 12 | `created_on` | `timestamp with time zone` |  |  |  |
-| 13 | `price_list_count` | `bigint` |  |  | Number of customer-specific price list entries for this product |
-| 14 | `is_kit` | `boolean` |  |  | True if this product is a parent kit/BOM |
+| 7 | `standard_cost` | `numeric` |  | not_negative (warn) |  |
+| 8 | `list_price` | `numeric` |  | not_negative (warn) | ABM price level 1 (list/retail price ex-tax) |
+| 9 | `trade_price` | `numeric` |  | not_negative (warn) | ABM price level 2 (trade/stockist price ex-tax) |
+| 10 | `price_level_3` | `numeric` |  | not_negative (warn) |  |
+| 11 | `price_level_4` | `numeric` |  | not_negative (warn) |  |
+| 12 | `quantity_on_hand` | `numeric` |  |  |  |
+| 13 | `quantity_available` | `numeric` |  |  |  |
+| 14 | `barcode` | `text` |  |  |  |
+| 15 | `state_code` | `text` |  | accepted_values('', 'A', 'S', 'H', 'D') |  |
+| 16 | `gst_category` | `text` |  | not_null | Product-level GST category from ABM (e.g. '9% GST', 'Zero Rated Products') |
+| 17 | `created_on` | `timestamp with time zone` |  |  |  |
+| 18 | `price_list_count` | `bigint` |  |  | Number of customer-specific price list entries for this product |
+| 19 | `is_kit` | `boolean` |  |  | True if this product is a parent kit/BOM |
 
 > [!NOTE]
 > **Data quirks:**
