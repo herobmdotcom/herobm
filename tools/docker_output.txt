@@ -1,5 +1,0 @@
- Container loki Running 
- Container promtail Recreate 
- Container promtail Recreated 
- Container promtail Starting 
- Container promtail Started 

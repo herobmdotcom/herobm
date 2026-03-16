@@ -38,3 +38,16 @@ logs/
 pipelines/abm_transform/target/
 pipelines/abm_transform/dbt_packages/
 pipelines/abm_transform/logs/
+
+# Temp files (agents MUST write temp output here, not in app dirs)
+/tmp/
+*.tsbuildinfo
+
+# Next.js
+.next/
+
+# Test coverage
+coverage/
+
+# Temp data files
+events*.json

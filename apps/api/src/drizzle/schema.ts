@@ -54,6 +54,7 @@ export const products = marts.table('mart_products', {
   barcode: text('barcode'),
   stateCode: text('state_code'),
   gstCategory: text('gst_category'),
+  scNumber: text('sc_number'),
   createdOn: timestamp('created_on'),
 });
 
@@ -65,6 +66,7 @@ export const inventory = marts.table('mart_inventory', {
   productId: text('product_id'),
   productNumber: text('product_number'),
   productName: text('product_name'),
+  scNumber: text('sc_number'),
   locationNo: text('location_no'),
   locationName: text('location_name'),
   quantityOnHand: numeric('quantity_on_hand'),
@@ -118,6 +120,60 @@ export const salesOrderLines = marts.table('mart_sales_order_lines', {
   productId: text('product_id'),
   productNumber: text('product_number'),
   productDescription: text('product_description'),
+  unitOfMeasure: text('unit_of_measure'),
+  quantity: numeric('quantity'),
+  pricePerUnit: numeric('price_per_unit'),
+  discountPercentage: numeric('discount_percentage'),
+  amount: numeric('amount'),
+  tax: numeric('tax'),
+  totalAmount: numeric('total_amount'),
+  quantityDelivered: numeric('quantity_delivered'),
+  quantityInvoiced: numeric('quantity_invoiced'),
+  isFullyDelivered: boolean('is_fully_delivered'),
+  isFullyInvoiced: boolean('is_fully_invoiced'),
+  documentTotalIncTax: numeric('document_total_inc_tax'),
+});
+
+// ---------------------------------------------------------------------------
+// mart_suppliers  (CDM: Vendor)
+// ---------------------------------------------------------------------------
+export const suppliers = marts.table('mart_suppliers', {
+  vendorId: text('vendor_id').primaryKey(),
+  vendorNumber: text('vendor_number'),
+  name: text('name'),
+  vendorGroup: text('vendor_group'),
+  address1Line1: text('address1_line1'),
+  address1Line2: text('address1_line2'),
+  address1City: text('address1_city'),
+  address1StateOrProvince: text('address1_state_or_province'),
+  address1PostalCode: text('address1_postal_code'),
+  address1Country: text('address1_country'),
+  telephone1: text('telephone1'),
+  fax: text('fax'),
+  emailAddress1: text('email_address1'),
+  stateCode: text('state_code'),
+  createdOn: timestamp('created_on'),
+  productCount: integer('product_count'),
+});
+
+// ---------------------------------------------------------------------------
+// mart_purchase_order_lines  (CDM: PurchaseOrderProduct)
+// ---------------------------------------------------------------------------
+export const purchaseOrderLines = marts.table('mart_purchase_order_lines', {
+  purchaseOrderLineId: text('purchase_order_line_id').primaryKey(),
+  lineItemId: text('line_item_id'),
+  lineNumber: integer('line_number'),
+  orderReference: text('order_reference'),
+  documentNumber: text('document_number'),
+  documentDate: timestamp('document_date'),
+  orderNumber: text('order_number'),
+  vendorId: text('vendor_id'),
+  vendorNumber: text('vendor_number'),
+  vendorName: text('vendor_name'),
+  productId: text('product_id'),
+  productNumber: text('product_number'),
+  productDescription: text('product_description'),
+  supplierPartNumber: text('supplier_part_number'),
   unitOfMeasure: text('unit_of_measure'),
   quantity: numeric('quantity'),
   pricePerUnit: numeric('price_per_unit'),

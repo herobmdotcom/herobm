@@ -256,3 +256,64 @@ Data is fetched lazily when the availability tab is selected, via `GET /api/inve
 
 > [!NOTE]
 > Stock data reflects the last ELT pipeline run. It is not real-time — run `make elt` to refresh from ABM.
+
+---
+
+## Returns
+
+A return records goods sent back by a customer against a previously **invoiced** order. Returns can be full (entire order) or partial (specific lines and quantities). Multiple partial returns can be raised against the same order.
+
+### Return Lifecycle
+
+Returns have their own state machine, independent of the parent order:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> Confirmed
+    Draft --> Cancelled
+    Confirmed --> Processed
+    Confirmed --> Draft : Return to draft
+    Processed --> [*]
+```
+
+| Status | Meaning | What can be changed? |
+|--------|---------|---------------------|
+| **Draft** | Return is being prepared. | Lines, quantities, reasons, fees — everything. |
+| **Confirmed** | Return has been accepted and goods are expected. | Cannot edit. Can return to Draft or move to Processed. |
+| **Processed** | Goods have been received and restocked. | Nothing — the return is closed. Triggers outbox event for credit note. |
+| **Cancelled** | Return was cancelled. | Nothing. |
+
+> [!IMPORTANT]
+> **"Processed" is purely operational.** It means the returned goods have been received. The financial credit note is generated asynchronously by ERPNext via the outbox, not by the order system.
+
+### Validation Rules
+
+- Returns can **only** be created against orders in `invoiced` state.
+- Each return line references an original order line. The `quantity_returned` must be ≤ the original quantity minus any already-returned quantity (from other non-cancelled returns).
+- Return lines can only be edited when the return is in `draft` state.
+
+### Return Fees
+
+Each return line can carry an optional **return fee** — an absolute amount in the order's currency (e.g. restocking fee, handling charge). The fee defaults to 0.
+
+The UI provides a convenience toggle to enter the fee as a percentage of the original line amount, but **the database stores the resolved absolute value only**.
+
+### Data Model
+
+Returns are stored as two tables in `modbm_core`:
+
+- **`sales_order_returns`** — return header (linked to `sales_orders`)
+- **`sales_order_return_lines`** — per-line return quantities, reason, and fee (linked to `sales_order_lines`)
+
+### Events
+
+All return mutations emit audit events and outbox records:
+
+| Event | When |
+|-------|------|
+| `return_created` | A new return is created |
+| `return_updated` | Return header is updated |
+| `return_status_changed` | Return state transitions |
+| `return_processed` | Return reaches `processed` state (triggers credit note via outbox) |
+| `return_line_added/updated/removed` | Return line changes |

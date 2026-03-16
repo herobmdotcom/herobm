@@ -84,6 +84,7 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
   tax: numeric('tax').default('0'),
   totalAmount: numeric('total_amount'),
   unitOfMeasure: text('unit_of_measure'),
+  quantityPicked: numeric('quantity_picked').default('0'),
 });
 
 // ---------------------------------------------------------------------------
@@ -99,6 +100,153 @@ export const orderEvents = modbmCore.table('order_events', {
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// sales_order_returns  (Return header against an invoiced order)
+// ---------------------------------------------------------------------------
+export const salesOrderReturns = modbmCore.table('sales_order_returns', {
+  returnId: uuid('return_id').primaryKey().defaultRandom(),
+  returnNumber: text('return_number').unique().notNull(),
+  salesOrderId: uuid('sales_order_id')
+    .notNull()
+    .references(() => salesOrders.salesOrderId),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// sales_order_return_lines  (Per-line return quantities + reason + fee)
+// ---------------------------------------------------------------------------
+export const salesOrderReturnLines = modbmCore.table('sales_order_return_lines', {
+  returnLineId: uuid('return_line_id').primaryKey().defaultRandom(),
+  returnId: uuid('return_id')
+    .notNull()
+    .references(() => salesOrderReturns.returnId),
+  salesOrderLineId: uuid('sales_order_line_id')
+    .notNull()
+    .references(() => salesOrderLineItems.salesOrderLineId),
+  quantityReturned: numeric('quantity_returned').notNull(),
+  reason: text('reason'),
+  returnFee: numeric('return_fee').default('0'),    // absolute fee in order currency
+});
+
+// ---------------------------------------------------------------------------
+// sales_order_shipments  (Shipment/delivery batch header)
+// ---------------------------------------------------------------------------
+export const salesOrderShipments = modbmCore.table('sales_order_shipments', {
+  shipmentId: uuid('shipment_id').primaryKey().defaultRandom(),
+  shipmentNumber: text('shipment_number').unique().notNull(),
+  salesOrderId: uuid('sales_order_id')
+    .notNull()
+    .references(() => salesOrders.salesOrderId),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  trackingNumber: text('tracking_number'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// sales_order_shipment_lines  (Per-line quantities in each shipment)
+// ---------------------------------------------------------------------------
+export const salesOrderShipmentLines = modbmCore.table('sales_order_shipment_lines', {
+  shipmentLineId: uuid('shipment_line_id').primaryKey().defaultRandom(),
+  shipmentId: uuid('shipment_id')
+    .notNull()
+    .references(() => salesOrderShipments.shipmentId),
+  salesOrderLineId: uuid('sales_order_line_id')
+    .notNull()
+    .references(() => salesOrderLineItems.salesOrderLineId),
+  quantityShipped: numeric('quantity_shipped').notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_orders  (CDM: PurchaseOrder)
+// ---------------------------------------------------------------------------
+export const purchaseOrders = modbmCore.table('purchase_orders', {
+  purchaseOrderId: uuid('purchase_order_id').primaryKey().defaultRandom(),
+  orderNumber: text('order_number').unique().notNull(),
+  name: text('name'),
+  vendorId: text('vendor_id'),
+  invoiceNumber: text('invoice_number'),
+  stateCode: text('state_code').notNull().default('draft'),
+  currencyCode: text('currency_code').notNull().default('EUR'),
+  notes: text('notes'),
+  customFields: jsonb('custom_fields'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_order_lines  (CDM: PurchaseOrderProduct)
+// ---------------------------------------------------------------------------
+export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
+  purchaseOrderLineId: uuid('purchase_order_line_id').primaryKey().defaultRandom(),
+  purchaseOrderId: uuid('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.purchaseOrderId),
+  lineNumber: integer('line_number').notNull(),
+  productId: text('product_id'),
+  productDescription: text('product_description'),
+  quantity: numeric('quantity').notNull(),
+  pricePerUnit: numeric('price_per_unit').notNull(),
+  discountPercentage: numeric('discount_percentage').default('0'),
+  amount: numeric('amount'),
+  tax: numeric('tax').default('0'),
+  totalAmount: numeric('total_amount'),
+  unitOfMeasure: text('unit_of_measure'),
+  quantityReceived: numeric('quantity_received').default('0'),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_order_receptions  (Goods Receipt)
+// ---------------------------------------------------------------------------
+export const purchaseOrderReceptions = modbmCore.table('purchase_order_receptions', {
+  receptionId: uuid('reception_id').primaryKey().defaultRandom(),
+  receptionNumber: text('reception_number').unique().notNull(),
+  purchaseOrderId: uuid('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.purchaseOrderId),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  packingSlipNumber: text('packing_slip_number'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_order_reception_lines  (Per-line quantities received)
+// ---------------------------------------------------------------------------
+export const purchaseOrderReceptionLines = modbmCore.table('purchase_order_reception_lines', {
+  receptionLineId: uuid('reception_line_id').primaryKey().defaultRandom(),
+  receptionId: uuid('reception_id')
+    .notNull()
+    .references(() => purchaseOrderReceptions.receptionId),
+  purchaseOrderLineId: uuid('purchase_order_line_id')
+    .notNull()
+    .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+  quantityReceived: numeric('quantity_received').notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// inventory_levels  (App-owned inventory, seeded from mart_inventory)
+// ---------------------------------------------------------------------------
+export const inventoryLevels = modbmCore.table('inventory_levels', {
+  inventoryLevelId: uuid('inventory_level_id').primaryKey().defaultRandom(),
+  productId: text('product_id').notNull(),
+  locationNo: text('location_no').notNull().default('MAIN'),
+  quantityOnHand: numeric('quantity_on_hand').notNull().default('0'),
+  quantityCommitted: numeric('quantity_committed').notNull().default('0'),
+  quantityOnOrder: numeric('quantity_on_order').notNull().default('0'),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+// UNIQUE(product_id, location_no) — enforced via migration
 
 // ---------------------------------------------------------------------------
 // outbox  (Transactional outbox for async BullMQ/ERPNext sync)

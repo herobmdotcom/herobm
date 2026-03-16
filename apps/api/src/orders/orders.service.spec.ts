@@ -44,6 +44,7 @@ describe('OrdersService', () => {
       groupBy: jest.fn().mockReturnThis(),
       $dynamic: jest.fn().mockReturnThis(),
       from: jest.fn().mockReturnThis(),
+      leftJoin: jest.fn().mockReturnThis(),
       then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
     };
     return qb;

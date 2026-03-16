@@ -7,6 +7,7 @@ import type { ColDef } from 'ag-grid-community';
 const columns: ColDef[] = [
   { field: 'productNumber', headerName: 'Product #', width: 130, pinned: 'left' },
   { field: 'name', headerName: 'Name', flex: 1, minWidth: 200 },
+  { field: 'scNumber', headerName: 'SC Number', width: 140 },
   { field: 'productGroupName', headerName: 'Group', width: 160 },
   { field: 'standardCost', headerName: 'Std Cost', width: 100, type: 'numericColumn',
     valueFormatter: (p) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
@@ -29,6 +30,7 @@ export default function ProductsPage() {
       <DataGrid
         endpoint="/api/products"
         columns={columns}
+        gridKey="ops-products"
         searchPlaceholder="Search by name, product number, or barcode…"
         exportFileName="products"
       />

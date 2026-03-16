@@ -16,6 +16,8 @@ import {
 import { accounts } from '../drizzle/schema';
 import { products } from '../drizzle/schema';
 import { GstCategoriesService } from '../gst/gst-categories.service';
+import { PickingService } from './picking.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 // Valid state transitions (from → allowed next states)
 const STATE_TRANSITIONS: Record<string, string[]> = {
@@ -76,6 +78,8 @@ export class OrdersWriteService {
   constructor(
     @Inject(DRIZZLE) private db: any,
     private readonly gstService: GstCategoriesService,
+    private readonly pickingService: PickingService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   private get database(): DrizzleDB {
@@ -417,12 +421,41 @@ export class OrdersWriteService {
       );
     }
 
+    // Gate: picking → shipped requires all lines fully picked
+    if (existing.stateCode === 'picking' && newState === 'shipped') {
+      await this.pickingService.assertFullyPicked(id);
+    }
+
+    // Fetch order lines (needed for inventory mutations)
+    const orderLines = await this.database
+      .select()
+      .from(salesOrderLineItems)
+      .where(eq(salesOrderLineItems.salesOrderId, id));
+
+    const stockLines = orderLines.map((l: any) => ({
+      productId: l.productId,
+      quantity: l.quantity,
+    }));
+
+    // States where stock has been committed
+    const COMMITTED_STATES = ['confirmed', 'picking', 'shipped'];
+
     const result = await this.database.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
+
+      // ── Inventory hooks ──
+      // Confirming → commit stock
+      if (newState === 'confirmed' && !COMMITTED_STATES.includes(existing.stateCode)) {
+        await this.inventoryService.commitStock(tx, stockLines);
+      }
+      // Cancelling from a committed state → release stock
+      if (newState === 'cancelled' && COMMITTED_STATES.includes(existing.stateCode)) {
+        await this.inventoryService.releaseStock(tx, stockLines);
+      }
 
       await this.writeEvent(tx, id, 'status_changed', {
         from: existing.stateCode,
@@ -655,15 +688,19 @@ export class OrdersWriteService {
 
   private async findOrder(id: string) {
     const rows = await this.database
-      .select()
+      .select({
+        order: salesOrders,
+        customerName: accounts.name,
+      })
       .from(salesOrders)
+      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);
 
     if (rows.length === 0) {
       throw new NotFoundException(`Order '${id}' not found`);
     }
-    return rows[0];
+    return { ...rows[0].order, customerName: rows[0].customerName };
   }
 
   private async findLine(lineId: string, orderId: string) {

@@ -1,7 +1,0 @@
-custom-api
-grafana
-promtail
-postgres-custom
-loki
-redis-broker
-prometheus

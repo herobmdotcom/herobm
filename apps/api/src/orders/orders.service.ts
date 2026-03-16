@@ -207,6 +207,7 @@ export class OrdersService {
         tax: l.tax,
         totalAmount: l.totalAmount,
         unitOfMeasure: l.unitOfMeasure,
+        quantityPicked: l.quantityDelivered ?? '0',
       })),
       events: [],
     };

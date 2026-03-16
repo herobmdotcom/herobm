@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal docs-generate schema-ref migrate migrate-status migrate-dry
+.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal dev-supplier-portal docs-generate schema-ref migrate migrate-status migrate-dry
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -105,6 +105,9 @@ dev-ops-portal:
 
 dev-sales-portal:
 	cd apps/sales-portal && npm run dev
+
+dev-supplier-portal:
+	cd apps/supplier-portal && npm run dev
 
 # --- Migrations (modbm_core) ---
 

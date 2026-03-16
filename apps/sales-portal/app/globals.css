@@ -1,32 +1,11 @@
 @import "tailwindcss";
+@source "../../../packages/portal-ui/src";
+@import "@modbm/portal-ui/src/theme.css";
 
-:root {
-  --bg-primary: #0a0f1c;
-  --bg-secondary: #111827;
-  --bg-card: #1a2332;
-  --bg-card-hover: #1e293b;
-  --border: #1e3a5f;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent: #8b5cf6;
-  --accent-hover: #a78bfa;
-  --accent-glow: rgba(139, 92, 246, 0.15);
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
+/* ══════════════════════════════════════════════════════════════════════
+   Sales Portal — Local Component Styles
+   Colours below reference tokens from @modbm/portal-ui/src/theme.css
+   ══════════════════════════════════════════════════════════════════════ */
 
 /* Status badges */
 .badge {
@@ -42,7 +21,7 @@ body {
 }
 
 .badge-draft { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
-.badge-quoted { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+.badge-quoted { background: rgba(238, 127, 0, 0.2); color: #F59E42; }
 .badge-confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 .badge-picking { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 .badge-shipped { background: rgba(16, 185, 129, 0.2); color: #34d399; }
@@ -50,7 +29,13 @@ body {
 .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 .badge-legacy { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
 .badge-abm { background: rgba(100, 116, 139, 0.15); color: #64748b; }
-.badge-app { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.badge-app { background: rgba(238, 127, 0, 0.15); color: #F59E42; }
+
+/* Return state badges */
+.badge-return-draft { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+.badge-return-confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.badge-return-processed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-return-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
 /* Form inputs */
 .input {
@@ -71,6 +56,12 @@ body {
 
 .input::placeholder {
   color: var(--text-muted);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
 }
 
 /* Buttons */
@@ -155,21 +146,11 @@ body {
   background: var(--bg-card-hover);
 }
 
-/* Scrollable area */
+/* Scrollable area — scrollbar sits at window edge */
 .scroll-area {
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+  padding-right: 2rem; /* space between content and scrollbar */
 }
 
-/* ag-Grid dark theme overrides */
-.ag-theme-alpine-dark {
-  --ag-background-color: var(--bg-card);
-  --ag-header-background-color: var(--bg-secondary);
-  --ag-odd-row-background-color: rgba(255, 255, 255, 0.02);
-  --ag-row-hover-color: var(--bg-card-hover);
-  --ag-border-color: var(--border);
-  --ag-header-foreground-color: var(--text-secondary);
-  --ag-foreground-color: var(--text-primary);
-  --ag-font-size: 13px;
-}

@@ -1,9 +1,0 @@
-PASS src/gst/gst-categories.service.spec.ts
-PASS src/auth/auth.service.spec.ts
-PASS src/orders/orders-write.service.spec.ts
-PASS src/telemetry/telemetry.controller.spec.ts
-PASS src/inventory/inventory.service.spec.ts
-PASS src/orders/orders.controller.spec.ts
-PASS src/gst/gst-categories.controller.spec.ts
-PASS src/inventory/inventory.controller.spec.ts
-PASS src/products/products.controller.spec.ts

@@ -7,6 +7,7 @@ import type { ColDef } from 'ag-grid-community';
 const columns: ColDef[] = [
   { field: 'productNumber', headerName: 'Product #', width: 130, pinned: 'left' },
   { field: 'productName', headerName: 'Product', flex: 1, minWidth: 200 },
+  { field: 'scNumber', headerName: 'SC Number', width: 140 },
   { field: 'locationName', headerName: 'Location', width: 140 },
   { field: 'quantityOnHand', headerName: 'On Hand', width: 100, type: 'numericColumn' },
   { field: 'quantityCommitted', headerName: 'Committed', width: 110, type: 'numericColumn' },
@@ -24,6 +25,7 @@ export default function InventoryPage() {
       <DataGrid
         endpoint="/api/inventory"
         columns={columns}
+        gridKey="ops-inventory"
         searchPlaceholder="Search by product name, number, or location…"
         exportFileName="inventory"
       />

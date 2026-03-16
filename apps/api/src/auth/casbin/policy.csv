@@ -6,6 +6,9 @@ p, viewer, accounts, read
 p, viewer, products, read
 p, viewer, inventory, read
 p, viewer, orders, read
+p, viewer, purchase-orders, read
+p, viewer, suppliers, read
+p, viewer, receptions, read
 p, viewer, dashboard, read
 p, viewer, gst-categories, read
 
@@ -15,6 +18,11 @@ p, admin, products, read
 p, admin, inventory, read
 p, admin, orders, read
 p, admin, orders, write
+p, admin, purchase-orders, read
+p, admin, purchase-orders, write
+p, admin, suppliers, read
+p, admin, receptions, read
+p, admin, receptions, write
 p, admin, dashboard, read
 p, admin, gst-categories, read
 p, admin, users, read

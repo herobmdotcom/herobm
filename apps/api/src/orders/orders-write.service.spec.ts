@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersWriteService } from './orders-write.service';
+import { PickingService } from './picking.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
+import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import {
   NotFoundException,
@@ -55,6 +57,8 @@ describe('OrdersWriteService', () => {
   let service: OrdersWriteService;
   let mockDb: any;
   let mockGstService: any;
+  let mockPickingService: any;
+  let mockInventoryService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -67,7 +71,10 @@ describe('OrdersWriteService', () => {
       from: jest.fn().mockImplementation(() => {
         call++;
         const data = responses[call] ?? fallback;
-        return createMockQueryBuilder(data);
+        const qb = createMockQueryBuilder(data);
+        // Support .leftJoin() chaining (used by findOrder)
+        qb.leftJoin = jest.fn().mockReturnValue(qb);
+        return qb;
       }),
     });
   }
@@ -98,11 +105,28 @@ describe('OrdersWriteService', () => {
       getById: jest.fn().mockResolvedValue(GST_DEFAULT),
     };
 
+    mockPickingService = {
+      assertFullyPicked: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockInventoryService = {
+      commitStock: jest.fn().mockResolvedValue(undefined),
+      releaseStock: jest.fn().mockResolvedValue(undefined),
+      deductStock: jest.fn().mockResolvedValue(undefined),
+      restoreStock: jest.fn().mockResolvedValue(undefined),
+      returnStock: jest.fn().mockResolvedValue(undefined),
+      placeOnOrder: jest.fn().mockResolvedValue(undefined),
+      cancelOnOrder: jest.fn().mockResolvedValue(undefined),
+      receiveStock: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: GstCategoriesService, useValue: mockGstService },
+        { provide: PickingService, useValue: mockPickingService },
+        { provide: InventoryService, useValue: mockInventoryService },
       ],
     }).compile();
 
@@ -310,7 +334,7 @@ describe('OrdersWriteService', () => {
   describe('update', () => {
     function setupForUpdate(stateCode: string) {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode, name: 'Old Name', customerOrderNumber: null, notes: null }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode, name: 'Old Name', customerOrderNumber: null, notes: null }, customerName: 'Test Customer' }],
       });
 
       const txUpdateQb = createMockQueryBuilder([{
@@ -360,7 +384,8 @@ describe('OrdersWriteService', () => {
   describe('changeState', () => {
     function setupWithState(currentState: string) {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: currentState }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: currentState }, customerName: 'Test Customer' }],
+        2: [{ productId: 'PROD-001', quantity: '10' }],  // order lines for inventory hooks
       });
 
       const txUpdateQb = createMockQueryBuilder([{ salesOrderId: 'uuid-001', stateCode: '' }]);
@@ -394,6 +419,88 @@ describe('OrdersWriteService', () => {
     it('should reject unknown state name', async () => {
       await expect(service.changeState('uuid-001', 'nonexistent_state', 'admin')).rejects.toThrow(BadRequestException);
     });
+
+    // ── Inventory integration tests ──
+
+    it('should call commitStock when confirming an order', async () => {
+      setupWithState('quoted');
+      // Mock the order lines query that changeState does before the transaction
+      const origSelect = mockDb.select;
+      let selectCall = 0;
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockImplementation(() => {
+          selectCall++;
+          if (selectCall === 1) {
+            // findOrder
+            return createMockQueryBuilder([{ order: { salesOrderId: 'uuid-001', stateCode: 'quoted' }, customerName: 'Test Customer' }]);
+          }
+          // order lines for inventory
+          return createMockQueryBuilder([{ productId: 'PROD-001', quantity: '10' }]);
+        }),
+      });
+
+      const txUpdateQb = createMockQueryBuilder([{ salesOrderId: 'uuid-001', stateCode: 'confirmed' }]);
+      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
+        const tx = createMockTx();
+        tx.update = jest.fn().mockReturnValue(txUpdateQb);
+        return cb(tx);
+      });
+
+      await service.changeState('uuid-001', 'confirmed', 'admin');
+      expect(mockInventoryService.commitStock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call releaseStock when cancelling from confirmed state', async () => {
+      let selectCall = 0;
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockImplementation(() => {
+          selectCall++;
+          if (selectCall === 1) {
+            return createMockQueryBuilder([{ order: { salesOrderId: 'uuid-001', stateCode: 'confirmed' }, customerName: 'Test Customer' }]);
+          }
+          return createMockQueryBuilder([{ productId: 'PROD-001', quantity: '10' }]);
+        }),
+      });
+
+      const txUpdateQb = createMockQueryBuilder([{ salesOrderId: 'uuid-001', stateCode: 'cancelled' }]);
+      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
+        const tx = createMockTx();
+        tx.update = jest.fn().mockReturnValue(txUpdateQb);
+        return cb(tx);
+      });
+
+      await service.changeState('uuid-001', 'cancelled', 'admin');
+      expect(mockInventoryService.releaseStock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT call commitStock when transitioning draft → quoted', async () => {
+      setupWithState('draft');
+      await service.changeState('uuid-001', 'quoted', 'admin');
+      expect(mockInventoryService.commitStock).not.toHaveBeenCalled();
+    });
+
+    it('should NOT call releaseStock when cancelling from draft', async () => {
+      let selectCall = 0;
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockImplementation(() => {
+          selectCall++;
+          if (selectCall === 1) {
+            return createMockQueryBuilder([{ order: { salesOrderId: 'uuid-001', stateCode: 'draft' }, customerName: 'Test Customer' }]);
+          }
+          return createMockQueryBuilder([]);
+        }),
+      });
+
+      const txUpdateQb = createMockQueryBuilder([{ salesOrderId: 'uuid-001', stateCode: 'cancelled' }]);
+      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
+        const tx = createMockTx();
+        tx.update = jest.fn().mockReturnValue(txUpdateQb);
+        return cb(tx);
+      });
+
+      await service.changeState('uuid-001', 'cancelled', 'admin');
+      expect(mockInventoryService.releaseStock).not.toHaveBeenCalled();
+    });
   });
 
   // =========================================================================
@@ -412,13 +519,13 @@ describe('OrdersWriteService', () => {
 
     function setupForAddLine(orderState: string, maxLineNumber = 0) {
       mockSelectChain({
-        1: [{
+        1: [{ order: {
           salesOrderId: 'uuid-001',
           stateCode: orderState,
           customerId: 'CUST-001',
           customerDiscount: '10',
           gstCategoryId: 'gst-default',
-        }],
+        }, customerName: 'Test Customer' }],
         2: [{ productId: 'PROD-001', gstCategory: '9% GST' }],     // validateProduct → lookupProduct
         3: [{ max: maxLineNumber }],                                  // max line number
         4: [{ gstPosition: 'taxable' }],                             // resolveGstForLine → gstPosition
@@ -473,7 +580,7 @@ describe('OrdersWriteService', () => {
 
     it('should use zero-rate for zero-rated product', async () => {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: 'draft', customerId: 'CUST-001', customerDiscount: '0', gstCategoryId: 'gst-default' }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: 'draft', customerId: 'CUST-001', customerDiscount: '0', gstCategoryId: 'gst-default' }, customerName: 'Test Customer' }],
         2: [{ productId: 'PROD-ZR', gstCategory: 'Zero Rated Products' }],
         3: [{ max: 0 }],
         4: [{ gstPosition: 'taxable' }],
@@ -498,7 +605,7 @@ describe('OrdersWriteService', () => {
   describe('updateLine', () => {
     function setupForUpdateLine(orderState: string) {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: orderState, gstCategoryId: 'gst-default' }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: orderState, gstCategoryId: 'gst-default' }, customerName: 'Test Customer' }],
         2: [{
           salesOrderLineId: 'line-001',
           salesOrderId: 'uuid-001',
@@ -563,7 +670,7 @@ describe('OrdersWriteService', () => {
   describe('removeLine', () => {
     function setupForRemoveLine(orderState: string) {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: orderState }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: orderState }, customerName: 'Test Customer' }],
         2: [{ salesOrderLineId: 'line-001', salesOrderId: 'uuid-001', productId: 'PROD-001', quantity: '10' }],
       });
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => cb(createMockTx()));
@@ -603,7 +710,7 @@ describe('OrdersWriteService', () => {
   describe('findOne', () => {
     it('should return order with lines and events', async () => {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: 'draft' }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: 'draft' }, customerName: 'Test Customer' }],
         2: [{ salesOrderLineId: 'line-001', lineNumber: 1 }],
         3: [{ eventId: 'evt-001', eventType: 'created' }],
       });
@@ -623,7 +730,7 @@ describe('OrdersWriteService', () => {
   describe('findLine (via updateLine)', () => {
     it('should throw NotFoundException when line does not exist', async () => {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: 'draft', gstCategoryId: 'gst-default' }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: 'draft', gstCategoryId: 'gst-default' }, customerName: 'Test Customer' }],
         2: [],  // line not found
       });
 
@@ -634,7 +741,7 @@ describe('OrdersWriteService', () => {
 
     it('should throw BadRequestException if line belongs to different order', async () => {
       mockSelectChain({
-        1: [{ salesOrderId: 'uuid-001', stateCode: 'draft', gstCategoryId: 'gst-default' }],
+        1: [{ order: { salesOrderId: 'uuid-001', stateCode: 'draft', gstCategoryId: 'gst-default' }, customerName: 'Test Customer' }],
         2: [{ salesOrderLineId: 'line-001', salesOrderId: 'uuid-OTHER', quantity: '10', pricePerUnit: '5.00' }],
       });
 

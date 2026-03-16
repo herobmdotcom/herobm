@@ -27,7 +27,6 @@ const columns: ColDef<UnifiedOrder>[] = [
     headerName: 'Order #',
     width: 140,
     pinned: 'left',
-    cellStyle: { fontWeight: 600, color: 'var(--accent)' },
   },
   { field: 'customerName', headerName: 'Customer', flex: 1, minWidth: 160 },
   { field: 'name', headerName: 'Name', width: 160 },
@@ -107,6 +106,7 @@ export default function OrdersPage() {
       <DataGrid<UnifiedOrder>
         endpoint="/api/orders"
         columns={columns}
+        gridKey="sales-orders"
         searchPlaceholder="Search orders…"
         exportFileName="orders"
         onRowClicked={handleRowClicked}
