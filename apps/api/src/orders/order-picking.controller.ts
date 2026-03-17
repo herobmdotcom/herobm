@@ -18,7 +18,7 @@ import {
 
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('orders')
+@CasbinResource('sales-orders')
 export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}
 

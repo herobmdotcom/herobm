@@ -24,7 +24,7 @@ export class PaginationQuery {
   @Transform(({ value }) => (value ? Number(value) : undefined))
   page?: number;
 
-  /** Maximum results per page (default: 50, max: 200) */
+  /** Maximum results per page (default: 50, max: 100000) */
   @IsOptional()
   @Transform(({ value }) => (value ? Number(value) : undefined))
   limit?: number;
@@ -53,7 +53,7 @@ export interface PaginatedResponse<T> {
  */
 export function parsePagination(query?: PaginationQuery) {
   const page = query?.page ?? 1;
-  const limit = Math.min(query?.limit ?? 50, 200);
+  const limit = Math.min(query?.limit ?? 50, 100_000);
   const offset = (page - 1) * limit;
   const searchTerm = query?.q ? `%${query.q}%` : null;
   return { page, limit, offset, searchTerm };

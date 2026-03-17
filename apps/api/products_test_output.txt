@@ -1,0 +1,14 @@
+PASS test/products.e2e-spec.ts
+  Products (e2e)
+    ΓêÜ GET /api/products ΓÇö returns a list of products (viewer) (163 ms)
+    ΓêÜ POST /api/products ΓÇö creates a new product (admin) (24 ms)
+    ΓêÜ POST /api/products ΓÇö fails with 403 (viewer) (4 ms)
+    ΓêÜ PATCH /api/products/:id ΓÇö updates a product (admin) (35 ms)
+    ΓêÜ PATCH /api/products/:id ΓÇö fails on legacy product (admin) (89 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        1.848 s, estimated 2 s
+Ran all test suites matching test/products.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

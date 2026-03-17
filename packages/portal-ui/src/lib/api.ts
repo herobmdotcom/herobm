@@ -5,6 +5,7 @@
  */
 
 let token: string | null = null;
+let role: string | null = null;
 
 export async function login(username: string, password: string) {
   const res = await fetch('/api/auth/login', {
@@ -15,11 +16,13 @@ export async function login(username: string, password: string) {
   if (!res.ok) throw new Error('Login failed');
   const data = await res.json();
   token = data.access_token;
+  role = data.role;
   return data;
 }
 
 export function getToken() { return token; }
 export function setToken(t: string) { token = t; }
+export function getRole() { return role; }
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   if (!token) throw new Error('Not authenticated');
@@ -32,10 +35,30 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   });
   if (res.status === 401) {
     token = null;
+    role = null;
     throw new Error('Session expired');
   }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
+}
+
+/** Fetch for binary data (e.g. PDF reports). */
+export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Blob> {
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(path, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (res.status === 401) {
+    token = null;
+    role = null;
+    throw new Error('Session expired');
+  }
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.blob();
 }
 
 /** POST/PATCH/DELETE with JSON body. */
@@ -56,6 +79,7 @@ export async function apiMutate<T = unknown>(
   });
   if (res.status === 401) {
     token = null;
+    role = null;
     throw new Error('Session expired');
   }
   if (!res.ok) {

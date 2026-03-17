@@ -1,6 +1,17 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+  Post,
+  Patch,
+  Body,
+  Req,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
+import { ProductsWriteService } from './products-write.service';
 import {
   CasbinGuard,
   CasbinResource,
@@ -12,7 +23,10 @@ import { PaginationQuery } from '../common/pagination';
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly productsWriteService: ProductsWriteService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -24,5 +38,17 @@ export class ProductsController {
   @CasbinAction('read')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
+  }
+
+  @Post()
+  @CasbinAction('write')
+  create(@Body() dto: any, @Req() req: any) {
+    return this.productsWriteService.create(dto, req.user.username);
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  update(@Param('id') id: string, @Body() dto: any, @Req() req: any) {
+    return this.productsWriteService.update(id, dto, req.user.username);
   }
 }

@@ -1,0 +1,17 @@
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.controller.spec.ts
+  20:37  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+  42:19  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+  53:55  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+  58:62  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\app.e2e-spec.ts
+  73:46  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+  80:47  error  ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional  no-restricted-syntax
+
+Γ£û 6 problems (6 errors, 0 warnings)
+

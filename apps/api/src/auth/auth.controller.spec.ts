@@ -17,7 +17,8 @@ describe('AuthController', () => {
   let controller: AuthController;
   let service: any;
 
-  const mockToken = { access_token: 'jwt.token.here' };
+  // eslint-disable-next-line no-restricted-syntax
+  const mockToken = { access_token: 'jwt.token.here' }; // TEST_CREDENTIAL
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,7 +40,8 @@ describe('AuthController', () => {
     it('should return a JWT token for valid credentials', async () => {
       const result = await controller.login({
         username: 'admin',
-        password: 'password123',
+        // eslint-disable-next-line no-restricted-syntax
+        password: 'password123', // TEST_CREDENTIAL
       });
       expect(result).toEqual(mockToken);
       expect(service.login).toHaveBeenCalledWith('admin', 'password123');
@@ -50,12 +52,14 @@ describe('AuthController', () => {
         new UnauthorizedException('Invalid credentials'),
       );
       await expect(
-        controller.login({ username: 'bad', password: 'wrong' }),
+        // eslint-disable-next-line no-restricted-syntax
+        controller.login({ username: 'bad', password: 'wrong' }), // TEST_CREDENTIAL
       ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should pass username and password from DTO body', async () => {
-      await controller.login({ username: 'viewer', password: 'REDACTED' });
+      // eslint-disable-next-line no-restricted-syntax
+      await controller.login({ username: 'viewer', password: 'REDACTED' }); // TEST_CREDENTIAL
       expect(service.login).toHaveBeenCalledWith('viewer', 'REDACTED');
     });
   });

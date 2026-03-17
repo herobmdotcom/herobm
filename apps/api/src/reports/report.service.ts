@@ -57,7 +57,7 @@ export class ReportService {
   private invokeTypst(templatePath: string, jsonPath: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       execFile(
-        'typst',
+        process.env.TYPST_BINARY_PATH || 'typst',
         [
           'compile',
           templatePath,

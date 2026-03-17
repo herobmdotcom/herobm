@@ -25,7 +25,7 @@ import {
 
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('orders')
+@CasbinResource('sales-orders')
 export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 

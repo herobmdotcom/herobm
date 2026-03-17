@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsController } from './accounts.controller';
 import { AccountsService } from './accounts.service';
+import { AccountsWriteService } from './accounts-write.service';
 
 describe('AccountsController', () => {
   let controller: AccountsController;
@@ -19,11 +20,19 @@ describe('AccountsController', () => {
       .mockResolvedValue({ accountId: 'C001', name: 'Acme Corp' }),
   };
 
+  const mockWriteService = {
+    create: jest.fn(),
+    update: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AccountsController],
-      providers: [{ provide: AccountsService, useValue: mockService }],
+      providers: [
+        { provide: AccountsService, useValue: mockService },
+        { provide: AccountsWriteService, useValue: mockWriteService },
+      ],
     }).compile();
 
     controller = module.get<AccountsController>(AccountsController);

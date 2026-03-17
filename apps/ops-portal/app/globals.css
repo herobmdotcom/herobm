@@ -25,6 +25,8 @@
 .badge-legacy { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
 .badge-abm { background: rgba(100, 116, 139, 0.15); color: #64748b; }
 .badge-app { background: rgba(238, 127, 0, 0.15); color: #F59E42; }
+.badge-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-inactive { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
 
 /* Form inputs */
 .input {

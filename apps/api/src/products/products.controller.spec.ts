@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
+import { ProductsWriteService } from './products-write.service';
 
 describe('ProductsController', () => {
   let controller: ProductsController;
@@ -17,11 +18,19 @@ describe('ProductsController', () => {
     findOne: jest.fn().mockResolvedValue({ productId: 'P001', name: 'Widget' }),
   };
 
+  const mockWriteService = {
+    create: jest.fn(),
+    update: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductsController],
-      providers: [{ provide: ProductsService, useValue: mockService }],
+      providers: [
+        { provide: ProductsService, useValue: mockService },
+        { provide: ProductsWriteService, useValue: mockWriteService },
+      ],
     }).compile();
 
     controller = module.get<ProductsController>(ProductsController);

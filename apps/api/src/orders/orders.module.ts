@@ -10,9 +10,11 @@ import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
 import { GstModule } from '../gst/gst.module';
 import { InventoryModule } from '../inventory/inventory.module';
+import { AccountsModule } from '../accounts/accounts.module';
+import { ProductsModule } from '../products/products.module';
 
 @Module({
-  imports: [GstModule, InventoryModule],
+  imports: [GstModule, InventoryModule, AccountsModule, ProductsModule],
   controllers: [
     OrdersController,
     OrderReturnsController,

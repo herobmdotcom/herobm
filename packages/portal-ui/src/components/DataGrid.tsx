@@ -65,6 +65,8 @@ export interface DataGridProps<T> {
   onError?: (err: unknown, component: string) => void;
   /** Optional callback when a row is clicked */
   onRowClicked?: (data: T) => void;
+  /** When true, fetch the entire dataset in one request (no pagination). AG Grid handles sorting/filtering client-side. */
+  fetchAll?: boolean;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -75,13 +77,13 @@ function numericFormatter(params: { value: unknown }) {
   return Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export default function DataGrid<T>({ endpoint, columns, gridKey, searchPlaceholder, exportFileName, apiFetch, onError, onRowClicked }: DataGridProps<T>) {
+export default function DataGrid<T>({ endpoint, columns, gridKey, searchPlaceholder, exportFileName, apiFetch, onError, onRowClicked, fetchAll }: DataGridProps<T>) {
   const gridRef = useRef<AgGridReact<T>>(null);
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 200;
+  const limit = fetchAll ? 99999 : 200;
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
@@ -335,21 +337,23 @@ export default function DataGrid<T>({ endpoint, columns, gridKey, searchPlacehol
             </div>
           )}
         </div>
-        <div className="flex gap-1 ml-auto">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-          >← Prev</button>
-          <span className="px-3 py-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>Page {page}</span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={data.length < limit}
-            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-          >Next →</button>
-        </div>
+        {!fetchAll && (
+          <div className="flex gap-1 ml-auto">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            >← Prev</button>
+            <span className="px-3 py-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>Page {page}</span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={data.length < limit}
+              className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            >Next →</button>
+          </div>
+        )}
       </div>
       <div className="ag-theme-alpine-dark flex-1 min-h-0">
         <AgGridReact<T>

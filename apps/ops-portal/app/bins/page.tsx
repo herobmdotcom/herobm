@@ -5,14 +5,17 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 
 const columns: ColDef[] = [
-  { field: 'binNumber', headerName: 'Bin', width: 120 },
+  { field: 'binNumber', headerName: 'Bin', width: 120, pinned: 'left' },
   { field: 'binType', headerName: 'Type', width: 90 },
+  { field: 'locationNo', headerName: 'Location No', width: 110 },
   { field: 'locationName', headerName: 'Location', width: 140 },
   { field: 'productNumber', headerName: 'Product #', width: 130 },
   { field: 'productName', headerName: 'Product', flex: 1, minWidth: 200 },
   { field: 'actualQuantity', headerName: 'Qty', width: 90, type: 'numericColumn' },
+  { field: 'baseQuantity', headerName: 'Base Qty', width: 100, type: 'numericColumn' },
   { field: 'isConsignment', headerName: 'Consignment', width: 110 },
   { field: 'isBonded', headerName: 'Bonded', width: 90 },
+  { field: 'isUnavailable', headerName: 'Unavailable', width: 110 },
 ];
 
 export default function BinsPage() {
@@ -23,6 +26,7 @@ export default function BinsPage() {
         endpoint="/api/inventory/bins"
         columns={columns}
         searchPlaceholder="Search by bin number, product name, or product number…"
+        fetchAll
       />
     </Shell>
   );

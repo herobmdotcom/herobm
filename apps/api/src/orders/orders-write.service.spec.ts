@@ -5,6 +5,8 @@ import { GstCategoriesService } from '../gst/gst-categories.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { AccountsService } from '../accounts/accounts.service';
+import { ProductsService } from '../products/products.service';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -29,6 +31,7 @@ function createMockTx() {
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
+    execute: jest.fn().mockResolvedValue([]),
   };
 }
 
@@ -72,9 +75,10 @@ const GST_ZERO = {
 describe('OrdersWriteService', () => {
   let service: OrdersWriteService;
   let mockDb: any;
-  let mockGstService: any;
   let mockPickingService: any;
   let mockInventoryService: any;
+  let mockAccountsService: any;
+  let mockProductsService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -109,6 +113,8 @@ describe('OrdersWriteService', () => {
       if (insertCount === 1) return txInsertQb;
       return createMockQueryBuilder([]);
     });
+    // generateOrderNumber is now called inside the tx
+    mockTx.execute = jest.fn().mockResolvedValue([]);
     mockDb.transaction = jest
       .fn()
       .mockImplementation(async (cb: any) => cb(mockTx));
@@ -142,6 +148,21 @@ describe('OrdersWriteService', () => {
       cancelOnOrder: jest.fn().mockResolvedValue(undefined),
       receiveStock: jest.fn().mockResolvedValue(undefined),
     };
+    mockAccountsService = {
+      findOne: jest.fn().mockResolvedValue({
+        accountId: 'CUST-001',
+        customerDiscount: '0',
+        currencyCode: 'EUR',
+        gstPosition: 'taxable',
+      }),
+    };
+    mockProductsService = {
+      findOne: jest.fn().mockResolvedValue({
+        productId: 'PROD-001',
+        name: 'Test Product',
+        gstCategory: '9% GST',
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -150,6 +171,8 @@ describe('OrdersWriteService', () => {
         { provide: GstCategoriesService, useValue: mockGstService },
         { provide: PickingService, useValue: mockPickingService },
         { provide: InventoryService, useValue: mockInventoryService },
+        { provide: AccountsService, useValue: mockAccountsService },
+        { provide: ProductsService, useValue: mockProductsService },
       ],
     }).compile();
 
@@ -211,15 +234,11 @@ describe('OrdersWriteService', () => {
   // =========================================================================
   // create()
   //
-  // New select call sequence:
-  //   1. resolveCustomer → accounts row
-  //   2. resolveGstForLine → accounts.gstPosition (header GST)
-  //   3. resolveGstForLine → lookupProduct (header GST, product gstCategory)
-  //   4. validateProduct → lookupProduct (existence check)
-  //   5. generateOrderNumber → salesOrders query
-  // Then per line inside tx:
-  //   6. resolveGstForLine → accounts.gstPosition
-  //   7. resolveGstForLine → lookupProduct
+  // generateOrderNumber() is now called inside the transaction (uses tx.execute).
+  // The remaining select calls outside the transaction are:
+  //   - resolveCustomer → AccountsService.findOne (mocked)
+  //   - resolveGstForLine → AccountsService + ProductsService (mocked)
+  //   - validateProduct → ProductsService.findOne (mocked)
   // =========================================================================
 
   describe('create', () => {
@@ -239,16 +258,21 @@ describe('OrdersWriteService', () => {
       const prodGst = opts?.productGst ?? '9% GST';
       const currency = opts?.currency ?? 'EUR';
 
-      // Map every select().from() call
-      mockSelectChain({
-        1: [{ id: 'CUST-001', customerDiscount: disc, currencyCode: currency }], // resolveCustomer
-        2: [{ gstPosition: gstPos }], // resolveGstForLine → gstPosition
-        3: [{ productId: 'PROD-001', gstCategory: prodGst }], // resolveGstForLine → lookupProduct
-        4: [{ productId: 'PROD-001', gstCategory: prodGst }], // validateProduct → lookupProduct
-        5: [], // generateOrderNumber
-        6: [{ gstPosition: gstPos }], // line loop: resolveGstForLine → gstPosition
-        7: [{ productId: 'PROD-001', gstCategory: prodGst }], // line loop: resolveGstForLine → lookupProduct
+      mockAccountsService.findOne.mockResolvedValue({
+        accountId: 'CUST-001',
+        customerDiscount: disc,
+        currencyCode: currency,
+        gstPosition: gstPos,
       });
+
+      mockProductsService.findOne.mockResolvedValue({
+        productId: 'PROD-001',
+        name: 'Test Product',
+        gstCategory: prodGst,
+      });
+
+      // DB calls: generateOrderNumber is now inside the tx (handled by mockTransaction)
+      mockSelectChain({});
 
       mockTransaction({
         salesOrderId: 'uuid-001',
@@ -295,20 +319,13 @@ describe('OrdersWriteService', () => {
     });
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
-      // When customer is exempt, resolveGstForLine returns early (no product lookup),
-      // so the select chain is shorter:
-      // 1: resolveCustomer, 2: resolveGstForLine→gstPosition(exempt→return),
-      // 3: resolveGstForLine→gstPosition(exempt→return) [header GST],
-      // wait — header GST also skips product, so:
-      // 1=resolveCustomer, 2=headerGst→gstPosition(exempt), 3=validateProduct→lookupProduct,
-      // 4=generateOrderNumber, 5=lineGst→gstPosition(exempt)
-      mockSelectChain({
-        1: [{ id: 'CUST-001', customerDiscount: '0' }],
-        2: [{ gstPosition: 'exempt' }], // header resolveGstForLine → exempt, returns early
-        3: [{ productId: 'PROD-001', gstCategory: '9% GST' }], // validateProduct → lookupProduct
-        4: [], // generateOrderNumber
-        5: [{ gstPosition: 'exempt' }], // line resolveGstForLine → exempt, returns early
+      mockAccountsService.findOne.mockResolvedValue({
+        accountId: 'CUST-001',
+        customerDiscount: '0',
+        currencyCode: 'EUR',
+        gstPosition: 'exempt',
       });
+      mockSelectChain({});
       mockTransaction({
         salesOrderId: 'uuid-001',
         orderNumber: 'ORD-20260313-0001',
@@ -322,19 +339,14 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject unknown customer', async () => {
-      mockSelectChain({ 1: [] }); // resolveCustomer → not found
+      mockAccountsService.findOne.mockRejectedValue(new NotFoundException());
       await expect(service.create(validDto, 'admin')).rejects.toThrow(
         BadRequestException,
       );
     });
 
     it('should reject unknown product', async () => {
-      mockSelectChain({
-        1: [{ id: 'CUST-001', customerDiscount: '0' }],
-        2: [{ gstPosition: 'taxable' }],
-        3: [{ productId: 'PROD-001', gstCategory: '9% GST' }],
-        4: [], // validateProduct → not found
-      });
+      mockProductsService.findOne.mockRejectedValue(new NotFoundException());
       await expect(service.create(validDto, 'admin')).rejects.toThrow(
         BadRequestException,
       );
@@ -348,11 +360,7 @@ describe('OrdersWriteService', () => {
 
     it('should create order with no lines', async () => {
       // No productId → resolveGstForLine skips product lookup
-      mockSelectChain({
-        1: [{ id: 'CUST-001', customerDiscount: '0' }], // resolveCustomer
-        2: [{ gstPosition: null }], // resolveGstForLine → gstPosition (no product, falls to default)
-        3: [], // generateOrderNumber
-      });
+      mockSelectChain({});
       mockTransaction({
         salesOrderId: 'uuid-no-lines',
         orderNumber: 'ORD-20260313-0001',
@@ -617,6 +625,19 @@ describe('OrdersWriteService', () => {
     };
 
     function setupForAddLine(orderState: string, maxLineNumber = 0) {
+      mockAccountsService.findOne.mockResolvedValue({
+        accountId: 'CUST-001',
+        customerDiscount: '10',
+        currencyCode: 'EUR',
+        gstPosition: 'taxable',
+      });
+
+      mockProductsService.findOne.mockResolvedValue({
+        productId: 'PROD-001',
+        name: 'Test Product',
+        gstCategory: '9% GST',
+      });
+
       mockSelectChain({
         1: [
           {
@@ -631,11 +652,8 @@ describe('OrdersWriteService', () => {
             customerName: 'Test Customer',
           },
         ],
-        2: [{ productId: 'PROD-001', gstCategory: '9% GST' }], // validateProduct → lookupProduct
-        3: [], // NEW: Check if product already exists in this order (empty = not present)
-        4: [{ max: maxLineNumber }], // max line number
-        5: [{ gstPosition: 'taxable' }], // resolveGstForLine → gstPosition
-        6: [{ productId: 'PROD-001', gstCategory: '9% GST' }], // resolveGstForLine → lookupProduct
+        2: [], // NEW: Check if product already exists in this order (empty = not present)
+        3: [{ max: maxLineNumber }], // max line number
       });
 
       const txInsertQb = createMockQueryBuilder([
@@ -697,6 +715,18 @@ describe('OrdersWriteService', () => {
     });
 
     it('should use zero-rate for zero-rated product', async () => {
+      mockAccountsService.findOne.mockResolvedValue({
+        accountId: 'CUST-001',
+        customerDiscount: '0',
+        currencyCode: 'EUR',
+        gstPosition: 'taxable',
+      });
+      mockProductsService.findOne.mockResolvedValue({
+        productId: 'PROD-ZR',
+        name: 'Zero Prod',
+        gstCategory: 'Zero Rated Products',
+      });
+
       mockSelectChain({
         1: [
           {
@@ -711,11 +741,8 @@ describe('OrdersWriteService', () => {
             customerName: 'Test Customer',
           },
         ],
-        2: [{ productId: 'PROD-ZR', gstCategory: 'Zero Rated Products' }], // validateProduct
-        3: [], // Duplicate check
-        4: [{ max: 0 }],
-        5: [{ gstPosition: 'taxable' }],
-        6: [{ productId: 'PROD-ZR', gstCategory: 'Zero Rated Products' }],
+        2: [], // Duplicate check
+        3: [{ max: 0 }], // Line number
       });
       const txInsertQb = createMockQueryBuilder([
         { salesOrderLineId: 'line-1', lineNumber: 1 },

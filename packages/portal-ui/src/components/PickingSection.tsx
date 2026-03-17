@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, apiMutate, reportError } from '../lib/api';
+import { apiFetch, apiMutate, apiFetchBlob, reportError } from '../lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -327,14 +327,7 @@ export default function PickingSection({
               className="btn btn-secondary btn-sm"
               onClick={async () => {
                 try {
-                  const { getToken } = await import('../lib/api');
-                  const t = getToken();
-                  if (!t) return;
-                  const res = await fetch(`/api/sales-orders/${orderId}/picking-slip-report`, {
-                    headers: { Authorization: `Bearer ${t}` },
-                  });
-                  if (!res.ok) throw new Error(`Failed: ${res.status}`);
-                  const blob = await res.blob();
+                  const blob = await apiFetchBlob(`/api/sales-orders/${orderId}/picking-slip-report`);
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 } catch (err) {

@@ -5,7 +5,12 @@ import { OrdersWriteService } from '../orders/orders-write.service';
 import { ReportService } from './report.service';
 import { SalesQuoteData } from './sales-quote.service';
 
-const TEMPLATE_PATH = join(__dirname, 'templates', 'orders', 'sales-invoice.typ');
+const TEMPLATE_PATH = join(
+  __dirname,
+  'templates',
+  'orders',
+  'sales-invoice.typ',
+);
 
 @Injectable()
 export class SalesInvoiceService {

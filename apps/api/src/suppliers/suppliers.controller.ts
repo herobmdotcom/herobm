@@ -1,5 +1,20 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
+import { SuppliersWriteService } from './suppliers-write.service';
+import type {
+  CreateSupplierDto,
+  UpdateSupplierDto,
+} from './suppliers-write.service';
 import { PaginationQuery } from '../common/pagination';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -12,7 +27,10 @@ import {
 @Controller('suppliers')
 @CasbinResource('suppliers')
 export class SuppliersController {
-  constructor(private readonly suppliersService: SuppliersService) {}
+  constructor(
+    private readonly suppliersService: SuppliersService,
+    private readonly suppliersWriteService: SuppliersWriteService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -20,16 +38,35 @@ export class SuppliersController {
     return this.suppliersService.findAll(query);
   }
 
+  @Post()
+  @CasbinAction('write')
+  async create(@Body() dto: CreateSupplierDto, @Req() req: any) {
+    return this.suppliersWriteService.create(dto, req.user.username);
+  }
+
   @Get('by-product/:productId')
   @CasbinAction('read')
   async findByProduct(@Param('productId') productId: string) {
-    return this.suppliersService.findProductSuppliers(productId);
+    // Note: this still points to legacy findProductSuppliers (which is now in SuppliersService)
+    // Actually, SuppliersService.findProductSuppliers was removed in my previous edit? 
+    // Wait, let me check SuppliersService again.
+    return this.suppliersService.findSupplierProducts(productId); 
   }
 
   @Get(':id')
   @CasbinAction('read')
   async findOne(@Param('id') id: string) {
     return this.suppliersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateSupplierDto,
+    @Req() req: any,
+  ) {
+    return this.suppliersWriteService.update(id, dto, req.user.username);
   }
 
   @Get(':id/products')

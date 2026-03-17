@@ -1,0 +1,52 @@
+
+> api@0.0.1 test
+> npm run lint && jest src/accounts/accounts.service.spec.ts
+
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+FAIL src/accounts/accounts.service.spec.ts
+  AccountsService
+    findAll
+      ΓêÜ should return paginated accounts (8 ms)
+      ΓêÜ should apply pagination parameters (2 ms)
+      ΓêÜ should cap limit at 200 (1 ms)
+      ΓêÜ should apply search filter when q is provided (2 ms)
+    findOne
+      ├ù should return a single account (4 ms)
+      ΓêÜ should throw NotFoundException for unknown ID (3 ms)
+
+  ΓùÅ AccountsService ΓÇ║ findOne ΓÇ║ should return a single account
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 1
+
+    @@ -2,8 +2,8 @@
+        "accountId": "C001",
+        "accountNumber": "ACME",
+        "address1Line1": "123 Main St",
+        "deliveryAddressCount": 2,
+        "name": "Acme Corp",
+    -   "source": "app",
+    +   "source": "abm",
+        "stateCode": "Active",
+      }
+
+      91 |         .mockImplementation((cb) => cb([mockAccounts[0]]));
+      92 |       const result = await service.findOne('C001');
+    > 93 |       expect(result).toEqual({ ...mockAccounts[0], source: 'app' });
+         |                      ^
+      94 |     });
+      95 |
+      96 |     it('should throw NotFoundException for unknown ID', async () => {
+
+      at Object.<anonymous> (accounts/accounts.service.spec.ts:93:22)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 5 passed, 6 total
+Snapshots:   0 total
+Time:        0.792 s, estimated 2 s
+Ran all test suites matching src/accounts/accounts.service.spec.ts.

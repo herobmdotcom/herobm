@@ -9,6 +9,11 @@ import { SalesInvoiceService } from './sales-invoice.service';
 @Module({
   imports: [OrdersModule],
   controllers: [ReportsController],
-  providers: [ReportService, PickingSlipService, SalesQuoteService, SalesInvoiceService],
+  providers: [
+    ReportService,
+    PickingSlipService,
+    SalesQuoteService,
+    SalesInvoiceService,
+  ],
 })
 export class ReportsModule {}

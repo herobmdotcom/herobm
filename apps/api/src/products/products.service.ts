@@ -1,9 +1,16 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or } from 'drizzle-orm';
+import { eq, ilike, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { products } from '../drizzle/schema';
+import { products as martProducts } from '../drizzle/schema';
+import {
+  products as coreProducts,
+  productEvents,
+} from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+
+const isUuid = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 @Injectable()
 export class ProductsService {
@@ -12,33 +19,113 @@ export class ProductsService {
   async findAll(query?: PaginationQuery) {
     const { page, limit, offset, searchTerm } = parsePagination(query);
 
-    let qb = this.db.select().from(products).$dynamic();
+    // --- App products (modbm_core) ---
+    let appQuery = this.db
+      .select({
+        productId: coreProducts.productId,
+        productNumber: coreProducts.productNumber,
+        name: coreProducts.name,
+        barcode: coreProducts.barcode,
+        listPrice: coreProducts.listPrice,
+        standardCost: coreProducts.standardCost,
+        stateCode: coreProducts.stateCode,
+        notes: coreProducts.notes,
+        createdBy: coreProducts.createdBy,
+        createdOn: coreProducts.createdOn,
+        source: sql<string>`'app'`.as('source'),
+      })
+      .from(coreProducts)
+      .$dynamic();
 
     if (searchTerm) {
-      qb = qb.where(
+      appQuery = appQuery.where(
         or(
-          ilike(products.name, searchTerm),
-          ilike(products.productNumber, searchTerm),
-          ilike(products.barcode, searchTerm),
+          ilike(coreProducts.name, searchTerm),
+          ilike(coreProducts.productNumber, searchTerm),
+          ilike(coreProducts.barcode, searchTerm),
         ),
       );
     }
 
-    const rows = await qb.orderBy(products.name).limit(limit).offset(offset);
+    // --- Mart products (legacy ABM) ---
+    let martQuery = this.db
+      .select({
+        productId: martProducts.productId,
+        productNumber: martProducts.productNumber,
+        name: martProducts.name,
+        productGroupName: martProducts.productGroupName,
+        defaultVendorId: martProducts.defaultVendorId,
+        defaultVendorName: martProducts.defaultVendorName,
+        standardCost: martProducts.standardCost,
+        listPrice: martProducts.listPrice,
+        tradePrice: martProducts.tradePrice,
+        priceLevel3: martProducts.priceLevel3,
+        priceLevel4: martProducts.priceLevel4,
+        barcode: martProducts.barcode,
+        stateCode: martProducts.stateCode,
+        gstCategory: martProducts.gstCategory,
+        scNumber: martProducts.scNumber,
+        createdOn: martProducts.createdOn,
+        source: sql<string>`'abm'`.as('source'),
+      })
+      .from(martProducts)
+      .$dynamic();
 
-    return { data: rows, page, limit };
+    if (searchTerm) {
+      martQuery = martQuery.where(
+        or(
+          ilike(martProducts.name, searchTerm),
+          ilike(martProducts.productNumber, searchTerm),
+          ilike(martProducts.barcode, searchTerm),
+        ),
+      );
+    }
+
+    // Execute both and merge (core products first for relevance)
+    const [appRows, martRows] = await Promise.all([appQuery, martQuery]);
+
+    const unified = [...appRows, ...martRows];
+
+    // Simple in-memory sorting by name
+    unified.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    // Paginate manually
+    const data = unified.slice(offset, offset + limit);
+
+    return { data, page, limit, total: unified.length };
   }
 
   async findOne(id: string) {
-    const rows = await this.db
+    // 1. Check core first (only if it looks like a UUID)
+    if (isUuid(id)) {
+      const coreRows = await this.db
+        .select()
+        .from(coreProducts)
+        .where(eq(coreProducts.productId, id))
+        .limit(1);
+
+      if (coreRows.length > 0) {
+        const events = await this.db
+          .select()
+          .from(productEvents)
+          .where(eq(productEvents.productId, id))
+          .orderBy(productEvents.createdOn);
+
+        return { ...coreRows[0], source: 'app', events };
+      }
+    }
+
+    // 2. Check mart
+    const martRows = await this.db
       .select()
-      .from(products)
-      .where(eq(products.productId, id))
+      .from(martProducts)
+      .where(eq(martProducts.productId, id))
       .limit(1);
 
-    if (rows.length === 0) {
-      throw new NotFoundException(`Product '${id}' not found`);
+    if (martRows.length > 0) {
+      return { ...martRows[0], source: 'abm', events: [] };
     }
-    return rows[0];
+
+    throw new NotFoundException(`Product '${id}' not found`);
   }
 }

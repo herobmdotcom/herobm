@@ -71,9 +71,9 @@ describe('ProductsService', () => {
       expect(mockQueryBuilder.where).toHaveBeenCalled();
     });
 
-    it('should cap limit at 200', async () => {
-      await service.findAll({ limit: 999 });
-      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(200);
+    it('should cap limit at 100000', async () => {
+      const result = await service.findAll({ limit: 200_000 });
+      expect(result.limit).toBe(100_000);
     });
   });
 
@@ -83,7 +83,7 @@ describe('ProductsService', () => {
         .fn()
         .mockImplementation((cb) => cb([mockProducts[0]]));
       const result = await service.findOne('P001');
-      expect(result).toEqual(mockProducts[0]);
+      expect(result).toEqual({ ...mockProducts[0], source: 'abm', events: [] });
     });
 
     it('should throw NotFoundException for unknown ID', async () => {

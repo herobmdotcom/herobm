@@ -1,32 +1,42 @@
-# Phase 2 RBAC policies
+# Unified Portal RBAC policies
 # Format: p, role, resource, action
 
 # viewer — read access to all data endpoints
 p, viewer, accounts, read
 p, viewer, products, read
 p, viewer, inventory, read
-p, viewer, orders, read
+p, viewer, sales-orders, read
 p, viewer, purchase-orders, read
 p, viewer, suppliers, read
 p, viewer, receptions, read
 p, viewer, dashboard, read
 p, viewer, gst-categories, read
 
-# admin — everything viewer can do, plus user management + order writes
-p, admin, accounts, read
-p, admin, products, read
-p, admin, inventory, read
-p, admin, orders, read
-p, admin, orders, write
-p, admin, purchase-orders, read
+# admin — full access to everything
+p, admin, accounts, write
+p, admin, products, write
+p, admin, sales-orders, write
 p, admin, purchase-orders, write
-p, admin, suppliers, read
-p, admin, receptions, read
+p, admin, suppliers, write
 p, admin, receptions, write
-p, admin, dashboard, read
-p, admin, gst-categories, read
 p, admin, users, read
 p, admin, users, write
 
-# Role inheritance: admin inherits viewer
+# sales — viewer + customer/order writes
+p, sales, accounts, write
+p, sales, sales-orders, write
+
+# warehouse — viewer + order writes (pick/ship) + purchase/reception writes
+p, warehouse, sales-orders, write
+p, warehouse, purchase-orders, write
+p, warehouse, receptions, write
+
+# procurement — viewer + supplier/PO writes
+p, procurement, suppliers, write
+p, procurement, purchase-orders, write
+
+# Role inheritance: all roles inherit viewer (read-all)
 g, admin, viewer
+g, sales, viewer
+g, warehouse, viewer
+g, procurement, viewer

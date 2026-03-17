@@ -1,0 +1,60 @@
+[Nest] 8236  - 03/17/2026, 3:29:03 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: select "account_id", "account_number", "name", "address1_line1", "address1_line2", "address1_city", "address1_state_or_province", "address1_postal_code", "address1_country", "telephone1", "fax", "email_address1", "primary_contact_name", "primary_contact_email", "primary_contact_phone", "customer_group", "state_code", "gst_position", "currency_code", "customer_discount", "notes", "created_by", "created_on", "modified_on" from "modbm_core"."accounts" where "modbm_core"."accounts"."account_id" = $1 limit $2
+params: CBRENNAXXXX,1
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at AccountsWriteService.update (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts-write.service.ts:120:22) {
+  query: 'select "account_id", "account_number", "name", "address1_line1", "address1_line2", "address1_city", "address1_state_or_province", "address1_postal_code", "address1_country", "telephone1", "fax", "email_address1", "primary_contact_name", "primary_contact_email", "primary_contact_phone", "customer_group", "state_code", "gst_position", "currency_code", "customer_discount", "notes", "created_by", "created_on", "modified_on" from "modbm_core"."accounts" where "modbm_core"."accounts"."account_id" = $1 limit $2',
+  params: [
+    'CBRENNAXXXX',
+    1
+  ],
+  cause: PostgresError: invalid input syntax for type uuid: "CBRENNAXXXX"
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '22P02',
+    where: "unnamed portal parameter $1 = '...'",
+    file: 'uuid.c',
+    line: '133',
+    routine: 'string_to_uuid'
+  }
+}
+FAIL test/accounts.e2e-spec.ts
+  Accounts (e2e)
+    ΓêÜ GET /api/accounts ΓÇö returns a list of accounts (viewer) (56 ms)
+    ΓêÜ POST /api/accounts ΓÇö creates a new account (admin) (24 ms)
+    ΓêÜ POST /api/accounts ΓÇö fails with 403 (viewer) (4 ms)
+    ΓêÜ PATCH /api/accounts/:id ΓÇö updates an account (admin) (32 ms)
+    ├ù PATCH /api/accounts/:id ΓÇö fails on legacy account (admin) (21 ms)
+
+  ΓùÅ Accounts (e2e) ΓÇ║ PATCH /api/accounts/:id ΓÇö fails on legacy account (admin)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 500
+
+      135 |       .send({ name: 'Should Fail' });
+      136 |
+    > 137 |     expect(res.status).toBe(400);
+          |                        ^
+      138 |     expect(res.body.message).toContain(
+      139 |       'legacy ABM record and cannot be edited',
+      140 |     );
+
+      at Object.<anonymous> (accounts.e2e-spec.ts:137:24)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 4 passed, 5 total
+Snapshots:   0 total
+Time:        1.501 s, estimated 2 s
+Ran all test suites matching test/accounts.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

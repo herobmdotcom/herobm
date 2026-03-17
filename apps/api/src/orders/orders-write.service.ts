@@ -14,6 +14,7 @@ import {
   orderEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   writeEvent as sharedWriteEvent,
   findOrderLine as sharedFindOrderLine,
@@ -23,6 +24,8 @@ import { products } from '../drizzle/schema';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { AccountsService } from '../accounts/accounts.service';
+import { ProductsService } from '../products/products.service';
 
 // Valid state transitions (from → allowed next states)
 const STATE_TRANSITIONS: Record<string, string[]> = {
@@ -85,28 +88,34 @@ export class OrdersWriteService {
     private readonly gstService: GstCategoriesService,
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
+    private readonly accountsService: AccountsService,
+    private readonly productsService: ProductsService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
 
   /**
    * Generate a human-readable order number (ORD-YYYYMMDD-NNNN).
+   * Must be called inside a transaction to prevent race conditions.
+   * Uses FOR UPDATE to serialize concurrent callers.
    */
-  private async generateOrderNumber(): Promise<string> {
+  private async generateOrderNumber(tx?: any): Promise<string> {
+    const db = tx || this.db;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `ORD-${today}-`;
 
-    // Find the highest sequence for today
-    const result = await this.db
-      .select({ orderNumber: salesOrders.orderNumber })
-      .from(salesOrders)
-      .where(sql`${salesOrders.orderNumber} LIKE ${prefix + '%'}`)
-      .orderBy(sql`${salesOrders.orderNumber} DESC`)
-      .limit(1);
+    // Find the highest sequence for today, locking the row to prevent races
+    const result = await db.execute(
+      sql`SELECT order_number FROM modbm_core.sales_orders
+          WHERE order_number LIKE ${prefix + '%'}
+          ORDER BY order_number DESC
+          LIMIT 1
+          FOR UPDATE`,
+    );
 
     const seq =
       result.length > 0
-        ? parseInt(result[0].orderNumber.replace(prefix, ''), 10) + 1
+        ? parseInt(result[0].order_number.replace(prefix, ''), 10) + 1
         : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
@@ -164,15 +173,9 @@ export class OrdersWriteService {
     }
 
     // 2. Customer exempt → always 0%
-    const custRows = await this.db
-      .select({ gstPosition: accounts.gstPosition })
-      .from(accounts)
-      .where(eq(accounts.accountId, customerId))
-      .limit(1);
+    const account = await this.accountsService.findOne(customerId);
 
-    const gstPosition = custRows.length > 0 ? custRows[0].gstPosition : null;
-
-    if (gstPosition?.toLowerCase() === 'exempt') {
+    if (account.gstPosition?.toLowerCase() === 'exempt') {
       const exempt = await this.gstService.getByCode('EXE');
       return {
         gstCategoryId: exempt.gstCategoryId,
@@ -215,24 +218,18 @@ export class OrdersWriteService {
     customerDiscount: string;
     currencyCode: string;
   }> {
-    const rows = await this.db
-      .select({
-        id: accounts.accountId,
-        customerDiscount: accounts.customerDiscount,
-        currencyCode: accounts.currencyCode,
-      })
-      .from(accounts)
-      .where(eq(accounts.accountId, customerId))
-      .limit(1);
-
-    if (rows.length === 0) {
-      throw new BadRequestException(`Customer '${customerId}' not found`);
+    try {
+      const account = await this.accountsService.findOne(customerId);
+      return {
+        customerDiscount: account.customerDiscount ?? '0',
+        currencyCode: account.currencyCode ?? 'EUR',
+      };
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        throw new BadRequestException(`Customer '${customerId}' not found`);
+      }
+      throw err;
     }
-
-    return {
-      customerDiscount: rows[0].customerDiscount ?? '0',
-      currencyCode: rows[0].currencyCode ?? 'EUR',
-    };
   }
 
   /**
@@ -244,20 +241,18 @@ export class OrdersWriteService {
     productId: string;
     gstCategory: string | null;
   }> {
-    const rows = await this.db
-      .select({
-        productId: products.productId,
-        gstCategory: products.gstCategory,
-      })
-      .from(products)
-      .where(eq(products.productId, productId))
-      .limit(1);
-
-    if (rows.length === 0) {
-      throw new BadRequestException(`Product '${productId}' not found`);
+    try {
+      const product = await this.productsService.findOne(productId);
+      return {
+        productId: product.productId,
+        gstCategory: (product as any).gstCategory ?? null,
+      };
+    } catch (err) {
+      if (err instanceof NotFoundException) {
+        throw new BadRequestException(`Product '${productId}' not found`);
+      }
+      throw err;
     }
-
-    return rows[0];
   }
 
   /**
@@ -311,9 +306,8 @@ export class OrdersWriteService {
       throw new BadRequestException('Order cannot contain duplicate products');
     }
 
-    const orderNumber = await this.generateOrderNumber();
-
     const result = await this.db.transaction(async (tx: any) => {
+      const orderNumber = await this.generateOrderNumber(tx);
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
         .insert(salesOrders)
@@ -385,7 +379,7 @@ export class OrdersWriteService {
     });
 
     this.logger.log(
-      `Order created: ${orderNumber} for customer ${dto.customerId} with ${dto.lines.length} lines by ${actor}`,
+      `Order created: ${result.orderNumber} for customer ${dto.customerId} with ${dto.lines.length} lines by ${actor}`,
     );
     return result;
   }
@@ -406,33 +400,29 @@ export class OrdersWriteService {
     }
 
     const result = await this.db.transaction(async (tx: any) => {
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
+
       const [updated] = await tx
         .update(salesOrders)
         .set({
-          ...(dto.name !== undefined && { name: dto.name }),
-          ...(dto.customerOrderNumber !== undefined && {
-            customerOrderNumber: dto.customerOrderNumber,
-          }),
-          ...(dto.notes !== undefined && { notes: dto.notes }),
+          ...audit.changes,
           modifiedOn: new Date(),
         })
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'updated',
-        {
-          changes: dto,
-          previousValues: {
-            name: existing.name,
-            customerOrderNumber: existing.customerOrderNumber,
-            notes: existing.notes,
+      if (audit.hasChanges) {
+        await this.writeEvent(
+          tx,
+          id,
+          'updated',
+          {
+            changes: audit.changes,
+            previousValues: audit.previousValues,
           },
-        },
-        actor,
-      );
+          actor,
+        );
+      }
 
       return updated;
     });
@@ -669,25 +659,12 @@ export class OrdersWriteService {
     );
 
     const result = await this.db.transaction(async (tx: any) => {
+      const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
+
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({
-          ...(dto.quantity !== undefined && { quantity: dto.quantity }),
-          ...(dto.pricePerUnit !== undefined && {
-            pricePerUnit: dto.pricePerUnit,
-          }),
-          ...(dto.discountPercentage !== undefined && {
-            discountPercentage: dto.discountPercentage,
-          }),
-          ...(dto.gstCategoryId !== undefined && {
-            gstCategoryId: dto.gstCategoryId,
-          }),
-          ...(dto.productDescription !== undefined && {
-            productDescription: dto.productDescription,
-          }),
-          ...(dto.unitOfMeasure !== undefined && {
-            unitOfMeasure: dto.unitOfMeasure,
-          }),
+          ...audit.changes,
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -700,22 +677,19 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'line_updated',
-        {
-          lineId,
-          changes: dto,
-          previousValues: {
-            quantity: existingLine.quantity,
-            pricePerUnit: existingLine.pricePerUnit,
-            discountPercentage: existingLine.discountPercentage,
-            gstCategoryId: existingLine.gstCategoryId,
+      if (audit.hasChanges) {
+        await this.writeEvent(
+          tx,
+          orderId,
+          'line_updated',
+          {
+            lineId,
+            changes: audit.changes,
+            previousValues: audit.previousValues,
           },
-        },
-        actor,
-      );
+          actor,
+        );
+      }
 
       return updated;
     });
@@ -803,6 +777,10 @@ export class OrdersWriteService {
   // -------------------------------------------------------------------------
 
   private async findOrder(id: string) {
+    if (!id || id === 'undefined') {
+      throw new BadRequestException(`Invalid order ID: ${id}`);
+    }
+
     const rows = await this.db
       .select({
         order: salesOrders,

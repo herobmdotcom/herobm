@@ -13,6 +13,14 @@ export class GstCategoriesService {
   }
 
   async getById(id: string) {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
+    if (!isUuid) {
+      throw new NotFoundException(`Invalid GST category ID: ${id}`);
+    }
+
     const rows = await this.db
       .select()
       .from(gstCategories)

@@ -70,6 +70,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — invalid password returns 401', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
+        // eslint-disable-next-line no-restricted-syntax
         .send({ username: 'admin', password: 'wrongpassword' }) // TEST_CREDENTIAL
         .expect(401);
     });
@@ -77,6 +78,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — unknown user returns 401', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
+        // eslint-disable-next-line no-restricted-syntax
         .send({ username: 'nobody', password: 'REDACTED' }) // TEST_CREDENTIAL
         .expect(401);
     });

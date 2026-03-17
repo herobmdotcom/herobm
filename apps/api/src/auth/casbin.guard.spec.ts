@@ -175,10 +175,10 @@ describe('CasbinGuard', () => {
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });
 
-    it('should allow admin to write orders', async () => {
+    it('should allow admin to write sales-orders', async () => {
       const ctx = createMockContext({
         metadata: {
-          [CASBIN_RESOURCE]: 'orders',
+          [CASBIN_RESOURCE]: 'sales-orders',
           [CASBIN_ACTION]: 'write',
         },
         user: { userId: '1', username: 'admin', role: 'admin' },
@@ -213,10 +213,10 @@ describe('CasbinGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should deny viewer from writing orders', async () => {
+    it('should deny viewer from writing sales-orders', async () => {
       const ctx = createMockContext({
         metadata: {
-          [CASBIN_RESOURCE]: 'orders',
+          [CASBIN_RESOURCE]: 'sales-orders',
           [CASBIN_ACTION]: 'write',
         },
         user: { userId: '2', username: 'viewer', role: 'viewer' },
@@ -229,6 +229,122 @@ describe('CasbinGuard', () => {
         });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    // --- New role tests ---
+
+    it('should allow sales role to write accounts', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'accounts',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '3', username: 'sales', role: 'sales' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should deny sales role from writing suppliers', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'suppliers',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '3', username: 'sales', role: 'sales' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow warehouse role to write sales-orders (pick/ship)', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'sales-orders',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '4', username: 'warehouse', role: 'warehouse' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should allow procurement role to write suppliers', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'suppliers',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '5', username: 'procurement', role: 'procurement' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
+
+      const result = await guard.canActivate(ctx);
+      expect(result).toBe(true);
+    });
+
+    it('should deny procurement role from writing accounts', async () => {
+      const ctx = createMockContext({
+        metadata: {
+          [CASBIN_RESOURCE]: 'accounts',
+          [CASBIN_ACTION]: 'write',
+        },
+        user: { userId: '5', username: 'procurement', role: 'procurement' },
+      });
+
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
+
+      await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should allow all roles to read products (inherited from viewer)', async () => {
+      for (const role of ['sales', 'warehouse', 'procurement']) {
+        const ctx = createMockContext({
+          metadata: {
+            [CASBIN_RESOURCE]: 'products',
+            [CASBIN_ACTION]: 'read',
+          },
+          user: { userId: '99', username: role, role },
+        });
+
+        jest
+          .spyOn(reflector, 'getAllAndOverride')
+          .mockImplementation((key: string) => {
+            return (ctx as any).__metadata[key];
+          });
+
+        const result = await guard.canActivate(ctx);
+        expect(result).toBe(true);
+      }
     });
   });
 });

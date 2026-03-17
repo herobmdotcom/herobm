@@ -57,7 +57,7 @@ describe('ReportService', () => {
     // Should have invoked typst with template path and --input
     expect(mockExecFile).toHaveBeenCalledTimes(1);
     const [cmd, args] = mockExecFile.mock.calls[0];
-    expect(cmd).toBe('typst');
+    expect(cmd).toBe(process.env.TYPST_BINARY_PATH || 'typst');
     expect(args).toContain('compile');
     expect(args).toContain('/path/to/template.typ');
     expect(args).toContain('-');

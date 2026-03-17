@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
@@ -59,6 +60,7 @@ const columns: ColDef<UnifiedOrder>[] = [
       return formatAmount(params.value, params.data?.currencyCode || 'EUR');
     },
   },
+  { field: 'currencyCode', headerName: 'Currency', width: 90, hide: true },
   {
     field: 'createdOn',
     headerName: 'Date',
@@ -84,13 +86,19 @@ export default function OrdersPage() {
 
   return (
     <Shell>
-      <h2 className="text-2xl font-bold mb-6">Orders</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Orders</h2>
+        <Link href="/sales-orders/new" className="btn btn-secondary btn-sm">
+          + Create Order
+        </Link>
+      </div>
       <DataGrid<UnifiedOrder>
         endpoint="/api/sales-orders"
         columns={columns}
         gridKey="ops-orders"
         searchPlaceholder="Search by order number, customer, or PO…"
         exportFileName="orders"
+        fetchAll
         onRowClicked={handleRowClicked}
       />
     </Shell>

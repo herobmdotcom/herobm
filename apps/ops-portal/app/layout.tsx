@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
-  title: 'Operations Portal',
-  description: 'Inventory browser and operations dashboard',
+  title: 'modbm',
+  description: 'Business management portal',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Toaster position="top-right" />
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
-import { login, getToken } from '../lib/api';
+import { login, getToken, getRole } from '../lib/api';
 
-const AuthContext = createContext<{ authenticated: boolean }>({ authenticated: false });
+const AuthContext = createContext<{ authenticated: boolean; role: string | null }>({
+  authenticated: false,
+  role: null,
+});
 
 export function useAuth() { return useContext(AuthContext); }
 
@@ -17,6 +20,7 @@ export interface AuthGateProps {
 
 export default function AuthGate({ portalName, idPrefix, children }: AuthGateProps) {
   const [authenticated, setAuthenticated] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
@@ -25,6 +29,7 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   useEffect(() => {
     if (getToken()) {
       setAuthenticated(true);
+      setRole(getRole());
       setLoading(false);
     } else {
       setLoading(false);
@@ -34,8 +39,9 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   const handleLogin = async () => {
     setError('');
     try {
-      await login(username, password);
+      const data = await login(username, password);
       setAuthenticated(true);
+      setRole(data.role);
     } catch {
       setError('Invalid credentials');
     }
@@ -86,7 +92,7 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
   }
 
   return (
-    <AuthContext.Provider value={{ authenticated }}>
+    <AuthContext.Provider value={{ authenticated, role }}>
       {children}
     </AuthContext.Provider>
   );

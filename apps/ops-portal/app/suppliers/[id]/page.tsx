@@ -1,0 +1,448 @@
+'use client';
+
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
+import Shell from '@/components/Shell';
+import {
+  apiFetch,
+  apiMutate,
+  EntityHeader,
+  ActivityTimeline,
+  reportError,
+} from '@/lib/api';
+
+interface Supplier {
+  vendorId: string;
+  vendorNumber: string;
+  name: string;
+  emailAddress1: string | null;
+  telephone1: string | null;
+  address1Line1: string | null;
+  address1Line2: string | null;
+  address1City: string | null;
+  address1StateOrProvince: string | null;
+  address1PostalCode: string | null;
+  address1Country: string | null;
+  paymentTerms: string | null;
+  currencyCode: string;
+  stateCode: string;
+  notes: string | null;
+  source: 'abm' | 'app';
+  createdBy?: string | null;
+  createdOn?: string | null;
+  modifiedOn?: string | null;
+  events?: any[];
+}
+
+export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const params = use(paramsPromise);
+  const router = useRouter();
+  const [supplier, setSupplier] = useState<Supplier | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // Editable field state
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editStreet, setEditStreet] = useState('');
+  const [editCity, setEditCity] = useState('');
+  const [editCountry, setEditCountry] = useState('');
+  const [editPaymentTerms, setEditPaymentTerms] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editCurrency, setEditCurrency] = useState('EUR');
+
+  const loadSupplier = async (showSpinner = true) => {
+    if (showSpinner) setLoading(true);
+    try {
+      const data = await apiFetch<Supplier>(`/api/suppliers/${params.id}`);
+      setSupplier(data);
+      setEditName(data.name || '');
+      setEditEmail(data.emailAddress1 || '');
+      setEditPhone(data.telephone1 || '');
+      setEditStreet(data.address1Line1 || '');
+      setEditCity(data.address1City || '');
+      setEditCountry(data.address1Country || '');
+      setEditPaymentTerms(data.paymentTerms || '');
+      setEditNotes(data.notes || '');
+      setEditCurrency(data.currencyCode || 'EUR');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load supplier');
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSupplier();
+  }, [params.id]);
+
+  /** Save a single field on blur if it changed */
+  const saveField = async (field: string, value: string, original: string | null) => {
+    if (value === (original || '')) return;
+    if (supplier?.source === 'abm') return;
+    setSaving(true);
+    setError('');
+    try {
+      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: value || null });
+      await loadSupplier(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /** Toggle state code (active/inactive) */
+  const toggleState = async () => {
+    if (!supplier || supplier.source === 'abm' || saving) return;
+    const newState = supplier.stateCode === 'active' ? 'inactive' : 'active';
+    setSaving(true);
+    setError('');
+    try {
+      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { stateCode: newState });
+      await loadSupplier(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Shell>
+        <div className="flex items-center justify-center flex-1">
+          <p style={{ color: 'var(--text-muted)' }}>Loading supplier…</p>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (!supplier) {
+    return (
+      <Shell>
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+            {error || 'Supplier not found'}
+          </p>
+          <button className="btn btn-secondary" onClick={() => router.push('/suppliers')}>
+            ← Back to Suppliers
+          </button>
+        </div>
+      </Shell>
+    );
+  }
+
+  const isLegacy = supplier.source === 'abm';
+  const isEditable = !isLegacy;
+
+  return (
+    <Shell>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => router.push('/suppliers')}
+          >
+            ←
+          </button>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{supplier.name}</h1>
+              <span className={`badge badge-${supplier.stateCode}`}>
+                {supplier.stateCode}
+              </span>
+              {saving && (
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  Saving…
+                </span>
+              )}
+            </div>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {supplier.vendorNumber} · {supplier.source === 'app' ? 'Application Managed' : 'Legacy ABM'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div
+          className="mb-4 px-4 py-3 rounded-lg text-sm"
+          style={{
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            color: '#f87171',
+          }}
+        >
+          {error}
+          <button className="ml-3 text-xs underline" onClick={() => setError('')}>dismiss</button>
+        </div>
+      )}
+
+      <div className="scroll-area" style={{ flex: 1 }}>
+        <div className="space-y-6 mb-8">
+            {/* Basic Info Card */}
+            <div className="card">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={() => saveField('name', editName, supplier.name)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Supplier Number
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={supplier.vendorNumber}
+                    disabled
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Contact & Location Card */}
+            <div className="card">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Contact & Location
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    onBlur={() => saveField('emailAddress1', editEmail, supplier.emailAddress1)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    onBlur={() => saveField('telephone1', editPhone, supplier.telephone1)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Street
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editStreet}
+                    onChange={(e) => setEditStreet(e.target.value)}
+                    onBlur={() => saveField('address1Line1', editStreet, supplier.address1Line1)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    onBlur={() => saveField('address1City', editCity, supplier.address1City)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editCountry}
+                    onChange={(e) => setEditCountry(e.target.value)}
+                    onBlur={() => saveField('address1Country', editCountry, supplier.address1Country)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Internal Notes Card */}
+            <div className="card">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                Internal Notes
+              </h3>
+              <input
+                type="text"
+                className="input"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                onBlur={() => saveField('notes', editNotes, supplier.notes)}
+                placeholder="Internal notes"
+                disabled={!isEditable || saving}
+              />
+            </div>
+
+          {/* Record Details Card */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Record Details
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Vendor ID
+                </label>
+                <input className="input" disabled value={supplier.vendorId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Source
+                </label>
+                <input className="input" disabled value={supplier.source === 'abm' ? 'Legacy ABM' : 'Application'} />
+              </div>
+              {supplier.createdOn && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created
+                  </label>
+                  <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
+                </div>
+              )}
+              {supplier.createdBy && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created By
+                  </label>
+                  <input className="input" disabled value={supplier.createdBy} />
+                </div>
+              )}
+            </div>
+            {supplier.modifiedOn && (
+              <div className="mt-4" style={{ maxWidth: '50%' }}>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Last Modified
+                </label>
+                <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
+              </div>
+            )}
+            {isLegacy && (
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                This is a read-only legacy record imported from ABM. Changes must be made in the source system.
+              </p>
+            )}
+          </div>
+
+          {/* Financials Card */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Financials
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Currency
+                </label>
+                <select
+                  className="input"
+                  value={editCurrency}
+                  onChange={(e) => {
+                    setEditCurrency(e.target.value);
+                    saveField('currencyCode', e.target.value, supplier.currencyCode);
+                  }}
+                  disabled={!isEditable || saving}
+                >
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Payment Terms
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={editPaymentTerms}
+                  onChange={(e) => setEditPaymentTerms(e.target.value)}
+                  onBlur={() => saveField('paymentTerms', editPaymentTerms, supplier.paymentTerms)}
+                  disabled={!isEditable || saving}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Status
+                </label>
+                <div
+                  className="flex items-center gap-3"
+                  style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                  onClick={toggleState}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 22,
+                      borderRadius: 11,
+                      background: supplier.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
+                      position: 'relative',
+                      transition: 'background 0.2s ease',
+                      opacity: !isEditable || saving ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: 3,
+                        left: supplier.stateCode === 'active' ? 21 : 3,
+                        transition: 'left 0.2s ease',
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {supplier.stateCode === 'active' ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Activity Timeline
+            </h3>
+            <ActivityTimeline events={supplier.events || []} />
+          </div>
+        </div>
+      </div>
+    </Shell>
+  );
+}

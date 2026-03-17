@@ -36,7 +36,7 @@ import { PaginationQuery } from '../common/pagination';
  */
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('orders')
+@CasbinResource('sales-orders')
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,

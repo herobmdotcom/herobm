@@ -1,0 +1,455 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+PASS test/accounts.e2e-spec.ts
+[Nest] 14976  - 03/17/2026, 5:30:27 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: ORD-20260317-0273,E2E Audit Order,e381a96a-9448-4089-94bb-83cbd2ab4640,draft,0,e56f874a-a65e-4b52-bfae-5f775746b28c,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:309:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:307:20) {
+  query: 'insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'ORD-20260317-0273',
+    'E2E Audit Order',
+    'e381a96a-9448-4089-94bb-83cbd2ab4640',
+    'draft',
+    '0',
+    'e56f874a-a65e-4b52-bfae-5f775746b28c',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: duplicate key value violates unique constraint "sales_orders_order_number_key"
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '23505',
+    detail: 'Key (order_number)=(ORD-20260317-0273) already exists.',
+    schema_name: 'modbm_core',
+    table_name: 'sales_orders',
+    constraint_name: 'sales_orders_order_number_key',
+    file: 'nbtinsert.c',
+    line: '666',
+    routine: '_bt_check_unique'
+  }
+}
+PASS test/products.e2e-spec.ts
+FAIL test/audit.e2e-spec.ts
+  ΓùÅ Audit Events (e2e) ΓÇ║ Order Audit ΓÇ║ should record clean diff for order name change
+
+    TypeError: Cannot read properties of undefined (reading 'find')
+
+      144 |         .set('Authorization', `Bearer ${adminToken}`);
+      145 |
+    > 146 |       const updatedEvent = res.body.events.find(
+          |                                            ^
+      147 |         (e: any) => e.eventType === 'updated',
+      148 |       );
+      149 |       expect(updatedEvent).toBeDefined();
+
+      at Object.<anonymous> (audit.e2e-spec.ts:146:44)
+
+[Nest] 2548  - 03/17/2026, 5:30:28 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: ORD-20260317-0274,E2E Picking Test Order,e381a96a-9448-4089-94bb-83cbd2ab4640,draft,0,e56f874a-a65e-4b52-bfae-5f775746b28c,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:309:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:307:20) {
+  query: 'insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'ORD-20260317-0274',
+    'E2E Picking Test Order',
+    'e381a96a-9448-4089-94bb-83cbd2ab4640',
+    'draft',
+    '0',
+    'e56f874a-a65e-4b52-bfae-5f775746b28c',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: duplicate key value violates unique constraint "sales_orders_order_number_key"
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '23505',
+    detail: 'Key (order_number)=(ORD-20260317-0274) already exists.',
+    schema_name: 'modbm_core',
+    table_name: 'sales_orders',
+    constraint_name: 'sales_orders_order_number_key',
+    file: 'nbtinsert.c',
+    line: '666',
+    routine: '_bt_check_unique'
+  }
+}
+FAIL test/orders-write.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ GET /api/sales-orders/:id?source=app ΓÇö retrieves the order with lines and events
+
+    expected 200 "OK", got 404 "Not Found"
+
+      178 |         .get(`/api/sales-orders/${orderId}?source=app`)
+      179 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 180 |         .expect(200);
+          |          ^
+      181 |
+      182 |       expect(res.body.salesOrderId).toBe(orderId);
+      183 |       expect(res.body.orderNumber).toBe(orderNumber);
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:180:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ GET /api/sales-orders/:id/sales-quote-report?source=app ΓÇö generates a PDF
+
+    expected 200 "OK", got 404 "Not Found"
+
+      203 |         .get(`/api/sales-orders/${orderId}/sales-quote-report?source=app`)
+      204 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 205 |         .expect(200);
+          |          ^
+      206 |
+      207 |       expect(res.header['content-type']).toBe('application/pdf');
+      208 |       expect(res.header['content-disposition']).toContain(
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:205:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ GET /api/sales-orders/:id/sales-invoice-report?source=app ΓÇö generates a PDF
+
+    expected 200 "OK", got 404 "Not Found"
+
+      216 |         .get(`/api/sales-orders/${orderId}/sales-invoice-report?source=app`)
+      217 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 218 |         .expect(200);
+          |          ^
+      219 |
+      220 |       expect(res.header['content-type']).toBe('application/pdf');
+      221 |       expect(res.header['content-disposition']).toContain(
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:218:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ PATCH /api/sales-orders/:id ΓÇö updates order header
+
+    expected 200 "OK", got 404 "Not Found"
+
+      233 |           customerOrderNumber: 'CUST-PO-12345',
+      234 |         })
+    > 235 |         .expect(200);
+          |          ^
+      236 |
+      237 |       expect(res.body.name).toBe('E2E Test Order ΓÇö Updated');
+      238 |       expect(res.body.customerOrderNumber).toBe('CUST-PO-12345');
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:235:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ POST /api/sales-orders/:id/lines ΓÇö adds a third line
+
+    expected 201 "Created", got 404 "Not Found"
+
+      249 |           pricePerUnit: '15.00',
+      250 |         })
+    > 251 |         .expect(201);
+          |          ^
+      252 |
+      253 |       expect(res.body).toHaveProperty('salesOrderLineId');
+      254 |       expect(res.body.lineNumber).toBe(3);
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:251:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ PATCH /api/sales-orders/:id/lines/:lineId ΓÇö updates a line
+
+    expected 200 "OK", got 404 "Not Found"
+
+      261 |         .set('Authorization', `Bearer ${adminToken}`)
+      262 |         .send({ quantity: '14', pricePerUnit: '15.00' })
+    > 263 |         .expect(200);
+          |          ^
+      264 |
+      265 |       // 14 ├ù 15.00 = 210.00
+      266 |       expect(parseFloat(res.body.amount)).toBeCloseTo(210.0, 2);
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:263:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ DELETE /api/sales-orders/:id/lines/:lineId ΓÇö removes a line
+
+    expected 200 "OK", got 404 "Not Found"
+
+      271 |         .delete(`/api/sales-orders/${orderId}/lines/${addedLineId}`)
+      272 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 273 |         .expect(200);
+          |          ^
+      274 |
+      275 |       // Verify line count is back to 2
+      276 |       const detail = await request(app.getHttpServer())
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:273:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ PATCH /api/sales-orders/:id/state ΓÇö transitions through the full lifecycle
+
+    expected 200 "OK", got 404 "Not Found"
+
+      302 |           .set('Authorization', `Bearer ${adminToken}`)
+      303 |           .send({ stateCode: nextState })
+    > 304 |           .expect(200);
+          |            ^
+      305 |         expect(res.body.stateCode).toBe(nextState);
+      306 |       }
+      307 |     });
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:304:12)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ event log captures the full history
+
+    expected 200 "OK", got 404 "Not Found"
+
+      311 |         .get(`/api/sales-orders/${orderId}?source=app`)
+      312 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 313 |         .expect(200);
+          |          ^
+      314 |
+      315 |       const eventTypes = res.body.events.map((e: any) => e.eventType);
+      316 |       expect(eventTypes).toContain('created');
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:313:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+PASS test/app.e2e-spec.ts
+FAIL test/picking.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ GET /api/sales-orders/:id/picking ΓÇö shows unpicked summary
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ PATCH picking/lines/:lineId ΓÇö partial pick
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped BLOCKED when lines incomplete
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ POST picking/lines/:lineId/pick-all ΓÇö pick remaining for line 1
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ pick line 2 fully
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped ALLOWED when all lines picked
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ shipped ΓåÆ invoiced completes lifecycle
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      122 |         ],
+      123 |       })
+    > 124 |       .expect(201);
+          |        ^
+      125 |
+      126 |     const orderId = res.body.salesOrderId;
+      127 |
+
+      at createPickingOrder (picking.e2e-spec.ts:124:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:157:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+Test Suites: 3 failed, 3 passed, 6 total
+Tests:       17 failed, 77 passed, 94 total
+Snapshots:   0 total
+Time:        4.745 s, estimated 5 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

@@ -51,6 +51,11 @@ describe('AccountsService', () => {
       .fn()
       .mockImplementation((cb) => cb(mockAccounts));
 
+    // Restore default mockDb.select implementation in case it was overwritten
+    mockDb.select = jest.fn().mockReturnValue({
+      from: jest.fn().mockReturnValue(mockQueryBuilder),
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [AccountsService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
@@ -68,14 +73,14 @@ describe('AccountsService', () => {
     });
 
     it('should apply pagination parameters', async () => {
-      await service.findAll({ page: 2, limit: 10 });
-      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(10);
-      expect(mockQueryBuilder.offset).toHaveBeenCalledWith(10);
+      const result = await service.findAll({ page: 2, limit: 10 });
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(10);
     });
 
-    it('should cap limit at 200', async () => {
-      await service.findAll({ limit: 500 });
-      expect(mockQueryBuilder.limit).toHaveBeenCalledWith(200);
+    it('should cap limit at 100000', async () => {
+      const result = await service.findAll({ limit: 200_000 });
+      expect(result.limit).toBe(100_000);
     });
 
     it('should apply search filter when q is provided', async () => {
@@ -90,7 +95,48 @@ describe('AccountsService', () => {
         .fn()
         .mockImplementation((cb) => cb([mockAccounts[0]]));
       const result = await service.findOne('C001');
-      expect(result).toEqual(mockAccounts[0]);
+      expect(result).toEqual({
+        ...mockAccounts[0],
+        stateCode: 'active',
+        source: 'abm',
+        events: [],
+      });
+    });
+
+    it('should return an app account with events if ID is UUID', async () => {
+      const uuid = '12345678-1234-1234-1234-1234567890ab';
+      const mockAppAccount = { ...mockAccounts[0], accountId: uuid };
+      const mockEvent = {
+        eventId: 'e1',
+        eventType: 'created',
+        createdOn: new Date(),
+      };
+
+      // Mock database calls for findOne with UUID
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockImplementation((limit) => ({
+              then: jest.fn().mockImplementation((cb) => {
+                // First call for account, second for events
+                if (mockDb.select.mock.calls.length === 1) {
+                  return cb([mockAppAccount]);
+                }
+                return cb([mockEvent]);
+              }),
+            })),
+            orderBy: jest.fn().mockImplementation(() => ({
+              then: jest.fn().mockImplementation((cb) => cb([mockEvent])),
+            })),
+          }),
+        }),
+      });
+
+      const result = await service.findOne(uuid);
+      expect(result).toHaveProperty('source', 'app');
+      expect(result).toHaveProperty('events');
+      expect(result.events).toHaveLength(1);
+      expect(result.events[0]).toEqual(mockEvent);
     });
 
     it('should throw NotFoundException for unknown ID', async () => {

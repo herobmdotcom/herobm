@@ -26,7 +26,7 @@ import { SalesInvoiceService } from './sales-invoice.service';
  */
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('orders')
+@CasbinResource('sales-orders')
 export class ReportsController {
   constructor(
     private readonly pickingSlipService: PickingSlipService,

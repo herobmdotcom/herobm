@@ -8,7 +8,7 @@ describe('GstCategoriesService', () => {
 
   const mockCategories = [
     {
-      gstCategoryId: 'uuid-gst-1',
+      gstCategoryId: '550e8400-e29b-41d4-a716-446655440000',
       code: 'GST',
       title: 'GST 10%',
       type: 'gst_applies',
@@ -16,7 +16,7 @@ describe('GstCategoriesService', () => {
       isDefault: true,
     },
     {
-      gstCategoryId: 'uuid-gst-2',
+      gstCategoryId: '550e8400-e29b-41d4-a716-446655440001',
       code: 'EXE',
       title: 'Exempt',
       type: 'exempt',
@@ -24,7 +24,7 @@ describe('GstCategoriesService', () => {
       isDefault: false,
     },
     {
-      gstCategoryId: 'uuid-gst-3',
+      gstCategoryId: '550e8400-e29b-41d4-a716-446655440002',
       code: 'ZRO',
       title: 'Zero Rated',
       type: 'zero_rated',
@@ -83,7 +83,9 @@ describe('GstCategoriesService', () => {
   describe('getById', () => {
     it('should return a category by ID', async () => {
       mockReturns([mockCategories[0]]);
-      const result = await service.getById('uuid-gst-1');
+      const result = await service.getById(
+        '550e8400-e29b-41d4-a716-446655440000',
+      );
       expect(result).toEqual(mockCategories[0]);
     });
 

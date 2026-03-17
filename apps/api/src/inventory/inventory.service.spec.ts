@@ -81,9 +81,9 @@ describe('InventoryService', () => {
       expect(mockQb.where).toHaveBeenCalled();
     });
 
-    it('should cap limit at 200', async () => {
-      await service.findAll({ limit: 500 });
-      expect(mockQb.limit).toHaveBeenCalledWith(200);
+    it('should cap limit at 100000', async () => {
+      await service.findAll({ limit: 200_000 });
+      expect(mockQb.limit).toHaveBeenCalledWith(100_000);
     });
 
     it('should filter by locationNo', async () => {

@@ -105,9 +105,9 @@ export default tseslint.config(
         },
         {
           // ADV-024: No hardcoded secrets in source code
-          // Targets properties or variables named like 'password' or 'secret' that have weak literal values.
-          selector: ":matches(Property[key.name=/password|secret|token|apiKey/i], VariableDeclarator[id.name=/password|secret|token|apiKey/i], AssignmentExpression[left.name=/password|secret|token|apiKey/i]) > Literal[value=/^(admin|viewer|password|changeme|secret|test|default)$/i]",
-          message: "ADV-024: Do not hardcode weak credentials or literal passwords in secret-related fields."
+          // Flag ANY string literal assigned to password/secret fields (not just weak ones)
+          selector: ":matches(Property[key.name=/password|secret|token|apiKey/i], VariableDeclarator[id.name=/password|secret|token|apiKey/i], AssignmentExpression[left.name=/password|secret|token|apiKey/i]) > Literal[value=/./]",
+          message: "ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional."
         }
       ]
     },

@@ -1,6 +1,17 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+  Post,
+  Patch,
+  Body,
+  Req,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AccountsService } from './accounts.service';
+import { AccountsWriteService } from './accounts-write.service';
 import {
   CasbinGuard,
   CasbinResource,
@@ -12,7 +23,10 @@ import { PaginationQuery } from '../common/pagination';
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('accounts')
 export class AccountsController {
-  constructor(private readonly accountsService: AccountsService) {}
+  constructor(
+    private readonly accountsService: AccountsService,
+    private readonly accountsWriteService: AccountsWriteService,
+  ) {}
 
   @Get()
   @CasbinAction('read')
@@ -24,5 +38,17 @@ export class AccountsController {
   @CasbinAction('read')
   findOne(@Param('id') id: string) {
     return this.accountsService.findOne(id);
+  }
+
+  @Post()
+  @CasbinAction('write')
+  create(@Body() dto: any, @Req() req: any) {
+    return this.accountsWriteService.create(dto, req.user.username);
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  update(@Param('id') id: string, @Body() dto: any, @Req() req: any) {
+    return this.accountsWriteService.update(id, dto, req.user.username);
   }
 }

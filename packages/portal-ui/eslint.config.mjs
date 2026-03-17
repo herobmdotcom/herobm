@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.mjs'],
+    ignores: ['dist/**', 'node_modules/**', 'eslint.config.mjs', '**/lib/api.ts'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -32,6 +32,11 @@ export default tseslint.config(
         {
           selector: "Literal[value=/€/], TemplateElement[value.raw=/€/]",
           message: "Do not hardcode currency symbols. Use the formatted amount from the backend or the shared currency formatter."
+        },
+        // ADV-041: Enforce API Client Usage
+        {
+          selector: "CallExpression[callee.name='fetch']",
+          message: "ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling."
         }
       ]
     },

@@ -278,3 +278,129 @@ export const outbox = modbmCore.table('outbox', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
 });
+
+// ---------------------------------------------------------------------------
+// products  (CDM: Product)
+// ---------------------------------------------------------------------------
+export const products = modbmCore.table('products', {
+  productId: uuid('product_id').primaryKey().defaultRandom(),
+  productNumber: text('product_number').unique().notNull(),
+  name: text('name').notNull(),
+  barcode: text('barcode'),
+  listPrice: numeric('list_price').default('0'),
+  standardCost: numeric('standard_cost').default('0'),
+  stateCode: text('state_code').notNull().default('active'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// product_events  (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const productEvents = modbmCore.table('product_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.productId),
+  eventType: text('event_type').notNull(), // created, updated, price_changed, etc.
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// accounts  (CDM: Account)
+// ---------------------------------------------------------------------------
+export const accounts = modbmCore.table('accounts', {
+  accountId: uuid('account_id').primaryKey().defaultRandom(),
+  accountNumber: text('account_number').unique().notNull(),
+  name: text('name').notNull(),
+  address1Line1: text('address1_line1'),
+  address1Line2: text('address1_line2'),
+  address1City: text('address1_city'),
+  address1StateOrProvince: text('address1_state_or_province'),
+  address1PostalCode: text('address1_postal_code'),
+  address1Country: text('address1_country'),
+  telephone1: text('telephone1'),
+  fax: text('fax'),
+  emailAddress1: text('email_address1'),
+  primaryContactName: text('primary_contact_name'),
+  primaryContactEmail: text('primary_contact_email'),
+  primaryContactPhone: text('primary_contact_phone'),
+  customerGroup: text('customer_group'),
+  stateCode: text('state_code').notNull().default('active'),
+  gstPosition: text('gst_position'),
+  currencyCode: text('currency_code').notNull().default('EUR'),
+  customerDiscount: numeric('customer_discount').default('0'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// account_events  (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const accountEvents = modbmCore.table('account_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id')
+    .notNull()
+    .references(() => accounts.accountId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// suppliers  (CDM: Vendor)
+// ---------------------------------------------------------------------------
+export const suppliers = modbmCore.table('suppliers', {
+  vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
+  vendorNumber: text('vendor_number').unique().notNull(),
+  name: text('name').notNull(),
+  address1Line1: text('address1_line1'),
+  address1Line2: text('address1_line2'),
+  address1City: text('address1_city'),
+  address1StateOrProvince: text('address1_state_or_province'),
+  address1PostalCode: text('address1_postal_code'),
+  address1Country: text('address1_country'),
+  telephone1: text('telephone1'),
+  fax: text('fax'),
+  emailAddress1: text('email_address1'),
+  paymentTerms: text('payment_terms'),
+  currencyCode: text('currency_code').notNull().default('EUR'),
+  stateCode: text('state_code').notNull().default('active'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// supplier_events  (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const supplierEvents = modbmCore.table('supplier_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  vendorId: uuid('vendor_id')
+    .notNull()
+    .references(() => suppliers.vendorId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// users  (Application users for portal auth + RBAC)
+// ---------------------------------------------------------------------------
+export const users = modbmCore.table('users', {
+  userId: uuid('user_id').primaryKey().defaultRandom(),
+  username: text('username').unique().notNull(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull(), // admin | sales | warehouse | procurement
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});

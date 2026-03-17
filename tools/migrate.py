@@ -47,6 +47,14 @@ def psql_file(filepath: str) -> None:
         "psql", "-U", DB_USER, "-d", DB_NAME,
         "-v", "ON_ERROR_STOP=1",
     ]
+    # Pass known env vars as psql variables for migration seeding
+    for env_key in [
+        "DEV_ADMIN_PASSWORD", "DEV_SALES_PASSWORD",
+        "DEV_WAREHOUSE_PASSWORD", "DEV_PROCUREMENT_PASSWORD",
+    ]:
+        val = os.environ.get(env_key, "")
+        if val:
+            cmd.extend(["-v", f"{env_key}={val}"])
     result = subprocess.run(cmd, input=sql, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"ERROR applying migration:\n{result.stderr.strip()}", file=sys.stderr)

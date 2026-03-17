@@ -16,6 +16,7 @@ import {
   orderEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
+import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
 import {
   writeEvent as sharedWriteEvent,
@@ -255,25 +256,30 @@ export class ReturnsWriteService {
     }
 
     const result = await this.db.transaction(async (tx: any) => {
+      const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
+
       const [updated] = await tx
         .update(salesOrderReturns)
         .set({
-          ...(dto.notes !== undefined && { notes: dto.notes }),
+          ...audit.changes,
           modifiedOn: new Date(),
         })
         .where(eq(salesOrderReturns.returnId, returnId))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        existing.salesOrderId,
-        'return_updated',
-        {
-          returnId,
-          changes: dto,
-        },
-        actor,
-      );
+      if (audit.hasChanges) {
+        await this.writeEvent(
+          tx,
+          existing.salesOrderId,
+          'return_updated',
+          {
+            returnId,
+            changes: audit.changes,
+            previousValues: audit.previousValues,
+          },
+          actor,
+        );
+      }
 
       return updated;
     });
@@ -486,14 +492,12 @@ export class ReturnsWriteService {
     }
 
     const result = await this.db.transaction(async (tx: any) => {
+      const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
+
       const [updated] = await tx
         .update(salesOrderReturnLines)
         .set({
-          ...(dto.quantityReturned !== undefined && {
-            quantityReturned: dto.quantityReturned,
-          }),
-          ...(dto.reason !== undefined && { reason: dto.reason }),
-          ...(dto.returnFee !== undefined && { returnFee: dto.returnFee }),
+          ...audit.changes,
         })
         .where(eq(salesOrderReturnLines.returnLineId, lineId))
         .returning();
@@ -503,22 +507,20 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(
-        tx,
-        ret.salesOrderId,
-        'return_line_updated',
-        {
-          returnId,
-          returnLineId: lineId,
-          changes: dto,
-          previousValues: {
-            quantityReturned: existingLine.quantityReturned,
-            reason: existingLine.reason,
-            returnFee: existingLine.returnFee,
+      if (audit.hasChanges) {
+        await this.writeEvent(
+          tx,
+          ret.salesOrderId,
+          'return_line_updated',
+          {
+            returnId,
+            returnLineId: lineId,
+            changes: audit.changes,
+            previousValues: audit.previousValues,
           },
-        },
-        actor,
-      );
+          actor,
+        );
+      }
 
       return updated;
     });

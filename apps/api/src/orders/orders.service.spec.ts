@@ -114,9 +114,9 @@ describe('OrdersService', () => {
       expect(appQb.where).toHaveBeenCalled();
     });
 
-    it('should cap limit at 200', async () => {
-      const result = await service.findAll({ limit: 999 });
-      expect(result.limit).toBe(200);
+    it('should cap limit at 100000', async () => {
+      const result = await service.findAll({ limit: 200_000 });
+      expect(result.limit).toBe(100_000);
     });
   });
 

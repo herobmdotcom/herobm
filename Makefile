@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal dev-supplier-portal docs-generate schema-ref migrate migrate-status migrate-dry test-all build-all
+.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api test-api test-api-cov test-api-e2e dev-portal docs-generate schema-ref migrate migrate-status migrate-dry test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -101,16 +101,10 @@ test-api-cov:
 test-api-e2e:
 	cd apps/api && npm run test:e2e
 
-# --- Portals ---
+# --- Portal (unified) ---
 
-dev-ops-portal:
+dev-portal:
 	cd apps/ops-portal && npm run dev
-
-dev-sales-portal:
-	cd apps/sales-portal && npm run dev
-
-dev-supplier-portal:
-	cd apps/supplier-portal && npm run dev
 
 # --- Migrations (modbm_core) ---
 
@@ -123,15 +117,34 @@ migrate-status:
 migrate-dry:
 	"$(VENV_PYTHON)" tools/migrate.py --dry-run
 
+# --- Typechecks & Builds ---
+
+typecheck-portal:
+	cd apps/ops-portal && npm run typecheck
+
+build-api:
+	cd apps/api && npm run build
+
+build-portal:
+	cd apps/ops-portal && npm run build
+
 # --- Quality Gates ---
 
-test-all: test-api
-	cd apps/ops-portal && npm run typecheck
-	cd apps/sales-portal && npm run typecheck
-	cd apps/supplier-portal && npm run typecheck
+# Scoped: API-only (unit tests + build)
+verify-api-only: test-api build-api
 
-build-all:
-	cd apps/api && npm run build
-	cd apps/ops-portal && npm run build
-	cd apps/sales-portal && npm run build
-	cd apps/supplier-portal && npm run build
+# Scoped: portal typecheck
+verify-portal: typecheck-portal
+
+# Full API verification (unit + e2e)
+verify-api: test-api test-api-e2e
+
+test-deps:
+	python infra/tests/test_dependency_completeness.py
+
+test-all: test-api test-deps typecheck-portal
+
+build-all: build-api build-portal
+
+# Full verification — use before deployment, not after every change
+verify-all: test-all build-all test-api-e2e test-infra
