@@ -12,7 +12,10 @@ import { CasbinGuard } from './casbin.guard';
     JwtModule.register({
       secret: (() => {
         const s = process.env.JWT_SECRET;
-        if (!s) throw new Error('FATAL: JWT_SECRET environment variable is not set. Check your .env file.');
+        if (!s)
+          throw new Error(
+            'FATAL: JWT_SECRET environment variable is not set. Check your .env file.',
+          );
         return s;
       })(),
       signOptions: { expiresIn: '8h' },

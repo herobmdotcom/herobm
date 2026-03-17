@@ -47,7 +47,10 @@ export async function getShippedPerLine(
 
     for (const line of lines) {
       const current = shippedMap.get(line.salesOrderLineId) ?? 0;
-      shippedMap.set(line.salesOrderLineId, current + parseFloat(line.quantityShipped));
+      shippedMap.set(
+        line.salesOrderLineId,
+        current + parseFloat(line.quantityShipped),
+      );
     }
   }
 
@@ -103,6 +106,7 @@ export async function writeEvent(
   eventType: string,
   payload: any,
   actor: string,
+  aggregateType: string = 'sales_order',
 ): Promise<void> {
   await tx.insert(orderEvents).values({
     salesOrderId,
@@ -112,7 +116,7 @@ export async function writeEvent(
   });
 
   await tx.insert(outbox).values({
-    aggregateType: 'sales_order_shipment',
+    aggregateType,
     aggregateId: salesOrderId,
     eventType,
     payload,
@@ -136,7 +140,11 @@ export async function findOrder(db: DrizzleDB, salesOrderId: string) {
   return rows[0];
 }
 
-export async function findOrderLine(db: DrizzleDB, lineId: string, salesOrderId: string) {
+export async function findOrderLine(
+  db: DrizzleDB,
+  lineId: string,
+  salesOrderId: string,
+) {
   const rows = await db
     .select()
     .from(salesOrderLineItems)

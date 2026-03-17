@@ -1,20 +1,19 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/orders/OrderTotalsCard';
-import ProductSearchInput from '@/components/orders/ProductSearchInput';
-import type { Product } from '@/components/orders/ProductSearchInput';
+import OrderTotalsCard from '@/components/purchase-orders/OrderTotalsCard';
+import ProductSearchInput from '@/components/purchase-orders/ProductSearchInput';
+import type { Product } from '@/components/purchase-orders/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
-
-import PickingSection from '@/components/orders/PickingSection';
 
 interface OrderLine {
   salesOrderLineId: string;
   lineNumber: number;
   productId: string;
+  productNumber?: string;
   productDescription: string;
   quantity: string;
   pricePerUnit: string;
@@ -55,7 +54,6 @@ interface OrderDetail {
   orderNumber: string;
   name: string | null;
   customerId: string | null;
-  customerName: string | null;
   customerOrderNumber: string | null;
   stateCode: string;
   currencyCode: string;
@@ -112,19 +110,16 @@ const RETURN_STATE_TRANSITIONS: Record<string, string[]> = {
 };
 
 const STATE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['quoted', 'cancelled'],
-  quoted: ['confirmed', 'draft', 'cancelled'],
-  confirmed: ['picking', 'cancelled'],
-  picking: ['shipped', 'confirmed'],
-  shipped: ['invoiced'],
-  invoiced: [],
+  draft: ['ordered', 'cancelled'],
+  ordered: ['received', 'cancelled'],
+  received: [],
   cancelled: ['draft'],
   legacy: [],
 };
 
 const ORDER_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, quoted: 2, confirmed: 3,
-  picking: 4, shipped: 5, invoiced: 6, legacy: 7,
+  cancelled: 0, draft: 1, ordered: 2,
+  received: 3, legacy: 4,
 };
 
 const RETURN_LIFECYCLE: Record<string, number> = {
@@ -139,8 +134,6 @@ function isBackTransition(
 }
 
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-
 
 function StateBadge({ state }: { state: string }) {
   return <span className={`badge badge-${state}`}>{state}</span>;
@@ -157,22 +150,12 @@ function EventIcon({ type }: { type: string }) {
     quoted: '📨',
     confirmed: '✅',
     cancelled: '❌',
-    shipment_created: '🚚',
-    shipment_updated: '🚚',
-    shipment_dispatched: '🚚',
-    shipment_status_changed: '🔄',
-    shipment_line_added: '🚚',
-    shipment_line_updated: '🚚',
-    shipment_line_removed: '🚚',
-    picking_line_updated: '🧺',
-    picking_line_picked_all: '🧺',
-    picking_order_picked_all: '🧺',
     return_created: '↩️',
-    return_updated: '✏️',
+    return_updated: '📝',
     return_status_changed: '🔄',
     return_processed: '✅',
     return_line_added: '➕',
-    return_line_updated: '✏️',
+    return_line_updated: '📝',
     return_line_removed: '🗑️',
   };
   return <span>{icons[type] || '📌'}</span>;
@@ -195,6 +178,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [latestAutoTransition, setLatestAutoTransition] = useState<{
+    ruleName: string;
+    from: string;
+    to: string;
+    reason: string;
+  } | null>(null);
 
   // Editable header fields
   const [editName, setEditName] = useState('');
@@ -226,21 +215,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     originalAmount: number;
   }>>([])
 
-  // Toast notification state
-  const [toastData, setToastData] = useState<{ message: React.ReactNode } | null>(null);
-  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = (message: React.ReactNode) => {
-    setToastData({ message });
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    toastTimeoutRef.current = setTimeout(() => setToastData(null), 6000);
-  };
-
-  const loadOrder = async (autoTransitions?: any[]) => {
-    setLoading(true);
+  const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
+    if (showSpinner) setLoading(true);
     try {
       const data = await apiFetch<OrderDetail>(
-        `/api/orders/${encodeURIComponent(id)}?source=${source}`,
+        `/api/purchase-orders/${encodeURIComponent(id)}?source=${source}`,
       );
       setOrder(data);
       setEditName(data.name || '');
@@ -249,21 +228,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       setHeaderDirty(false);
 
       if (autoTransitions && autoTransitions.length > 0) {
-        showToast(
-          <>Automatically moved to <strong>{cap(autoTransitions[0].to)}</strong> because {autoTransitions[0].reason.toLowerCase()}.</>
-        );
+        setLatestAutoTransition(autoTransitions[0]);
+        setTimeout(() => setLatestAutoTransition(null), 5000);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load order');
     } finally {
-      setLoading(false);
+      if (showSpinner) setLoading(false);
     }
   };
 
   const loadReturns = async () => {
     setReturnsLoading(true);
     try {
-      const data = await apiFetch<OrderReturn[]>(`/api/orders/${encodeURIComponent(id)}/returns`);
+      const data = await apiFetch<OrderReturn[]>(`/api/purchase-orders/${encodeURIComponent(id)}/returns`);
       setReturns(data);
     } catch (err) {
       // Returns might not exist yet, that's fine
@@ -279,9 +257,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id, source]);
 
-  // Load returns when order is invoiced
+  // Load returns when order is received
   useEffect(() => {
-    if (order?.stateCode === 'invoiced' || order?.stateCode === 'legacy') {
+    if (order?.stateCode === 'received' || order?.stateCode === 'legacy') {
       loadReturns();
     }
   }, [order?.stateCode, source]);
@@ -300,13 +278,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       .finally(() => setInventoryLoading(false));
   }, [activeTab, order]);
 
-  // Order details (name, PO, notes) editable until cancelled
-  const isOrderDetailsEditable = source === 'app'
-    && !['cancelled', 'legacy'].includes(order?.stateCode ?? '');
-
-  // Line items only editable in draft
-  const isOrderLinesEditable = source === 'app'
-    && order?.stateCode === 'draft';
+  // Header editable in all states except cancelled and legacy
+  const isHeaderEditable = source === 'app' && order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
+  // Lines editable only in draft
+  const isLinesEditable = source === 'app' && order?.stateCode === 'draft';
 
   // Track header changes
   useEffect(() => {
@@ -323,12 +298,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!headerDirty) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/orders/${id}`, 'PATCH', {
+      await apiMutate(`/api/purchase-orders/${id}`, 'PATCH', {
         name: editName || undefined,
         customerOrderNumber: editPO || undefined,
         notes: editNotes || undefined,
       });
-      await loadOrder();
+      await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update order');
     } finally {
@@ -339,9 +314,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   // State transitions
   const changeState = async (newState: string) => {
     try {
-      await apiMutate(`/api/orders/${id}/state`, 'PATCH', { stateCode: newState });
-      showToast(<>Order moved to <strong>{cap(newState)}</strong></>);
-      await loadOrder();
+      await apiMutate(`/api/purchase-orders/${id}/state`, 'PATCH', { stateCode: newState });
+      await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change state');
     }
@@ -352,22 +326,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!order) return;
     setCopying(true);
     try {
-      const newOrder = await apiMutate<{ salesOrderId: string }>('/api/orders', 'POST', {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const newOrder = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
+        orderNumber: `PO-${today}-${rand}`,
         name: order.name ? `Copy of ${order.name}` : undefined,
-        customerId: order.customerId || undefined,
-        customerOrderNumber: order.customerOrderNumber || undefined,
+        vendorId: (order as any).vendorId || undefined,
+        currencyCode: order.currencyCode || 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
           productId: l.productId,
           productDescription: l.productDescription,
           quantity: l.quantity,
           pricePerUnit: l.pricePerUnit,
-          discountPercentage: l.discountPercentage || '0',
-          gstCategoryId: l.gstCategoryId || undefined,
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
       });
-      router.push(`/orders/${newOrder.salesOrderId}?source=app`);
+      router.push(`/purchase-orders/${newOrder.purchaseOrderId}?source=app`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to copy order');
     } finally {
@@ -379,8 +354,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
-      await loadOrder();
+      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
+      await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update line');
     } finally {
@@ -393,8 +368,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setSaving(true);
     setError('');
     try {
-      await apiMutate(`/api/orders/${id}/lines/${lineId}`, 'DELETE');
-      await loadOrder();
+      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'DELETE');
+      await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove line');
     } finally {
@@ -405,7 +380,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const addLineFromProduct = async (p: Product) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/orders/${id}/lines`, 'POST', {
+      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
         productId: p.productId,
         productDescription: p.name,
         quantity: '1',
@@ -413,7 +388,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         discountPercentage: '0',
         unitOfMeasure: 'EA',
       });
-      await loadOrder();
+      await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add line');
     } finally {
@@ -456,8 +431,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     (sum, l) => sum + parseFloat(l.tax || '0'), 0,
   );
 
-
-
   return (
     <Shell>
       <div className="flex items-center justify-between mb-6">
@@ -491,7 +464,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           >
             {copying ? 'Copying…' : '📋 Copy Order'}
           </button>
-          {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && !showCreateReturn && (
+          {(order.stateCode === 'received' || order.stateCode === 'legacy') && !showCreateReturn && (
             <button
               className="btn btn-secondary btn-sm"
               onClick={() => {
@@ -511,7 +484,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               ↩ Create Return
             </button>
           )}
-          {headerDirty && isOrderDetailsEditable && (
+          {headerDirty && isHeaderEditable && (
             <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
               💾 Save
             </button>
@@ -570,7 +543,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer
+                    Supplier
                     {order.currencyCode && (
                       <span
                         style={{
@@ -587,45 +560,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {order.currencyCode}
                       </span>
                     )}
-                    {order.gstCategoryId && (() => {
-                      const c = gstCategories.find((g) => g.gstCategoryId === order.gstCategoryId);
-                      return c?.type === 'exempt' ? (
-                        <span
-                          style={{
-                            marginLeft: 4,
-                            padding: '1px 6px',
-                            borderRadius: 4,
-                            background: 'rgba(245,158,11,0.15)',
-                            color: '#f59e0b',
-                            fontWeight: 600,
-                            fontSize: 10,
-                            letterSpacing: '0.04em',
-                          }}
-                        >
-                          EXEMPT
-                        </span>
-                      ) : null;
-                    })()}
-                    {parseFloat(order.customerDiscount || '0') > 0 && (
-                      <span
-                        style={{
-                          marginLeft: 4,
-                          padding: '1px 6px',
-                          borderRadius: 4,
-                          background: 'rgba(74,222,128,0.15)',
-                          color: '#4ade80',
-                          fontWeight: 600,
-                          fontSize: 10,
-                          letterSpacing: '0.04em',
-                        }}
-                      >
-                        {parseFloat(order.customerDiscount!)}% disc
-                      </span>
-                    )}
                   </label>
                   <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {order.customerName ? `${order.customerName} (${order.customerId})` : order.customerId || '—'}
+                    {(order as any).vendorId || '—'}
                   </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Invoice #
+                  </label>
+                  <input
+                    className="input"
+                    value={editPO}
+                    onChange={(e) => setEditPO(e.target.value)}
+                    onBlur={saveHeader}
+                    disabled={!isHeaderEditable}
+                    placeholder="Supplier invoice reference"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Order Name
+                  </label>
+                  <input
+                    className="input"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onBlur={saveHeader}
+                    disabled={!isHeaderEditable}
+                    placeholder="Order name"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -635,42 +599,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
                   </p>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Order Name
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!isOrderDetailsEditable}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={saveHeader}
-                    placeholder="Order name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer PO #
-                  </label>
-                  <input
-                    className="input"
-                    disabled={!isOrderDetailsEditable}
-                    value={editPO}
-                    onChange={(e) => setEditPO(e.target.value)}
-                    onBlur={saveHeader}
-                    placeholder="Customer purchase order"
-                  />
-                </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     Notes
                   </label>
                   <input
                     className="input"
-                    disabled={!isOrderDetailsEditable}
                     value={editNotes}
                     onChange={(e) => setEditNotes(e.target.value)}
                     onBlur={saveHeader}
+                    disabled={!isHeaderEditable}
                     placeholder="Internal notes"
                   />
                 </div>
@@ -714,7 +652,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 📦 Availability
               </button>
             </div>
-            {isOrderLinesEditable && activeTab === 'lines' && (
+            {isLinesEditable && activeTab === 'lines' && (
               <ProductSearchInput
                 onSelect={addLineFromProduct}
                 placeholder="Add product… (search)"
@@ -732,10 +670,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <th>Description</th>
                   <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
                   <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
-                  <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>GST</th>
                   <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
-                  {isOrderLinesEditable && <th style={{ width: 50 }}></th>}
+                  {isLinesEditable && <th style={{ width: 50 }}></th>}
                 </tr>
               </thead>
               <tbody>
@@ -743,111 +679,46 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <tr key={line.salesOrderLineId}>
                     <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                     <td style={{ fontWeight: 600, fontSize: 12 }}>
-                      {line.productId?.substring(0, 8) || '—'}
+                      {line.productNumber || line.productId?.substring(0, 8) || '—'}
                     </td>
                     <td>{line.productDescription || '—'}</td>
-                    {isOrderLinesEditable ? (
-                      <>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            step="1"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={line.quantity}
-                            key={`qty-${line.salesOrderLineId}-${line.quantity}`}
-                            onBlur={(e) => {
-                              if (e.target.value !== line.quantity) {
-                                updateLine(line.salesOrderLineId, 'quantity', e.target.value);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
-                            key={`price-${line.salesOrderLineId}-${line.pricePerUnit}`}
-                            onBlur={(e) => {
-                              const val = parseFloat(e.target.value);
-                              const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
-                              e.target.value = formatted;
-                              if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
-                                updateLine(line.salesOrderLineId, 'pricePerUnit', formatted);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={line.discountPercentage || '0'}
-                            key={`disc-${line.salesOrderLineId}-${line.discountPercentage}`}
-                            onBlur={(e) => {
-                              if (e.target.value !== (line.discountPercentage || '0')) {
-                                updateLine(line.salesOrderLineId, 'discountPercentage', e.target.value);
-                              }
-                            }}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {line.quantity}
-                        </td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
-                        </td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {line.discountPercentage || '0'}%
-                        </td>
-                      </>
-                    )}
-                    {isOrderLinesEditable ? (
-                      <td style={{ textAlign: 'right' }}>
-                        <select
-                          className="input"
-                          style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                          value={line.gstCategoryId || ''}
-                          onChange={(e) => {
-                            updateLine(line.salesOrderLineId, 'gstCategoryId', e.target.value);
-                          }}
-                        >
-                          {gstCategories.map((c) => (
-                            <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                              {gstLabel(c)}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    ) : (
-                      <td style={{ textAlign: 'right', fontSize: 12 }}>
-                        {(() => {
-                          const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
-                          if (c) return gstLabel(c);
-                          // ABM legacy: derive effective rate from tax / amount
-                          const amt = parseFloat(line.amount || '0');
-                          const tax = parseFloat(line.tax || '0');
-                          if (amt > 0 && tax > 0) {
-                            const pct = (tax / amt) * 100;
-                            return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                    <td style={{ textAlign: 'right' }}>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        step="1"
+                        style={{ width: '100%', textAlign: 'right' }}
+                        defaultValue={line.quantity}
+                        key={`qty-${line.salesOrderLineId}-${line.quantity}`}
+                        disabled={!isLinesEditable}
+                        onBlur={(e) => {
+                          if (e.target.value !== line.quantity) {
+                            updateLine(line.salesOrderLineId, 'quantity', e.target.value);
                           }
-                          if (amt > 0 && tax === 0) return 'Exempt';
-                          return '—';
-                        })()}
-                      </td>
-                    )}
+                        }}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <input
+                        className="input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        style={{ width: '100%', textAlign: 'right' }}
+                        defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
+                        key={`price-${line.salesOrderLineId}-${line.pricePerUnit}`}
+                        disabled={!isLinesEditable}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
+                          e.target.value = formatted;
+                          if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
+                            updateLine(line.salesOrderLineId, 'pricePerUnit', formatted);
+                          }
+                        }}
+                      />
+                    </td>
                     <td
                       style={{
                         textAlign: 'right',
@@ -857,7 +728,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     >
                       {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
                     </td>
-                    {isOrderLinesEditable && (
+                    {isLinesEditable && (
                       <td>
                         <button
                           className="btn btn-danger btn-sm"
@@ -873,7 +744,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {order.lines.length === 0 && (
                   <tr>
                     <td
-                      colSpan={isOrderLinesEditable ? 9 : 8}
+                      colSpan={isLinesEditable ? 6 : 5}
                       style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                     >
                       No line items — use the search above to add products
@@ -996,16 +867,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} currencyCode={order.currencyCode || 'EUR'} />
 
-        {/* Picking section */}
-        <PickingSection
-          orderId={order.salesOrderId || id}
-          orderState={order.stateCode}
-          orderLines={order.lines}
-          onOrderUpdated={loadOrder}
-        />
+
 
         {/* Returns section — only shown when returns exist or creating one */}
-        {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
+        {(order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
           <div className="card mb-6">
             <h3
               className="text-sm font-semibold mb-4"
@@ -1059,7 +924,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                               reason: l.reason || undefined,
                               returnFee: l.returnFee || '0',
                             }));
-                          await apiMutate(`/api/orders/${id}/returns`, 'POST', {
+                          await apiMutate(`/api/purchase-orders/${id}/returns`, 'POST', {
                             notes: newReturnNotes || undefined,
                             lines,
                           });
@@ -1067,7 +932,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           setNewReturnLines([]);
                           setNewReturnNotes('');
                           await loadReturns();
-                          await loadOrder();
+                          await loadOrder(undefined, false);
                         } catch (err) {
                           setError(err instanceof Error ? err.message : 'Failed to create return');
                         } finally {
@@ -1245,9 +1110,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                               className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
                               onClick={async () => {
                                 try {
-                                  await apiMutate(`/api/orders/${id}/returns/${ret.returnId}/state`, 'PATCH', { stateCode: s });
+                                  await apiMutate(`/api/purchase-orders/${id}/returns/${ret.returnId}/state`, 'PATCH', { stateCode: s });
                                   await loadReturns();
-                                  await loadOrder();
+                                  await loadOrder(undefined, false);
                                 } catch (err) {
                                   setError(err instanceof Error ? err.message : 'Failed to change return state');
                                 }
@@ -1303,7 +1168,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         if (e.target.value !== rl.quantityReturned) {
                                           try {
                                             await apiMutate(
-                                              `/api/orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
                                               'PATCH',
                                               { quantityReturned: e.target.value },
                                             );
@@ -1329,7 +1194,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         if (e.target.value !== (rl.reason || '')) {
                                           try {
                                             await apiMutate(
-                                              `/api/orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
                                               'PATCH',
                                               { reason: e.target.value },
                                             );
@@ -1361,7 +1226,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         if (formatted !== parseFloat(rl.returnFee || '0').toFixed(2)) {
                                           try {
                                             await apiMutate(
-                                              `/api/orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
                                               'PATCH',
                                               { returnFee: formatted },
                                             );
@@ -1391,7 +1256,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         if (!confirm('Remove this return line?')) return;
                                         try {
                                           await apiMutate(
-                                            `/api/orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                            `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
                                             'DELETE',
                                           );
                                           await loadReturns();
@@ -1471,20 +1336,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         {/* Audit timeline — only for app orders */}
-        {source === 'app' && (
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
+        {source === 'app' && (order.events?.length ?? 0) > 0 && (
+          <details className="card">
+            <summary
+              className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
               style={{
                 color: 'var(--text-muted)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
+                listStyle: 'none',
               }}
             >
+              <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
               Activity Timeline
-            </h3>
-            <div className="space-y-3">
-              {[...order.events].reverse().map((event) => {
+              <span style={{ fontSize: 11, fontWeight: 400 }}>({order.events!.length})</span>
+            </summary>
+            <div className="space-y-3" style={{ marginTop: 16 }}>
+              {[...order.events!].reverse().map((event) => {
                 const hasPayload = event.payload && Object.keys(event.payload).length > 0;
                 return (
                   <details
@@ -1539,49 +1407,36 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </details>
                 );
               })}
-              {order.events.length === 0 && (
+              {order.events!.length === 0 && (
                 <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                   No events recorded
                 </p>
               )}
             </div>
-          </div>
+          </details>
         )}
       </div>
 
-        {/* Global Toast Notification */}
-        <div
-          className="global-order-toast"
-          style={{
-            position: 'fixed',
-            top: '24px',
-            left: '50%',
-            transform: `translateX(-50%) ${toastData ? 'translateY(0)' : 'translateY(-150%)'}`,
-            opacity: toastData ? 1 : 0,
-            background: '#0ea5e9',
-            color: '#ffffff',
-            border: 'none',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-            borderRadius: '12px',
-            padding: '16px 24px',
-            zIndex: 999999,
-            display: 'flex',
-            flexDirection: 'column' as const,
-            gap: '4px',
-            pointerEvents: toastData ? 'auto' as const : 'none' as const,
-            transition: 'transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 300ms ease-out',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18 }}>⚡</span>
-            <strong style={{ fontSize: 14, color: '#ffffff' }}>
-              Order State Updated
-            </strong>
-          </div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', margin: 0, lineHeight: 1.4 }}>
-            {toastData?.message}
-          </p>
+      {/* Global Toast Notification for Auto-Transitions */}
+      <div
+        className={`fixed bottom-6 right-6 rounded-lg p-4 max-w-[400px] z-[60] flex flex-col gap-1 pointer-events-none shadow-lg border border-[var(--border)] transition-all duration-300 ease-out ${latestAutoTransition ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+          }`}
+        style={{ background: 'var(--bg-card)' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>⚡</span>
+          <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+            Order State Updated
+          </strong>
         </div>
+        <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+          {latestAutoTransition && (
+            <>
+              Automatically moved to <strong>{cap(latestAutoTransition.to)}</strong> because {latestAutoTransition.reason.toLowerCase()}.
+            </>
+          )}
+        </p>
+      </div>
     </Shell>
   );
 }

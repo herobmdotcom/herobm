@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ReturnsWriteService } from './returns-write.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import {
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 // ---------------------------------------------------------------------------
 // Mock helpers (reuse pattern from orders-write.service.spec.ts)
@@ -28,7 +25,9 @@ function createMockQueryBuilder(resolvedValue: any = []) {
 
 function createMockTx() {
   return {
-    select: jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(createMockQueryBuilder([])) }),
+    select: jest.fn().mockReturnValue({
+      from: jest.fn().mockReturnValue(createMockQueryBuilder([])),
+    }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
@@ -38,11 +37,15 @@ function createMockTx() {
 function createMockDb() {
   const selectQb = createMockQueryBuilder([]);
   const db: any = {
-    select: jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(selectQb) }),
+    select: jest
+      .fn()
+      .mockReturnValue({ from: jest.fn().mockReturnValue(selectQb) }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    transaction: jest.fn().mockImplementation(async (cb: any) => cb(createMockTx())),
+    transaction: jest
+      .fn()
+      .mockImplementation(async (cb: any) => cb(createMockTx())),
     _selectQb: selectQb,
   };
   return db;
@@ -99,7 +102,10 @@ describe('ReturnsWriteService', () => {
   /**
    * Flexible select-chain mock that maps call indices to results.
    */
-  function mockSelectChain(responses: Record<number, any[]>, fallback: any[] = []) {
+  function mockSelectChain(
+    responses: Record<number, any[]>,
+    fallback: any[] = [],
+  ) {
     let call = 0;
     mockDb.select = jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation(() => {
@@ -115,14 +121,18 @@ describe('ReturnsWriteService', () => {
 
   function mockTransaction(result: any) {
     const mockTx = createMockTx();
-    const txInsertQb = createMockQueryBuilder(Array.isArray(result) ? result : [result]);
+    const txInsertQb = createMockQueryBuilder(
+      Array.isArray(result) ? result : [result],
+    );
     let insertCount = 0;
     mockTx.insert = jest.fn().mockImplementation(() => {
       insertCount++;
       if (insertCount === 1) return txInsertQb;
       return createMockQueryBuilder([]);
     });
-    mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => cb(mockTx));
+    mockDb.transaction = jest
+      .fn()
+      .mockImplementation(async (cb: any) => cb(mockTx));
     return mockTx;
   }
 
@@ -165,24 +175,30 @@ describe('ReturnsWriteService', () => {
   describe('createReturn', () => {
     const validDto = {
       notes: 'Customer returned items',
-      lines: [{
-        salesOrderLineId: 'line-001',
-        quantityReturned: '5',
-        reason: 'Defective',
-        returnFee: '10.00',
-      }],
+      lines: [
+        {
+          salesOrderLineId: 'line-001',
+          quantityReturned: '5',
+          reason: 'Defective',
+          returnFee: '10.00',
+        },
+      ],
     };
 
-    function setupCreate(opts?: { orderState?: string; alreadyReturned?: string; originalQty?: string }) {
+    function setupCreate(opts?: {
+      orderState?: string;
+      alreadyReturned?: string;
+      originalQty?: string;
+    }) {
       const orderState = opts?.orderState ?? 'invoiced';
       const alreadyReturned = opts?.alreadyReturned ?? '0';
       const originalQty = opts?.originalQty ?? '10';
 
       mockSelectChain({
-        1: [{ ...INVOICED_ORDER, stateCode: orderState }],    // findOrder
-        2: [{ ...ORDER_LINE, quantity: originalQty }],          // findOrderLine
-        3: [{ total: alreadyReturned }],                        // getAlreadyReturnedQty
-        4: [],                                                   // generateReturnNumber
+        1: [{ ...INVOICED_ORDER, stateCode: orderState }], // findOrder
+        2: [{ ...ORDER_LINE, quantity: originalQty }], // findOrderLine
+        3: [{ total: alreadyReturned }], // getAlreadyReturnedQty
+        4: [], // generateReturnNumber
       });
 
       mockTransaction({
@@ -248,11 +264,13 @@ describe('ReturnsWriteService', () => {
     it('should reject return with negative fee', async () => {
       setupCreate();
       const dto = {
-        lines: [{
-          salesOrderLineId: 'line-001',
-          quantityReturned: '5',
-          returnFee: '-10',
-        }],
+        lines: [
+          {
+            salesOrderLineId: 'line-001',
+            quantityReturned: '5',
+            returnFee: '-10',
+          },
+        ],
       };
       await expect(
         service.createReturn('order-001', dto, 'admin'),
@@ -261,8 +279,8 @@ describe('ReturnsWriteService', () => {
 
     it('should create return with no lines', async () => {
       mockSelectChain({
-        1: [INVOICED_ORDER],    // findOrder
-        2: [],                   // generateReturnNumber
+        1: [INVOICED_ORDER], // findOrder
+        2: [], // generateReturnNumber
       });
       mockTransaction({
         returnId: 'ret-002',
@@ -293,11 +311,13 @@ describe('ReturnsWriteService', () => {
         1: [{ ...MOCK_RETURN, stateCode }],
       });
 
-      const txUpdateQb = createMockQueryBuilder([{
-        ...MOCK_RETURN,
-        stateCode,
-        notes: 'Updated notes',
-      }]);
+      const txUpdateQb = createMockQueryBuilder([
+        {
+          ...MOCK_RETURN,
+          stateCode,
+          notes: 'Updated notes',
+        },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
@@ -307,7 +327,11 @@ describe('ReturnsWriteService', () => {
 
     it('should update notes on a draft return', async () => {
       setupForUpdate('draft');
-      const result = await service.updateReturn('ret-001', { notes: 'Updated notes' }, 'admin');
+      const result = await service.updateReturn(
+        'ret-001',
+        { notes: 'Updated notes' },
+        'admin',
+      );
       expect(result.notes).toBe('Updated notes');
     });
 
@@ -336,7 +360,9 @@ describe('ReturnsWriteService', () => {
         1: [{ ...MOCK_RETURN, stateCode: currentState }],
       });
 
-      const txUpdateQb = createMockQueryBuilder([{ ...MOCK_RETURN, stateCode: '' }]);
+      const txUpdateQb = createMockQueryBuilder([
+        { ...MOCK_RETURN, stateCode: '' },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
@@ -351,7 +377,9 @@ describe('ReturnsWriteService', () => {
       ['confirmed', 'draft'],
     ])('should allow transition %s → %s', async (from, to) => {
       setupWithState(from);
-      await expect(service.changeReturnState('ret-001', to, 'admin')).resolves.toBeDefined();
+      await expect(
+        service.changeReturnState('ret-001', to, 'admin'),
+      ).resolves.toBeDefined();
     });
 
     it.each([
@@ -405,12 +433,14 @@ describe('ReturnsWriteService', () => {
         3: [{ total: alreadyReturned }],
       });
 
-      const txInsertQb = createMockQueryBuilder([{
-        returnLineId: 'retline-002',
-        returnId: 'ret-001',
-        salesOrderLineId: 'line-001',
-        quantityReturned: '3',
-      }]);
+      const txInsertQb = createMockQueryBuilder([
+        {
+          returnLineId: 'retline-002',
+          returnId: 'ret-001',
+          salesOrderLineId: 'line-001',
+          quantityReturned: '3',
+        },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.insert = jest.fn().mockReturnValue(txInsertQb);
@@ -466,10 +496,12 @@ describe('ReturnsWriteService', () => {
         2: [MOCK_RETURN_LINE],
       });
 
-      const txUpdateQb = createMockQueryBuilder([{
-        ...MOCK_RETURN_LINE,
-        quantityReturned: '3',
-      }]);
+      const txUpdateQb = createMockQueryBuilder([
+        {
+          ...MOCK_RETURN_LINE,
+          quantityReturned: '3',
+        },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
@@ -480,7 +512,10 @@ describe('ReturnsWriteService', () => {
     it('should update return line on a draft return', async () => {
       setupForUpdateLine('draft');
       const result = await service.updateReturnLine(
-        'ret-001', 'retline-001', { reason: 'Changed mind' }, 'admin',
+        'ret-001',
+        'retline-001',
+        { reason: 'Changed mind' },
+        'admin',
       );
       expect(result).toBeDefined();
     });
@@ -488,14 +523,24 @@ describe('ReturnsWriteService', () => {
     it('should reject update on confirmed return', async () => {
       setupForUpdateLine('confirmed');
       await expect(
-        service.updateReturnLine('ret-001', 'retline-001', { reason: 'Test' }, 'admin'),
+        service.updateReturnLine(
+          'ret-001',
+          'retline-001',
+          { reason: 'Test' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject negative return fee', async () => {
       setupForUpdateLine('draft');
       await expect(
-        service.updateReturnLine('ret-001', 'retline-001', { returnFee: '-5' }, 'admin'),
+        service.updateReturnLine(
+          'ret-001',
+          'retline-001',
+          { returnFee: '-5' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -510,7 +555,9 @@ describe('ReturnsWriteService', () => {
         1: [{ ...MOCK_RETURN, stateCode: returnState }],
         2: [MOCK_RETURN_LINE],
       });
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => cb(createMockTx()));
+      mockDb.transaction = jest
+        .fn()
+        .mockImplementation(async (cb: any) => cb(createMockTx()));
     }
 
     it('should remove a line from a draft return', async () => {
@@ -553,7 +600,9 @@ describe('ReturnsWriteService', () => {
 
     it('should throw NotFoundException for unknown return', async () => {
       mockSelectChain({ 1: [] });
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -598,7 +647,12 @@ describe('ReturnsWriteService', () => {
         2: [],
       });
       await expect(
-        service.updateReturnLine('ret-001', 'NONEXISTENT', { reason: 'test' }, 'admin'),
+        service.updateReturnLine(
+          'ret-001',
+          'NONEXISTENT',
+          { reason: 'test' },
+          'admin',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -608,7 +662,12 @@ describe('ReturnsWriteService', () => {
         2: [{ ...MOCK_RETURN_LINE, returnId: 'ret-OTHER' }],
       });
       await expect(
-        service.updateReturnLine('ret-001', 'retline-001', { reason: 'test' }, 'admin'),
+        service.updateReturnLine(
+          'ret-001',
+          'retline-001',
+          { reason: 'test' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

@@ -49,9 +49,7 @@ export class MetricsInterceptor implements NestInterceptor {
           httpRequestDuration
             .labels(method, route, String(statusCode))
             .observe(duration);
-          httpRequestTotal
-            .labels(method, route, String(statusCode))
-            .inc();
+          httpRequestTotal.labels(method, route, String(statusCode)).inc();
 
           this.logger.log(
             `${method} ${url} ${statusCode} ${(duration * 1000).toFixed(0)}ms`,
@@ -65,9 +63,7 @@ export class MetricsInterceptor implements NestInterceptor {
           httpRequestDuration
             .labels(method, route, String(statusCode))
             .observe(duration);
-          httpRequestTotal
-            .labels(method, route, String(statusCode))
-            .inc();
+          httpRequestTotal.labels(method, route, String(statusCode)).inc();
 
           this.logger.warn(
             `${method} ${url} ${statusCode} ${(duration * 1000).toFixed(0)}ms — ${err.message}`,

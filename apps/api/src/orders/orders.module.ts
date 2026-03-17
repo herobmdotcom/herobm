@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { OrdersController } from './orders.controller';
+import { OrderReturnsController } from './order-returns.controller';
+import { OrderPickingController } from './order-picking.controller';
+import { OrderShipmentsController } from './order-shipments.controller';
 import { OrdersService } from './orders.service';
 import { OrdersWriteService } from './orders-write.service';
 import { ReturnsWriteService } from './returns-write.service';
@@ -10,7 +13,19 @@ import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
   imports: [GstModule, InventoryModule],
-  controllers: [OrdersController],
-  providers: [OrdersService, OrdersWriteService, ReturnsWriteService, PickingService, ShipmentService],
+  controllers: [
+    OrdersController,
+    OrderReturnsController,
+    OrderPickingController,
+    OrderShipmentsController,
+  ],
+  providers: [
+    OrdersService,
+    OrdersWriteService,
+    ReturnsWriteService,
+    PickingService,
+    ShipmentService,
+  ],
+  exports: [OrdersService, OrdersWriteService],
 })
 export class OrdersModule {}

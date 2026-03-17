@@ -34,11 +34,13 @@ export interface LifecycleRule {
 
 export const autoShipWhenFullyShipped: LifecycleRule = {
   name: 'auto-ship-when-fully-shipped',
-  description: 'Transitions an order from picking to shipped when all lines are fully shipped',
+  description:
+    'Transitions an order from picking to shipped when all lines are fully shipped',
   enabled: true,
   evaluate: async (db, salesOrderId, trigger, actor) => {
     // 1. Only applies if triggered by a shipment dispatch
-    if (trigger.entity !== 'shipment' || trigger.action !== 'dispatched') return null;
+    if (trigger.entity !== 'shipment' || trigger.action !== 'dispatched')
+      return null;
 
     // 2. Order must be in 'picking'
     const order = await findOrder(db, salesOrderId);
@@ -97,7 +99,8 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
 
 export const revertToPickingOnShipmentCancel: LifecycleRule = {
   name: 'revert-to-picking-on-shipment-cancel',
-  description: 'Transitions an order from shipped back to picking if a shipment is cancelled/reverted, causing it to no longer be fully shipped',
+  description:
+    'Transitions an order from shipped back to picking if a shipment is cancelled/reverted, causing it to no longer be fully shipped',
   enabled: true,
   evaluate: async (db, salesOrderId, trigger, actor) => {
     // 1. Only applies if a shipment was cancelled or reverted to draft

@@ -6,8 +6,22 @@ describe('GstCategoriesController', () => {
   let controller: GstCategoriesController;
 
   const mockCategories = [
-    { gstCategoryId: 'uuid-gst-1', code: 'GST', title: 'GST 10%', type: 'gst_applies', rate: '10', isDefault: true },
-    { gstCategoryId: 'uuid-gst-2', code: 'EXE', title: 'Exempt', type: 'exempt', rate: '0', isDefault: false },
+    {
+      gstCategoryId: 'uuid-gst-1',
+      code: 'GST',
+      title: 'GST 10%',
+      type: 'gst_applies',
+      rate: '10',
+      isDefault: true,
+    },
+    {
+      gstCategoryId: 'uuid-gst-2',
+      code: 'EXE',
+      title: 'Exempt',
+      type: 'exempt',
+      rate: '0',
+      isDefault: false,
+    },
   ];
 
   const mockService = {

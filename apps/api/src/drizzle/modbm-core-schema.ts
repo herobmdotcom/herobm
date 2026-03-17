@@ -27,8 +27,8 @@ export const gstCategories = modbmCore.table('gst_categories', {
   gstCategoryId: uuid('gst_category_id').primaryKey().defaultRandom(),
   code: text('code').unique().notNull(),
   title: text('title').notNull(),
-  type: text('type').notNull(),          // not_relevant | exempt | zero_rated | gst_applies
-  rate: numeric('rate').default('0'),     // percentage, e.g. '9' = 9%
+  type: text('type').notNull(), // not_relevant | exempt | zero_rated | gst_applies
+  rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
   isDefault: boolean('is_default').default(false),
 });
 
@@ -39,8 +39,8 @@ export const exchangeRates = modbmCore.table('exchange_rates', {
   exchangeRateId: uuid('exchange_rate_id').primaryKey().defaultRandom(),
   currencyCode: text('currency_code').notNull().unique(), // ISO 4217
   currencyName: text('currency_name').notNull(),
-  buyRate: numeric('buy_rate').notNull(),      // units of this currency per 1 EUR
-  sellRate: numeric('sell_rate').notNull(),     // units of this currency per 1 EUR
+  buyRate: numeric('buy_rate').notNull(), // units of this currency per 1 EUR
+  sellRate: numeric('sell_rate').notNull(), // units of this currency per 1 EUR
   effectiveDate: timestamp('effective_date').defaultNow(),
   updatedOn: timestamp('updated_on').defaultNow(),
 });
@@ -56,7 +56,9 @@ export const salesOrders = modbmCore.table('sales_orders', {
   customerOrderNumber: text('customer_order_number'),
   stateCode: text('state_code').notNull().default('draft'),
   customerDiscount: numeric('customer_discount').default('0'),
-  gstCategoryId: uuid('gst_category_id').references(() => gstCategories.gstCategoryId),
+  gstCategoryId: uuid('gst_category_id').references(
+    () => gstCategories.gstCategoryId,
+  ),
   currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
   customFields: jsonb('custom_fields'),
@@ -80,7 +82,9 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
   pricePerUnit: numeric('price_per_unit').notNull(),
   discountPercentage: numeric('discount_percentage').default('0'),
   amount: numeric('amount'),
-  gstCategoryId: uuid('gst_category_id').references(() => gstCategories.gstCategoryId),
+  gstCategoryId: uuid('gst_category_id').references(
+    () => gstCategories.gstCategoryId,
+  ),
   tax: numeric('tax').default('0'),
   totalAmount: numeric('total_amount'),
   unitOfMeasure: text('unit_of_measure'),
@@ -120,18 +124,21 @@ export const salesOrderReturns = modbmCore.table('sales_order_returns', {
 // ---------------------------------------------------------------------------
 // sales_order_return_lines  (Per-line return quantities + reason + fee)
 // ---------------------------------------------------------------------------
-export const salesOrderReturnLines = modbmCore.table('sales_order_return_lines', {
-  returnLineId: uuid('return_line_id').primaryKey().defaultRandom(),
-  returnId: uuid('return_id')
-    .notNull()
-    .references(() => salesOrderReturns.returnId),
-  salesOrderLineId: uuid('sales_order_line_id')
-    .notNull()
-    .references(() => salesOrderLineItems.salesOrderLineId),
-  quantityReturned: numeric('quantity_returned').notNull(),
-  reason: text('reason'),
-  returnFee: numeric('return_fee').default('0'),    // absolute fee in order currency
-});
+export const salesOrderReturnLines = modbmCore.table(
+  'sales_order_return_lines',
+  {
+    returnLineId: uuid('return_line_id').primaryKey().defaultRandom(),
+    returnId: uuid('return_id')
+      .notNull()
+      .references(() => salesOrderReturns.returnId),
+    salesOrderLineId: uuid('sales_order_line_id')
+      .notNull()
+      .references(() => salesOrderLineItems.salesOrderLineId),
+    quantityReturned: numeric('quantity_returned').notNull(),
+    reason: text('reason'),
+    returnFee: numeric('return_fee').default('0'), // absolute fee in order currency
+  },
+);
 
 // ---------------------------------------------------------------------------
 // sales_order_shipments  (Shipment/delivery batch header)
@@ -153,16 +160,19 @@ export const salesOrderShipments = modbmCore.table('sales_order_shipments', {
 // ---------------------------------------------------------------------------
 // sales_order_shipment_lines  (Per-line quantities in each shipment)
 // ---------------------------------------------------------------------------
-export const salesOrderShipmentLines = modbmCore.table('sales_order_shipment_lines', {
-  shipmentLineId: uuid('shipment_line_id').primaryKey().defaultRandom(),
-  shipmentId: uuid('shipment_id')
-    .notNull()
-    .references(() => salesOrderShipments.shipmentId),
-  salesOrderLineId: uuid('sales_order_line_id')
-    .notNull()
-    .references(() => salesOrderLineItems.salesOrderLineId),
-  quantityShipped: numeric('quantity_shipped').notNull(),
-});
+export const salesOrderShipmentLines = modbmCore.table(
+  'sales_order_shipment_lines',
+  {
+    shipmentLineId: uuid('shipment_line_id').primaryKey().defaultRandom(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => salesOrderShipments.shipmentId),
+    salesOrderLineId: uuid('sales_order_line_id')
+      .notNull()
+      .references(() => salesOrderLineItems.salesOrderLineId),
+    quantityShipped: numeric('quantity_shipped').notNull(),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // purchase_orders  (CDM: PurchaseOrder)
@@ -186,7 +196,9 @@ export const purchaseOrders = modbmCore.table('purchase_orders', {
 // purchase_order_lines  (CDM: PurchaseOrderProduct)
 // ---------------------------------------------------------------------------
 export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
-  purchaseOrderLineId: uuid('purchase_order_line_id').primaryKey().defaultRandom(),
+  purchaseOrderLineId: uuid('purchase_order_line_id')
+    .primaryKey()
+    .defaultRandom(),
   purchaseOrderId: uuid('purchase_order_id')
     .notNull()
     .references(() => purchaseOrders.purchaseOrderId),
@@ -206,33 +218,39 @@ export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
 // ---------------------------------------------------------------------------
 // purchase_order_receptions  (Goods Receipt)
 // ---------------------------------------------------------------------------
-export const purchaseOrderReceptions = modbmCore.table('purchase_order_receptions', {
-  receptionId: uuid('reception_id').primaryKey().defaultRandom(),
-  receptionNumber: text('reception_number').unique().notNull(),
-  purchaseOrderId: uuid('purchase_order_id')
-    .notNull()
-    .references(() => purchaseOrders.purchaseOrderId),
-  stateCode: text('state_code').notNull().default('draft'),
-  notes: text('notes'),
-  packingSlipNumber: text('packing_slip_number'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const purchaseOrderReceptions = modbmCore.table(
+  'purchase_order_receptions',
+  {
+    receptionId: uuid('reception_id').primaryKey().defaultRandom(),
+    receptionNumber: text('reception_number').unique().notNull(),
+    purchaseOrderId: uuid('purchase_order_id')
+      .notNull()
+      .references(() => purchaseOrders.purchaseOrderId),
+    stateCode: text('state_code').notNull().default('draft'),
+    notes: text('notes'),
+    packingSlipNumber: text('packing_slip_number'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // purchase_order_reception_lines  (Per-line quantities received)
 // ---------------------------------------------------------------------------
-export const purchaseOrderReceptionLines = modbmCore.table('purchase_order_reception_lines', {
-  receptionLineId: uuid('reception_line_id').primaryKey().defaultRandom(),
-  receptionId: uuid('reception_id')
-    .notNull()
-    .references(() => purchaseOrderReceptions.receptionId),
-  purchaseOrderLineId: uuid('purchase_order_line_id')
-    .notNull()
-    .references(() => purchaseOrderLineItems.purchaseOrderLineId),
-  quantityReceived: numeric('quantity_received').notNull(),
-});
+export const purchaseOrderReceptionLines = modbmCore.table(
+  'purchase_order_reception_lines',
+  {
+    receptionLineId: uuid('reception_line_id').primaryKey().defaultRandom(),
+    receptionId: uuid('reception_id')
+      .notNull()
+      .references(() => purchaseOrderReceptions.receptionId),
+    purchaseOrderLineId: uuid('purchase_order_line_id')
+      .notNull()
+      .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+    quantityReceived: numeric('quantity_received').notNull(),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // inventory_levels  (App-owned inventory, seeded from mart_inventory)

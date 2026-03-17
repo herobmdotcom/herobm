@@ -3,43 +3,34 @@ import { eq, ilike, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { products } from '../drizzle/schema';
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
 export class ProductsService {
-  constructor(@Inject(DRIZZLE) private db: any) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  async findAll(query?: PaginationQuery) {
+    const { page, limit, offset, searchTerm } = parsePagination(query);
 
-  async findAll(query?: { search?: string; page?: number; limit?: number }) {
-    const page = query?.page ?? 1;
-    const limit = Math.min(query?.limit ?? 50, 200);
-    const offset = (page - 1) * limit;
+    let qb = this.db.select().from(products).$dynamic();
 
-    let qb = this.database.select().from(products).$dynamic();
-
-    if (query?.search) {
-      const term = `%${query.search}%`;
+    if (searchTerm) {
       qb = qb.where(
         or(
-          ilike(products.name, term),
-          ilike(products.productNumber, term),
-          ilike(products.barcode, term),
+          ilike(products.name, searchTerm),
+          ilike(products.productNumber, searchTerm),
+          ilike(products.barcode, searchTerm),
         ),
       );
     }
 
-    const rows = await qb
-      .orderBy(products.name)
-      .limit(limit)
-      .offset(offset);
+    const rows = await qb.orderBy(products.name).limit(limit).offset(offset);
 
     return { data: rows, page, limit };
   }
 
   async findOne(id: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(products)
       .where(eq(products.productId, id))

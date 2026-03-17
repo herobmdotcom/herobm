@@ -32,7 +32,7 @@ describe('ProductsService', () => {
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
-    $dynamic: jest.fn().mockReturnThis(),
+    $dynamic: jest.fn(),
     then: jest.fn().mockImplementation((cb) => cb(mockProducts)),
     [Symbol.asyncIterator]: jest.fn(),
   };
@@ -45,13 +45,14 @@ describe('ProductsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb(mockProducts));
+    mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
+    mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
+    mockQueryBuilder.then = jest
+      .fn()
+      .mockImplementation((cb) => cb(mockProducts));
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ProductsService,
-        { provide: DRIZZLE, useValue: mockDb },
-      ],
+      providers: [ProductsService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
@@ -65,8 +66,8 @@ describe('ProductsService', () => {
       expect(result).toHaveProperty('limit', 50);
     });
 
-    it('should apply search filter', async () => {
-      await service.findAll({ search: 'bolt' });
+    it('should apply search filter when q is provided', async () => {
+      await service.findAll({ q: 'bolt' });
       expect(mockQueryBuilder.where).toHaveBeenCalled();
     });
 
@@ -78,7 +79,9 @@ describe('ProductsService', () => {
 
   describe('findOne', () => {
     it('should return a single product', async () => {
-      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb([mockProducts[0]]));
+      mockQueryBuilder.then = jest
+        .fn()
+        .mockImplementation((cb) => cb([mockProducts[0]]));
       const result = await service.findOne('P001');
       expect(result).toEqual(mockProducts[0]);
     });

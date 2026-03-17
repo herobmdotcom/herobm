@@ -1,29 +1,22 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { suppliers } from '../drizzle/schema';
+import { suppliers, productSuppliers } from '../drizzle/schema';
 import { eq, ilike, or, and } from 'drizzle-orm';
-
-export class SupplierSearchParams {
-  q?: string;
-  limit?: number;
-  offset?: number;
-}
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
 export class SuppliersService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
-  async findAll(params: SupplierSearchParams) {
-    const limit = params.limit ? Number(params.limit) : 50;
-    const offset = params.offset ? Number(params.offset) : 0;
-    
+  async findAll(params: PaginationQuery) {
+    const { page, limit, offset, searchTerm } = parsePagination(params);
+
     let conditions = undefined;
-    if (params.q) {
-      const searchTerm = `%${params.q}%`;
+    if (searchTerm) {
       conditions = or(
         ilike(suppliers.name, searchTerm),
-        ilike(suppliers.vendorNumber, searchTerm)
+        ilike(suppliers.vendorNumber, searchTerm),
       );
     }
 
@@ -34,18 +27,15 @@ export class SuppliersService {
       .limit(limit)
       .offset(offset);
 
-    // Get total count for pagination
-    // Ideally use count(), but simple length if no conditions works for small sets,
-    // For large sets, another query is needed.
     const [{ count }] = await this.db
       .select({ count: this.db.$count(suppliers, conditions) })
       .from(suppliers);
 
     return {
       data,
-      total: Number(count),
+      page,
       limit,
-      offset,
+      total: Number(count),
     };
   }
 
@@ -62,5 +52,21 @@ export class SuppliersService {
     }
 
     return supplier;
+  }
+
+  /** Products supplied by a given vendor */
+  async findSupplierProducts(vendorId: string) {
+    return this.db
+      .select()
+      .from(productSuppliers)
+      .where(eq(productSuppliers.vendorId, vendorId));
+  }
+
+  /** All suppliers for a given product */
+  async findProductSuppliers(productId: string) {
+    return this.db
+      .select()
+      .from(productSuppliers)
+      .where(eq(productSuppliers.productId, productId));
   }
 }

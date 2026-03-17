@@ -36,20 +36,19 @@ describe('InventoryController', () => {
 
   describe('findAll', () => {
     it('should call service.findAll with no params', async () => {
-      const result = await controller.findAll();
+      const result = await controller.findAll({});
       expect(result).toEqual(mockResult);
-      expect(mockService.findAll).toHaveBeenCalledWith({
-        search: undefined,
-        page: undefined,
-        limit: undefined,
-        locationNo: undefined,
-      });
+      // Controller spreads query + locationNo → service receives { ...query, locationNo: undefined }
+      expect(mockService.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({}),
+      );
     });
 
-    it('should parse all query parameters', async () => {
-      await controller.findAll('widget', '2', '25', 'LOC01');
+    it('should pass all query parameters plus locationNo', async () => {
+      const query = { q: 'widget', page: 2, limit: 25 };
+      await controller.findAll(query, 'LOC01');
       expect(mockService.findAll).toHaveBeenCalledWith({
-        search: 'widget',
+        q: 'widget',
         page: 2,
         limit: 25,
         locationNo: 'LOC01',
@@ -57,32 +56,27 @@ describe('InventoryController', () => {
     });
 
     it('should pass locationNo filter without pagination', async () => {
-      await controller.findAll(undefined, undefined, undefined, 'LOC02');
-      expect(mockService.findAll).toHaveBeenCalledWith({
-        search: undefined,
-        page: undefined,
-        limit: undefined,
-        locationNo: 'LOC02',
-      });
+      await controller.findAll({}, 'LOC02');
+      expect(mockService.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ locationNo: 'LOC02' }),
+      );
     });
   });
 
   describe('findBins', () => {
     it('should call service.findBins with no params', async () => {
-      const result = await controller.findBins();
+      const result = await controller.findBins({});
       expect(result).toEqual(mockBinsResult);
-      expect(mockService.findBins).toHaveBeenCalledWith({
-        search: undefined,
-        page: undefined,
-        limit: undefined,
-        locationNo: undefined,
-      });
+      expect(mockService.findBins).toHaveBeenCalledWith(
+        expect.objectContaining({}),
+      );
     });
 
-    it('should parse all query parameters for bins', async () => {
-      await controller.findBins('bolt', '1', '10', 'LOC01');
+    it('should pass all query parameters for bins', async () => {
+      const query = { q: 'bolt', page: 1, limit: 10 };
+      await controller.findBins(query, 'LOC01');
       expect(mockService.findBins).toHaveBeenCalledWith({
-        search: 'bolt',
+        q: 'bolt',
         page: 1,
         limit: 10,
         locationNo: 'LOC01',

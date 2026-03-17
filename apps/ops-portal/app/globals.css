@@ -26,6 +26,33 @@
 .badge-abm { background: rgba(100, 116, 139, 0.15); color: #64748b; }
 .badge-app { background: rgba(238, 127, 0, 0.15); color: #F59E42; }
 
+/* Form inputs */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  transition: border-color 150ms;
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;

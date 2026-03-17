@@ -80,9 +80,9 @@ export default function OrdersPage() {
 
   const handleRowClicked = useCallback((order: UnifiedOrder) => {
     if (order.source === 'app') {
-      router.push(`/orders/${order.id}?source=app`);
+      router.push(`/sales-orders/${order.id}?source=app`);
     } else {
-      router.push(`/orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
+      router.push(`/sales-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
     }
   }, [router]);
 
@@ -98,13 +98,13 @@ export default function OrdersPage() {
         <button
           id="btn-new-order"
           className="btn btn-primary"
-          onClick={() => router.push('/orders/new')}
+          onClick={() => router.push('/sales-orders/new')}
         >
           ➕ New Order
         </button>
       </div>
       <DataGrid<UnifiedOrder>
-        endpoint="/api/orders"
+        endpoint="/api/sales-orders"
         columns={columns}
         gridKey="sales-orders"
         searchPlaceholder="Search orders…"

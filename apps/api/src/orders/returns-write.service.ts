@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -16,6 +17,11 @@ import {
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
+import {
+  writeEvent as sharedWriteEvent,
+  findOrder as sharedFindOrder,
+  findOrderLine as sharedFindOrderLine,
+} from './shipment-helpers';
 
 // Valid return state transitions
 const RETURN_STATE_TRANSITIONS: Record<string, string[]> = {
@@ -57,13 +63,11 @@ interface UpdateReturnLineDto {
 @Injectable()
 export class ReturnsWriteService {
   constructor(
-    @Inject(DRIZZLE) private db: any,
+    @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
   ) {}
 
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  private readonly logger = new Logger(ReturnsWriteService.name);
 
   /**
    * Generate a human-readable return number (RET-YYYYMMDD-NNNN).
@@ -72,16 +76,17 @@ export class ReturnsWriteService {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `RET-${today}-`;
 
-    const result = await this.database
+    const result = await this.db
       .select({ returnNumber: salesOrderReturns.returnNumber })
       .from(salesOrderReturns)
       .where(sql`${salesOrderReturns.returnNumber} LIKE ${prefix + '%'}`)
       .orderBy(sql`${salesOrderReturns.returnNumber} DESC`)
       .limit(1);
 
-    const seq = result.length > 0
-      ? parseInt(result[0].returnNumber.replace(prefix, ''), 10) + 1
-      : 1;
+    const seq =
+      result.length > 0
+        ? parseInt(result[0].returnNumber.replace(prefix, ''), 10) + 1
+        : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
@@ -96,19 +101,14 @@ export class ReturnsWriteService {
     payload: any,
     actor: string,
   ): Promise<void> {
-    await tx.insert(orderEvents).values({
+    await sharedWriteEvent(
+      tx,
       salesOrderId,
       eventType,
       payload,
       actor,
-    });
-
-    await tx.insert(outbox).values({
-      aggregateType: 'sales_order_return',
-      aggregateId: salesOrderId,
-      eventType,
-      payload,
-    });
+      'sales_order_return',
+    );
   }
 
   /**
@@ -119,7 +119,7 @@ export class ReturnsWriteService {
     salesOrderLineId: string,
     excludeReturnId?: string,
   ): Promise<number> {
-    let query = this.database
+    const query = this.db
       .select({
         total: sql<string>`COALESCE(SUM(${salesOrderReturnLines.quantityReturned}::numeric), 0)::text`,
       })
@@ -149,7 +149,11 @@ export class ReturnsWriteService {
   /**
    * Create a new return against an invoiced order.
    */
-  async createReturn(salesOrderId: string, dto: CreateReturnDto, actor: string) {
+  async createReturn(
+    salesOrderId: string,
+    dto: CreateReturnDto,
+    actor: string,
+  ) {
     // Validate the order exists and is invoiced
     const order = await this.findOrder(salesOrderId);
     if (order.stateCode !== 'invoiced') {
@@ -160,22 +164,25 @@ export class ReturnsWriteService {
 
     // Validate all lines belong to this order and quantities are valid
     for (const line of dto.lines) {
-      const orderLine = await this.findOrderLine(line.salesOrderLineId, salesOrderId);
-      const alreadyReturned = await this.getAlreadyReturnedQty(line.salesOrderLineId);
+      const orderLine = await this.findOrderLine(
+        line.salesOrderLineId,
+        salesOrderId,
+      );
+      const alreadyReturned = await this.getAlreadyReturnedQty(
+        line.salesOrderLineId,
+      );
       const originalQty = parseFloat(orderLine.quantity);
       const requestedQty = parseFloat(line.quantityReturned);
 
       if (requestedQty <= 0) {
-        throw new BadRequestException(
-          `Return quantity must be greater than 0`,
-        );
+        throw new BadRequestException(`Return quantity must be greater than 0`);
       }
 
       if (requestedQty > originalQty - alreadyReturned) {
         throw new BadRequestException(
           `Cannot return ${requestedQty} of line ${orderLine.lineNumber}. ` +
-          `Original qty: ${originalQty}, already returned: ${alreadyReturned}, ` +
-          `remaining returnable: ${originalQty - alreadyReturned}`,
+            `Original qty: ${originalQty}, already returned: ${alreadyReturned}, ` +
+            `remaining returnable: ${originalQty - alreadyReturned}`,
         );
       }
 
@@ -189,7 +196,7 @@ export class ReturnsWriteService {
 
     const returnNumber = await this.generateReturnNumber();
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [ret] = await tx
         .insert(salesOrderReturns)
         .values({
@@ -214,15 +221,24 @@ export class ReturnsWriteService {
         await tx.insert(salesOrderReturnLines).values(lineValues);
       }
 
-      await this.writeEvent(tx, salesOrderId, 'return_created', {
-        returnId: ret.returnId,
-        returnNumber,
-        lineCount: lineValues.length,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        salesOrderId,
+        'return_created',
+        {
+          returnId: ret.returnId,
+          returnNumber,
+          lineCount: lineValues.length,
+        },
+        actor,
+      );
 
       return ret;
     });
 
+    this.logger.log(
+      `Return created: ${returnNumber} for order ${salesOrderId} with ${dto.lines.length} lines by ${actor}`,
+    );
     return result;
   }
 
@@ -238,7 +254,7 @@ export class ReturnsWriteService {
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderReturns)
         .set({
@@ -248,10 +264,16 @@ export class ReturnsWriteService {
         .where(eq(salesOrderReturns.returnId, returnId))
         .returning();
 
-      await this.writeEvent(tx, existing.salesOrderId, 'return_updated', {
-        returnId,
-        changes: dto,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        existing.salesOrderId,
+        'return_updated',
+        {
+          returnId,
+          changes: dto,
+        },
+        actor,
+      );
 
       return updated;
     });
@@ -273,11 +295,11 @@ export class ReturnsWriteService {
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition return from '${existing.stateCode}' to '${newState}'. ` +
-        `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+          `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderReturns)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -297,7 +319,9 @@ export class ReturnsWriteService {
           const orderLine = await tx
             .select()
             .from(salesOrderLineItems)
-            .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
+            .where(
+              eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
+            )
             .limit(1)
             .then((r: any[]) => r[0]);
           if (orderLine) {
@@ -311,20 +335,28 @@ export class ReturnsWriteService {
         await this.inventoryService.returnStock(tx, stockLines);
       }
 
-      const eventType = newState === 'processed'
-        ? 'return_processed'
-        : 'return_status_changed';
+      const eventType =
+        newState === 'processed' ? 'return_processed' : 'return_status_changed';
 
-      await this.writeEvent(tx, existing.salesOrderId, eventType, {
-        returnId,
-        returnNumber: existing.returnNumber,
-        from: existing.stateCode,
-        to: newState,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        existing.salesOrderId,
+        eventType,
+        {
+          returnId,
+          returnNumber: existing.returnNumber,
+          from: existing.stateCode,
+          to: newState,
+        },
+        actor,
+      );
 
       return updated;
     });
 
+    this.logger.log(
+      `Return ${existing.returnNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
+    );
     return result;
   }
 
@@ -340,8 +372,13 @@ export class ReturnsWriteService {
       );
     }
 
-    const orderLine = await this.findOrderLine(dto.salesOrderLineId, ret.salesOrderId);
-    const alreadyReturned = await this.getAlreadyReturnedQty(dto.salesOrderLineId);
+    const orderLine = await this.findOrderLine(
+      dto.salesOrderLineId,
+      ret.salesOrderId,
+    );
+    const alreadyReturned = await this.getAlreadyReturnedQty(
+      dto.salesOrderLineId,
+    );
     const originalQty = parseFloat(orderLine.quantity);
     const requestedQty = parseFloat(dto.quantityReturned);
 
@@ -362,7 +399,7 @@ export class ReturnsWriteService {
       }
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [line] = await tx
         .insert(salesOrderReturnLines)
         .values({
@@ -379,12 +416,18 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(tx, ret.salesOrderId, 'return_line_added', {
-        returnId,
-        returnLineId: line.returnLineId,
-        salesOrderLineId: dto.salesOrderLineId,
-        quantityReturned: dto.quantityReturned,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        ret.salesOrderId,
+        'return_line_added',
+        {
+          returnId,
+          returnLineId: line.returnLineId,
+          salesOrderLineId: dto.salesOrderLineId,
+          quantityReturned: dto.quantityReturned,
+        },
+        actor,
+      );
 
       return line;
     });
@@ -418,7 +461,10 @@ export class ReturnsWriteService {
         throw new BadRequestException(`Return quantity must be greater than 0`);
       }
 
-      const orderLine = await this.findOrderLine(existingLine.salesOrderLineId, ret.salesOrderId);
+      const orderLine = await this.findOrderLine(
+        existingLine.salesOrderLineId,
+        ret.salesOrderId,
+      );
       const alreadyReturned = await this.getAlreadyReturnedQty(
         existingLine.salesOrderLineId,
         returnId,
@@ -439,11 +485,13 @@ export class ReturnsWriteService {
       }
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderReturnLines)
         .set({
-          ...(dto.quantityReturned !== undefined && { quantityReturned: dto.quantityReturned }),
+          ...(dto.quantityReturned !== undefined && {
+            quantityReturned: dto.quantityReturned,
+          }),
           ...(dto.reason !== undefined && { reason: dto.reason }),
           ...(dto.returnFee !== undefined && { returnFee: dto.returnFee }),
         })
@@ -455,16 +503,22 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(tx, ret.salesOrderId, 'return_line_updated', {
-        returnId,
-        returnLineId: lineId,
-        changes: dto,
-        previousValues: {
-          quantityReturned: existingLine.quantityReturned,
-          reason: existingLine.reason,
-          returnFee: existingLine.returnFee,
+      await this.writeEvent(
+        tx,
+        ret.salesOrderId,
+        'return_line_updated',
+        {
+          returnId,
+          returnLineId: lineId,
+          changes: dto,
+          previousValues: {
+            quantityReturned: existingLine.quantityReturned,
+            reason: existingLine.reason,
+            returnFee: existingLine.returnFee,
+          },
         },
-      }, actor);
+        actor,
+      );
 
       return updated;
     });
@@ -486,7 +540,7 @@ export class ReturnsWriteService {
 
     const existingLine = await this.findReturnLine(lineId, returnId);
 
-    await this.database.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: any) => {
       await tx
         .delete(salesOrderReturnLines)
         .where(eq(salesOrderReturnLines.returnLineId, lineId));
@@ -496,12 +550,18 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(tx, ret.salesOrderId, 'return_line_removed', {
-        returnId,
-        returnLineId: lineId,
-        salesOrderLineId: existingLine.salesOrderLineId,
-        quantityReturned: existingLine.quantityReturned,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        ret.salesOrderId,
+        'return_line_removed',
+        {
+          returnId,
+          returnLineId: lineId,
+          salesOrderLineId: existingLine.salesOrderLineId,
+          quantityReturned: existingLine.quantityReturned,
+        },
+        actor,
+      );
     });
   }
 
@@ -511,7 +571,7 @@ export class ReturnsWriteService {
   async findOne(returnId: string) {
     const ret = await this.findReturn(returnId);
 
-    const lines = await this.database
+    const lines = await this.db
       .select()
       .from(salesOrderReturnLines)
       .where(eq(salesOrderReturnLines.returnId, returnId));
@@ -523,7 +583,7 @@ export class ReturnsWriteService {
    * List all returns for an order.
    */
   async findByOrder(salesOrderId: string) {
-    const returns = await this.database
+    const returns = await this.db
       .select()
       .from(salesOrderReturns)
       .where(eq(salesOrderReturns.salesOrderId, salesOrderId))
@@ -532,7 +592,7 @@ export class ReturnsWriteService {
     // Fetch lines for each return
     const result = [];
     for (const ret of returns) {
-      const lines = await this.database
+      const lines = await this.db
         .select()
         .from(salesOrderReturnLines)
         .where(eq(salesOrderReturnLines.returnId, ret.returnId));
@@ -547,40 +607,15 @@ export class ReturnsWriteService {
   // -------------------------------------------------------------------------
 
   private async findOrder(salesOrderId: string) {
-    const rows = await this.database
-      .select()
-      .from(salesOrders)
-      .where(eq(salesOrders.salesOrderId, salesOrderId))
-      .limit(1);
-
-    if (rows.length === 0) {
-      throw new NotFoundException(`Order '${salesOrderId}' not found`);
-    }
-    return rows[0];
+    return sharedFindOrder(this.db, salesOrderId);
   }
 
   private async findOrderLine(lineId: string, salesOrderId: string) {
-    const rows = await this.database
-      .select()
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
-      .limit(1);
-
-    if (rows.length === 0) {
-      throw new NotFoundException(`Order line '${lineId}' not found`);
-    }
-
-    if (rows[0].salesOrderId !== salesOrderId) {
-      throw new BadRequestException(
-        `Order line '${lineId}' does not belong to order '${salesOrderId}'`,
-      );
-    }
-
-    return rows[0];
+    return sharedFindOrderLine(this.db, lineId, salesOrderId);
   }
 
   private async findReturn(returnId: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(salesOrderReturns)
       .where(eq(salesOrderReturns.returnId, returnId))
@@ -593,7 +628,7 @@ export class ReturnsWriteService {
   }
 
   private async findReturnLine(lineId: string, returnId: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(salesOrderReturnLines)
       .where(eq(salesOrderReturnLines.returnLineId, lineId))

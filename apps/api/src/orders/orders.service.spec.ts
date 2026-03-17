@@ -105,9 +105,11 @@ describe('OrdersService', () => {
       const abmQb = createMockQb([]);
       const appQb = createMockQb([]);
       mockDb.selectDistinctOn = jest.fn().mockReturnValue(abmQb);
-      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(appQb) });
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(appQb) });
 
-      await service.findAll({ search: 'acme' });
+      await service.findAll({ q: 'acme' });
       expect(abmQb.where).toHaveBeenCalled();
       expect(appQb.where).toHaveBeenCalled();
     });
@@ -121,7 +123,9 @@ describe('OrdersService', () => {
   describe('findOne', () => {
     it('should return a single order line', async () => {
       const singleQb = createMockQb([mockAbmRows[0]]);
-      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(singleQb) });
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(singleQb) });
 
       const result = await service.findOne('SOL001');
       expect(result).toEqual(mockAbmRows[0]);
@@ -129,9 +133,13 @@ describe('OrdersService', () => {
 
     it('should throw NotFoundException for unknown ID', async () => {
       const emptyQb = createMockQb([]);
-      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(emptyQb) });
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(emptyQb) });
 
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -177,7 +185,9 @@ describe('OrdersService', () => {
 
     it('should return a unified order shape with mapped lines', async () => {
       const linesQb = createMockQb(mockAbmLines);
-      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(linesQb) });
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(linesQb) });
 
       const result = await service.findAbmOrder('SO-1001');
       expect(result.orderNumber).toBe('SO-1001');
@@ -192,9 +202,13 @@ describe('OrdersService', () => {
 
     it('should throw NotFoundException for unknown document number', async () => {
       const emptyQb = createMockQb([]);
-      mockDb.select = jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(emptyQb) });
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(emptyQb) });
 
-      await expect(service.findAbmOrder('NONEXISTENT')).rejects.toThrow(NotFoundException);
+      await expect(service.findAbmOrder('NONEXISTENT')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

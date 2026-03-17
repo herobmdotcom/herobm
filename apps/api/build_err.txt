@@ -1,0 +1,35 @@
+src/orders/picking.service.ts:7:14 - error TS2305: Module '"drizzle-orm"' has no exported member 'leftJoin'.
+
+7 import { eq, leftJoin } from 'drizzle-orm';
+               ~~~~~~~~
+src/reports/sales-quote.service.ts:4:36 - error TS2307: Cannot find module '../orders-write.service' or its corresponding type declarations.
+
+4 import { OrdersWriteService } from '../orders-write.service';
+                                     ~~~~~~~~~~~~~~~~~~~~~~~~~
+src/reports/sales-quote.service.ts:113:36 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+
+113     const subtotal = lines.reduce((sum, l) => sum + parseFloat(l.amount), 0);
+                                       ~~~
+src/reports/sales-quote.service.ts:113:41 - error TS7006: Parameter 'l' implicitly has an 'any' type.
+
+113     const subtotal = lines.reduce((sum, l) => sum + parseFloat(l.amount), 0);
+                                            ~
+src/reports/sales-quote.service.ts:114:36 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+
+114     const totalTax = lines.reduce((sum, l) => sum + parseFloat(l.tax), 0);
+                                       ~~~
+src/reports/sales-quote.service.ts:114:41 - error TS7006: Parameter 'l' implicitly has an 'any' type.
+
+114     const totalTax = lines.reduce((sum, l) => sum + parseFloat(l.tax), 0);
+                                            ~
+src/reports/sales-quote.service.ts:115:39 - error TS7006: Parameter 'sum' implicitly has an 'any' type.
+
+115     const totalAmount = lines.reduce((sum, l) => sum + parseFloat(l.totalAmount), 0);
+                                          ~~~
+src/reports/sales-quote.service.ts:115:44 - error TS7006: Parameter 'l' implicitly has an 'any' type.
+
+115     const totalAmount = lines.reduce((sum, l) => sum + parseFloat(l.totalAmount), 0);
+                                               ~
+
+Found 8 error(s).
+

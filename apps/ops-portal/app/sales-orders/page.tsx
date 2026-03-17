@@ -76,9 +76,9 @@ export default function OrdersPage() {
 
   const handleRowClicked = useCallback((order: UnifiedOrder) => {
     if (order.source === 'app') {
-      router.push(`/orders/${order.id}?source=app`);
+      router.push(`/sales-orders/${order.id}?source=app`);
     } else {
-      router.push(`/orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
+      router.push(`/sales-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
     }
   }, [router]);
 
@@ -86,7 +86,7 @@ export default function OrdersPage() {
     <Shell>
       <h2 className="text-2xl font-bold mb-6">Orders</h2>
       <DataGrid<UnifiedOrder>
-        endpoint="/api/orders"
+        endpoint="/api/sales-orders"
         columns={columns}
         gridKey="ops-orders"
         searchPlaceholder="Search by order number, customer, or PO…"

@@ -3,21 +3,21 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { purchaseOrders, purchaseOrderLineItems } from '../drizzle/modbm-core-schema';
-import { purchaseOrderLines as abmPurchaseOrderLines, suppliers } from '../drizzle/schema';
+import {
+  purchaseOrders,
+  purchaseOrderLineItems,
+} from '../drizzle/modbm-core-schema';
+import {
+  purchaseOrderLines as abmPurchaseOrderLines,
+  suppliers,
+} from '../drizzle/schema';
 import { eq, or, ilike, desc, sql, inArray } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
-
-export class PurchaseOrderSearchParams {
-  q?: string;
-  limit?: number;
-  offset?: number;
-  state?: string;
-  page?: number;
-}
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 export interface UnifiedPurchaseOrderRow {
   id: string;
@@ -38,7 +38,9 @@ export class PurchaseOrdersService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
-  ) { }
+  ) {}
+
+  private readonly logger = new Logger(PurchaseOrdersService.name);
 
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
@@ -77,11 +79,9 @@ export class PurchaseOrdersService {
     });
   }
 
-  async findAll(query?: PurchaseOrderSearchParams) {
-    const page = query?.page ?? 1;
-    const limit = Math.min(query?.limit ?? 50, 200);
-    const offset = (page - 1) * limit;
-    const searchTerm = query?.q ? `%${query.q}%` : null;
+  async findAll(query?: PaginationQuery) {
+    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const stateFilter = query?.state ?? null;
 
     // --- ABM legacy orders ---
     let abmQuery = this.db
@@ -289,11 +289,17 @@ export class PurchaseOrdersService {
 
       // ── Inventory hooks ──
       // Ordering → place on order
-      if (stateCode === 'ordered' && !ON_ORDER_STATES.includes(existing.stateCode)) {
+      if (
+        stateCode === 'ordered' &&
+        !ON_ORDER_STATES.includes(existing.stateCode)
+      ) {
         await this.inventoryService.placeOnOrder(tx, stockLines);
       }
       // Cancelling from ordered → cancel on order
-      if (stateCode === 'cancelled' && ON_ORDER_STATES.includes(existing.stateCode)) {
+      if (
+        stateCode === 'cancelled' &&
+        ON_ORDER_STATES.includes(existing.stateCode)
+      ) {
         await this.inventoryService.cancelOnOrder(tx, stockLines);
       }
 
@@ -304,11 +310,14 @@ export class PurchaseOrdersService {
   async addLine(orderId: string, lineDto: any) {
     const existing = await this.findOne(orderId);
     if (existing.stateCode !== 'draft') {
-      throw new BadRequestException('Can only add lines to draft purchase orders');
+      throw new BadRequestException(
+        'Can only add lines to draft purchase orders',
+      );
     }
 
     const maxLine = existing.lines.reduce(
-      (max: number, l: any) => Math.max(max, l.lineNumber || 0), 0,
+      (max: number, l: any) => Math.max(max, l.lineNumber || 0),
+      0,
     );
 
     const qty = parseFloat(lineDto.quantity || '1');
@@ -334,22 +343,39 @@ export class PurchaseOrdersService {
   async updateLine(orderId: string, lineId: string, lineDto: any) {
     const existing = await this.findOne(orderId);
     if (existing.stateCode !== 'draft') {
-      throw new BadRequestException('Can only update lines on draft purchase orders');
+      throw new BadRequestException(
+        'Can only update lines on draft purchase orders',
+      );
     }
 
     const updateFields: any = {};
-    if (lineDto.quantity !== undefined) updateFields.quantity = lineDto.quantity.toString();
-    if (lineDto.pricePerUnit !== undefined) updateFields.pricePerUnit = lineDto.pricePerUnit.toString();
-    if (lineDto.discountPercentage !== undefined) updateFields.discountPercentage = lineDto.discountPercentage.toString();
-    if (lineDto.productDescription !== undefined) updateFields.productDescription = lineDto.productDescription;
-    if (lineDto.unitOfMeasure !== undefined) updateFields.unitOfMeasure = lineDto.unitOfMeasure;
+    if (lineDto.quantity !== undefined)
+      updateFields.quantity = lineDto.quantity.toString();
+    if (lineDto.pricePerUnit !== undefined)
+      updateFields.pricePerUnit = lineDto.pricePerUnit.toString();
+    if (lineDto.discountPercentage !== undefined)
+      updateFields.discountPercentage = lineDto.discountPercentage.toString();
+    if (lineDto.productDescription !== undefined)
+      updateFields.productDescription = lineDto.productDescription;
+    if (lineDto.unitOfMeasure !== undefined)
+      updateFields.unitOfMeasure = lineDto.unitOfMeasure;
 
     // Recalculate amount if qty or price changed
     if (lineDto.quantity !== undefined || lineDto.pricePerUnit !== undefined) {
-      const line = existing.lines.find((l: any) => l.purchaseOrderLineId === lineId);
-      const qty = parseFloat(lineDto.quantity?.toString() || line?.quantity || '0');
-      const price = parseFloat(lineDto.pricePerUnit?.toString() || line?.pricePerUnit || '0');
-      const disc = parseFloat(lineDto.discountPercentage?.toString() || line?.discountPercentage || '0');
+      const line = existing.lines.find(
+        (l: any) => l.purchaseOrderLineId === lineId,
+      );
+      const qty = parseFloat(
+        lineDto.quantity?.toString() || line?.quantity || '0',
+      );
+      const price = parseFloat(
+        lineDto.pricePerUnit?.toString() || line?.pricePerUnit || '0',
+      );
+      const disc = parseFloat(
+        lineDto.discountPercentage?.toString() ||
+          line?.discountPercentage ||
+          '0',
+      );
       const amount = qty * price * (1 - disc / 100);
       updateFields.amount = amount.toFixed(2);
       updateFields.totalAmount = amount.toFixed(2);
@@ -366,7 +392,9 @@ export class PurchaseOrdersService {
   async removeLine(orderId: string, lineId: string) {
     const existing = await this.findOne(orderId);
     if (existing.stateCode !== 'draft') {
-      throw new BadRequestException('Can only remove lines from draft purchase orders');
+      throw new BadRequestException(
+        'Can only remove lines from draft purchase orders',
+      );
     }
 
     await this.db
@@ -397,7 +425,7 @@ export class PurchaseOrdersService {
         .returning();
 
       // For simplicity in this demo, we're not doing full line-item syncing
-      // Usually you'd use a delta technique or delete/recreate. 
+      // Usually you'd use a delta technique or delete/recreate.
       // If updating lines, delete and recreate for simplicity.
       if (updateDto.lines) {
         await tx
@@ -405,17 +433,19 @@ export class PurchaseOrdersService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
-          const lineValues = updateDto.lines.map((line: any, index: number) => ({
-            purchaseOrderId: id,
-            lineNumber: index + 1,
-            productId: line.productId,
-            productDescription: line.productDescription,
-            quantity: line.quantity.toString(),
-            pricePerUnit: line.pricePerUnit.toString(),
-            unitOfMeasure: line.unitOfMeasure || 'EA',
-            amount: (line.quantity * line.pricePerUnit).toString(),
-            totalAmount: (line.quantity * line.pricePerUnit).toString(),
-          }));
+          const lineValues = updateDto.lines.map(
+            (line: any, index: number) => ({
+              purchaseOrderId: id,
+              lineNumber: index + 1,
+              productId: line.productId,
+              productDescription: line.productDescription,
+              quantity: line.quantity.toString(),
+              pricePerUnit: line.pricePerUnit.toString(),
+              unitOfMeasure: line.unitOfMeasure || 'EA',
+              amount: (line.quantity * line.pricePerUnit).toString(),
+              totalAmount: (line.quantity * line.pricePerUnit).toString(),
+            }),
+          );
           await tx.insert(purchaseOrderLineItems).values(lineValues);
         }
       }

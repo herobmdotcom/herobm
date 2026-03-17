@@ -2,6 +2,7 @@ import {
   Injectable,
   Inject,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { eq, sql, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -10,7 +11,9 @@ import {
   salesOrders,
   salesOrderShipments,
   salesOrderShipmentLines,
+  salesOrderLineItems,
 } from '../drizzle/modbm-core-schema';
+import { products as martProducts } from '../drizzle/schema';
 import {
   findOrder,
   findOrderLine,
@@ -28,7 +31,7 @@ import { InventoryService } from '../inventory/inventory.service';
 
 const SHIPMENT_STATE_TRANSITIONS: Record<string, string[]> = {
   draft: ['dispatched', 'cancelled'],
-  dispatched: ['draft', 'cancelled'],
+  dispatched: ['draft'], // cannot transition directly from dispatched to cancelled
   cancelled: [],
 };
 
@@ -68,13 +71,11 @@ interface UpdateShipmentLineDto {
 @Injectable()
 export class ShipmentService {
   constructor(
-    @Inject(DRIZZLE) private db: any,
+    @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
   ) {}
 
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  private readonly logger = new Logger(ShipmentService.name);
 
   // -------------------------------------------------------------------------
   // Number generation
@@ -84,16 +85,17 @@ export class ShipmentService {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `SHP-${today}-`;
 
-    const result = await this.database
+    const result = await this.db
       .select({ shipmentNumber: salesOrderShipments.shipmentNumber })
       .from(salesOrderShipments)
       .where(sql`${salesOrderShipments.shipmentNumber} LIKE ${prefix + '%'}`)
       .orderBy(sql`${salesOrderShipments.shipmentNumber} DESC`)
       .limit(1);
 
-    const seq = result.length > 0
-      ? parseInt(result[0].shipmentNumber.replace(prefix, ''), 10) + 1
-      : 1;
+    const seq =
+      result.length > 0
+        ? parseInt(result[0].shipmentNumber.replace(prefix, ''), 10) + 1
+        : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
@@ -105,8 +107,12 @@ export class ShipmentService {
   /**
    * Create a new shipment against an order in picking state.
    */
-  async createShipment(salesOrderId: string, dto: CreateShipmentDto, actor: string) {
-    const order = await findOrder(this.database, salesOrderId);
+  async createShipment(
+    salesOrderId: string,
+    dto: CreateShipmentDto,
+    actor: string,
+  ) {
+    const order = await findOrder(this.db, salesOrderId);
     if (order.stateCode !== 'picking') {
       throw new BadRequestException(
         `Cannot create shipment for order in state '${order.stateCode}'. Order must be in 'picking'.`,
@@ -115,9 +121,13 @@ export class ShipmentService {
 
     // Validate every line: shipped qty must be available
     for (const line of dto.lines) {
-      const orderLine = await findOrderLine(this.database, line.salesOrderLineId, salesOrderId);
+      const orderLine = await findOrderLine(
+        this.db,
+        line.salesOrderLineId,
+        salesOrderId,
+      );
       await assertShipmentQtyAvailable(
-        this.database,
+        this.db,
         salesOrderId,
         line.salesOrderLineId,
         parseFloat(line.quantityShipped),
@@ -127,7 +137,7 @@ export class ShipmentService {
 
     const shipmentNumber = await this.generateShipmentNumber();
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [shipment] = await tx
         .insert(salesOrderShipments)
         .values({
@@ -150,45 +160,68 @@ export class ShipmentService {
         await tx.insert(salesOrderShipmentLines).values(lineValues);
       }
 
-      await writeEvent(tx, salesOrderId, 'shipment_created', {
-        shipmentId: shipment.shipmentId,
-        shipmentNumber,
-        lineCount: lineValues.length,
-      }, actor);
+      await writeEvent(
+        tx,
+        salesOrderId,
+        'shipment_created',
+        {
+          shipmentId: shipment.shipmentId,
+          shipmentNumber,
+          lineCount: lineValues.length,
+        },
+        actor,
+        'sales_order_shipment',
+      );
 
       return shipment;
     });
 
+    this.logger.log(
+      `Shipment created: ${shipmentNumber} for order ${salesOrderId} with ${dto.lines.length} lines by ${actor}`,
+    );
     return result;
   }
 
   /**
    * Update shipment header (notes, tracking). Editable in any non-cancelled state.
    */
-  async updateShipment(shipmentId: string, dto: UpdateShipmentDto, actor: string) {
-    const shipment = await findShipment(this.database, shipmentId);
+  async updateShipment(
+    shipmentId: string,
+    dto: UpdateShipmentDto,
+    actor: string,
+  ) {
+    const shipment = await findShipment(this.db, shipmentId);
 
-    if (shipment.stateCode === 'cancelled') {
+    if (shipment.stateCode !== 'draft') {
       throw new BadRequestException(
-        `Cannot update a cancelled shipment.`,
+        `Cannot update a ${shipment.stateCode} shipment.`,
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderShipments)
         .set({
           ...(dto.notes !== undefined && { notes: dto.notes }),
-          ...(dto.trackingNumber !== undefined && { trackingNumber: dto.trackingNumber }),
+          ...(dto.trackingNumber !== undefined && {
+            trackingNumber: dto.trackingNumber,
+          }),
           modifiedOn: new Date(),
         })
         .where(eq(salesOrderShipments.shipmentId, shipmentId))
         .returning();
 
-      await writeEvent(tx, shipment.salesOrderId, 'shipment_updated', {
-        shipmentId,
-        changes: dto,
-      }, actor);
+      await writeEvent(
+        tx,
+        shipment.salesOrderId,
+        'shipment_updated',
+        {
+          shipmentId,
+          changes: dto,
+        },
+        actor,
+        'sales_order_shipment',
+      );
 
       return updated;
     });
@@ -199,22 +232,26 @@ export class ShipmentService {
   /**
    * Transition shipment state.
    */
-  async changeShipmentState(shipmentId: string, newState: string, actor: string) {
+  async changeShipmentState(
+    shipmentId: string,
+    newState: string,
+    actor: string,
+  ) {
     if (!VALID_SHIPMENT_STATES.includes(newState)) {
       throw new BadRequestException(`Invalid shipment state: '${newState}'`);
     }
 
-    const shipment = await findShipment(this.database, shipmentId);
+    const shipment = await findShipment(this.db, shipmentId);
     const allowed = SHIPMENT_STATE_TRANSITIONS[shipment.stateCode];
 
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition shipment from '${shipment.stateCode}' to '${newState}'. ` +
-        `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+          `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderShipments)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -231,7 +268,11 @@ export class ShipmentService {
       // Resolve productIds from order lines
       const stockLines = [];
       for (const sl of shipmentLines) {
-        const orderLine = await findOrderLine(tx, sl.salesOrderLineId, shipment.salesOrderId);
+        const orderLine = await findOrderLine(
+          tx,
+          sl.salesOrderLineId,
+          shipment.salesOrderId,
+        );
         stockLines.push({
           productId: orderLine.productId,
           quantity: sl.quantityShipped,
@@ -241,21 +282,32 @@ export class ShipmentService {
       if (shipment.stateCode === 'draft' && newState === 'dispatched') {
         // Dispatching: deduct on-hand, release committed
         await this.inventoryService.deductStock(tx, stockLines);
-      } else if (shipment.stateCode === 'dispatched' && (newState === 'draft' || newState === 'cancelled')) {
+      } else if (
+        shipment.stateCode === 'dispatched' &&
+        (newState === 'draft' || newState === 'cancelled')
+      ) {
         // Reversing or cancelling a dispatch: restore on-hand and re-commit
         await this.inventoryService.restoreStock(tx, stockLines);
       }
 
-      const eventType = newState === 'dispatched'
-        ? 'shipment_dispatched'
-        : 'shipment_status_changed';
+      const eventType =
+        newState === 'dispatched'
+          ? 'shipment_dispatched'
+          : 'shipment_status_changed';
 
-      await writeEvent(tx, shipment.salesOrderId, eventType, {
-        shipmentId,
-        shipmentNumber: shipment.shipmentNumber,
-        from: shipment.stateCode,
-        to: newState,
-      }, actor);
+      await writeEvent(
+        tx,
+        shipment.salesOrderId,
+        eventType,
+        {
+          shipmentId,
+          shipmentNumber: shipment.shipmentNumber,
+          from: shipment.stateCode,
+          to: newState,
+        },
+        actor,
+        'sales_order_shipment',
+      );
 
       const autoTransitions = await evaluateLifecycleRules(
         tx,
@@ -267,14 +319,21 @@ export class ShipmentService {
       return { ...updated, _autoTransitions: autoTransitions };
     });
 
+    this.logger.log(
+      `Shipment ${shipment.shipmentNumber} state: ${shipment.stateCode} → ${newState} by ${actor}`,
+    );
     return result;
   }
 
   /**
    * Add a line to a draft shipment.
    */
-  async addShipmentLine(shipmentId: string, dto: AddShipmentLineDto, actor: string) {
-    const shipment = await findShipment(this.database, shipmentId);
+  async addShipmentLine(
+    shipmentId: string,
+    dto: AddShipmentLineDto,
+    actor: string,
+  ) {
+    const shipment = await findShipment(this.db, shipmentId);
 
     if (shipment.stateCode !== 'draft') {
       throw new BadRequestException(
@@ -282,16 +341,20 @@ export class ShipmentService {
       );
     }
 
-    const orderLine = await findOrderLine(this.database, dto.salesOrderLineId, shipment.salesOrderId);
+    const orderLine = await findOrderLine(
+      this.db,
+      dto.salesOrderLineId,
+      shipment.salesOrderId,
+    );
     await assertShipmentQtyAvailable(
-      this.database,
+      this.db,
       shipment.salesOrderId,
       dto.salesOrderLineId,
       parseFloat(dto.quantityShipped),
       orderLine.lineNumber,
     );
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [line] = await tx
         .insert(salesOrderShipmentLines)
         .values({
@@ -306,12 +369,19 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(tx, shipment.salesOrderId, 'shipment_line_added', {
-        shipmentId,
-        shipmentLineId: line.shipmentLineId,
-        salesOrderLineId: dto.salesOrderLineId,
-        quantityShipped: dto.quantityShipped,
-      }, actor);
+      await writeEvent(
+        tx,
+        shipment.salesOrderId,
+        'shipment_line_added',
+        {
+          shipmentId,
+          shipmentLineId: line.shipmentLineId,
+          salesOrderLineId: dto.salesOrderLineId,
+          quantityShipped: dto.quantityShipped,
+        },
+        actor,
+        'sales_order_shipment',
+      );
 
       return line;
     });
@@ -328,7 +398,7 @@ export class ShipmentService {
     dto: UpdateShipmentLineDto,
     actor: string,
   ) {
-    const shipment = await findShipment(this.database, shipmentId);
+    const shipment = await findShipment(this.db, shipmentId);
 
     if (shipment.stateCode !== 'draft') {
       throw new BadRequestException(
@@ -336,12 +406,16 @@ export class ShipmentService {
       );
     }
 
-    const existingLine = await findShipmentLine(this.database, lineId, shipmentId);
+    const existingLine = await findShipmentLine(this.db, lineId, shipmentId);
 
     if (dto.quantityShipped !== undefined) {
-      const orderLine = await findOrderLine(this.database, existingLine.salesOrderLineId, shipment.salesOrderId);
+      const orderLine = await findOrderLine(
+        this.db,
+        existingLine.salesOrderLineId,
+        shipment.salesOrderId,
+      );
       await assertShipmentQtyAvailable(
-        this.database,
+        this.db,
         shipment.salesOrderId,
         existingLine.salesOrderLineId,
         parseFloat(dto.quantityShipped),
@@ -350,11 +424,13 @@ export class ShipmentService {
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderShipmentLines)
         .set({
-          ...(dto.quantityShipped !== undefined && { quantityShipped: dto.quantityShipped }),
+          ...(dto.quantityShipped !== undefined && {
+            quantityShipped: dto.quantityShipped,
+          }),
         })
         .where(eq(salesOrderShipmentLines.shipmentLineId, lineId))
         .returning();
@@ -364,14 +440,21 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(tx, shipment.salesOrderId, 'shipment_line_updated', {
-        shipmentId,
-        shipmentLineId: lineId,
-        changes: dto,
-        previousValues: {
-          quantityShipped: existingLine.quantityShipped,
+      await writeEvent(
+        tx,
+        shipment.salesOrderId,
+        'shipment_line_updated',
+        {
+          shipmentId,
+          shipmentLineId: lineId,
+          changes: dto,
+          previousValues: {
+            quantityShipped: existingLine.quantityShipped,
+          },
         },
-      }, actor);
+        actor,
+        'sales_order_shipment',
+      );
 
       return updated;
     });
@@ -383,7 +466,7 @@ export class ShipmentService {
    * Remove a shipment line.
    */
   async removeShipmentLine(shipmentId: string, lineId: string, actor: string) {
-    const shipment = await findShipment(this.database, shipmentId);
+    const shipment = await findShipment(this.db, shipmentId);
 
     if (shipment.stateCode !== 'draft') {
       throw new BadRequestException(
@@ -391,9 +474,9 @@ export class ShipmentService {
       );
     }
 
-    const existingLine = await findShipmentLine(this.database, lineId, shipmentId);
+    const existingLine = await findShipmentLine(this.db, lineId, shipmentId);
 
-    await this.database.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: any) => {
       await tx
         .delete(salesOrderShipmentLines)
         .where(eq(salesOrderShipmentLines.shipmentLineId, lineId));
@@ -403,12 +486,19 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(tx, shipment.salesOrderId, 'shipment_line_removed', {
-        shipmentId,
-        shipmentLineId: lineId,
-        salesOrderLineId: existingLine.salesOrderLineId,
-        quantityShipped: existingLine.quantityShipped,
-      }, actor);
+      await writeEvent(
+        tx,
+        shipment.salesOrderId,
+        'shipment_line_removed',
+        {
+          shipmentId,
+          shipmentLineId: lineId,
+          salesOrderLineId: existingLine.salesOrderLineId,
+          quantityShipped: existingLine.quantityShipped,
+        },
+        actor,
+        'sales_order_shipment',
+      );
     });
   }
 
@@ -417,18 +507,35 @@ export class ShipmentService {
   // -------------------------------------------------------------------------
 
   async findOne(shipmentId: string) {
-    const shipment = await findShipment(this.database, shipmentId);
+    const shipment = await findShipment(this.db, shipmentId);
 
-    const lines = await this.database
-      .select()
+    const lines = await this.db
+      .select({
+        shipmentLineId: salesOrderShipmentLines.shipmentLineId,
+        salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
+        quantityShipped: salesOrderShipmentLines.quantityShipped,
+        productId: salesOrderLineItems.productId,
+        productNumber: martProducts.productNumber,
+      })
       .from(salesOrderShipmentLines)
+      .innerJoin(
+        salesOrderLineItems,
+        eq(
+          salesOrderShipmentLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
+      .leftJoin(
+        martProducts,
+        eq(salesOrderLineItems.productId, martProducts.productId),
+      )
       .where(eq(salesOrderShipmentLines.shipmentId, shipmentId));
 
     return { ...shipment, lines };
   }
 
   async findByOrder(salesOrderId: string) {
-    const shipments = await this.database
+    const shipments = await this.db
       .select()
       .from(salesOrderShipments)
       .where(eq(salesOrderShipments.salesOrderId, salesOrderId))
@@ -436,9 +543,26 @@ export class ShipmentService {
 
     const result = [];
     for (const shipment of shipments) {
-      const lines = await this.database
-        .select()
+      const lines = await this.db
+        .select({
+          shipmentLineId: salesOrderShipmentLines.shipmentLineId,
+          salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
+          quantityShipped: salesOrderShipmentLines.quantityShipped,
+          productId: salesOrderLineItems.productId,
+          productNumber: martProducts.productNumber,
+        })
         .from(salesOrderShipmentLines)
+        .innerJoin(
+          salesOrderLineItems,
+          eq(
+            salesOrderShipmentLines.salesOrderLineId,
+            salesOrderLineItems.salesOrderLineId,
+          ),
+        )
+        .leftJoin(
+          martProducts,
+          eq(salesOrderLineItems.productId, martProducts.productId),
+        )
         .where(eq(salesOrderShipmentLines.shipmentId, shipment.shipmentId));
       result.push({ ...shipment, lines });
     }

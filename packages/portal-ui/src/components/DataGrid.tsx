@@ -134,7 +134,7 @@ export default function DataGrid<T>({ endpoint, columns, gridKey, searchPlacehol
     const params = new URLSearchParams();
     params.set('page', String(page));
     params.set('limit', String(limit));
-    if (search) params.set('search', search);
+    if (search) params.set('q', search);
 
     apiFetch<{ data: T[] }>(`${endpoint}?${params}`)
       .then((res) => setData(res.data))

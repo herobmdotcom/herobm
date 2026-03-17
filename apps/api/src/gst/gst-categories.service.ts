@@ -6,18 +6,14 @@ import { gstCategories } from '../drizzle/modbm-core-schema';
 
 @Injectable()
 export class GstCategoriesService {
-  constructor(@Inject(DRIZZLE) private db: any) {}
-
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll() {
-    return this.database.select().from(gstCategories);
+    return this.db.select().from(gstCategories);
   }
 
   async getById(id: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(gstCategories)
       .where(eq(gstCategories.gstCategoryId, id))
@@ -29,7 +25,7 @@ export class GstCategoriesService {
   }
 
   async getDefault() {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(gstCategories)
       .where(eq(gstCategories.isDefault, true))
@@ -41,7 +37,7 @@ export class GstCategoriesService {
   }
 
   async getByCode(code: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(gstCategories)
       .where(eq(gstCategories.code, code))

@@ -6,6 +6,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { PaginationQuery } from '../common/pagination';
 
 @Controller('products')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -15,16 +16,8 @@ export class ProductsController {
 
   @Get()
   @CasbinAction('read')
-  findAll(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.productsService.findAll({
-      search,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-    });
+  findAll(@Query() query: PaginationQuery) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')

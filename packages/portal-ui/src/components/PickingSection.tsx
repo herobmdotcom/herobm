@@ -11,6 +11,7 @@ interface PickingSummaryLine {
   salesOrderLineId: string;
   lineNumber: number;
   productId: string;
+  productNumber?: string;
   productDescription: string;
   quantity: string;
   quantityPicked: string;
@@ -49,6 +50,7 @@ interface OrderLine {
   salesOrderLineId: string;
   lineNumber: number;
   productId: string;
+  productNumber?: string;
   productDescription: string;
   quantity: string;
 }
@@ -143,8 +145,8 @@ export default function PickingSection({
   const loadPickingData = useCallback(async () => {
     try {
       const [summaryData, shipmentsData] = await Promise.all([
-        apiFetch<PickingSummary>(`/api/orders/${orderId}/picking`),
-        apiFetch<Shipment[]>(`/api/orders/${orderId}/shipments`),
+        apiFetch<PickingSummary>(`/api/sales-orders/${orderId}/picking`),
+        apiFetch<Shipment[]>(`/api/sales-orders/${orderId}/shipments`),
       ]);
       setSummary(summaryData);
       setShipments(shipmentsData);
@@ -176,7 +178,7 @@ export default function PickingSection({
       }
     }
     try {
-      await apiMutate(`/api/orders/${orderId}/picking/lines/${lineId}`, 'PATCH', {
+      await apiMutate(`/api/sales-orders/${orderId}/picking/lines/${lineId}`, 'PATCH', {
         quantityPicked: qty,
       });
       setEditingLineId(null);
@@ -189,7 +191,7 @@ export default function PickingSection({
   const pickAllForLine = async (lineId: string) => {
     setError('');
     try {
-      await apiMutate(`/api/orders/${orderId}/picking/lines/${lineId}/pick-all`, 'POST');
+      await apiMutate(`/api/sales-orders/${orderId}/picking/lines/${lineId}/pick-all`, 'POST');
       await loadPickingData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to pick all');
@@ -199,7 +201,7 @@ export default function PickingSection({
   const pickAllOrder = async () => {
     setError('');
     try {
-      await apiMutate(`/api/orders/${orderId}/picking/pick-all`, 'POST');
+      await apiMutate(`/api/sales-orders/${orderId}/picking/pick-all`, 'POST');
       await loadPickingData();
       onOrderUpdated();
     } catch (err) {
@@ -221,7 +223,7 @@ export default function PickingSection({
       return;
     }
     try {
-      await apiMutate(`/api/orders/${orderId}/shipments`, 'POST', {
+      await apiMutate(`/api/sales-orders/${orderId}/shipments`, 'POST', {
         notes: newShipmentNotes || undefined,
         trackingNumber: newShipmentTracking || undefined,
         lines,
@@ -240,7 +242,7 @@ export default function PickingSection({
     setError('');
     try {
       const response = await apiMutate<{ _autoTransitions?: any[] }>(
-        `/api/orders/${orderId}/shipments/${shipmentId}/state`,
+        `/api/sales-orders/${orderId}/shipments/${shipmentId}/state`,
         'PATCH',
         { stateCode: newState }
       );
@@ -261,7 +263,7 @@ export default function PickingSection({
     setError('');
     try {
       await apiMutate(
-        `/api/orders/${orderId}/shipments/${shipmentId}`,
+        `/api/sales-orders/${orderId}/shipments/${shipmentId}`,
         'PATCH',
         {
           notes: editShipmentNotes || null,
@@ -321,6 +323,27 @@ export default function PickingSection({
 
         {isPickingState && (
           <div className="flex items-center gap-2" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={async () => {
+                try {
+                  const { getToken } = await import('../lib/api');
+                  const t = getToken();
+                  if (!t) return;
+                  const res = await fetch(`/api/sales-orders/${orderId}/picking-slip-report`, {
+                    headers: { Authorization: `Bearer ${t}` },
+                  });
+                  if (!res.ok) throw new Error(`Failed: ${res.status}`);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Failed to generate picking slip');
+                }
+              }}
+            >
+              🖨️ Print Picking Slip
+            </button>
             <button className="btn btn-secondary btn-sm" onClick={pickAllOrder}>
               ✅ Pick All &amp; Create Shipment
             </button>
@@ -424,7 +447,7 @@ export default function PickingSection({
                 <tr key={line.salesOrderLineId}>
                   <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                   <td style={{ fontWeight: 600, fontSize: 12 }}>
-                    {line.productId?.substring(0, 8) || '—'}
+                    {line.productNumber || line.productId?.substring(0, 8) || '—'}
                   </td>
                   <td>{line.productDescription || '—'}</td>
                   <td style={{ textAlign: 'right' }}>{line.quantity}</td>
@@ -598,7 +621,9 @@ export default function PickingSection({
                 return (
                   <tr key={ol.salesOrderLineId}>
                     <td style={{ color: 'var(--text-muted)' }}>{ol.lineNumber}</td>
-                    <td style={{ fontWeight: 600, fontSize: 12 }}>{ol.productId?.substring(0, 8) || '—'}</td>
+                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                      {ol.productNumber || ol.productId?.substring(0, 8) || '—'}
+                    </td>
                     <td>{ol.productDescription || '—'}</td>
                     <td style={{ textAlign: 'right' }}>{ol.quantity}</td>
                     <td style={{ textAlign: 'right' }}>{pickLine?.quantityPicked || '0'}</td>
@@ -727,7 +752,7 @@ export default function PickingSection({
                           if (val !== (shipment.notes || null)) {
                             try {
                               await apiMutate(
-                                `/api/orders/${orderId}/shipments/${shipment.shipmentId}`,
+                                `/api/sales-orders/${orderId}/shipments/${shipment.shipmentId}`,
                                 'PATCH',
                                 { notes: val, trackingNumber: shipment.trackingNumber }
                               );
@@ -753,7 +778,7 @@ export default function PickingSection({
                           if (val !== (shipment.trackingNumber || null)) {
                             try {
                               await apiMutate(
-                                `/api/orders/${orderId}/shipments/${shipment.shipmentId}`,
+                                `/api/sales-orders/${orderId}/shipments/${shipment.shipmentId}`,
                                 'PATCH',
                                 { notes: shipment.notes, trackingNumber: val }
                               );
@@ -790,7 +815,9 @@ export default function PickingSection({
                         );
                         return (
                           <tr key={sl.shipmentLineId}>
-                            <td style={{ fontWeight: 600, fontSize: 12 }}>{orderLine?.productId?.substring(0, 8) || '—'}</td>
+                            <td style={{ fontWeight: 600, fontSize: 12 }}>
+                              {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                            </td>
                             <td>{orderLine?.productDescription || '—'}</td>
                             <td style={{ textAlign: 'right' }}>{sl.quantityShipped}</td>
                           </tr>

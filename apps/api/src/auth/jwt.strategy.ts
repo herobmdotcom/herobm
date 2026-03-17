@@ -16,7 +16,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
       secretOrKey: (() => {
         const secret = process.env.JWT_SECRET;
-        if (!secret) throw new Error('FATAL: JWT_SECRET environment variable is not set. Check your .env file.');
+        if (!secret)
+          throw new Error(
+            'FATAL: JWT_SECRET environment variable is not set. Check your .env file.',
+          );
         return secret;
       })(),
     });

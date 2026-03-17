@@ -1,6 +1,15 @@
 import { Reflector } from '@nestjs/core';
-import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { CasbinGuard, CASBIN_RESOURCE, CASBIN_ACTION, SKIP_CASBIN } from './casbin.guard';
+import {
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  CasbinGuard,
+  CASBIN_RESOURCE,
+  CASBIN_ACTION,
+  SKIP_CASBIN,
+} from './casbin.guard';
 
 /**
  * Helper to build a mock ExecutionContext with configurable metadata and request.
@@ -24,7 +33,11 @@ function createMockContext(opts: {
     __metadata: opts.metadata ?? {},
     __handler: handler,
     __classRef: classRef,
-  } as unknown as ExecutionContext & { __metadata: Record<string, any>; __handler: any; __classRef: any };
+  } as unknown as ExecutionContext & {
+    __metadata: Record<string, any>;
+    __handler: any;
+    __classRef: any;
+  };
 }
 
 describe('CasbinGuard', () => {
@@ -38,12 +51,17 @@ describe('CasbinGuard', () => {
 
   describe('SkipCasbin decorator', () => {
     it('should allow access when @SkipCasbin() is set', async () => {
-      const ctx = createMockContext({ metadata: { [SKIP_CASBIN]: true }, user: null });
+      const ctx = createMockContext({
+        metadata: { [SKIP_CASBIN]: true },
+        user: null,
+      });
 
       // Mock reflector to return skip_casbin = true
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       const result = await guard.canActivate(ctx);
       expect(result).toBe(true);
@@ -57,9 +75,11 @@ describe('CasbinGuard', () => {
         user: { userId: '1', username: 'admin', role: 'admin' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });
@@ -70,9 +90,11 @@ describe('CasbinGuard', () => {
         user: { userId: '1', username: 'admin', role: 'admin' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });
@@ -83,9 +105,11 @@ describe('CasbinGuard', () => {
         user: { userId: '1', username: 'admin', role: 'admin' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });
@@ -101,11 +125,15 @@ describe('CasbinGuard', () => {
         user: null,
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
-      await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+      await expect(guard.canActivate(ctx)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -119,9 +147,11 @@ describe('CasbinGuard', () => {
         user: { userId: '2', username: 'viewer', role: 'viewer' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       const result = await guard.canActivate(ctx);
       expect(result).toBe(true);
@@ -136,9 +166,11 @@ describe('CasbinGuard', () => {
         user: { userId: '2', username: 'viewer', role: 'viewer' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });
@@ -152,9 +184,11 @@ describe('CasbinGuard', () => {
         user: { userId: '1', username: 'admin', role: 'admin' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       const result = await guard.canActivate(ctx);
       expect(result).toBe(true);
@@ -169,9 +203,11 @@ describe('CasbinGuard', () => {
         user: { userId: '1', username: 'admin', role: 'admin' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       const result = await guard.canActivate(ctx);
       expect(result).toBe(true);
@@ -186,9 +222,11 @@ describe('CasbinGuard', () => {
         user: { userId: '2', username: 'viewer', role: 'viewer' },
       });
 
-      jest.spyOn(reflector, 'getAllAndOverride').mockImplementation((key: string) => {
-        return (ctx as any).__metadata[key];
-      });
+      jest
+        .spyOn(reflector, 'getAllAndOverride')
+        .mockImplementation((key: string) => {
+          return (ctx as any).__metadata[key];
+        });
 
       await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
     });

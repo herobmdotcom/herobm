@@ -28,32 +28,22 @@ describe('ProductsController', () => {
   });
 
   describe('findAll', () => {
-    it('should call service.findAll with no params', async () => {
-      const result = await controller.findAll();
+    it('should call service.findAll with empty query', async () => {
+      const result = await controller.findAll({});
       expect(result).toEqual(mockResult);
-      expect(mockService.findAll).toHaveBeenCalledWith({
-        search: undefined,
-        page: undefined,
-        limit: undefined,
-      });
+      expect(mockService.findAll).toHaveBeenCalledWith({});
     });
 
-    it('should parse page and limit from query strings', async () => {
-      await controller.findAll('bolt', '3', '10');
-      expect(mockService.findAll).toHaveBeenCalledWith({
-        search: 'bolt',
-        page: 3,
-        limit: 10,
-      });
+    it('should pass through PaginationQuery object', async () => {
+      const query = { q: 'bolt', page: 3, limit: 10 };
+      await controller.findAll(query);
+      expect(mockService.findAll).toHaveBeenCalledWith(query);
     });
 
     it('should pass search without pagination', async () => {
-      await controller.findAll('fitting');
-      expect(mockService.findAll).toHaveBeenCalledWith({
-        search: 'fitting',
-        page: undefined,
-        limit: undefined,
-      });
+      const query = { q: 'fitting' };
+      await controller.findAll(query);
+      expect(mockService.findAll).toHaveBeenCalledWith(query);
     });
   });
 

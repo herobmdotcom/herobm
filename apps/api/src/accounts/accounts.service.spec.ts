@@ -6,7 +6,6 @@ import { NotFoundException } from '@nestjs/common';
 describe('AccountsService', () => {
   let service: AccountsService;
 
-  // Mock data matching mart_accounts CDM schema
   const mockAccounts = [
     {
       accountId: 'C001',
@@ -26,13 +25,13 @@ describe('AccountsService', () => {
     },
   ];
 
-  // Chainable mock for Drizzle query builder
+  // Chainable mock for Drizzle $dynamic() query builder
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
-    $dynamic: jest.fn().mockReturnThis(),
+    $dynamic: jest.fn(),
     then: jest.fn().mockImplementation((cb) => cb(mockAccounts)),
     [Symbol.asyncIterator]: jest.fn(),
   };
@@ -44,15 +43,16 @@ describe('AccountsService', () => {
   };
 
   beforeEach(async () => {
-    // Reset mocks
     jest.clearAllMocks();
-    mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb(mockAccounts));
+    // $dynamic() must return the same chainable object
+    mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
+    mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
+    mockQueryBuilder.then = jest
+      .fn()
+      .mockImplementation((cb) => cb(mockAccounts));
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AccountsService,
-        { provide: DRIZZLE, useValue: mockDb },
-      ],
+      providers: [AccountsService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
 
     service = module.get<AccountsService>(AccountsService);
@@ -78,15 +78,17 @@ describe('AccountsService', () => {
       expect(mockQueryBuilder.limit).toHaveBeenCalledWith(200);
     });
 
-    it('should apply search filter when search is provided', async () => {
-      await service.findAll({ search: 'acme' });
+    it('should apply search filter when q is provided', async () => {
+      await service.findAll({ q: 'acme' });
       expect(mockQueryBuilder.where).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
     it('should return a single account', async () => {
-      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb([mockAccounts[0]]));
+      mockQueryBuilder.then = jest
+        .fn()
+        .mockImplementation((cb) => cb([mockAccounts[0]]));
       const result = await service.findOne('C001');
       expect(result).toEqual(mockAccounts[0]);
     });

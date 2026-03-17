@@ -5,7 +5,7 @@ import type { NavItem } from '@modbm/portal-ui';
 
 const navItems: NavItem[] = [
   { href: '/', label: 'Orders', icon: '📋' },
-  { href: '/orders/new', label: 'New Order', icon: '➕' },
+  { href: '/sales-orders/new', label: 'New Order', icon: '➕' },
 ];
 
 export default function Sidebar() {

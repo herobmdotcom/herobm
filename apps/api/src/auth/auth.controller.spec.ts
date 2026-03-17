@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Mock AuthService at the module level to prevent requireEnv() from firing
 // during module load (it calls bcrypt.hashSync(requireEnv(...)) at top level).
@@ -20,6 +21,7 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
       controllers: [AuthController],
       providers: [
         {
@@ -53,8 +55,8 @@ describe('AuthController', () => {
     });
 
     it('should pass username and password from DTO body', async () => {
-      await controller.login({ username: 'viewer', password: 'secret' });
-      expect(service.login).toHaveBeenCalledWith('viewer', 'secret');
+      await controller.login({ username: 'viewer', password: 'REDACTED' });
+      expect(service.login).toHaveBeenCalledWith('viewer', 'REDACTED');
     });
   });
 });

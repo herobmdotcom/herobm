@@ -12,7 +12,9 @@ describe('PurchaseOrdersController', () => {
         {
           provide: PurchaseOrdersService,
           useValue: {
-            findAll: jest.fn().mockResolvedValue({ data: [], page: 1, limit: 50, total: 0 }),
+            findAll: jest
+              .fn()
+              .mockResolvedValue({ data: [], page: 1, limit: 50, total: 0 }),
             findOne: jest.fn().mockResolvedValue({}),
             create: jest.fn().mockResolvedValue({}),
             update: jest.fn().mockResolvedValue({}),

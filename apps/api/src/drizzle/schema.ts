@@ -1,4 +1,11 @@
-import { pgSchema, text, integer, numeric, timestamp, boolean } from 'drizzle-orm/pg-core';
+import {
+  pgSchema,
+  text,
+  integer,
+  numeric,
+  timestamp,
+  boolean,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Drizzle schema mapping the dbt marts layer (read-only in Phase 2).
@@ -188,4 +195,27 @@ export const purchaseOrderLines = marts.table('mart_purchase_order_lines', {
   documentTotalExTax: numeric('document_total_ex_tax'),
   documentTotalTax: numeric('document_total_tax'),
   documentTotalIncTax: numeric('document_total_inc_tax'),
+});
+
+// ---------------------------------------------------------------------------
+// mart_product_suppliers  (CDM: ProductVendor — many-to-many junction)
+// ---------------------------------------------------------------------------
+export const productSuppliers = marts.table('mart_product_suppliers', {
+  productSupplierId: text('product_supplier_id').primaryKey(),
+  productId: text('product_id'),
+  productNumber: text('product_number'),
+  productName: text('product_name'),
+  vendorId: text('vendor_id'),
+  vendorNumber: text('vendor_number'),
+  vendorName: text('vendor_name'),
+  supplierPartNumber: text('supplier_part_number'),
+  costPrice: numeric('cost_price'),
+  costPrice2: numeric('cost_price_2'),
+  discountPercent: numeric('discount_percent'),
+  priceBreakQuantity: numeric('price_break_quantity'),
+  isPreferred: boolean('is_preferred'),
+  minPurchaseQty: numeric('min_purchase_qty'),
+  purchaseUnit: text('purchase_unit'),
+  effectiveFrom: timestamp('effective_from'),
+  effectiveTo: timestamp('effective_to'),
 });

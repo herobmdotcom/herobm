@@ -9,7 +9,7 @@ const navItems = [
   { href: '/bins', label: 'Bin Contents', icon: '🗄️' },
   { href: '/products', label: 'Products', icon: '🏷️' },
   { href: '/accounts', label: 'Accounts', icon: '🏢' },
-  { href: '/orders', label: 'Orders', icon: '📋' },
+  { href: '/sales-orders', label: 'Orders', icon: '📋' },
 ];
 
 export default function Sidebar() {

@@ -1,18 +1,37 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/orders/OrderTotalsCard';
-import ProductSearchInput from '@/components/orders/ProductSearchInput';
-import type { Product } from '@/components/orders/ProductSearchInput';
+import OrderTotalsCard from '@/components/sales-orders/OrderTotalsCard';
+import ProductSearchInput from '@/components/sales-orders/ProductSearchInput';
+import type { Product } from '@/components/sales-orders/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 
-interface Supplier {
-  vendorId: string;
-  vendorNumber: string;
+interface Account {
+  accountId: string;
+  accountNumber: string;
   name: string;
+  customerDiscount: string | null;
+  currencyCode: string | null;
+  gstPosition: string | null;
+}
+
+interface GstCategory {
+  gstCategoryId: string;
+  code: string;
+  title: string;
+  type: string;
+  rate: string;
+  isDefault: boolean;
+}
+
+function gstLabel(c: GstCategory): string {
+  if (c.type === 'exempt') return 'Exempt';
+  if (c.type === 'zero_rated') return 'Zero Rated';
+  const pct = parseFloat(c.rate || '0');
+  return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
 }
 
 interface LineItem {
@@ -22,12 +41,14 @@ interface LineItem {
   productDescription: string;
   quantity: string;
   pricePerUnit: string;
+  discountPercentage: string;
+  gstCategoryId: string;
   unitOfMeasure: string;
 }
 
 let lineKey = 0;
 
-function emptyLine(): LineItem {
+function emptyLine(defaultDiscount = '0', defaultGstCategoryId = ''): LineItem {
   return {
     key: ++lineKey,
     productId: '',
@@ -35,6 +56,8 @@ function emptyLine(): LineItem {
     productDescription: '',
     quantity: '1',
     pricePerUnit: '0',
+    discountPercentage: defaultDiscount,
+    gstCategoryId: defaultGstCategoryId,
     unitOfMeasure: 'EA',
   };
 }
@@ -47,51 +70,92 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
   }, [fn, delay]);
 }
 
-function generateOrderNumber(): string {
-  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `PO-${today}-${rand}`;
-}
-
-export default function NewPurchaseOrderPage() {
+export default function NewOrderPage() {
   const router = useRouter();
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+  const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
 
-  const [vendorId, setVendorId] = useState('');
-  const [supplierSearch, setSupplierSearch] = useState('');
-  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
+  const [customerId, setCustomerId] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerDiscount, setCustomerDiscount] = useState('0');
   const [currencyCode, setCurrencyCode] = useState('EUR');
+  const [customerGstPosition, setCustomerGstPosition] = useState<string | null>(null);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [name, setName] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [customerOrderNumber, setCustomerOrderNumber] = useState('');
   const [notes, setNotes] = useState('');
+
+  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+  const defaultGstCategoryId = gstCategories.find((c) => c.isDefault)?.gstCategoryId || '';
+  const exemptGstCategoryId = gstCategories.find((c) => c.type === 'exempt')?.gstCategoryId || '';
+  const isCustomerExempt = customerGstPosition?.toLowerCase() === 'exempt';
+  // Exempt customers always get the exempt GST category
+  const effectiveGstCategoryId = isCustomerExempt ? exemptGstCategoryId : defaultGstCategoryId;
 
   const [lines, setLines] = useState<LineItem[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Debounced server-side search for suppliers (300ms)
-  const searchSuppliers = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setFilteredSuppliers([]); return; }
-    try {
-      const data = await apiFetch<{ data: Supplier[] }>(
-        `/api/suppliers?q=${encodeURIComponent(term)}&limit=10`,
-      );
-      setFilteredSuppliers(data.data);
-    } catch { setFilteredSuppliers([]); }
+  // Load GST categories on mount
+  useEffect(() => {
+    apiFetch<GstCategory[]>('/api/gst-categories')
+      .then(setGstCategories)
+      .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
 
-  const debouncedSupplierSearch = useDebounce(
-    (term: unknown) => searchSuppliers(term as string), 300,
+  // When GST categories load or customer changes, backfill effective GST onto lines missing one
+  useEffect(() => {
+    if (!effectiveGstCategoryId) return;
+    setLines((prev) =>
+      prev.map((l) => (l.gstCategoryId ? l : { ...l, gstCategoryId: effectiveGstCategoryId })),
+    );
+  }, [effectiveGstCategoryId]);
+
+  // Debounced server-side search for customers (300ms)
+  const searchAccounts = useCallback(async (term: string) => {
+    if (!term || term.length < 2) { setFilteredAccounts([]); return; }
+    try {
+      const data = await apiFetch<{ data: Account[] }>(
+        `/api/accounts?q=${encodeURIComponent(term)}&limit=10`,
+      );
+      setFilteredAccounts(data.data);
+    } catch { setFilteredAccounts([]); }
+  }, []);
+
+  const debouncedAccountSearch = useDebounce(
+    (term: unknown) => searchAccounts(term as string), 300,
   );
 
-  const selectSupplier = (s: Supplier) => {
-    setVendorId(s.vendorId);
-    setSupplierSearch(`${s.vendorNumber} — ${s.name}`);
-    setShowSupplierDropdown(false);
+  const selectCustomer = (a: Account) => {
+    setCustomerId(a.accountId);
+    setCustomerSearch(`${a.accountNumber} — ${a.name}`);
+    setShowCustomerDropdown(false);
+    const disc = a.customerDiscount ?? '0';
+    setCustomerDiscount(disc);
+    const resolvedCurrency = a.currencyCode || 'EUR';
+    setCurrencyCode(resolvedCurrency);
+    setCustomerGstPosition(a.gstPosition);
+
+    // Resolve the GST category: exempt customers force all lines to exempt
+    const custExempt = a.gstPosition?.toLowerCase() === 'exempt';
+    const lineGstId = custExempt ? exemptGstCategoryId : defaultGstCategoryId;
+
+    // Update discount + GST on all existing lines
+    setLines((prev) =>
+      prev.map((l) => ({
+        ...l,
+        discountPercentage: l.discountPercentage === '0' ? disc : l.discountPercentage,
+        gstCategoryId: custExempt ? lineGstId : l.gstCategoryId,
+      })),
+    );
   };
 
   const addLineFromProduct = (p: Product) => {
+    if (lines.some((l) => l.productId === p.productId)) {
+      setError(`Product '${p.productNumber}' is already in the order.`);
+      return;
+    }
+    setError('');
     setLines((prev) => [
       ...prev,
       {
@@ -100,7 +164,9 @@ export default function NewPurchaseOrderPage() {
         productNumber: p.productNumber,
         productDescription: p.name,
         quantity: '1',
-        pricePerUnit: parseFloat(p.tradePrice || p.listPrice || '0').toFixed(2),
+        pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
+        discountPercentage: customerDiscount,
+        gstCategoryId: effectiveGstCategoryId,
         unitOfMeasure: 'EA',
       },
     ]);
@@ -117,18 +183,26 @@ export default function NewPurchaseOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine()]);
+    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveGstCategoryId)]);
   };
 
   const computeAmount = (line: LineItem) => {
     const qty = parseFloat(line.quantity) || 0;
     const price = parseFloat(line.pricePerUnit) || 0;
-    return qty * price;
+    const disc = parseFloat(line.discountPercentage) || 0;
+    return qty * price * (1 - disc / 100);
+  };
+
+  const computeTax = (line: LineItem) => {
+    const amount = computeAmount(line);
+    const cat = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+    const rate = cat ? parseFloat(cat.rate || '0') : 0;
+    return amount * (rate / 100);
   };
 
   const handleSubmit = async () => {
-    if (!vendorId) {
-      setError('Please select a supplier');
+    if (!customerId) {
+      setError('Please select a customer');
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
@@ -140,12 +214,10 @@ export default function NewPurchaseOrderPage() {
     setError('');
 
     try {
-      const order = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
-        orderNumber: generateOrderNumber(),
+      const order = await apiMutate<{ salesOrderId: string }>('/api/sales-orders', 'POST', {
         name: name || undefined,
-        vendorId,
-        currencyCode,
-        invoiceNumber: invoiceNumber || undefined,
+        customerId,
+        customerOrderNumber: customerOrderNumber || undefined,
         notes: notes || undefined,
         lines: lines
           .filter((l) => l.productId)
@@ -154,26 +226,29 @@ export default function NewPurchaseOrderPage() {
             productDescription: l.productDescription,
             quantity: l.quantity,
             pricePerUnit: l.pricePerUnit,
+            discountPercentage: l.discountPercentage,
+            gstCategoryId: l.gstCategoryId || undefined,
             unitOfMeasure: l.unitOfMeasure,
           })),
       });
-      router.push(`/orders/${order.purchaseOrderId}`);
+      router.push(`/sales-orders/${order.salesOrderId}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create purchase order');
+      setError(err instanceof Error ? err.message : 'Failed to create order');
     } finally {
       setSubmitting(false);
     }
   };
 
   const subtotal = lines.reduce((sum, l) => sum + computeAmount(l), 0);
+  const totalTax = lines.reduce((sum, l) => sum + computeTax(l), 0);
 
   return (
     <Shell>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">New Purchase Order</h1>
+          <h1 className="text-2xl font-bold">New Order</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Create a purchase order
+            Create a sales order
           </p>
         </div>
         <div className="flex gap-3">
@@ -214,14 +289,14 @@ export default function NewPurchaseOrderPage() {
             Order Details
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            {/* Supplier selector */}
+            {/* Customer selector */}
             <div className="relative">
               <label
                 className="block text-xs font-medium mb-1.5"
                 style={{ color: 'var(--text-muted)' }}
               >
-                Supplier *
-                {vendorId && (
+                Customer *
+                {customerId && (
                   <span
                     style={{
                       marginLeft: 8,
@@ -237,22 +312,54 @@ export default function NewPurchaseOrderPage() {
                     {currencyCode}
                   </span>
                 )}
+                {isCustomerExempt && (
+                  <span
+                    style={{
+                      marginLeft: 4,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: 'rgba(245,158,11,0.15)',
+                      color: '#f59e0b',
+                      fontWeight: 600,
+                      fontSize: 10,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    EXEMPT
+                  </span>
+                )}
+                {customerId && parseFloat(customerDiscount) > 0 && (
+                  <span
+                    style={{
+                      marginLeft: 4,
+                      padding: '1px 6px',
+                      borderRadius: 4,
+                      background: 'rgba(74,222,128,0.15)',
+                      color: '#4ade80',
+                      fontWeight: 600,
+                      fontSize: 10,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {parseFloat(customerDiscount)}% disc
+                  </span>
+                )}
               </label>
               <input
-                id="order-supplier"
+                id="order-customer"
                 className="input"
                 autoComplete="off"
-                placeholder="Search supplier…"
-                value={supplierSearch}
+                placeholder="Search customer…"
+                value={customerSearch}
                 onChange={(e) => {
-                  setSupplierSearch(e.target.value);
-                  setShowSupplierDropdown(true);
-                  setVendorId('');
-                  debouncedSupplierSearch(e.target.value);
+                  setCustomerSearch(e.target.value);
+                  setShowCustomerDropdown(true);
+                  setCustomerId('');
+                  debouncedAccountSearch(e.target.value);
                 }}
-                onFocus={() => setShowSupplierDropdown(true)}
+                onFocus={() => setShowCustomerDropdown(true)}
               />
-              {showSupplierDropdown && supplierSearch && (
+              {showCustomerDropdown && customerSearch && (
                 <div
                   className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area"
                   style={{
@@ -261,24 +368,24 @@ export default function NewPurchaseOrderPage() {
                     boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                   }}
                 >
-                  {filteredSuppliers.slice(0, 10).map((s) => (
+                  {filteredAccounts.slice(0, 10).map((a) => (
                     <div
-                      key={s.vendorId}
+                      key={a.accountId}
                       className="px-3 py-2 cursor-pointer text-sm"
                       style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
-                      onMouseDown={() => selectSupplier(s)}
+                      onMouseDown={() => selectCustomer(a)}
                     >
                       <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                        {s.vendorNumber}
+                        {a.accountNumber}
                       </span>
                       <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                        {s.name}
+                        {a.name}
                       </span>
                     </div>
                   ))}
-                  {filteredSuppliers.length === 0 && (
+                  {filteredAccounts.length === 0 && (
                     <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      No matching suppliers
+                      No matching customers
                     </div>
                   )}
                 </div>
@@ -287,14 +394,14 @@ export default function NewPurchaseOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Invoice #
+                Customer PO #
               </label>
               <input
-                id="order-invoice"
+                id="order-po"
                 className="input"
-                placeholder="Supplier invoice reference"
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
+                placeholder="Customer's purchase order reference"
+                value={customerOrderNumber}
+                onChange={(e) => setCustomerOrderNumber(e.target.value)}
               />
             </div>
 
@@ -312,19 +419,6 @@ export default function NewPurchaseOrderPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Currency
-              </label>
-              <input
-                id="order-currency"
-                className="input"
-                placeholder="EUR"
-                value={currencyCode}
-                onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
-              />
-            </div>
-
-            <div className="col-span-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 Notes
               </label>
@@ -365,6 +459,8 @@ export default function NewPurchaseOrderPage() {
                 <th>Description</th>
                 <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
                 <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
+                <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
+                <th style={{ width: 110, textAlign: 'right' }}>GST</th>
                 <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
                 <th style={{ width: 50 }}></th>
               </tr>
@@ -420,6 +516,32 @@ export default function NewPurchaseOrderPage() {
                       }}
                     />
                   </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      style={{ width: '100%', textAlign: 'right' }}
+                      value={line.discountPercentage}
+                      onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <select
+                      className="input"
+                      style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                      value={line.gstCategoryId}
+                      onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
+                    >
+                      {gstCategories.map((c) => (
+                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
+                          {gstLabel(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td
                     style={{
                       textAlign: 'right',
@@ -444,7 +566,7 @@ export default function NewPurchaseOrderPage() {
               {lines.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={9}
                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                   >
                     No line items — use the search above to add products
@@ -457,7 +579,7 @@ export default function NewPurchaseOrderPage() {
 
         <OrderTotalsCard
           subtotal={subtotal}
-          totalTax={0}
+          totalTax={totalTax}
           currencyCode={currencyCode}
         />
       </div>

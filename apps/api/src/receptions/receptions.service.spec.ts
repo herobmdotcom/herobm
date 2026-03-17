@@ -7,10 +7,7 @@ describe('ReceptionsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        ReceptionsService,
-        { provide: DRIZZLE, useValue: {} },
-      ],
+      providers: [ReceptionsService, { provide: DRIZZLE, useValue: {} }],
     }).compile();
 
     service = module.get<ReceptionsService>(ReceptionsService);

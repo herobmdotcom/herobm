@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 
@@ -14,6 +14,12 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }),
+  );
 
   // CORS: restrict to explicit origins (ADV-027 fix)
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:4300')
@@ -37,4 +43,7 @@ async function bootstrap() {
   await app.listen(port);
   Logger.log(`API running on http://localhost:${port}`, 'Bootstrap');
 }
-bootstrap();
+bootstrap().catch((err) => {
+  Logger.error(err);
+  process.exit(1);
+});

@@ -1,0 +1,93 @@
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  ValidateNested,
+  IsNumberString,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+// ── PO Line DTOs ──
+
+export class CreatePurchaseOrderLineDto {
+  @IsString()
+  @IsNotEmpty()
+  productId!: string;
+
+  @IsOptional()
+  @IsString()
+  productDescription?: string;
+
+  @IsNumberString()
+  quantity!: string;
+
+  @IsNumberString()
+  pricePerUnit!: string;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasure?: string;
+}
+
+export class UpdatePurchaseOrderLineDto {
+  @IsOptional()
+  @IsNumberString()
+  quantity?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  pricePerUnit?: string;
+
+  @IsOptional()
+  @IsString()
+  productDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  unitOfMeasure?: string;
+}
+
+// ── PO Header DTOs ──
+
+export class CreatePurchaseOrderDto {
+  @IsString()
+  @IsNotEmpty()
+  orderNumber!: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  vendorId!: string;
+
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePurchaseOrderLineDto)
+  lines?: CreatePurchaseOrderLineDto[];
+}
+
+export class UpdatePurchaseOrderDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  invoiceNumber?: string;
+}

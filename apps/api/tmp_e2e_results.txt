@@ -1,0 +1,1236 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: ORD-20260317-0024,E2E Picking Test Order,CBRENNAXXXX,draft,0.000000000,16911815-344b-435b-b1e8-861be911b848,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:291:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:289:20) {
+  query: 'insert into "modbm_core"."sales_orders" ("sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, $4, $5, $6, $7, default, default, $8, default, default) returning "sales_order_id", "order_number", "name", "customer_id", "customer_order_number", "state_code", "customer_discount", "gst_category_id", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'ORD-20260317-0024',
+    'E2E Picking Test Order',
+    'CBRENNAXXXX',
+    'draft',
+    '0.000000000',
+    '16911815-344b-435b-b1e8-861be911b848',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: duplicate key value violates unique constraint "sales_orders_order_number_key"
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '23505',
+    detail: 'Key (order_number)=(ORD-20260317-0024) already exists.',
+    schema_name: 'modbm_core',
+    table_name: 'sales_orders',
+    constraint_name: 'sales_orders_order_number_key',
+    file: 'nbtinsert.c',
+    line: '666',
+    routine: '_bt_check_unique'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 6328  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 6328  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,1,1
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '1',
+    '1'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+FAIL test/orders-write.e2e-spec.ts
+  ΓùÅ Console
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"admin","usernameReceived":"admin","receivedPasswordLength":16,"passwordHash":"$2b$10$iP10sOxGihvkAYlI6LAuQuukY2JBoA9cc.j/ImfKKgi3uJkO3HFQW"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"viewer","usernameReceived":"viewer","receivedPasswordLength":16,"passwordHash":"$2b$10$1a8imgMfIrIAKrgLL/n2HO8SUNmDFMijDWPvWbO7aiZcVjY0qu5SW"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ GET /api/sales-orders/:id?source=app ΓÇö retrieves the order with lines and events
+
+    expect(received).toBeCloseTo(expected, precision)
+
+    Expected: 254.38
+    Received: 242.25
+
+    Expected precision:    2
+    Expected difference: < 0.005
+    Received difference:   12.129999999999995
+
+      168 |       expect(parseFloat(lineA.amount)).toBeCloseTo(242.25, 2);
+      169 |       // 242.25 + 12.13 = 254.38
+    > 170 |       expect(parseFloat(lineA.totalAmount)).toBeCloseTo(254.38, 2);
+          |                                             ^
+      171 |
+      172 |       firstLineId = res.body.lines[0].salesOrderLineId;
+      173 |     });
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:170:45)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ PATCH /api/sales-orders/:id/state ΓÇö transitions through the full lifecycle
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      237 |           .set('Authorization', `Bearer ${adminToken}`)
+      238 |           .send({ stateCode: nextState })
+    > 239 |           .expect(200);
+          |            ^
+      240 |         expect(res.body.stateCode).toBe(nextState);
+      241 |       }
+      242 |     });
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:239:12)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Full order lifecycle ΓÇ║ event log captures the full history
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 5
+    Received length: 1
+    Received array:  [{"actor": "admin", "createdOn": "2026-03-17T11:05:45.488Z", "eventId": "ea97c1aa-6035-4cbd-9a9e-72c4ad64bd88", "eventType": "status_changed", "payload": {"from": "draft", "to": "quoted"}, "salesOrderId": "6aa47370-0dcd-4289-8f56-e134153afd59"}]
+
+      260 |         (e: any) => e.eventType === 'status_changed',
+      261 |       );
+    > 262 |       expect(statusChanges).toHaveLength(5);
+          |                             ^
+      263 |     });
+      264 |   });
+      265 |
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:262:29)
+
+  ΓùÅ API E2E ΓÇö Sales Portal Write Endpoints ΓÇ║ Validation & error handling ΓÇ║ update on invoiced order returns 400
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      359 |           .set('Authorization', `Bearer ${adminToken}`)
+      360 |           .send({ stateCode: state })
+    > 361 |           .expect(200);
+          |            ^
+      362 |       }
+      363 |
+      364 |       // Now try to update it
+
+      at Object.<anonymous> (orders-write.e2e-spec.ts:361:12)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+PASS test/app.e2e-spec.ts
+  ΓùÅ Console
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"admin","usernameReceived":"admin","receivedPasswordLength":16,"passwordHash":"$2b$10$1qD.azcAP.mZVbL6arg0pOErJ7NcN5RIa3PjE6iP/YHjWCwUpvDxa"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"admin","usernameReceived":"admin","receivedPasswordLength":16,"passwordHash":"$2b$10$1qD.azcAP.mZVbL6arg0pOErJ7NcN5RIa3PjE6iP/YHjWCwUpvDxa"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"admin","usernameReceived":"admin","receivedPasswordLength":13,"passwordHash":"$2b$10$1qD.azcAP.mZVbL6arg0pOErJ7NcN5RIa3PjE6iP/YHjWCwUpvDxa"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] false
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,3,3
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '3',
+    '3'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:45 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:46 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+[Nest] 23284  - 03/17/2026, 12:05:46 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: 
+      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)
+      VALUES ($1, $2, $3, NOW())
+      ON CONFLICT (product_id, location_no) DO UPDATE
+      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,
+          modified_on = NOW()
+    
+params: P250982XXXX,MAIN,10,10
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at InventoryService.applyDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:111:5)
+    at InventoryService.applyLineDelta (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:134:7)
+    at InventoryService.commitStock (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.ts:142:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:445:9
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at OrdersWriteService.changeState (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.ts:435:20) {
+  query: '\n      INSERT INTO modbm_core.inventory_levels (product_id, location_no, quantity_committed, modified_on)\n      VALUES ($1, $2, $3, NOW())\n      ON CONFLICT (product_id, location_no) DO UPDATE\n      SET quantity_committed = (modbm_core.inventory_levels.quantity_committed::numeric + $4::numeric)::text,\n          modified_on = NOW()\n    ',
+  params: [
+    'P250982XXXX',
+    'MAIN',
+    '10',
+    '10'
+  ],
+  cause: PostgresError: column "quantity_committed" is of type numeric but expression is of type text
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42804',
+    hint: 'You will need to rewrite or cast the expression.',
+    position: '226',
+    file: 'parse_target.c',
+    line: '586',
+    routine: 'transformAssignedExpr'
+  }
+}
+FAIL test/picking.e2e-spec.ts
+  ΓùÅ Console
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"admin","usernameReceived":"admin","receivedPasswordLength":16,"passwordHash":"$2b$10$EKNInocJCiyS0mttFyGAgOY5lnJPs7GK99Jp130/9rV7uMNo1nWMe"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+    console.log
+      [DEBUG LOGIN] {"usernameExpected":"viewer","usernameReceived":"viewer","receivedPasswordLength":16,"passwordHash":"$2b$10$ftbPlL6TJbR//LGg442rPOy3sHOof1ENXrDJt5GZwplCc8t/o9OjS"}
+
+      at AuthService.login (../src/auth/auth.service.ts:44:13)
+
+    console.log
+      [DEBUG LOGIN RESULT] true
+
+      at AuthService.login (../src/auth/auth.service.ts:52:13)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ GET /api/sales-orders/:id/picking ΓÇö shows unpicked summary
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ PATCH picking/lines/:lineId ΓÇö partial pick
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped BLOCKED when lines incomplete
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ POST picking/lines/:lineId/pick-all ΓÇö pick remaining for line 1
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ pick line 2 fully
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped ALLOWED when all lines picked
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ shipped ΓåÆ invoiced completes lifecycle
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      100 |         ],
+      101 |       })
+    > 102 |       .expect(201);
+          |        ^
+      103 |
+      104 |     const orderId = res.body.salesOrderId;
+      105 |
+
+      at createPickingOrder (picking.e2e-spec.ts:102:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:135:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ POST picking/pick-all ΓÇö picks all lines and creates shipment
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:238:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ can now transition to shipped
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:238:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (with prior partial shipment) ΓÇ║ should ship only unshipped quantities when prior shipment exists
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:288:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments ΓÇö creates a shipment with lines
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ GET /shipments/:id ΓÇö returns shipment with lines
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id ΓÇö updates notes on draft
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments/:id/lines ΓÇö adds a line
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/lines/:lid ΓÇö updates line quantity
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/state ΓåÆ dispatched
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ rejects mutations on dispatched shipment
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:360:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ can cancel a draft shipment
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:476:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ cannot transition dispatched ΓåÆ cancelled
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:476:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects quantity exceeding ordered
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:584:36)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects negative quantity
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:594:36)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects shipping more than picked
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:604:36)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick a line (403)
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:644:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick-all (403)
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:644:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot create shipment (403)
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:644:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read picking summary (200)
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:644:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read shipments (200)
+
+    expected 200 "OK", got 500 "Internal Server Error"
+
+      110 |         .set('Authorization', `Bearer ${adminToken}`)
+      111 |         .send({ stateCode: state })
+    > 112 |         .expect(200);
+          |          ^
+      113 |     }
+      114 |
+      115 |     // Get line IDs
+
+      at createPickingOrder (picking.e2e-spec.ts:112:10)
+      at Object.<anonymous> (picking.e2e-spec.ts:644:22)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       31 failed, 41 passed, 72 total
+Snapshots:   0 total
+Time:        3.34 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

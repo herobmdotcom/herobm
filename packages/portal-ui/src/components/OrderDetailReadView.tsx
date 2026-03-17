@@ -16,6 +16,7 @@ export interface OrderLine {
   salesOrderLineId: string;
   lineNumber: number;
   productId: string;
+  productNumber?: string;
   productDescription: string;
   quantity: string;
   pricePerUnit: string;
@@ -257,7 +258,7 @@ export default function OrderDetailReadView({
               <tr key={line.salesOrderLineId}>
                 <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                 <td style={{ fontWeight: 600, fontSize: 12 }}>
-                  {line.productId?.substring(0, 8) || '—'}
+                  {line.productNumber || line.productId?.substring(0, 8) || '—'}
                 </td>
                 <td>{line.productDescription || '—'}</td>
                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>

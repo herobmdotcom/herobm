@@ -1,7 +1,11 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GstCategoriesService } from './gst-categories.service';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 
 @Controller('gst-categories')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)

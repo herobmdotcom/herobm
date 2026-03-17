@@ -4,6 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { inventory, binContents } from '../drizzle/schema';
 import { inventoryLevels } from '../drizzle/modbm-core-schema';
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 /** A line with productId + quantity for stock mutations. */
 export interface StockLine {
@@ -13,30 +14,23 @@ export interface StockLine {
 
 @Injectable()
 export class InventoryService {
-  constructor(@Inject(DRIZZLE) private db: any) {}
-
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   // =========================================================================
   // Read-only queries (existing — from mart_inventory)
   // =========================================================================
 
-  async findAll(query?: { search?: string; page?: number; limit?: number; locationNo?: string }) {
-    const page = query?.page ?? 1;
-    const limit = Math.min(query?.limit ?? 50, 200);
-    const offset = (page - 1) * limit;
+  async findAll(query?: PaginationQuery & { locationNo?: string }) {
+    const { page, limit, offset, searchTerm } = parsePagination(query);
 
-    let qb = this.database.select().from(inventory).$dynamic();
+    let qb = this.db.select().from(inventory).$dynamic();
 
-    if (query?.search) {
-      const term = `%${query.search}%`;
+    if (searchTerm) {
       qb = qb.where(
         or(
-          ilike(inventory.productName, term),
-          ilike(inventory.productNumber, term),
-          ilike(inventory.locationName, term),
+          ilike(inventory.productName, searchTerm),
+          ilike(inventory.productNumber, searchTerm),
+          ilike(inventory.locationName, searchTerm),
         ),
       );
     }
@@ -60,7 +54,7 @@ export class InventoryService {
   async findByProductIds(productIds: string[]) {
     if (productIds.length === 0) return { data: [] };
 
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(inventory)
       .where(inArray(inventory.productId, productIds))
@@ -69,20 +63,17 @@ export class InventoryService {
     return { data: rows };
   }
 
-  async findBins(query?: { search?: string; page?: number; limit?: number; locationNo?: string }) {
-    const page = query?.page ?? 1;
-    const limit = Math.min(query?.limit ?? 50, 200);
-    const offset = (page - 1) * limit;
+  async findBins(query?: PaginationQuery & { locationNo?: string }) {
+    const { page, limit, offset, searchTerm } = parsePagination(query);
 
-    let qb = this.database.select().from(binContents).$dynamic();
+    let qb = this.db.select().from(binContents).$dynamic();
 
-    if (query?.search) {
-      const term = `%${query.search}%`;
+    if (searchTerm) {
       qb = qb.where(
         or(
-          ilike(binContents.productName, term),
-          ilike(binContents.productNumber, term),
-          ilike(binContents.binNumber, term),
+          ilike(binContents.productName, searchTerm),
+          ilike(binContents.productNumber, searchTerm),
+          ilike(binContents.binNumber, searchTerm),
         ),
       );
     }
@@ -121,7 +112,7 @@ export class InventoryService {
       INSERT INTO modbm_core.inventory_levels (product_id, location_no, ${sql.raw(column)}, modified_on)
       VALUES (${productId}, ${locationNo}, ${delta.toString()}, NOW())
       ON CONFLICT (product_id, location_no) DO UPDATE
-      SET ${sql.raw(column)} = (modbm_core.inventory_levels.${sql.raw(column)}::numeric + ${delta.toString()}::numeric)::text,
+      SET ${sql.raw(column)} = (modbm_core.inventory_levels.${sql.raw(column)}::numeric + ${delta.toString()}::numeric),
           modified_on = NOW()
     `);
   }
@@ -191,4 +182,3 @@ export class InventoryService {
     await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_order', -1);
   }
 }
-

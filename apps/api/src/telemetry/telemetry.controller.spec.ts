@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TelemetryController } from './telemetry.controller';
 import { Logger, BadRequestException } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 describe('TelemetryController', () => {
   let controller: TelemetryController;
@@ -8,6 +9,7 @@ describe('TelemetryController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])],
       controllers: [TelemetryController],
     }).compile();
 
@@ -53,14 +55,14 @@ describe('TelemetryController', () => {
   });
 
   it('should throw BadRequestException when message is missing', () => {
-    expect(() =>
-      controller.reportClientError({} as any),
-    ).toThrow(BadRequestException);
+    expect(() => controller.reportClientError({} as any)).toThrow(
+      BadRequestException,
+    );
   });
 
   it('should throw BadRequestException when body is null', () => {
-    expect(() =>
-      controller.reportClientError(null as any),
-    ).toThrow(BadRequestException);
+    expect(() => controller.reportClientError(null as any)).toThrow(
+      BadRequestException,
+    );
   });
 });

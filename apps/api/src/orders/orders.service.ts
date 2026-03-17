@@ -4,6 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesOrderLines, accounts } from '../drizzle/schema';
 import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 /**
  * Unified order shape returned by findAll — merges ABM legacy and app orders.
@@ -25,11 +26,7 @@ export interface UnifiedOrderRow {
 
 @Injectable()
 export class OrdersService {
-  constructor(@Inject(DRIZZLE) private db: any) {}
-
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   /**
    * Unified order list: unions ABM mart orders + app orders.
@@ -38,14 +35,11 @@ export class OrdersService {
    *
    * At cutover: remove the ABM query and return only app orders.
    */
-  async findAll(query?: { search?: string; page?: number; limit?: number }) {
-    const page = query?.page ?? 1;
-    const limit = Math.min(query?.limit ?? 50, 200);
-    const offset = (page - 1) * limit;
-    const searchTerm = query?.search ? `%${query.search}%` : null;
+  async findAll(query?: PaginationQuery) {
+    const { page, limit, offset, searchTerm } = parsePagination(query);
 
     // --- ABM legacy orders (deduplicated by document_number) ---
-    let abmQuery = this.database
+    let abmQuery = this.db
       .selectDistinctOn([salesOrderLines.documentNumber], {
         id: salesOrderLines.salesOrderLineId,
         orderNumber: salesOrderLines.documentNumber,
@@ -71,7 +65,7 @@ export class OrdersService {
     }
 
     // --- App orders (join accounts for customer name) ---
-    let appQuery = this.database
+    let appQuery = this.db
       .select({
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
@@ -106,7 +100,7 @@ export class OrdersService {
     const appTotalMap = new Map<string, string>();
     const appOrderIds = appRows.map((r) => r.id);
     if (appOrderIds.length > 0) {
-      const totals = await this.database
+      const totals = await this.db
         .select({
           salesOrderId: salesOrderLineItems.salesOrderId,
           total: sql<string>`COALESCE(SUM(${salesOrderLineItems.totalAmount}::numeric), 0)::text`,
@@ -156,7 +150,7 @@ export class OrdersService {
   }
 
   async findOne(id: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select()
       .from(salesOrderLines)
       .where(eq(salesOrderLines.salesOrderLineId, id))
@@ -173,7 +167,7 @@ export class OrdersService {
    * Returns a unified detail shape for the Sales Portal.
    */
   async findAbmOrder(documentNumber: string) {
-    const lines = await this.database
+    const lines = await this.db
       .select()
       .from(salesOrderLines)
       .where(eq(salesOrderLines.documentNumber, documentNumber));
@@ -199,6 +193,7 @@ export class OrdersService {
         salesOrderLineId: l.salesOrderLineId,
         lineNumber: l.lineNumber ?? idx + 1,
         productId: l.productId,
+        productNumber: l.productNumber,
         productDescription: l.productDescription,
         quantity: l.quantity,
         pricePerUnit: l.pricePerUnit,

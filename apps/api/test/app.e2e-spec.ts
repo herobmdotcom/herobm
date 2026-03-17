@@ -8,7 +8,7 @@
  * Requires: Postgres running with populated marts (make elt && make transform)
  */
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 
@@ -29,6 +29,12 @@ describe('API E2E — Data Pipeline Verification', () => {
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        transform: true,
+      }),
+    );
     await app.init();
 
     // Obtain auth token
@@ -71,14 +77,12 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('POST /api/auth/login — unknown user returns 401', async () => {
       await request(app.getHttpServer())
         .post('/api/auth/login')
-        .send({ username: 'nobody', password: 'password' }) // TEST_CREDENTIAL
+        .send({ username: 'nobody', password: 'REDACTED' }) // TEST_CREDENTIAL
         .expect(401);
     });
 
     it('GET /api/accounts — no token returns 401', async () => {
-      await request(app.getHttpServer())
-        .get('/api/accounts')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/accounts').expect(401);
     });
   });
 
@@ -131,7 +135,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!searchTerm) return; // skip if no data
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/accounts?search=${searchTerm}`)
+        .get(`/api/accounts?q=${searchTerm}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -195,7 +199,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!searchTerm) return;
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/products?search=${searchTerm}`)
+        .get(`/api/products?q=${searchTerm}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -260,7 +264,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!searchTerm) return;
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/inventory?search=${searchTerm}`)
+        .get(`/api/inventory?q=${searchTerm}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -268,9 +272,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     });
 
     it('GET /api/inventory — no token returns 401', async () => {
-      await request(app.getHttpServer())
-        .get('/api/inventory')
-        .expect(401);
+      await request(app.getHttpServer()).get('/api/inventory').expect(401);
     });
   });
 
@@ -304,7 +306,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!binNum) return;
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/inventory/bins?search=${binNum}`)
+        .get(`/api/inventory/bins?q=${binNum}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -317,9 +319,9 @@ describe('API E2E — Data Pipeline Verification', () => {
   // =========================================================================
 
   describe('Orders — unified order listing', () => {
-    it('GET /api/orders — returns paginated unified orders', async () => {
+    it('GET /api/sales-orders — returns paginated unified orders', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/orders')
+        .get('/api/sales-orders')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -332,9 +334,9 @@ describe('API E2E — Data Pipeline Verification', () => {
       expect(first).toHaveProperty('stateCode');
     });
 
-    it('GET /api/orders — search by order number', async () => {
+    it('GET /api/sales-orders — search by order number', async () => {
       const allRes = await request(app.getHttpServer())
-        .get('/api/orders?limit=1')
+        .get('/api/sales-orders?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -342,16 +344,16 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!orderNum) return;
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/orders?search=${orderNum}`)
+        .get(`/api/sales-orders?q=${orderNum}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
       expect(searchRes.body.data.length).toBeGreaterThan(0);
     });
 
-    it('GET /api/orders/:id — returns specific order', async () => {
+    it('GET /api/sales-orders/:id — returns specific order', async () => {
       const listRes = await request(app.getHttpServer())
-        .get('/api/orders?limit=1')
+        .get('/api/sales-orders?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -362,24 +364,22 @@ describe('API E2E — Data Pipeline Verification', () => {
       const source = listRes.body.data[0]?.source;
       if (source === 'app') {
         const detailRes = await request(app.getHttpServer())
-          .get(`/api/orders/${orderId}?source=app`)
+          .get(`/api/sales-orders/${orderId}?source=app`)
           .set('Authorization', `Bearer ${authToken}`)
           .expect(200);
         expect(detailRes.body.salesOrderId).toBe(orderId);
       }
     });
 
-    it('GET /api/orders/:id — unknown ID returns 404', async () => {
+    it('GET /api/sales-orders/:id — unknown ID returns 404', async () => {
       await request(app.getHttpServer())
-        .get('/api/orders/NONEXISTENT-UUID-12345')
+        .get('/api/sales-orders/NONEXISTENT-UUID-12345')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
 
-    it('GET /api/orders — no token returns 401', async () => {
-      await request(app.getHttpServer())
-        .get('/api/orders')
-        .expect(401);
+    it('GET /api/sales-orders — no token returns 401', async () => {
+      await request(app.getHttpServer()).get('/api/sales-orders').expect(401);
     });
   });
 

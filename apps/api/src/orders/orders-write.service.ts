@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -13,6 +14,10 @@ import {
   orderEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
+import {
+  writeEvent as sharedWriteEvent,
+  findOrderLine as sharedFindOrderLine,
+} from './shipment-helpers';
 import { accounts } from '../drizzle/schema';
 import { products } from '../drizzle/schema';
 import { GstCategoriesService } from '../gst/gst-categories.service';
@@ -76,15 +81,13 @@ interface UpdateLineDto {
 @Injectable()
 export class OrdersWriteService {
   constructor(
-    @Inject(DRIZZLE) private db: any,
+    @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly gstService: GstCategoriesService,
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
   ) {}
 
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  private readonly logger = new Logger(OrdersWriteService.name);
 
   /**
    * Generate a human-readable order number (ORD-YYYYMMDD-NNNN).
@@ -94,16 +97,17 @@ export class OrdersWriteService {
     const prefix = `ORD-${today}-`;
 
     // Find the highest sequence for today
-    const result = await this.database
+    const result = await this.db
       .select({ orderNumber: salesOrders.orderNumber })
       .from(salesOrders)
       .where(sql`${salesOrders.orderNumber} LIKE ${prefix + '%'}`)
       .orderBy(sql`${salesOrders.orderNumber} DESC`)
       .limit(1);
 
-    const seq = result.length > 0
-      ? parseInt(result[0].orderNumber.replace(prefix, ''), 10) + 1
-      : 1;
+    const seq =
+      result.length > 0
+        ? parseInt(result[0].orderNumber.replace(prefix, ''), 10) + 1
+        : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
@@ -153,11 +157,14 @@ export class OrdersWriteService {
     // 1. Explicit override wins
     if (gstCategoryIdOverride) {
       const cat = await this.gstService.getById(gstCategoryIdOverride);
-      return { gstCategoryId: cat.gstCategoryId, rate: parseFloat(cat.rate ?? '0') };
+      return {
+        gstCategoryId: cat.gstCategoryId,
+        rate: parseFloat(cat.rate ?? '0'),
+      };
     }
 
     // 2. Customer exempt → always 0%
-    const custRows = await this.database
+    const custRows = await this.db
       .select({ gstPosition: accounts.gstPosition })
       .from(accounts)
       .where(eq(accounts.accountId, customerId))
@@ -167,24 +174,36 @@ export class OrdersWriteService {
 
     if (gstPosition?.toLowerCase() === 'exempt') {
       const exempt = await this.gstService.getByCode('EXE');
-      return { gstCategoryId: exempt.gstCategoryId, rate: parseFloat(exempt.rate ?? '0') };
+      return {
+        gstCategoryId: exempt.gstCategoryId,
+        rate: parseFloat(exempt.rate ?? '0'),
+      };
     }
 
     // 3. Product's GST category
     if (productId) {
       const product = await this.lookupProduct(productId);
       if (product.gstCategory) {
-        const code = OrdersWriteService.GST_CATEGORY_MAP[product.gstCategory.toLowerCase()];
+        const code =
+          OrdersWriteService.GST_CATEGORY_MAP[
+            product.gstCategory.toLowerCase()
+          ];
         if (code) {
           const cat = await this.gstService.getByCode(code);
-          return { gstCategoryId: cat.gstCategoryId, rate: parseFloat(cat.rate ?? '0') };
+          return {
+            gstCategoryId: cat.gstCategoryId,
+            rate: parseFloat(cat.rate ?? '0'),
+          };
         }
       }
     }
 
     // 4. Fallback: system default
     const defaultGst = await this.gstService.getDefault();
-    return { gstCategoryId: defaultGst.gstCategoryId, rate: parseFloat(defaultGst.rate ?? '0') };
+    return {
+      gstCategoryId: defaultGst.gstCategoryId,
+      rate: parseFloat(defaultGst.rate ?? '0'),
+    };
   }
 
   /**
@@ -196,7 +215,7 @@ export class OrdersWriteService {
     customerDiscount: string;
     currencyCode: string;
   }> {
-    const rows = await this.database
+    const rows = await this.db
       .select({
         id: accounts.accountId,
         customerDiscount: accounts.customerDiscount,
@@ -225,7 +244,7 @@ export class OrdersWriteService {
     productId: string;
     gstCategory: string | null;
   }> {
-    const rows = await this.database
+    const rows = await this.db
       .select({
         productId: products.productId,
         gstCategory: products.gstCategory,
@@ -258,19 +277,7 @@ export class OrdersWriteService {
     payload: any,
     actor: string,
   ): Promise<void> {
-    await tx.insert(orderEvents).values({
-      salesOrderId,
-      eventType,
-      payload,
-      actor,
-    });
-
-    await tx.insert(outbox).values({
-      aggregateType: 'sales_order',
-      aggregateId: salesOrderId,
-      eventType,
-      payload,
-    });
+    await sharedWriteEvent(tx, salesOrderId, eventType, payload, actor);
   }
 
   // -------------------------------------------------------------------------
@@ -284,8 +291,12 @@ export class OrdersWriteService {
     const customer = await this.resolveCustomer(dto.customerId);
 
     // Resolve order-level GST from the first line's product, or customer default
-    const firstProductId = dto.lines.length > 0 ? dto.lines[0].productId : undefined;
-    const headerGst = await this.resolveGstForLine(dto.customerId, firstProductId);
+    const firstProductId =
+      dto.lines.length > 0 ? dto.lines[0].productId : undefined;
+    const headerGst = await this.resolveGstForLine(
+      dto.customerId,
+      firstProductId,
+    );
 
     for (const line of dto.lines) {
       if (line.productId) {
@@ -293,9 +304,16 @@ export class OrdersWriteService {
       }
     }
 
+    // Check for duplicate product IDs in the input lines
+    const productIds = dto.lines.map((l) => l.productId).filter(Boolean);
+    const uniqueProductIds = new Set(productIds);
+    if (uniqueProductIds.size !== productIds.length) {
+      throw new BadRequestException('Order cannot contain duplicate products');
+    }
+
     const orderNumber = await this.generateOrderNumber();
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
         .insert(salesOrders)
@@ -322,7 +340,8 @@ export class OrdersWriteService {
           line.productId,
           line.gstCategoryId,
         );
-        const lineDiscount = line.discountPercentage ?? customer.customerDiscount;
+        const lineDiscount =
+          line.discountPercentage ?? customer.customerDiscount;
         const computed = this.computeLineAmount(
           line.quantity,
           line.pricePerUnit,
@@ -350,15 +369,24 @@ export class OrdersWriteService {
       }
 
       // Audit + outbox
-      await this.writeEvent(tx, order.salesOrderId, 'created', {
-        orderNumber,
-        customerId: dto.customerId,
-        lineCount: lineValues.length,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        order.salesOrderId,
+        'created',
+        {
+          orderNumber,
+          customerId: dto.customerId,
+          lineCount: lineValues.length,
+        },
+        actor,
+      );
 
       return order;
     });
 
+    this.logger.log(
+      `Order created: ${orderNumber} for customer ${dto.customerId} with ${dto.lines.length} lines by ${actor}`,
+    );
     return result;
   }
 
@@ -368,13 +396,16 @@ export class OrdersWriteService {
   async update(id: string, dto: UpdateOrderDto, actor: string) {
     const existing = await this.findOrder(id);
 
-    if (existing.stateCode === 'invoiced' || existing.stateCode === 'cancelled') {
+    if (
+      existing.stateCode === 'invoiced' ||
+      existing.stateCode === 'cancelled'
+    ) {
       throw new BadRequestException(
         `Cannot update order in state '${existing.stateCode}'`,
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({
@@ -388,14 +419,20 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      await this.writeEvent(tx, id, 'updated', {
-        changes: dto,
-        previousValues: {
-          name: existing.name,
-          customerOrderNumber: existing.customerOrderNumber,
-          notes: existing.notes,
+      await this.writeEvent(
+        tx,
+        id,
+        'updated',
+        {
+          changes: dto,
+          previousValues: {
+            name: existing.name,
+            customerOrderNumber: existing.customerOrderNumber,
+            notes: existing.notes,
+          },
         },
-      }, actor);
+        actor,
+      );
 
       return updated;
     });
@@ -417,7 +454,7 @@ export class OrdersWriteService {
     if (!allowed || !allowed.includes(newState)) {
       throw new BadRequestException(
         `Cannot transition from '${existing.stateCode}' to '${newState}'. ` +
-        `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+          `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
       );
     }
 
@@ -427,7 +464,7 @@ export class OrdersWriteService {
     }
 
     // Fetch order lines (needed for inventory mutations)
-    const orderLines = await this.database
+    const orderLines = await this.db
       .select()
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, id));
@@ -440,7 +477,7 @@ export class OrdersWriteService {
     // States where stock has been committed
     const COMMITTED_STATES = ['confirmed', 'picking', 'shipped'];
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -449,22 +486,37 @@ export class OrdersWriteService {
 
       // ── Inventory hooks ──
       // Confirming → commit stock
-      if (newState === 'confirmed' && !COMMITTED_STATES.includes(existing.stateCode)) {
+      if (
+        newState === 'confirmed' &&
+        !COMMITTED_STATES.includes(existing.stateCode)
+      ) {
         await this.inventoryService.commitStock(tx, stockLines);
       }
       // Cancelling from a committed state → release stock
-      if (newState === 'cancelled' && COMMITTED_STATES.includes(existing.stateCode)) {
+      if (
+        newState === 'cancelled' &&
+        COMMITTED_STATES.includes(existing.stateCode)
+      ) {
         await this.inventoryService.releaseStock(tx, stockLines);
       }
 
-      await this.writeEvent(tx, id, 'status_changed', {
-        from: existing.stateCode,
-        to: newState,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        id,
+        'status_changed',
+        {
+          from: existing.stateCode,
+          to: newState,
+        },
+        actor,
+      );
 
       return updated;
     });
 
+    this.logger.log(
+      `Order ${existing.orderNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
+    );
     return result;
   }
 
@@ -482,11 +534,28 @@ export class OrdersWriteService {
 
     if (dto.productId) {
       await this.validateProduct(dto.productId);
+
+      // Check if product already exists in this order
+      const existingLine = await this.db
+        .select({ id: salesOrderLineItems.salesOrderLineId })
+        .from(salesOrderLineItems)
+        .where(
+          sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
+        )
+        .limit(1);
+
+      if (existingLine.length > 0) {
+        throw new BadRequestException(
+          `Product '${dto.productId}' is already present in this order.`,
+        );
+      }
     }
 
     // Get next line number
-    const maxLine = await this.database
-      .select({ max: sql<number>`COALESCE(MAX(${salesOrderLineItems.lineNumber}), 0)` })
+    const maxLine = await this.db
+      .select({
+        max: sql<number>`COALESCE(MAX(${salesOrderLineItems.lineNumber}), 0)`,
+      })
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, orderId));
 
@@ -501,7 +570,8 @@ export class OrdersWriteService {
     const gstCategoryId = lineGst.gstCategoryId;
     const gstRate = lineGst.rate;
 
-    const lineDiscount = dto.discountPercentage ?? order.customerDiscount ?? '0';
+    const lineDiscount =
+      dto.discountPercentage ?? order.customerDiscount ?? '0';
 
     const computed = this.computeLineAmount(
       dto.quantity,
@@ -510,7 +580,7 @@ export class OrdersWriteService {
       gstRate,
     );
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [line] = await tx
         .insert(salesOrderLineItems)
         .values({
@@ -534,12 +604,18 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(tx, orderId, 'line_added', {
-        lineId: line.salesOrderLineId,
-        productId: dto.productId,
-        quantity: dto.quantity,
-        gstCategoryId,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        orderId,
+        'line_added',
+        {
+          lineId: line.salesOrderLineId,
+          productId: dto.productId,
+          quantity: dto.quantity,
+          gstCategoryId,
+        },
+        actor,
+      );
 
       return line;
     });
@@ -582,24 +658,36 @@ export class OrdersWriteService {
 
     const quantity = dto.quantity ?? existingLine.quantity;
     const pricePerUnit = dto.pricePerUnit ?? existingLine.pricePerUnit;
-    const discountPercentage = dto.discountPercentage ?? existingLine.discountPercentage ?? '0';
+    const discountPercentage =
+      dto.discountPercentage ?? existingLine.discountPercentage ?? '0';
 
-    const computed = this.computeLineAmount(quantity, pricePerUnit, discountPercentage, gstRate);
+    const computed = this.computeLineAmount(
+      quantity,
+      pricePerUnit,
+      discountPercentage,
+      gstRate,
+    );
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({
           ...(dto.quantity !== undefined && { quantity: dto.quantity }),
-          ...(dto.pricePerUnit !== undefined && { pricePerUnit: dto.pricePerUnit }),
+          ...(dto.pricePerUnit !== undefined && {
+            pricePerUnit: dto.pricePerUnit,
+          }),
           ...(dto.discountPercentage !== undefined && {
             discountPercentage: dto.discountPercentage,
           }),
-          ...(dto.gstCategoryId !== undefined && { gstCategoryId: dto.gstCategoryId }),
+          ...(dto.gstCategoryId !== undefined && {
+            gstCategoryId: dto.gstCategoryId,
+          }),
           ...(dto.productDescription !== undefined && {
             productDescription: dto.productDescription,
           }),
-          ...(dto.unitOfMeasure !== undefined && { unitOfMeasure: dto.unitOfMeasure }),
+          ...(dto.unitOfMeasure !== undefined && {
+            unitOfMeasure: dto.unitOfMeasure,
+          }),
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -612,16 +700,22 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(tx, orderId, 'line_updated', {
-        lineId,
-        changes: dto,
-        previousValues: {
-          quantity: existingLine.quantity,
-          pricePerUnit: existingLine.pricePerUnit,
-          discountPercentage: existingLine.discountPercentage,
-          gstCategoryId: existingLine.gstCategoryId,
+      await this.writeEvent(
+        tx,
+        orderId,
+        'line_updated',
+        {
+          lineId,
+          changes: dto,
+          previousValues: {
+            quantity: existingLine.quantity,
+            pricePerUnit: existingLine.pricePerUnit,
+            discountPercentage: existingLine.discountPercentage,
+            gstCategoryId: existingLine.gstCategoryId,
+          },
         },
-      }, actor);
+        actor,
+      );
 
       return updated;
     });
@@ -643,7 +737,7 @@ export class OrdersWriteService {
 
     const existingLine = await this.findLine(lineId, orderId);
 
-    await this.database.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: any) => {
       await tx
         .delete(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, lineId));
@@ -653,11 +747,17 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(tx, orderId, 'line_removed', {
-        lineId,
-        productId: existingLine.productId,
-        quantity: existingLine.quantity,
-      }, actor);
+      await this.writeEvent(
+        tx,
+        orderId,
+        'line_removed',
+        {
+          lineId,
+          productId: existingLine.productId,
+          quantity: existingLine.quantity,
+        },
+        actor,
+      );
     });
   }
 
@@ -667,13 +767,29 @@ export class OrdersWriteService {
   async findOne(id: string) {
     const order = await this.findOrder(id);
 
-    const lines = await this.database
-      .select()
+    const lines = await this.db
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        salesOrderId: salesOrderLineItems.salesOrderId,
+        lineNumber: salesOrderLineItems.lineNumber,
+        productId: salesOrderLineItems.productId,
+        productNumber: products.productNumber,
+        productDescription: salesOrderLineItems.productDescription,
+        quantity: salesOrderLineItems.quantity,
+        pricePerUnit: salesOrderLineItems.pricePerUnit,
+        discountPercentage: salesOrderLineItems.discountPercentage,
+        amount: salesOrderLineItems.amount,
+        tax: salesOrderLineItems.tax,
+        totalAmount: salesOrderLineItems.totalAmount,
+        unitOfMeasure: salesOrderLineItems.unitOfMeasure,
+        quantityPicked: salesOrderLineItems.quantityPicked,
+      })
       .from(salesOrderLineItems)
+      .leftJoin(products, eq(salesOrderLineItems.productId, products.productId))
       .where(eq(salesOrderLineItems.salesOrderId, id))
       .orderBy(salesOrderLineItems.lineNumber);
 
-    const events = await this.database
+    const events = await this.db
       .select()
       .from(orderEvents)
       .where(eq(orderEvents.salesOrderId, id))
@@ -687,7 +803,7 @@ export class OrdersWriteService {
   // -------------------------------------------------------------------------
 
   private async findOrder(id: string) {
-    const rows = await this.database
+    const rows = await this.db
       .select({
         order: salesOrders,
         customerName: accounts.name,
@@ -704,22 +820,6 @@ export class OrdersWriteService {
   }
 
   private async findLine(lineId: string, orderId: string) {
-    const rows = await this.database
-      .select()
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
-      .limit(1);
-
-    if (rows.length === 0) {
-      throw new NotFoundException(`Line '${lineId}' not found`);
-    }
-
-    if (rows[0].salesOrderId !== orderId) {
-      throw new BadRequestException(
-        `Line '${lineId}' does not belong to order '${orderId}'`,
-      );
-    }
-
-    return rows[0];
+    return sharedFindOrderLine(this.db, lineId, orderId);
   }
 }

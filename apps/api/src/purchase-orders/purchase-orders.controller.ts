@@ -10,30 +10,42 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { PurchaseOrdersService, PurchaseOrderSearchParams } from './purchase-orders.service';
+import { PurchaseOrdersService } from './purchase-orders.service';
 import { AuthGuard } from '@nestjs/passport';
+import { PaginationQuery } from '../common/pagination';
 import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import {
+  CreatePurchaseOrderDto,
+  UpdatePurchaseOrderDto,
+  CreatePurchaseOrderLineDto,
+  UpdatePurchaseOrderLineDto,
+} from './dto';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('purchase-orders')
 @CasbinResource('purchase-orders')
 export class PurchaseOrdersController {
-  constructor(private readonly purchaseOrdersService: PurchaseOrdersService) { }
+  constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
 
   @Post()
   @CasbinAction('write')
-  async create(@Body() createPurchaseOrderDto: any, @Req() req: any) {
-    const user = req.user;
-    return this.purchaseOrdersService.create(createPurchaseOrderDto, user.sub);
+  async create(
+    @Body() createPurchaseOrderDto: CreatePurchaseOrderDto,
+    @Req() req: any,
+  ) {
+    return this.purchaseOrdersService.create(
+      createPurchaseOrderDto,
+      req.user.username,
+    );
   }
 
   @Get()
   @CasbinAction('read')
-  async findAll(@Query() query: PurchaseOrderSearchParams) {
+  async findAll(@Query() query: PaginationQuery) {
     return this.purchaseOrdersService.findAll(query);
   }
 
@@ -50,11 +62,14 @@ export class PurchaseOrdersController {
   @CasbinAction('write')
   async update(
     @Param('id') id: string,
-    @Body() updatePurchaseOrderDto: any,
+    @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto,
     @Req() req: any,
   ) {
-    const user = req.user;
-    return this.purchaseOrdersService.update(id, updatePurchaseOrderDto, user.sub);
+    return this.purchaseOrdersService.update(
+      id,
+      updatePurchaseOrderDto,
+      req.user.username,
+    );
   }
 
   @Patch(':id/state')
@@ -68,7 +83,10 @@ export class PurchaseOrdersController {
 
   @Post(':id/lines')
   @CasbinAction('write')
-  async addLine(@Param('id') id: string, @Body() body: any) {
+  async addLine(
+    @Param('id') id: string,
+    @Body() body: CreatePurchaseOrderLineDto,
+  ) {
     return this.purchaseOrdersService.addLine(id, body);
   }
 
@@ -77,17 +95,14 @@ export class PurchaseOrdersController {
   async updateLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
-    @Body() body: any,
+    @Body() body: UpdatePurchaseOrderLineDto,
   ) {
     return this.purchaseOrdersService.updateLine(id, lineId, body);
   }
 
   @Delete(':id/lines/:lineId')
   @CasbinAction('write')
-  async removeLine(
-    @Param('id') id: string,
-    @Param('lineId') lineId: string,
-  ) {
+  async removeLine(@Param('id') id: string, @Param('lineId') lineId: string) {
     return this.purchaseOrdersService.removeLine(id, lineId);
   }
 }

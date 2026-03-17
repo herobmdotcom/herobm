@@ -21,7 +21,7 @@ describe('AllExceptionsFilter', () => {
     };
     mockRequest = {
       method: 'GET',
-      url: '/api/orders',
+      url: '/api/sales-orders',
     };
     mockHost = {
       switchToHttp: () => ({
@@ -45,7 +45,7 @@ describe('AllExceptionsFilter', () => {
     const payload = JSON.parse(warnSpy.mock.calls[0][0]);
     expect(payload.event).toBe('unhandled_exception');
     expect(payload.method).toBe('GET');
-    expect(payload.path).toBe('/api/orders');
+    expect(payload.path).toBe('/api/sales-orders');
     expect(payload.statusCode).toBe(404);
     expect(payload.message).toBe('Not Found');
 
@@ -54,7 +54,7 @@ describe('AllExceptionsFilter', () => {
       expect.objectContaining({
         statusCode: 404,
         message: 'Not Found',
-        path: '/api/orders',
+        path: '/api/sales-orders',
       }),
     );
   });

@@ -80,9 +80,9 @@ export default function PurchaseOrdersPage() {
 
   const handleRowClicked = useCallback((order: UnifiedPurchaseOrderRow) => {
     if (order.source === 'app') {
-      router.push(`/orders/${order.id}?source=app`);
+      router.push(`/purchase-orders/${order.id}?source=app`);
     } else {
-      router.push(`/orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
+      router.push(`/purchase-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
     }
   }, [router]);
 
@@ -98,7 +98,7 @@ export default function PurchaseOrdersPage() {
         <button
           id="btn-new-order"
           className="btn btn-primary"
-          onClick={() => router.push('/orders/new')}
+          onClick={() => router.push('/purchase-orders/new')}
         >
           ➕ Create PO
         </button>

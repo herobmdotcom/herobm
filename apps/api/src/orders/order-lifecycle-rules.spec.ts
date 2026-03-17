@@ -17,9 +17,11 @@ function createMockDb(
   const mockTx: any = {
     select: jest.fn().mockReturnValue({
       from: jest.fn().mockReturnValue({
-        where: jest.fn().mockReturnValue(
-          lines.map(l => ({ salesOrderLineId: l.id, quantity: l.qty }))
-        ),
+        where: jest
+          .fn()
+          .mockReturnValue(
+            lines.map((l) => ({ salesOrderLineId: l.id, quantity: l.qty })),
+          ),
       }),
     }),
     update: jest.fn().mockReturnValue({
@@ -55,21 +57,36 @@ describe('Order Lifecycle Rules', () => {
   });
 
   describe('autoShipWhenFullyShipped', () => {
-    const trigger: LifecycleTrigger = { entity: 'shipment', id: 'shp-1', action: 'dispatched' };
+    const trigger: LifecycleTrigger = {
+      entity: 'shipment',
+      id: 'shp-1',
+      action: 'dispatched',
+    };
 
     it('should transition order to shipped when all lines are fully shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
       (getShippedPerLine as jest.Mock).mockResolvedValue(
-        new Map([['line1', 10], ['line2', 5]])
+        new Map([
+          ['line1', 10],
+          ['line2', 5],
+        ]),
       );
 
       const db = createMockDb(
         'picking',
-        [{ id: 'line1', qty: '10' }, { id: 'line2', qty: '5' }],
-        new Map() // not used directly by our mock db setup
+        [
+          { id: 'line1', qty: '10' },
+          { id: 'line2', qty: '5' },
+        ],
+        new Map(), // not used directly by our mock db setup
       );
 
-      const result = await autoShipWhenFullyShipped.evaluate(db, 'order-1', trigger, 'admin');
+      const result = await autoShipWhenFullyShipped.evaluate(
+        db,
+        'order-1',
+        trigger,
+        'admin',
+      );
 
       expect(result).toBeDefined();
       expect(result?.to).toBe('shipped');
@@ -79,23 +96,34 @@ describe('Order Lifecycle Rules', () => {
         'order-1',
         'auto_status_changed',
         expect.objectContaining({ to: 'shipped' }),
-        'admin'
+        'admin',
       );
     });
 
     it('should do nothing if an order line is only partially shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
       (getShippedPerLine as jest.Mock).mockResolvedValue(
-        new Map([['line1', 10], ['line2', 2]]) // line2 is short
+        new Map([
+          ['line1', 10],
+          ['line2', 2],
+        ]), // line2 is short
       );
 
       const db = createMockDb(
         'picking',
-        [{ id: 'line1', qty: '10' }, { id: 'line2', qty: '5' }],
-        new Map()
+        [
+          { id: 'line1', qty: '10' },
+          { id: 'line2', qty: '5' },
+        ],
+        new Map(),
       );
 
-      const result = await autoShipWhenFullyShipped.evaluate(db, 'order-1', trigger, 'admin');
+      const result = await autoShipWhenFullyShipped.evaluate(
+        db,
+        'order-1',
+        trigger,
+        'admin',
+      );
 
       expect(result).toBeNull();
       expect(db.update).not.toHaveBeenCalled();
@@ -103,10 +131,15 @@ describe('Order Lifecycle Rules', () => {
 
     it('should do nothing if order is not in picking state', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'draft' });
-      
+
       const db = createMockDb('draft', [], new Map());
-      const result = await autoShipWhenFullyShipped.evaluate(db, 'order-1', trigger, 'admin');
-      
+      const result = await autoShipWhenFullyShipped.evaluate(
+        db,
+        'order-1',
+        trigger,
+        'admin',
+      );
+
       expect(result).toBeNull();
     });
 
@@ -116,29 +149,44 @@ describe('Order Lifecycle Rules', () => {
         db,
         'order-1',
         { entity: 'shipment', id: 'shp-1', action: 'draft' },
-        'admin'
+        'admin',
       );
       expect(result).toBeNull();
     });
   });
 
   describe('revertToPickingOnShipmentCancel', () => {
-    const trigger: LifecycleTrigger = { entity: 'shipment', id: 'shp-1', action: 'cancelled' };
+    const trigger: LifecycleTrigger = {
+      entity: 'shipment',
+      id: 'shp-1',
+      action: 'cancelled',
+    };
 
     it('should transition order to picking when lines are no longer fully shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'shipped' });
       // Total shipped after cancellation: line1 is full, line2 has 0
       (getShippedPerLine as jest.Mock).mockResolvedValue(
-        new Map([['line1', 10], ['line2', 0]])
+        new Map([
+          ['line1', 10],
+          ['line2', 0],
+        ]),
       );
 
       const db = createMockDb(
         'shipped',
-        [{ id: 'line1', qty: '10' }, { id: 'line2', qty: '5' }],
-        new Map()
+        [
+          { id: 'line1', qty: '10' },
+          { id: 'line2', qty: '5' },
+        ],
+        new Map(),
       );
 
-      const result = await revertToPickingOnShipmentCancel.evaluate(db, 'order-1', trigger, 'admin');
+      const result = await revertToPickingOnShipmentCancel.evaluate(
+        db,
+        'order-1',
+        trigger,
+        'admin',
+      );
 
       expect(result).toBeDefined();
       expect(result?.to).toBe('picking');
@@ -148,23 +196,34 @@ describe('Order Lifecycle Rules', () => {
         'order-1',
         'auto_status_changed',
         expect.objectContaining({ to: 'picking' }),
-        'admin'
+        'admin',
       );
     });
 
     it('should do nothing if order remains fully shipped (e.g. over-shipped or zero qty cancelled)', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'shipped' });
       (getShippedPerLine as jest.Mock).mockResolvedValue(
-        new Map([['line1', 10], ['line2', 5]]) // still fully covered
+        new Map([
+          ['line1', 10],
+          ['line2', 5],
+        ]), // still fully covered
       );
 
       const db = createMockDb(
         'shipped',
-        [{ id: 'line1', qty: '10' }, { id: 'line2', qty: '5' }],
-        new Map()
+        [
+          { id: 'line1', qty: '10' },
+          { id: 'line2', qty: '5' },
+        ],
+        new Map(),
       );
 
-      const result = await revertToPickingOnShipmentCancel.evaluate(db, 'order-1', trigger, 'admin');
+      const result = await revertToPickingOnShipmentCancel.evaluate(
+        db,
+        'order-1',
+        trigger,
+        'admin',
+      );
 
       expect(result).toBeNull();
       expect(db.update).not.toHaveBeenCalled();
@@ -176,7 +235,7 @@ describe('Order Lifecycle Rules', () => {
         db,
         'order-1',
         { entity: 'shipment', id: 'shp-1', action: 'dispatched' },
-        'admin'
+        'admin',
       );
       expect(result).toBeNull();
     });
@@ -186,20 +245,20 @@ describe('Order Lifecycle Rules', () => {
     it('should run rules and return transitions', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
       (getShippedPerLine as jest.Mock).mockResolvedValue(
-        new Map([['line1', 10]])
+        new Map([['line1', 10]]),
       );
 
       const db = createMockDb(
         'picking',
         [{ id: 'line1', qty: '10' }],
-        new Map()
+        new Map(),
       );
 
       const transitions = await evaluateLifecycleRules(
         db,
         'order-1',
         { entity: 'shipment', id: 'shp-1', action: 'dispatched' },
-        'admin'
+        'admin',
       );
 
       expect(transitions).toHaveLength(1);

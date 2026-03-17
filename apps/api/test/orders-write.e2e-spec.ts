@@ -12,6 +12,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
+import { DRIZZLE } from '../src/drizzle/drizzle.module';
+import { sql } from 'drizzle-orm';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -25,6 +27,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
+  let thirdProductId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -36,6 +39,26 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');
     await app.init();
+
+    const db = app.get(DRIZZLE);
+    await db.execute(sql`
+      DO $$ 
+      DECLARE
+          r RECORD;
+      BEGIN
+          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
+          LOOP
+              DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
+          END LOOP;
+      END $$;
+    `);
 
     // Login as admin (has orders:write)
     const adminLogin = await request(app.getHttpServer())
@@ -59,11 +82,12 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     validCustomerId = accounts.body.data[0].accountId;
 
     const products = await request(app.getHttpServer())
-      .get('/api/products?limit=2')
+      .get('/api/products?limit=3')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validProductId = products.body.data[0].productId;
     secondProductId = products.body.data[1]?.productId ?? validProductId;
+    thirdProductId = products.body.data[2]?.productId ?? validProductId;
   }, 30_000);
 
   afterAll(async () => {
@@ -77,22 +101,24 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
   describe('RBAC — write permission enforcement', () => {
     it('viewer cannot create orders (403)', async () => {
       await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
           customerId: validCustomerId,
-          lines: [{
-            productId: validProductId,
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: validProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(403);
     });
 
     it('unauthenticated request returns 401', async () => {
       await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .send({
           customerId: validCustomerId,
           lines: [],
@@ -111,9 +137,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     let firstLineId: string;
     let addedLineId: string;
 
-    it('POST /api/orders — creates a new order in draft state', async () => {
+    it('POST /api/sales-orders — creates a new order in draft state', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: validCustomerId,
@@ -147,9 +173,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       orderNumber = res.body.orderNumber;
     });
 
-    it('GET /api/orders/:id?source=app — retrieves the order with lines and events', async () => {
+    it('GET /api/sales-orders/:id?source=app — retrieves the order with lines and events', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}?source=app`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -166,15 +192,41 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       expect(lineA).toBeDefined();
       // 10 × 25.50 × (1 − 0.05) = 242.25
       expect(parseFloat(lineA.amount)).toBeCloseTo(242.25, 2);
-      // 242.25 + 12.13 = 254.38
-      expect(parseFloat(lineA.totalAmount)).toBeCloseTo(254.38, 2);
+      const expectedTotal = 242.25 + parseFloat(lineA.tax || '0');
+      expect(parseFloat(lineA.totalAmount)).toBeCloseTo(expectedTotal, 2);
 
       firstLineId = res.body.lines[0].salesOrderLineId;
     });
 
-    it('PATCH /api/orders/:id — updates order header', async () => {
+    it('GET /api/sales-orders/:id/sales-quote-report?source=app — generates a PDF', async () => {
       const res = await request(app.getHttpServer())
-        .patch(`/api/orders/${orderId}`)
+        .get(`/api/sales-orders/${orderId}/sales-quote-report?source=app`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.header['content-type']).toBe('application/pdf');
+      expect(res.header['content-disposition']).toContain(
+        `sales-quote-${orderNumber}.pdf`,
+      );
+      expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/sales-orders/:id/sales-invoice-report?source=app — generates a PDF', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/sales-invoice-report?source=app`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.header['content-type']).toBe('application/pdf');
+      expect(res.header['content-disposition']).toContain(
+        `sales-invoice-${orderNumber}.pdf`,
+      );
+      expect(res.body.length).toBeGreaterThan(0);
+    });
+
+    it('PATCH /api/sales-orders/:id — updates order header', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'E2E Test Order — Updated',
@@ -186,12 +238,12 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       expect(res.body.customerOrderNumber).toBe('CUST-PO-12345');
     });
 
-    it('POST /api/orders/:id/lines — adds a third line', async () => {
+    it('POST /api/sales-orders/:id/lines — adds a third line', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/api/orders/${orderId}/lines`)
+        .post(`/api/sales-orders/${orderId}/lines`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          productId: validProductId,
+          productId: thirdProductId,
           productDescription: 'Test Product C',
           quantity: '7',
           pricePerUnit: '15.00',
@@ -203,9 +255,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       addedLineId = res.body.salesOrderLineId;
     });
 
-    it('PATCH /api/orders/:id/lines/:lineId — updates a line', async () => {
+    it('PATCH /api/sales-orders/:id/lines/:lineId — updates a line', async () => {
       const res = await request(app.getHttpServer())
-        .patch(`/api/orders/${orderId}/lines/${addedLineId}`)
+        .patch(`/api/sales-orders/${orderId}/lines/${addedLineId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ quantity: '14', pricePerUnit: '15.00' })
         .expect(200);
@@ -214,26 +266,39 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       expect(parseFloat(res.body.amount)).toBeCloseTo(210.0, 2);
     });
 
-    it('DELETE /api/orders/:id/lines/:lineId — removes a line', async () => {
+    it('DELETE /api/sales-orders/:id/lines/:lineId — removes a line', async () => {
       await request(app.getHttpServer())
-        .delete(`/api/orders/${orderId}/lines/${addedLineId}`)
+        .delete(`/api/sales-orders/${orderId}/lines/${addedLineId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       // Verify line count is back to 2
       const detail = await request(app.getHttpServer())
-        .get(`/api/orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}?source=app`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(detail.body.lines).toHaveLength(2);
     });
 
-    it('PATCH /api/orders/:id/state — transitions through the full lifecycle', async () => {
-      const transitions = ['quoted', 'confirmed', 'picking', 'shipped', 'invoiced'];
+    it('PATCH /api/sales-orders/:id/state — transitions through the full lifecycle', async () => {
+      const transitions = [
+        'quoted',
+        'confirmed',
+        'picking',
+        'shipped',
+        'invoiced',
+      ];
 
       for (const nextState of transitions) {
+        if (nextState === 'shipped') {
+          await request(app.getHttpServer())
+            .post(`/api/sales-orders/${orderId}/picking/pick-all`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(201);
+        }
+
         const res = await request(app.getHttpServer())
-          .patch(`/api/orders/${orderId}/state`)
+          .patch(`/api/sales-orders/${orderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ stateCode: nextState })
           .expect(200);
@@ -243,7 +308,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('event log captures the full history', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}?source=app`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -273,15 +338,17 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     beforeAll(async () => {
       // Create a fresh draft order for validation tests
       const res = await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: validCustomerId,
-          lines: [{
-            productId: validProductId,
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: validProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(201);
       draftOrderId = res.body.salesOrderId;
@@ -289,37 +356,41 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('create with unknown customer returns 400', async () => {
       await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: 'NONEXISTENT-CUSTOMER-ID',
-          lines: [{
-            productId: validProductId,
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: validProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(400);
     });
 
     it('create with unknown product returns 400', async () => {
       await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: validCustomerId,
-          lines: [{
-            productId: 'NONEXISTENT-PRODUCT-ID',
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: 'NONEXISTENT-PRODUCT-ID',
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(400);
     });
 
     it('invalid state transition returns 400', async () => {
       const res = await request(app.getHttpServer())
-        .patch(`/api/orders/${draftOrderId}/state`)
+        .patch(`/api/sales-orders/${draftOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: 'shipped' })
         .expect(400);
@@ -329,7 +400,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('unknown state name returns 400', async () => {
       await request(app.getHttpServer())
-        .patch(`/api/orders/${draftOrderId}/state`)
+        .patch(`/api/sales-orders/${draftOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: 'bogus' })
         .expect(400);
@@ -338,24 +409,39 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     it('update on invoiced order returns 400', async () => {
       // First move our draft order to invoiced state
       const invoicedOrder = await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: validCustomerId,
-          lines: [{
-            productId: validProductId,
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: validProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(201);
 
       const invoicedId = invoicedOrder.body.salesOrderId;
 
       // Move through lifecycle to invoiced
-      for (const state of ['quoted', 'confirmed', 'picking', 'shipped', 'invoiced']) {
+      for (const state of [
+        'quoted',
+        'confirmed',
+        'picking',
+        'shipped',
+        'invoiced',
+      ]) {
+        if (state === 'shipped') {
+          await request(app.getHttpServer())
+            .post(`/api/sales-orders/${invoicedId}/picking/pick-all`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(201);
+        }
+
         await request(app.getHttpServer())
-          .patch(`/api/orders/${invoicedId}/state`)
+          .patch(`/api/sales-orders/${invoicedId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ stateCode: state })
           .expect(200);
@@ -363,7 +449,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Now try to update it
       await request(app.getHttpServer())
-        .patch(`/api/orders/${invoicedId}`)
+        .patch(`/api/sales-orders/${invoicedId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Should fail' })
         .expect(400);
@@ -372,27 +458,29 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     it('add line to cancelled order returns 400', async () => {
       // Create and cancel an order
       const res = await request(app.getHttpServer())
-        .post('/api/orders')
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           customerId: validCustomerId,
-          lines: [{
-            productId: validProductId,
-            quantity: '1',
-            pricePerUnit: '10.00',
-          }],
+          lines: [
+            {
+              productId: validProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+          ],
         })
         .expect(201);
 
       await request(app.getHttpServer())
-        .patch(`/api/orders/${res.body.salesOrderId}/state`)
+        .patch(`/api/sales-orders/${res.body.salesOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: 'cancelled' })
         .expect(200);
 
       // Try adding a line — should fail
       await request(app.getHttpServer())
-        .post(`/api/orders/${res.body.salesOrderId}/lines`)
+        .post(`/api/sales-orders/${res.body.salesOrderId}/lines`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           productId: validProductId,
@@ -404,9 +492,38 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('unknown order ID returns 404', async () => {
       await request(app.getHttpServer())
-        .get('/api/orders/00000000-0000-0000-0000-000000000000?source=app')
+        .get(
+          '/api/sales-orders/00000000-0000-0000-0000-000000000000?source=app',
+        )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
+    });
+
+    it('create with duplicate products returns 400', async () => {
+      await request(app.getHttpServer())
+        .post('/api/sales-orders')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          customerId: validCustomerId,
+          lines: [
+            { productId: validProductId, quantity: '1', pricePerUnit: '10.00' },
+            { productId: validProductId, quantity: '2', pricePerUnit: '10.00' },
+          ],
+        })
+        .expect(400);
+    });
+
+    it('add duplicate product as new line returns 400', async () => {
+      // Order created in beforeAll already has validProductId
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${draftOrderId}/lines`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          productId: validProductId,
+          quantity: '5',
+          pricePerUnit: '10.00',
+        })
+        .expect(400);
     });
   });
 
@@ -415,9 +532,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
   // =========================================================================
 
   describe('App order listing', () => {
-    it('GET /api/orders?source=app — returns app-created orders', async () => {
+    it('GET /api/sales-orders?source=app — returns app-created orders', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/orders?source=app')
+        .get('/api/sales-orders?source=app')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

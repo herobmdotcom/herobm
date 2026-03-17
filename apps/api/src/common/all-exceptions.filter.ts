@@ -37,8 +37,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
           ? exception.message
           : String(exception);
 
-    const stack =
-      exception instanceof Error ? exception.stack : undefined;
+    const stack = exception instanceof Error ? exception.stack : undefined;
 
     // Structured JSON log for Loki parsing
     const logPayload = {

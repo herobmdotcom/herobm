@@ -9,16 +9,11 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, inArray } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-
-export class ReceptionSearchParams {
-  q?: string;
-  limit?: number;
-  offset?: number;
-}
+import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
 export class ReceptionsService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) { }
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
@@ -52,19 +47,32 @@ export class ReceptionsService {
           const [poLine] = await tx
             .select()
             .from(purchaseOrderLineItems)
-            .where(eq(purchaseOrderLineItems.purchaseOrderLineId, line.purchaseOrderLineId));
+            .where(
+              eq(
+                purchaseOrderLineItems.purchaseOrderLineId,
+                line.purchaseOrderLineId,
+              ),
+            );
 
           if (poLine) {
-            const newTotal = Number(poLine.quantityReceived) + Number(line.quantityReceived);
-            await tx.update(purchaseOrderLineItems)
+            const newTotal =
+              Number(poLine.quantityReceived) + Number(line.quantityReceived);
+            await tx
+              .update(purchaseOrderLineItems)
               .set({ quantityReceived: newTotal.toString() })
-              .where(eq(purchaseOrderLineItems.purchaseOrderLineId, line.purchaseOrderLineId));
+              .where(
+                eq(
+                  purchaseOrderLineItems.purchaseOrderLineId,
+                  line.purchaseOrderLineId,
+                ),
+              );
           }
         }
 
         // Check if all PO lines are fully received, update PO status if so
         // For simplicity, just marking the PO as 'received' if a reception is created
-        await tx.update(purchaseOrders)
+        await tx
+          .update(purchaseOrders)
           .set({ stateCode: 'received', modifiedOn: new Date() })
           .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId));
       }
@@ -73,16 +81,14 @@ export class ReceptionsService {
     });
   }
 
-  async findAll(params: ReceptionSearchParams) {
-    const limit = params.limit ? Number(params.limit) : 50;
-    const offset = params.offset ? Number(params.offset) : 0;
+  async findAll(params: PaginationQuery) {
+    const { page, limit, offset, searchTerm } = parsePagination(params);
 
     let conditions = undefined;
-    if (params.q) {
-      const searchTerm = `%${params.q}%`;
+    if (searchTerm) {
       conditions = or(
         ilike(purchaseOrderReceptions.receptionNumber, searchTerm),
-        ilike(purchaseOrderReceptions.packingSlipNumber, searchTerm)
+        ilike(purchaseOrderReceptions.packingSlipNumber, searchTerm),
       );
     }
 
@@ -94,7 +100,10 @@ export class ReceptionsService {
       .from(purchaseOrderReceptions)
       .leftJoin(
         purchaseOrders,
-        eq(purchaseOrderReceptions.purchaseOrderId, purchaseOrders.purchaseOrderId)
+        eq(
+          purchaseOrderReceptions.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
       )
       .where(conditions)
       .limit(limit)
@@ -111,9 +120,9 @@ export class ReceptionsService {
         purchaseOrderNumber: d.purchaseOrder?.orderNumber,
         vendorId: d.purchaseOrder?.vendorId,
       })),
-      total: Number(count),
+      page,
       limit,
-      offset,
+      total: Number(count),
     };
   }
 
@@ -140,7 +149,10 @@ export class ReceptionsService {
       .from(purchaseOrderReceptionLines)
       .leftJoin(
         purchaseOrderLineItems,
-        eq(purchaseOrderReceptionLines.purchaseOrderLineId, purchaseOrderLineItems.purchaseOrderLineId)
+        eq(
+          purchaseOrderReceptionLines.purchaseOrderLineId,
+          purchaseOrderLineItems.purchaseOrderLineId,
+        ),
       )
       .where(eq(purchaseOrderReceptionLines.receptionId, id));
 

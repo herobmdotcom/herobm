@@ -6,6 +6,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { PaginationQuery } from '../common/pagination';
 
 @Controller('inventory')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -16,24 +17,20 @@ export class InventoryController {
   @Get()
   @CasbinAction('read')
   findAll(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
   ) {
-    return this.inventoryService.findAll({
-      search,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      locationNo,
-    });
+    return this.inventoryService.findAll({ ...query, locationNo });
   }
 
   @Get('by-products')
   @CasbinAction('read')
   findByProductIds(@Query('productIds') productIds?: string) {
     const ids = productIds
-      ? productIds.split(',').map((id) => id.trim()).filter(Boolean)
+      ? productIds
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
       : [];
     return this.inventoryService.findByProductIds(ids);
   }
@@ -41,16 +38,9 @@ export class InventoryController {
   @Get('bins')
   @CasbinAction('read')
   findBins(
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query() query: PaginationQuery,
     @Query('locationNo') locationNo?: string,
   ) {
-    return this.inventoryService.findBins({
-      search,
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      locationNo,
-    });
+    return this.inventoryService.findBins({ ...query, locationNo });
   }
 }

@@ -113,6 +113,7 @@ services:
     volumes:
       - ./configs/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
       - ./logs:/var/log/pipelines:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       loki:

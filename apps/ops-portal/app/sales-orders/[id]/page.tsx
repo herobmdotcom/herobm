@@ -21,14 +21,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     setLoading(true);
     apiFetch<OrderDetailData>(
-      `/api/orders/${encodeURIComponent(id)}?source=${source}`,
+      `/api/sales-orders/${encodeURIComponent(id)}?source=${source}`,
     )
       .then(setOrder)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load order'))
       .finally(() => setLoading(false));
   }, [id, source]);
 
-  const handleBack = useCallback(() => router.push('/orders'), [router]);
+  const handleBack = useCallback(() => router.push('/sales-orders'), [router]);
 
   if (loading) {
     return (

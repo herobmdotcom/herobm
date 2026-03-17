@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ShipmentService } from './shipment.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import {
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -18,6 +15,7 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     where: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
     innerJoin: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
@@ -29,7 +27,9 @@ function createMockQueryBuilder(resolvedValue: any = []) {
 
 function createMockTx() {
   return {
-    select: jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(createMockQueryBuilder([])) }),
+    select: jest.fn().mockReturnValue({
+      from: jest.fn().mockReturnValue(createMockQueryBuilder([])),
+    }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
@@ -39,11 +39,15 @@ function createMockTx() {
 function createMockDb() {
   const selectQb = createMockQueryBuilder([]);
   const db: any = {
-    select: jest.fn().mockReturnValue({ from: jest.fn().mockReturnValue(selectQb) }),
+    select: jest
+      .fn()
+      .mockReturnValue({ from: jest.fn().mockReturnValue(selectQb) }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    transaction: jest.fn().mockImplementation(async (cb: any) => cb(createMockTx())),
+    transaction: jest
+      .fn()
+      .mockImplementation(async (cb: any) => cb(createMockTx())),
     _selectQb: selectQb,
   };
   return db;
@@ -98,6 +102,7 @@ describe('ShipmentService', () => {
         const data = responses[call] ?? [];
         const qb = createMockQueryBuilder(data);
         qb.innerJoin = jest.fn().mockReturnValue(qb);
+        qb.leftJoin = jest.fn().mockReturnValue(qb);
         return qb;
       }),
     });
@@ -156,7 +161,9 @@ describe('ShipmentService', () => {
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnValue({
             orderBy: jest.fn().mockReturnValue({
-              limit: jest.fn().mockResolvedValue([{ shipmentNumber: `SHP-${today}-0005` }]),
+              limit: jest
+                .fn()
+                .mockResolvedValue([{ shipmentNumber: `SHP-${today}-0005` }]),
             }),
           }),
         }),
@@ -188,29 +195,39 @@ describe('ShipmentService', () => {
         return cb(tx);
       });
 
-      const dto = { lines: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }] };
+      const dto = {
+        lines: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }],
+      };
       const result = await service.createShipment('order-001', dto, 'admin');
-      
+
       expect(result).toHaveProperty('shipmentId', 'ship-001');
       expect(mockDb.transaction).toHaveBeenCalled();
     });
 
     it('should reject if order is not in picking state', async () => {
       mockSelectChain({ 1: [{ ...PICKING_ORDER, stateCode: 'draft' }] });
-      const dto = { lines: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }] };
-      await expect(service.createShipment('order-001', dto, 'admin')).rejects.toThrow(BadRequestException);
+      const dto = {
+        lines: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }],
+      };
+      await expect(
+        service.createShipment('order-001', dto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject if shipped quantity is greater than available', async () => {
       mockSelectChain({
         1: [PICKING_ORDER],
-        2: [ORDER_LINE], 
-        3: [ORDER_LINE], 
+        2: [ORDER_LINE],
+        3: [ORDER_LINE],
         4: [], // getShippedPerLine
       });
       // ORDER_LINE has quantityPicked=10. Requesting 15 should fail.
-      const dto = { lines: [{ salesOrderLineId: 'line-001', quantityShipped: '15' }] };
-      await expect(service.createShipment('order-001', dto, 'admin')).rejects.toThrow(BadRequestException);
+      const dto = {
+        lines: [{ salesOrderLineId: 'line-001', quantityShipped: '15' }],
+      };
+      await expect(
+        service.createShipment('order-001', dto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -221,7 +238,7 @@ describe('ShipmentService', () => {
   describe('updateShipment', () => {
     it('should allow updating notes on a draft shipment', async () => {
       mockSelectChain({ 1: [MOCK_SHIPMENT] });
-      
+
       const txQb = createMockQueryBuilder([MOCK_SHIPMENT]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -229,13 +246,19 @@ describe('ShipmentService', () => {
         return cb(tx);
       });
 
-      const result = await service.updateShipment('ship-001', { notes: 'Updated notes' }, 'admin');
+      const result = await service.updateShipment(
+        'ship-001',
+        { notes: 'Updated notes' },
+        'admin',
+      );
       expect(result).toHaveProperty('shipmentId', 'ship-001');
     });
 
     it('should reject updating a cancelled shipment', async () => {
       mockSelectChain({ 1: [{ ...MOCK_SHIPMENT, stateCode: 'cancelled' }] });
-      await expect(service.updateShipment('ship-001', { notes: 'Updated notes' }, 'admin')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateShipment('ship-001', { notes: 'Updated notes' }, 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -251,7 +274,7 @@ describe('ShipmentService', () => {
         3: [ORDER_LINE], // findOrderLine inside assertShipmentQtyAvailable
         4: [], // getShippedPerLine (shipments)
       });
-      
+
       const txQb = createMockQueryBuilder([MOCK_SHIPMENT_LINE]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -260,13 +283,23 @@ describe('ShipmentService', () => {
         return cb(tx);
       });
 
-      const result = await service.addShipmentLine('ship-001', { salesOrderLineId: 'line-001', quantityShipped: '2' }, 'admin');
+      const result = await service.addShipmentLine(
+        'ship-001',
+        { salesOrderLineId: 'line-001', quantityShipped: '2' },
+        'admin',
+      );
       expect(result).toHaveProperty('quantityShipped', '5');
     });
 
     it('should reject if shipment is not in draft', async () => {
       mockSelectChain({ 1: [{ ...MOCK_SHIPMENT, stateCode: 'cancelled' }] });
-      await expect(service.addShipmentLine('ship-001', { salesOrderLineId: 'line-001', quantityShipped: '2' }, 'admin')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.addShipmentLine(
+          'ship-001',
+          { salesOrderLineId: 'line-001', quantityShipped: '2' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -284,21 +317,35 @@ describe('ShipmentService', () => {
         5: [], // shipped map (shipments)
         6: [MOCK_SHIPMENT_LINE], // existing line excluding self inside assert
       });
-      
-      const txQb = createMockQueryBuilder([{ ...MOCK_SHIPMENT_LINE, quantityShipped: '4' }]);
+
+      const txQb = createMockQueryBuilder([
+        { ...MOCK_SHIPMENT_LINE, quantityShipped: '4' },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txQb);
         return cb(tx);
       });
 
-      const result = await service.updateShipmentLine('ship-001', 'shipline-001', { quantityShipped: '4' }, 'admin');
+      const result = await service.updateShipmentLine(
+        'ship-001',
+        'shipline-001',
+        { quantityShipped: '4' },
+        'admin',
+      );
       expect(result).toHaveProperty('quantityShipped', '4');
     });
 
     it('should reject if shipment is not in draft', async () => {
       mockSelectChain({ 1: [{ ...MOCK_SHIPMENT, stateCode: 'dispatched' }] });
-      await expect(service.updateShipmentLine('ship-001', 'shipline-001', { quantityShipped: '4' }, 'admin')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.updateShipmentLine(
+          'ship-001',
+          'shipline-001',
+          { quantityShipped: '4' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -311,7 +358,9 @@ describe('ShipmentService', () => {
       mockSelectChain({
         1: [{ ...MOCK_SHIPMENT, stateCode: currentState }],
       });
-      const txUpdateQb = createMockQueryBuilder([{ ...MOCK_SHIPMENT, stateCode: '' }]);
+      const txUpdateQb = createMockQueryBuilder([
+        { ...MOCK_SHIPMENT, stateCode: '' },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
@@ -373,15 +422,17 @@ describe('ShipmentService', () => {
       ['draft', 'dispatched'],
       ['draft', 'cancelled'],
       ['dispatched', 'draft'],
-      ['dispatched', 'cancelled'],
     ])('should allow transition %s → %s', async (from, to) => {
       setupWithState(from);
-      await expect(service.changeShipmentState('ship-001', to, 'admin')).resolves.toBeDefined();
+      await expect(
+        service.changeShipmentState('ship-001', to, 'admin'),
+      ).resolves.toBeDefined();
     });
 
     it.each([
       ['cancelled', 'draft'],
       ['cancelled', 'dispatched'],
+      ['dispatched', 'cancelled'],
     ])('should reject transition %s → %s', async (from, to) => {
       setupWithState(from);
       await expect(
@@ -406,7 +457,9 @@ describe('ShipmentService', () => {
         1: [MOCK_SHIPMENT],
         2: [MOCK_SHIPMENT_LINE],
       });
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => cb(createMockTx()));
+      mockDb.transaction = jest
+        .fn()
+        .mockImplementation(async (cb: any) => cb(createMockTx()));
       await expect(
         service.removeShipmentLine('ship-001', 'shipline-001', 'admin'),
       ).resolves.toBeUndefined();
@@ -430,7 +483,7 @@ describe('ShipmentService', () => {
     it('should return shipment with lines', async () => {
       mockSelectChain({
         1: [MOCK_SHIPMENT],
-        2: [MOCK_SHIPMENT_LINE],
+        2: [{ ...MOCK_SHIPMENT_LINE, productNumber: 'PN-1' }],
       });
       const result = await service.findOne('ship-001');
       expect(result).toHaveProperty('shipmentId', 'ship-001');
@@ -439,7 +492,9 @@ describe('ShipmentService', () => {
 
     it('should throw NotFoundException for unknown shipment', async () => {
       mockSelectChain({ 1: [] });
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -452,7 +507,12 @@ describe('ShipmentService', () => {
           if (call === 1) {
             return createMockQueryBuilder([MOCK_SHIPMENT]);
           }
-          return createMockQueryBuilder([MOCK_SHIPMENT_LINE]);
+          const qb = createMockQueryBuilder([
+            { ...MOCK_SHIPMENT_LINE, productNumber: 'PN-1' },
+          ]);
+          qb.innerJoin = jest.fn().mockReturnValue(qb);
+          qb.leftJoin = jest.fn().mockReturnValue(qb);
+          return qb;
         }),
       });
 

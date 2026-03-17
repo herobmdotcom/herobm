@@ -7,9 +7,30 @@ describe('GstCategoriesService', () => {
   let service: GstCategoriesService;
 
   const mockCategories = [
-    { gstCategoryId: 'uuid-gst-1', code: 'GST', title: 'GST 10%', type: 'gst_applies', rate: '10', isDefault: true },
-    { gstCategoryId: 'uuid-gst-2', code: 'EXE', title: 'Exempt', type: 'exempt', rate: '0', isDefault: false },
-    { gstCategoryId: 'uuid-gst-3', code: 'ZRO', title: 'Zero Rated', type: 'zero_rated', rate: '0', isDefault: false },
+    {
+      gstCategoryId: 'uuid-gst-1',
+      code: 'GST',
+      title: 'GST 10%',
+      type: 'gst_applies',
+      rate: '10',
+      isDefault: true,
+    },
+    {
+      gstCategoryId: 'uuid-gst-2',
+      code: 'EXE',
+      title: 'Exempt',
+      type: 'exempt',
+      rate: '0',
+      isDefault: false,
+    },
+    {
+      gstCategoryId: 'uuid-gst-3',
+      code: 'ZRO',
+      title: 'Zero Rated',
+      type: 'zero_rated',
+      rate: '0',
+      isDefault: false,
+    },
   ];
 
   // Chainable mock that supports select().from(...).where(...).limit(...)
@@ -36,10 +57,7 @@ describe('GstCategoriesService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GstCategoriesService,
-        { provide: DRIZZLE, useValue: mockDb },
-      ],
+      providers: [GstCategoriesService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
 
     service = module.get<GstCategoriesService>(GstCategoriesService);
@@ -71,7 +89,9 @@ describe('GstCategoriesService', () => {
 
     it('should throw NotFoundException for unknown ID', async () => {
       mockReturns([]);
-      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.getById('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -86,7 +106,9 @@ describe('GstCategoriesService', () => {
       mockReturns([]);
       await expect(service.getDefault()).rejects.toThrow(NotFoundException);
       mockReturns([]);
-      await expect(service.getDefault()).rejects.toThrow('No default GST category configured');
+      await expect(service.getDefault()).rejects.toThrow(
+        'No default GST category configured',
+      );
     });
   });
 
@@ -99,9 +121,13 @@ describe('GstCategoriesService', () => {
 
     it('should throw NotFoundException for unknown code', async () => {
       mockReturns([]);
-      await expect(service.getByCode('INVALID')).rejects.toThrow(NotFoundException);
+      await expect(service.getByCode('INVALID')).rejects.toThrow(
+        NotFoundException,
+      );
       mockReturns([]);
-      await expect(service.getByCode('INVALID')).rejects.toThrow("GST category code 'INVALID' not found");
+      await expect(service.getByCode('INVALID')).rejects.toThrow(
+        "GST category code 'INVALID' not found",
+      );
     });
   });
 });

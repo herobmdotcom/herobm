@@ -23,6 +23,7 @@ export interface CurrencyDef {
  * Source: ABM Currencies table (screenshot reference).
  */
 export const CURRENCIES: CurrencyDef[] = [
+  // eslint-disable-next-line no-restricted-syntax
   { code: 'EUR', symbol: '€',   name: 'Euro',              decimals: 2, abmCode: 0   },
   { code: 'USD', symbol: '$',   name: 'US Dollar',         decimals: 2, abmCode: 1   },
   { code: 'CAD', symbol: 'C$',  name: 'Canadian Dollar',   decimals: 2, abmCode: 11  },

@@ -9,7 +9,7 @@ function requireEnv(name: string): string {
       `FATAL: Required environment variable ${name} is not set. Check your .env file.`,
     );
   }
-  return value;
+  return value.trim();
 }
 
 /**
@@ -41,7 +41,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    console.log(
+      '[DEBUG LOGIN]',
+      JSON.stringify({
+        usernameExpected: user.username,
+        usernameReceived: username,
+        receivedPasswordLength: password?.length,
+        passwordHash: user.passwordHash,
+      }),
+    );
+
     const valid = await bcrypt.compare(password, user.passwordHash);
+    console.log('[DEBUG LOGIN RESULT]', valid);
     if (!valid) {
       throw new UnauthorizedException('Invalid credentials');
     }

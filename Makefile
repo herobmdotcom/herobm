@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal dev-supplier-portal docs-generate schema-ref migrate migrate-status migrate-dry
+.PHONY: up down restart logs clean status ps nuke test-infra check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api test-api test-api-cov test-api-e2e dev-ops-portal dev-sales-portal dev-supplier-portal docs-generate schema-ref migrate migrate-status migrate-dry test-all build-all
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -89,6 +89,9 @@ extract-docker-dry:
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
 
+rebuild-api:
+	$(COMPOSE_CMD) up -d --build custom-api
+
 test-api:
 	cd apps/api && npm test
 
@@ -119,3 +122,16 @@ migrate-status:
 
 migrate-dry:
 	"$(VENV_PYTHON)" tools/migrate.py --dry-run
+
+# --- Quality Gates ---
+
+test-all: test-api
+	cd apps/ops-portal && npm run typecheck
+	cd apps/sales-portal && npm run typecheck
+	cd apps/supplier-portal && npm run typecheck
+
+build-all:
+	cd apps/api && npm run build
+	cd apps/ops-portal && npm run build
+	cd apps/sales-portal && npm run build
+	cd apps/supplier-portal && npm run build

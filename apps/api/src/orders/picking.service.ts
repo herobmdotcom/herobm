@@ -2,14 +2,13 @@ import {
   Injectable,
   Inject,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import {
-  salesOrders,
-  salesOrderLineItems,
-} from '../drizzle/modbm-core-schema';
+import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
+import { products as martProducts } from '../drizzle/schema';
 import {
   findOrder,
   findOrderLine,
@@ -21,13 +20,11 @@ import { ShipmentService } from './shipment.service';
 @Injectable()
 export class PickingService {
   constructor(
-    @Inject(DRIZZLE) private db: any,
+    @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly shipmentService: ShipmentService,
-  ) { }
+  ) {}
 
-  private get database(): DrizzleDB {
-    return this.db as DrizzleDB;
-  }
+  private readonly logger = new Logger(PickingService.name);
 
   // -------------------------------------------------------------------------
   // Picking operations
@@ -42,14 +39,14 @@ export class PickingService {
     quantityPicked: string,
     actor: string,
   ) {
-    const order = await findOrder(this.database, orderId);
+    const order = await findOrder(this.db, orderId);
     if (order.stateCode !== 'picking') {
       throw new BadRequestException(
         `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'picking'.`,
       );
     }
 
-    const line = await findOrderLine(this.database, lineId, orderId);
+    const line = await findOrderLine(this.db, lineId, orderId);
     const qty = parseFloat(quantityPicked);
     const ordered = parseFloat(line.quantity);
 
@@ -63,7 +60,7 @@ export class PickingService {
     }
 
     // Ensure picked qty doesn't drop below what's already been shipped
-    const shippedMap = await getShippedPerLine(this.database, orderId);
+    const shippedMap = await getShippedPerLine(this.db, orderId);
     const shipped = shippedMap.get(lineId) || 0;
     if (qty < shipped) {
       throw new BadRequestException(
@@ -71,7 +68,7 @@ export class PickingService {
       );
     }
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked })
@@ -83,11 +80,17 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(tx, orderId, 'picking_line_updated', {
-        lineId,
-        quantityPicked,
-        previousQuantityPicked: line.quantityPicked,
-      }, actor);
+      await writeEvent(
+        tx,
+        orderId,
+        'picking_line_updated',
+        {
+          lineId,
+          quantityPicked,
+          previousQuantityPicked: line.quantityPicked,
+        },
+        actor,
+      );
 
       return updated;
     });
@@ -99,16 +102,16 @@ export class PickingService {
    * Pick all for a single line: set quantity_picked = quantity.
    */
   async pickAllForLine(orderId: string, lineId: string, actor: string) {
-    const order = await findOrder(this.database, orderId);
+    const order = await findOrder(this.db, orderId);
     if (order.stateCode !== 'picking') {
       throw new BadRequestException(
         `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'picking'.`,
       );
     }
 
-    const line = await findOrderLine(this.database, lineId, orderId);
+    const line = await findOrderLine(this.db, lineId, orderId);
 
-    const result = await this.database.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: any) => {
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked: line.quantity })
@@ -120,11 +123,17 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(tx, orderId, 'picking_line_picked_all', {
-        lineId,
-        quantityPicked: line.quantity,
-        previousQuantityPicked: line.quantityPicked,
-      }, actor);
+      await writeEvent(
+        tx,
+        orderId,
+        'picking_line_picked_all',
+        {
+          lineId,
+          quantityPicked: line.quantity,
+          previousQuantityPicked: line.quantityPicked,
+        },
+        actor,
+      );
 
       return updated;
     });
@@ -137,14 +146,14 @@ export class PickingService {
    * AND create a shipment with the UNSHIPPED quantities.
    */
   async pickAllOrder(orderId: string, actor: string) {
-    const order = await findOrder(this.database, orderId);
+    const order = await findOrder(this.db, orderId);
     if (order.stateCode !== 'picking') {
       throw new BadRequestException(
         `Cannot pick on order in state '${order.stateCode}'. Order must be in 'picking'.`,
       );
     }
 
-    const lines = await this.database
+    const lines = await this.db
       .select()
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
@@ -155,12 +164,14 @@ export class PickingService {
     }
 
     // First, set all lines as fully picked
-    await this.database.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: any) => {
       for (const line of lines) {
         await tx
           .update(salesOrderLineItems)
           .set({ quantityPicked: line.quantity })
-          .where(eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId));
+          .where(
+            eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId),
+          );
       }
 
       await tx
@@ -168,14 +179,20 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(tx, orderId, 'picking_order_picked_all', {
-        lineCount: lines.length,
-      }, actor);
+      await writeEvent(
+        tx,
+        orderId,
+        'picking_order_picked_all',
+        {
+          lineCount: lines.length,
+        },
+        actor,
+      );
     });
 
     // Now create the shipment with unshipped quantities, using the ShipmentService
     // (which will re-read the picked state and compute availability correctly)
-    const shippedMap = await getShippedPerLine(this.database, orderId);
+    const shippedMap = await getShippedPerLine(this.db, orderId);
     const shipmentLines = lines
       .map((line) => {
         const alreadyShipped = shippedMap.get(line.salesOrderLineId) ?? 0;
@@ -189,7 +206,11 @@ export class PickingService {
       .filter((v): v is NonNullable<typeof v> => v !== null);
 
     if (shipmentLines.length > 0) {
-      return this.shipmentService.createShipment(orderId, { lines: shipmentLines }, actor);
+      return this.shipmentService.createShipment(
+        orderId,
+        { lines: shipmentLines },
+        actor,
+      );
     }
 
     // Everything was already shipped — return a marker
@@ -204,15 +225,27 @@ export class PickingService {
    * Get picking summary for an order, including shipped quantities.
    */
   async getPickingSummary(orderId: string) {
-    await findOrder(this.database, orderId);
+    await findOrder(this.db, orderId);
 
-    const lines = await this.database
-      .select()
+    const lines = await this.db
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        lineNumber: salesOrderLineItems.lineNumber,
+        productId: salesOrderLineItems.productId,
+        productDescription: salesOrderLineItems.productDescription,
+        quantity: salesOrderLineItems.quantity,
+        quantityPicked: salesOrderLineItems.quantityPicked,
+        productNumber: martProducts.productNumber,
+      })
       .from(salesOrderLineItems)
+      .leftJoin(
+        martProducts,
+        eq(salesOrderLineItems.productId, martProducts.productId),
+      )
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
 
-    const shippedMap = await getShippedPerLine(this.database, orderId);
+    const shippedMap = await getShippedPerLine(this.db, orderId);
 
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
@@ -222,6 +255,7 @@ export class PickingService {
         salesOrderLineId: line.salesOrderLineId,
         lineNumber: line.lineNumber,
         productId: line.productId,
+        productNumber: line.productNumber,
         productDescription: line.productDescription,
         quantity: line.quantity,
         quantityPicked: line.quantityPicked ?? '0',
@@ -251,7 +285,7 @@ export class PickingService {
    * Throws BadRequestException if not.
    */
   async assertFullyPicked(orderId: string): Promise<void> {
-    const lines = await this.database
+    const lines = await this.db
       .select({
         lineNumber: salesOrderLineItems.lineNumber,
         quantity: salesOrderLineItems.quantity,
@@ -268,7 +302,8 @@ export class PickingService {
 
     if (unpicked.length > 0) {
       const details = unpicked.map(
-        (l) => `line ${l.lineNumber}: picked ${l.quantityPicked ?? '0'} of ${l.quantity}`,
+        (l) =>
+          `line ${l.lineNumber}: picked ${l.quantityPicked ?? '0'} of ${l.quantity}`,
       );
       throw new BadRequestException(
         `Cannot transition to 'shipped' — ${unpicked.length} line(s) not fully picked: ${details.join('; ')}`,
