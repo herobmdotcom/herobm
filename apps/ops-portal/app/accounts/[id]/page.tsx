@@ -377,7 +377,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 className="input"
                 value={dto.notes || ''}
                 onChange={(e) => updateField('notes', e.target.value)}
-                placeholder="Internal notes"
+                placeholder={t('common.placeholders.notes')}
                 disabled={!isEditable || saving}
               />
             </div>

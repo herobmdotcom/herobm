@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '../lib/api';
 
 /**
@@ -51,9 +52,10 @@ export type { Product };
 
 export default function ProductSearchInput({
   onSelect,
-  placeholder = 'Search product…',
+  placeholder,
   style,
 }: ProductSearchInputProps) {
+  const t = useTranslations('common.productSearch');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Product[]>([]);
   const [stockMap, setStockMap] = useState<Record<string, ProductStock>>({});
@@ -106,7 +108,7 @@ export default function ProductSearchInput({
       <input
         className="input"
         style={{ width: '100%', fontSize: 13 }}
-        placeholder={placeholder}
+        placeholder={placeholder || t('placeholder')}
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);
@@ -150,15 +152,15 @@ export default function ProductSearchInput({
                     color: onHand > 0 ? '#4ade80' : '#f59e0b',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
-                  }}>
-                    OH: {onHand}
+                   }}>
+                    {t('onHandShort')}: {onHand}
                   </span>
                   <span style={{
                     color: avail > 0 ? '#4ade80' : '#ef4444',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
-                  }}>
-                    Avail: {avail}
+                   }}>
+                    {t('availableShort')}: {avail}
                   </span>
                 </div>
               </div>
@@ -167,7 +169,7 @@ export default function ProductSearchInput({
           })}
           {results.length === 0 && (
             <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-              {search.length < 2 ? 'Type at least 2 characters…' : 'No matching products'}
+              {search.length < 2 ? t('typeMinChars') : t('noMatchingProducts')}
             </div>
           )}
         </div>

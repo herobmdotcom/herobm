@@ -42,6 +42,7 @@ export default function Sidebar() {
       title={t('title')}
       subtitle={t('subtitle')}
       sections={sections}
+      footer={t('footer')}
     />
   );
 }

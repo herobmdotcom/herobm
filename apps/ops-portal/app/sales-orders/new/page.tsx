@@ -29,11 +29,12 @@ interface GstCategory {
 }
 
 function GstLabel({ category }: { category: GstCategory }) {
-  const t = useTranslations('common.gst');
-  if (category.type === 'exempt') return <>{t('exempt')}</>;
-  if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
-  const pct = parseFloat(category.rate || '0');
-  return <>{t('pctGst', { pct: pct % 1 === 0 ? pct.toFixed(0) : pct.toString() })}</>;
+    const t = useTranslations('common.gst');
+    if (category.type === 'exempt') return <>{t('exempt')}</>;
+    if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
+    const pct = parseFloat(category.rate || '0');
+    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+    return <>{t('pctGst', { pct: formattedPct })}</>;
 }
 
 interface LineItem {
@@ -352,7 +353,7 @@ export default function NewOrderPage() {
                 id="order-customer"
                 className="input"
                 autoComplete="off"
-                placeholder={t('salesOrders.placeholders.searchOrders')}
+                placeholder={t('salesOrders.placeholders.searchCustomers')}
                 value={customerSearch}
                 onChange={(e) => {
                   setCustomerSearch(e.target.value);
@@ -449,7 +450,7 @@ export default function NewOrderPage() {
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                + {t('salesOrders.buttons.removeLine').replace('Remove line', 'Blank Line')}
+                + {t('salesOrders.buttons.blankLine')}
               </button>
             </div>
           </div>

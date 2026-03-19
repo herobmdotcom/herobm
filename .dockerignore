@@ -1,0 +1,27 @@
+# Ignore heavy directories that are re-created inside the container
+**/node_modules
+**/dist
+**/.next
+**/.tsbuildinfo
+**/coverage
+
+# Pipeline data (large)
+pipelines/abm_extract/.dlt
+**/*.pipeline_data
+
+# OS / editor
+.git
+**/.DS_Store
+**/Thumbs.db
+
+# Environment (secrets — never send to build context)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+**/*.log
+
+# Temp files
+/tmp/

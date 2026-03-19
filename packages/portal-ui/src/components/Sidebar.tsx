@@ -22,9 +22,11 @@ export interface SidebarProps {
   subtitle: string;
   /** Navigation sections with grouped items */
   sections: NavSection[];
+  /** Optional footer text, e.g. "Phase 3 • modbm" */
+  footer?: string;
 }
 
-export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
+export default function Sidebar({ title, subtitle, sections, footer }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -76,7 +78,7 @@ export default function Sidebar({ title, subtitle, sections }: SidebarProps) {
         ))}
       </nav>
       <div className="px-5 py-4" style={{ borderTop: '1px solid var(--border)' }}>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Phase 3 • modbm</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{footer || 'modbm'}</p>
       </div>
     </aside>
   );

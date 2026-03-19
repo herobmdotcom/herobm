@@ -198,7 +198,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         <div className="flex gap-2">
           {supplier.source === 'app' && (
             supplier.stateCode === 'archived' ? (
-              <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 Unarchive</button>
+              <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
             ) : (
               <button
                 className="btn btn-secondary btn-sm"
@@ -277,7 +277,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* Contact & Location Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Contact & Location
+                {t('suppliers.contactLocation')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -351,7 +351,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* Internal Notes Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Internal Notes
+                {t('products.internalNotes')}
               </h3>
               <input
                 type="text"
@@ -359,7 +359,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 onBlur={() => saveField('notes', editNotes, supplier.notes)}
-                placeholder="Internal notes"
+                placeholder={t('common.placeholders.notes')}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -367,7 +367,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           {/* Record Details Card */}
           <div className="card">
             <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Record Details
+              {t('suppliers.recordDetails')}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
@@ -378,9 +378,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Source
+                  {t('common.columns.source')}
                 </label>
-                <input className="input" disabled value={supplier.source === 'abm' ? 'Legacy ABM' : 'Application'} />
+                <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
               </div>
               {supplier.createdOn && (
                 <div>
@@ -417,12 +417,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           {/* Financials Card */}
           <div className="card">
             <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Financials
+              {t('suppliers.financials')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Currency
+                  {t('common.columns.currency')}
                 </label>
                 <select
                   className="input"
@@ -440,7 +440,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Payment Terms
+                  {t('suppliers.paymentTerms')}
                 </label>
                 <input
                   type="text"
@@ -453,7 +453,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Status
+                  {t('common.columns.status')}
                 </label>
                 <div
                   className="flex items-center gap-3"

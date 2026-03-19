@@ -36,11 +36,12 @@ interface GstCategory {
 }
 
 function GstLabel({ category }: { category: GstCategory }) {
-  const t = useTranslations('salesOrders.gst');
+  const t = useTranslations('common.gst');
   if (category.type === 'exempt') return t('exempt');
   if (category.type === 'zero_rated') return t('zeroRated');
   const pct = parseFloat(category.rate || '0');
-  return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
+  const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+  return t('pctGst', { pct: formattedPct });
 }
 
 interface OrderEvent {
@@ -140,6 +141,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const source = searchParams.get('source') || 'app';
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
+  const tToast = useTranslations('toast');
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1316,12 +1318,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 16 }}>⚡</span>
           <strong style={{ fontSize: 13, color: 'var(--text-primary)' }}>
-            {tPurchase('toast.orderStateUpdated')}
+            {tToast('orderStateUpdated')}
           </strong>
         </div>
         <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
           {latestAutoTransition && (
-            tPurchase('toast.orderMovedToReason', {
+            tToast('orderMovedToReason', {
               state: tCommon(`states.${latestAutoTransition.to}`),
               reason: latestAutoTransition.reason.toLowerCase()
             })

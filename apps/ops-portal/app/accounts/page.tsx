@@ -14,7 +14,7 @@ export default function AccountsPage() {
   const tAccounts = useTranslations('accounts');
 
   const columns = useMemo<ColDef[]>(() => [
-    { field: 'accountNumber', headerName: tCommon('columns.accountNumber'), width: 120, pinned: 'left' },
+    { field: 'accountNumber', headerName: tAccounts('columns.accountNumber'), width: 120, pinned: 'left' },
     { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'address1Line1', headerName: tCommon('columns.address'), width: 180, hide: true },
     { field: 'address1Line2', headerName: tCommon('columns.address2'), width: 150, hide: true },
@@ -64,7 +64,7 @@ export default function AccountsPage() {
       type: 'numericColumn',
       valueFormatter: (p: any) => p.value != null ? `${parseFloat(p.value).toFixed(1)}%` : '—',
     },
-  ], [tCommon]);
+  ], [tCommon, tAccounts]);
 
   const handleRowClicked = useCallback((row: any) => {
     router.push(`/accounts/${row.accountId}`);

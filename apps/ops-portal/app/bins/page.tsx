@@ -17,7 +17,7 @@ export default function BinsPage() {
     { field: 'locationName', headerName: tCommon('columns.city'), width: 140 },
     { field: 'productNumber', headerName: tBins('columns.productNumber'), width: 130 },
     { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
-    { field: 'actualQuantity', headerName: tCommon('columns.disc').replace('%', ''), width: 90, type: 'numericColumn' }, // Wait, I need a proper Qty key
+    { field: 'actualQuantity', headerName: tCommon('columns.qty'), width: 90, type: 'numericColumn' },
     { field: 'baseQuantity', headerName: tBins('columns.baseQty'), width: 100, type: 'numericColumn' },
     { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110 },
     { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90 },

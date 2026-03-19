@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
-import { login, getToken, getRole } from '../lib/api';
+import { login, getToken, getRole, validateSession } from '../lib/api';
 
 const AuthContext = createContext<{ authenticated: boolean; role: string | null }>({
   authenticated: false,
@@ -28,9 +28,14 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
 
   useEffect(() => {
     if (getToken()) {
-      setAuthenticated(true);
-      setRole(getRole());
-      setLoading(false);
+      // Don't blindly trust localStorage — verify the token is still valid
+      validateSession().then((valid) => {
+        if (valid) {
+          setAuthenticated(true);
+          setRole(getRole());
+        }
+        setLoading(false);
+      });
     } else {
       setLoading(false);
     }

@@ -331,13 +331,19 @@ export default function PickingSection({
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : 'Failed to generate picking slip');
+                  setError(err instanceof Error ? err.message : tPicking('errors.failedToGeneratePickingSlip'));
                 }
               }}
             >
               🖨️ {tPicking('printPickingSlip')}
             </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={pickAllOrder}
+              disabled={summary.isFullyPicked}
+            >
               ✅ {tPicking('pickAllCreateShipment')}
+            </button>
             {!showCreateShipment && (
               <button
                 className="btn btn-secondary btn-sm"
@@ -749,7 +755,7 @@ export default function PickingSection({
                               );
                               await loadPickingData();
                             } catch (err) {
-                              setError(err instanceof Error ? err.message : 'Failed to update shipment');
+                              setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdateShipment'));
                             }
                           }
                         }}
@@ -775,7 +781,7 @@ export default function PickingSection({
                               );
                               await loadPickingData();
                             } catch (err) {
-                              setError(err instanceof Error ? err.message : 'Failed to update shipment');
+                              setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdateShipment'));
                             }
                           }
                         }}

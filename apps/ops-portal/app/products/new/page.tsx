@@ -77,7 +77,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.productNumber}
                   onChange={(e) => updateField('productNumber', e.target.value)}
-                  placeholder="e.g. PROD-001"
+                  placeholder={t('products.placeholders.productNumber')}
                   disabled={submitting}
                 />
               </div>
@@ -90,7 +90,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.name}
                   onChange={(e) => updateField('name', e.target.value)}
-                  placeholder="e.g. Widget Deluxe"
+                  placeholder={t('products.placeholders.productName')}
                   disabled={submitting}
                 />
               </div>
@@ -103,7 +103,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.barcode}
                   onChange={(e) => updateField('barcode', e.target.value)}
-                  placeholder="UPC / EAN"
+                  placeholder={t('products.placeholders.barcode')}
                   disabled={submitting}
                 />
               </div>
@@ -176,7 +176,7 @@ export default function NewProductPage() {
             className="textarea h-32"
             value={dto.notes}
             onChange={(e) => updateField('notes', e.target.value)}
-            placeholder="Handling instructions, storage requirements, or product description..."
+            placeholder={t('products.placeholders.notes')}
             disabled={submitting}
           />
         </div>

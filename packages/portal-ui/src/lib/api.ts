@@ -50,6 +50,34 @@ function clearSession() {
   writeStorage(ROLE_KEY, null);
 }
 
+/** Clear credentials and reload so AuthGate shows the login screen. */
+function clearSessionAndReload(): never {
+  clearSession();
+  if (typeof window !== 'undefined') window.location.reload();
+  throw new Error('Session expired');
+}
+
+/**
+ * Validate the stored token against the API.
+ * Returns true if valid, false if expired/invalid (and clears storage).
+ * Used by AuthGate on startup so stale tokens don't skip the login screen.
+ */
+export async function validateSession(): Promise<boolean> {
+  if (!token) return false;
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) return true;
+    // Token is expired or invalid — clear it silently
+    clearSession();
+    return false;
+  } catch {
+    // Network error — keep the token, let real API calls handle it
+    return true;
+  }
+}
+
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   if (!token) throw new Error('Not authenticated');
   const res = await fetch(path, {
@@ -59,10 +87,7 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
       ...(init?.headers ?? {}),
     },
   });
-  if (res.status === 401) {
-    clearSession();
-    throw new Error('Session expired');
-  }
+  if (res.status === 401) clearSessionAndReload();
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
@@ -77,10 +102,7 @@ export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Bl
       ...(init?.headers ?? {}),
     },
   });
-  if (res.status === 401) {
-    clearSession();
-    throw new Error('Session expired');
-  }
+  if (res.status === 401) clearSessionAndReload();
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.blob();
 }
@@ -101,10 +123,7 @@ export async function apiMutate<T = unknown>(
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401) {
-    clearSession();
-    throw new Error('Session expired');
-  }
+  if (res.status === 401) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new Error(errData?.message ?? `API error: ${res.status}`);

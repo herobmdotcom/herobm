@@ -16,7 +16,7 @@ export default function ProductsPage() {
   const columns = useMemo<ColDef[]>(() => [
     { field: 'productNumber', headerName: tProducts('columns.productNumber'), width: 130, pinned: 'left' },
     { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
-    { field: 'scNumber', headerName: tCommon('columns.gstPosition').replace('GST Position', 'SC Number'), width: 140 }, // SC Number not in common
+    { field: 'scNumber', headerName: tProducts('columns.scNumber'), width: 140 },
     { field: 'productGroupName', headerName: tCommon('columns.group'), width: 160 },
     { field: 'defaultVendorName', headerName: tProducts('columns.vendor'), width: 160, hide: true },
     { field: 'standardCost', headerName: tProducts('columns.stdCost'), width: 100, type: 'numericColumn',

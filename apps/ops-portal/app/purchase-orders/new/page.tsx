@@ -243,7 +243,7 @@ export default function NewPurchaseOrderPage() {
                 id="order-supplier"
                 className="input"
                 autoComplete="off"
-                placeholder={t('purchaseOrders.placeholders.searchOrders')}
+                placeholder={t('purchaseOrders.placeholders.searchSuppliers')}
                 value={supplierSearch}
                 onChange={(e) => {
                   setSupplierSearch(e.target.value);
@@ -353,7 +353,7 @@ export default function NewPurchaseOrderPage() {
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                + {t('purchaseOrders.lineItems').replace('Line Items', 'Blank Line')}
+                + {t('purchaseOrders.buttons.blankLine')}
               </button>
             </div>
           </div>

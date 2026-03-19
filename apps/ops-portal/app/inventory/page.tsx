@@ -26,9 +26,9 @@ export default function InventoryPage() {
     { field: 'maxQuantity', headerName: tInventory('columns.maxQty'), width: 90, type: 'numericColumn', hide: true },
     { field: 'defaultBinNumber', headerName: tInventory('columns.defaultBin'), width: 110 },
     { field: 'valueOnHand', headerName: tInventory('columns.value'), width: 100, type: 'numericColumn',
-      valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+      valueFormatter: (p: any) => p.value ? p.value.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) : '—' },
     { field: 'lastInUnitCost', headerName: tInventory('columns.lastCost'), width: 110, type: 'numericColumn', hide: true,
-      valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+      valueFormatter: (p: any) => p.value ? p.value.toLocaleString(undefined, { style: 'currency', currency: 'EUR' }) : '—' },
   ], [tCommon, tInventory]);
 
   return (

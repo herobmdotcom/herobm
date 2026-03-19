@@ -32,11 +32,20 @@
       "dispatched": "Dispatched",
       "processed": "Processed",
       "legacy": "Legacy",
+      "active": "Active",
       "archived": "Archived"
     },
     "sources": {
       "abm": "ABM",
       "app": "App"
+    },
+    "auth": {
+      "signIn": "Sign In",
+      "signInToContinue": "Sign in to continue",
+      "username": "Username",
+      "password": "Password",
+      "invalidCredentials": "Invalid credentials",
+      "loading": "Loading…"
     },
     "columns": {
       "orderNumber": "Order #",
@@ -70,12 +79,23 @@
       "gstPosition": "GST Position",
       "deliveryAddrs": "Delivery Addrs",
       "priceScale": "Price Scale",
-      "groupDisc": "Group Disc %",
+      "groupDisc": "Grp Disc",
       "disc": "Disc %",
       "discountPct": "Discount %",
       "qty": "Qty",
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "available": "Avail",
+      "ordered": "On Order",
+      "reserved": "Reserved",
+      "total": "Total",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "activityTimeline": "Activity Timeline",
+      "createdOn": "Created On",
+      "modifiedOn": "Modified On",
       "customerGroup": "Customer Group",
-      "gstPosition": "GST Position"
+      "notes": "Notes"
     },
     "errors": {
       "failedToLoadOrder": "Failed to load order",
@@ -100,7 +120,7 @@
       "failedToCreatePO": "Failed to create purchase order",
       "pleaseSelectCustomer": "Please select a customer",
       "pleaseSelectSupplier": "Please select a supplier",
-      "pleaseAddLineItem": "Please add at least one line item with a product"
+      "pleaseAddLineItem": "Please add at least one line item"
     },
     "gst": {
       "exempt": "Exempt",
@@ -136,6 +156,13 @@
       "return_line_added": "Return Line Added",
       "return_line_updated": "Return Line Updated",
       "return_line_removed": "Return Line Removed"
+    },
+    "productSearch": {
+      "placeholder": "Search product…",
+      "typeMinChars": "Type at least 2 characters…",
+      "noMatchingProducts": "No matching products",
+      "onHandShort": "OH",
+      "availableShort": "Avail"
     }
   },
   "toast": {
@@ -168,10 +195,6 @@
     "lineItems": "Line Items",
     "availability": "📦 Availability",
     "returns": "↩ Returns",
-    "orderDetails": "Order Details",
-    "lineItems": "Line Items",
-    "availability": "📦 Availability",
-    "returns": "↩ Returns",
     "discountPercent": "{disc}% disc",
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -189,7 +212,9 @@
       "searchProduct": "Add product… (search)",
       "returnNotes": "Return reason / notes",
       "reason": "Reason",
-      "searchOrders": "Search by order number, customer, or PO…"
+      "searchOrders": "Search by order number, customer, or PO…",
+      "searchCustomers": "Search customers…",
+      "zero": "0"
     },
     "buttons": {
       "createOrder": "+ Create Order",
@@ -202,7 +227,8 @@
       "save": "💾 Save",
       "saveReturn": "💾 Create Return",
       "removeLine": "Remove line",
-      "removeReturnLine": "Remove return line"
+      "removeReturnLine": "Remove return line",
+      "blankLine": "Blank Line"
     },
     "columns": {
       "lineNumber": "#",
@@ -261,13 +287,15 @@
       "orderName": "Order name",
       "invoiceNumber": "Supplier invoice reference",
       "notes": "Internal notes",
-      "searchProduct": "Add product… (search)"
+      "searchProduct": "Add product… (search)",
+      "searchSuppliers": "Search suppliers…"
     },
     "buttons": {
       "createPO": "+ Create PO",
       "copyOrder": "📋 Copy Order",
       "createReturn": "↩ Create Return",
-      "save": "💾 Save"
+      "save": "💾 Save",
+      "blankLine": "Blank Line"
     },
     "columns": {
       "lineNumber": "#",
@@ -282,7 +310,28 @@
       "committed": "Committed",
       "reserved": "Reserved",
       "available": "Available",
-      "status": "Status"
+      "status": "Status",
+      "qtyReturned": "Qty Returned",
+      "reason": "Reason",
+      "fee": "Fee"
+    },
+    "noLineItemsShort": "No line items",
+    "noReturns": "No returns",
+    "noReturnLines": "No return lines",
+    "loadingReturns": "Loading returns…",
+    "returns": {
+      "totalCredit": "Total Credit",
+      "totalFees": "Total Fees",
+      "netCredit": "Net Credit"
+    },
+    "placeholders": {
+      "searchOrders": "Search purchase orders…",
+      "orderName": "Order name",
+      "invoiceNumber": "Supplier invoice reference",
+      "notes": "Internal notes",
+      "searchProduct": "Add product… (search)",
+      "searchSuppliers": "Search suppliers…",
+      "reason": "Reason"
     }
   },
   "picking": {
@@ -323,7 +372,8 @@
       "failedToPickAll": "Failed to pick all",
       "failedToCreateShipment": "Failed to create shipment",
       "failedToUpdateShipment": "Failed to update shipment",
-      "atLeastOneLineRequired": "At least one line with a quantity is required"
+      "atLeastOneLineRequired": "At least one line with a quantity is required",
+      "failedToGeneratePickingSlip": "Failed to generate picking slip"
     }
   },
   "dashboard": {
@@ -338,6 +388,7 @@
   "sidebar": {
     "title": "modbm",
     "subtitle": "Business Management",
+    "footer": "Phase 3 • modbm",
     "groups": {
       "inventory": "Inventory",
       "sales": "Sales",
@@ -382,8 +433,26 @@
       "createSupplier": "+ Create Supplier"
     },
     "placeholders": {
-      "searchSuppliers": "Search suppliers…"
-    }
+      "searchSuppliers": "Search suppliers…",
+      "vendorNumber": "e.g. VEND-001",
+      "name": "e.g. ACME Corp",
+      "paymentTerms": "e.g. NET30",
+      "email": "vendor@example.com",
+      "phone": "+1 234 567 890",
+      "address": "123 Main St",
+      "city": "City",
+      "country": "Country",
+      "notes": "Key relationship details, preferred delivery methods, etc."
+    },
+    "columns": {
+      "vendorNumber": "Vendor #",
+      "paymentTerms": "Payment Terms",
+      "productCount": "Products"
+    },
+    "contactLocation": "Contact & Location",
+    "recordDetails": "Record Details",
+    "financials": "Financials",
+    "paymentTerms": "Payment Terms"
   },
   "bins": {
     "title": "Bin Contents",
@@ -407,6 +476,8 @@
       "searchInventory": "Search by product name, number, or location…"
     },
     "columns": {
+      "productNumber": "Product #",
+      "locationNo": "Location No",
       "scNumber": "SC Number",
       "backOrdered": "Back Ordered",
       "minQty": "Min Qty",
@@ -421,10 +492,9 @@
     "buttons": {
       "addProduct": "+ Add Product"
     },
-    "placeholders": {
-      "searchProducts": "Search by name, product number, or barcode…"
-    },
     "columns": {
+      "productNumber": "Product # (SKU)",
+      "productId": "Product ID",
       "vendor": "Default Vendor",
       "stdCost": "Std Cost",
       "listPrice": "List Price",
@@ -432,7 +502,8 @@
       "priceLevel3": "Level 3",
       "priceLevel4": "Level 4",
       "barcode": "Barcode",
-      "gstCategory": "GST Category"
+      "gstCategory": "GST Category",
+      "scNumber": "SC Number"
     },
     "generalInfo": "General Information",
     "pricing": "Pricing & Costs",
@@ -440,8 +511,17 @@
     "catalogManagement": "Catalog & Inventory Management",
     "pricingCostsInfo": "Standard cost is used for margin calculations and inventory valuation. List price is the default selling price before customer discounts.",
     "internalWarehouseNotes": "Internal & Warehouse Notes",
-    "columns": {
-      "productNumber": "Product # (SKU)"
+    "productInformation": "Product Information",
+    "productName": "Product Name",
+    "productGroup": "Product Group",
+    "recordDetails": "Record Details",
+    "internalNotes": "Internal Notes",
+    "placeholders": {
+      "searchProducts": "Search by name, product number, or barcode…",
+      "productNumber": "e.g. PROD-001",
+      "productName": "e.g. Widget Deluxe",
+      "barcode": "EAN / UPC barcode",
+      "notes": "Handling instructions, storage requirements, or product description..."
     }
   }
 }

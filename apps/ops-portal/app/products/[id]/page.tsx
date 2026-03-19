@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 import { apiFetch, apiMutate, EntityHeader, ActivityTimeline } from '@/lib/api';
 
 export default function ProductDetailPage() {
+  const t = useTranslations();
   const router = useRouter();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
@@ -71,11 +73,11 @@ export default function ProductDetailPage() {
   };
 
   const archiveProduct = async () => {
-    if (!confirm('Are you sure you want to archive this product?')) return;
+    if (!confirm(t('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
       await apiMutate(`/api/products/${id}/archive`, 'POST');
-      toast.success('Product archived', { icon: '📦' });
+      toast.success(t('toast.productUpdated'), { icon: '📦' });
       await fetchProduct(false);
     } catch (err: any) {
       toast.error(err.message);
@@ -88,7 +90,7 @@ export default function ProductDetailPage() {
     setSaving(true);
     try {
       await apiMutate(`/api/products/${id}/unarchive`, 'POST');
-      toast.success('Product unarchived', { icon: '📦' });
+      toast.success(t('toast.productUpdated'), { icon: '📦' });
       await fetchProduct(false);
     } catch (err: any) {
       toast.error(err.message);
@@ -98,7 +100,7 @@ export default function ProductDetailPage() {
   };
 
   if (loading) return <Shell><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></Shell>;
-  if (!product) return <Shell><div className="text-center py-20">Product not found</div></Shell>;
+  if (!product) return <Shell><div className="text-center py-20">{t('common.noMatchingResults')}</div></Shell>;
 
   const isLegacy = product.source === 'abm';
   const isEditable = !isLegacy && product.stateCode !== 'archived';
@@ -112,14 +114,14 @@ export default function ProductDetailPage() {
         isSaving={saving}
         badges={
           <>
-            <span className={`badge badge-${product.stateCode}`}>{product.stateCode}</span>
-            {isLegacy && <span className="badge badge-abm">Legacy ABM</span>}
+            <span className={`badge badge-${product.stateCode}`}>{t(`common.states.${product.stateCode}`)}</span>
+            {isLegacy && <span className="badge badge-abm">{t('common.sources.abm')}</span>}
           </>
         }
         actions={
           product.source === 'app' ? (
             product.stateCode === 'archived' ? (
-              <button className="btn btn-secondary btn-sm" onClick={unarchiveProduct} disabled={saving}>📦 Unarchive</button>
+              <button className="btn btn-secondary btn-sm" onClick={unarchiveProduct} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
             ) : (
               <button
                 className="btn btn-secondary btn-sm"
@@ -127,7 +129,7 @@ export default function ProductDetailPage() {
                 onClick={archiveProduct}
                 disabled={saving}
               >
-                📦 Archive
+                📦 {t('salesOrders.buttons.archive')}
               </button>
             )
           ) : null
@@ -141,7 +143,7 @@ export default function ProductDetailPage() {
         >
           <span style={{ fontSize: '1.2rem' }}>📦</span>
           <div>
-            <strong className="font-semibold text-amber-800">This product is archived.</strong> It is hidden from default views and is read-only. Unarchive to restore normal access.
+            <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
           </div>
         </div>
       )}
@@ -154,12 +156,12 @@ export default function ProductDetailPage() {
               className="text-sm font-semibold mb-4"
               style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
-              Product Information
+              {t('products.productInformation')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Product Name
+                  {t('products.productName')}
                 </label>
                 <input
                   className="input"
@@ -174,7 +176,7 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Barcode
+                    {t('products.columns.barcode')}
                   </label>
                   <input
                     className="input"
@@ -182,7 +184,7 @@ export default function ProductDetailPage() {
                     value={dto.barcode}
                     onChange={(e) => setDto({ ...dto, barcode: e.target.value })}
                     onBlur={(e) => handleBlur('barcode', e.target.value)}
-                    placeholder="EAN / UPC barcode"
+                    placeholder={t('products.placeholders.barcode')}
                   />
                 </div>
                 <div>
@@ -195,9 +197,9 @@ export default function ProductDetailPage() {
                     value={dto.stateCode}
                     onChange={(e) => handleSelectChange('stateCode', e.target.value)}
                   >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="discontinued">Discontinued</option>
+                    <option value="active">{t('common.states.active')}</option>
+                    <option value="inactive">{t('common.states.inactive')}</option>
+                    <option value="discontinued">{t('common.states.discontinued')}</option>
                   </select>
                 </div>
               </div>
@@ -205,7 +207,7 @@ export default function ProductDetailPage() {
               {isLegacy && product.productGroupName && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Product Group
+                    {t('products.productGroup')}
                   </label>
                   <input className="input" disabled value={product.productGroupName} />
                 </div>
@@ -224,7 +226,7 @@ export default function ProductDetailPage() {
                   {product.gstCategory && (
                     <div>
                       <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                        GST Category
+                        {t('products.columns.gstCategory')}
                       </label>
                       <input className="input" disabled value={product.gstCategory} />
                     </div>
@@ -240,13 +242,13 @@ export default function ProductDetailPage() {
               className="text-sm font-semibold mb-4"
               style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
-              Pricing & Financials
+              {t('products.pricing')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    List Price
+                    {t('products.columns.listPrice')}
                   </label>
                   <input
                     type="number"
@@ -261,7 +263,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Standard Cost
+                    {t('products.columns.stdCost')}
                   </label>
                   <input
                     type="number"
@@ -280,7 +282,7 @@ export default function ProductDetailPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Trade Price
+                      {t('products.columns.tradePrice')}
                     </label>
                     <input
                       className="input"
@@ -291,7 +293,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Price Level 3
+                      {t('products.columns.priceLevel3')}
                     </label>
                     <input
                       className="input"
@@ -302,7 +304,7 @@ export default function ProductDetailPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Price Level 4
+                      {t('products.columns.priceLevel4')}
                     </label>
                     <input
                       className="input"
@@ -323,7 +325,7 @@ export default function ProductDetailPage() {
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
-            Record Details
+            {t('products.recordDetails')}
           </h3>
           <div className="grid grid-cols-1 gap-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -335,9 +337,9 @@ export default function ProductDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Source
+                  {t('common.columns.source')}
                 </label>
-                <input className="input" disabled value={product.source === 'abm' ? 'Legacy ABM' : 'Application'} />
+                <input className="input" disabled value={product.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
               </div>
               {product.createdOn && (
                 <div>
@@ -366,7 +368,7 @@ export default function ProductDetailPage() {
             )}
             {isLegacy && (
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                This is a read-only legacy record imported from ABM. Changes must be made in the source system.
+                {t('common.legacyRecordImported')}
               </p>
             )}
           </div>
@@ -378,7 +380,7 @@ export default function ProductDetailPage() {
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
-            Internal Notes
+            {t('products.internalNotes')}
           </h3>
           <textarea
             className="input w-full"
@@ -387,7 +389,7 @@ export default function ProductDetailPage() {
             value={dto.notes}
             onChange={(e) => setDto({ ...dto, notes: e.target.value })}
             onBlur={(e) => handleBlur('notes', e.target.value)}
-            placeholder="Technical specifications, sourcing details, etc…"
+            placeholder={t('products.placeholders.notes')}
           />
         </div>
 

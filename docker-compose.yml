@@ -21,9 +21,10 @@ services:
       - app-net
 
   custom-api:
+    image: localhost/modbm_custom-api:latest
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.api
     container_name: custom-api
     restart: unless-stopped
     env_file: .env

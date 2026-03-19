@@ -2,10 +2,12 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache typst font-dejavu
+RUN apk add --no-cache typst font-dejavu \
+    && npm install -g npm@11
 
-# Copy root scripts needed for tests
-COPY scripts /app/scripts
+# Copy and build shared workspace package
+COPY packages/shared ./packages/shared
+RUN cd packages/shared && npm install && npm run build
 
 # Build API
 WORKDIR /app/apps/api

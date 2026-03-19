@@ -107,6 +107,9 @@
         "statements": 90
       }
     },
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@modbm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1"
+    }
   }
 }

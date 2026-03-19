@@ -126,7 +126,10 @@ dev-api:
 	node --env-file=.env apps/api/dist/main.js
 
 rebuild-api:
-	$(COMPOSE_CMD) up -d --build --no-deps custom-api
+	podman build -t localhost/modbm_custom-api:latest -f Dockerfile.api .
+	-podman stop custom-api
+	-podman rm custom-api
+	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api
 	$(COMPOSE_CMD) ps
 
 test-api:

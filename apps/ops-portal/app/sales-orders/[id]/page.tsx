@@ -43,7 +43,8 @@ function GstLabel({ category }: { category: GstCategory }) {
     if (category.type === 'exempt') return <>{t('exempt')}</>;
     if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
     const pct = parseFloat(category.rate || '0');
-    return <>{t('pctGst', { pct: pct % 1 === 0 ? pct.toFixed(0) : pct.toString() })}</>;
+    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+    return <>{t('pctGst', { pct: formattedPct })}</>;
 }
 
 interface OrderEvent {
@@ -686,7 +687,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     letterSpacing: '0.04em',
                                                 }}
                                             >
-                                                EXEMPT
+                                                {t('common.gst.exempt').toUpperCase()}
                                             </span>
                                         ) : null;
                                     })()}
@@ -1172,7 +1173,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         className="input"
                                         value={newReturnNotes}
                                         onChange={(e) => setNewReturnNotes(e.target.value)}
-                                        placeholder={t('salesOrders.placeholders.returnNotes')}
+                                        placeholder={t('salesOrders.placeholders.notes')}
                                     />
                                 </div>
 
@@ -1219,7 +1220,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 updated[idx] = { ...rl, quantityReturned: e.target.value };
                                                                 setNewReturnLines(updated);
                                                             }}
-                                                            placeholder="0"
+                                                            placeholder={t('salesOrders.placeholders.zero')}
                                                         />
                                                     </td>
                                                     <td>
@@ -1232,7 +1233,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 updated[idx] = { ...rl, reason: e.target.value };
                                                                 setNewReturnLines(updated);
                                                             }}
-                                                            placeholder="Reason"
+                                                            placeholder={t('salesOrders.placeholders.reason')}
                                                         />
                                                     </td>
                                                     <td style={{ textAlign: 'right' }}>

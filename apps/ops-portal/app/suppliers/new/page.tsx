@@ -82,7 +82,7 @@ export default function NewSupplierPage() {
                   className="input"
                   value={dto.vendorNumber}
                   onChange={(e) => updateField('vendorNumber', e.target.value)}
-                  placeholder="e.g. VEND-001"
+                  placeholder={t('suppliers.placeholders.vendorNumber')}
                   disabled={submitting}
                 />
               </div>
@@ -96,7 +96,7 @@ export default function NewSupplierPage() {
                   className="input"
                   value={dto.name}
                   onChange={(e) => updateField('name', e.target.value)}
-                  placeholder="e.g. ACME Corp"
+                  placeholder={t('suppliers.placeholders.name')}
                   disabled={submitting}
                 />
               </div>
@@ -141,7 +141,7 @@ export default function NewSupplierPage() {
                     className="input"
                     value={dto.paymentTerms}
                     onChange={(e) => updateField('paymentTerms', e.target.value)}
-                    placeholder="e.g. NET30"
+                    placeholder={t('suppliers.placeholders.paymentTerms')}
                     disabled={submitting}
                   />
                 </div>
@@ -172,7 +172,7 @@ export default function NewSupplierPage() {
                 className="input"
                 value={dto.emailAddress1}
                 onChange={(e) => updateField('emailAddress1', e.target.value)}
-                placeholder="vendor@example.com"
+                placeholder={t('suppliers.placeholders.email')}
                 disabled={submitting}
               />
             </div>
@@ -185,7 +185,7 @@ export default function NewSupplierPage() {
                 className="input"
                 value={dto.telephone1}
                 onChange={(e) => updateField('telephone1', e.target.value)}
-                placeholder="+1 234 567 890"
+                placeholder={t('suppliers.placeholders.phone')}
                 disabled={submitting}
               />
             </div>
@@ -198,7 +198,7 @@ export default function NewSupplierPage() {
                 className="input"
                 value={dto.address1Line1}
                 onChange={(e) => updateField('address1Line1', e.target.value)}
-                placeholder="123 Main St"
+                placeholder={t('suppliers.placeholders.address')}
                 disabled={submitting}
               />
             </div>
@@ -211,7 +211,7 @@ export default function NewSupplierPage() {
                 className="input"
                 value={dto.address1City}
                 onChange={(e) => updateField('address1City', e.target.value)}
-                placeholder="City"
+                placeholder={t('suppliers.placeholders.city')}
                 disabled={submitting}
               />
             </div>
@@ -224,7 +224,7 @@ export default function NewSupplierPage() {
                 className="input"
                 value={dto.address1Country}
                 onChange={(e) => updateField('address1Country', e.target.value)}
-                placeholder="Country"
+                placeholder={t('suppliers.placeholders.country')}
                 disabled={submitting}
               />
             </div>
@@ -248,7 +248,7 @@ export default function NewSupplierPage() {
             className="input"
             value={dto.notes}
             onChange={(e) => updateField('notes', e.target.value)}
-            placeholder="Key relationship details, preferred delivery methods, etc."
+            placeholder={t('suppliers.placeholders.notes')}
             disabled={submitting}
           />
         </div>
