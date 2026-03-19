@@ -2,7 +2,7 @@
 -- Generated from: apps/api/src/drizzle/modbm-core-schema.ts
 
 -- products (CDM: Product)
-CREATE TABLE modbm_core.products (
+CREATE TABLE IF NOT EXISTS modbm_core.products (
     product_id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_number      TEXT NOT NULL UNIQUE,
     name                TEXT NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE modbm_core.products (
 );
 
 -- product_events (Audit log + event sourcing)
-CREATE TABLE modbm_core.product_events (
+CREATE TABLE IF NOT EXISTS modbm_core.product_events (
     event_id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id          UUID NOT NULL REFERENCES modbm_core.products(product_id),
     event_type          TEXT NOT NULL,
@@ -27,6 +27,7 @@ CREATE TABLE modbm_core.product_events (
 );
 
 -- Indexes
-CREATE INDEX idx_products_number ON modbm_core.products(product_number);
-CREATE INDEX idx_products_name ON modbm_core.products(name);
-CREATE INDEX idx_product_events_product ON modbm_core.product_events(product_id);
+CREATE INDEX IF NOT EXISTS idx_products_number ON modbm_core.products(product_number);
+CREATE INDEX IF NOT EXISTS idx_products_name ON modbm_core.products(name);
+CREATE INDEX IF NOT EXISTS idx_product_events_product ON modbm_core.product_events(product_id);
+

@@ -14,6 +14,12 @@ scrape_configs:
     static_configs:
       - targets: ['custom-api:3001']
 
+  # --- Outbox Relay Worker (Node) ---
+  - job_name: 'outbox-worker'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['outbox-worker:9090']
+
   # --- Loki (log aggregation) ---
   - job_name: 'loki'
     static_configs:
@@ -34,6 +40,11 @@ scrape_configs:
   # Scraping requires a dedicated postgres_exporter sidecar container.
   # Tracked for future implementation.
 
-  # EXCEPTION: redis-broker — Redis does not expose a /metrics endpoint natively.
+  # EXCEPTION: redis-broker & erpnext-redis-* — Redis does not expose a /metrics endpoint natively.
   # Scraping requires a dedicated redis_exporter sidecar container.
   # Tracked for future implementation.
+
+  # EXCEPTION: erpnext-* containers (Backend/Frontend/Worker) — Frappe does not expose a /metrics
+  # endpoint natively on its standard ports. Scraping requires installing a custom Frappe Prometheus app.
+  # Tracked for future implementation.
+

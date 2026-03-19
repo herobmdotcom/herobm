@@ -81,6 +81,18 @@ export class PurchaseOrdersController {
     return this.purchaseOrdersService.changeState(id, stateCode);
   }
 
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  async archive(@Param('id') id: string, @Req() req: any) {
+    return this.purchaseOrdersService.archive(id, req.user.username);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  async unarchive(@Param('id') id: string, @Req() req: any) {
+    return this.purchaseOrdersService.unarchive(id, req.user.username);
+  }
+
   @Post(':id/lines')
   @CasbinAction('write')
   async addLine(

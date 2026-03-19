@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate, EntityHeader } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 export default function NewAccountPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
@@ -36,7 +38,7 @@ export default function NewAccountPage() {
 
     try {
       const account = await apiMutate<any>('/api/accounts', 'POST', dto);
-      toast.success('Account created successfully');
+      toast.success(t('toast.accountCreated'));
       router.push(`/accounts/${account.accountId}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -54,13 +56,13 @@ export default function NewAccountPage() {
   return (
     <Shell>
       <EntityHeader
-        title="Create New Account"
-        subtitle="Customer Management"
+        title={t('accounts.buttons.createAccount')}
+        subtitle={t('accounts.customerManagement')}
         onBack={() => router.push('/accounts')}
         isSaving={submitting}
         isDirty={isValid}
         onSave={handleSubmit}
-        saveLabel="✨ Create Account"
+        saveLabel={t('accounts.buttons.createAccount')}
       />
 
       <div className="scroll-area" style={{ flex: 1 }}>
@@ -75,12 +77,12 @@ export default function NewAccountPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              General Information
+              {t('accounts.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Account Number *
+                  {t('accounts.columns.accountNumber')} *
                 </label>
                 <input
                   id="accountNumber"
@@ -94,7 +96,7 @@ export default function NewAccountPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Account Name *
+                  {t('common.columns.name')} *
                 </label>
                 <input
                   id="name"
@@ -109,7 +111,7 @@ export default function NewAccountPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer Group
+                    {t('common.columns.customerGroup')}
                   </label>
                   <input
                     type="text"
@@ -122,7 +124,7 @@ export default function NewAccountPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    GST Position
+                    {t('common.columns.gstPosition')}
                   </label>
                   <input
                     type="text"
@@ -147,13 +149,13 @@ export default function NewAccountPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              Pricing & Currency
+              {t('accounts.pricingCurrency')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Currency
+                    {t('common.columns.currency')}
                   </label>
                   <select
                     className="input"
@@ -168,7 +170,7 @@ export default function NewAccountPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer Discount %
+                    {t('accounts.columns.discountPct')}
                   </label>
                   <input
                     type="number"
@@ -196,12 +198,12 @@ export default function NewAccountPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Primary Contact
+            {t('common.columns.contact')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Contact Name
+                {t('common.columns.contactName')}
               </label>
               <input
                 type="text"
@@ -214,7 +216,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Contact Email
+                {t('common.columns.contactEmail')}
               </label>
               <input
                 type="email"
@@ -227,7 +229,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Contact Phone
+                {t('common.columns.contactPhone')}
               </label>
               <input
                 type="text"
@@ -251,12 +253,12 @@ export default function NewAccountPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Address
+            {t('common.columns.address')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Email
+                {t('common.columns.email')}
               </label>
               <input
                 type="email"
@@ -269,7 +271,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Phone
+                {t('common.columns.phone')}
               </label>
               <input
                 type="text"
@@ -282,7 +284,7 @@ export default function NewAccountPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Street Address
+                {t('common.columns.address')}
               </label>
               <input
                 type="text"
@@ -295,7 +297,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                City
+                {t('common.columns.city')}
               </label>
               <input
                 type="text"
@@ -308,7 +310,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                State / Province
+                {t('common.columns.state')}
               </label>
               <input
                 type="text"
@@ -321,7 +323,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Postal Code
+                {t('common.columns.postalCode')}
               </label>
               <input
                 type="text"
@@ -334,7 +336,7 @@ export default function NewAccountPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Country
+                {t('common.columns.country')}
               </label>
               <input
                 type="text"
@@ -358,7 +360,7 @@ export default function NewAccountPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Internal Notes
+            {t('common.columns.notes')}
           </h3>
           <textarea
             className="textarea h-32"

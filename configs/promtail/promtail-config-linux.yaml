@@ -10,23 +10,22 @@ clients:
     tenant_id: modbm
 
 scrape_configs:
-  # Container logs via file-based discovery (Linux).
-  # Docker's json-file driver writes logs to /var/lib/docker/containers/<id>/<id>-json.log
-  - job_name: docker
+  # Container logs via file-based discovery (Linux / Podman).
+  # Podman stores container logs under /var/log/pods/ in CRI format.
+  - job_name: container_logs
     static_configs:
       - targets:
           - localhost
         labels:
-          job: docker
-          __path__: /var/lib/docker/containers/*/*.log
+          job: containers
+          __path__: /var/log/pods/*/*/*.log
     pipeline_stages:
-      - json:
-          expressions:
-            log: log
-            stream: stream
-            time: time
+      - regex:
+          expression: '^(?P<time>[^ ]+) (?P<stream>\w+) \w (?P<log>.*)$'
       - output:
           source: log
+      - labels:
+          stream:
 
   # ELT pipeline logs
   - job_name: elt_pipelines

@@ -1,39 +1,44 @@
 'use client';
 
+import { useMemo } from 'react';
 import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
-
-const columns: ColDef[] = [
-  { field: 'productNumber', headerName: 'Product #', width: 130, pinned: 'left' },
-  { field: 'productName', headerName: 'Product', flex: 1, minWidth: 200 },
-  { field: 'scNumber', headerName: 'SC Number', width: 140 },
-  { field: 'locationNo', headerName: 'Location No', width: 110, hide: true },
-  { field: 'locationName', headerName: 'Location', width: 140 },
-  { field: 'quantityOnHand', headerName: 'On Hand', width: 100, type: 'numericColumn' },
-  { field: 'quantityCommitted', headerName: 'Committed', width: 110, type: 'numericColumn' },
-  { field: 'quantityAvailable', headerName: 'Available', width: 100, type: 'numericColumn' },
-  { field: 'quantityOnOrder', headerName: 'On Order', width: 100, type: 'numericColumn' },
-  { field: 'quantityReserved', headerName: 'Reserved', width: 100, type: 'numericColumn' },
-  { field: 'quantityBackOrdered', headerName: 'Back Ordered', width: 120, type: 'numericColumn', hide: true },
-  { field: 'minQuantity', headerName: 'Min Qty', width: 90, type: 'numericColumn', hide: true },
-  { field: 'maxQuantity', headerName: 'Max Qty', width: 90, type: 'numericColumn', hide: true },
-  { field: 'defaultBinNumber', headerName: 'Default Bin', width: 110 },
-  { field: 'valueOnHand', headerName: 'Value', width: 100, type: 'numericColumn',
-    valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-  { field: 'lastInUnitCost', headerName: 'Last In Cost', width: 110, type: 'numericColumn', hide: true,
-    valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-];
+import { useTranslations } from 'next-intl';
 
 export default function InventoryPage() {
+  const tCommon = useTranslations('common');
+  const tInventory = useTranslations('inventory');
+
+  const columns = useMemo<ColDef[]>(() => [
+    { field: 'productNumber', headerName: tInventory('columns.productNumber'), width: 130, pinned: 'left' },
+    { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
+    { field: 'scNumber', headerName: tInventory('columns.scNumber'), width: 140 },
+    { field: 'locationNo', headerName: tInventory('columns.locationNo'), width: 110, hide: true },
+    { field: 'locationName', headerName: tCommon('columns.city'), width: 140 }, // Using city for locationName
+    { field: 'quantityOnHand', headerName: tCommon('columns.onHand'), width: 100, type: 'numericColumn' },
+    { field: 'quantityCommitted', headerName: tCommon('columns.committed'), width: 110, type: 'numericColumn' },
+    { field: 'quantityAvailable', headerName: tCommon('columns.available'), width: 100, type: 'numericColumn' },
+    { field: 'quantityOnOrder', headerName: tCommon('columns.ordered'), width: 100, type: 'numericColumn' },
+    { field: 'quantityReserved', headerName: tCommon('columns.reserved'), width: 100, type: 'numericColumn' },
+    { field: 'quantityBackOrdered', headerName: tInventory('columns.backOrdered'), width: 120, type: 'numericColumn', hide: true },
+    { field: 'minQuantity', headerName: tInventory('columns.minQty'), width: 90, type: 'numericColumn', hide: true },
+    { field: 'maxQuantity', headerName: tInventory('columns.maxQty'), width: 90, type: 'numericColumn', hide: true },
+    { field: 'defaultBinNumber', headerName: tInventory('columns.defaultBin'), width: 110 },
+    { field: 'valueOnHand', headerName: tInventory('columns.value'), width: 100, type: 'numericColumn',
+      valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+    { field: 'lastInUnitCost', headerName: tInventory('columns.lastCost'), width: 110, type: 'numericColumn', hide: true,
+      valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+  ], [tCommon, tInventory]);
+
   return (
     <Shell>
-      <h2 className="text-2xl font-bold mb-6">Inventory</h2>
+      <h2 className="text-2xl font-bold mb-6">{tInventory('title')}</h2>
       <DataGrid
         endpoint="/api/inventory"
         columns={columns}
         gridKey="ops-inventory"
-        searchPlaceholder="Search by product name, number, or location…"
+        searchPlaceholder={tInventory('placeholders.searchInventory')}
         exportFileName="inventory"
         fetchAll
       />

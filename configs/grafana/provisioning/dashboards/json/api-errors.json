@@ -18,7 +18,7 @@
       },
       "targets": [
         {
-          "expr": "{container=\"custom-api\"} |= \"unhandled_exception\" | json",
+          "expr": "{job=\"containers\"} |= \"unhandled_exception\" | json",
           "refId": "A"
         }
       ],

@@ -24,7 +24,8 @@ export class AccountsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, offset, searchTerm, includeArchived } =
+      parsePagination(query);
 
     // --- App accounts (modbm_core) ---
     let appQuery = this.db
@@ -63,6 +64,10 @@ export class AccountsService {
           ilike(coreAccounts.emailAddress1, searchTerm),
         ),
       );
+    }
+
+    if (!includeArchived) {
+      appQuery = appQuery.where(sql`${coreAccounts.stateCode} != 'archived'`);
     }
 
     // --- Mart accounts (legacy ABM) ---
@@ -107,11 +112,13 @@ export class AccountsService {
       );
     }
 
-
     // Execute both and merge
     const [appRows, martRows] = await Promise.all([appQuery, martQuery]);
     // Normalize ABM state codes
-    const normalisedMart = martRows.map((r) => ({ ...r, stateCode: normalizeStateCode(r.stateCode) }));
+    const normalisedMart = martRows.map((r) => ({
+      ...r,
+      stateCode: normalizeStateCode(r.stateCode),
+    }));
     const unified = [...appRows, ...normalisedMart];
 
     // Case-insensitive name sort
@@ -158,7 +165,12 @@ export class AccountsService {
       .limit(1);
 
     if (martRows.length > 0) {
-      return { ...martRows[0], stateCode: normalizeStateCode(martRows[0].stateCode), source: 'abm', events: [] };
+      return {
+        ...martRows[0],
+        stateCode: normalizeStateCode(martRows[0].stateCode),
+        source: 'abm',
+        events: [],
+      };
     }
 
     throw new NotFoundException(`Account '${id}' not found`);

@@ -10,33 +10,24 @@ clients:
     tenant_id: modbm
 
 scrape_configs:
-  # ── Docker container logs (ADV-037) ──
-  # Auto-discovers all containers via the Docker socket and ships
-  # stdout/stderr to Loki, labelled by container name and compose service.
-  - job_name: docker_containers
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 10s
-    relabel_configs:
-      # Use the container name as a label
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/(.*)'
-        target_label: container
-      # Use the compose service name if available
-      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
-        target_label: compose_service
-      # Use the compose project name if available
-      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
-        target_label: compose_project
+  # ── Container stdout/stderr logs (Podman) ──
+  # Podman writes JSON log files to the container storage directory.
+  # The Podman machine mounts these into the Promtail container.
+  - job_name: container_logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: containers
+          __path__: /var/log/pods/*/*/*.log
     pipeline_stages:
-      # Try to parse JSON log lines (NestJS structured output)
-      - json:
-          expressions:
-            level: level
-            context: context
+      # Podman/CRI log lines are in CRI format: <timestamp> <stream> <tag> <log>
+      - regex:
+          expression: '^(?P<time>[^ ]+) (?P<stream>\w+) \w (?P<log>.*)$'
+      - output:
+          source: log
       - labels:
-          level:
-          context:
+          stream:
 
   # ── ELT pipeline file logs ──
   - job_name: elt_pipelines

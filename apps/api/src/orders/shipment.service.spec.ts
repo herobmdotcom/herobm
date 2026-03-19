@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ShipmentService } from './shipment.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -125,6 +126,7 @@ describe('ShipmentService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ConfigService, useValue: { get: jest.fn() } },
         ShipmentService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },
@@ -382,35 +384,15 @@ describe('ShipmentService', () => {
                 ),
               };
             }
-            if (txSelectCall === 3) {
-              // evaluateLifecycleRules: find the order
-              return {
-                where: jest.fn().mockReturnValue(
-                  Object.assign(Promise.resolve([PICKING_ORDER]), {
-                    limit: jest.fn().mockResolvedValue([PICKING_ORDER]),
-                  }),
-                ),
-              };
-            }
-            if (txSelectCall === 4) {
-              // evaluateLifecycleRules: looking for rules (return empty)
-              return {
-                where: jest.fn().mockReturnValue(
-                  Object.assign(Promise.resolve([]), {
-                    limit: jest.fn().mockResolvedValue([]),
-                  }),
-                ),
-              };
-            }
-            // For any other select
-            const resolvedEmptyArray = Promise.resolve([]);
+            // Add a catch-all that tries to infer what is being queried, or just pad it:
             return {
-              where: jest.fn().mockReturnValue(
-                Object.assign(resolvedEmptyArray, {
-                  orderBy: jest.fn().mockReturnValue(resolvedEmptyArray),
-                  limit: jest.fn().mockResolvedValue([]),
-                }),
-              ),
+              where: jest.fn().mockImplementation(() => {
+                const resolvedArray = Promise.resolve([PICKING_ORDER]);
+                return Object.assign(resolvedArray, {
+                  orderBy: jest.fn().mockReturnValue(resolvedArray),
+                  limit: jest.fn().mockResolvedValue([PICKING_ORDER]),
+                });
+              }),
             };
           }),
         });

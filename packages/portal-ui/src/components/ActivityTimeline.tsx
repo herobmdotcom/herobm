@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface TimelineEvent {
   eventId: string;
@@ -11,17 +12,18 @@ export interface TimelineEvent {
 }
 
 export function EventIcon({ type }: { type: string }) {
-  const t = (type || '').toLowerCase();
+  const tCommon = useTranslations('common.eventTypes');
+  const typeLower = (type || '').toLowerCase();
 
   // Common emoji mappings
-  if (t.includes('shipment')) return <span>🚚</span>;
-  if (t.includes('picking')) return <span>📦</span>;
-  if (t.includes('return')) return <span>↩️</span>;
-  if (t.includes('auto_status')) return <span>⚡</span>;
-  if (t.includes('price')) return <span>💰</span>;
-  if (t.includes('stock') || t.includes('inventory')) return <span>🏢</span>;
-  if (t.includes('invoice')) return <span>🧾</span>;
-  if (t.includes('payment')) return <span>💳</span>;
+  if (typeLower.includes('shipment')) return <span>🚚</span>;
+  if (typeLower.includes('picking')) return <span>📦</span>;
+  if (typeLower.includes('return')) return <span>↩️</span>;
+  if (typeLower.includes('auto_status')) return <span>⚡</span>;
+  if (typeLower.includes('price')) return <span>💰</span>;
+  if (typeLower.includes('stock') || typeLower.includes('inventory')) return <span>🏢</span>;
+  if (typeLower.includes('invoice')) return <span>🧾</span>;
+  if (typeLower.includes('payment')) return <span>💳</span>;
 
   const icons: Record<string, string> = {
     created: '🆕',
@@ -37,7 +39,7 @@ export function EventIcon({ type }: { type: string }) {
     shipped: '🚚',
     picked: '📦',
   };
-  return <span>{icons[t] || '📌'}</span>;
+  return <span>{icons[typeLower] || '📌'}</span>;
 }
 
 export interface ActivityTimelineProps {
@@ -49,10 +51,13 @@ export interface ActivityTimelineProps {
 
 export default function ActivityTimeline({
   events,
-  title = 'Activity Timeline',
-  emptyMessage = 'No events recorded',
+  title,
+  emptyMessage,
   defaultOpen = true,
 }: ActivityTimelineProps) {
+  const t = useTranslations('common');
+  const displayTitle = title || t('activityTimeline');
+  const displayEmptyMessage = emptyMessage || t('noEvents');
   if (!events || events.length === 0) {
     return (
       <div className="card">
@@ -64,10 +69,10 @@ export default function ActivityTimeline({
             letterSpacing: '0.05em',
           }}
         >
-          {title}
+          {displayTitle}
         </h3>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {emptyMessage}
+          {displayEmptyMessage}
         </p>
       </div>
     );
@@ -85,7 +90,7 @@ export default function ActivityTimeline({
         }}
       >
         <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
-        {title}
+        {displayTitle}
         <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
       </summary>
       <div className="space-y-3" style={{ marginTop: 16 }}>
@@ -108,10 +113,10 @@ export default function ActivityTimeline({
               >
                 <EventIcon type={event.eventType} />
                 <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                  {event.eventType.replace(/_/g, ' ')}
+                  {t(`eventTypes.${event.eventType}`)}
                 </span>
                 <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-                  by {event.actor}
+                  {t('timeline.by', { actor: event.actor })}
                 </span>
                 <span className="ml-auto text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                   {new Date(event.createdOn).toLocaleString()}

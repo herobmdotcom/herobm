@@ -1,0 +1,13 @@
+ignores:
+  # Depcheck reads code imports to find usage. The following dependencies are used by 
+  # NestJS, TypeScript, and testing configurations globally, so they must be explicitly ignored.
+  - "@nestjs/cli"
+  - "@nestjs/schematics"
+  - "@types/jest"
+  - "@types/supertest"
+  - "source-map-support"
+  - "ts-loader"
+  - "ts-node"
+  - "tsconfig-paths"
+  # Dependencies used in new ESLint flat config aren't yet fully natively supported by depcheck
+  - "@eslint/eslintrc"

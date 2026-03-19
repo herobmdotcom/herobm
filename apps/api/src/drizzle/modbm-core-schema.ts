@@ -214,6 +214,19 @@ export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
   unitOfMeasure: text('unit_of_measure'),
   quantityReceived: numeric('quantity_received').default('0'),
 });
+// ---------------------------------------------------------------------------
+// purchase_order_events (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const purchaseOrderEvents = modbmCore.table('purchase_order_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  purchaseOrderId: uuid('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.purchaseOrderId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
 
 // ---------------------------------------------------------------------------
 // purchase_order_receptions  (Goods Receipt)
@@ -289,6 +302,8 @@ export const products = modbmCore.table('products', {
   barcode: text('barcode'),
   listPrice: numeric('list_price').default('0'),
   standardCost: numeric('standard_cost').default('0'),
+  weightedAverageCost: numeric('weighted_average_cost').default('0'),
+  quantityOnHand: numeric('quantity_on_hand').default('0'),
   stateCode: text('state_code').notNull().default('active'),
   notes: text('notes'),
   createdBy: text('created_by'),
@@ -402,5 +417,7 @@ export const users = modbmCore.table('users', {
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull(), // admin | sales | warehouse | procurement
   isActive: boolean('is_active').notNull().default(true),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });

@@ -33,7 +33,7 @@ export async function getShippedPerLine(
     .where(
       and(
         eq(salesOrderShipments.salesOrderId, salesOrderId),
-        sql`${salesOrderShipments.stateCode} != 'cancelled'`,
+        eq(salesOrderShipments.stateCode, 'dispatched'),
       ),
     );
 

@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -14,6 +14,9 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { accounts as martAccounts } from '../drizzle/schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
+
+const isUuid = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 export interface CreateAccountDto {
   accountNumber: string;
@@ -119,13 +122,8 @@ export class AccountsWriteService {
   }
 
   async update(id: string, dto: UpdateAccountDto, actor: string) {
-    const isUuid =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        id,
-      );
-
     let existing: any[] = [];
-    if (isUuid) {
+    if (isUuid(id)) {
       existing = await this.db
         .select()
         .from(coreAccounts)
@@ -191,5 +189,108 @@ export class AccountsWriteService {
 
     this.logger.log(`Account updated: ${id} by ${actor}`);
     return result;
+  }
+
+  /**
+   * Archive an account.
+   */
+  async archive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(
+        `Account '${id}' is a legacy ABM account and cannot be archived.`,
+      );
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreAccounts)
+      .where(eq(coreAccounts.accountId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(
+        `Account '${id}' not found in application data`,
+      );
+    }
+
+    if (existing[0].stateCode === 'archived') {
+      throw new BadRequestException(`Account '${id}' is already archived`);
+    }
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreAccounts)
+        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        .where(eq(coreAccounts.accountId, id))
+        .returning();
+
+      await tx.insert(accountEvents).values({
+        accountId: id,
+        eventType: 'archived',
+        payload: {
+          from: existing[0].stateCode,
+          to: 'archived',
+        },
+        actor,
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Unarchive an account.
+   */
+  async unarchive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(`Account '${id}' is a legacy ABM account.`);
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreAccounts)
+      .where(eq(coreAccounts.accountId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(`Account '${id}' not found`);
+    }
+
+    if (existing[0].stateCode !== 'archived') {
+      throw new BadRequestException(`Account '${id}' is not archived`);
+    }
+
+    const lastEvent = await this.db
+      .select()
+      .from(accountEvents)
+      .where(
+        sql`${accountEvents.accountId} = ${id} AND ${accountEvents.eventType} = 'archived'`,
+      )
+      .orderBy(sql`${accountEvents.createdOn} DESC`)
+      .limit(1);
+
+    const previousState =
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
+      'active';
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreAccounts)
+        .set({ stateCode: previousState, modifiedOn: new Date() })
+        .where(eq(coreAccounts.accountId, id))
+        .returning();
+
+      await tx.insert(accountEvents).values({
+        accountId: id,
+        eventType: 'unarchived',
+        payload: {
+          from: 'archived',
+          to: previousState,
+        },
+        actor,
+      });
+
+      return updated;
+    });
   }
 }

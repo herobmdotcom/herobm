@@ -20,13 +20,19 @@ describe('SuppliersWriteService', () => {
         const tx = {
           insert: jest.fn().mockReturnValue({
             values: jest.fn().mockReturnValue({
-              returning: jest.fn().mockResolvedValue([{ vendorId: 'new-uuid', vendorNumber: 'V-001' }]),
+              returning: jest
+                .fn()
+                .mockResolvedValue([
+                  { vendorId: 'new-uuid', vendorNumber: 'V-001' },
+                ]),
             }),
           }),
           update: jest.fn().mockReturnValue({
             set: jest.fn().mockReturnValue({
               where: jest.fn().mockReturnValue({
-                returning: jest.fn().mockResolvedValue([{ vendorId: 'existing-uuid' }]),
+                returning: jest
+                  .fn()
+                  .mockResolvedValue([{ vendorId: 'existing-uuid' }]),
               }),
             }),
           }),
@@ -63,7 +69,9 @@ describe('SuppliersWriteService', () => {
       });
 
       const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
-      await expect(service.create(dto, 'test-actor')).rejects.toThrow(BadRequestException);
+      await expect(service.create(dto, 'test-actor')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -74,7 +82,9 @@ describe('SuppliersWriteService', () => {
       mockDb.select.mockReturnValueOnce({
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([{ vendorId: existingUuid, name: 'Old' }]),
+            limit: jest
+              .fn()
+              .mockResolvedValue([{ vendorId: existingUuid, name: 'Old' }]),
           }),
         }),
       });
@@ -93,7 +103,9 @@ describe('SuppliersWriteService', () => {
         }),
       });
 
-      await expect(service.update(existingUuid, {}, 'test-actor')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update(existingUuid, {}, 'test-actor'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

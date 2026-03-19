@@ -33,6 +33,11 @@ export class PaginationQuery {
   @IsOptional()
   @IsString()
   state?: string;
+
+  /** Whether to include archived records */
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  includeArchived?: boolean;
 }
 
 /**
@@ -56,7 +61,8 @@ export function parsePagination(query?: PaginationQuery) {
   const limit = Math.min(query?.limit ?? 50, 100_000);
   const offset = (page - 1) * limit;
   const searchTerm = query?.q ? `%${query.q}%` : null;
-  return { page, limit, offset, searchTerm };
+  const includeArchived = query?.includeArchived ?? false;
+  return { page, limit, offset, searchTerm, includeArchived };
 }
 
 /**

@@ -1,4 +1,4 @@
-CREATE TABLE "modbm_core"."purchase_order_lines" (
+CREATE TABLE IF NOT EXISTS "modbm_core"."purchase_order_lines" (
 	"purchase_order_line_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"purchase_order_id" uuid NOT NULL,
 	"line_number" integer NOT NULL,
@@ -14,14 +14,14 @@ CREATE TABLE "modbm_core"."purchase_order_lines" (
 	"quantity_received" numeric DEFAULT '0'
 );
 --> statement-breakpoint
-CREATE TABLE "modbm_core"."purchase_order_reception_lines" (
+CREATE TABLE IF NOT EXISTS "modbm_core"."purchase_order_reception_lines" (
 	"reception_line_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"reception_id" uuid NOT NULL,
 	"purchase_order_line_id" uuid NOT NULL,
 	"quantity_received" numeric NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "modbm_core"."purchase_order_receptions" (
+CREATE TABLE IF NOT EXISTS "modbm_core"."purchase_order_receptions" (
 	"reception_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"reception_number" text NOT NULL,
 	"purchase_order_id" uuid NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE "modbm_core"."purchase_order_receptions" (
 	CONSTRAINT "purchase_order_receptions_reception_number_unique" UNIQUE("reception_number")
 );
 --> statement-breakpoint
-CREATE TABLE "modbm_core"."purchase_orders" (
+CREATE TABLE IF NOT EXISTS "modbm_core"."purchase_orders" (
 	"purchase_order_id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"order_number" text NOT NULL,
 	"name" text,
@@ -50,7 +50,25 @@ CREATE TABLE "modbm_core"."purchase_orders" (
 	CONSTRAINT "purchase_orders_order_number_unique" UNIQUE("order_number")
 );
 --> statement-breakpoint
-ALTER TABLE "modbm_core"."purchase_order_lines" ADD CONSTRAINT "purchase_order_lines_purchase_order_id_purchase_orders_purchase_order_id_fk" FOREIGN KEY ("purchase_order_id") REFERENCES "modbm_core"."purchase_orders"("purchase_order_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "modbm_core"."purchase_order_reception_lines" ADD CONSTRAINT "purchase_order_reception_lines_reception_id_purchase_order_receptions_reception_id_fk" FOREIGN KEY ("reception_id") REFERENCES "modbm_core"."purchase_order_receptions"("reception_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "modbm_core"."purchase_order_reception_lines" ADD CONSTRAINT "purchase_order_reception_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk" FOREIGN KEY ("purchase_order_line_id") REFERENCES "modbm_core"."purchase_order_lines"("purchase_order_line_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "modbm_core"."purchase_order_receptions" ADD CONSTRAINT "purchase_order_receptions_purchase_order_id_purchase_orders_purchase_order_id_fk" FOREIGN KEY ("purchase_order_id") REFERENCES "modbm_core"."purchase_orders"("purchase_order_id") ON DELETE no action ON UPDATE no action;
+DO $$ BEGIN
+    ALTER TABLE "modbm_core"."purchase_order_lines" ADD CONSTRAINT "purchase_order_lines_purchase_order_id_purchase_orders_purchase_order_id_fk" FOREIGN KEY ("purchase_order_id") REFERENCES "modbm_core"."purchase_orders"("purchase_order_id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "modbm_core"."purchase_order_reception_lines" ADD CONSTRAINT "purchase_order_reception_lines_reception_id_purchase_order_receptions_reception_id_fk" FOREIGN KEY ("reception_id") REFERENCES "modbm_core"."purchase_order_receptions"("reception_id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "modbm_core"."purchase_order_reception_lines" ADD CONSTRAINT "purchase_order_reception_lines_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk" FOREIGN KEY ("purchase_order_line_id") REFERENCES "modbm_core"."purchase_order_lines"("purchase_order_line_id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "modbm_core"."purchase_order_receptions" ADD CONSTRAINT "purchase_order_receptions_purchase_order_id_purchase_orders_purchase_order_id_fk" FOREIGN KEY ("purchase_order_id") REFERENCES "modbm_core"."purchase_orders"("purchase_order_id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+

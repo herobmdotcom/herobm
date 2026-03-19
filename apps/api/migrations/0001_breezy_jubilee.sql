@@ -1,0 +1,2 @@
+ALTER TABLE "modbm_core"."products" ADD COLUMN IF NOT EXISTS "weighted_average_cost" numeric DEFAULT '0';
+ALTER TABLE "modbm_core"."products" ADD COLUMN IF NOT EXISTS "quantity_on_hand" numeric DEFAULT '0';

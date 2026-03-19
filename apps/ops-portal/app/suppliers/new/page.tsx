@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate, EntityHeader } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 export default function NewSupplierPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
@@ -28,7 +30,7 @@ export default function NewSupplierPage() {
 
     try {
       const supplier = await apiMutate<any>('/api/suppliers', 'POST', dto);
-      toast.success('Supplier created successfully');
+      toast.success(t('toast.supplierCreated'));
       router.push(`/suppliers/${supplier.vendorId}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -46,13 +48,13 @@ export default function NewSupplierPage() {
   return (
     <Shell>
       <EntityHeader
-        title="Create New Supplier"
-        subtitle="Vendor Management"
+        title={t('suppliers.buttons.createSupplier')}
+        subtitle={t('suppliers.management')}
         onBack={() => router.push('/suppliers')}
         isSaving={submitting}
         isDirty={isValid}
         onSave={handleSubmit}
-        saveLabel="✨ Create Supplier"
+        saveLabel={t('suppliers.buttons.createSupplier')}
       />
 
       <div className="scroll-area" style={{ flex: 1 }}>
@@ -67,12 +69,12 @@ export default function NewSupplierPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              General Information
+              {t('suppliers.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Supplier Number *
+                  {t('suppliers.columns.vendorNumber')} *
                 </label>
                 <input
                   id="vendorNumber"
@@ -86,7 +88,7 @@ export default function NewSupplierPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Supplier Name *
+                  {t('suppliers.columns.name')} *
                 </label>
                 <input
                   id="name"
@@ -111,13 +113,13 @@ export default function NewSupplierPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              Payment & Currency
+              {t('suppliers.paymentCurrency')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Currency
+                    {t('common.columns.currency')}
                   </label>
                   <select
                     className="input"
@@ -132,7 +134,7 @@ export default function NewSupplierPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Payment Terms
+                    {t('suppliers.columns.paymentTerms')}
                   </label>
                   <input
                     type="text"
@@ -158,12 +160,12 @@ export default function NewSupplierPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Contact & Address
+            {t('common.contactAddress')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Email Address
+                {t('common.columns.email')}
               </label>
               <input
                 type="email"
@@ -176,7 +178,7 @@ export default function NewSupplierPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Phone Number
+                {t('common.columns.telephone')}
               </label>
               <input
                 type="text"
@@ -189,7 +191,7 @@ export default function NewSupplierPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Street Address
+                {t('common.columns.address')}
               </label>
               <input
                 type="text"
@@ -202,7 +204,7 @@ export default function NewSupplierPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                City
+                {t('common.columns.city')}
               </label>
               <input
                 type="text"
@@ -215,7 +217,7 @@ export default function NewSupplierPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Country
+                {t('common.columns.country')}
               </label>
               <input
                 type="text"
@@ -239,7 +241,7 @@ export default function NewSupplierPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Internal Notes
+            {t('common.columns.notes')}
           </h3>
           <input
             type="text"

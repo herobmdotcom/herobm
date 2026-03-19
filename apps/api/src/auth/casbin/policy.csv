@@ -21,6 +21,12 @@ p, admin, suppliers, write
 p, admin, receptions, write
 p, admin, users, read
 p, admin, users, write
+p, admin, accounts, archive
+p, admin, products, archive
+p, admin, sales-orders, archive
+p, admin, purchase-orders, archive
+p, admin, suppliers, archive
+p, admin, receptions, archive
 
 # sales — viewer + customer/order writes
 p, sales, accounts, write

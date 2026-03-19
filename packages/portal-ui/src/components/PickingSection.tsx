@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, apiMutate, apiFetchBlob, reportError } from '../lib/api';
+import { useTranslations } from 'next-intl';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,23 +56,19 @@ interface OrderLine {
   quantity: string;
 }
 
-const SHIPMENT_STATE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['dispatched', 'cancelled'],
-  dispatched: ['draft', 'cancelled'],
-  cancelled: [],
-};
-
-const SHIPMENT_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, dispatched: 2,
-};
+import {
+  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
+  SHIPMENT_LIFECYCLE,
+  isBackTransition,
+  cap,
+} from '@modbm/shared';
 
 function isBackShipmentTransition(from: string, to: string): boolean {
-  return (SHIPMENT_LIFECYCLE[to] ?? 99) < (SHIPMENT_LIFECYCLE[from] ?? 99) && to !== 'cancelled';
+  return isBackTransition(SHIPMENT_LIFECYCLE, from, to);
 }
 
-function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
-
 function ShipmentStateBadge({ state }: { state: string }) {
+  const t = useTranslations('common.states');
   const colours: Record<string, string> = {
     draft: 'var(--badge-draft, #6b7280)',
     dispatched: 'var(--badge-shipped, #059669)',
@@ -91,7 +88,7 @@ function ShipmentStateBadge({ state }: { state: string }) {
         border: `1px solid ${colours[state] || '#6b7280'}40`,
       }}
     >
-      {state}
+      {t(state)}
     </span>
   );
 }
@@ -118,6 +115,9 @@ export default function PickingSection({
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const tCommon = useTranslations('common');
+  const tPicking = useTranslations('picking');
 
   // Inline pick quantity editing
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -173,7 +173,7 @@ export default function PickingSection({
       const line = summary?.lines.find((l) => l.salesOrderLineId === lineId);
       const shipped = parseFloat(line?.quantityShipped || '0');
       if (parseFloat(qty) < shipped) {
-        setError(`Cannot reduce picked to ${qty} — ${shipped} already shipped`);
+        setError(tPicking('errors.cannotReducePicked', { qty, shipped: String(shipped) }));
         return;
       }
     }
@@ -184,7 +184,7 @@ export default function PickingSection({
       setEditingLineId(null);
       await loadPickingData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update pick');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdatePick'));
     }
   };
 
@@ -194,7 +194,7 @@ export default function PickingSection({
       await apiMutate(`/api/sales-orders/${orderId}/picking/lines/${lineId}/pick-all`, 'POST');
       await loadPickingData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to pick all');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToPickAll'));
     }
   };
 
@@ -205,7 +205,7 @@ export default function PickingSection({
       await loadPickingData();
       onOrderUpdated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to pick all');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToPickAll'));
     }
   };
 
@@ -219,7 +219,7 @@ export default function PickingSection({
       (l) => l.quantityShipped && parseFloat(l.quantityShipped) > 0,
     );
     if (lines.length === 0) {
-      setError('At least one line with a quantity is required');
+      setError(tPicking('errors.atLeastOneLineRequired'));
       return;
     }
     try {
@@ -234,7 +234,7 @@ export default function PickingSection({
       setNewShipmentLines([]);
       await loadPickingData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create shipment');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToCreateShipment'));
     }
   };
 
@@ -255,7 +255,7 @@ export default function PickingSection({
         onOrderUpdated();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update shipment');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdateShipment'));
     }
   };
 
@@ -273,7 +273,7 @@ export default function PickingSection({
       setEditingShipmentId(null);
       await loadPickingData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update shipment');
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdateShipment'));
     }
   };
 
@@ -318,7 +318,7 @@ export default function PickingSection({
           }}
         >
           <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
-          📦 Picking Progress
+          {tPicking('title')}
         </summary>
 
         {isPickingState && (
@@ -335,11 +335,9 @@ export default function PickingSection({
                 }
               }}
             >
-              🖨️ Print Picking Slip
+              🖨️ {tPicking('printPickingSlip')}
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={pickAllOrder}>
-              ✅ Pick All &amp; Create Shipment
-            </button>
+              ✅ {tPicking('pickAllCreateShipment')}
             {!showCreateShipment && (
               <button
                 className="btn btn-secondary btn-sm"
@@ -363,7 +361,7 @@ export default function PickingSection({
                   );
                 }}
               >
-                🚚 Create Shipment
+                🚚 {tPicking('createShipment')}
               </button>
             )}
           </div>
@@ -401,7 +399,7 @@ export default function PickingSection({
             />
           </div>
           <span style={{ fontSize: 13, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-            {summary.fullyPickedLines} / {summary.totalLines} lines picked
+            {tPicking('linesPicked', { picked: String(summary.fullyPickedLines), total: String(summary.totalLines) })}
           </span>
         </div>
 
@@ -424,14 +422,14 @@ export default function PickingSection({
         <table className="table-lines">
           <thead>
             <tr>
-              <th style={{ width: 50 }}>#</th>
-              <th>Product</th>
-              <th>Description</th>
-              <th style={{ width: 90, textAlign: 'right' }}>Ordered</th>
-              <th style={{ width: 110, textAlign: 'right' }}>Picked</th>
-              <th style={{ width: 90, textAlign: 'right' }}>Shipped</th>
-              <th style={{ width: 90, textAlign: 'right' }}>Remaining</th>
-              {isPickingState && <th style={{ width: 120, textAlign: 'center' }}>Action</th>}
+              <th style={{ width: 50 }}>{tPicking('columns.lineNumber')}</th>
+              <th>{tPicking('columns.product')}</th>
+              <th>{tPicking('columns.description')}</th>
+              <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
+              <th style={{ width: 110, textAlign: 'right' }}>{tPicking('columns.picked')}</th>
+              <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.shipped')}</th>
+              <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.remaining')}</th>
+              {isPickingState && <th style={{ width: 120, textAlign: 'center' }}>{tPicking('columns.action')}</th>}
             </tr>
           </thead>
           <tbody>
@@ -497,7 +495,7 @@ export default function PickingSection({
                           setEditingLineId(line.salesOrderLineId);
                           setEditPickQty(line.quantityPicked);
                         }}
-                        title={isPickingState ? 'Click to edit' : undefined}
+                        title={isPickingState ? tPicking('clickToEdit') : undefined}
                       >
                         {line.quantityPicked}
                       </span>
@@ -525,12 +523,12 @@ export default function PickingSection({
                           }}
                           onClick={() => pickAllForLine(line.salesOrderLineId)}
                         >
-                          Pick All
+                          {tPicking('actions.pickAll')}
                         </button>
                       )}
                       {line.isFullyPicked && (
                         <span style={{ color: 'var(--color-success, #059669)', fontWeight: 600, fontSize: 12 }}>
-                          ✓ Done
+                          ✓ {tPicking('actions.done')}
                         </span>
                       )}
                     </td>
@@ -552,7 +550,7 @@ export default function PickingSection({
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <strong style={{ fontSize: 13 }}>🚚 New Shipment</strong>
+            <strong style={{ fontSize: 13 }}>🚚 {tPicking('newShipment')}</strong>
             <button
               style={{
                 background: 'none',
@@ -569,28 +567,28 @@ export default function PickingSection({
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-              Notes
+              {tPicking('columns.notes')}
             </label>
             <input
               type="text"
               className="input"
               value={newShipmentNotes}
               onChange={(e) => setNewShipmentNotes(e.target.value)}
-              placeholder="e.g. First batch delivery"
+              placeholder={tPicking('placeholders.notes')}
               style={{ width: '100%' }}
             />
           </div>
 
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-              Tracking Number
+              {tPicking('columns.trackingNumber')}
             </label>
             <input
               type="text"
               className="input"
               value={newShipmentTracking}
               onChange={(e) => setNewShipmentTracking(e.target.value)}
-              placeholder="e.g. AU123456789"
+              placeholder={tPicking('placeholders.tracking')}
               style={{ width: '100%' }}
             />
           </div>
@@ -598,12 +596,12 @@ export default function PickingSection({
           <table className="table-lines" style={{ marginBottom: 12 }}>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Product</th>
-                <th>Description</th>
-                <th style={{ textAlign: 'right' }}>Ordered</th>
-                <th style={{ textAlign: 'right' }}>Picked</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Qty to Ship</th>
+                <th>{tPicking('columns.lineNumber')}</th>
+                <th>{tPicking('columns.product')}</th>
+                <th>{tPicking('columns.description')}</th>
+                <th style={{ textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
+                <th style={{ textAlign: 'right' }}>{tPicking('columns.picked')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{tPicking('columns.qtyToShip')}</th>
               </tr>
             </thead>
             <tbody>
@@ -655,14 +653,14 @@ export default function PickingSection({
 
           <div className="flex items-center gap-2">
             <button type="button" className="btn btn-primary btn-sm" onClick={createShipment}>
-              Create Shipment
+              {tPicking('createShipment')}
             </button>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
               onClick={() => setShowCreateShipment(false)}
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
           </div>
         </div>
@@ -683,7 +681,7 @@ export default function PickingSection({
             }}
           >
             <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
-            🚚 Shipments
+            🚚 {tPicking('shipments')}
             <span style={{ fontSize: 11, fontWeight: 400 }}>({shipments.length})</span>
           </summary>
 
@@ -725,7 +723,7 @@ export default function PickingSection({
                               }`}
                               onClick={() => changeShipmentState(shipment.shipmentId, state)}
                             >
-                                                          {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
+                                                          {state === 'cancelled' ? `✕ ${tCommon(`states.${state}`)}` : back ? `← ${tCommon(`states.${state}`)}` : `→ ${tCommon(`states.${state}`)}`}
                             </button>
                           );
                         })}
@@ -755,7 +753,7 @@ export default function PickingSection({
                             }
                           }
                         }}
-                        placeholder="Shipment notes"
+                        placeholder={tPicking('placeholders.notes')}
                         style={{ width: '100%', fontSize: 12 }}
                       />
                     </div>
@@ -781,7 +779,7 @@ export default function PickingSection({
                             }
                           }
                         }}
-                        placeholder="Tracking #"
+                        placeholder={tPicking('placeholders.tracking')}
                         style={{ width: '100%', fontSize: 12 }}
                       />
                     </div>
@@ -790,9 +788,9 @@ export default function PickingSection({
                   <table className="table-lines">
                     <thead>
                       <tr>
-                        <th>Product</th>
-                        <th>Description</th>
-                        <th style={{ textAlign: 'right' }}>Qty Shipped</th>
+                        <th>{tPicking('columns.product')}</th>
+                        <th>{tPicking('columns.description')}</th>
+                        <th style={{ textAlign: 'right' }}>{tPicking('columns.shipped')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -820,8 +818,7 @@ export default function PickingSection({
                   </table>
 
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>
-                    Created {new Date(shipment.createdOn).toLocaleDateString()}
-                    {shipment.createdBy && ` by ${shipment.createdBy}`}
+                    {shipment.createdBy ? tPicking('createdOnBy', { date: new Date(shipment.createdOn).toLocaleDateString(), user: shipment.createdBy }) : tPicking('createdOn', { date: new Date(shipment.createdOn).toLocaleDateString() })}
                   </div>
                 </div>
               );

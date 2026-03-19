@@ -70,10 +70,38 @@ export default function ProductDetailPage() {
     saveProduct({ [field]: value });
   };
 
+  const archiveProduct = async () => {
+    if (!confirm('Are you sure you want to archive this product?')) return;
+    setSaving(true);
+    try {
+      await apiMutate(`/api/products/${id}/archive`, 'POST');
+      toast.success('Product archived', { icon: '📦' });
+      await fetchProduct(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const unarchiveProduct = async () => {
+    setSaving(true);
+    try {
+      await apiMutate(`/api/products/${id}/unarchive`, 'POST');
+      toast.success('Product unarchived', { icon: '📦' });
+      await fetchProduct(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <Shell><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></Shell>;
   if (!product) return <Shell><div className="text-center py-20">Product not found</div></Shell>;
 
   const isLegacy = product.source === 'abm';
+  const isEditable = !isLegacy && product.stateCode !== 'archived';
 
   return (
     <Shell>
@@ -88,7 +116,35 @@ export default function ProductDetailPage() {
             {isLegacy && <span className="badge badge-abm">Legacy ABM</span>}
           </>
         }
+        actions={
+          product.source === 'app' ? (
+            product.stateCode === 'archived' ? (
+              <button className="btn btn-secondary btn-sm" onClick={unarchiveProduct} disabled={saving}>📦 Unarchive</button>
+            ) : (
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                onClick={archiveProduct}
+                disabled={saving}
+              >
+                📦 Archive
+              </button>
+            )
+          ) : null
+        }
       />
+
+      {product.stateCode === 'archived' && (
+        <div
+          className="mb-6 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>📦</span>
+          <div>
+            <strong className="font-semibold text-amber-800">This product is archived.</strong> It is hidden from default views and is read-only. Unarchive to restore normal access.
+          </div>
+        </div>
+      )}
 
       <div className="scroll-area" style={{ flex: 1 }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -108,7 +164,7 @@ export default function ProductDetailPage() {
                 <input
                   className="input"
                   required
-                  disabled={isLegacy || saving}
+                  disabled={!isEditable || saving}
                   value={dto.name}
                   onChange={(e) => setDto({ ...dto, name: e.target.value })}
                   onBlur={(e) => handleBlur('name', e.target.value)}
@@ -122,7 +178,7 @@ export default function ProductDetailPage() {
                   </label>
                   <input
                     className="input"
-                    disabled={isLegacy || saving}
+                    disabled={!isEditable || saving}
                     value={dto.barcode}
                     onChange={(e) => setDto({ ...dto, barcode: e.target.value })}
                     onBlur={(e) => handleBlur('barcode', e.target.value)}
@@ -135,7 +191,7 @@ export default function ProductDetailPage() {
                   </label>
                   <select
                     className="input"
-                    disabled={isLegacy || saving}
+                    disabled={!isEditable || saving}
                     value={dto.stateCode}
                     onChange={(e) => handleSelectChange('stateCode', e.target.value)}
                   >
@@ -197,7 +253,7 @@ export default function ProductDetailPage() {
                     step="0.01"
                     className="input"
                     style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    disabled={isLegacy || saving}
+                    disabled={!isEditable || saving}
                     value={dto.listPrice}
                     onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
                     onBlur={(e) => handleBlur('listPrice', e.target.value)}
@@ -212,7 +268,7 @@ export default function ProductDetailPage() {
                     step="0.01"
                     className="input"
                     style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    disabled={isLegacy || saving}
+                    disabled={!isEditable || saving}
                     value={dto.standardCost}
                     onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
                     onBlur={(e) => handleBlur('standardCost', e.target.value)}

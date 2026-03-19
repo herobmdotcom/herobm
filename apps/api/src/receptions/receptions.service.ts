@@ -6,17 +6,29 @@ import {
   purchaseOrderReceptionLines,
   purchaseOrders,
   purchaseOrderLineItems,
+  products,
+  outbox,
 } from '../drizzle/modbm-core-schema';
-import { eq, or, ilike, desc, inArray } from 'drizzle-orm';
+import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { ConfigService } from '@nestjs/config';
+import { getValuationStrategy } from '../inventory/valuation';
 
 @Injectable()
 export class ReceptionsService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private configService: ConfigService,
+  ) {}
 
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
+      const method = this.configService.get<string>(
+        'INVENTORY_VALUATION_METHOD',
+      );
+      const strategy = getValuationStrategy(method);
+
       // Create Reception
       const receptionNumber = `REC-${randomUUID().substring(0, 8).toUpperCase()}`;
 
@@ -54,9 +66,59 @@ export class ReceptionsService {
               ),
             );
 
-          if (poLine) {
+          if (poLine && poLine.productId) {
             const newTotal =
               Number(poLine.quantityReceived) + Number(line.quantityReceived);
+
+            // Get product to calculate new WAC/Standard cost
+            const [productRow] = await tx
+              .select()
+              .from(products)
+              .where(eq(products.productId, poLine.productId));
+
+            if (productRow) {
+              const poLinePrice = poLine.pricePerUnit || '0';
+              const receivedQty = Number(line.quantityReceived);
+
+              const valuation = strategy.onGoodsReceipt(
+                {
+                  productId: productRow.productId,
+                  standardCost: productRow.standardCost || '0',
+                  weightedAverageCost: productRow.weightedAverageCost || '0',
+                  quantityOnHand: productRow.quantityOnHand || '0',
+                },
+                receivedQty,
+                poLinePrice,
+              );
+
+              // Update product costs and global QOH
+              await tx
+                .update(products)
+                .set({
+                  weightedAverageCost: valuation.newWeightedAverageCost,
+                  quantityOnHand: valuation.newQuantityOnHand,
+                  modifiedOn: new Date(),
+                })
+                .where(eq(products.productId, productRow.productId));
+
+              // Record event for general ledger mapping & sync
+              await tx.insert(outbox).values({
+                aggregateType: 'purchase_order',
+                aggregateId: createDto.purchaseOrderId,
+                eventType: 'goods_received',
+                payload: {
+                  receptionId: reception.receptionId,
+                  receptionNumber: reception.receptionNumber,
+                  productId: productRow.productId,
+                  quantityReceived: receivedQty,
+                  unitCost: poLinePrice,
+                  inventoryValueAdded: valuation.inventoryValueAdded,
+                  purchasePriceVariance: valuation.purchasePriceVariance,
+                  newWeightedAverageCost: valuation.newWeightedAverageCost,
+                },
+              });
+            }
+
             await tx
               .update(purchaseOrderLineItems)
               .set({ quantityReceived: newTotal.toString() })
@@ -82,15 +144,21 @@ export class ReceptionsService {
   }
 
   async findAll(params: PaginationQuery) {
-    const { page, limit, offset, searchTerm } = parsePagination(params);
+    const { page, limit, offset, searchTerm, includeArchived } =
+      parsePagination(params);
 
-    let conditions = undefined;
-    if (searchTerm) {
-      conditions = or(
-        ilike(purchaseOrderReceptions.receptionNumber, searchTerm),
-        ilike(purchaseOrderReceptions.packingSlipNumber, searchTerm),
-      );
-    }
+    const searchCondition = searchTerm
+      ? or(
+          ilike(purchaseOrderReceptions.receptionNumber, searchTerm),
+          ilike(purchaseOrderReceptions.packingSlipNumber, searchTerm),
+        )
+      : undefined;
+
+    const stateCondition = includeArchived
+      ? undefined
+      : sql`${purchaseOrderReceptions.stateCode} != 'archived'`;
+
+    const conditions = and(searchCondition, stateCondition);
 
     const data = await this.db
       .select({

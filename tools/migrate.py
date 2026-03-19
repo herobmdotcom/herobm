@@ -24,7 +24,7 @@ DB_NAME = os.environ.get("POSTGRES_DB", "custom_app")
 def psql(sql: str, capture: bool = False) -> str | None:
     """Execute SQL via docker exec psql."""
     cmd = [
-        "docker", "exec", "-i", CONTAINER,
+        "podman", "exec", "-i", CONTAINER,
         "psql", "-U", DB_USER, "-d", DB_NAME,
         "-t", "-A",  # tuples-only, unaligned output
         "-c", sql,
@@ -43,7 +43,7 @@ def psql_file(filepath: str) -> None:
     with open(filepath, "r", encoding="utf-8") as f:
         sql = f.read()
     cmd = [
-        "docker", "exec", "-i", CONTAINER,
+        "podman", "exec", "-i", CONTAINER,
         "psql", "-U", DB_USER, "-d", DB_NAME,
         "-v", "ON_ERROR_STOP=1",
     ]
@@ -64,7 +64,8 @@ def psql_file(filepath: str) -> None:
 
 
 def ensure_tracking_table() -> None:
-    """Create the schema_migrations tracking table if it doesn't exist."""
+    """Create the modbm_core schema and migration tracking table if they don't exist."""
+    psql("CREATE SCHEMA IF NOT EXISTS modbm_core;")
     psql("""
         CREATE TABLE IF NOT EXISTS modbm_core.schema_migrations (
             filename TEXT PRIMARY KEY,

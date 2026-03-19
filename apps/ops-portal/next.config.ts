@@ -1,7 +1,10 @@
 import path from 'path';
+import createNextIntlPlugin from 'next-intl/plugin';
+import type { NextConfig } from 'next';
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
+const nextConfig: NextConfig = {
   output: 'standalone',
   transpilePackages: ['@modbm/portal-ui'],
   turbopack: {
@@ -17,4 +20,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

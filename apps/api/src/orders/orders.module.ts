@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { OrdersController } from './orders.controller';
 import { OrderReturnsController } from './order-returns.controller';
 import { OrderPickingController } from './order-picking.controller';
@@ -14,7 +15,13 @@ import { AccountsModule } from '../accounts/accounts.module';
 import { ProductsModule } from '../products/products.module';
 
 @Module({
-  imports: [GstModule, InventoryModule, AccountsModule, ProductsModule],
+  imports: [
+    ConfigModule,
+    GstModule,
+    InventoryModule,
+    AccountsModule,
+    ProductsModule,
+  ],
   controllers: [
     OrdersController,
     OrderReturnsController,

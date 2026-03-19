@@ -17,7 +17,8 @@ export class ProductsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, offset, searchTerm, includeArchived } =
+      parsePagination(query);
 
     // --- App products (modbm_core) ---
     let appQuery = this.db
@@ -45,6 +46,10 @@ export class ProductsService {
           ilike(coreProducts.barcode, searchTerm),
         ),
       );
+    }
+
+    if (!includeArchived) {
+      appQuery = appQuery.where(sql`${coreProducts.stateCode} != 'archived'`);
     }
 
     // --- Mart products (legacy ABM) ---

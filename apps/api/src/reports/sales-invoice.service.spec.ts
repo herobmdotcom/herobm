@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { OrdersService } from '../orders/orders.service';
@@ -40,6 +41,7 @@ describe('SalesInvoiceService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ConfigService, useValue: { get: jest.fn() } },
         SalesInvoiceService,
         {
           provide: OrdersService,

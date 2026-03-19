@@ -1,0 +1,20 @@
+Account Name,Parent Account,Account Type,Is Group,Root Type
+Application of Funds (Assets),,Asset,1,Asset
+Bank (Checking),Application of Funds (Assets),Bank,0,
+Accounts Receivable,Application of Funds (Assets),Receivable,0,
+Inventory,Application of Funds (Assets),Stock,0,
+Source of Funds (Liabilities),,Liability,1,Liability
+Accounts Payable,Source of Funds (Liabilities),Payable,0,
+GST Liability,Source of Funds (Liabilities),Tax,0,
+Goods Received Not Invoiced,Source of Funds (Liabilities),Payable,0,
+Income,,Income,1,Income
+Sales Revenue,Income,Income Account,0,
+Freight Revenue,Income,Income Account,0,
+Other Income,Income,Income Account,0,
+Expenses,,Expense,1,Expense
+Cost of Goods Sold,Expenses,Cost of Goods Sold,0,
+Freight Expense,Expenses,Expense Account,0,
+Operating Expenses,Expenses,Expense Account,0,
+Equity,,Equity,1,Equity
+Owner's Equity,Equity,Equity,0,
+Retained Earnings,Equity,Equity,0,

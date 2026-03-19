@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface EntityHeaderProps {
   title: string | React.ReactNode;
@@ -25,6 +26,7 @@ export default function EntityHeader({
   saveLabel,
   actions,
 }: EntityHeaderProps) {
+  const t = useTranslations('common');
   return (
     <div className="flex items-center justify-between mb-6">
       <div className="flex items-center gap-4">
@@ -43,7 +45,7 @@ export default function EntityHeader({
             {badges}
             {isSaving && (
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Saving…
+                {t('saving')}
               </span>
             )}
           </div>
@@ -62,7 +64,7 @@ export default function EntityHeader({
             onClick={onSave}
             disabled={isSaving}
           >
-            {saveLabel || '💾 Save'}
+            {saveLabel || `💾 ${t('save')}`}
           </button>
         )}
       </div>

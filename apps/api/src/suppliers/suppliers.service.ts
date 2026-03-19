@@ -23,7 +23,8 @@ export class SuppliersService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(params: PaginationQuery) {
-    const { page, limit, offset, searchTerm } = parsePagination(params);
+    const { page, limit, offset, searchTerm, includeArchived } =
+      parsePagination(params);
 
     // --- App suppliers (modbm_core) ---
     let appQuery = this.db
@@ -59,6 +60,10 @@ export class SuppliersService {
       );
     }
 
+    if (!includeArchived) {
+      appQuery = appQuery.where(sql`${coreSuppliers.stateCode} != 'archived'`);
+    }
+
     // --- Mart suppliers (legacy ABM) ---
     let martQuery = this.db
       .select({
@@ -92,9 +97,11 @@ export class SuppliersService {
       );
     }
 
-
     const [appRows, martRows] = await Promise.all([appQuery, martQuery]);
-    const normalisedMart = martRows.map((r) => ({ ...r, stateCode: normalizeStateCode(r.stateCode) }));
+    const normalisedMart = martRows.map((r) => ({
+      ...r,
+      stateCode: normalizeStateCode(r.stateCode),
+    }));
     const unified = [...appRows, ...normalisedMart];
 
     // Case-insensitive name sort
@@ -146,7 +153,12 @@ export class SuppliersService {
       .limit(1);
 
     if (martRows.length > 0) {
-      return { ...martRows[0], stateCode: normalizeStateCode(martRows[0].stateCode), source: 'abm', events: [] };
+      return {
+        ...martRows[0],
+        stateCode: normalizeStateCode(martRows[0].stateCode),
+        source: 'abm',
+        events: [],
+      };
     }
 
     throw new NotFoundException(`Supplier '${id}' not found`);

@@ -1,0 +1,447 @@
+{
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "copying": "Copying…",
+    "by": "by",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "total": "Total",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "dismiss": "dismiss",
+    "loading": "Loading…",
+    "noMatchingResults": "No matching results",
+    "activityTimeline": "Activity Timeline",
+    "noEvents": "No events recorded",
+    "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
+    "placeholders": {
+      "quantity": "0",
+      "notes": "Add notes…"
+    },
+    "states": {
+      "draft": "Draft",
+      "quoted": "Quoted",
+      "confirmed": "Confirmed",
+      "picking": "Picking",
+      "shipped": "Shipped",
+      "invoiced": "Invoiced",
+      "cancelled": "Cancelled",
+      "ordered": "Ordered",
+      "received": "Received",
+      "dispatched": "Dispatched",
+      "processed": "Processed",
+      "legacy": "Legacy",
+      "archived": "Archived"
+    },
+    "sources": {
+      "abm": "ABM",
+      "app": "App"
+    },
+    "columns": {
+      "orderNumber": "Order #",
+      "customer": "Customer",
+      "vendor": "Vendor",
+      "name": "Name",
+      "status": "Status",
+      "source": "Source",
+      "customerPO": "Customer PO",
+      "invoiceNumber": "Invoice #",
+      "totalPrice": "Total",
+      "currency": "Currency",
+      "date": "Date",
+      "created": "Created",
+      "createdBy": "Created By",
+      "address": "Address",
+      "address2": "Address 2",
+      "city": "City",
+      "state": "State",
+      "postalCode": "Postal Code",
+      "country": "Country",
+      "phone": "Phone",
+      "fax": "Fax",
+      "email": "Email",
+      "contactName": "Contact Name",
+      "contact": "Contact",
+      "contactAddress": "Contact & Address",
+      "contactEmail": "Contact Email",
+      "contactPhone": "Contact Phone",
+      "group": "Group",
+      "gstPosition": "GST Position",
+      "deliveryAddrs": "Delivery Addrs",
+      "priceScale": "Price Scale",
+      "groupDisc": "Group Disc %",
+      "disc": "Disc %",
+      "discountPct": "Discount %",
+      "qty": "Qty",
+      "customerGroup": "Customer Group",
+      "gstPosition": "GST Position"
+    },
+    "errors": {
+      "failedToLoadOrder": "Failed to load order",
+      "failedToUpdateOrder": "Failed to update order",
+      "failedToUpdateLine": "Failed to update line",
+      "failedToRemoveLine": "Failed to remove line",
+      "failedToAddLine": "Failed to add line",
+      "failedToCopy": "Failed to copy order",
+      "failedToChangeState": "Failed to change state",
+      "failedToArchive": "Failed to archive order",
+      "failedToUnarchive": "Failed to unarchive order",
+      "failedToGenerateQuote": "Failed to generate quote",
+      "failedToGenerateInvoice": "Failed to generate invoice",
+      "failedToCreateReturn": "Failed to create return",
+      "failedToChangeReturnState": "Failed to change return state",
+      "failedToUpdateReturnLine": "Failed to update return line",
+      "failedToRemoveReturnLine": "Failed to remove return line",
+      "failedToPickAll": "Failed to pick all",
+      "failedToCreateShipment": "Failed to create shipment",
+      "failedToUpdateShipment": "Failed to update shipment",
+      "failedToCreateOrder": "Failed to create order",
+      "failedToCreatePO": "Failed to create purchase order",
+      "pleaseSelectCustomer": "Please select a customer",
+      "pleaseSelectSupplier": "Please select a supplier",
+      "pleaseAddLineItem": "Please add at least one line item with a product"
+    },
+    "gst": {
+      "exempt": "Exempt",
+      "zeroRated": "Zero Rated",
+      "pctGst": "{pct}% GST"
+    },
+    "eventTypes": {
+      "created": "Created",
+      "updated": "Updated",
+      "status_changed": "Status Changed",
+      "line_added": "Line Added",
+      "line_updated": "Line Updated",
+      "line_removed": "Line Removed",
+      "quoted": "Quoted",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "archived": "Archived",
+      "unarchived": "Unarchived",
+      "shipment_created": "Shipment Created",
+      "shipment_updated": "Shipment Updated",
+      "shipment_dispatched": "Shipment Dispatched",
+      "shipment_status_changed": "Shipment Status Changed",
+      "shipment_line_added": "Shipment Line Added",
+      "shipment_line_updated": "Shipment Line Updated",
+      "shipment_line_removed": "Shipment Line Removed",
+      "picking_line_updated": "Picking Line Updated",
+      "picking_line_picked_all": "Picking Line Picked All",
+      "picking_order_picked_all": "Picking Order Picked All",
+      "return_created": "Return Created",
+      "return_updated": "Return Updated",
+      "return_status_changed": "Return Status Changed",
+      "return_processed": "Return Processed",
+      "return_line_added": "Return Line Added",
+      "return_line_updated": "Return Line Updated",
+      "return_line_removed": "Return Line Removed"
+    }
+  },
+  "toast": {
+    "orderStateUpdated": "Order State Updated",
+    "orderMovedTo": "Order moved to {state}",
+    "orderMovedToReason": "Order moved to {state} because {reason}.",
+    "orderArchived": "Order has been archived",
+    "orderUnarchived": "Order has been unarchived",
+    "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
+    "supplierCreated": "Supplier created successfully",
+    "supplierUpdated": "Supplier updated successfully",
+    "accountCreated": "Account created successfully",
+    "accountUpdated": "Account updated successfully",
+    "productCreated": "Product created successfully",
+    "productUpdated": "Product updated successfully"
+  },
+  "confirm": {
+    "archiveOrder": "Are you sure you want to archive this order?",
+    "removeLine": "Remove this line item?",
+    "removeReturnLine": "Remove this return line?",
+    "removeShipmentLine": "Remove this shipment line?",
+    "removeReturnLineItem": "Remove this return line item?"
+  },
+  "salesOrders": {
+    "title": "Sales Orders",
+    "backToOrders": "← Back to Orders",
+    "orderNotFound": "Order not found",
+    "untitledOrder": "Untitled order",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "availability": "📦 Availability",
+    "returns": "↩ Returns",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "availability": "📦 Availability",
+    "returns": "↩ Returns",
+    "discountPercent": "{disc}% disc",
+    "archivedBannerTitle": "This record is archived.",
+    "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
+    "labels": {
+      "customer": "Customer",
+      "created": "Created",
+      "orderName": "Order Name",
+      "customerPO": "Customer PO #",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "orderName": "Order name",
+      "customerPO": "Customer purchase order",
+      "notes": "Internal notes",
+      "searchProduct": "Add product… (search)",
+      "returnNotes": "Return reason / notes",
+      "reason": "Reason",
+      "searchOrders": "Search by order number, customer, or PO…"
+    },
+    "buttons": {
+      "createOrder": "+ Create Order",
+      "createQuote": "📄 Create Quote",
+      "createInvoice": "📄 Create Invoice",
+      "copyOrder": "📋 Copy Order",
+      "createReturn": "↩ Create Return",
+      "archive": "📦 Archive",
+      "unarchive": "📦 Unarchive",
+      "save": "💾 Save",
+      "saveReturn": "💾 Create Return",
+      "removeLine": "Remove line",
+      "removeReturnLine": "Remove return line"
+    },
+    "columns": {
+      "lineNumber": "#",
+      "product": "Product",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "discountPct": "Disc %",
+      "gst": "GST",
+      "amount": "Amount",
+      "ordered": "Ordered",
+      "location": "Location",
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "reserved": "Reserved",
+      "available": "Available",
+      "status": "Status",
+      "originalQty": "Original Qty",
+      "returnQty": "Return Qty",
+      "reason": "Reason",
+      "fee": "Fee",
+      "qtyReturned": "Qty Returned"
+    },
+    "returns": {
+      "totalCredit": "Total Credit",
+      "totalFees": "Total Fees",
+      "netCredit": "Net Credit"
+    },
+    "timeline": {
+      "by": "by {actor}"
+    }
+  },
+  "purchaseOrders": {
+    "title": "Purchase Orders",
+    "subtitle": "Manage purchase orders",
+    "backToOrders": "← Back to Orders",
+    "orderNotFound": "Order not found",
+    "untitledOrder": "Untitled order",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "availability": "📦 Availability",
+    "returns": "↩ Returns",
+    "newReturn": "New Return",
+    "noLineItems": "No line items — use the search above to add products",
+    "loadingInventory": "Loading inventory data…",
+    "noInventoryData": "No inventory data",
+    "labels": {
+      "supplier": "Supplier",
+      "invoiceNumber": "Invoice #",
+      "orderName": "Order Name",
+      "created": "Created",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "searchOrders": "Search purchase orders…",
+      "orderName": "Order name",
+      "invoiceNumber": "Supplier invoice reference",
+      "notes": "Internal notes",
+      "searchProduct": "Add product… (search)"
+    },
+    "buttons": {
+      "createPO": "+ Create PO",
+      "copyOrder": "📋 Copy Order",
+      "createReturn": "↩ Create Return",
+      "save": "💾 Save"
+    },
+    "columns": {
+      "lineNumber": "#",
+      "product": "Product",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "amount": "Amount",
+      "ordered": "Ordered",
+      "location": "Location",
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "reserved": "Reserved",
+      "available": "Available",
+      "status": "Status"
+    }
+  },
+  "picking": {
+    "title": "Picking Progress",
+    "printPickingSlip": "Print Picking Slip",
+    "pickAllCreateShipment": "Pick All & Create Shipment",
+    "createShipment": "Create Shipment",
+    "newShipment": "New Shipment",
+    "shipments": "Shipments",
+    "linesPicked": "{picked} / {total} lines picked",
+    "clickToEdit": "Click to edit",
+    "createdOnBy": "Created {date} by {user}",
+    "createdOn": "Created {date}",
+    "columns": {
+      "lineNumber": "#",
+      "product": "Product",
+      "description": "Description",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "shipped": "Shipped",
+      "remaining": "Remaining",
+      "action": "Action",
+      "qtyToShip": "Qty to Ship",
+      "notes": "Notes",
+      "trackingNumber": "Tracking Number"
+    },
+    "actions": {
+      "pickAll": "Pick All",
+      "done": "Done"
+    },
+    "placeholders": {
+      "notes": "Shipment notes",
+      "tracking": "Tracking #"
+    },
+    "errors": {
+      "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
+      "failedToUpdatePick": "Failed to update pick",
+      "failedToPickAll": "Failed to pick all",
+      "failedToCreateShipment": "Failed to create shipment",
+      "failedToUpdateShipment": "Failed to update shipment",
+      "atLeastOneLineRequired": "At least one line with a quantity is required"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "stats": {
+      "accounts": "Accounts",
+      "products": "Products",
+      "inventoryLevels": "Inventory Levels",
+      "orderLines": "Order Lines"
+    }
+  },
+  "sidebar": {
+    "title": "modbm",
+    "subtitle": "Business Management",
+    "groups": {
+      "inventory": "Inventory",
+      "sales": "Sales",
+      "purchasing": "Purchasing"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "products": "Products",
+      "inventory": "Inventory",
+      "bins": "Bin Contents",
+      "accounts": "Accounts",
+      "salesOrders": "Sales Orders",
+      "suppliers": "Suppliers",
+      "purchaseOrders": "Purchase Orders"
+    }
+  },
+  "accounts": {
+    "title": "Accounts",
+    "buttons": {
+      "createAccount": "+ Create Account"
+    },
+    "placeholders": {
+      "searchAccounts": "Search by name, account number, or email…"
+    },
+    "generalInfo": "General Information",
+    "financials": "Financials",
+    "management": "Account Management",
+    "customerManagement": "Customer Management",
+    "pricingCurrency": "Pricing & Currency",
+    "columns": {
+      "accountNumber": "Account #",
+      "discountPct": "Customer Discount %"
+    }
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "subtitle": "Manage supplier records",
+    "generalInfo": "General Information",
+    "paymentCurrency": "Payment & Currency",
+    "management": "Vendor Management",
+    "buttons": {
+      "createSupplier": "+ Create Supplier"
+    },
+    "placeholders": {
+      "searchSuppliers": "Search suppliers…"
+    }
+  },
+  "bins": {
+    "title": "Bin Contents",
+    "placeholders": {
+      "searchBins": "Search by bin number, product name, or product number…"
+    },
+    "columns": {
+      "bin": "Bin",
+      "binType": "Type",
+      "locationNo": "Location No",
+      "productNumber": "Product #",
+      "baseQty": "Base Qty",
+      "consignment": "Consignment",
+      "bonded": "Bonded",
+      "unavailable": "Unavailable"
+    }
+  },
+  "inventory": {
+    "title": "Inventory",
+    "placeholders": {
+      "searchInventory": "Search by product name, number, or location…"
+    },
+    "columns": {
+      "scNumber": "SC Number",
+      "backOrdered": "Back Ordered",
+      "minQty": "Min Qty",
+      "maxQty": "Max Qty",
+      "defaultBin": "Default Bin",
+      "value": "Value",
+      "lastCost": "Last In Cost"
+    }
+  },
+  "products": {
+    "title": "Products",
+    "buttons": {
+      "addProduct": "+ Add Product"
+    },
+    "placeholders": {
+      "searchProducts": "Search by name, product number, or barcode…"
+    },
+    "columns": {
+      "vendor": "Default Vendor",
+      "stdCost": "Std Cost",
+      "listPrice": "List Price",
+      "tradePrice": "Trade Price",
+      "priceLevel3": "Level 3",
+      "priceLevel4": "Level 4",
+      "barcode": "Barcode",
+      "gstCategory": "GST Category"
+    },
+    "generalInfo": "General Information",
+    "pricing": "Pricing & Costs",
+    "management": "Product Management",
+    "catalogManagement": "Catalog & Inventory Management",
+    "pricingCostsInfo": "Standard cost is used for margin calculations and inventory valuation. List price is the default selling price before customer discounts.",
+    "internalWarehouseNotes": "Internal & Warehouse Notes",
+    "columns": {
+      "productNumber": "Product # (SKU)"
+    }
+  }
+}

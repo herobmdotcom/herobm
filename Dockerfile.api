@@ -1,0 +1,22 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache typst font-dejavu
+
+# Copy root scripts needed for tests
+COPY scripts /app/scripts
+
+# Build API
+WORKDIR /app/apps/api
+COPY apps/api/package*.json ./
+RUN npm ci
+
+COPY apps/api ./
+RUN npm test
+RUN npm run build
+RUN npm prune --omit=dev
+
+EXPOSE 3001
+
+CMD ["node", "dist/main.js"]

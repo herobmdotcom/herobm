@@ -42,7 +42,6 @@ const purchaseRules = {
     '\"/orders': '\"/purchase-orders'
 };
 
-processApp('apps/sales-portal', salesRules);
 processApp('apps/ops-portal', salesRules);
 processApp('apps/supplier-portal', purchaseRules);
 processApp('apps/api', salesRules);

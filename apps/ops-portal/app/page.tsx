@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 interface Summary {
   accounts: number;
@@ -32,6 +33,7 @@ function StatCard({ label, value, icon, loading }: { label: string; value: numbe
 
 /** This component only mounts AFTER AuthGate confirms login */
 function DashboardContent() {
+  const t = useTranslations('dashboard');
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -44,12 +46,12 @@ function DashboardContent() {
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
+      <h2 className="text-2xl font-bold mb-6">{t('title')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard label="Accounts" value={summary?.accounts ?? null} icon="🏢" loading={loading} />
-        <StatCard label="Products" value={summary?.products ?? null} icon="🏷️" loading={loading} />
-        <StatCard label="Inventory Levels" value={summary?.inventoryLevels ?? null} icon="📦" loading={loading} />
-        <StatCard label="Order Lines" value={summary?.orderLines ?? null} icon="📋" loading={loading} />
+        <StatCard label={t('stats.accounts')} value={summary?.accounts ?? null} icon="🏢" loading={loading} />
+        <StatCard label={t('stats.products')} value={summary?.products ?? null} icon="🏷️" loading={loading} />
+        <StatCard label={t('stats.inventoryLevels')} value={summary?.inventoryLevels ?? null} icon="📦" loading={loading} />
+        <StatCard label={t('stats.orderLines')} value={summary?.orderLines ?? null} icon="📋" loading={loading} />
       </div>
     </>
   );

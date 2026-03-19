@@ -26,19 +26,12 @@ import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AccountsService } from '../accounts/accounts.service';
 import { ProductsService } from '../products/products.service';
+import {
+  SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
+  getValidStates,
+} from '@modbm/shared';
 
-// Valid state transitions (from → allowed next states)
-const STATE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['quoted', 'cancelled'],
-  quoted: ['confirmed', 'draft', 'cancelled'],
-  confirmed: ['picking', 'cancelled'],
-  picking: ['shipped', 'confirmed'],
-  shipped: ['invoiced'],
-  invoiced: [],
-  cancelled: ['draft'],
-};
-
-const VALID_STATES = Object.keys(STATE_TRANSITIONS);
+const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
 interface CreateOrderDto {
   name?: string;
@@ -508,6 +501,88 @@ export class OrdersWriteService {
       `Order ${existing.orderNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
     );
     return result;
+  }
+
+  /**
+   * Archive an order.
+   */
+  async archive(id: string, actor: string) {
+    const existing = await this.findOrder(id);
+
+    if (
+      existing.stateCode !== 'invoiced' &&
+      existing.stateCode !== 'cancelled'
+    ) {
+      throw new BadRequestException(
+        `Order must be 'invoiced' or 'cancelled' to be archived (current state: '${existing.stateCode}')`,
+      );
+    }
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(salesOrders)
+        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, id))
+        .returning();
+
+      await this.writeEvent(
+        tx,
+        id,
+        'archived',
+        {
+          from: existing.stateCode,
+          to: 'archived',
+        },
+        actor,
+      );
+
+      return updated;
+    });
+  }
+
+  /**
+   * Unarchive an order.
+   */
+  async unarchive(id: string, actor: string) {
+    const existing = await this.findOrder(id);
+
+    if (existing.stateCode !== 'archived') {
+      throw new BadRequestException(`Order is not archived`);
+    }
+
+    const lastEvent = await this.db
+      .select()
+      .from(orderEvents)
+      .where(
+        sql`${orderEvents.salesOrderId} = ${id} AND ${orderEvents.eventType} = 'archived'`,
+      )
+      .orderBy(sql`${orderEvents.createdOn} DESC`)
+      .limit(1);
+
+    const previousState =
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
+      'cancelled';
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(salesOrders)
+        .set({ stateCode: previousState, modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, id))
+        .returning();
+
+      await this.writeEvent(
+        tx,
+        id,
+        'unarchived',
+        {
+          from: 'archived',
+          to: previousState,
+        },
+        actor,
+      );
+
+      return updated;
+    });
   }
 
   /**

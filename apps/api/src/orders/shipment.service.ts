@@ -12,8 +12,12 @@ import {
   salesOrderShipments,
   salesOrderShipmentLines,
   salesOrderLineItems,
+  products as coreProducts,
+  outbox,
 } from '../drizzle/modbm-core-schema';
 import { products as martProducts } from '../drizzle/schema';
+import { ConfigService } from '@nestjs/config';
+import { getValuationStrategy } from '../inventory/valuation';
 import {
   findOrder,
   findOrderLine,
@@ -25,17 +29,12 @@ import {
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
 
-// ============================================================================
-// Shipment state machine
-// ============================================================================
+import {
+  SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
+  getValidStates,
+} from '@modbm/shared';
 
-const SHIPMENT_STATE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['dispatched', 'cancelled'],
-  dispatched: ['draft'], // cannot transition directly from dispatched to cancelled
-  cancelled: [],
-};
-
-const VALID_SHIPMENT_STATES = Object.keys(SHIPMENT_STATE_TRANSITIONS);
+const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 
 // ============================================================================
 // DTOs
@@ -73,6 +72,7 @@ export class ShipmentService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
+    private configService: ConfigService,
   ) {}
 
   private readonly logger = new Logger(ShipmentService.name);
@@ -280,8 +280,63 @@ export class ShipmentService {
       }
 
       if (shipment.stateCode === 'draft' && newState === 'dispatched') {
+        const method = this.configService.get<string>(
+          'INVENTORY_VALUATION_METHOD',
+        );
+        const strategy = getValuationStrategy(method);
+
         // Dispatching: deduct on-hand, release committed
         await this.inventoryService.deductStock(tx, stockLines);
+
+        // Calculate COGS and record outbox event for GL mapping
+        const cogsDetails = [];
+        for (const line of stockLines) {
+          if (!line.productId) continue;
+
+          const isUuid =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              line.productId,
+            );
+
+          const [product] = await tx
+            .select()
+            .from(coreProducts)
+            .where(
+              isUuid
+                ? eq(coreProducts.productId, line.productId)
+                : eq(coreProducts.productNumber, line.productId),
+            );
+
+          if (product) {
+            const cogsAmount = strategy.getCogs(
+              {
+                productId: product.productId,
+                standardCost: product.standardCost || '0',
+                weightedAverageCost: product.weightedAverageCost || '0',
+                quantityOnHand: product.quantityOnHand || '0',
+              },
+              parseFloat(line.quantity),
+            );
+
+            cogsDetails.push({
+              productId: line.productId,
+              quantity: line.quantity,
+              cogsAmount,
+            });
+          }
+        }
+
+        await tx.insert(outbox).values({
+          aggregateType: 'sales_order_shipment',
+          aggregateId: shipmentId,
+          eventType: 'goods_dispatched',
+          payload: {
+            shipmentId,
+            shipmentNumber: shipment.shipmentNumber,
+            salesOrderId: shipment.salesOrderId,
+            cogsDetails,
+          },
+        });
       } else if (
         shipment.stateCode === 'dispatched' &&
         (newState === 'draft' || newState === 'cancelled')

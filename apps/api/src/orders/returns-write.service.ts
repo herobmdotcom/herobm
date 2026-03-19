@@ -24,15 +24,12 @@ import {
   findOrderLine as sharedFindOrderLine,
 } from './shipment-helpers';
 
-// Valid return state transitions
-const RETURN_STATE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['confirmed', 'cancelled'],
-  confirmed: ['processed', 'draft'],
-  processed: [],
-  cancelled: [],
-};
+import {
+  RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
+  getValidStates,
+} from '@modbm/shared';
 
-const VALID_RETURN_STATES = Object.keys(RETURN_STATE_TRANSITIONS);
+const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
 interface CreateReturnDto {
   notes?: string;

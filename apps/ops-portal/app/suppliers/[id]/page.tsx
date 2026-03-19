@@ -3,6 +3,8 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
+import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 import {
   apiFetch,
   apiMutate,
@@ -35,6 +37,7 @@ interface Supplier {
 }
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const t = useTranslations();
   const params = use(paramsPromise);
   const router = useRouter();
   const [supplier, setSupplier] = useState<Supplier | null>(null);
@@ -68,7 +71,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditNotes(data.notes || '');
       setEditCurrency(data.currencyCode || 'EUR');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load supplier');
+      setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
     } finally {
       if (showSpinner) setLoading(false);
     }
@@ -88,7 +91,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: value || null });
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateOrder'));
     } finally {
       setSaving(false);
     }
@@ -104,7 +107,34 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { stateCode: newState });
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change status');
+      setError(err instanceof Error ? err.message : t('common.errors.failedToChangeState'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const archiveSupplier = async () => {
+    if (!confirm(t('confirm.archiveOrder'))) return;
+    setSaving(true);
+    try {
+      await apiMutate(`/api/suppliers/${params.id}/archive`, 'POST');
+      toast.success(t('toast.orderArchived'), { icon: '📦' });
+      await loadSupplier(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const unarchiveSupplier = async () => {
+    setSaving(true);
+    try {
+      await apiMutate(`/api/suppliers/${params.id}/unarchive`, 'POST');
+      toast.success(t('toast.orderUnarchived'), { icon: '📦' });
+      await loadSupplier(false);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setSaving(false);
     }
@@ -114,7 +144,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     return (
       <Shell>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>Loading supplier…</p>
+          <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
         </div>
       </Shell>
     );
@@ -125,10 +155,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       <Shell>
         <div className="flex flex-col items-center justify-center flex-1">
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-            {error || 'Supplier not found'}
+            {error || t('common.noMatchingResults')}
           </p>
           <button className="btn btn-secondary" onClick={() => router.push('/suppliers')}>
-            ← Back to Suppliers
+            ← {t('sidebar.items.suppliers')}
           </button>
         </div>
       </Shell>
@@ -136,7 +166,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   }
 
   const isLegacy = supplier.source === 'abm';
-  const isEditable = !isLegacy;
+  const isEditable = !isLegacy && supplier.stateCode !== 'archived';
 
   return (
     <Shell>
@@ -152,20 +182,48 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{supplier.name}</h1>
               <span className={`badge badge-${supplier.stateCode}`}>
-                {supplier.stateCode}
+                {t(`common.states.${supplier.stateCode}`)}
               </span>
               {saving && (
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Saving…
+                  {t('common.saving')}
                 </span>
               )}
             </div>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {supplier.vendorNumber} · {supplier.source === 'app' ? 'Application Managed' : 'Legacy ABM'}
+              {supplier.vendorNumber} · {supplier.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}
             </p>
           </div>
         </div>
+        <div className="flex gap-2">
+          {supplier.source === 'app' && (
+            supplier.stateCode === 'archived' ? (
+              <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 Unarchive</button>
+            ) : (
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                onClick={archiveSupplier}
+                disabled={saving}
+              >
+                📦 {t('salesOrders.buttons.archive')}
+              </button>
+            )
+          )}
+        </div>
       </div>
+
+      {supplier.stateCode === 'archived' && (
+        <div
+          className="mb-6 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>📦</span>
+          <div>
+            <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div
@@ -177,7 +235,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           }}
         >
           {error}
-          <button className="ml-3 text-xs underline" onClick={() => setError('')}>dismiss</button>
+          <button className="ml-3 text-xs underline" onClick={() => setError('')}>{t('common.dismiss')}</button>
         </div>
       )}
 
@@ -186,12 +244,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             {/* Basic Info Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Basic Information
+                {t('suppliers.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Name
+                    {t('common.columns.name')}
                   </label>
                   <input
                     type="text"
@@ -204,7 +262,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Supplier Number
+                    {t('suppliers.columns.vendorNumber')}
                   </label>
                   <input
                     type="text"
@@ -250,7 +308,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Street
+                    {t('common.columns.address')}
                   </label>
                   <input
                     type="text"
@@ -351,7 +409,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             )}
             {isLegacy && (
               <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                This is a read-only legacy record imported from ABM. Changes must be made in the source system.
+                {t('common.legacyRecordImported')}
               </p>
             )}
           </div>
@@ -427,7 +485,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     />
                   </div>
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {supplier.stateCode === 'active' ? 'Active' : 'Inactive'}
+                    {t(`common.states.${supplier.stateCode}`)}
                   </span>
                 </div>
               </div>
@@ -435,12 +493,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
 
           {/* Activity Timeline */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Activity Timeline
-            </h3>
-            <ActivityTimeline events={supplier.events || []} />
-          </div>
+          <ActivityTimeline events={supplier.events || []} />
+
         </div>
       </div>
     </Shell>

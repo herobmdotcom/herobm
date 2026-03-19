@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReceptionsService } from './receptions.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -7,7 +8,11 @@ describe('ReceptionsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ReceptionsService, { provide: DRIZZLE, useValue: {} }],
+      providers: [
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+        ReceptionsService,
+        { provide: DRIZZLE, useValue: {} },
+      ],
     }).compile();
 
     service = module.get<ReceptionsService>(ReceptionsService);

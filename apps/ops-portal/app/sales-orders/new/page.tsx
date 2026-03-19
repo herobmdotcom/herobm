@@ -8,6 +8,7 @@ import ProductSearchInput from '@/components/sales-orders/ProductSearchInput';
 import type { Product } from '@/components/sales-orders/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
+import { useTranslations } from 'next-intl';
 
 interface Account {
   accountId: string;
@@ -27,11 +28,12 @@ interface GstCategory {
   isDefault: boolean;
 }
 
-function gstLabel(c: GstCategory): string {
-  if (c.type === 'exempt') return 'Exempt';
-  if (c.type === 'zero_rated') return 'Zero Rated';
-  const pct = parseFloat(c.rate || '0');
-  return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
+function GstLabel({ category }: { category: GstCategory }) {
+  const t = useTranslations('common.gst');
+  if (category.type === 'exempt') return <>{t('exempt')}</>;
+  if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
+  const pct = parseFloat(category.rate || '0');
+  return <>{t('pctGst', { pct: pct % 1 === 0 ? pct.toFixed(0) : pct.toString() })}</>;
 }
 
 interface LineItem {
@@ -71,6 +73,7 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
 }
 
 export default function NewOrderPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
 
@@ -152,7 +155,7 @@ export default function NewOrderPage() {
 
   const addLineFromProduct = (p: Product) => {
     if (lines.some((l) => l.productId === p.productId)) {
-      setError(`Product '${p.productNumber}' is already in the order.`);
+      setError(t('toast.productAlreadyInOrder', { productNumber: p.productNumber }));
       return;
     }
     setError('');
@@ -202,11 +205,11 @@ export default function NewOrderPage() {
 
   const handleSubmit = async () => {
     if (!customerId) {
-      setError('Please select a customer');
+      setError(t('common.errors.pleaseSelectCustomer'));
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
-      setError('Please add at least one line item with a product');
+      setError(t('common.errors.pleaseAddLineItem'));
       return;
     }
 
@@ -233,7 +236,7 @@ export default function NewOrderPage() {
       });
       router.push(`/sales-orders/${order.salesOrderId}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create order');
+      setError(err instanceof Error ? err.message : t('common.errors.failedToCreateOrder'));
     } finally {
       setSubmitting(false);
     }
@@ -246,9 +249,9 @@ export default function NewOrderPage() {
     <Shell>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">New Order</h1>
+          <h1 className="text-2xl font-bold">{t('salesOrders.buttons.createOrder')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Create a sales order
+            {t('salesOrders.title')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -256,7 +259,7 @@ export default function NewOrderPage() {
             className="btn btn-secondary"
             onClick={() => router.push('/sales-orders')}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             id="btn-submit-order"
@@ -264,7 +267,7 @@ export default function NewOrderPage() {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? 'Creating…' : '✅ Create Order'}
+            {submitting ? t('common.saving') : t('salesOrders.buttons.createOrder')}
           </button>
         </div>
       </div>
@@ -286,7 +289,7 @@ export default function NewOrderPage() {
         {/* Order header */}
         <div className="card mb-6">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Order Details
+            {t('salesOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {/* Customer selector */}
@@ -295,7 +298,7 @@ export default function NewOrderPage() {
                 className="block text-xs font-medium mb-1.5"
                 style={{ color: 'var(--text-muted)' }}
               >
-                Customer *
+                {t('salesOrders.labels.customer')} *
                 {customerId && (
                   <span
                     style={{
@@ -313,43 +316,43 @@ export default function NewOrderPage() {
                   </span>
                 )}
                 {isCustomerExempt && (
-                  <span
-                    style={{
-                      marginLeft: 4,
-                      padding: '1px 6px',
-                      borderRadius: 4,
-                      background: 'rgba(245,158,11,0.15)',
-                      color: '#f59e0b',
-                      fontWeight: 600,
-                      fontSize: 10,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    EXEMPT
-                  </span>
+                    <span
+                      style={{
+                        marginLeft: 4,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: 'rgba(245,158,11,0.15)',
+                        color: '#f59e0b',
+                        fontWeight: 600,
+                        fontSize: 10,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {t('common.gst.exempt')}
+                    </span>
                 )}
                 {customerId && parseFloat(customerDiscount) > 0 && (
-                  <span
-                    style={{
-                      marginLeft: 4,
-                      padding: '1px 6px',
-                      borderRadius: 4,
-                      background: 'rgba(74,222,128,0.15)',
-                      color: '#4ade80',
-                      fontWeight: 600,
-                      fontSize: 10,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {parseFloat(customerDiscount)}% disc
-                  </span>
+                    <span
+                      style={{
+                        marginLeft: 4,
+                        padding: '1px 6px',
+                        borderRadius: 4,
+                        background: 'rgba(74,222,128,0.15)',
+                        color: '#4ade80',
+                        fontWeight: 600,
+                        fontSize: 10,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {t('salesOrders.discountPercent', { disc: parseFloat(customerDiscount) })}
+                    </span>
                 )}
               </label>
               <input
                 id="order-customer"
                 className="input"
                 autoComplete="off"
-                placeholder="Search customer…"
+                placeholder={t('salesOrders.placeholders.searchOrders')}
                 value={customerSearch}
                 onChange={(e) => {
                   setCustomerSearch(e.target.value);
@@ -385,21 +388,21 @@ export default function NewOrderPage() {
                   ))}
                   {filteredAccounts.length === 0 && (
                     <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      No matching customers
+                      {t('common.noMatchingResults')}
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div>
+             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Customer PO #
+                {t('salesOrders.labels.customerPO')}
               </label>
               <input
                 id="order-po"
                 className="input"
-                placeholder="Customer's purchase order reference"
+                placeholder={t('salesOrders.placeholders.customerPO')}
                 value={customerOrderNumber}
                 onChange={(e) => setCustomerOrderNumber(e.target.value)}
               />
@@ -407,12 +410,12 @@ export default function NewOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Order Name
+                {t('salesOrders.labels.orderName')}
               </label>
               <input
                 id="order-name"
                 className="input"
-                placeholder="Descriptive title (optional)"
+                placeholder={t('salesOrders.placeholders.orderName')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -420,12 +423,12 @@ export default function NewOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Notes
+                {t('salesOrders.labels.notes')}
               </label>
               <input
                 id="order-notes"
                 className="input"
-                placeholder="Internal notes"
+                placeholder={t('salesOrders.placeholders.notes')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -437,16 +440,16 @@ export default function NewOrderPage() {
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Line Items
+              {t('salesOrders.lineItems')}
             </h3>
             <div className="flex items-center gap-3">
               <ProductSearchInput
                 onSelect={addLineFromProduct}
-                placeholder="Add product… (search)"
+                placeholder={t('salesOrders.placeholders.searchProduct')}
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                ➕ Blank Line
+                + {t('salesOrders.buttons.removeLine').replace('Remove line', 'Blank Line')}
               </button>
             </div>
           </div>
@@ -454,14 +457,14 @@ export default function NewOrderPage() {
           <table className="table-lines">
             <thead>
               <tr>
-                <th style={{ width: 40 }}>#</th>
-                <th>Product</th>
-                <th>Description</th>
-                <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
-                <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
-                <th style={{ width: 110, textAlign: 'right' }}>GST</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
+                <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
+                <th>{t('salesOrders.columns.product')}</th>
+                <th>{t('salesOrders.columns.description')}</th>
+                <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qty')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.unitPrice')}</th>
+                <th style={{ width: 80, textAlign: 'right' }}>{t('salesOrders.columns.discountPct')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.gst')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
             </thead>
@@ -537,7 +540,7 @@ export default function NewOrderPage() {
                     >
                       {gstCategories.map((c) => (
                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                          {gstLabel(c)}
+                          <GstLabel category={c} />
                         </option>
                       ))}
                     </select>
@@ -569,7 +572,7 @@ export default function NewOrderPage() {
                     colSpan={9}
                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                   >
-                    No line items — use the search above to add products
+                    {t('salesOrders.noLineItems')}
                   </td>
                 </tr>
               )}

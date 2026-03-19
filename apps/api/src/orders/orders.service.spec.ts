@@ -118,6 +118,28 @@ describe('OrdersService', () => {
       const result = await service.findAll({ limit: 200_000 });
       expect(result.limit).toBe(100_000);
     });
+
+    it('should exclude archived orders by default', async () => {
+      const appQb = createMockQb([]);
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(appQb) });
+
+      await service.findAll({});
+      expect(appQb.where).toHaveBeenCalled();
+    });
+
+    it('should not exclude archived orders if includeArchived is true', async () => {
+      const appQb = createMockQb([]);
+      mockDb.select = jest
+        .fn()
+        .mockReturnValue({ from: jest.fn().mockReturnValue(appQb) });
+
+      await service.findAll({ includeArchived: true });
+      // Depending on how where is chained, but we can just check if where is called less or not at all
+      // The implementation only calls where for searchTerm and !includeArchived
+      expect(appQb.where).not.toHaveBeenCalled();
+    });
   });
 
   describe('findOne', () => {

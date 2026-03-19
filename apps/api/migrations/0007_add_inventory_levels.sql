@@ -1,5 +1,6 @@
--- 0007: Create modbm_core.inventory_levels table and seed from mart_inventory
+-- 0007: Create modbm_core.inventory_levels table
 -- This table is app-owned inventory, mutated by order lifecycle events.
+-- Data seeding is handled by tools/seed.py (not in migrations).
 
 CREATE TABLE IF NOT EXISTS modbm_core.inventory_levels (
   inventory_level_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -11,23 +12,3 @@ CREATE TABLE IF NOT EXISTS modbm_core.inventory_levels (
   modified_on        TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(product_id, location_no)
 );
-
--- Seed from mart_inventory (one-time snapshot of ABM data)
-INSERT INTO modbm_core.inventory_levels (
-  product_id,
-  location_no,
-  quantity_on_hand,
-  quantity_committed,
-  quantity_on_order,
-  modified_on
-)
-SELECT
-  product_id,
-  COALESCE(location_no, 'MAIN'),
-  COALESCE(quantity_on_hand::numeric, 0),
-  COALESCE(quantity_committed::numeric, 0),
-  COALESCE(quantity_on_order::numeric, 0),
-  NOW()
-FROM public_marts.mart_inventory
-WHERE product_id IS NOT NULL
-ON CONFLICT (product_id, location_no) DO NOTHING;

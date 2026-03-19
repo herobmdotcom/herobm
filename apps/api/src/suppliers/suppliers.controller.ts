@@ -48,9 +48,9 @@ export class SuppliersController {
   @CasbinAction('read')
   async findByProduct(@Param('productId') productId: string) {
     // Note: this still points to legacy findProductSuppliers (which is now in SuppliersService)
-    // Actually, SuppliersService.findProductSuppliers was removed in my previous edit? 
+    // Actually, SuppliersService.findProductSuppliers was removed in my previous edit?
     // Wait, let me check SuppliersService again.
-    return this.suppliersService.findSupplierProducts(productId); 
+    return this.suppliersService.findSupplierProducts(productId);
   }
 
   @Get(':id')
@@ -73,5 +73,17 @@ export class SuppliersController {
   @CasbinAction('read')
   async findSupplierProducts(@Param('id') id: string) {
     return this.suppliersService.findSupplierProducts(id);
+  }
+
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  async archive(@Param('id') id: string, @Req() req: any) {
+    return this.suppliersWriteService.archive(id, req.user.username);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  async unarchive(@Param('id') id: string, @Req() req: any) {
+    return this.suppliersWriteService.unarchive(id, req.user.username);
   }
 }

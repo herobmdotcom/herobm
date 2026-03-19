@@ -6,8 +6,10 @@ import Shell from '@/components/Shell';
 import OrderTotalsCard from '@/components/sales-orders/OrderTotalsCard';
 import ProductSearchInput from '@/components/sales-orders/ProductSearchInput';
 import type { Product } from '@/components/sales-orders/ProductSearchInput';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { apiFetch, apiMutate, reportError, ActivityTimeline } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
+import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 import PickingSection from '@/components/sales-orders/PickingSection';
 
@@ -36,11 +38,12 @@ interface GstCategory {
     isDefault: boolean;
 }
 
-function gstLabel(c: GstCategory): string {
-    if (c.type === 'exempt') return 'Exempt';
-    if (c.type === 'zero_rated') return 'Zero Rated';
-    const pct = parseFloat(c.rate || '0');
-    return `${pct % 1 === 0 ? pct.toFixed(0) : pct}% GST`;
+function GstLabel({ category }: { category: GstCategory }) {
+    const t = useTranslations('common.gst');
+    if (category.type === 'exempt') return <>{t('exempt')}</>;
+    if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
+    const pct = parseFloat(category.rate || '0');
+    return <>{t('pctGst', { pct: pct % 1 === 0 ? pct.toFixed(0) : pct.toString() })}</>;
 }
 
 interface OrderEvent {
@@ -105,49 +108,31 @@ interface OrderReturn {
     lines: ReturnLine[];
 }
 
-const RETURN_STATE_TRANSITIONS: Record<string, string[]> = {
-    draft: ['confirmed', 'cancelled'],
-    confirmed: ['processed', 'draft'],
-    processed: [],
-    cancelled: [],
-};
-
-const STATE_TRANSITIONS: Record<string, string[]> = {
-    draft: ['quoted', 'cancelled'],
-    quoted: ['confirmed', 'draft', 'cancelled'],
-    confirmed: ['picking', 'cancelled'],
-    picking: ['shipped', 'confirmed'],
-    shipped: ['invoiced'],
-    invoiced: [],
-    cancelled: ['draft'],
-    legacy: [],
-};
-
-const ORDER_LIFECYCLE: Record<string, number> = {
-    cancelled: 0, draft: 1, quoted: 2, confirmed: 3,
-    picking: 4, shipped: 5, invoiced: 6, legacy: 7,
-};
-
-const RETURN_LIFECYCLE: Record<string, number> = {
-    cancelled: 0, draft: 1, confirmed: 2, processed: 3,
-};
+import {
+    RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
+    SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
+    SALES_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
+    RETURN_LIFECYCLE,
+    isBackTransition as sharedIsBackTransition,
+    cap,
+} from '@modbm/shared';
 
 function isBackTransition(
     from: string, to: string,
     lifecycle: Record<string, number> = ORDER_LIFECYCLE,
 ): boolean {
-    return (lifecycle[to] ?? 99) < (lifecycle[from] ?? 99) && to !== 'cancelled';
+    return sharedIsBackTransition(lifecycle, from, to);
 }
-
-function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 
 
 function StateBadge({ state }: { state: string }) {
-    return <span className={`badge badge-${state}`}>{state}</span>;
+    const t = useTranslations('common.states');
+    return <span className={`badge badge-${state}`}>{t(state)}</span>;
 }
 
 function EventIcon({ type }: { type: string }) {
+    const t = useTranslations('common.eventTypes');
     const icons: Record<string, string> = {
         created: '🆕',
         updated: '✏️',
@@ -158,6 +143,8 @@ function EventIcon({ type }: { type: string }) {
         quoted: '📨',
         confirmed: '✅',
         cancelled: '❌',
+        archived: '📦',
+        unarchived: '📦',
         shipment_created: '🚚',
         shipment_updated: '🚚',
         shipment_dispatched: '🚚',
@@ -176,11 +163,12 @@ function EventIcon({ type }: { type: string }) {
         return_line_updated: '✏️',
         return_line_removed: '🗑️',
     };
-    return <span>{icons[type] || '📌'}</span>;
+    return <span title={t(type)}>{icons[type] || '📌'}</span>;
 }
 
 function ReturnStateBadge({ state }: { state: string }) {
-    return <span className={`badge badge-return-${state}`}>{state}</span>;
+    const t = useTranslations('common.states');
+    return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
 }
 
 
@@ -190,6 +178,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const router = useRouter();
     const searchParams = useSearchParams();
     const source = searchParams.get('source') || 'app';
+    const t = useTranslations();
 
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -227,15 +216,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         originalAmount: number;
     }>>([])
 
-    // Toast notification state
-    const [toastData, setToastData] = useState<{ message: React.ReactNode } | null>(null);
-    const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    const showToast = (message: React.ReactNode) => {
-        setToastData({ message });
-        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-        toastTimeoutRef.current = setTimeout(() => setToastData(null), 6000);
-    };
 
     const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
         if (showSpinner) setLoading(true);
@@ -250,12 +230,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             setHeaderDirty(false);
 
             if (autoTransitions && autoTransitions.length > 0) {
-                showToast(
-                    <>Automatically moved to <strong>{cap(autoTransitions[0].to)}</strong> because {autoTransitions[0].reason.toLowerCase()}.</>
-                );
+                const tr = autoTransitions[0];
+                toast(t('toast.orderMovedToReason', { state: t(`common.states.${tr.to}`), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load order');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
         } finally {
             if (showSpinner) setLoading(false);
         }
@@ -303,7 +282,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     // Order details (name, PO, notes) editable until cancelled
     const isOrderDetailsEditable = source === 'app'
-        && !['cancelled', 'legacy'].includes(order?.stateCode ?? '');
+        && !['cancelled', 'legacy', 'archived'].includes(order?.stateCode ?? '');
 
     // Line items only editable in draft
     const isOrderLinesEditable = source === 'app'
@@ -331,7 +310,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update order');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateOrder'));
         } finally {
             setSaving(false);
         }
@@ -341,10 +320,37 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const changeState = async (newState: string) => {
         try {
             await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState });
-            showToast(<>Order moved to <strong>{cap(newState)}</strong></>);
+            toast(t('toast.orderMovedTo', { state: t(`common.states.${newState}`) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to change state');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToChangeState'));
+        }
+    };
+
+    const archiveOrder = async () => {
+        if (!confirm(t('confirm.archiveOrder'))) return;
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${id}/archive`, 'POST');
+            toast.success(t('toast.orderArchived'));
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('common.errors.failedToArchive'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const unarchiveOrder = async () => {
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${id}/unarchive`, 'POST');
+            toast.success(t('toast.orderUnarchived'));
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : t('common.errors.failedToUnarchive'));
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -370,7 +376,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             router.push(`/sales-orders/${newOrder.salesOrderId}?source=app`);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to copy order');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToCopy'));
         } finally {
             setCopying(false);
         }
@@ -383,33 +389,29 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update line');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateLine'));
         } finally {
             setSaving(false);
         }
     };
 
     const removeLine = async (lineId: string) => {
-        if (!confirm('Remove this line item?')) return;
+        if (!confirm(t('confirm.removeLine'))) return;
         setSaving(true);
         setError('');
         try {
             await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'DELETE');
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to remove line');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToRemoveLine'));
         } finally {
             setSaving(false);
         }
     };
 
     const addLineFromProduct = async (p: Product) => {
-        if (order.lines.some((l) => l.productId === p.productId)) {
-            showToast(
-                <span style={{ color: '#f87171' }}>
-                    Product <strong>{p.productNumber}</strong> is already present in this order.
-                </span>
-            );
+        if (order?.lines.some((l) => l.productId === p.productId)) {
+            toast.error(t('toast.productAlreadyInOrder', { productNumber: p.productNumber }));
             return;
         }
 
@@ -425,7 +427,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to add line');
+            setError(err instanceof Error ? err.message : t('common.errors.failedToAddLine'));
         } finally {
             setSaving(false);
         }
@@ -435,7 +437,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         return (
             <Shell>
                 <div className="flex items-center justify-center flex-1">
-                    <p style={{ color: 'var(--text-muted)' }}>Loading order…</p>
+                    <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
                 </div>
             </Shell>
         );
@@ -446,10 +448,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <Shell>
                 <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-                        {error || 'Order not found'}
+                        {error || t('salesOrders.orderNotFound')}
                     </p>
                     <button className="btn btn-secondary" onClick={() => router.push('/sales-orders')}>
-                        ← Back to Orders
+                        {t('salesOrders.backToOrders')}
                     </button>
                 </div>
             </Shell>
@@ -484,12 +486,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <StateBadge state={order.stateCode} />
                             {saving && (
                                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    Saving…
+                                    {t('common.saving')}
                                 </span>
                             )}
                         </div>
                         <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                            {order.name || 'Untitled order'}
+                            {order.name || t('salesOrders.untitledOrder')}
                         </p>
                     </div>
                 </div>
@@ -499,23 +501,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             className="btn btn-secondary btn-sm"
                             onClick={async () => {
                                 try {
-                                    const { getToken } = await import('@/lib/api');
-                                    const t = getToken();
-                                    if (!t) return;
-                                    const res = await fetch(`/api/sales-orders/${id}/sales-quote-report?source=${source}`, {
-                                        headers: { Authorization: `Bearer ${t}` },
-                                    });
-                                    if (!res.ok) throw new Error(`Failed to generate quote: ${res.status}`);
-                                    const blob = await res.blob();
+                                    const { apiFetchBlob } = await import('@/lib/api');
+                                    const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-quote-report?source=${source}`);
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, '_blank');
                                 } catch (err) {
                                     reportError(err, 'OrderDetailPage:generateQuote');
-                                    setError(err instanceof Error ? err.message : 'Failed to generate quote');
+                                    setError(err instanceof Error ? err.message : t('common.errors.failedToGenerateQuote'));
                                 }
                             }}
                         >
-                            📄 Create Quote
+                            {t('salesOrders.buttons.createQuote')}
                         </button>
                     )}
                     {(order.stateCode === 'picking' || order.stateCode === 'shipped' || order.stateCode === 'invoiced') && (
@@ -523,24 +519,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             className="btn btn-secondary btn-sm"
                             onClick={async () => {
                                 try {
-                                    const { getToken } = await import('@/lib/api');
-                                    const t = getToken();
-                                    if (!t) return;
-                                    const res = await fetch(`/api/sales-orders/${id}/sales-invoice-report?source=${source}`, {
-                                        headers: { Authorization: `Bearer ${t}` },
-                                    });
-                                    if (!res.ok) throw new Error(`Failed to generate invoice: ${res.status}`);
-                                    const blob = await res.blob();
+                                    const { apiFetchBlob } = await import('@/lib/api');
+                                    const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-invoice-report?source=${source}`);
                                     const url = URL.createObjectURL(blob);
                                     window.open(url, '_blank');
                                 } catch (err) {
                                     const { reportError } = await import('@/lib/api');
                                     reportError(err, 'OrderDetailPage:generateInvoice');
-                                    setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+                                    setError(err instanceof Error ? err.message : t('common.errors.failedToGenerateInvoice'));
                                 }
                             }}
                         >
-                            📄 Create Invoice
+                            {t('salesOrders.buttons.createInvoice')}
                         </button>
                     )}
                     <button
@@ -548,7 +538,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         onClick={copyOrder}
                         disabled={copying}
                     >
-                        {copying ? 'Copying…' : '📋 Copy Order'}
+                        {copying ? t('common.copying') : t('salesOrders.buttons.copyOrder')}
                     </button>
                     {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && !showCreateReturn && (
                         <button
@@ -567,12 +557,31 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 );
                             }}
                         >
-                            ↩ Create Return
+                            {t('salesOrders.buttons.createReturn')}
+                        </button>
+                    )}
+                    {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && source === 'app' && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                            onClick={archiveOrder}
+                            disabled={saving}
+                        >
+                            {t('salesOrders.buttons.archive')}
+                        </button>
+                    )}
+                    {order.stateCode === 'archived' && source === 'app' && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={unarchiveOrder}
+                            disabled={saving}
+                        >
+                            {t('salesOrders.buttons.unarchive')}
                         </button>
                     )}
                     {headerDirty && isOrderDetailsEditable && (
                         <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
-                            💾 Save
+                            {t('salesOrders.buttons.save')}
                         </button>
                     )}
                     {[...allowedTransitions]
@@ -591,7 +600,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         }`}
                                     onClick={() => changeState(state)}
                                 >
-                                    {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
+                                    {state === 'cancelled' ? `✕ ${t(`common.states.${state}`)}` : back ? `← ${t(`common.states.${state}`)}` : `→ ${t(`common.states.${state}`)}`}
                                 </button>
                             );
                         })}
@@ -608,7 +617,23 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     }}
                 >
                     {error}
-                    <button className="ml-3 text-xs underline" onClick={() => setError('')}>dismiss</button>
+                    <button className="ml-3 text-xs underline" onClick={() => setError('')}>{t('common.dismiss')}</button>
+                </div>
+            )}
+
+            {order.stateCode === 'archived' && (
+                <div
+                    className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+                    style={{
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        color: '#b45309',
+                    }}
+                >
+                    <span style={{ fontSize: '1.2rem' }}>📦</span>
+                    <div>
+                        <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+                    </div>
                 </div>
             )}
 
@@ -624,12 +649,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            Order Details
+                            {t('salesOrders.orderDetails')}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Customer
+                                    {t('salesOrders.labels.customer')}
                                     {order.currencyCode && (
                                         <span
                                             style={{
@@ -678,7 +703,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 letterSpacing: '0.04em',
                                             }}
                                         >
-                                            {parseFloat(order.customerDiscount!)}% disc
+                                            {t('salesOrders.discountPercent', { disc: parseFloat(order.customerDiscount!) })}
                                         </span>
                                     )}
                                 </label>
@@ -688,7 +713,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Created
+                                    {t('salesOrders.labels.created')}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
                                     {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
@@ -696,7 +721,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Order Name
+                                    {t('salesOrders.labels.orderName')}
                                 </label>
                                 <input
                                     className="input"
@@ -704,12 +729,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     onBlur={saveHeader}
-                                    placeholder="Order name"
+                                    placeholder={t('salesOrders.placeholders.orderName')}
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Customer PO #
+                                    {t('salesOrders.labels.customerPO')}
                                 </label>
                                 <input
                                     className="input"
@@ -717,12 +742,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     value={editPO}
                                     onChange={(e) => setEditPO(e.target.value)}
                                     onBlur={saveHeader}
-                                    placeholder="Customer purchase order"
+                                    placeholder={t('salesOrders.placeholders.customerPO')}
                                 />
                             </div>
                             <div className="col-span-2">
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Notes
+                                    {t('salesOrders.labels.notes')}
                                 </label>
                                 <input
                                     className="input"
@@ -730,7 +755,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     value={editNotes}
                                     onChange={(e) => setEditNotes(e.target.value)}
                                     onBlur={saveHeader}
-                                    placeholder="Internal notes"
+                                    placeholder={t('salesOrders.placeholders.notes')}
                                 />
                             </div>
                         </div>
@@ -754,7 +779,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 }}
                                 onClick={() => setActiveTab('lines')}
                             >
-                                Line Items
+                                {t('salesOrders.lineItems')}
                             </button>
                             <button
                                 className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
@@ -770,13 +795,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 }}
                                 onClick={() => setActiveTab('availability')}
                             >
-                                📦 Availability
+                                {t('salesOrders.availability')}
                             </button>
                         </div>
                         {isOrderLinesEditable && activeTab === 'lines' && (
                             <ProductSearchInput
                                 onSelect={addLineFromProduct}
-                                placeholder="Add product… (search)"
+                                placeholder={t('salesOrders.placeholders.searchProduct')}
                                 style={{ width: 240 }}
                             />
                         )}
@@ -786,14 +811,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         <table className="table-lines">
                             <thead>
                                 <tr>
-                                    <th style={{ width: 40 }}>#</th>
-                                    <th>Product</th>
-                                    <th>Description</th>
-                                    <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
-                                    <th style={{ width: 80, textAlign: 'right' }}>Disc %</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>GST</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
+                                    <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
+                                    <th>{t('salesOrders.columns.product')}</th>
+                                    <th>{t('salesOrders.columns.description')}</th>
+                                    <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qty')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.unitPrice')}</th>
+                                    <th style={{ width: 80, textAlign: 'right' }}>{t('salesOrders.columns.discountPct')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.gst')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
                                     {isOrderLinesEditable && <th style={{ width: 50 }}></th>}
                                 </tr>
                             </thead>
@@ -885,7 +910,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 >
                                                     {gstCategories.map((c) => (
                                                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                                                            {gstLabel(c)}
+                                                            <GstLabel category={c} />
                                                         </option>
                                                     ))}
                                                 </select>
@@ -894,7 +919,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <td style={{ textAlign: 'right', fontSize: 12 }}>
                                                 {(() => {
                                                     const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
-                                                    if (c) return gstLabel(c);
+                                                    if (c) return <GstLabel category={c} />;
                                                     // ABM legacy: derive effective rate from tax / amount
                                                     const amt = parseFloat(line.amount || '0');
                                                     const tax = parseFloat(line.tax || '0');
@@ -902,7 +927,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                         const pct = (tax / amt) * 100;
                                                         return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                                                     }
-                                                    if (amt > 0 && tax === 0) return 'Exempt';
+                                                    if (amt > 0 && tax === 0) return t('common.gst.exempt');
                                                     return '—';
                                                 })()}
                                             </td>
@@ -921,7 +946,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 <button
                                                     className="btn btn-danger btn-sm"
                                                     onClick={() => removeLine(line.salesOrderLineId)}
-                                                    title="Remove line"
+                                                    title={t('salesOrders.buttons.removeLine')}
                                                 >
                                                     ✕
                                                 </button>
@@ -935,7 +960,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             colSpan={isOrderLinesEditable ? 9 : 8}
                                             style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                                         >
-                                            No line items — use the search above to add products
+                                            {t('salesOrders.noLineItems')}
                                         </td>
                                     </tr>
                                 )}
@@ -944,21 +969,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         /* Availability tab */
                         inventoryLoading ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>Loading inventory data…</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{t('salesOrders.loadingInventory')}</p>
                         ) : (
                             <table className="table-lines">
                                 <thead>
                                     <tr>
-                                        <th style={{ width: 40 }}>#</th>
-                                        <th>Product</th>
-                                        <th>Description</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>Ordered</th>
-                                        <th style={{ width: 100, textAlign: 'right' }}>Location</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>On Hand</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>Committed</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>Reserved</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>Available</th>
-                                        <th style={{ width: 70, textAlign: 'center' }}>Status</th>
+                                        <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
+                                        <th>{t('salesOrders.columns.product')}</th>
+                                        <th>{t('salesOrders.columns.description')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.ordered')}</th>
+                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.location')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.onHand')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.committed')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.reserved')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.available')}</th>
+                                        <th style={{ width: 70, textAlign: 'center' }}>{t('salesOrders.columns.status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -982,7 +1007,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     <td>{line.productDescription || '—'}</td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
                                                     <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                                        No inventory data
+                                                        {t('salesOrders.noInventoryData')}
                                                     </td>
                                                     <td style={{ textAlign: 'center' }}>
                                                         <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⚠</span>
@@ -1043,7 +1068,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     {order.lines.length === 0 && (
                                         <tr>
                                             <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                                                No line items
+                                                {t('salesOrders.noLineItemsShort')}
                                             </td>
                                         </tr>
                                     )}
@@ -1060,7 +1085,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     orderId={order.salesOrderId || id}
                     orderState={order.stateCode}
                     orderLines={order.lines}
-                    onOrderUpdated={() => loadOrder(undefined, false)}
+                    onOrderUpdated={(autoTransitions?: any[]) => loadOrder(autoTransitions, false)}
                 />
 
                 {/* Returns section — only shown when returns exist or creating one */}
@@ -1074,7 +1099,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            ↩ Returns
+                            {t('salesOrders.returns')}
                         </h3>
 
                         {/* Create return form */}
@@ -1090,7 +1115,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-semibold" style={{ color: '#c084fc' }}>
-                                        New Return
+                                        {t('salesOrders.newReturn')}
                                     </span>
                                     <div className="flex gap-2">
                                         <button
@@ -1101,7 +1126,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 setNewReturnNotes('');
                                             }}
                                         >
-                                            Cancel
+                                            {t('common.cancel')}
                                         </button>
                                         <button
                                             className="btn btn-primary btn-sm"
@@ -1128,38 +1153,38 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     await loadReturns();
                                                     await loadOrder(undefined, false);
                                                 } catch (err) {
-                                                    setError(err instanceof Error ? err.message : 'Failed to create return');
+                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToCreateReturn'));
                                                 } finally {
                                                     setSaving(false);
                                                 }
                                             }}
                                         >
-                                            💾 Create Return
+                                            {t('salesOrders.buttons.saveReturn')}
                                         </button>
                                     </div>
                                 </div>
 
                                 <div style={{ marginBottom: 12 }}>
                                     <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                                        Notes
+                                        {t('salesOrders.labels.notes')}
                                     </label>
                                     <input
                                         className="input"
                                         value={newReturnNotes}
                                         onChange={(e) => setNewReturnNotes(e.target.value)}
-                                        placeholder="Return reason / notes"
+                                        placeholder={t('salesOrders.placeholders.returnNotes')}
                                     />
                                 </div>
 
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: 40 }}>#</th>
-                                            <th>Product</th>
-                                            <th style={{ width: 90, textAlign: 'right' }}>Original Qty</th>
-                                            <th style={{ width: 100, textAlign: 'right' }}>Return Qty</th>
-                                            <th style={{ width: 180 }}>Reason</th>
-                                            <th style={{ width: 140, textAlign: 'right' }}>Fee</th>
+                                            <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
+                                            <th>{t('salesOrders.columns.product')}</th>
+                                            <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.originalQty')}</th>
+                                            <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.returnQty')}</th>
+                                            <th style={{ width: 180 }}>{t('salesOrders.columns.reason')}</th>
+                                            <th style={{ width: 140, textAlign: 'right' }}>{t('salesOrders.columns.fee')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1270,9 +1295,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                         {/* Existing returns list */}
                         {returnsLoading ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading returns…</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('salesOrders.loadingReturns')}</p>
                         ) : returns.length === 0 && !showCreateReturn ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No returns recorded</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('salesOrders.noReturns')}</p>
                         ) : (
                             <div className="space-y-3">
                                 {returns.map((ret) => {
@@ -1294,7 +1319,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     <ReturnStateBadge state={ret.stateCode} />
                                                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                                         {new Date(ret.createdOn).toLocaleString()}
-                                                        {ret.createdBy && ` by ${ret.createdBy}`}
+                                                        {ret.createdBy && ` ${t('common.by')} ${ret.createdBy}`}
                                                     </span>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -1308,11 +1333,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                     await loadReturns();
                                                                     await loadOrder(undefined, false);
                                                                 } catch (err) {
-                                                                    setError(err instanceof Error ? err.message : 'Failed to change return state');
+                                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToChangeReturnState'));
                                                                 }
                                                             }}
                                                         >
-                                                            → {s}
+                                                            → {t(`common.states.${s}`)}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -1327,11 +1352,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <table className="table-lines">
                                                 <thead>
                                                     <tr>
-                                                        <th>Product</th>
-                                                        <th style={{ width: 90, textAlign: 'right' }}>Qty Returned</th>
-                                                        <th style={{ width: 180 }}>Reason</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>Fee</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>Amount</th>
+                                                        <th>{t('salesOrders.columns.product')}</th>
+                                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qtyReturned')}</th>
+                                                        <th style={{ width: 180 }}>{t('salesOrders.columns.reason')}</th>
+                                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.fee')}</th>
+                                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
                                                         {isRetEditable && <th style={{ width: 50 }}></th>}
                                                     </tr>
                                                 </thead>
@@ -1368,7 +1393,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : 'Failed to update return line');
+                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
@@ -1394,11 +1419,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : 'Failed to update return line');
+                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
-                                                                            placeholder="Reason"
+                                                                            placeholder={t('salesOrders.placeholders.reason')}
                                                                         />
                                                                     ) : (
                                                                         <span style={{ fontSize: 12 }}>{rl.reason || '—'}</span>
@@ -1426,7 +1451,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : 'Failed to update return line');
+                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
@@ -1447,7 +1472,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                         <button
                                                                             className="btn btn-danger btn-sm"
                                                                             onClick={async () => {
-                                                                                if (!confirm('Remove this return line?')) return;
+                                                                                if (!confirm(t('confirm.removeReturnLine'))) return;
                                                                                 try {
                                                                                     await apiMutate(
                                                                                         `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
@@ -1455,10 +1480,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                     );
                                                                                     await loadReturns();
                                                                                 } catch (err) {
-                                                                                    setError(err instanceof Error ? err.message : 'Failed to remove return line');
+                                                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToRemoveReturnLine'));
                                                                                 }
                                                                             }}
-                                                                            title="Remove return line"
+                                                                            title={t('salesOrders.buttons.removeReturnLine')}
                                                                         >
                                                                             ✕
                                                                         </button>
@@ -1473,7 +1498,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 colSpan={isRetEditable ? 6 : 5}
                                                                 style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '12px 0' }}
                                                             >
-                                                                No return lines
+                                                                {t('salesOrders.noReturnLines')}
                                                             </td>
                                                         </tr>
                                                     )}
@@ -1490,7 +1515,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                             <>
                                                                 <tr style={{ borderTop: '2px solid var(--border)' }}>
                                                                     <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                                                        Total Credit
+                                                                        {t('salesOrders.returns.totalCredit')}
                                                                     </td>
                                                                     <td></td>
                                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
@@ -1500,7 +1525,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 </tr>
                                                                 <tr>
                                                                     <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                                                        Total Fees
+                                                                        {t('salesOrders.returns.totalFees')}
                                                                     </td>
                                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: totalFees > 0 ? '#f87171' : undefined }}>
                                                                         {totalFees > 0 ? `−${formatAmount(totalFees, cc)}` : formatAmount(0, cc)}
@@ -1510,7 +1535,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 </tr>
                                                                 <tr>
                                                                     <td colSpan={isRetEditable ? 5 : 4} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
-                                                                        Net Credit
+                                                                        {t('salesOrders.returns.netCredit')}
                                                                     </td>
                                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13, color: '#4ade80' }}>
                                                                         {formatAmount(totalCredit, cc)}
@@ -1531,116 +1556,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                 {/* Audit timeline — only for app orders */}
                 {source === 'app' && (
-                    <div className="card">
-                        <h3
-                            className="text-sm font-semibold mb-4"
-                            style={{
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                            }}
-                        >
-                            Activity Timeline
-                        </h3>
-                        <div className="space-y-3">
-                            {[...order.events].reverse().map((event) => {
-                                const hasPayload = event.payload && Object.keys(event.payload).length > 0;
-                                return (
-                                    <details
-                                        key={event.eventId}
-                                        className="text-sm"
-                                        style={{
-                                            padding: '6px 12px',
-                                            borderRadius: 8,
-                                            background: 'rgba(255,255,255,0.02)',
-                                            border: '1px solid rgba(30,58,95,0.3)',
-                                        }}
-                                    >
-                                        <summary
-                                            className="flex items-center gap-3"
-                                            style={{ cursor: hasPayload ? 'pointer' : 'default', userSelect: 'none', listStyle: 'none' }}
-                                        >
-                                            <EventIcon type={event.eventType} />
-                                            <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                                                {event.eventType.replace(/_/g, ' ')}
-                                            </span>
-                                            <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>
-                                                by {event.actor}
-                                            </span>
-                                            <span className="ml-auto text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                                                {new Date(event.createdOn).toLocaleString()}
-                                            </span>
-                                            {hasPayload && (
-                                                <span className="text-xs" style={{ color: 'var(--text-muted)', fontSize: 10 }}>▶</span>
-                                            )}
-                                        </summary>
-                                        {hasPayload && (
-                                            <div
-                                                className="mt-2 text-xs grid gap-y-1"
-                                                style={{ marginLeft: 28, color: 'var(--text-secondary)' }}
-                                            >
-                                                {Object.entries(event.payload).map(([key, value]) => (
-                                                    <div key={key} className="flex gap-2">
-                                                        <span style={{ color: 'var(--text-muted)', minWidth: 100, fontWeight: 500 }}>
-                                                            {key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                                                        </span>
-                                                        <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                                                            {typeof value === 'object' && value !== null
-                                                                ? Object.entries(value as Record<string, unknown>)
-                                                                    .map(([k, v]) => `${k}: ${v}`)
-                                                                    .join(', ')
-                                                                : String(value)}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </details>
-                                );
-                            })}
-                            {order.events.length === 0 && (
-                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                                    No events recorded
-                                </p>
-                            )}
-                        </div>
-                    </div>
+                    <ActivityTimeline events={order.events || []} />
                 )}
             </div>
 
-            {/* Global Toast Notification */}
-            <div
-                className="global-order-toast"
-                style={{
-                    position: 'fixed',
-                    top: '24px',
-                    left: '50%',
-                    transform: `translateX(-50%) ${toastData ? 'translateY(0)' : 'translateY(-150%)'}`,
-                    opacity: toastData ? 1 : 0,
-                    background: '#0ea5e9',
-                    color: '#ffffff',
-                    border: 'none',
-                    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.5)',
-                    borderRadius: '12px',
-                    padding: '16px 24px',
-                    zIndex: 999999,
-                    display: 'flex',
-                    flexDirection: 'column' as const,
-                    gap: '4px',
-                    pointerEvents: toastData ? 'auto' as const : 'none' as const,
-                    transition: 'transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 300ms ease-out',
-                }}
-            >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 18 }}>⚡</span>
-                    <strong style={{ fontSize: 14, color: '#ffffff' }}>
-                        Order State Updated
-                    </strong>
-                </div>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', margin: 0, lineHeight: 1.4 }}>
-                    {toastData?.message}
-                </p>
-            </div>
         </Shell>
     );
 }

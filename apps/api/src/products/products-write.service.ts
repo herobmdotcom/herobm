@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, or } from 'drizzle-orm';
+import { eq, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -178,5 +178,108 @@ export class ProductsWriteService {
 
     this.logger.log(`Product updated: ${id} by ${actor}`);
     return result;
+  }
+
+  /**
+   * Archive a product.
+   */
+  async archive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(
+        `Product '${id}' is a legacy ABM product and cannot be archived.`,
+      );
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(
+        `Product '${id}' not found in application data`,
+      );
+    }
+
+    if (existing[0].stateCode === 'archived') {
+      throw new BadRequestException(`Product '${id}' is already archived`);
+    }
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreProducts)
+        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        .where(eq(coreProducts.productId, id))
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId: id,
+        eventType: 'archived',
+        payload: {
+          from: existing[0].stateCode,
+          to: 'archived',
+        },
+        actor,
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Unarchive a product.
+   */
+  async unarchive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(`Product '${id}' is a legacy ABM product.`);
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(`Product '${id}' not found`);
+    }
+
+    if (existing[0].stateCode !== 'archived') {
+      throw new BadRequestException(`Product '${id}' is not archived`);
+    }
+
+    const lastEvent = await this.db
+      .select()
+      .from(productEvents)
+      .where(
+        sql`${productEvents.productId} = ${id} AND ${productEvents.eventType} = 'archived'`,
+      )
+      .orderBy(sql`${productEvents.createdOn} DESC`)
+      .limit(1);
+
+    const previousState =
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
+      'active';
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreProducts)
+        .set({ stateCode: previousState, modifiedOn: new Date() })
+        .where(eq(coreProducts.productId, id))
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId: id,
+        eventType: 'unarchived',
+        payload: {
+          from: 'archived',
+          to: previousState,
+        },
+        actor,
+      });
+
+      return updated;
+    });
   }
 }

@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate, EntityHeader } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 export default function NewProductPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
@@ -24,7 +26,7 @@ export default function NewProductPage() {
 
     try {
       const product = await apiMutate<any>('/api/products', 'POST', dto);
-      toast.success('Product created successfully');
+      toast.success(t('toast.productCreated'));
       router.push(`/products/${product.productId}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -42,13 +44,13 @@ export default function NewProductPage() {
   return (
     <Shell>
       <EntityHeader
-        title="Create New Product"
-        subtitle="Catalog & Inventory Management"
+        title={t('products.buttons.addProduct')}
+        subtitle={t('products.catalogManagement')}
         onBack={() => router.push('/products')}
         isSaving={submitting}
         isDirty={isValid}
         onSave={handleSubmit}
-        saveLabel="✨ Create Product"
+        saveLabel={t('products.buttons.addProduct')}
       />
 
       <div className="scroll-area" style={{ flex: 1 }}>
@@ -63,12 +65,12 @@ export default function NewProductPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              General Information
+              {t('products.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Product Number (SKU) *
+                  {t('products.columns.productNumber')} *
                 </label>
                 <input
                   type="text"
@@ -81,7 +83,7 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Product Name *
+                  {t('common.columns.name')} *
                 </label>
                 <input
                   type="text"
@@ -94,7 +96,7 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Barcode
+                  {t('products.columns.barcode')}
                 </label>
                 <input
                   type="text"
@@ -118,13 +120,13 @@ export default function NewProductPage() {
                 letterSpacing: '0.05em',
               }}
             >
-              Pricing & Costs
+              {t('products.pricing')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    List Price (EUR)
+                    {t('products.columns.listPrice')}
                   </label>
                   <input
                     type="number"
@@ -137,7 +139,7 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Standard Cost (EUR)
+                    {t('products.columns.stdCost')}
                   </label>
                   <input
                     type="number"
@@ -151,8 +153,7 @@ export default function NewProductPage() {
               </div>
               <div className="mt-4 p-4 rounded-lg bg-base-200/50 border border-base-300">
                 <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  Standard cost is used for margin calculations and inventory valuation. 
-                  List price is the default selling price before customer discounts.
+                  {t('products.pricingCostsInfo')}
                 </p>
               </div>
             </div>
@@ -169,7 +170,7 @@ export default function NewProductPage() {
               letterSpacing: '0.05em',
             }}
           >
-            Internal & Warehouse Notes
+            {t('products.internalWarehouseNotes')}
           </h3>
           <textarea
             className="textarea h-32"

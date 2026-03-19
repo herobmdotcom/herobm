@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersWriteService } from './orders-write.service';
 import { PickingService } from './picking.service';
@@ -166,6 +167,7 @@ describe('OrdersWriteService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: ConfigService, useValue: { get: jest.fn() } },
         OrdersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: GstCategoriesService, useValue: mockGstService },

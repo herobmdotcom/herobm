@@ -99,6 +99,18 @@ export class OrdersController {
     );
   }
 
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  archive(@Param('id') id: string, @Req() req: any) {
+    return this.ordersWriteService.archive(id, req.user.username);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  unarchive(@Param('id') id: string, @Req() req: any) {
+    return this.ordersWriteService.unarchive(id, req.user.username);
+  }
+
   @Post(':id/lines')
   @CasbinAction('write')
   addLine(

@@ -1,11 +1,28 @@
 /**
  * API client for portal frontends.
  * All requests go through Next.js rewrite (/api/* → backend).
- * JWT token is stored in memory (not localStorage for SSR safety).
+ * JWT token is backed by localStorage so sessions survive page reloads
+ * and direct URL navigation. The in-memory variables act as a fast cache.
  */
 
-let token: string | null = null;
-let role: string | null = null;
+const TOKEN_KEY = 'modbm_token';
+const ROLE_KEY = 'modbm_role';
+
+function readStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function writeStorage(key: string, value: string | null): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch { /* storage unavailable */ }
+}
+
+let token: string | null = readStorage(TOKEN_KEY);
+let role: string | null = readStorage(ROLE_KEY);
 
 export async function login(username: string, password: string) {
   const res = await fetch('/api/auth/login', {
@@ -17,12 +34,21 @@ export async function login(username: string, password: string) {
   const data = await res.json();
   token = data.access_token;
   role = data.role;
+  writeStorage(TOKEN_KEY, token);
+  writeStorage(ROLE_KEY, role);
   return data;
 }
 
 export function getToken() { return token; }
-export function setToken(t: string) { token = t; }
+export function setToken(t: string) { token = t; writeStorage(TOKEN_KEY, t); }
 export function getRole() { return role; }
+
+function clearSession() {
+  token = null;
+  role = null;
+  writeStorage(TOKEN_KEY, null);
+  writeStorage(ROLE_KEY, null);
+}
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   if (!token) throw new Error('Not authenticated');
@@ -34,8 +60,7 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
     },
   });
   if (res.status === 401) {
-    token = null;
-    role = null;
+    clearSession();
     throw new Error('Session expired');
   }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -53,8 +78,7 @@ export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Bl
     },
   });
   if (res.status === 401) {
-    token = null;
-    role = null;
+    clearSession();
     throw new Error('Session expired');
   }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -78,8 +102,7 @@ export async function apiMutate<T = unknown>(
     body: body ? JSON.stringify(body) : undefined,
   });
   if (res.status === 401) {
-    token = null;
-    role = null;
+    clearSession();
     throw new Error('Session expired');
   }
   if (!res.ok) {

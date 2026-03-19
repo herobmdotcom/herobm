@@ -36,7 +36,8 @@ export class OrdersService {
    * At cutover: remove the ABM query and return only app orders.
    */
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, offset, searchTerm, includeArchived } =
+      parsePagination(query);
 
     // --- ABM legacy orders (deduplicated by document_number) ---
     let abmQuery = this.db
@@ -91,6 +92,10 @@ export class OrdersService {
           ilike(accounts.name, searchTerm),
         ),
       );
+    }
+
+    if (!includeArchived) {
+      appQuery = appQuery.where(sql`${salesOrders.stateCode} != 'archived'`);
     }
 
     // Execute both and merge (app first, then ABM)

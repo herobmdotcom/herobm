@@ -51,4 +51,16 @@ export class ProductsController {
   update(@Param('id') id: string, @Body() dto: any, @Req() req: any) {
     return this.productsWriteService.update(id, dto, req.user.username);
   }
+
+  @Post(':id/archive')
+  @CasbinAction('archive')
+  archive(@Param('id') id: string, @Req() req: any) {
+    return this.productsWriteService.archive(id, req.user.username);
+  }
+
+  @Post(':id/unarchive')
+  @CasbinAction('archive')
+  unarchive(@Param('id') id: string, @Req() req: any) {
+    return this.productsWriteService.unarchive(id, req.user.username);
+  }
 }

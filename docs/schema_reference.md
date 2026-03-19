@@ -1,7 +1,7 @@
 # Schema Reference
 
 > Auto-generated from dbt metadata. Only documents the **mart layer**.
-> Last generated: 2026-03-13 14:07 UTC
+> Last generated: 2026-03-19 13:06 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `public_marts`
@@ -9,21 +9,21 @@
 All mart tables use **dbt Model Contracts** (🔒) with enforced data types and database-level constraints.
 
 **Source freshness:**
- Last raw data load: `2026-03-12 21:05:05.845235+00`
- Freshness checks: warn after 36h, error after 72h
+ Status: unavailable
 
 ## Models
 
 | Model | Rows | Description |
 |-------|------|-------------|
-| [`mart_accounts`](#mart_accounts) | 17 | Customer accounts with primary contact and delivery address count |
-| [`mart_bin_contents`](#mart_bin_contents) | 5,052 | Bin-level stock for warehouse picking |
-| [`mart_inventory`](#mart_inventory) | 19,023 | Stock position per product per location |
-| [`mart_products`](#mart_products) | 14,896 | Product catalogue with group name resolved |
-| [`mart_purchase_order_lines`](#mart_purchase_order_lines) | 7,806 | Purchase order line items with supplier and product resolved |
-| [`mart_sales_order_lines`](#mart_sales_order_lines) | 21,207 | Sales order line items with customer and product resolved |
-| [`mart_sales_quote_lines`](#mart_sales_quote_lines) | 1,638 | Sales quote line items with customer and product resolved |
-| [`mart_suppliers`](#mart_suppliers) | 54 | Supplier/vendor master with product count enrichment |
+| [`mart_accounts`](#mart_accounts) | — | Customer accounts with primary contact and delivery address count |
+| [`mart_bin_contents`](#mart_bin_contents) | — | Bin-level stock for warehouse picking |
+| [`mart_inventory`](#mart_inventory) | — | Stock position per product per location |
+| [`mart_product_suppliers`](#mart_product_suppliers) | — | Product-supplier linkage with pricing, enriched with names |
+| [`mart_products`](#mart_products) | — | Product catalogue with group name resolved |
+| [`mart_purchase_order_lines`](#mart_purchase_order_lines) | — | Purchase order line items with supplier and product resolved |
+| [`mart_sales_order_lines`](#mart_sales_order_lines) | — | Sales order line items with customer and product resolved |
+| [`mart_sales_quote_lines`](#mart_sales_quote_lines) | — | Sales quote line items with customer and product resolved |
+| [`mart_suppliers`](#mart_suppliers) | — | Supplier/vendor master with product count enrichment |
 
 ---
 
@@ -51,6 +51,7 @@ graph LR
     mart_accounts["mart_accounts"]:::mart
     mart_bin_contents["mart_bin_contents"]:::mart
     mart_inventory["mart_inventory"]:::mart
+    mart_product_suppliers["mart_product_suppliers"]:::mart
     mart_products["mart_products"]:::mart
     mart_purchase_order_lines["mart_purchase_order_lines"]:::mart
     mart_sales_order_lines["mart_sales_order_lines"]:::mart
@@ -71,6 +72,11 @@ graph LR
     stg_bin_contents --> mart_inventory
     stg_bins --> mart_inventory
     mart_products --> mart_inventory
+    stg_product_suppliers --> mart_product_suppliers
+    stg_suppliers --> mart_product_suppliers
+    stg_products --> mart_product_suppliers
+    mart_products --> mart_product_suppliers
+    mart_suppliers --> mart_product_suppliers
     stg_products --> mart_products
     stg_product_groups --> mart_products
     stg_price_list --> mart_products
@@ -103,6 +109,8 @@ graph LR
 |------|------------|------|------------|
 | `mart_bin_contents` | `product_id` | `mart_products` | `product_id` |
 | `mart_inventory` | `product_id` | `mart_products` | `product_id` |
+| `mart_product_suppliers` | `product_id` | `mart_products` | `product_id` |
+| `mart_product_suppliers` | `vendor_id` | `mart_suppliers` | `vendor_id` |
 | `mart_purchase_order_lines` | `vendor_id` | `mart_suppliers` | `vendor_id` |
 | `mart_purchase_order_lines` | `product_id` | `mart_products` | `product_id` |
 | `mart_sales_order_lines` | `account_id` | `mart_accounts` | `account_id` |
@@ -112,7 +120,7 @@ graph LR
 
 ---
 
-### `public_marts.mart_accounts` (17 rows)
+### `public_marts.mart_accounts`
 
 Customer accounts with primary contact and delivery address count. CDM entity: Account.
 
@@ -151,7 +159,7 @@ Customer accounts with primary contact and delivery address count. CDM entity: A
 > **Data quirks:**
 > - Status codes include legacy classifications `A1`, `A2`, `A28` beyond standard `A`/`S`/`H`.
 
-### `public_marts.mart_bin_contents` (5,052 rows)
+### `public_marts.mart_bin_contents`
 
 Bin-level stock for warehouse picking. Custom entity: BinStock.
 
@@ -177,7 +185,7 @@ Bin-level stock for warehouse picking. Custom entity: BinStock.
 | 13 | `is_bonded` | `boolean` |  |  |  |
 | 14 | `is_unavailable` | `boolean` |  |  |  |
 
-### `public_marts.mart_inventory` (19,023 rows)
+### `public_marts.mart_inventory`
 
 Stock position per product per location. Schema.org entity: InventoryLevel.
 
@@ -192,19 +200,20 @@ Stock position per product per location. Schema.org entity: InventoryLevel.
 | 2 | `product_id` | `text` | foreign_key → mart_products(product_id) | not_null (warn) |  |
 | 3 | `product_number` | `text` |  |  |  |
 | 4 | `product_name` | `text` |  |  |  |
-| 5 | `location_no` | `text` |  |  |  |
-| 6 | `location_name` | `text` |  |  |  |
-| 7 | `quantity_on_hand` | `numeric` |  | not_negative |  |
-| 8 | `quantity_committed` | `numeric` |  |  |  |
-| 9 | `quantity_on_order` | `numeric` |  |  |  |
-| 10 | `quantity_available` | `numeric` |  |  |  |
-| 11 | `quantity_reserved` | `numeric` |  |  |  |
-| 12 | `quantity_back_ordered` | `numeric` |  |  |  |
-| 13 | `min_quantity` | `numeric` |  |  |  |
-| 14 | `max_quantity` | `numeric` |  |  |  |
-| 15 | `value_on_hand` | `numeric` |  | not_negative (warn) |  |
-| 16 | `last_in_unit_cost` | `numeric` |  | not_negative (warn) |  |
-| 17 | `default_bin_number` | `text` |  |  | Bin location(s) for this product at this location. Prefers ABM's native default bin (plocdetails.bin_number) when populated; otherwise aggregates bin numbers from bin contents.
+| 5 | `sc_number` | `text` |  |  | Supplier catalogue number (ABM zsc_num) |
+| 6 | `location_no` | `text` |  |  |  |
+| 7 | `location_name` | `text` |  |  |  |
+| 8 | `quantity_on_hand` | `numeric` |  | not_negative |  |
+| 9 | `quantity_committed` | `numeric` |  |  |  |
+| 10 | `quantity_on_order` | `numeric` |  |  |  |
+| 11 | `quantity_available` | `numeric` |  |  |  |
+| 12 | `quantity_reserved` | `numeric` |  |  |  |
+| 13 | `quantity_back_ordered` | `numeric` |  |  |  |
+| 14 | `min_quantity` | `numeric` |  |  |  |
+| 15 | `max_quantity` | `numeric` |  |  |  |
+| 16 | `value_on_hand` | `numeric` |  | not_negative (warn) |  |
+| 17 | `last_in_unit_cost` | `numeric` |  | not_negative (warn) |  |
+| 18 | `default_bin_number` | `text` |  |  | Bin location(s) for this product at this location. Prefers ABM's native default bin (plocdetails.bin_number) when populated; otherwise aggregates bin numbers from bin contents.
  |
 
 > [!NOTE]
@@ -213,7 +222,36 @@ Stock position per product per location. Schema.org entity: InventoryLevel.
 > - `value_on_hand` has 28 sub-cent rounding residuals (max magnitude $0.008) on zero-stock items — ERP moving-average artefact.
 > - `last_in_unit_cost` is negative for 3 pseudo-products (`Discount`, `GST`, one fitting) — side-effect of routing non-stock line items through the costing engine.
 
-### `public_marts.mart_products` (14,896 rows)
+### `public_marts.mart_product_suppliers`
+
+Product-supplier linkage with pricing, enriched with names. CDM entity: ProductVendor (many-to-many junction).
+
+**Mart dependencies:** `mart_products`, `mart_suppliers`
+**Staging sources:** `stg_product_suppliers`, `stg_suppliers`, `stg_products`
+
+**Model tests:** `mart_row_count_sanity`
+
+| # | Column | Type | Constraints | Tests | Description |
+|---|--------|------|-------------|-------|-------------|
+| 1 | `product_supplier_id` | `text` | primary_key |  | Unique product-supplier link identifier (ABM UniqueID) |
+| 2 | `product_id` | `text` | foreign_key → mart_products(product_id) | not_null (warn) |  |
+| 3 | `product_number` | `text` |  |  |  |
+| 4 | `product_name` | `text` |  |  |  |
+| 5 | `vendor_id` | `text` | foreign_key → mart_suppliers(vendor_id) | not_null (warn) |  |
+| 6 | `vendor_number` | `text` |  |  |  |
+| 7 | `vendor_name` | `text` |  |  |  |
+| 8 | `supplier_part_number` | `text` |  |  |  |
+| 9 | `cost_price` | `numeric` |  | not_negative (warn) |  |
+| 10 | `cost_price_2` | `numeric` |  | not_negative (warn) |  |
+| 11 | `discount_percent` | `numeric` |  |  |  |
+| 12 | `price_break_quantity` | `numeric` |  |  |  |
+| 13 | `is_preferred` | `boolean` |  |  |  |
+| 14 | `min_purchase_qty` | `numeric` |  |  |  |
+| 15 | `purchase_unit` | `text` |  |  |  |
+| 16 | `effective_from` | `timestamp with time zone` |  |  |  |
+| 17 | `effective_to` | `timestamp with time zone` |  |  |  |
+
+### `public_marts.mart_products`
 
 Product catalogue with group name resolved. CDM entity: Product.
 
@@ -234,20 +272,19 @@ Product catalogue with group name resolved. CDM entity: Product.
 | 9 | `trade_price` | `numeric` |  | not_negative (warn) | ABM price level 2 (trade/stockist price ex-tax) |
 | 10 | `price_level_3` | `numeric` |  | not_negative (warn) |  |
 | 11 | `price_level_4` | `numeric` |  | not_negative (warn) |  |
-| 12 | `quantity_on_hand` | `numeric` |  |  |  |
-| 13 | `quantity_available` | `numeric` |  |  |  |
-| 14 | `barcode` | `text` |  |  |  |
-| 15 | `state_code` | `text` |  | accepted_values('', 'A', 'S', 'H', 'D') |  |
-| 16 | `gst_category` | `text` |  | not_null | Product-level GST category from ABM (e.g. '9% GST', 'Zero Rated Products') |
-| 17 | `created_on` | `timestamp with time zone` |  |  |  |
-| 18 | `price_list_count` | `bigint` |  |  | Number of customer-specific price list entries for this product |
-| 19 | `is_kit` | `boolean` |  |  | True if this product is a parent kit/BOM |
+| 12 | `barcode` | `text` |  |  |  |
+| 13 | `state_code` | `text` |  | accepted_values('', 'A', 'S', 'H', 'D') |  |
+| 14 | `gst_category` | `text` |  | not_null | Product-level GST category from ABM (e.g. '9% GST', 'Zero Rated Products') |
+| 15 | `sc_number` | `text` |  |  | Supplier catalogue number (ABM zsc_num) |
+| 16 | `created_on` | `timestamp with time zone` |  |  |  |
+| 17 | `price_list_count` | `bigint` |  |  | Number of customer-specific price list entries for this product |
+| 18 | `is_kit` | `boolean` |  |  | True if this product is a parent kit/BOM |
 
 > [!NOTE]
 > **Data quirks:**
 > - Includes system pseudo-products (e.g., `Discount`, `GST`) that have zero stock and anomalous `last_in_unit_cost` values. These are not real inventory items.
 
-### `public_marts.mart_purchase_order_lines` (7,806 rows)
+### `public_marts.mart_purchase_order_lines`
 
 Purchase order line items with supplier and product resolved. CDM entity: PurchaseOrderProduct. Header rows (line_number = 9999) are excluded. order_reference = coalesce(order_number, document_number).
 
@@ -286,7 +323,7 @@ Purchase order line items with supplier and product resolved. CDM entity: Purcha
 | 27 | `document_total_tax` | `numeric` |  |  |  |
 | 28 | `document_total_inc_tax` | `numeric` |  |  |  |
 
-### `public_marts.mart_sales_order_lines` (21,207 rows)
+### `public_marts.mart_sales_order_lines`
 
 Sales order line items with customer and product resolved. CDM entity: SalesOrderProduct. Header rows (line_number = 9999) are excluded. order_reference = coalesce(order_number, document_number).
 
@@ -332,7 +369,7 @@ Sales order line items with customer and product resolved. CDM entity: SalesOrde
 > - ABM models **discounts as negative line items** (`product_number = 'Discount'`). `price_per_unit`, `amount`, `tax`, and `total_amount` are intentionally negative on these rows. `not_negative` is intentionally **not** applied to financial columns.
 > - `document_date` is cast from `text` → `timestamp with time zone` in the mart SQL.
 
-### `public_marts.mart_sales_quote_lines` (1,638 rows)
+### `public_marts.mart_sales_quote_lines`
 
 Sales quote line items with customer and product resolved. CDM entity: QuoteProduct. Header rows (line_number = 9999) are excluded.
 
@@ -363,7 +400,7 @@ Sales quote line items with customer and product resolved. CDM entity: QuoteProd
 | 20 | `document_total_tax` | `numeric` |  |  |  |
 | 21 | `document_total_inc_tax` | `numeric` |  |  |  |
 
-### `public_marts.mart_suppliers` (54 rows)
+### `public_marts.mart_suppliers`
 
 Supplier/vendor master with product count enrichment. CDM entity: Vendor.
 

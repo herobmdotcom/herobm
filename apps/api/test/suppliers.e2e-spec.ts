@@ -66,7 +66,9 @@ describe('Suppliers (e2e)', () => {
 
     expect(res.body.data).toBeDefined();
     expect(res.body.data.length).toBeGreaterThanOrEqual(1);
-    const found = res.body.data.find((s: any) => s.vendorNumber.startsWith('E2E-V-'));
+    const found = res.body.data.find((s: any) =>
+      s.vendorNumber.startsWith('E2E-V-'),
+    );
     expect(found).toBeDefined();
     expect(found.source).toBe('app');
   });

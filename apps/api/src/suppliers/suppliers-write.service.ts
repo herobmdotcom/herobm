@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -191,5 +191,110 @@ export class SuppliersWriteService {
 
     this.logger.log(`Supplier updated: ${id} by ${actor}`);
     return result;
+  }
+
+  /**
+   * Archive a supplier.
+   */
+  async archive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(
+        `Supplier '${id}' is a legacy ABM supplier and cannot be archived.`,
+      );
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(
+        `Supplier '${id}' not found in application data`,
+      );
+    }
+
+    if (existing[0].stateCode === 'archived') {
+      throw new BadRequestException(`Supplier '${id}' is already archived`);
+    }
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreSuppliers)
+        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        .where(eq(coreSuppliers.vendorId, id))
+        .returning();
+
+      await tx.insert(supplierEvents).values({
+        vendorId: id,
+        eventType: 'archived',
+        payload: {
+          from: existing[0].stateCode,
+          to: 'archived',
+        },
+        actor,
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Unarchive a supplier.
+   */
+  async unarchive(id: string, actor: string) {
+    if (!isUuid(id)) {
+      throw new BadRequestException(
+        `Supplier '${id}' is a legacy ABM supplier.`,
+      );
+    }
+
+    const existing = await this.db
+      .select()
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, id))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(`Supplier '${id}' not found`);
+    }
+
+    if (existing[0].stateCode !== 'archived') {
+      throw new BadRequestException(`Supplier '${id}' is not archived`);
+    }
+
+    const lastEvent = await this.db
+      .select()
+      .from(supplierEvents)
+      .where(
+        sql`${supplierEvents.vendorId} = ${id} AND ${supplierEvents.eventType} = 'archived'`,
+      )
+      .orderBy(sql`${supplierEvents.createdOn} DESC`)
+      .limit(1);
+
+    const previousState =
+      ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
+      'active';
+
+    return await this.db.transaction(async (tx: any) => {
+      const [updated] = await tx
+        .update(coreSuppliers)
+        .set({ stateCode: previousState, modifiedOn: new Date() })
+        .where(eq(coreSuppliers.vendorId, id))
+        .returning();
+
+      await tx.insert(supplierEvents).values({
+        vendorId: id,
+        eventType: 'unarchived',
+        payload: {
+          from: 'archived',
+          to: previousState,
+        },
+        actor,
+      });
+
+      return updated;
+    });
   }
 }

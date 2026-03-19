@@ -8,6 +8,7 @@ import ProductSearchInput from '@/components/purchase-orders/ProductSearchInput'
 import type { Product } from '@/components/purchase-orders/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
+import { useTranslations } from 'next-intl';
 
 interface Supplier {
   vendorId: string;
@@ -54,6 +55,7 @@ function generateOrderNumber(): string {
 }
 
 export default function NewPurchaseOrderPage() {
+  const t = useTranslations();
   const router = useRouter();
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
 
@@ -128,11 +130,11 @@ export default function NewPurchaseOrderPage() {
 
   const handleSubmit = async () => {
     if (!vendorId) {
-      setError('Please select a supplier');
+      setError(t('common.errors.pleaseSelectSupplier'));
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
-      setError('Please add at least one line item with a product');
+      setError(t('common.errors.pleaseAddLineItem'));
       return;
     }
 
@@ -159,7 +161,7 @@ export default function NewPurchaseOrderPage() {
       });
       router.push(`/purchase-orders/${order.purchaseOrderId}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create purchase order');
+      setError(err instanceof Error ? err.message : t('common.errors.failedToCreatePO'));
     } finally {
       setSubmitting(false);
     }
@@ -171,9 +173,9 @@ export default function NewPurchaseOrderPage() {
     <Shell>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">New Purchase Order</h1>
+          <h1 className="text-2xl font-bold">{t('purchaseOrders.buttons.createPO')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Create a purchase order
+            {t('purchaseOrders.subtitle')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -181,15 +183,14 @@ export default function NewPurchaseOrderPage() {
             className="btn btn-secondary"
             onClick={() => router.push('/purchase-orders')}
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
-            id="btn-submit-order"
             className="btn btn-primary"
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? 'Creating…' : '✅ Create Order'}
+            {submitting ? t('common.saving') : t('purchaseOrders.buttons.createPO')}
           </button>
         </div>
       </div>
@@ -211,7 +212,7 @@ export default function NewPurchaseOrderPage() {
         {/* Order header */}
         <div className="card mb-6">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Order Details
+            {t('purchaseOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {/* Supplier selector */}
@@ -220,7 +221,7 @@ export default function NewPurchaseOrderPage() {
                 className="block text-xs font-medium mb-1.5"
                 style={{ color: 'var(--text-muted)' }}
               >
-                Supplier *
+                {t('purchaseOrders.labels.supplier')} *
                 {vendorId && (
                   <span
                     style={{
@@ -242,7 +243,7 @@ export default function NewPurchaseOrderPage() {
                 id="order-supplier"
                 className="input"
                 autoComplete="off"
-                placeholder="Search supplier…"
+                placeholder={t('purchaseOrders.placeholders.searchOrders')}
                 value={supplierSearch}
                 onChange={(e) => {
                   setSupplierSearch(e.target.value);
@@ -278,21 +279,21 @@ export default function NewPurchaseOrderPage() {
                   ))}
                   {filteredSuppliers.length === 0 && (
                     <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      No matching suppliers
+                      {t('common.noMatchingResults')}
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            <div>
+             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Invoice #
+                {t('purchaseOrders.labels.invoiceNumber')}
               </label>
               <input
                 id="order-invoice"
                 className="input"
-                placeholder="Supplier invoice reference"
+                placeholder={t('purchaseOrders.placeholders.invoiceNumber')}
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
               />
@@ -300,12 +301,12 @@ export default function NewPurchaseOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Order Name
+                {t('purchaseOrders.labels.orderName')}
               </label>
               <input
                 id="order-name"
                 className="input"
-                placeholder="Descriptive title (optional)"
+                placeholder={t('purchaseOrders.placeholders.orderName')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -313,7 +314,7 @@ export default function NewPurchaseOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Currency
+                {t('common.columns.currency')}
               </label>
               <input
                 id="order-currency"
@@ -326,12 +327,12 @@ export default function NewPurchaseOrderPage() {
 
             <div className="col-span-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Notes
+                {t('purchaseOrders.labels.notes')}
               </label>
               <input
                 id="order-notes"
                 className="input"
-                placeholder="Internal notes"
+                placeholder={t('purchaseOrders.placeholders.notes')}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
               />
@@ -343,16 +344,16 @@ export default function NewPurchaseOrderPage() {
         <div className="card mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Line Items
+              {t('purchaseOrders.lineItems')}
             </h3>
             <div className="flex items-center gap-3">
               <ProductSearchInput
                 onSelect={addLineFromProduct}
-                placeholder="Add product… (search)"
+                placeholder={t('purchaseOrders.placeholders.searchProduct')}
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                ➕ Blank Line
+                + {t('purchaseOrders.lineItems').replace('Line Items', 'Blank Line')}
               </button>
             </div>
           </div>
@@ -360,12 +361,12 @@ export default function NewPurchaseOrderPage() {
           <table className="table-lines">
             <thead>
               <tr>
-                <th style={{ width: 40 }}>#</th>
-                <th>Product</th>
-                <th>Description</th>
-                <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Unit Price</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
+                <th style={{ width: 40 }}>{t('purchaseOrders.columns.lineNumber')}</th>
+                <th>{t('purchaseOrders.columns.product')}</th>
+                <th>{t('purchaseOrders.columns.description')}</th>
+                <th style={{ width: 90, textAlign: 'right' }}>{t('purchaseOrders.columns.qty')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.unitPrice')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
             </thead>
@@ -447,7 +448,7 @@ export default function NewPurchaseOrderPage() {
                     colSpan={7}
                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                   >
-                    No line items — use the search above to add products
+                    {t('purchaseOrders.noLineItems')}
                   </td>
                 </tr>
               )}

@@ -10,19 +10,23 @@ clients:
     tenant_id: modbm
 
 scrape_configs:
-  # Container logs via Docker socket discovery (Windows / Docker Desktop).
-  # Required because Docker Desktop does not expose container log files
-  # to the host filesystem. See ADV-023 for risk analysis.
-  - job_name: docker
+  # Container logs via Podman k8s-file log driver.
+  # Mounted from the podman_logs named volume (overlay-containers).
+  # Each container writes CRI-format logs to: <id>/userdata/ctr.log
+  - job_name: container_logs
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: containers
+          __path__: /var/log/containers/*/userdata/ctr.log
     pipeline_stages:
-      - docker: {}
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 5s
-    relabel_configs:
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/(.*)'
-        target_label: 'container'
+      - regex:
+          expression: '^(?P<time>[^ ]+) (?P<stream>\w+) \w (?P<log>.*)$'
+      - output:
+          source: log
+      - labels:
+          stream:
 
   # ELT pipeline logs
   - job_name: elt_pipelines
