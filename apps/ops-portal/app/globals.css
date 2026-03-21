@@ -1,6 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 @import "tailwindcss";
-@source "../../../packages/portal-ui/src";
-@import "@modbm/portal-ui/src/theme.css";
+@import "../theme.css";
 
 /* Status badges */
 .badge {
@@ -143,4 +144,161 @@
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
   padding-right: 2rem; /* space between content and scrollbar */
+}
+
+
+/* STITCH UI GLOBAL THEME */
+
+:root {
+
+  /* Soft Tech Colors */
+  --bg-primary: #F7F9FB;
+  --bg-secondary: #F2F4F6;
+  --bg-card: #F2F4F6; /* Search inputs will pick this up to match mock */
+  --text-primary: #191C1E;
+  --text-secondary: #44474C;
+  --text-muted: #8192A7;
+  --border: rgba(196, 198, 205, 0.4);
+  --accent: #006b5c; 
+  --accent-glow: #FFFFFF;
+  --brand-navy: #041627;
+
+  /* Fill the <main> container, absorbing its 2rem padding without breaking out to sidebar */
+        background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+      flex: 1;
+    }
+
+/* Active Sidebar Item Shadow Match */
+aside nav a[style*="var(--accent-glow)"] {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+h2 {
+  font-family: 'Manrope', sans-serif;
+}
+
+.btn-primary, .btn-secondary {
+  border: none !important;
+}
+
+.btn-secondary {
+  /* "Create Account" acts as secondary/primary depending on context, making it pop */
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px 0 rgba(0, 107, 92, 0.39);
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  padding: 10px 24px;
+}
+
+.btn-secondary:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+/* DataGrid toolbar inputs and buttons */
+input[type="text"] {
+  background-color: var(--bg-card) !important;
+  border: none !important;
+  border-radius: 9999px !important;
+  padding: 8px 16px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 13px !important;
+}
+
+input[type="text"]:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* DataGrid overrides for the POC */
+.ag-theme-alpine-dark {
+  --ag-background-color: transparent !important;
+  --ag-header-background-color: var(--brand-navy) !important;
+  --ag-header-foreground-color: #ffffff !important;
+  --ag-odd-row-background-color: transparent !important;
+  --ag-even-row-background-color: #f7f9fb !important;
+  --ag-border-color: transparent !important;
+  --ag-row-border-color: rgba(196, 198, 205, 0.2) !important;
+  --ag-foreground-color: var(--brand-navy) !important;
+  --ag-row-hover-color: #f8fafc !important; /* Lighter hover color */
+  --ag-font-family: 'Inter', sans-serif !important;
+  --ag-font-size: 13px !important;
+  --ag-header-cell-hover-background-color: transparent !important;
+  --ag-row-height: 48px !important;
+  --ag-header-height: 48px !important;
+  --ag-border-radius: 0 !important;
+  --ag-wrapper-border-radius: 0 !important;
+  
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  overflow: hidden;
+  flex: 1; /* Take remaining space */
+}
+
+/* Explicit fallback for grid wrappers */
+.ag-root-wrapper,
+.ag-root-wrapper-body {
+  border-radius: 0 !important;
+}
+
+/* Force header text color */
+.ag-theme-alpine-dark .ag-header-cell,
+.ag-theme-alpine-dark .ag-header-cell-text {
+  color: #ffffff !important;
+  font-family: 'Manrope', sans-serif !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+}
+
+.ag-theme-alpine-dark .ag-header {
+  border-bottom: none !important;
+  background-color: var(--brand-navy) !important;
+  border-radius: 0 !important;
+}
+
+/* Header row border radius mimicking the mock */
+.ag-theme-alpine-dark .ag-header-row {
+  border-radius: 0 !important;
+  overflow: hidden;
+}
+
+.ag-theme-alpine-dark .ag-row {
+  border-bottom: 1px solid rgba(196, 198, 205, 0.2) !important;
+  transition: background-color 0.15s ease;
+}
+
+.ag-theme-alpine-dark .ag-row:hover {
+  background-color: var(--bg-secondary) !important;
+  cursor: pointer;
+}
+
+.ag-theme-alpine-dark .ag-cell {
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+/* Hide AG grid scrollbars explicitly if required or style them */
+.ag-theme-alpine-dark ::-webkit-scrollbar-thumb {
+  background: rgba(4, 22, 39, 0.1);
+}
+
+/* Override state badges to match Mock */
+.badge-active {
+  background: #68fadd !important;
+  color: #005145 !important;
+}
+.badge-inactive {
+  background: #e6e8ea !important;
+  color: #44474c !important;
 }

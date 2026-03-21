@@ -1,4 +1,21 @@
 services:
+  ops-portal:
+    image: localhost/modbm_ops-portal:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.portal
+    container_name: ops-portal
+    restart: unless-stopped
+    environment:
+      API_URL: http://custom-api:3001
+    ports:
+      - "127.0.0.1:4300:3000"
+    depends_on:
+      custom-api:
+        condition: service_started
+    networks:
+      - app-net
+
   postgres-custom:
     image: postgres:16-alpine
     container_name: postgres-custom

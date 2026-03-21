@@ -26,6 +26,10 @@ export class CreatePurchaseOrderLineDto {
   pricePerUnit!: string;
 
   @IsOptional()
+  @IsNumberString()
+  discountPercentage?: string;
+
+  @IsOptional()
   @IsString()
   unitOfMeasure?: string;
 }
@@ -38,6 +42,10 @@ export class UpdatePurchaseOrderLineDto {
   @IsOptional()
   @IsNumberString()
   pricePerUnit?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  discountPercentage?: string;
 
   @IsOptional()
   @IsString()
@@ -85,9 +93,21 @@ export class UpdatePurchaseOrderDto {
 
   @IsOptional()
   @IsString()
+  vendorId?: string;
+
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
 
   @IsOptional()
   @IsString()
   invoiceNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  stateCode?: string;
 }

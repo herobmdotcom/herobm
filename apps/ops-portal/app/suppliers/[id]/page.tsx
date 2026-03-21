@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -8,10 +9,11 @@ import { useTranslations } from 'next-intl';
 import {
   apiFetch,
   apiMutate,
-  EntityHeader,
-  ActivityTimeline,
   reportError,
 } from '@/lib/api';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import StateBadge, { StateName } from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 interface Supplier {
   vendorId: string;
@@ -181,9 +183,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{supplier.name}</h1>
-              <span className={`badge badge-${supplier.stateCode}`}>
-                {t(`common.states.${supplier.stateCode}`)}
-              </span>
+              <StateBadge state={supplier.stateCode as ValidState} />
               {saving && (
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {t('common.saving')}
@@ -240,7 +240,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       )}
 
       <div className="scroll-area" style={{ flex: 1 }}>
-        <div className="space-y-6 mb-8">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-8">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
             {/* Basic Info Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
@@ -273,7 +276,25 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
               </div>
             </div>
+            {/* Notes Card */}
+            <div className="card">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('common.notesCardHeading')}
+              </h3>
+              <textarea
+                className="input w-full"
+                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                onBlur={() => saveField('notes', editNotes, supplier.notes)}
+                placeholder={t('common.notesCardPlaceholder')}
+                disabled={!isEditable || saving}
+              />
+            </div>
+          </div>
 
+          {/* RIGHT COLUMN */}
+          <div className="space-y-6">
             {/* Contact & Location Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
@@ -347,74 +368,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
               </div>
             </div>
-
-            {/* Internal Notes Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {t('products.internalNotes')}
-              </h3>
-              <input
-                type="text"
-                className="input"
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                onBlur={() => saveField('notes', editNotes, supplier.notes)}
-                placeholder={t('common.placeholders.notes')}
-                disabled={!isEditable || saving}
-              />
-            </div>
-
-          {/* Record Details Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {t('suppliers.recordDetails')}
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Vendor ID
-                </label>
-                <input className="input" disabled value={supplier.vendorId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.source')}
-                </label>
-                <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
-              </div>
-              {supplier.createdOn && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created
-                  </label>
-                  <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
-                </div>
-              )}
-              {supplier.createdBy && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created By
-                  </label>
-                  <input className="input" disabled value={supplier.createdBy} />
-                </div>
-              )}
-            </div>
-            {supplier.modifiedOn && (
-              <div className="mt-4" style={{ maxWidth: '50%' }}>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Last Modified
-                </label>
-                <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
-              </div>
-            )}
-            {isLegacy && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                {t('common.legacyRecordImported')}
-              </p>
-            )}
-          </div>
-
-          {/* Financials Card */}
+            {/* Financials Card */}
           <div className="card">
             <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
               {t('suppliers.financials')}
@@ -485,7 +439,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     />
                   </div>
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {t(`common.states.${supplier.stateCode}`)}
+                    <StateName state={supplier.stateCode as ValidState} />
                   </span>
                 </div>
               </div>
@@ -494,8 +448,57 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
           {/* Activity Timeline */}
           <ActivityTimeline events={supplier.events || []} />
-
-        </div>
+            {/* Record Details Card */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {t('suppliers.recordDetails')}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Vendor ID
+                </label>
+                <input className="input" disabled value={supplier.vendorId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.source')}
+                </label>
+                <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
+              </div>
+              {supplier.createdOn && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created
+                  </label>
+                  <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
+                </div>
+              )}
+              {supplier.createdBy && (
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created By
+                  </label>
+                  <input className="input" disabled value={supplier.createdBy} />
+                </div>
+              )}
+            </div>
+            {supplier.modifiedOn && (
+              <div className="mt-4" style={{ maxWidth: '50%' }}>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Last Modified
+                </label>
+                <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
+              </div>
+            )}
+            {isLegacy && (
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                {t('common.legacyRecordImported')}
+              </p>
+            )}
+          </div>
+          </div>
+</div>
       </div>
     </Shell>
   );

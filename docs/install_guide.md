@@ -51,6 +51,7 @@ This checks for and installs:
 - **Typst** — report generation engine
 - **podman-compose** — orchestrates the containers (installed via `pip`)
 - **Make** — task runner (may need manual install, the script will tell you)
+- **Auto-Start Shortcut** — creates a Windows Startup shortcut to automatically start the Podman machine and run `make up` every time you log into Windows.
 
 ### Permissions
 
@@ -109,7 +110,7 @@ If you don't have the ABM details yet, press Enter to skip — you can fill them
 make up
 ```
 
-This starts all 7 core services. The first run will download container images (roughly 1 GB), which takes a few minutes on a typical connection. Subsequent starts are fast.
+This starts all 8 core services (including the ops-portal). The first run will download container images (roughly 1.5 GB), which takes a few minutes on a typical connection. Subsequent starts are fast.
 
 ### Optional: ERPNext Financial Ledger Integration
 
@@ -176,6 +177,9 @@ Other portal accounts: `sales`, `warehouse`, `procurement` — each with their o
 
 ## Daily Usage
 
+> [!NOTE]
+> **Auto-Start:** The setup script automatically configures Windows to boot the Podman machine and bring up all ModBM containers (`make up`) in the background whenever you log in. You shouldn't normally need to run `make up` manually unless you've explicitly stopped them.
+
 | Action | Command |
 |---|---|
 | Start the platform | `make up` |
@@ -184,7 +188,8 @@ Other portal accounts: `sales`, `warehouse`, `procurement` — each with their o
 | Check container status | `make ps` |
 | Refresh data from ABM | `make elt` |
 | Run API in dev mode | `make dev-api` |
-| Run portal in dev mode | `make dev-portal` |
+| Rebuild portal after changes | `make rebuild-portal` |
+| Rebuild API after changes | `make rebuild-api` |
 
 ---
 

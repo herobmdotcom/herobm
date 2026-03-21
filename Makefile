@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api test-api test-api-cov test-api-e2e dev-portal docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal
+.PHONY: up down restart logs clean status ps nuke test-infra test-structural check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -20,8 +20,20 @@ DBT_DIR = pipelines/abm_transform
 
 # --- Container Stack (Podman) ---
 
-up:
+# Ensure the podman_logs volume exists before starting containers.
+# Promtail needs this volume to scrape container logs on Windows.
+# The volume maps Podman's overlay-containers directory into the container.
+check-logs-volume:
+ifeq ($(OS),Windows_NT)
+	@podman volume inspect podman_logs >nul 2>&1 || ( \
+		echo [pre-flight] Creating podman_logs volume... && \
+		podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs \
+	)
+endif
+
+up: check-logs-volume
 	$(COMPOSE_CMD) up -d
+
 
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
@@ -83,6 +95,7 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 
 # --- ELT Pipeline ---
 
@@ -132,6 +145,13 @@ rebuild-api:
 	$(COMPOSE_CMD) up -d --no-build --no-deps custom-api
 	$(COMPOSE_CMD) ps
 
+rebuild-portal:
+	podman build -t localhost/modbm_ops-portal:latest -f Dockerfile.portal .
+	-podman stop ops-portal
+	-podman rm ops-portal
+	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
+	$(COMPOSE_CMD) ps
+
 test-api:
 	cd apps/api && npm test
 
@@ -141,10 +161,16 @@ test-api-cov:
 test-api-e2e:
 	cd apps/api && npm run test:e2e
 
-# --- Portal (unified) ---
+# --- Portal (unified, containerised) ---
 
+# Debug build: runs next dev inside a container for unminified errors.
+# Use when the production portal crashes with cryptic minified errors.
 dev-portal:
-	cd apps/ops-portal && npm run dev
+	podman build -t localhost/modbm_ops-portal:dev -f Dockerfile.portal.dev .
+	-podman stop ops-portal
+	-podman rm ops-portal
+	podman run -d --name ops-portal --network modbm_default -p 127.0.0.1:4300:3000 --env-file .env localhost/modbm_ops-portal:dev
+	@echo "Portal running in DEV mode at http://localhost:4300 (unminified errors)"
 
 # --- Migrations (modbm_core) ---
 

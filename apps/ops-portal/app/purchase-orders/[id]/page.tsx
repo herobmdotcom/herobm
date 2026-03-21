@@ -1,12 +1,14 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/purchase-orders/OrderTotalsCard';
-import ProductSearchInput from '@/components/purchase-orders/ProductSearchInput';
-import type { Product } from '@/components/purchase-orders/ProductSearchInput';
-import { apiFetch, apiMutate, reportError, ActivityTimeline } from '@/lib/api';
+import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
+import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import type { Product } from '@/components/shared/ProductSearchInput';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 
@@ -57,6 +59,7 @@ interface OrderDetail {
   orderNumber: string;
   name: string | null;
   customerId: string | null;
+  vendorId: string | null;
   customerOrderNumber: string | null;
   stateCode: string;
   currencyCode: string;
@@ -113,6 +116,8 @@ import {
   isBackTransition as sharedIsBackTransition,
   cap,
 } from '@modbm/shared';
+import StateBadge, { StateName } from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 function isBackTransition(
   from: string, to: string,
@@ -121,13 +126,7 @@ function isBackTransition(
   return sharedIsBackTransition(lifecycle, from, to);
 }
 
-function StateBadge({ state }: { state: string }) {
-  const t = useTranslations('common.states');
-  return <span className={`badge badge-${state}`}>{t(state)}</span>;
-}
-
-
-function ReturnStateBadge({ state }: { state: string }) {
+function ReturnStateBadge({ state }: { state: ValidState }) {
   const t = useTranslations('common.states');
   return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
 }
@@ -142,6 +141,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
   const tToast = useTranslations('toast');
+  const tConfirm = useTranslations('confirm');
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -301,7 +301,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       const newOrder = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
         orderNumber: `PO-${today}-${rand}`,
         name: order.name ? `Copy of ${order.name}` : undefined,
-        vendorId: (order as any).vendorId || undefined,
+        vendorId: order.vendorId || undefined,
         currencyCode: order.currencyCode || 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
@@ -334,7 +334,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
 
   const removeLine = async (lineId: string) => {
-    if (!confirm(tCommon('confirm.removeLine'))) return;
+    if (!confirm(tConfirm('removeLine'))) return;
     setSaving(true);
     setError('');
     try {
@@ -414,7 +414,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
-              <StateBadge state={order.stateCode} />
+              <StateBadge state={order.stateCode as ValidState} />
               {saving && (
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {tCommon('saving')}
@@ -532,7 +532,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     )}
                   </label>
                   <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {(order as any).vendorId || '—'}
+                    {order.vendorId || '—'}
                   </p>
                 </div>
                 <div>
@@ -569,21 +569,31 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
                   </p>
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tPurchase('labels.notes')}
-                  </label>
-                  <input
-                    className="input"
-                    value={editNotes}
-                    onChange={(e) => setEditNotes(e.target.value)}
-                    onBlur={saveHeader}
-                    disabled={!isHeaderEditable}
-                    placeholder={tPurchase('placeholders.notes')}
-                  />
-                </div>
               </div>
           </div>
+        </div>
+
+        {/* Notes Card */}
+        <div className="card mb-6">
+          <h3
+            className="text-sm font-semibold mb-4"
+            style={{
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {tCommon('notesCardHeading')}
+          </h3>
+          <textarea
+            className="input w-full"
+            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+            value={editNotes}
+            onChange={(e) => setEditNotes(e.target.value)}
+            onBlur={saveHeader}
+            disabled={!isHeaderEditable}
+            placeholder={tCommon('notesCardPlaceholder')}
+          />
         </div>
 
         {/* Line items / Availability tabs */}
@@ -850,7 +860,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 letterSpacing: '0.05em',
               }}
             >
-              {tPurchase('returns')}
+              {tPurchase('returns' as any)}
             </h3>
 
             {/* Create return form */}
@@ -917,7 +927,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                 <div style={{ marginBottom: 12 }}>
                   <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                    {tPurchase('labels.notes')}
+                    {tCommon('notesCardHeading')}
                   </label>
                   <input
                     className="input"
@@ -1067,7 +1077,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <span style={{ fontWeight: 700, fontSize: 13 }}>{ret.returnNumber}</span>
-                          <ReturnStateBadge state={ret.stateCode} />
+                          <ReturnStateBadge state={ret.stateCode as ValidState} />
                           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                             {new Date(ret.createdOn).toLocaleString()}
                             {ret.createdBy && ` by ${ret.createdBy}`}
@@ -1088,7 +1098,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 }
                               }}
                             >
-                              → {tCommon(`states.${s}`)}
+                              → <StateName state={s as ValidState} />
                             </button>
                           ))}
                         </div>
@@ -1223,7 +1233,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     <button
                                       className="btn btn-danger btn-sm"
                                       onClick={async () => {
-                                        if (!confirm(tCommon('confirm.removeReturnLine'))) return;
+                                        if (!confirm(tConfirm('removeReturnLine'))) return;
                                         try {
                                           await apiMutate(
                                             `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
@@ -1324,7 +1334,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
           {latestAutoTransition && (
             tToast('orderMovedToReason', {
-              state: tCommon(`states.${latestAutoTransition.to}`),
+              state: tCommon(`states.${latestAutoTransition.to}` as any),
               reason: latestAutoTransition.reason.toLowerCase()
             })
           )}

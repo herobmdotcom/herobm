@@ -111,6 +111,27 @@ if ($podmanCmd) {
     podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>$null | Out-Null
 }
 
+# --- Setup Auto-Start ---
+Write-Host "`n--- Startup Automation ---" -ForegroundColor Cyan
+try {
+    $startupFolder = [Environment]::GetFolderPath('Startup')
+    $shortcutPath = Join-Path $startupFolder "Antigravity Podman Autostart.lnk"
+    $wshShell = New-Object -ComObject WScript.Shell
+    $shortcut = $wshShell.CreateShortcut($shortcutPath)
+    
+    # Target powershell to run hidden, start the machine, and run make up
+    $shortcut.TargetPath = "powershell.exe"
+    $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
+    $logFile = Join-Path $projectDir "logs\autostart.log"
+    $shortcut.Arguments = "-WindowStyle Hidden -Command `"Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; make up 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append`""
+    $shortcut.WorkingDirectory = $projectDir
+    $shortcut.Description = "Starts Podman machine and ModBM containers on boot (logs to logs/autostart.log)"
+    $shortcut.Save()
+    Write-Host "  [OK] Created Windows Startup shortcut for Podman and containers" -ForegroundColor Green
+} catch {
+    Write-Host "  [WARNING] Could not create startup shortcut: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 # --- Summary ---
 Write-Host "`n=== Summary ===" -ForegroundColor Cyan
 if ($installed.Count -gt 0) {

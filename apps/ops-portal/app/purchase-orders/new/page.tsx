@@ -1,11 +1,12 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/purchase-orders/OrderTotalsCard';
-import ProductSearchInput from '@/components/purchase-orders/ProductSearchInput';
-import type { Product } from '@/components/purchase-orders/ProductSearchInput';
+import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
+import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
@@ -325,19 +326,22 @@ export default function NewPurchaseOrderPage() {
               />
             </div>
 
-            <div className="col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('purchaseOrders.labels.notes')}
-              </label>
-              <input
-                id="order-notes"
-                className="input"
-                placeholder={t('purchaseOrders.placeholders.notes')}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
             </div>
           </div>
+
+        {/* Notes Card */}
+        <div className="card mb-6">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('common.notesCardHeading')}
+          </h3>
+          <textarea
+            id="order-notes"
+            className="input w-full"
+            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+            placeholder={t('common.notesCardPlaceholder')}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
 
         {/* Line items */}

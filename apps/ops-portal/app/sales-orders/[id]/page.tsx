@@ -1,17 +1,19 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, useRef, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/sales-orders/OrderTotalsCard';
-import ProductSearchInput from '@/components/sales-orders/ProductSearchInput';
-import type { Product } from '@/components/sales-orders/ProductSearchInput';
-import { apiFetch, apiMutate, reportError, ActivityTimeline } from '@/lib/api';
+import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
+import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import type { Product } from '@/components/shared/ProductSearchInput';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
-import PickingSection from '@/components/sales-orders/PickingSection';
+import PickingSection from '@/components/shared/PickingSection';
 
 interface OrderLine {
     salesOrderLineId: string;
@@ -117,6 +119,8 @@ import {
     isBackTransition as sharedIsBackTransition,
     cap,
 } from '@modbm/shared';
+import StateBadge, { StateName } from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 function isBackTransition(
     from: string, to: string,
@@ -125,12 +129,6 @@ function isBackTransition(
     return sharedIsBackTransition(lifecycle, from, to);
 }
 
-
-
-function StateBadge({ state }: { state: string }) {
-    const t = useTranslations('common.states');
-    return <span className={`badge badge-${state}`}>{t(state)}</span>;
-}
 
 function EventIcon({ type }: { type: string }) {
     const t = useTranslations('common.eventTypes');
@@ -148,14 +146,14 @@ function EventIcon({ type }: { type: string }) {
         unarchived: '📦',
         shipment_created: '🚚',
         shipment_updated: '🚚',
-        shipment_dispatched: '🚚',
-        shipment_status_changed: '🔄',
-        shipment_line_added: '🚚',
-        shipment_line_updated: '🚚',
-        shipment_line_removed: '🚚',
-        picking_line_updated: '🧺',
-        picking_line_picked_all: '🧺',
-        picking_order_picked_all: '🧺',
+        shipment_status_changed: '🚚',
+        shipment_processed: '📫',
+        shipment_line_added: '📦',
+        shipment_line_updated: '📦',
+        shipment_line_removed: '🗑️',
+        picking_line_updated: '📦',
+        picking_line_picked_all: '✅',
+        picking_order_picked_all: '✅',
         return_created: '↩️',
         return_updated: '✏️',
         return_status_changed: '🔄',
@@ -164,10 +162,10 @@ function EventIcon({ type }: { type: string }) {
         return_line_updated: '✏️',
         return_line_removed: '🗑️',
     };
-    return <span title={t(type)}>{icons[type] || '📌'}</span>;
+    return <span className="mr-2" style={{ fontSize: '1.2rem', lineHeight: 1 }} title={t(type as any)}>{icons[type] || '📌'}</span>;
 }
 
-function ReturnStateBadge({ state }: { state: string }) {
+function ReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
     return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
 }
@@ -180,6 +178,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const searchParams = useSearchParams();
     const source = searchParams.get('source') || 'app';
     const t = useTranslations();
+    const tCommon = useTranslations('common');
+    const tSales = useTranslations('salesOrders');
+    const tToast = useTranslations('toast');
+    const tConfirm = useTranslations('confirm');
 
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -232,10 +234,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
             if (autoTransitions && autoTransitions.length > 0) {
                 const tr = autoTransitions[0];
-                toast(t('toast.orderMovedToReason', { state: t(`common.states.${tr.to}`), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
+                toast(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as any), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
         } finally {
             if (showSpinner) setLoading(false);
         }
@@ -311,7 +313,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateOrder'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
         } finally {
             setSaving(false);
         }
@@ -321,22 +323,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const changeState = async (newState: string) => {
         try {
             await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState });
-            toast(t('toast.orderMovedTo', { state: t(`common.states.${newState}`) }), { icon: '🔄' });
+            toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToChangeState'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
         }
     };
 
     const archiveOrder = async () => {
-        if (!confirm(t('confirm.archiveOrder'))) return;
+        if (!confirm(tConfirm('archiveOrder'))) return;
         setSaving(true);
         try {
             await apiMutate(`/api/sales-orders/${id}/archive`, 'POST');
-            toast.success(t('toast.orderArchived'));
+            toast.success(tToast('orderArchived'));
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToArchive'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToArchive'));
         } finally {
             setSaving(false);
         }
@@ -346,10 +348,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         setSaving(true);
         try {
             await apiMutate(`/api/sales-orders/${id}/unarchive`, 'POST');
-            toast.success(t('toast.orderUnarchived'));
+            toast.success(tToast('orderUnarchived'));
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToUnarchive'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUnarchive'));
         } finally {
             setSaving(false);
         }
@@ -377,7 +379,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             router.push(`/sales-orders/${newOrder.salesOrderId}?source=app`);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToCopy'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {
             setCopying(false);
         }
@@ -390,21 +392,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateLine'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
         } finally {
             setSaving(false);
         }
     };
 
     const removeLine = async (lineId: string) => {
-        if (!confirm(t('confirm.removeLine'))) return;
+        if (!confirm(tConfirm('removeLine'))) return;
         setSaving(true);
         setError('');
         try {
             await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'DELETE');
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToRemoveLine'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
         } finally {
             setSaving(false);
         }
@@ -412,7 +414,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     const addLineFromProduct = async (p: Product) => {
         if (order?.lines.some((l) => l.productId === p.productId)) {
-            toast.error(t('toast.productAlreadyInOrder', { productNumber: p.productNumber }));
+            toast.error(tToast('productAlreadyInOrder', { productNumber: p.productNumber }));
             return;
         }
 
@@ -428,7 +430,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             });
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : t('common.errors.failedToAddLine'));
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
         } finally {
             setSaving(false);
         }
@@ -438,7 +440,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         return (
             <Shell>
                 <div className="flex items-center justify-center flex-1">
-                    <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
+                    <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
                 </div>
             </Shell>
         );
@@ -449,10 +451,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             <Shell>
                 <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-                        {error || t('salesOrders.orderNotFound')}
+                        {error || tSales('orderNotFound')}
                     </p>
                     <button className="btn btn-secondary" onClick={() => router.push('/sales-orders')}>
-                        {t('salesOrders.backToOrders')}
+                        {tSales('backToOrders')}
                     </button>
                 </div>
             </Shell>
@@ -484,15 +486,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
-                            <StateBadge state={order.stateCode} />
+                            <StateBadge state={order.stateCode as ValidState} />
                             {saving && (
                                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    {t('common.saving')}
+                                    {tCommon('saving')}
                                 </span>
                             )}
                         </div>
                         <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                            {order.name || t('salesOrders.untitledOrder')}
+                            {order.name || tSales('untitledOrder')}
                         </p>
                     </div>
                 </div>
@@ -508,11 +510,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     window.open(url, '_blank');
                                 } catch (err) {
                                     reportError(err, 'OrderDetailPage:generateQuote');
-                                    setError(err instanceof Error ? err.message : t('common.errors.failedToGenerateQuote'));
+                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
                                 }
                             }}
                         >
-                            {t('salesOrders.buttons.createQuote')}
+                            {tSales('buttons.createQuote')}
                         </button>
                     )}
                     {(order.stateCode === 'picking' || order.stateCode === 'shipped' || order.stateCode === 'invoiced') && (
@@ -527,11 +529,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 } catch (err) {
                                     const { reportError } = await import('@/lib/api');
                                     reportError(err, 'OrderDetailPage:generateInvoice');
-                                    setError(err instanceof Error ? err.message : t('common.errors.failedToGenerateInvoice'));
+                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
                                 }
                             }}
                         >
-                            {t('salesOrders.buttons.createInvoice')}
+                            {tSales('buttons.createInvoice')}
                         </button>
                     )}
                     <button
@@ -539,7 +541,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         onClick={copyOrder}
                         disabled={copying}
                     >
-                        {copying ? t('common.copying') : t('salesOrders.buttons.copyOrder')}
+                        {copying ? tCommon('copying') : tSales('buttons.copyOrder')}
                     </button>
                     {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && !showCreateReturn && (
                         <button
@@ -558,7 +560,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 );
                             }}
                         >
-                            {t('salesOrders.buttons.createReturn')}
+                            {tSales('buttons.createReturn')}
                         </button>
                     )}
                     {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && source === 'app' && (
@@ -568,7 +570,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             onClick={archiveOrder}
                             disabled={saving}
                         >
-                            {t('salesOrders.buttons.archive')}
+                            {tSales('buttons.archive')}
                         </button>
                     )}
                     {order.stateCode === 'archived' && source === 'app' && (
@@ -577,12 +579,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             onClick={unarchiveOrder}
                             disabled={saving}
                         >
-                            {t('salesOrders.buttons.unarchive')}
+                            {tSales('buttons.unarchive')}
                         </button>
                     )}
                     {headerDirty && isOrderDetailsEditable && (
                         <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
-                            {t('salesOrders.buttons.save')}
+                            {tSales('buttons.save')}
                         </button>
                     )}
                     {[...allowedTransitions]
@@ -601,7 +603,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         }`}
                                     onClick={() => changeState(state)}
                                 >
-                                    {state === 'cancelled' ? `✕ ${t(`common.states.${state}`)}` : back ? `← ${t(`common.states.${state}`)}` : `→ ${t(`common.states.${state}`)}`}
+                                    {state === 'cancelled' ? <>✕ <StateName state={state as ValidState} /></> : back ? <>← <StateName state={state as ValidState} /></> : <>→ <StateName state={state as ValidState} /></>}
                                 </button>
                             );
                         })}
@@ -618,7 +620,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     }}
                 >
                     {error}
-                    <button className="ml-3 text-xs underline" onClick={() => setError('')}>{t('common.dismiss')}</button>
+                    <button className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</button>
                 </div>
             )}
 
@@ -633,7 +635,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 >
                     <span style={{ fontSize: '1.2rem' }}>📦</span>
                     <div>
-                        <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+                        <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
                     </div>
                 </div>
             )}
@@ -650,12 +652,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            {t('salesOrders.orderDetails')}
+                            {tSales('orderDetails')}
                         </h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    {t('salesOrders.labels.customer')}
+                                    {tSales('labels.customer')}
                                     {order.currencyCode && (
                                         <span
                                             style={{
@@ -687,7 +689,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     letterSpacing: '0.04em',
                                                 }}
                                             >
-                                                {t('common.gst.exempt').toUpperCase()}
+                                                {tCommon('gst.exempt').toUpperCase()}
                                             </span>
                                         ) : null;
                                     })()}
@@ -704,7 +706,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 letterSpacing: '0.04em',
                                             }}
                                         >
-                                            {t('salesOrders.discountPercent', { disc: parseFloat(order.customerDiscount!) })}
+                                            {tSales('discountPercent', { disc: parseFloat(order.customerDiscount!) })}
                                         </span>
                                     )}
                                 </label>
@@ -714,7 +716,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    {t('salesOrders.labels.created')}
+                                    {tSales('labels.created')}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
                                     {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
@@ -722,7 +724,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    {t('salesOrders.labels.orderName')}
+                                    {tSales('labels.orderName')}
                                 </label>
                                 <input
                                     className="input"
@@ -730,12 +732,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     value={editName}
                                     onChange={(e) => setEditName(e.target.value)}
                                     onBlur={saveHeader}
-                                    placeholder={t('salesOrders.placeholders.orderName')}
+                                    placeholder={tSales('placeholders.orderName')}
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    {t('salesOrders.labels.customerPO')}
+                                    {tSales('labels.customerPO')}
                                 </label>
                                 <input
                                     className="input"
@@ -743,24 +745,34 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     value={editPO}
                                     onChange={(e) => setEditPO(e.target.value)}
                                     onBlur={saveHeader}
-                                    placeholder={t('salesOrders.placeholders.customerPO')}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    {t('salesOrders.labels.notes')}
-                                </label>
-                                <input
-                                    className="input"
-                                    disabled={!isOrderDetailsEditable}
-                                    value={editNotes}
-                                    onChange={(e) => setEditNotes(e.target.value)}
-                                    onBlur={saveHeader}
-                                    placeholder={t('salesOrders.placeholders.notes')}
+                                    placeholder={tSales('placeholders.customerPO')}
                                 />
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Notes Card */}
+                <div className="card mb-6">
+                    <h3
+                        className="text-sm font-semibold mb-4"
+                        style={{
+                            color: 'var(--text-muted)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                        }}
+                    >
+                        {tCommon('notesCardHeading')}
+                    </h3>
+                    <textarea
+                        className="input w-full"
+                        style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+                        disabled={!isOrderDetailsEditable}
+                        value={editNotes}
+                        onChange={(e) => setEditNotes(e.target.value)}
+                        onBlur={saveHeader}
+                        placeholder={tCommon('notesCardPlaceholder')}
+                    />
                 </div>
 
                 {/* Line items / Availability tabs */}
@@ -780,7 +792,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 }}
                                 onClick={() => setActiveTab('lines')}
                             >
-                                {t('salesOrders.lineItems')}
+                                {tSales('lineItems')}
                             </button>
                             <button
                                 className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
@@ -796,13 +808,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 }}
                                 onClick={() => setActiveTab('availability')}
                             >
-                                {t('salesOrders.availability')}
+                                {tSales('availability')}
                             </button>
                         </div>
                         {isOrderLinesEditable && activeTab === 'lines' && (
                             <ProductSearchInput
                                 onSelect={addLineFromProduct}
-                                placeholder={t('salesOrders.placeholders.searchProduct')}
+                                placeholder={tSales('placeholders.searchProduct')}
                                 style={{ width: 240 }}
                             />
                         )}
@@ -812,14 +824,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         <table className="table-lines">
                             <thead>
                                 <tr>
-                                    <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
-                                    <th>{t('salesOrders.columns.product')}</th>
-                                    <th>{t('salesOrders.columns.description')}</th>
-                                    <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qty')}</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.unitPrice')}</th>
-                                    <th style={{ width: 80, textAlign: 'right' }}>{t('salesOrders.columns.discountPct')}</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.gst')}</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
+                                    <th style={{ width: 40 }}>{tSales('columns.lineNumber')}</th>
+                                    <th>{tSales('columns.product')}</th>
+                                    <th>{tSales('columns.description')}</th>
+                                    <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.qty')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
+                                    <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.gst')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.amount')}</th>
                                     {isOrderLinesEditable && <th style={{ width: 50 }}></th>}
                                 </tr>
                             </thead>
@@ -928,7 +940,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                         const pct = (tax / amt) * 100;
                                                         return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                                                     }
-                                                    if (amt > 0 && tax === 0) return t('common.gst.exempt');
+                                                    if (amt > 0 && tax === 0) return tCommon('gst.exempt');
                                                     return '—';
                                                 })()}
                                             </td>
@@ -947,7 +959,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 <button
                                                     className="btn btn-danger btn-sm"
                                                     onClick={() => removeLine(line.salesOrderLineId)}
-                                                    title={t('salesOrders.buttons.removeLine')}
+                                                    title={tSales('buttons.removeLine')}
                                                 >
                                                     ✕
                                                 </button>
@@ -961,7 +973,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             colSpan={isOrderLinesEditable ? 9 : 8}
                                             style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                                         >
-                                            {t('salesOrders.noLineItems')}
+                                            {tSales('noLineItems')}
                                         </td>
                                     </tr>
                                 )}
@@ -970,21 +982,21 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         /* Availability tab */
                         inventoryLoading ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{t('salesOrders.loadingInventory')}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tSales('loadingInventory')}</p>
                         ) : (
                             <table className="table-lines">
                                 <thead>
                                     <tr>
-                                        <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
-                                        <th>{t('salesOrders.columns.product')}</th>
-                                        <th>{t('salesOrders.columns.description')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.ordered')}</th>
-                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.location')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.onHand')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.committed')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.reserved')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.available')}</th>
-                                        <th style={{ width: 70, textAlign: 'center' }}>{t('salesOrders.columns.status')}</th>
+                                        <th style={{ width: 40 }}>{tSales('columns.lineNumber')}</th>
+                                        <th>{tSales('columns.product')}</th>
+                                        <th>{tSales('columns.description')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.ordered')}</th>
+                                        <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.location')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.onHand')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.committed')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.reserved')}</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.available')}</th>
+                                        <th style={{ width: 70, textAlign: 'center' }}>{tSales('columns.status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1008,7 +1020,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     <td>{line.productDescription || '—'}</td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
                                                     <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                                        {t('salesOrders.noInventoryData')}
+                                                        {tSales('noInventoryData')}
                                                     </td>
                                                     <td style={{ textAlign: 'center' }}>
                                                         <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⚠</span>
@@ -1069,7 +1081,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     {order.lines.length === 0 && (
                                         <tr>
                                             <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                                                {t('salesOrders.noLineItemsShort')}
+                                                {tSales('noLineItemsShort')}
                                             </td>
                                         </tr>
                                     )}
@@ -1100,7 +1112,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 letterSpacing: '0.05em',
                             }}
                         >
-                            {t('salesOrders.returns')}
+                            {tSales('returns' as any)}
                         </h3>
 
                         {/* Create return form */}
@@ -1116,7 +1128,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             >
                                 <div className="flex items-center justify-between mb-3">
                                     <span className="text-sm font-semibold" style={{ color: '#c084fc' }}>
-                                        {t('salesOrders.newReturn')}
+                                        {tSales('newReturn')}
                                     </span>
                                     <div className="flex gap-2">
                                         <button
@@ -1127,7 +1139,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 setNewReturnNotes('');
                                             }}
                                         >
-                                            {t('common.cancel')}
+                                            {tCommon('cancel')}
                                         </button>
                                         <button
                                             className="btn btn-primary btn-sm"
@@ -1154,38 +1166,38 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     await loadReturns();
                                                     await loadOrder(undefined, false);
                                                 } catch (err) {
-                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToCreateReturn'));
+                                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToCreateReturn'));
                                                 } finally {
                                                     setSaving(false);
                                                 }
                                             }}
                                         >
-                                            {t('salesOrders.buttons.saveReturn')}
+                                            {tSales('buttons.saveReturn')}
                                         </button>
                                     </div>
                                 </div>
 
                                 <div style={{ marginBottom: 12 }}>
                                     <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                                        {t('salesOrders.labels.notes')}
+                                        {tCommon('notesCardHeading')}
                                     </label>
                                     <input
                                         className="input"
                                         value={newReturnNotes}
                                         onChange={(e) => setNewReturnNotes(e.target.value)}
-                                        placeholder={t('salesOrders.placeholders.notes')}
+                                        placeholder={tSales('placeholders.notes')}
                                     />
                                 </div>
 
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
-                                            <th>{t('salesOrders.columns.product')}</th>
-                                            <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.originalQty')}</th>
-                                            <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.returnQty')}</th>
-                                            <th style={{ width: 180 }}>{t('salesOrders.columns.reason')}</th>
-                                            <th style={{ width: 140, textAlign: 'right' }}>{t('salesOrders.columns.fee')}</th>
+                                            <th style={{ width: 40 }}>{tSales('columns.lineNumber')}</th>
+                                            <th>{tSales('columns.product')}</th>
+                                            <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.originalQty')}</th>
+                                            <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
+                                            <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
+                                            <th style={{ width: 140, textAlign: 'right' }}>{tSales('columns.fee')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1220,7 +1232,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 updated[idx] = { ...rl, quantityReturned: e.target.value };
                                                                 setNewReturnLines(updated);
                                                             }}
-                                                            placeholder={t('salesOrders.placeholders.zero')}
+                                                            placeholder={tSales('placeholders.zero')}
                                                         />
                                                     </td>
                                                     <td>
@@ -1233,7 +1245,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                 updated[idx] = { ...rl, reason: e.target.value };
                                                                 setNewReturnLines(updated);
                                                             }}
-                                                            placeholder={t('salesOrders.placeholders.reason')}
+                                                            placeholder={tSales('placeholders.reason')}
                                                         />
                                                     </td>
                                                     <td style={{ textAlign: 'right' }}>
@@ -1296,9 +1308,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                         {/* Existing returns list */}
                         {returnsLoading ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('salesOrders.loadingReturns')}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tSales('loadingReturns')}</p>
                         ) : returns.length === 0 && !showCreateReturn ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t('salesOrders.noReturns')}</p>
+                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tSales('noReturns')}</p>
                         ) : (
                             <div className="space-y-3">
                                 {returns.map((ret) => {
@@ -1317,10 +1329,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-3">
                                                     <span style={{ fontWeight: 700, fontSize: 13 }}>{ret.returnNumber}</span>
-                                                    <ReturnStateBadge state={ret.stateCode} />
+                                                    <ReturnStateBadge state={ret.stateCode as ValidState} />
                                                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                                         {new Date(ret.createdOn).toLocaleString()}
-                                                        {ret.createdBy && ` ${t('common.by')} ${ret.createdBy}`}
+                                                        {ret.createdBy && ` ${tCommon('by')} ${ret.createdBy}`}
                                                     </span>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -1334,11 +1346,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                     await loadReturns();
                                                                     await loadOrder(undefined, false);
                                                                 } catch (err) {
-                                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToChangeReturnState'));
+                                                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeReturnState'));
                                                                 }
                                                             }}
                                                         >
-                                                            → {t(`common.states.${s}`)}
+                                                                → <StateName state={s as ValidState} />
                                                         </button>
                                                     ))}
                                                 </div>
@@ -1353,11 +1365,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <table className="table-lines">
                                                 <thead>
                                                     <tr>
-                                                        <th>{t('salesOrders.columns.product')}</th>
-                                                        <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qtyReturned')}</th>
-                                                        <th style={{ width: 180 }}>{t('salesOrders.columns.reason')}</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.fee')}</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
+                                                        <th>{tSales('columns.product')}</th>
+                                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.qtyReturned')}</th>
+                                                        <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
+                                                        <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.fee')}</th>
+                                                        <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.amount')}</th>
                                                         {isRetEditable && <th style={{ width: 50 }}></th>}
                                                     </tr>
                                                 </thead>
@@ -1394,7 +1406,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
+                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
@@ -1420,11 +1432,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
+                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
-                                                                            placeholder={t('salesOrders.placeholders.reason')}
+                                                                            placeholder={tSales('placeholders.reason')}
                                                                         />
                                                                     ) : (
                                                                         <span style={{ fontSize: 12 }}>{rl.reason || '—'}</span>
@@ -1452,7 +1464,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                                         );
                                                                                         await loadReturns();
                                                                                     } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateReturnLine'));
+                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
                                                                                     }
                                                                                 }
                                                                             }}
@@ -1473,7 +1485,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                                         <button
                                                                             className="btn btn-danger btn-sm"
                                                                             onClick={async () => {
-                                                                                if (!confirm(t('confirm.removeReturnLine'))) return;
+                                                                                if (!confirm(tConfirm('removeReturnLine'))) return;
                                                                                 try {
                                                                                     await apiMutate(
                                                                                         `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,

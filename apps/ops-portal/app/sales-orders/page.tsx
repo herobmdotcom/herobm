@@ -8,6 +8,8 @@ import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 interface UnifiedOrder {
   id: string;
@@ -38,7 +40,7 @@ export default function OrdersPage() {
       width: 110,
       cellRenderer: (params: { value: string }) => {
         if (!params.value) return null;
-        return <span className={`badge badge-${params.value}`}>{tCommon(`states.${params.value}`)}</span>;
+        return <StateBadge state={params.value as ValidState} />;
       },
     },
     {
@@ -88,23 +90,52 @@ export default function OrdersPage() {
   }, [router]);
 
   return (
-    <Shell>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">{tSales('title')}</h2>
-        <Link href="/sales-orders/new" className="btn btn-secondary btn-sm">
-          {tSales('buttons.createOrder')}
-        </Link>
-      </div>
-      <DataGrid<UnifiedOrder>
-        endpoint="/api/sales-orders"
-        columns={columns}
-        gridKey="ops-orders"
-        searchPlaceholder={tSales('placeholders.searchOrders')}
-        exportFileName="orders"
-        fetchAll
-        showArchivedToggle
-        onRowClicked={handleRowClicked}
-      />
-    </Shell>
+    <div className="h-full flex flex-col relative" style={{ margin: "-2rem", padding: "2rem" }}>
+      <Shell>
+        <div className="relative h-full flex flex-col">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid<UnifiedOrder>
+              endpoint="/api/sales-orders"
+              columns={columns}
+              gridKey="ops-orders"
+              searchPlaceholder={tSales('placeholders.searchOrders')}
+              exportFileName="orders"
+              fetchAll
+              showArchivedToggle
+              onRowClicked={handleRowClicked}
+              renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                <div className="flex items-center justify-between px-6 py-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      {tSales('title')}
+                    </h2>
+                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Rows
+                      </span>
+                      <span className="text-[11px] font-bold text-[#006b5c]">
+                        {loading ? '...' : rowCount.toLocaleString()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex-1 ml-4 max-w-md">
+                      {searchInput}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    {optionsButton}
+                    <Link href="/sales-orders/new" className="px-5 py-2 text-sm font-semibold rounded-lg transition-all" style={{ background: '#006b5c', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(0, 107, 92, 0.39)' }}>
+                      {tSales('buttons.createOrder')}
+                    </Link>
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+      </Shell>
+    </div>
   );
 }

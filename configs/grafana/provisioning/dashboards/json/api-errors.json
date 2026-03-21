@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "API HTTP errors from custom-api container (Loki logs + Prometheus metrics)",
+  "description": "Client-side and server-side errors across the platform (Loki logs + Prometheus metrics)",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -10,7 +10,7 @@
   "links": [],
   "panels": [
     {
-      "title": "API Error Logs (Loki)",
+      "title": "Client-Side Errors (Frontend → Telemetry)",
       "type": "logs",
       "datasource": {
         "type": "loki",
@@ -18,11 +18,34 @@
       },
       "targets": [
         {
-          "expr": "{job=\"containers\"} |= \"unhandled_exception\" | json",
+          "expr": "{job=\"containers\"} |= \"\\\"event\\\":\\\"client_error\\\"\" | json",
           "refId": "A"
         }
       ],
-      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "options": {
+        "showTime": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true
+      }
+    },
+    {
+      "title": "Server-Side Errors (Unhandled Exceptions)",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "${DS_LOKI}"
+      },
+      "targets": [
+        {
+          "expr": "{job=\"containers\"} |= \"\\\"event\\\":\\\"unhandled_exception\\\"\" | json",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
       "options": {
         "showTime": true,
         "sortOrder": "Descending",
@@ -46,7 +69,7 @@
           "refId": "A"
         }
       ],
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -73,7 +96,7 @@
           "refId": "A"
         }
       ],
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },

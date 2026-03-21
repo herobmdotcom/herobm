@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -5,7 +6,11 @@ import { useRouter, useParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, EntityHeader, ActivityTimeline } from '@/lib/api';
+import { apiFetch, apiMutate } from '@/lib/api';
+import EntityHeader from '@/components/shared/EntityHeader';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 export default function ProductDetailPage() {
   const t = useTranslations();
@@ -19,6 +24,9 @@ export default function ProductDetailPage() {
     barcode: '',
     listPrice: '0',
     standardCost: '0',
+    tradePrice: '0',
+    priceLevel3: '0',
+    priceLevel4: '0',
     notes: '',
     stateCode: 'active',
   });
@@ -33,6 +41,9 @@ export default function ProductDetailPage() {
         barcode: data.barcode || '',
         listPrice: data.listPrice || '0',
         standardCost: data.standardCost || '0',
+        tradePrice: data.tradePrice || '0',
+        priceLevel3: data.priceLevel3 || '0',
+        priceLevel4: data.priceLevel4 || '0',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
       });
@@ -114,7 +125,7 @@ export default function ProductDetailPage() {
         isSaving={saving}
         badges={
           <>
-            <span className={`badge badge-${product.stateCode}`}>{t(`common.states.${product.stateCode}`)}</span>
+            {product.stateCode && <StateBadge state={product.stateCode as ValidState} />}
             {isLegacy && <span className="badge badge-abm">{t('common.sources.abm')}</span>}
           </>
         }
@@ -277,44 +288,53 @@ export default function ProductDetailPage() {
                   />
                 </div>
               </div>
-              {/* Legacy-only: Trade Price + Price Levels */}
-              {isLegacy && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.columns.tradePrice')}
-                    </label>
-                    <input
-                      className="input"
-                      style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                      disabled
-                      value={product.tradePrice ?? '—'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.columns.priceLevel3')}
-                    </label>
-                    <input
-                      className="input"
-                      style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                      disabled
-                      value={product.priceLevel3 ?? '—'}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('products.columns.priceLevel4')}
-                    </label>
-                    <input
-                      className="input"
-                      style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                      disabled
-                      value={product.priceLevel4 ?? '—'}
-                    />
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.tradePrice')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    disabled={!isEditable || saving}
+                    value={dto.tradePrice}
+                    onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
+                    onBlur={(e) => handleBlur('tradePrice', e.target.value)}
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.priceLevel3')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    disabled={!isEditable || saving}
+                    value={dto.priceLevel3}
+                    onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
+                    onBlur={(e) => handleBlur('priceLevel3', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.priceLevel4')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    disabled={!isEditable || saving}
+                    value={dto.priceLevel4}
+                    onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
+                    onBlur={(e) => handleBlur('priceLevel4', e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -380,7 +400,7 @@ export default function ProductDetailPage() {
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
-            {t('products.internalNotes')}
+            {t('common.notesCardHeading')}
           </h3>
           <textarea
             className="input w-full"

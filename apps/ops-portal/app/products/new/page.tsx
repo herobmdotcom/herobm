@@ -1,10 +1,12 @@
+/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
-import { apiMutate, EntityHeader } from '@/lib/api';
+import { apiMutate } from '@/lib/api';
+import EntityHeader from '@/components/shared/EntityHeader';
 import { useTranslations } from 'next-intl';
 
 export default function NewProductPage() {
@@ -17,6 +19,10 @@ export default function NewProductPage() {
     barcode: '',
     listPrice: '0',
     standardCost: '0',
+    tradePrice: '0',
+    priceLevel3: '0',
+    priceLevel4: '0',
+    stateCode: 'active',
     notes: '',
   });
 
@@ -55,17 +61,13 @@ export default function NewProductPage() {
 
       <div className="scroll-area" style={{ flex: 1 }}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* General Information Card */}
+          {/* Product Information Card */}
           <div className="card">
             <h3
               className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
+              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
-              {t('products.generalInfo')}
+              {t('products.productInformation')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -83,7 +85,7 @@ export default function NewProductPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.name')} *
+                  {t('products.productName')} *
                 </label>
                 <input
                   type="text"
@@ -94,31 +96,44 @@ export default function NewProductPage() {
                   disabled={submitting}
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.columns.barcode')}
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={dto.barcode}
-                  onChange={(e) => updateField('barcode', e.target.value)}
-                  placeholder={t('products.placeholders.barcode')}
-                  disabled={submitting}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.barcode')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.barcode}
+                    onChange={(e) => updateField('barcode', e.target.value)}
+                    placeholder={t('products.placeholders.barcode')}
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Status
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.stateCode}
+                    onChange={(e) => updateField('stateCode', e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="active">{t('common.states.active')}</option>
+                    <option value="inactive">{t('common.states.inactive')}</option>
+                    <option value="discontinued">{t('common.states.discontinued')}</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Pricing & Costs Card */}
+          {/* Pricing & Financials Card */}
           <div className="card">
             <h3
               className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
+              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
             >
               {t('products.pricing')}
             </h3>
@@ -132,6 +147,7 @@ export default function NewProductPage() {
                     type="number"
                     step="0.01"
                     className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
                     value={dto.listPrice}
                     onChange={(e) => updateField('listPrice', e.target.value)}
                     disabled={submitting}
@@ -145,8 +161,53 @@ export default function NewProductPage() {
                     type="number"
                     step="0.01"
                     className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
                     value={dto.standardCost}
                     onChange={(e) => updateField('standardCost', e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.tradePrice')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    value={dto.tradePrice}
+                    onChange={(e) => updateField('tradePrice', e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.priceLevel3')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    value={dto.priceLevel3}
+                    onChange={(e) => updateField('priceLevel3', e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.priceLevel4')}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="input"
+                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+                    value={dto.priceLevel4}
+                    onChange={(e) => updateField('priceLevel4', e.target.value)}
                     disabled={submitting}
                   />
                 </div>
@@ -164,16 +225,13 @@ export default function NewProductPage() {
         <div className="card mb-6">
           <h3
             className="text-sm font-semibold mb-4"
-            style={{
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
+            style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
           >
-            {t('products.internalWarehouseNotes')}
+            {t('common.notesCardHeading')}
           </h3>
           <textarea
-            className="textarea h-32"
+            className="input w-full"
+            style={{ height: 110, paddingTop: 12 }}
             value={dto.notes}
             onChange={(e) => updateField('notes', e.target.value)}
             placeholder={t('products.placeholders.notes')}

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
-import { apiMutate, EntityHeader } from '@/lib/api';
+import { apiMutate } from '@/lib/api';
+import EntityHeader from '@/components/shared/EntityHeader';
 import { useTranslations } from 'next-intl';
 
 export default function NewSupplierPage() {
@@ -45,9 +46,11 @@ export default function NewSupplierPage() {
 
   const isValid = dto.vendorNumber.trim() !== '' && dto.name.trim() !== '';
 
+  
+  
   return (
     <Shell>
-      <EntityHeader
+            <EntityHeader
         title={t('suppliers.buttons.createSupplier')}
         subtitle={t('suppliers.management')}
         onBack={() => router.push('/suppliers')}
@@ -57,202 +60,185 @@ export default function NewSupplierPage() {
         saveLabel={t('suppliers.buttons.createSupplier')}
       />
 
-      <div className="scroll-area" style={{ flex: 1 }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* General Information Card */}
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              {t('suppliers.generalInfo')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('suppliers.columns.vendorNumber')} *
-                </label>
-                <input
-                  id="vendorNumber"
-                  type="text"
-                  className="input"
-                  value={dto.vendorNumber}
-                  onChange={(e) => updateField('vendorNumber', e.target.value)}
-                  placeholder={t('suppliers.placeholders.vendorNumber')}
-                  disabled={submitting}
-                />
+      <div className="max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6">
+            {/* General Info Card */}
+            <div className="card">
+              <h3
+                className="text-sm font-semibold mb-4"
+                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              >
+                {t('suppliers.generalInfo')}
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('suppliers.columns.vendorNumber')} *
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.vendorNumber}
+                      onChange={(e) => updateField('vendorNumber', e.target.value)}
+                      placeholder={t('suppliers.placeholders.vendorNumber')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('suppliers.columns.name')} *
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.name}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      placeholder={t('suppliers.placeholders.name')}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.currency')}
+                    </label>
+                    <select
+                      className="input"
+                      value={dto.currencyCode}
+                      onChange={(e) => updateField('currencyCode', e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="USD">USD</option>
+                      <option value="GBP">GBP</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('suppliers.columns.paymentTerms')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.paymentTerms}
+                      onChange={(e) => updateField('paymentTerms', e.target.value)}
+                      placeholder={t('suppliers.placeholders.paymentTerms')}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('suppliers.columns.name')} *
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  className="input"
-                  value={dto.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  placeholder={t('suppliers.placeholders.name')}
-                  disabled={submitting}
-                />
-              </div>
+            </div>
+
+            {/* Notes Card */}
+            <div className="card">
+              <h3
+                className="text-sm font-semibold mb-4"
+                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              >
+                {t('common.notesCardHeading')}
+              </h3>
+              <textarea
+                className="input w-full"
+                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+                value={dto.notes}
+                onChange={(e) => updateField('notes', e.target.value)}
+                placeholder={t('common.notesCardPlaceholder')}
+                disabled={submitting}
+              />
             </div>
           </div>
 
-          {/* Settings Card */}
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              {t('suppliers.paymentCurrency')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.currency')}
-                  </label>
-                  <select
-                    className="input"
-                    value={dto.currencyCode}
-                    onChange={(e) => updateField('currencyCode', e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
-                  </select>
+          {/* RIGHT COLUMN */}
+          <div className="space-y-6">
+            {/* Contact Details Card */}
+            <div className="card">
+              <h3
+                className="text-sm font-semibold mb-4"
+                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+              >
+                {t('common.columns.address')}
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.email')}
+                    </label>
+                    <input
+                      type="email"
+                      className="input"
+                      value={dto.emailAddress1}
+                      onChange={(e) => updateField('emailAddress1', e.target.value)}
+                      placeholder={t('suppliers.placeholders.email')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.telephone')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.telephone1}
+                      onChange={(e) => updateField('telephone1', e.target.value)}
+                      placeholder={t('suppliers.placeholders.phone')}
+                      disabled={submitting}
+                    />
+                  </div>
                 </div>
-                <div>
+                <div className="col-span-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('suppliers.columns.paymentTerms')}
+                    {t('common.columns.address')}
                   </label>
                   <input
                     type="text"
                     className="input"
-                    value={dto.paymentTerms}
-                    onChange={(e) => updateField('paymentTerms', e.target.value)}
-                    placeholder={t('suppliers.placeholders.paymentTerms')}
+                    value={dto.address1Line1}
+                    onChange={(e) => updateField('address1Line1', e.target.value)}
+                    placeholder={t('suppliers.placeholders.address')}
                     disabled={submitting}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.city')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.address1City}
+                      onChange={(e) => updateField('address1City', e.target.value)}
+                      placeholder={t('suppliers.placeholders.city')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.country')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.address1Country}
+                      onChange={(e) => updateField('address1Country', e.target.value)}
+                      placeholder={t('suppliers.placeholders.country')}
+                      disabled={submitting}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Contact Details Card */}
-        <div className="card mb-6">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {t('common.contactAddress')}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.email')}
-              </label>
-              <input
-                type="email"
-                className="input"
-                value={dto.emailAddress1}
-                onChange={(e) => updateField('emailAddress1', e.target.value)}
-                placeholder={t('suppliers.placeholders.email')}
-                disabled={submitting}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.telephone')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={dto.telephone1}
-                onChange={(e) => updateField('telephone1', e.target.value)}
-                placeholder={t('suppliers.placeholders.phone')}
-                disabled={submitting}
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.address')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={dto.address1Line1}
-                onChange={(e) => updateField('address1Line1', e.target.value)}
-                placeholder={t('suppliers.placeholders.address')}
-                disabled={submitting}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.city')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={dto.address1City}
-                onChange={(e) => updateField('address1City', e.target.value)}
-                placeholder={t('suppliers.placeholders.city')}
-                disabled={submitting}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.country')}
-              </label>
-              <input
-                type="text"
-                className="input"
-                value={dto.address1Country}
-                onChange={(e) => updateField('address1Country', e.target.value)}
-                placeholder={t('suppliers.placeholders.country')}
-                disabled={submitting}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Notes Card */}
-        <div className="card mb-6">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {t('common.columns.notes')}
-          </h3>
-          <input
-            type="text"
-            className="input"
-            value={dto.notes}
-            onChange={(e) => updateField('notes', e.target.value)}
-            placeholder={t('suppliers.placeholders.notes')}
-            disabled={submitting}
-          />
-        </div>
       </div>
     </Shell>
   );
+
 }

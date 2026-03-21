@@ -1,4 +1,146 @@
 {
+  "accounts": {
+    "title": "Accounts",
+    "subtitle": "Manage customer accounts",
+    "totalAccounts": "TOTAL ACCOUNTS",
+    "generalInfo": "General Information",
+    "pricingCurrency": "Pricing & Currency",
+    "columns": {
+      "accountId": "Account ID",
+      "accountNumber": "Account Number",
+      "discountPct": "Discount %"
+    }
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "subtitle": "Manage vendor accounts and terms",
+    "buttons": {
+      "createSupplier": "Create Supplier",
+      "editSupplier": "Edit Supplier",
+      "save": "Save Supplier"
+    },
+    "placeholders": {
+      "searchSuppliers": "Search suppliers..."
+    },
+    "columns": {
+      "vendorNumber": "Vendor ID",
+      "paymentTerms": "Payment Terms",
+      "productCount": "Products"
+    },
+    "generalInfo": "General Information",
+    "labels": {
+      "vendorName": "Vendor Name",
+      "email": "Email Address",
+      "phone": "Phone Number"
+    }
+  },
+  "purchaseOrders": {
+    "title": "Purchase Orders",
+    "subtitle": "Manage supplier orders",
+    "buttons": {
+      "createPO": "Create PO",
+      "copyOrder": "Copy Order",
+      "createReturn": "Create Return",
+      "save": "Save"
+    },
+    "placeholders": {
+      "searchOrders": "Search orders...",
+      "invoiceNumber": "Invoice number...",
+      "orderName": "Order name...",
+      "notes": "Notes..."
+    },
+    "labels": {
+      "supplier": "Supplier",
+      "invoiceNumber": "Invoice Number",
+      "orderName": "Order Name",
+      "created": "Created",
+      "notes": "Notes"
+    },
+    "columns": {
+      "lineNumber": "#",
+      "product": "Product",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "amount": "Amount",
+      "ordered": "Ordered",
+      "location": "Location",
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "reserved": "Reserved",
+      "available": "Available",
+      "status": "Status",
+      "qtyReturned": "Returned",
+      "reason": "Reason",
+      "fee": "Fee"
+    },
+    "orderNotFound": "Order not found",
+    "backToOrders": "Back to orders",
+    "untitledOrder": "Untitled Order",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "noLineItems": "No line items added.",
+    "noLineItemsShort": "No items added.",
+    "loadingInventory": "Loading inventory data...",
+    "noInventoryData": "No inventory data available for this line.",
+    "newReturn": "New Return"
+  },
+  "salesOrders": {
+    "title": "Sales Orders",
+    "subtitle": "Manage customer orders and quotes",
+    "buttons": {
+      "createOrder": "Create Order",
+      "createQuote": "Create Quote",
+      "createInvoice": "Create Invoice",
+      "copyOrder": "Copy Order",
+      "createReturn": "Create Return",
+      "archive": "Archive",
+      "unarchive": "Unarchive",
+      "save": "Save",
+      "removeLine": "Remove Line"
+    },
+    "placeholders": {
+      "searchOrders": "Search orders...",
+      "orderName": "Order name...",
+      "customerPO": "Customer PO...",
+      "notes": "Notes...",
+      "searchProduct": "Search products..."
+    },
+    "labels": {
+      "customer": "Customer",
+      "orderName": "Order Name",
+      "customerPO": "Customer PO",
+      "created": "Created",
+      "notes": "Notes"
+    },
+    "columns": {
+      "lineNumber": "#",
+      "product": "Product",
+      "description": "Description",
+      "qty": "Qty",
+      "unitPrice": "Unit Price",
+      "discountPct": "Discount %",
+      "gst": "Tax",
+      "amount": "Amount",
+      "ordered": "Ordered",
+      "location": "Location",
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "reserved": "Reserved",
+      "available": "Available",
+      "status": "Status"
+    },
+    "archivedBannerTitle": "Archived",
+    "archivedBannerBody": "This order has been archived and is read-only.",
+    "orderNotFound": "Order not found",
+    "backToOrders": "Back to orders",
+    "untitledOrder": "Untitled Order",
+    "orderDetails": "Order Details",
+    "lineItems": "Line Items",
+    "availability": "Inventory Availability",
+    "noLineItems": "No line items added.",
+    "loadingInventory": "Loading inventory data..."
+  },
   "common": {
     "save": "Save",
     "saving": "Saving…",
@@ -15,9 +157,42 @@
     "activityTimeline": "Activity Timeline",
     "noEvents": "No events recorded",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
+    "timeline": {
+      "by": "by {actor}"
+    },
+    "notesCardHeading": "Notes",
+    "notesCardPlaceholder": "Internal notes",
+    "grid": {
+      "options": "Options",
+      "includeArchived": "Include Archived",
+      "exportCsv": "Export CSV",
+      "resetColumns": "Reset Columns",
+      "columns": "Columns",
+      "prev": "Prev",
+      "page": "Page {page}",
+      "next": "Next",
+      "rows": "{count} rows",
+      "loadingEllipsis": "Loading…"
+    },
+    "orderReadView": {
+      "orderDetails": "Order Details",
+      "lineItems": "Line Items",
+      "noLineItems": "No line items",
+      "customer": "Customer",
+      "customerPO": "Customer PO",
+      "orderName": "Order Name",
+      "created": "Created",
+      "notes": "Notes",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "taxWithPct": "Tax ({pct}%)",
+      "total": "Total",
+      "exempt": "EXEMPT",
+      "discPct": "{disc}% disc",
+      "untitledOrder": "Untitled order"
+    },
     "placeholders": {
-      "quantity": "0",
-      "notes": "Add notes…"
+      "quantity": "0"
     },
     "states": {
       "draft": "Draft",
@@ -33,6 +208,8 @@
       "processed": "Processed",
       "legacy": "Legacy",
       "active": "Active",
+      "inactive": "Inactive",
+      "discontinued": "Discontinued",
       "archived": "Archived"
     },
     "sources": {
@@ -41,6 +218,7 @@
     },
     "auth": {
       "signIn": "Sign In",
+      "signOut": "Sign Out",
       "signInToContinue": "Sign in to continue",
       "username": "Username",
       "password": "Password",
@@ -72,7 +250,7 @@
       "email": "Email",
       "contactName": "Contact Name",
       "contact": "Contact",
-      "contactAddress": "Contact & Address",
+      "contactAddress": "Contact Address",
       "contactEmail": "Contact Email",
       "contactPhone": "Contact Phone",
       "group": "Group",
@@ -95,6 +273,7 @@
       "createdOn": "Created On",
       "modifiedOn": "Modified On",
       "customerGroup": "Customer Group",
+      "telephone": "Telephone",
       "notes": "Notes"
     },
     "errors": {
@@ -195,6 +374,14 @@
     "lineItems": "Line Items",
     "availability": "📦 Availability",
     "returns": "↩ Returns",
+    "noLineItems": "No line items — use the search above to add products",
+    "noLineItemsShort": "No products ordered yet",
+    "noReturnLines": "No return lines",
+    "newReturn": "New Return",
+    "loadingInventory": "Loading inventory data…",
+    "noInventoryData": "No inventory data",
+    "loadingReturns": "Loading returns…",
+    "noReturns": "No returns for this order",
     "discountPercent": "{disc}% disc",
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -202,8 +389,7 @@
       "customer": "Customer",
       "created": "Created",
       "orderName": "Order Name",
-      "customerPO": "Customer PO #",
-      "notes": "Notes"
+      "customerPO": "Customer PO #"
     },
     "placeholders": {
       "orderName": "Order name",
@@ -279,8 +465,7 @@
       "supplier": "Supplier",
       "invoiceNumber": "Invoice #",
       "orderName": "Order Name",
-      "created": "Created",
-      "notes": "Notes"
+      "created": "Created"
     },
     "placeholders": {
       "searchOrders": "Search purchase orders…",
@@ -407,6 +592,7 @@
   },
   "accounts": {
     "title": "Accounts",
+    "totalAccounts": "TOTAL ACCOUNTS",
     "buttons": {
       "createAccount": "+ Create Account"
     },
@@ -419,7 +605,9 @@
     "customerManagement": "Customer Management",
     "pricingCurrency": "Pricing & Currency",
     "columns": {
-      "accountNumber": "Account #",
+      "accountNumber": "Account Number",
+      "accountId": "Account ID",
+      "accountType": "Type",
       "discountPct": "Customer Discount %"
     }
   },
@@ -446,6 +634,7 @@
     },
     "columns": {
       "vendorNumber": "Vendor #",
+      "name": "Name",
       "paymentTerms": "Payment Terms",
       "productCount": "Products"
     },
@@ -510,12 +699,10 @@
     "management": "Product Management",
     "catalogManagement": "Catalog & Inventory Management",
     "pricingCostsInfo": "Standard cost is used for margin calculations and inventory valuation. List price is the default selling price before customer discounts.",
-    "internalWarehouseNotes": "Internal & Warehouse Notes",
     "productInformation": "Product Information",
     "productName": "Product Name",
     "productGroup": "Product Group",
     "recordDetails": "Record Details",
-    "internalNotes": "Internal Notes",
     "placeholders": {
       "searchProducts": "Search by name, product number, or barcode…",
       "productNumber": "e.g. PROD-001",

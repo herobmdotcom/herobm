@@ -1,0 +1,73 @@
+# ==============================================================================
+# Antigravity Ops-Portal — Multi-stage Container Build
+# ==============================================================================
+# Builds the Next.js ops-portal in standalone mode for containerised deployment.
+# The directory structure mirrors the monorepo layout so that workspace package
+# references (../../packages/*) resolve correctly during build.
+#
+# Final image contains ONLY:
+#   - Node.js runtime (alpine, ~50 MB)
+#   - server.js + .next/standalone (~20 MB bundled deps)
+#   - .next/static (CSS/JS assets)
+# The deps and builder stages are discarded after build.
+# ==============================================================================
+
+FROM node:22-alpine AS base
+RUN npm install -g npm@11
+
+# --- Stage 1: Install dependencies -------------------------------------------
+FROM base AS deps
+WORKDIR /app
+
+# Install each workspace package's deps separately so Docker caches each layer.
+# When only portal code changes, the deps stage is fully cached.
+COPY packages/shared/package*.json ./packages/shared/
+RUN cd packages/shared && npm install
+
+COPY apps/ops-portal/package*.json ./apps/ops-portal/
+RUN cd apps/ops-portal && npm install
+
+# --- Stage 2: Build ----------------------------------------------------------
+FROM base AS builder
+WORKDIR /app
+
+# Copy installed node_modules from deps stage
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/apps/ops-portal/node_modules ./apps/ops-portal/node_modules
+
+# Copy source (shared → ops-portal, dependency order)
+COPY packages/shared ./packages/shared
+RUN cd packages/shared && npm run build
+
+COPY apps/ops-portal ./apps/ops-portal
+
+# Typecheck (quality gate — catches type errors before build)
+RUN cd apps/ops-portal && npx tsc --noEmit
+
+# Build the Next.js standalone bundle.
+# API_URL must be set at build time because next.config.ts rewrites are baked
+# into the standalone output (not resolved at runtime).
+ARG API_URL=http://custom-api:3001
+ENV API_URL=${API_URL}
+RUN cd apps/ops-portal && npm run build
+
+# --- Stage 3: Production runtime (slim) --------------------------------------
+# Uses node:22-alpine directly (not 'base') — no npm needed at runtime.
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+# The standalone output bundles all runtime deps into a self-contained directory.
+# Only server.js + bundled node_modules + static assets are needed.
+COPY --from=builder /app/apps/ops-portal/.next/standalone ./
+COPY --from=builder /app/apps/ops-portal/.next/static ./.next/static
+COPY --from=builder /app/apps/ops-portal/messages ./messages
+# If a public/ directory is added later, uncomment:
+# COPY --from=builder /app/apps/ops-portal/public ./public
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]

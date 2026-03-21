@@ -1,6 +1,7 @@
 import eslint from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import i18nextPlugin from 'eslint-plugin-i18next';
 
 export default tseslint.config(
   {
@@ -17,7 +18,16 @@ export default tseslint.config(
     },
   },
   {
+    plugins: {
+      i18next: i18nextPlugin,
+    },
     rules: {
+      'i18next/no-literal-string': ['warn', {
+        markupOnly: true,
+        ignoreAttribute: ['aria-hidden'],
+        // Ignore strings that consist entirely of emoji / variation selectors
+        ignore: ['^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$'],
+      }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       

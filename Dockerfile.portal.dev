@@ -1,0 +1,37 @@
+# ==============================================================================
+# Antigravity Ops-Portal — DEVELOPMENT Container Build
+# ==============================================================================
+# Runs the portal in dev mode (next dev) inside a container for debugging.
+# Unminified errors, React dev-mode warnings, and full stack traces.
+#
+# Usage:  make dev-portal
+#
+# Unlike the production Dockerfile.portal, this does NOT create a standalone
+# bundle. It runs `next dev` directly, so errors are human-readable.
+# ==============================================================================
+
+FROM node:22-alpine
+RUN npm install -g npm@11
+WORKDIR /app
+
+# Install shared package deps
+COPY packages/shared/package*.json ./packages/shared/
+RUN cd packages/shared && npm install
+
+# Install portal deps
+COPY apps/ops-portal/package*.json ./apps/ops-portal/
+RUN cd apps/ops-portal && npm install
+
+# Copy source
+COPY packages/shared ./packages/shared
+RUN cd packages/shared && npm run build
+
+COPY apps/ops-portal ./apps/ops-portal
+
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3000
+
+# Run dev server — unminified errors, full stack traces, React dev warnings
+CMD ["sh", "-c", "cd apps/ops-portal && npx next dev --port 3000 --hostname 0.0.0.0"]

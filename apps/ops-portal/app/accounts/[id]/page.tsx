@@ -8,10 +8,12 @@ import { useTranslations } from 'next-intl';
 import {
   apiFetch,
   apiMutate,
-  EntityHeader,
-  ActivityTimeline,
   reportError,
 } from '@/lib/api';
+import EntityHeader from '@/components/shared/EntityHeader';
+import ActivityTimeline from '@/components/shared/ActivityTimeline';
+import StateBadge, { StateName } from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 interface Account {
   accountId: string;
@@ -33,9 +35,12 @@ interface Account {
   gstPosition: string | null;
   currencyCode: string;
   customerDiscount: string | null;
-  stateCode: string;
+  stateCode: ValidState;
   notes: string | null;
   source: 'abm' | 'app';
+  createdOn: string | null;
+  createdBy: string | null;
+  modifiedOn: string | null;
   events?: any[];
 }
 
@@ -137,9 +142,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         isDirty={isDirty}
         onSave={handleSave}
         badges={
-          <span className={`badge badge-${account.stateCode}`}>
-            {t(`common.states.${account.stateCode}`)}
-          </span>
+          <StateBadge state={account.stateCode as ValidState} />
         }
         actions={
           account.source === 'app' ? (
@@ -277,7 +280,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             {/* Address & Contact Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {t('suppliers.contactAddress')}
+                {t('common.columns.contactAddress')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -369,15 +372,15 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
             {/* Notes Card */}
             <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {t('common.columns.notes')}
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {t('common.notesCardHeading')}
               </h3>
-              <input
-                type="text"
-                className="input"
+              <textarea
+                className="input w-full"
+                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
                 value={dto.notes || ''}
                 onChange={(e) => updateField('notes', e.target.value)}
-                placeholder={t('common.placeholders.notes')}
+                placeholder={t('common.notesCardPlaceholder')}
                 disabled={!isEditable || saving}
               />
             </div>
@@ -400,29 +403,29 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </label>
                 <input className="input" disabled value={account.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
               </div>
-              {(account as any).createdOn && (
+              {account.createdOn && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.createdOn')}
                   </label>
-                  <input className="input" disabled value={new Date((account as any).createdOn).toLocaleDateString()} />
+                  <input className="input" disabled value={new Date(account.createdOn).toLocaleDateString()} />
                 </div>
               )}
-              {(account as any).createdBy && (
+              {account.createdBy && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.createdBy')}
                   </label>
-                  <input className="input" disabled value={(account as any).createdBy} />
+                  <input className="input" disabled value={account.createdBy} />
                 </div>
               )}
             </div>
-            {(account as any).modifiedOn && (
+            {account.modifiedOn && (
               <div className="mt-4" style={{ maxWidth: '50%' }}>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('common.columns.modifiedOn')}
                 </label>
-                <input className="input" disabled value={new Date((account as any).modifiedOn).toLocaleString()} />
+                <input className="input" disabled value={new Date(account.modifiedOn).toLocaleString()} />
               </div>
             )}
             {isLegacy && (
@@ -505,7 +508,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     />
                   </div>
                   <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {t(`common.states.${dto.stateCode}`)}
+                    {dto.stateCode ? <StateName state={dto.stateCode as ValidState} /> : ''}
                   </span>
                 </div>
               </div>

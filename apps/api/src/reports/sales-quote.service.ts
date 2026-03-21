@@ -3,6 +3,7 @@ import { join } from 'path';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { ReportService } from './report.service';
+import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 
 export interface SalesQuoteData {
   header: {
@@ -64,89 +65,12 @@ export class SalesQuoteService {
     orderId: string,
     source?: string,
   ): Promise<SalesQuoteData> {
-    let orderDetail: any;
-
-    if (source === 'app') {
-      orderDetail = await this.ordersWriteService.findOne(orderId);
-    } else if (source === 'abm') {
-      orderDetail = await this.ordersService.findAbmOrder(orderId);
-    } else {
-      // Default to trying app then abm (similar to controller logic)
-      try {
-        orderDetail = await this.ordersWriteService.findOne(orderId);
-      } catch {
-        orderDetail = await this.ordersService.findAbmOrder(orderId);
-      }
-    }
-
-    const lines = orderDetail.lines.map((l: any) => {
-      const amount = parseFloat(l.amount || '0');
-      const tax = parseFloat(l.tax || '0');
-      const qty = parseFloat(l.quantity || '0');
-      const price = parseFloat(l.pricePerUnit || '0');
-
-      // Calculate GST rate if possible, otherwise placeholder
-      // In a real app we might want to fetch the GST category details
-      let gstRate = '0%';
-      if (amount > 0 && tax > 0) {
-        const rate = (tax / amount) * 100;
-        gstRate = `${rate.toFixed(1)}%`;
-      }
-
-      return {
-        lineNumber: l.lineNumber,
-        productNumber: l.productNumber || l.productId || '—',
-        description: l.productDescription || '—',
-        quantity: l.quantity,
-        pricePerUnit: l.pricePerUnit,
-        discountPercentage: l.discountPercentage || '0',
-        gstRate,
-        tax: l.tax || '0.00',
-        amount: l.amount || '0.00',
-        totalAmount: l.totalAmount || '0.00',
-        unitOfMeasure: l.unitOfMeasure || 'EA',
-      };
-    });
-
-    const subtotal = lines.reduce(
-      (sum: number, l: any) => sum + parseFloat(l.amount),
-      0,
+    const orderDetail = await resolveOrderDetail(
+      this.ordersWriteService,
+      this.ordersService,
+      orderId,
+      source,
     );
-    const totalTax = lines.reduce(
-      (sum: number, l: any) => sum + parseFloat(l.tax),
-      0,
-    );
-    const totalAmount = lines.reduce(
-      (sum: number, l: any) => sum + parseFloat(l.totalAmount),
-      0,
-    );
-
-    const header = {
-      orderNumber: orderDetail.orderNumber || '',
-      customerName: orderDetail.customerName || '',
-      customerOrderNumber: orderDetail.customerOrderNumber || '',
-      orderDate: orderDetail.createdOn
-        ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
-        : '',
-      currencyCode: orderDetail.currencyCode || 'EUR',
-      name: orderDetail.name || '',
-    };
-
-    return {
-      header,
-      lines,
-      summary: {
-        subtotal,
-        totalTax,
-        totalAmount,
-      },
-      generatedAt:
-        new Date().toLocaleDateString('en-IE') +
-        ' ' +
-        new Date().toLocaleTimeString('en-IE', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-    };
+    return assembleOrderData(orderDetail);
   }
 }

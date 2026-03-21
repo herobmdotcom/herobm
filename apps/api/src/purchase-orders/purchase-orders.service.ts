@@ -90,17 +90,25 @@ export class PurchaseOrdersService {
 
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
-        const lineValues = createDto.lines.map((line: any, index: number) => ({
-          purchaseOrderId: order.purchaseOrderId,
-          lineNumber: index + 1,
-          productId: line.productId,
-          productDescription: line.productDescription,
-          quantity: line.quantity.toString(),
-          pricePerUnit: line.pricePerUnit.toString(),
-          unitOfMeasure: line.unitOfMeasure || 'EA',
-          amount: (line.quantity * line.pricePerUnit).toString(),
-          totalAmount: (line.quantity * line.pricePerUnit).toString(), // simplify for now, no tax logic needed here initially
-        }));
+        const lineValues = createDto.lines.map((line: any, index: number) => {
+          const qty = parseFloat(line.quantity || '0');
+          const price = parseFloat(line.pricePerUnit || '0');
+          const disc = parseFloat(line.discountPercentage || '0');
+          const amount = (qty * price * (1 - disc / 100)).toFixed(2);
+          
+          return {
+            purchaseOrderId: order.purchaseOrderId,
+            lineNumber: index + 1,
+            productId: line.productId,
+            productDescription: line.productDescription,
+            quantity: line.quantity.toString(),
+            pricePerUnit: line.pricePerUnit.toString(),
+            discountPercentage: line.discountPercentage?.toString() || '0',
+            unitOfMeasure: line.unitOfMeasure || 'EA',
+            amount: amount,
+            totalAmount: amount, // simplify for now, no tax logic needed here initially
+          };
+        });
 
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }

@@ -1,0 +1,80 @@
+commit ab067defc1744be975077d61b4ae9931d726e2cd
+Author: Marcel <emmpeegee@gmail.com>
+Date:   Thu Mar 19 22:55:53 2026 +0100
+
+    Migration to Podman, setup and install scripts, state machine extraction, internationalisation, ERPNext phase 1
+
+diff --git a/apps/ops-portal/next.config.ts b/apps/ops-portal/next.config.ts
+index 5a0a198..37879c1 100644
+--- a/apps/ops-portal/next.config.ts
++++ b/apps/ops-portal/next.config.ts
+@@ -1,7 +1,10 @@
+ import path from 'path';
++import createNextIntlPlugin from 'next-intl/plugin';
++import type { NextConfig } from 'next';
+ 
+-/** @type {import('next').NextConfig} */
+-const nextConfig = {
++const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
++
++const nextConfig: NextConfig = {
+   output: 'standalone',
+   transpilePackages: ['@modbm/portal-ui'],
+   turbopack: {
+@@ -17,4 +20,4 @@ const nextConfig = {
+   },
+ };
+ 
+-export default nextConfig;
++export default withNextIntl(nextConfig);
+
+commit c995f69eb6364d00e732bc1c02b5e9d5f19333e8
+Author: Marcel <emmpeegee@gmail.com>
+Date:   Fri Mar 13 17:17:25 2026 +0100
+
+    Addressed tax, currencies, discounts
+
+diff --git a/apps/ops-portal/next.config.ts b/apps/ops-portal/next.config.ts
+index 3167f2f..5a0a198 100644
+--- a/apps/ops-portal/next.config.ts
++++ b/apps/ops-portal/next.config.ts
+@@ -1,6 +1,12 @@
++import path from 'path';
++
+ /** @type {import('next').NextConfig} */
+ const nextConfig = {
+   output: 'standalone',
++  transpilePackages: ['@modbm/portal-ui'],
++  turbopack: {
++    root: path.resolve(import.meta.dirname, '../../'),
++  },
+   async rewrites() {
+     return [
+       {
+
+commit f71e0efa70624f2724ec25549147359c29dd2d14
+Author: Marcel <emmpeegee@gmail.com>
+Date:   Thu Mar 12 23:42:39 2026 +0100
+
+    Creating a dev portal, sales portal and the APIs to back them; migrating more data
+
+diff --git a/apps/ops-portal/next.config.ts b/apps/ops-portal/next.config.ts
+new file mode 100644
+index 0000000..3167f2f
+--- /dev/null
++++ b/apps/ops-portal/next.config.ts
+@@ -0,0 +1,14 @@
++/** @type {import('next').NextConfig} */
++const nextConfig = {
++  output: 'standalone',
++  async rewrites() {
++    return [
++      {
++        source: '/api/:path*',
++        destination: `${process.env.API_URL ?? 'http://localhost:3001'}/api/:path*`,
++      },
++    ];
++  },
++};
++
++export default nextConfig;

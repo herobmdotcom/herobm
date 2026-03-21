@@ -4,7 +4,8 @@
  * Local DataGrid wrapper that injects the ops-portal API client.
  * Pages import this instead of the raw shared component.
  */
-import { DataGrid as SharedDataGrid, type DataGridProps } from '@modbm/portal-ui';
+import SharedDataGrid from '@/components/shared/DataGrid';
+import type { DataGridProps } from '@/components/shared/DataGrid';
 import { apiFetch, reportError } from '@/lib/api';
 
 type LocalProps<T> = Omit<DataGridProps<T>, 'apiFetch' | 'onError'>;

@@ -1,8 +1,8 @@
 'use client';
 
-import { AuthGate as SharedAuthGate } from '@modbm/portal-ui';
+import { default as SharedAuthGate } from '@/components/shared/AuthGate';
 
-export { useAuth } from '@modbm/portal-ui';
+export { useAuth } from '@/components/shared/AuthGate';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
   return (

@@ -24,7 +24,11 @@ export interface CreateProductDto {
   barcode?: string;
   listPrice?: string;
   standardCost?: string;
+  tradePrice?: string;
+  priceLevel3?: string;
+  priceLevel4?: string;
   notes?: string;
+  stateCode?: string;
 }
 
 export interface UpdateProductDto {
@@ -32,6 +36,9 @@ export interface UpdateProductDto {
   barcode?: string;
   listPrice?: string;
   standardCost?: string;
+  tradePrice?: string;
+  priceLevel3?: string;
+  priceLevel4?: string;
   notes?: string;
   stateCode?: string;
 }

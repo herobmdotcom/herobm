@@ -1,0 +1,189 @@
+
+> ops-portal@0.1.0 lint
+> eslint "app/**/*.{ts,tsx}" "lib/**/*.{ts,tsx}" "components/**/*.{ts,tsx}"
+
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\error.tsx
+   91:48  error  disallow literal string: <h2 className="text-xl font-bold mb-2">Something went wrong</h2>                                                                                                           i18next/no-literal-string
+   96:92  error  disallow literal string: <p className="text-xs mb-4" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+            Reference: {error.digest}
+          </p>                                     i18next/no-literal-string
+  101:92  error  disallow literal string: <p className="text-xs mb-6" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
+            Page: {window.location.pathname}
+          </p>                              i18next/no-literal-string
+  105:66  error  disallow literal string: <button onClick={reset} className="btn btn-primary mb-6">
+          Try Again
+        </button>                                                                            i18next/no-literal-string
+  113:33  error  disallow literal string: <p className="mb-2">If this problem persists, please contact support:</p>                                                                                                  i18next/no-literal-string
+  123:18  error  disallow literal string: <p>
+                Γ£ë∩╕Å{' '}
+                <a href={mailto} style={{ color: 'var(--accent)' }}>
+                  {supportEmail}
+                </a>
+              </p>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\global-error.tsx
+  100:74  error  disallow literal string: <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+            Something went wrong
+          </h2>                                                                                                                                                                                                                                                                                                                  i18next/no-literal-string
+  119:12  error  disallow literal string: <button
+            onClick={reset}
+            style={{
+              padding: '10px 24px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#f59e0b',
+              color: '#0a0e1a',
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: 'pointer',
+              marginBottom: 24,
+            }}
+          >
+            Try Again
+          </button>  i18next/no-literal-string
+  131:46  error  disallow literal string: <p style={{ marginBottom: 8 }}>If this problem persists, please contact support:</p>                                                                                                                                                                                                                                                                                                                                              i18next/no-literal-string
+  141:20  error  disallow literal string: <p>
+                  Γ£ë∩╕Å{' '}
+                  <a href={mailto} style={{ color: '#f59e0b' }}>
+                    {supportEmail}
+                  </a>
+                </p>                                                                                                                                                                                                                                                     i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\products\[id]\page.tsx
+  193:110  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Status
+                  </label>             i18next/no-literal-string
+  222:114  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        SC Number
+                      </label>  i18next/no-literal-string
+  335:108  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Product ID
+                </label>             i18next/no-literal-string
+  348:110  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created
+                  </label>            i18next/no-literal-string
+  356:110  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Created By
+                  </label>         i18next/no-literal-string
+  365:108  error  disallow literal string: <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Last Modified
+                </label>          i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\purchase-orders\[id]\page.tsx
+   566:65  error  disallow literal string: <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    {new Date(order.createdOn).toLocaleString()} by {order.createdBy || 'ΓÇö'}
+                  </p>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      i18next/no-literal-string
+   618:16  error  disallow literal string: <button
+                className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
+                style={{
+                  color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
+                  background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                  border: '1px solid',
+                  borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                  borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setActiveTab('availability')}
+              >
+                ≡ƒôª Availability
+              </button>                                                                                                                                                                                                                                                                   i18next/no-literal-string
+   704:26  error  disallow literal string: <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => removeLine(line.salesOrderLineId)}
+                          title="Remove line"
+                        >
+                          Γ£ò
+                        </button>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   i18next/no-literal-string
+  1235:38  error  disallow literal string: <button
+                                      className="btn btn-danger btn-sm"
+                                      onClick={async () => {
+                                        if (!confirm(tConfirm('removeReturnLine'))) return;
+                                        try {
+                                          await apiMutate(
+                                            `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                            'DELETE',
+                                          );
+                                          await loadReturns();
+                                        } catch (err) {
+                                          setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveReturnLine'));
+                                        }
+                                      }}
+                                      title="Remove return line"
+                                    >
+                                      Γ£ò
+                                    </button>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\purchase-orders\new\page.tsx
+  389:26  error  disallow literal string: <button
+                          className="text-xs cursor-pointer"
+                          style={{ color: 'var(--text-muted)' }}
+                          onClick={() => {
+                            updateLine(idx, 'productId', '');
+                            updateLine(idx, 'productNumber', '');
+                            updateLine(idx, 'productDescription', '');
+                          }}
+                        >
+                          Γ£ò
+                        </button>  i18next/no-literal-string
+  438:24  error  disallow literal string: <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeLine(idx)}
+                      >
+                        Γ£ò
+                      </button>                                                                                                                                                                                                                                                                                                   i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\sales-orders\[id]\page.tsx
+   604:64  error  disallow literal string: <>Γ£ò <StateName state={state as ValidState} /></>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         i18next/no-literal-string
+   720:81  error  disallow literal string: <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                                    {new Date(order.createdOn).toLocaleString()} by {order.createdBy || 'ΓÇö'}
+                                </p>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   i18next/no-literal-string
+   951:50  error  disallow literal string: <button
+                                                    className="btn btn-danger btn-sm"
+                                                    onClick={() => removeLine(line.salesOrderLineId)}
+                                                    title={tSales('buttons.removeLine')}
+                                                >
+                                                    Γ£ò
+                                                </button>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     i18next/no-literal-string
+  1488:74  error  disallow literal string: <button
+                                                                            className="btn btn-danger btn-sm"
+                                                                            onClick={async () => {
+                                                                                if (!confirm(tConfirm('removeReturnLine'))) return;
+                                                                                try {
+                                                                                    await apiMutate(
+                                                                                        `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
+                                                                                        'DELETE',
+                                                                                    );
+                                                                                    await loadReturns();
+                                                                                } catch (err) {
+                                                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToRemoveReturnLine'));
+                                                                                }
+                                                                            }}
+                                                                            title={t('salesOrders.buttons.removeReturnLine')}
+                                                                        >
+                                                                            Γ£ò
+                                                                        </button>  i18next/no-literal-string
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\sales-orders\new\page.tsx
+  488:26  error  disallow literal string: <button
+                          className="text-xs cursor-pointer"
+                          style={{ color: 'var(--text-muted)' }}
+                          onClick={() => {
+                            updateLine(idx, 'productId', '');
+                            updateLine(idx, 'productNumber', '');
+                            updateLine(idx, 'productDescription', '');
+                          }}
+                        >
+                          Γ£ò
+                        </button>  i18next/no-literal-string
+  563:24  error  disallow literal string: <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeLine(idx)}
+                      >
+                        Γ£ò
+                      </button>                                                                                                                                                                                                                                                                                                   i18next/no-literal-string
+
+Γ£û 28 problems (28 errors, 0 warnings)
+

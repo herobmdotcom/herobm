@@ -7,6 +7,8 @@ import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 export default function AccountsPage() {
   const router = useRouter();
@@ -32,11 +34,11 @@ export default function AccountsPage() {
     {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
-      width: 90,
-      cellRenderer: (params: { value: string }) => {
+      width: 120,
+      cellRenderer: (params: any) => {
         if (!params.value) return null;
-        return <span className={`badge badge-${params.value}`}>{tCommon(`states.${params.value}`)}</span>;
-      },
+        return <StateBadge state={params.value as ValidState} />;
+      }
     },
     { field: 'gstPosition', headerName: tCommon('columns.gstPosition'), width: 110, hide: true },
     { field: 'currencyCode', headerName: tCommon('columns.currency'), width: 90 },
@@ -71,23 +73,56 @@ export default function AccountsPage() {
   }, [router]);
 
   return (
-    <Shell>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">{tAccounts('title')}</h2>
-        <Link href="/accounts/new" className="btn btn-secondary btn-sm">
-          {tAccounts('buttons.createAccount')}
-        </Link>
-      </div>
-      <DataGrid
-        endpoint="/api/accounts"
-        columns={columns}
-        gridKey="ops-accounts"
-        searchPlaceholder={tAccounts('placeholders.searchAccounts')}
-        exportFileName="accounts"
-        fetchAll
-        showArchivedToggle
-        onRowClicked={handleRowClicked}
-      />
-    </Shell>
+    <div className="h-full flex flex-col relative" style={{ margin: "-2rem", padding: "2rem" }}>
+      <Shell>
+        <div className="relative h-full flex flex-col">
+          {/* Removed aggressive background blur gradients */}
+        
+        <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <DataGrid
+            endpoint="/api/accounts"
+            columns={columns}
+            gridKey="ops-accounts"
+            searchPlaceholder={tAccounts('placeholders.searchAccounts')}
+            exportFileName="accounts"
+            gridTheme="ag-theme-alpine"
+            fetchAll
+            showArchivedToggle
+            onRowClicked={handleRowClicked}
+            renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+              <div className="flex items-center justify-between px-6 py-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                    {tAccounts('title')}
+                  </h2>
+                  <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                    <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      {tAccounts('totalAccounts')}
+                    </span>
+                    <span className="text-[11px] font-bold text-[#006b5c]">
+                      {loading ? '...' : rowCount.toLocaleString()}
+                    </span>
+                  </div>
+                  
+                  {/* Search Bar natively rendered inside header row */}
+                  <div className="flex-1 ml-6 max-w-md">
+                    {searchInput}
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 shrink-0 ml-4">
+                  {optionsButton}
+                  <Link href="/accounts/new" className="btn btn-secondary !rounded-lg !px-5 !py-2 !bg-[#006b5c] !text-white !border-none hover:brightness-110 shadow-none transition-all">
+                    {tAccounts('buttons.createAccount')}
+                  </Link>
+                </div>
+              </div>
+            )}
+          />
+        </div>
+        </div>
+      </Shell>
+    </div>
   );
 }
