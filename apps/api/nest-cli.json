@@ -7,7 +7,8 @@
     "assets": [
       { "include": "auth/casbin/*.conf", "watchAssets": true },
       { "include": "auth/casbin/*.csv", "watchAssets": true },
-      { "include": "reports/templates/**/*.typ", "watchAssets": true }
+      { "include": "reports/templates/**/*.typ", "watchAssets": true },
+      { "include": "gl/charts/*.json", "watchAssets": true }
     ]
   }
 }

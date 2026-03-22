@@ -60,7 +60,9 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Shell>
-      <DashboardContent />
+      <div className="p-8 h-full overflow-y-auto">
+        <DashboardContent />
+      </div>
     </Shell>
   );
 }

@@ -6,6 +6,7 @@ import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 
 export default function NewSupplierPage() {
@@ -50,16 +51,19 @@ export default function NewSupplierPage() {
   
   return (
     <Shell>
-            <EntityHeader
-        title={t('suppliers.buttons.createSupplier')}
-        subtitle={t('suppliers.management')}
-        onBack={() => router.push('/suppliers')}
-        isSaving={submitting}
-        isDirty={isValid}
-        onSave={handleSubmit}
-        saveLabel={t('suppliers.buttons.createSupplier')}
-      />
-
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={t('suppliers.buttons.createSupplier')}
+            subtitle={t('suppliers.management')}
+            onBack={() => router.push('/suppliers')}
+            isSaving={submitting}
+            isDirty={isValid}
+            onSave={handleSubmit}
+            saveLabel={t('suppliers.buttons.createSupplier')}
+          />
+        }
+      >
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
           {/* LEFT COLUMN */}
@@ -238,6 +242,7 @@ export default function NewSupplierPage() {
           </div>
         </div>
       </div>
+      </DetailsLayout>
     </Shell>
   );
 

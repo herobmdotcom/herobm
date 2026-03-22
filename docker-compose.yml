@@ -109,7 +109,7 @@ services:
       ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
       ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
     ports:
-      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9091:9091"
     depends_on:
       postgres-custom:
         condition: service_healthy

@@ -42,14 +42,14 @@ describe('Archive E2E — Full Round-Trip', () => {
     // Login as admin (has archive action)
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
+      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD || 'password' })
       .expect(201);
     adminToken = adminLogin.body.access_token;
 
     // Login as viewer (read-only, no archive action)
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD })
+      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD || 'password' })
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 
@@ -422,7 +422,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived product appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/products?includeArchived=true')
+        .get('/api/products?includeArchived=true&q=E2E%20Archive%20Test')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

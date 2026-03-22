@@ -9,6 +9,7 @@ export interface NavItem {
   href: string;
   label: string;
   icon: string;
+  subItems?: { href: string; label: string }[];
 }
 
 export interface NavSection {
@@ -61,20 +62,53 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
                 item.href === '/'
                   ? pathname === '/'
                   : pathname.startsWith(item.href);
+              
+              // Handle sub-item active states to ensure parent stays highlight correctly,
+              // but we only exactly match if it's the exact path when subItems exist.
+              const isParentExact = pathname === item.href;
+
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg mb-0.5 text-sm transition-all duration-150"
-                  style={{
-                    background: isActive ? 'var(--accent-glow)' : 'transparent',
-                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                    fontWeight: isActive ? 600 : 400,
-                  }}
-                >
-                  <span className="material-symbols-outlined text-[18px]" style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}>{item.icon}</span>
-                  {item.label}
-                </Link>
+                <div key={item.href} className="mb-0.5">
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 relative"
+                    style={{
+                      background: isActive ? 'var(--accent-glow)' : 'transparent',
+                      color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                      fontWeight: isActive ? 600 : 400,
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-[18px]" style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}>{item.icon}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {item.subItems && (
+                      <span className="material-symbols-outlined text-[16px] opacity-70">
+                        {isActive ? 'expand_less' : 'expand_more'}
+                      </span>
+                    )}
+                  </Link>
+                  
+                  {item.subItems && isActive && (
+                    <div className="ml-9 mt-1 mb-2 flex flex-col gap-0.5 border-l-2 pl-3 py-1" style={{ borderColor: 'var(--border)' }}>
+                      {item.subItems.map(sub => {
+                        const isSubActive = pathname === sub.href;
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className="text-xs py-1.5 px-3 rounded-md transition-colors"
+                            style={{
+                              background: isSubActive ? 'var(--bg-secondary-hover)' : 'transparent',
+                              color: isSubActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                              fontWeight: isSubActive ? 600 : 400,
+                            }}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

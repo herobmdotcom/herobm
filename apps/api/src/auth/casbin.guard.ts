@@ -8,6 +8,22 @@ import {
 import { Reflector } from '@nestjs/core';
 import { newEnforcer, Enforcer } from 'casbin';
 import * as path from 'path';
+import * as fs from 'fs';
+
+/**
+ * Resolve a Casbin asset file. Tries the compiled dist/ path first
+ * (__dirname), then falls back to the source tree so local dev
+ * survives a dist/ wipe from `nest start --watch`.
+ */
+function resolveCasbinAsset(filename: string): string {
+  const distPath = path.join(__dirname, 'casbin', filename);
+  if (fs.existsSync(distPath)) return distPath;
+  // Fallback: walk up from dist/auth → project root → src/auth/casbin
+  const srcPath = path.resolve(__dirname, '..', '..', 'src', 'auth', 'casbin', filename);
+  if (fs.existsSync(srcPath)) return srcPath;
+  // If neither exists, return the dist path so the original error surfaces
+  return distPath;
+}
 
 // Decorators for controllers
 import { SetMetadata } from '@nestjs/common';
@@ -35,8 +51,8 @@ export class CasbinGuard implements CanActivate {
 
   private async getEnforcer(): Promise<Enforcer> {
     if (!this.enforcer) {
-      const modelPath = path.join(__dirname, 'casbin', 'model.conf');
-      const policyPath = path.join(__dirname, 'casbin', 'policy.csv');
+      const modelPath = resolveCasbinAsset('model.conf');
+      const policyPath = resolveCasbinAsset('policy.csv');
       this.enforcer = await newEnforcer(modelPath, policyPath);
     }
     return this.enforcer;

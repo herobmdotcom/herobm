@@ -43,4 +43,11 @@ export class InventoryController {
   ) {
     return this.inventoryService.findBins({ ...query, locationNo });
   }
+
+  @Get('movements')
+  @CasbinAction('read')
+  getMovements(@Query('days') days?: string) {
+    const daysInt = parseInt(days || '30', 10);
+    return this.inventoryService.getMovements(isNaN(daysInt) ? 30 : daysInt);
+  }
 }

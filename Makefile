@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume
+.PHONY: up down restart logs clean status ps nuke test-infra test-structural check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -134,6 +134,9 @@ extract-docker-dry:
 	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract --dry-run
 
 # --- Custom API ---
+
+dev-local:
+	powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
 
 dev-api:
 	node --env-file=.env apps/api/dist/main.js

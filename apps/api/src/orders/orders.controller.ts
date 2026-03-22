@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -7,7 +7,6 @@ import {
   Param,
   Query,
   Body,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -25,6 +24,8 @@ import {
   UpdateOrderLineDto,
 } from './dto';
 import { PaginationQuery } from '../common/pagination';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 /**
  * Core order CRUD and state transition endpoints.
@@ -33,6 +34,7 @@ import { PaginationQuery } from '../common/pagination';
  * - OrderReturnsController  → /sales-orders/:id/returns/*
  * - OrderPickingController  → /sales-orders/:id/picking/*
  * - OrderShipmentsController → /sales-orders/:id/shipments/*
+ * - SalesInvoiceController  → /sales-orders/:id/invoice (in InvoicesModule)
  */
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -71,8 +73,8 @@ export class OrdersController {
 
   @Post()
   @CasbinAction('write')
-  create(@Body() body: CreateOrderDto, @Req() req: any) {
-    return this.ordersWriteService.create(body, req.user.username);
+  create(@Body() body: CreateOrderDto, @AuthUser() user: JwtUser) {
+    return this.ordersWriteService.create(body, user.username);
   }
 
   @Patch(':id')
@@ -80,9 +82,9 @@ export class OrdersController {
   update(
     @Param('id') id: string,
     @Body() body: UpdateOrderDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.update(id, body, req.user.username);
+    return this.ordersWriteService.update(id, body, user.username);
   }
 
   @Patch(':id/state')
@@ -90,25 +92,25 @@ export class OrdersController {
   changeState(
     @Param('id') id: string,
     @Body('stateCode') stateCode: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.ordersWriteService.changeState(
       id,
       stateCode,
-      req.user.username,
+      user.username,
     );
   }
 
   @Post(':id/archive')
   @CasbinAction('archive')
-  archive(@Param('id') id: string, @Req() req: any) {
-    return this.ordersWriteService.archive(id, req.user.username);
+  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.ordersWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
   @CasbinAction('archive')
-  unarchive(@Param('id') id: string, @Req() req: any) {
-    return this.ordersWriteService.unarchive(id, req.user.username);
+  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.ordersWriteService.unarchive(id, user.username);
   }
 
   @Post(':id/lines')
@@ -116,9 +118,9 @@ export class OrdersController {
   addLine(
     @Param('id') id: string,
     @Body() body: CreateOrderLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.addLine(id, body, req.user.username);
+    return this.ordersWriteService.addLine(id, body, user.username);
   }
 
   @Patch(':id/lines/:lineId')
@@ -127,13 +129,13 @@ export class OrdersController {
     @Param('id') id: string,
     @Param('lineId') lineId: string,
     @Body() body: UpdateOrderLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.ordersWriteService.updateLine(
       id,
       lineId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -142,8 +144,8 @@ export class OrdersController {
   removeLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.removeLine(id, lineId, req.user.username);
+    return this.ordersWriteService.removeLine(id, lineId, user.username);
   }
 }

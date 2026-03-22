@@ -1,0 +1,53 @@
+
+> api@0.0.1 prebuild
+> jest --bail
+
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/purchase-orders/purchase-orders.service.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/receptions/receptions.service.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/orders/picking.service.spec.ts
+PASS src/receptions/receptions.controller.spec.ts
+PASS src/orders/shipment.service.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/orders/returns-write.service.spec.ts
+PASS src/inventory/inventory.service.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/orders/orders-write.service.spec.ts
+PASS src/gst/gst-categories.controller.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/gl/gl.service.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/suppliers/suppliers-write.service.spec.ts
+PASS src/suppliers/suppliers.service.spec.ts
+PASS src/orders/order-lifecycle-rules.spec.ts
+PASS src/gl/coa-loader.service.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/accounts/accounts-write.service.spec.ts
+PASS src/reports/picking-slip.service.spec.ts
+PASS src/gst/gst-categories.service.spec.ts
+PASS src/reports/report.service.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+
+Test Suites: 39 passed, 39 total
+Tests:       417 passed, 417 total
+Snapshots:   0 total
+Time:        2.546 s
+Ran all test suites.
+
+> api@0.0.1 build
+> nest build
+

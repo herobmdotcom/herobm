@@ -107,7 +107,7 @@ export default function PickingSection({
       {/* ------------------------------------------------------------------ */}
       {/* Picking Progress Card                                              */}
       {/* ------------------------------------------------------------------ */}
-      <details className="card mb-6" open>
+      <details className="card" open>
         <summary
           className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
           style={{
@@ -126,9 +126,11 @@ export default function PickingSection({
               <span aria-hidden>🖨️</span>{' '}{tPicking('printPickingSlip')}
             </button>
             <button
-              className="btn btn-primary btn-sm"
+              className="btn btn-secondary btn-sm"
               onClick={pickAllOrder}
-              disabled={summary.isFullyPicked}
+              disabled={summary.isFullyPicked && summary.lines.every(
+                (l) => parseFloat(l.quantityShipped) >= parseFloat(l.quantity),
+              )}
             >
               ✅ {tPicking('pickAllCreateShipment')}
             </button>
@@ -146,7 +148,7 @@ export default function PickingSection({
 
         {/* Progress bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--surface-raised, #1f2937)', overflow: 'hidden' }}>
+          <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--border)', overflow: 'hidden' }}>
             <div
               style={{
                 width: `${progressPct}%`, height: '100%', borderRadius: 4,
@@ -180,7 +182,7 @@ export default function PickingSection({
       {/* ------------------------------------------------------------------ */}
       {showCreateShipment && (
         <div
-          className="card mb-6"
+          className="card"
           style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)' }}
         >
           <div className="flex items-center justify-between mb-3">
@@ -282,7 +284,7 @@ export default function PickingSection({
       {/* Existing Shipments                                                 */}
       {/* ------------------------------------------------------------------ */}
       {hasShipments && (
-        <details className="card mb-6" open>
+        <details className="card" open>
           <summary
             className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
             style={{

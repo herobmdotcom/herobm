@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -8,7 +8,6 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -24,6 +23,8 @@ import {
   CreatePurchaseOrderLineDto,
   UpdatePurchaseOrderLineDto,
 } from './dto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('purchase-orders')
@@ -35,11 +36,11 @@ export class PurchaseOrdersController {
   @CasbinAction('write')
   async create(
     @Body() createPurchaseOrderDto: CreatePurchaseOrderDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.create(
       createPurchaseOrderDto,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -63,12 +64,12 @@ export class PurchaseOrdersController {
   async update(
     @Param('id') id: string,
     @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.update(
       id,
       updatePurchaseOrderDto,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -83,14 +84,14 @@ export class PurchaseOrdersController {
 
   @Post(':id/archive')
   @CasbinAction('archive')
-  async archive(@Param('id') id: string, @Req() req: any) {
-    return this.purchaseOrdersService.archive(id, req.user.username);
+  async archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.purchaseOrdersService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
   @CasbinAction('archive')
-  async unarchive(@Param('id') id: string, @Req() req: any) {
-    return this.purchaseOrdersService.unarchive(id, req.user.username);
+  async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.purchaseOrdersService.unarchive(id, user.username);
   }
 
   @Post(':id/lines')

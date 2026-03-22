@@ -186,7 +186,7 @@ describe('ShipmentService', () => {
         1: [PICKING_ORDER],
         2: [ORDER_LINE], // first findOrderLine
         3: [ORDER_LINE], // findOrderLine inside assertShipmentQtyAvailable
-        4: [], // getShippedPerLine (shipments)
+        4: [], // getCommittedPerLine (shipments)
         5: [], // generateShipmentNumber (max shipment lookup)
       });
 
@@ -221,7 +221,7 @@ describe('ShipmentService', () => {
         1: [PICKING_ORDER],
         2: [ORDER_LINE],
         3: [ORDER_LINE],
-        4: [], // getShippedPerLine
+        4: [], // getCommittedPerLine
       });
       // ORDER_LINE has quantityPicked=10. Requesting 15 should fail.
       const dto = {
@@ -274,7 +274,7 @@ describe('ShipmentService', () => {
         1: [MOCK_SHIPMENT], // shipment
         2: [ORDER_LINE], // first findOrderLine
         3: [ORDER_LINE], // findOrderLine inside assertShipmentQtyAvailable
-        4: [], // getShippedPerLine (shipments)
+        4: [], // getCommittedPerLine (shipments)
       });
 
       const txQb = createMockQueryBuilder([MOCK_SHIPMENT_LINE]);

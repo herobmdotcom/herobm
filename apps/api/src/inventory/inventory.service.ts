@@ -90,6 +90,67 @@ export class InventoryService {
     return { data: rows, page, limit };
   }
 
+  async getMovements(days: number) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffIso = cutoff.toISOString();
+
+    const query = sql`
+      SELECT
+        p.product_number AS "productNumber",
+        p.name AS "productName",
+        SUM(CASE WHEN m.type = 'IN' THEN m.quantity::numeric ELSE 0 END) AS "stockIn",
+        SUM(CASE WHEN m.type = 'OUT' THEN m.quantity::numeric ELSE 0 END) AS "stockOut",
+        SUM(CASE WHEN m.type = 'IN' THEN m.quantity::numeric ELSE -(m.quantity::numeric) END) AS "netChange"
+      FROM (
+        SELECT
+          sh.created_on as date,
+          'OUT' as type,
+          sh.shipment_number as reference,
+          sol.product_id,
+          shl.quantity_shipped as quantity
+        FROM modbm_core.sales_order_shipments sh
+        JOIN modbm_core.sales_order_shipment_lines shl ON sh.shipment_id = shl.shipment_id
+        JOIN modbm_core.sales_order_lines sol ON sol.sales_order_line_id = shl.sales_order_line_id
+        WHERE sh.state_code != 'cancelled' AND sh.created_on >= ${cutoffIso}
+        
+        UNION ALL
+        
+        SELECT
+          re.created_on as date,
+          'IN' as type,
+          re.reception_number as reference,
+          pol.product_id,
+          rel.quantity_received as quantity
+        FROM modbm_core.purchase_order_receptions re
+        JOIN modbm_core.purchase_order_reception_lines rel ON re.reception_id = rel.reception_id
+        JOIN modbm_core.purchase_order_lines pol ON pol.purchase_order_line_id = rel.purchase_order_line_id
+        WHERE re.state_code != 'cancelled' AND re.created_on >= ${cutoffIso}
+
+        UNION ALL
+
+        SELECT
+          ret.created_on as date,
+          'IN' as type,
+          ret.return_number as reference,
+          sol.product_id,
+          retl.quantity_returned as quantity
+        FROM modbm_core.sales_order_returns ret
+        JOIN modbm_core.sales_order_return_lines retl ON ret.return_id = retl.return_id
+        JOIN modbm_core.sales_order_lines sol ON sol.sales_order_line_id = retl.sales_order_line_id
+        WHERE ret.state_code != 'cancelled' AND ret.created_on >= ${cutoffIso}
+      ) m
+      JOIN public_marts.mart_products p ON p.product_id = m.product_id
+      WHERE m.quantity::numeric > 0
+      GROUP BY p.product_number, p.name
+      ORDER BY p.name ASC
+    `;
+
+    const result = await this.db.execute(query);
+    const rows = (result as any).rows ?? result;
+    return { data: rows };
+  }
+
   // =========================================================================
   // Stock mutations (write to modbm_core.inventory_levels)
   //

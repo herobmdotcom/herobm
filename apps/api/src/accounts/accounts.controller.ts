@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Param,
@@ -7,7 +7,6 @@ import {
   Post,
   Patch,
   Body,
-  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AccountsService } from './accounts.service';
@@ -18,6 +17,8 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { PaginationQuery } from '../common/pagination';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('accounts')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -42,25 +43,25 @@ export class AccountsController {
 
   @Post()
   @CasbinAction('write')
-  create(@Body() dto: any, @Req() req: any) {
-    return this.accountsWriteService.create(dto, req.user.username);
+  create(@Body() dto: any, @AuthUser() user: JwtUser) {
+    return this.accountsWriteService.create(dto, user.username);
   }
 
   @Patch(':id')
   @CasbinAction('write')
-  update(@Param('id') id: string, @Body() dto: any, @Req() req: any) {
-    return this.accountsWriteService.update(id, dto, req.user.username);
+  update(@Param('id') id: string, @Body() dto: any, @AuthUser() user: JwtUser) {
+    return this.accountsWriteService.update(id, dto, user.username);
   }
 
   @Post(':id/archive')
   @CasbinAction('archive')
-  archive(@Param('id') id: string, @Req() req: any) {
-    return this.accountsWriteService.archive(id, req.user.username);
+  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.accountsWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
   @CasbinAction('archive')
-  unarchive(@Param('id') id: string, @Req() req: any) {
-    return this.accountsWriteService.unarchive(id, req.user.username);
+  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.accountsWriteService.unarchive(id, user.username);
   }
 }

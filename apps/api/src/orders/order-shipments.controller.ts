@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -22,6 +21,8 @@ import {
   AddShipmentLineDto,
   UpdateShipmentLineDto,
 } from './dto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -34,9 +35,9 @@ export class OrderShipmentsController {
   createShipment(
     @Param('id') id: string,
     @Body() body: CreateShipmentDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.createShipment(id, body, req.user.username);
+    return this.shipmentService.createShipment(id, body, user.username);
   }
 
   @Get(':id/shipments')
@@ -60,12 +61,12 @@ export class OrderShipmentsController {
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
     @Body() body: UpdateShipmentDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.updateShipment(
       shipmentId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -75,12 +76,12 @@ export class OrderShipmentsController {
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
     @Body('stateCode') stateCode: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.changeShipmentState(
       shipmentId,
       stateCode,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -90,12 +91,12 @@ export class OrderShipmentsController {
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
     @Body() body: AddShipmentLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.addShipmentLine(
       shipmentId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -106,13 +107,13 @@ export class OrderShipmentsController {
     @Param('shipmentId') shipmentId: string,
     @Param('lineId') lineId: string,
     @Body() body: UpdateShipmentLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.updateShipmentLine(
       shipmentId,
       lineId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -122,12 +123,12 @@ export class OrderShipmentsController {
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
     @Param('lineId') lineId: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.removeShipmentLine(
       shipmentId,
       lineId,
-      req.user.username,
+      user.username,
     );
   }
 }

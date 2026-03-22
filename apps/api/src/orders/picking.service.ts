@@ -12,7 +12,7 @@ import { products as martProducts } from '../drizzle/schema';
 import {
   findOrder,
   findOrderLine,
-  getShippedPerLine,
+  getCommittedPerLine,
   writeEvent,
 } from './shipment-helpers';
 import { ShipmentService } from './shipment.service';
@@ -60,15 +60,15 @@ export class PickingService {
     }
 
     // Ensure picked qty doesn't drop below what's already been shipped
-    const shippedMap = await getShippedPerLine(this.db, orderId);
-    const shipped = shippedMap.get(lineId) || 0;
-    if (qty < shipped) {
+    const committedMap = await getCommittedPerLine(this.db, orderId);
+    const committed = committedMap.get(lineId) || 0;
+    if (qty < committed) {
       throw new BadRequestException(
-        `Cannot reduce picked to ${qty} — ${shipped} already shipped on this line`,
+        `Cannot reduce picked to ${qty} — ${committed} already committed to shipments on this line`,
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked })
@@ -111,7 +111,7 @@ export class PickingService {
 
     const line = await findOrderLine(this.db, lineId, orderId);
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked: line.quantity })
@@ -164,7 +164,7 @@ export class PickingService {
     }
 
     // First, set all lines as fully picked
-    await this.db.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: DrizzleDB) => {
       for (const line of lines) {
         await tx
           .update(salesOrderLineItems)
@@ -192,11 +192,11 @@ export class PickingService {
 
     // Now create the shipment with unshipped quantities, using the ShipmentService
     // (which will re-read the picked state and compute availability correctly)
-    const shippedMap = await getShippedPerLine(this.db, orderId);
+    const committedMap = await getCommittedPerLine(this.db, orderId);
     const shipmentLines = lines
       .map((line) => {
-        const alreadyShipped = shippedMap.get(line.salesOrderLineId) ?? 0;
-        const toShip = parseFloat(line.quantity) - alreadyShipped;
+        const alreadyCommitted = committedMap.get(line.salesOrderLineId) ?? 0;
+        const toShip = parseFloat(line.quantity) - alreadyCommitted;
         if (toShip <= 0) return null;
         return {
           salesOrderLineId: line.salesOrderLineId,
@@ -245,12 +245,12 @@ export class PickingService {
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
 
-    const shippedMap = await getShippedPerLine(this.db, orderId);
+    const committedMap = await getCommittedPerLine(this.db, orderId);
 
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
       const picked = parseFloat(line.quantityPicked ?? '0');
-      const shipped = shippedMap.get(line.salesOrderLineId) ?? 0;
+      const committed = committedMap.get(line.salesOrderLineId) ?? 0;
       return {
         salesOrderLineId: line.salesOrderLineId,
         lineNumber: line.lineNumber,
@@ -259,7 +259,7 @@ export class PickingService {
         productDescription: line.productDescription,
         quantity: line.quantity,
         quantityPicked: line.quantityPicked ?? '0',
-        quantityShipped: String(shipped),
+        quantityShipped: String(committed),
         remaining: String(ordered - picked),
         isFullyPicked: picked >= ordered,
       };

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
-import { findOrder, getShippedPerLine, writeEvent } from './shipment-helpers';
+import { findOrder, getCommittedPerLine, writeEvent } from './shipment-helpers';
 
 export interface LifecycleTrigger {
   entity: 'shipment';
@@ -57,13 +57,13 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
 
     if (lines.length === 0) return null;
 
-    const shippedMap = await getShippedPerLine(db, salesOrderId);
+    const committedMap = await getCommittedPerLine(db, salesOrderId);
 
     // 4. Check if fully shipped
     const isFullyShipped = lines.every((line) => {
       const ordered = parseFloat(line.quantity);
-      const shipped = shippedMap.get(line.salesOrderLineId) ?? 0;
-      return shipped >= ordered;
+      const committed = committedMap.get(line.salesOrderLineId) ?? 0;
+      return committed >= ordered;
     });
 
     if (!isFullyShipped) return null;
@@ -126,13 +126,13 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
 
     if (lines.length === 0) return null;
 
-    const shippedMap = await getShippedPerLine(db, salesOrderId);
+    const committedMap = await getCommittedPerLine(db, salesOrderId);
 
     // 4. Check if NO LONGER fully shipped
     const isFullyShipped = lines.every((line) => {
       const ordered = parseFloat(line.quantity);
-      const shipped = shippedMap.get(line.salesOrderLineId) ?? 0;
-      return shipped >= ordered;
+      const committed = committedMap.get(line.salesOrderLineId) ?? 0;
+      return committed >= ordered;
     });
 
     if (isFullyShipped) return null;

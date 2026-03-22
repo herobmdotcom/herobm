@@ -21,9 +21,11 @@ import {
 // ============================================================================
 
 /**
- * Sum shipped quantities per order line across non-cancelled shipments.
+ * Sum committed (non-cancelled) shipment quantities per order line.
+ * Includes both draft and dispatched shipments so that pick-all and
+ * shipment validation never over-allocate.
  */
-export async function getShippedPerLine(
+export async function getCommittedPerLine(
   db: DrizzleDB,
   salesOrderId: string,
 ): Promise<Map<string, number>> {
@@ -33,7 +35,7 @@ export async function getShippedPerLine(
     .where(
       and(
         eq(salesOrderShipments.salesOrderId, salesOrderId),
-        eq(salesOrderShipments.stateCode, 'dispatched'),
+        sql`${salesOrderShipments.stateCode} != 'cancelled'`,
       ),
     );
 
@@ -78,20 +80,20 @@ export async function assertShipmentQtyAvailable(
 
   const orderLine = await findOrderLine(db, salesOrderLineId, salesOrderId);
   const picked = parseFloat(orderLine.quantityPicked ?? '0');
-  const shippedMap = await getShippedPerLine(db, salesOrderId);
-  let alreadyShipped = shippedMap.get(salesOrderLineId) ?? 0;
+  const committedMap = await getCommittedPerLine(db, salesOrderId);
+  let alreadyCommitted = committedMap.get(salesOrderLineId) ?? 0;
 
   // When updating a shipment line, exclude its own quantity (we're replacing it)
   if (excludeShipmentLineId) {
     const existing = await findShipmentLineById(db, excludeShipmentLineId);
-    alreadyShipped -= parseFloat(existing.quantityShipped);
+    alreadyCommitted -= parseFloat(existing.quantityShipped);
   }
 
-  const available = picked - alreadyShipped;
+  const available = picked - alreadyCommitted;
 
   if (requestedQty > available) {
     throw new BadRequestException(
-      `Cannot ship ${requestedQty} of line ${lineNumber} — only ${available} available (${picked} picked, ${alreadyShipped} already shipped).`,
+      `Cannot ship ${requestedQty} of line ${lineNumber} — only ${available} available (${picked} picked, ${alreadyCommitted} already committed).`,
     );
   }
 }
@@ -99,6 +101,14 @@ export async function assertShipmentQtyAvailable(
 // ============================================================================
 // Audit + outbox
 // ============================================================================
+
+/** Event types that have active ERPNext mappers in the outbox-relay worker. */
+const OUTBOX_EVENT_TYPES = new Set([
+  'goods_received',
+  'goods_dispatched',
+  'sales_invoiced',
+  'purchase_invoiced',
+]);
 
 export async function writeEvent(
   tx: any,
@@ -108,6 +118,7 @@ export async function writeEvent(
   actor: string,
   aggregateType: string = 'sales_order',
 ): Promise<void> {
+  // Always write to the entity event table (audit log)
   await tx.insert(orderEvents).values({
     salesOrderId,
     eventType,
@@ -115,12 +126,15 @@ export async function writeEvent(
     actor,
   });
 
-  await tx.insert(outbox).values({
-    aggregateType,
-    aggregateId: salesOrderId,
-    eventType,
-    payload,
-  });
+  // Only enqueue to the outbox if the worker has a mapper for this type
+  if (OUTBOX_EVENT_TYPES.has(eventType)) {
+    await tx.insert(outbox).values({
+      aggregateType,
+      aggregateId: salesOrderId,
+      eventType,
+      payload,
+    });
+  }
 }
 
 // ============================================================================

@@ -8,7 +8,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <AuthGate>
       <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <main className="ml-60 flex-1 flex flex-col p-8 overflow-hidden">
+        <main className="ml-60 flex-1 flex flex-col overflow-y-auto">
           {children}
         </main>
       </div>

@@ -384,48 +384,20 @@ export default function DataGrid<T>({
                 boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
               }}
             >
-              {/* Include Archived toggle */}
-              {showArchivedToggle && (
-                <>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      width: "100%",
-                      padding: "6px 12px",
-                      cursor: "pointer",
-                      fontSize: 13,
-                      color: "var(--text-primary)",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--bg-card-hover)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
-                  >
-                    <input
-                      type="checkbox"
-                      checked={includeArchived}
-                      onChange={(e) => {
-                        setIncludeArchived(e.target.checked);
-                        setPage(1);
-                      }}
-                      style={{ accentColor: "var(--accent)" }}
-                    />
-                    {tGrid('includeArchived')}
-                  </label>
-                  <div
-                    style={{
-                      height: 1,
-                      background: "var(--border)",
-                      margin: "6px 0",
-                    }}
-                  />
-                </>
-              )}
-              {/* Action items */}
+              {/* 1. Export Section */}
+              <div
+                style={{
+                  padding: "2px 12px 4px",
+                  fontSize: 11,
+                  color: "var(--text-muted)",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginTop: 4,
+                }}
+              >
+                {tGrid('export')}
+              </div>
               <button
                 onClick={() => {
                   handleExport();
@@ -451,40 +423,10 @@ export default function DataGrid<T>({
                   (e.currentTarget.style.background = "transparent")
                 }
               >
-                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span aria-hidden>⬇</span>{' '}{tGrid('exportCsv')}
               </button>
-              {gridKey && (
-                <button
-                  onClick={() => {
-                    handleResetColumns();
-                    setColPickerOpen(false);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    width: "100%",
-                    padding: "6px 12px",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                    textAlign: "left",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "var(--bg-card-hover)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
-                </button>
-              )}
-              {/* Divider + column visibility */}
+
+              {/* 2. Columns Section */}
               {gridKey && (
                 <>
                   <div
@@ -548,6 +490,88 @@ export default function DataGrid<T>({
                       </label>
                     );
                   })}
+                  <button
+                    onClick={() => {
+                      handleResetColumns();
+                      setColPickerOpen(false);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      width: "100%",
+                      padding: "6px 12px",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      color: "var(--text-primary)",
+                      textAlign: "left",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-card-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span aria-hidden>↻</span>{' '}{tGrid('resetColumns')}
+                  </button>
+                </>
+              )}
+
+              {/* 3. Rows Section */}
+              {showArchivedToggle && (
+                <>
+                  <div
+                    style={{
+                      height: 1,
+                      background: "var(--border)",
+                      margin: "6px 0",
+                    }}
+                  />
+                  <div
+                    style={{
+                      padding: "2px 12px 4px",
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {tGrid('rowCountLabel')}
+                  </div>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      width: "100%",
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      color: "var(--text-primary)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-card-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeArchived}
+                      onChange={(e) => {
+                        setIncludeArchived(e.target.checked);
+                        setPage(1);
+                      }}
+                      style={{ accentColor: "var(--accent)" }}
+                    />
+                    {tGrid('includeArchived')}
+                  </label>
                 </>
               )}
             </div>
@@ -581,7 +605,6 @@ export default function DataGrid<T>({
                 color: "var(--text-secondary)",
               }}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span aria-hidden>←</span>{' '}{tGrid('prev')}
             </button>
             <span
@@ -600,7 +623,6 @@ export default function DataGrid<T>({
                 color: "var(--text-secondary)",
               }}
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
               {tGrid('next')}{' '}<span aria-hidden>→</span>
             </button>
           </div>

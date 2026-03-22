@@ -1,0 +1,68 @@
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Marcel\volz\modbm\modbm\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\package-lock.json
+   * C:\Users\Marcel\volz\modbm\modbm\apps\package-lock.json
+
+   Γû▓ Next.js 15.5.14
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 1447ms
+   Linting and checking validity of types ...
+
+ ΓÜá The Next.js plugin was not detected in your ESLint configuration. See https://nextjs.org/docs/app/api-reference/config/eslint#migrating-existing-config
+
+./app/accounts/[id]/page.tsx
+474:148  Warning: disallow literal string: <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Record Details
+            </h3>  i18next/no-literal-string
+
+./app/gl/journal-entries/page.tsx
+191:36  Warning: Unused eslint-disable directive (no problems were reported from 'i18next/no-literal-string').
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/20) ...
+   Generating static pages (5/20) 
+   Generating static pages (10/20) 
+   Generating static pages (15/20) 
+ Γ£ô Generating static pages (20/20)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+Γöî Γùï /                                      948 B         122 kB
+Γö£ Γùï /_not-found                            992 B         103 kB
+Γö£ Γùï /accounts                            1.68 kB         376 kB
+Γö£ ╞Æ /accounts/[id]                       4.14 kB         130 kB
+Γö£ Γùï /accounts/new                        2.03 kB         128 kB
+Γö£ Γùï /bins                                1.11 kB         376 kB
+Γö£ Γùï /gl/general-ledger                    1.7 kB         122 kB
+Γö£ Γùï /gl/journal-entries                  2.08 kB         123 kB
+Γö£ Γùï /gl/trial-balance                    1.63 kB         122 kB
+Γö£ Γùï /inventory                           1.25 kB         376 kB
+Γö£ Γùï /products                             1.5 kB         376 kB
+Γö£ ╞Æ /products/[id]                       3.98 kB         130 kB
+Γö£ Γùï /products/new                        1.86 kB         128 kB
+Γö£ Γùï /purchase-orders                     2.14 kB         377 kB
+Γö£ ╞Æ /purchase-orders/[id]                6.35 kB         131 kB
+Γö£ Γùï /purchase-orders/new                 4.21 kB         125 kB
+Γö£ Γùï /sales-orders                        2.15 kB         377 kB
+Γö£ ╞Æ /sales-orders/[id]                   10.2 kB         140 kB
+Γö£ Γùï /sales-orders/new                    4.86 kB         126 kB
+Γö£ Γùï /settings/erpnext-sync               2.63 kB         123 kB
+Γö£ Γùï /suppliers                           1.68 kB         376 kB
+Γö£ ╞Æ /suppliers/[id]                      4.29 kB         130 kB
+Γöö Γùï /suppliers/new                       1.86 kB         128 kB
++ First Load JS shared by all             102 kB
+  Γö£ chunks/255-38b49df12a94ee57.js         46 kB
+  Γö£ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  Γöö other shared chunks (total)          1.99 kB
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

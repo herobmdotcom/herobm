@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Inject,
   NotFoundException,
@@ -194,7 +194,7 @@ export class ReturnsWriteService {
 
     const returnNumber = await this.generateReturnNumber();
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [ret] = await tx
         .insert(salesOrderReturns)
         .values({
@@ -252,7 +252,7 @@ export class ReturnsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
       const [updated] = await tx
@@ -302,7 +302,7 @@ export class ReturnsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderReturns)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -402,7 +402,7 @@ export class ReturnsWriteService {
       }
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [line] = await tx
         .insert(salesOrderReturnLines)
         .values({
@@ -488,7 +488,7 @@ export class ReturnsWriteService {
       }
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
 
       const [updated] = await tx
@@ -539,7 +539,7 @@ export class ReturnsWriteService {
 
     const existingLine = await this.findReturnLine(lineId, returnId);
 
-    await this.db.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .delete(salesOrderReturnLines)
         .where(eq(salesOrderReturnLines.returnLineId, lineId));

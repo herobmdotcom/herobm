@@ -6,7 +6,8 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { outbox, modbmCore } from './schema';
 import { eq, isNull, sql } from 'drizzle-orm';
 import express from 'express';
-import { collectDefaultMetrics, Registry } from 'prom-client';
+import { collectDefaultMetrics, Registry, Counter } from 'prom-client';
+import { relayLogger as logger } from './logger';
 
 // Helpers
 function requireEnv(name: string): string {
@@ -29,7 +30,7 @@ const PG_DB = process.env.POSTGRES_DB || 'custom_app';
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 const REDIS_PASSWORD = requireEnv('REDIS_PASSWORD');
 
-const PORT = 9090;
+const PORT = 9091;
 
 // Setup DB
 const pgClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`);
@@ -55,13 +56,40 @@ const syncQueue = new Queue('erpnext-sync', { connection });
 const register = new Registry();
 collectDefaultMetrics({ register });
 
+const eventsProcessedCounter = new Counter({
+  name: 'outbox_events_processed_total',
+  help: 'Total outbox events successfully enqueued for ERPNext sync',
+  labelNames: ['event_type'],
+  registers: [register],
+});
+
+const eventsFailedCounter = new Counter({
+  name: 'outbox_events_failed_total',
+  help: 'Total outbox event processing failures',
+  labelNames: ['event_type'],
+  registers: [register],
+});
+
+const journalEntriesCounter = new Counter({
+  name: 'journal_entries_created_total',
+  help: 'Total ERPNext Journal Entries successfully created',
+  labelNames: ['event_type'],
+  registers: [register],
+});
+
+// Re-export counters for relay.service to use
+export { eventsProcessedCounter, eventsFailedCounter, journalEntriesCounter };
+
 import { pollOutbox, processEvent } from './relay.service';
 
 // Start Worker
-const worker = new Worker('erpnext-sync', (job) => processEvent(job, erpClient), { connection, concurrency: 5 });
+const worker = new Worker('erpnext-sync', (job) => processEvent(job, erpClient, db), { connection, concurrency: 5 });
 
 worker.on('failed', (job, err) => {
-  console.error(`Job ${job?.id} failed with error:`, err.message);
+  logger.error({ jobId: job?.id, err: err.message }, 'BullMQ job failed');
+  if (job?.data?.type) {
+    eventsFailedCounter.inc({ event_type: job.data.type });
+  }
 });
 
 // Start Express for Metrics
@@ -71,7 +99,7 @@ app.get('/metrics', async (req, res) => {
   res.end(await register.metrics());
 });
 app.listen(PORT, () => {
-  console.log(`Worker running... Metrics on port ${PORT}`);
+  logger.info({ port: PORT }, 'Worker running, metrics exposed');
 });
 
 // Start Polling

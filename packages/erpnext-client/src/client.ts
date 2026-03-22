@@ -80,4 +80,9 @@ export class ERPNextClient {
 
     return this.request('POST', 'Journal Entry', payload);
   }
+
+  async createResource(doctype: string, payload: any): Promise<any> {
+    const data = { doctype, ...payload };
+    return this.request('POST', doctype, data);
+  }
 }

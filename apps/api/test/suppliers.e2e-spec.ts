@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { suppliers, supplierEvents } from '../src/drizzle/modbm-core-schema';
-import { like } from 'drizzle-orm';
+import { like, sql } from 'drizzle-orm';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -32,7 +32,13 @@ describe('Suppliers (e2e)', () => {
       });
     adminToken = adminRes.body.access_token;
 
-    // Cleanup E2E data
+    // Cleanup E2E data — events first (FK), then suppliers
+    await db.execute(sql`
+      DELETE FROM modbm_core.supplier_events
+      WHERE vendor_id IN (
+        SELECT vendor_id FROM modbm_core.suppliers WHERE vendor_number LIKE 'E2E-%'
+      )
+    `);
     await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
   });
 

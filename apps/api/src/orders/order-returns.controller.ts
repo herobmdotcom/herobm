@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -6,7 +6,6 @@ import {
   Delete,
   Param,
   Body,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -22,6 +21,8 @@ import {
   AddReturnLineDto,
   UpdateReturnLineDto,
 } from './dto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -34,9 +35,9 @@ export class OrderReturnsController {
   createReturn(
     @Param('id') id: string,
     @Body() body: CreateReturnDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.returnsWriteService.createReturn(id, body, req.user.username);
+    return this.returnsWriteService.createReturn(id, body, user.username);
   }
 
   @Get(':id/returns')
@@ -57,12 +58,12 @@ export class OrderReturnsController {
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @Body() body: UpdateReturnDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.updateReturn(
       returnId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -72,12 +73,12 @@ export class OrderReturnsController {
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @Body('stateCode') stateCode: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.changeReturnState(
       returnId,
       stateCode,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -87,12 +88,12 @@ export class OrderReturnsController {
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @Body() body: AddReturnLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.addReturnLine(
       returnId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -103,13 +104,13 @@ export class OrderReturnsController {
     @Param('returnId') returnId: string,
     @Param('lineId') lineId: string,
     @Body() body: UpdateReturnLineDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.updateReturnLine(
       returnId,
       lineId,
       body,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -119,12 +120,12 @@ export class OrderReturnsController {
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @Param('lineId') lineId: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.removeReturnLine(
       returnId,
       lineId,
-      req.user.username,
+      user.username,
     );
   }
 }

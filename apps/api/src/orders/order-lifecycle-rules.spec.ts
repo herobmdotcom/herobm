@@ -37,15 +37,15 @@ function createMockDb(
   return mockTx;
 }
 
-// Since getShippedPerLine and findOrder are imported from shipment-helpers,
+// Since getCommittedPerLine and findOrder are imported from shipment-helpers,
 // we mock that module globally for the test.
 jest.mock('./shipment-helpers', () => ({
   findOrder: jest.fn(),
-  getShippedPerLine: jest.fn(),
+  getCommittedPerLine: jest.fn(),
   writeEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { findOrder, getShippedPerLine, writeEvent } from './shipment-helpers';
+import { findOrder, getCommittedPerLine, writeEvent } from './shipment-helpers';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -65,7 +65,7 @@ describe('Order Lifecycle Rules', () => {
 
     it('should transition order to shipped when all lines are fully shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
-      (getShippedPerLine as jest.Mock).mockResolvedValue(
+      (getCommittedPerLine as jest.Mock).mockResolvedValue(
         new Map([
           ['line1', 10],
           ['line2', 5],
@@ -102,7 +102,7 @@ describe('Order Lifecycle Rules', () => {
 
     it('should do nothing if an order line is only partially shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
-      (getShippedPerLine as jest.Mock).mockResolvedValue(
+      (getCommittedPerLine as jest.Mock).mockResolvedValue(
         new Map([
           ['line1', 10],
           ['line2', 2],
@@ -165,7 +165,7 @@ describe('Order Lifecycle Rules', () => {
     it('should transition order to picking when lines are no longer fully shipped', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'shipped' });
       // Total shipped after cancellation: line1 is full, line2 has 0
-      (getShippedPerLine as jest.Mock).mockResolvedValue(
+      (getCommittedPerLine as jest.Mock).mockResolvedValue(
         new Map([
           ['line1', 10],
           ['line2', 0],
@@ -202,7 +202,7 @@ describe('Order Lifecycle Rules', () => {
 
     it('should do nothing if order remains fully shipped (e.g. over-shipped or zero qty cancelled)', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'shipped' });
-      (getShippedPerLine as jest.Mock).mockResolvedValue(
+      (getCommittedPerLine as jest.Mock).mockResolvedValue(
         new Map([
           ['line1', 10],
           ['line2', 5],
@@ -244,7 +244,7 @@ describe('Order Lifecycle Rules', () => {
   describe('evaluateLifecycleRules', () => {
     it('should run rules and return transitions', async () => {
       (findOrder as jest.Mock).mockResolvedValue({ stateCode: 'picking' });
-      (getShippedPerLine as jest.Mock).mockResolvedValue(
+      (getCommittedPerLine as jest.Mock).mockResolvedValue(
         new Map([['line1', 10]]),
       );
 

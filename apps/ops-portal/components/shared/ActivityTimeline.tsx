@@ -105,8 +105,8 @@ export default function ActivityTimeline({
               style={{
                 padding: '6px 12px',
                 borderRadius: 8,
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(30,58,95,0.3)',
+                background: 'rgba(0,0,0,0.02)',
+                border: '1px solid var(--border)',
               }}
             >
               <summary

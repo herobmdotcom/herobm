@@ -15,6 +15,8 @@ import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
 import { ReceptionsModule } from './receptions/receptions.module';
 import { ReportsModule } from './reports/reports.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { GlModule } from './gl/gl.module';
 
 @Module({
   imports: [
@@ -25,6 +27,7 @@ import { ReportsModule } from './reports/reports.module';
     ProductsModule,
     InventoryModule,
     OrdersModule,
+    InvoicesModule,
     DashboardModule,
     GstModule,
     TelemetryModule,
@@ -32,6 +35,7 @@ import { ReportsModule } from './reports/reports.module';
     PurchaseOrdersModule,
     ReceptionsModule,
     ReportsModule,
+    GlModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })

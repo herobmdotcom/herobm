@@ -90,8 +90,8 @@ export default function OrdersPage() {
   }, [router]);
 
   return (
-    <div className="h-full flex flex-col relative" style={{ margin: "-2rem", padding: "2rem" }}>
-      <Shell>
+    <Shell>
+      <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid<UnifiedOrder>
@@ -112,7 +112,7 @@ export default function OrdersPage() {
                     <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
                       <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Rows
+                        {tCommon('grid.rowCountLabel')}
                       </span>
                       <span className="text-[11px] font-bold text-[#006b5c]">
                         {loading ? '...' : rowCount.toLocaleString()}
@@ -126,7 +126,7 @@ export default function OrdersPage() {
                   
                   <div className="flex items-center gap-3 shrink-0 ml-4">
                     {optionsButton}
-                    <Link href="/sales-orders/new" className="px-5 py-2 text-sm font-semibold rounded-lg transition-all" style={{ background: '#006b5c', color: '#ffffff', boxShadow: '0 4px 14px 0 rgba(0, 107, 92, 0.39)' }}>
+                    <Link href="/sales-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
                       {tSales('buttons.createOrder')}
                     </Link>
                   </div>
@@ -135,7 +135,7 @@ export default function OrdersPage() {
             />
           </div>
         </div>
-      </Shell>
-    </div>
+      </div>
+    </Shell>
   );
 }

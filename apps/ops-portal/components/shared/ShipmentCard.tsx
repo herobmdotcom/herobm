@@ -66,7 +66,7 @@ export default function ShipmentCard({
       style={{
         marginBottom: 12, padding: 12, borderRadius: 8,
         border: '1px solid var(--border)',
-        background: 'var(--surface-raised, #111827)',
+        background: 'var(--bg-card, #fff)',
       }}
     >
       {/* Header: shipment number + badge + transition buttons */}

@@ -35,10 +35,12 @@
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
+  font-family: inherit;
   outline: none;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #1e293b;
+  font-weight: 500;
   transition: border-color 150ms;
 }
 
@@ -51,9 +53,9 @@
 }
 
 .input:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
-  background: transparent;
+  background: #f9fafb;
 }
 
 /* Buttons */
@@ -104,10 +106,20 @@
 
 /* Cards */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
+}
+
+/* Light-mode overrides for detail pages (sidebar + grids keep dark theme) */
+.detail-content {
+  --border: #e5e7eb;
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --bg-card: #fff;
+  color: var(--text-primary);
 }
 
 /* Tables (for line items) */
@@ -130,12 +142,12 @@
 
 .table-lines td {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(30, 58, 95, 0.4);
+  border-bottom: 1px solid var(--border);
   color: var(--text-primary);
 }
 
 .table-lines tr:hover td {
-  background: var(--bg-card-hover);
+  background: rgba(0, 107, 92, 0.04);
 }
 
 /* Scrollable area — scrollbar sits at window edge */
@@ -152,12 +164,12 @@
 :root {
 
   /* Soft Tech Colors */
-  --bg-primary: #F7F9FB;
-  --bg-secondary: #F2F4F6;
-  --bg-card: #F2F4F6; /* Search inputs will pick this up to match mock */
-  --text-primary: #191C1E;
+  --bg-primary: #F2F4F6;
+  --bg-secondary: #E9ECEF;
+  --bg-card: #FFFFFF; /* Cards are now white */
+  --text-primary: #041627;
   --text-secondary: #44474C;
-  --text-muted: #8192A7;
+  --text-muted: #5d6f82;
   --border: rgba(196, 198, 205, 0.4);
   --accent: #006b5c; 
   --accent-glow: #FFFFFF;
@@ -179,27 +191,9 @@ h2 {
   font-family: 'Manrope', sans-serif;
 }
 
-.btn-primary, .btn-secondary {
-  border: none !important;
-}
 
-.btn-secondary {
-  /* "Create Account" acts as secondary/primary depending on context, making it pop */
-  background: var(--accent) !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px 0 rgba(0, 107, 92, 0.39);
-  border-radius: 8px;
-  font-family: 'Inter', sans-serif;
-  padding: 10px 24px;
-}
-
-.btn-secondary:hover {
-  filter: brightness(1.1);
-  transform: scale(1.02);
-}
-
-/* DataGrid toolbar inputs and buttons */
-input[type="text"] {
+/* DataGrid toolbar inputs and buttons — scoped to grid wrapper only */
+.ag-theme-alpine-dark input[type="text"] {
   background-color: var(--bg-card) !important;
   border: none !important;
   border-radius: 9999px !important;
@@ -208,18 +202,20 @@ input[type="text"] {
   font-size: 13px !important;
 }
 
-input[type="text"]:focus {
+.ag-theme-alpine-dark input[type="text"]:focus {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
-
 /* DataGrid overrides for the POC */
 .ag-theme-alpine-dark {
   --ag-background-color: transparent !important;
-  --ag-header-background-color: var(--brand-navy) !important;
-  --ag-header-foreground-color: #ffffff !important;
+  --ag-header-background-color: var(--bg-secondary) !important;
+  --ag-header-foreground-color: var(--text-secondary) !important;
   --ag-odd-row-background-color: transparent !important;
   --ag-even-row-background-color: #f7f9fb !important;
+  --ag-borders: none !important;
+  --ag-borders-critical: none !important;
+  --ag-borders-secondary: none !important;
   --ag-border-color: transparent !important;
   --ag-row-border-color: rgba(196, 198, 205, 0.2) !important;
   --ag-foreground-color: var(--brand-navy) !important;
@@ -243,12 +239,13 @@ input[type="text"]:focus {
 .ag-root-wrapper,
 .ag-root-wrapper-body {
   border-radius: 0 !important;
+  border: none !important;
 }
 
 /* Force header text color */
 .ag-theme-alpine-dark .ag-header-cell,
 .ag-theme-alpine-dark .ag-header-cell-text {
-  color: #ffffff !important;
+  color: var(--text-secondary) !important;
   font-family: 'Manrope', sans-serif !important;
   text-transform: uppercase !important;
   font-size: 11px !important;
@@ -257,8 +254,9 @@ input[type="text"]:focus {
 }
 
 .ag-theme-alpine-dark .ag-header {
-  border-bottom: none !important;
-  background-color: var(--brand-navy) !important;
+  border-top: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border) !important;
+  background-color: var(--bg-secondary) !important;
   border-radius: 0 !important;
 }
 

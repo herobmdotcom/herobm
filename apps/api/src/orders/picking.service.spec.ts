@@ -294,7 +294,7 @@ describe('PickingService', () => {
             lineNumber: 2,
           },
         ],
-        // getShippedPerLine queries:
+        // getCommittedPerLine queries:
         // shipments query
         3: [],
       });
@@ -410,7 +410,7 @@ describe('PickingService', () => {
             productNumber: 'PN-2',
           },
         ],
-        // getShippedPerLine: shipments
+        // getCommittedPerLine: shipments
         3: [
           {
             shipmentId: 'ship-1',
@@ -418,7 +418,7 @@ describe('PickingService', () => {
             stateCode: 'dispatched',
           },
         ],
-        // getShippedPerLine: shipment lines for ship-1
+        // getCommittedPerLine: shipment lines for ship-1
         4: [
           {
             shipmentLineId: 'sl-1',

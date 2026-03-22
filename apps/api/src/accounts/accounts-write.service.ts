@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Inject,
   NotFoundException,
@@ -96,7 +96,7 @@ export class AccountsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [account] = await tx
         .insert(coreAccounts)
         .values({
@@ -149,7 +149,7 @@ export class AccountsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);
 
       // Perform the update
@@ -217,7 +217,7 @@ export class AccountsWriteService {
       throw new BadRequestException(`Account '${id}' is already archived`);
     }
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(coreAccounts)
         .set({ stateCode: 'archived', modifiedOn: new Date() })
@@ -273,7 +273,7 @@ export class AccountsWriteService {
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
       'active';
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(coreAccounts)
         .set({ stateCode: previousState, modifiedOn: new Date() })

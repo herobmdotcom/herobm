@@ -11,6 +11,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 
 export default function ProductDetailPage() {
   const t = useTranslations();
@@ -118,7 +119,9 @@ export default function ProductDetailPage() {
 
   return (
     <Shell>
-      <EntityHeader
+      <DetailsLayout
+        header={
+          <EntityHeader
         title={product.productNumber}
         subtitle={product.name}
         onBack={() => router.push('/products')}
@@ -146,21 +149,23 @@ export default function ProductDetailPage() {
           ) : null
         }
       />
+    }
+  >
 
-      {product.stateCode === 'archived' && (
-        <div
-          className="mb-6 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
-          style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
-        >
-          <span style={{ fontSize: '1.2rem' }}>📦</span>
-          <div>
-            <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+      <div className="flex flex-col gap-6">
+        {product.stateCode === 'archived' && (
+          <div
+            className="px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+            style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
+          >
+            <span style={{ fontSize: '1.2rem' }}>📦</span>
+            <div>
+              <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="scroll-area" style={{ flex: 1 }}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Product Information Card */}
           <div className="card">
             <h3
@@ -265,7 +270,7 @@ export default function ProductDetailPage() {
                     type="number"
                     step="0.01"
                     className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+
                     disabled={!isEditable || saving}
                     value={dto.listPrice}
                     onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
@@ -280,7 +285,7 @@ export default function ProductDetailPage() {
                     type="number"
                     step="0.01"
                     className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+
                     disabled={!isEditable || saving}
                     value={dto.standardCost}
                     onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
@@ -297,7 +302,7 @@ export default function ProductDetailPage() {
                     type="number"
                     step="0.01"
                     className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+
                     disabled={!isEditable || saving}
                     value={dto.tradePrice}
                     onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
@@ -312,7 +317,7 @@ export default function ProductDetailPage() {
                     type="number"
                     step="0.01"
                     className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+
                     disabled={!isEditable || saving}
                     value={dto.priceLevel3}
                     onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
@@ -327,7 +332,7 @@ export default function ProductDetailPage() {
                     type="number"
                     step="0.01"
                     className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
+
                     disabled={!isEditable || saving}
                     value={dto.priceLevel4}
                     onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
@@ -340,7 +345,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Record Details Card - full width */}
-        <div className="card mb-6">
+        <div className="card">
           <h3
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
@@ -353,7 +358,7 @@ export default function ProductDetailPage() {
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   Product ID
                 </label>
-                <input className="input" disabled value={product.productId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
+                <input className="input" disabled value={product.productId} style={{ fontSize: 12 }} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -395,7 +400,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Notes Card - full width */}
-        <div className="card mb-6">
+        <div className="card">
           <h3
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
@@ -416,6 +421,7 @@ export default function ProductDetailPage() {
         {/* Activity Timeline */}
         <ActivityTimeline events={product.events || []} />
       </div>
+      </DetailsLayout>
     </Shell>
   );
 }

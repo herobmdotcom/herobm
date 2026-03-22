@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Inject,
   NotFoundException,
@@ -80,7 +80,7 @@ export class ProductsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [product] = await tx
         .insert(coreProducts)
         .values({
@@ -140,7 +140,7 @@ export class ProductsWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);
 
       const [updated] = await tx
@@ -213,7 +213,7 @@ export class ProductsWriteService {
       throw new BadRequestException(`Product '${id}' is already archived`);
     }
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(coreProducts)
         .set({ stateCode: 'archived', modifiedOn: new Date() })
@@ -269,7 +269,7 @@ export class ProductsWriteService {
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
       'active';
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(coreProducts)
         .set({ stateCode: previousState, modifiedOn: new Date() })

@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Inject,
   BadRequestException,
@@ -137,7 +137,7 @@ export class ShipmentService {
 
     const shipmentNumber = await this.generateShipmentNumber();
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [shipment] = await tx
         .insert(salesOrderShipments)
         .values({
@@ -198,7 +198,7 @@ export class ShipmentService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderShipments)
         .set({
@@ -251,7 +251,7 @@ export class ShipmentService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderShipments)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -409,7 +409,7 @@ export class ShipmentService {
       orderLine.lineNumber,
     );
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [line] = await tx
         .insert(salesOrderShipmentLines)
         .values({
@@ -479,7 +479,7 @@ export class ShipmentService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrderShipmentLines)
         .set({
@@ -531,7 +531,7 @@ export class ShipmentService {
 
     const existingLine = await findShipmentLine(this.db, lineId, shipmentId);
 
-    await this.db.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .delete(salesOrderShipmentLines)
         .where(eq(salesOrderShipmentLines.shipmentLineId, lineId));

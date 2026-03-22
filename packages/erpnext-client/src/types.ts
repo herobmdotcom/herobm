@@ -9,6 +9,8 @@ export interface JournalEntryAccount {
   account: string;
   debit_in_account_currency: number;
   credit_in_account_currency: number;
+  party_type?: string;
+  party?: string;
   reference_type?: string;
   reference_name?: string;
 }

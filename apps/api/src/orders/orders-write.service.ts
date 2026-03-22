@@ -92,7 +92,7 @@ export class OrdersWriteService {
    * Must be called inside a transaction to prevent race conditions.
    * Uses FOR UPDATE to serialize concurrent callers.
    */
-  private async generateOrderNumber(tx?: any): Promise<string> {
+  private async generateOrderNumber(tx?: DrizzleDB): Promise<string> {
     const db = tx || this.db;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `ORD-${today}-`;
@@ -106,9 +106,10 @@ export class OrdersWriteService {
           FOR UPDATE`,
     );
 
+    const rows = result as unknown as { order_number: string }[];
     const seq =
-      result.length > 0
-        ? parseInt(result[0].order_number.replace(prefix, ''), 10) + 1
+      rows.length > 0
+        ? parseInt(rows[0].order_number.replace(prefix, ''), 10) + 1
         : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
@@ -299,7 +300,7 @@ export class OrdersWriteService {
       throw new BadRequestException('Order cannot contain duplicate products');
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const orderNumber = await this.generateOrderNumber(tx);
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
@@ -392,7 +393,7 @@ export class OrdersWriteService {
       );
     }
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
       const [updated] = await tx
@@ -460,7 +461,7 @@ export class OrdersWriteService {
     // States where stock has been committed
     const COMMITTED_STATES = ['confirmed', 'picking', 'shipped'];
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -518,7 +519,7 @@ export class OrdersWriteService {
       );
     }
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: 'archived', modifiedOn: new Date() })
@@ -563,7 +564,7 @@ export class OrdersWriteService {
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
       'cancelled';
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: previousState, modifiedOn: new Date() })
@@ -645,7 +646,7 @@ export class OrdersWriteService {
       gstRate,
     );
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [line] = await tx
         .insert(salesOrderLineItems)
         .values({
@@ -733,7 +734,7 @@ export class OrdersWriteService {
       gstRate,
     );
 
-    const result = await this.db.transaction(async (tx: any) => {
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const audit = calculateAuditTrail(dto, existingLine, AuditMode.DIFF);
 
       const [updated] = await tx
@@ -786,7 +787,7 @@ export class OrdersWriteService {
 
     const existingLine = await this.findLine(lineId, orderId);
 
-    await this.db.transaction(async (tx: any) => {
+    await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .delete(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, lineId));

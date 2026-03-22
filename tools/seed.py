@@ -61,8 +61,9 @@ def psql_sql(sql: str, env_vars: list[str] | None = None) -> None:
 def seed_users(dry_run: bool = False) -> None:
     """Seed dev users from environment variables."""
     required_vars = [
-        "DEV_ADMIN_PASSWORD", "DEV_SALES_PASSWORD",
+        "DEV_ADMIN_PASSWORD", "DEV_VIEWER_PASSWORD", "DEV_SALES_PASSWORD",
         "DEV_WAREHOUSE_PASSWORD", "DEV_PROCUREMENT_PASSWORD",
+        "DEV_FINANCE_PASSWORD",
     ]
     missing = [v for v in required_vars if not os.environ.get(v)]
     if missing:
@@ -71,20 +72,22 @@ def seed_users(dry_run: bool = False) -> None:
         return
 
     if dry_run:
-        print("  [DRY RUN] Would seed users: admin, sales, warehouse, procurement")
+        print("  [DRY RUN] Would seed users: admin, viewer, sales, warehouse, procurement, finance")
         return
 
     sql = """
     CREATE EXTENSION IF NOT EXISTS pgcrypto;
     INSERT INTO modbm_core.users (username, password_hash, role) VALUES
         ('admin',       crypt(:'DEV_ADMIN_PASSWORD',       gen_salt('bf')), 'admin'),
+        ('viewer',      crypt(:'DEV_VIEWER_PASSWORD',      gen_salt('bf')), 'viewer'),
         ('sales',       crypt(:'DEV_SALES_PASSWORD',       gen_salt('bf')), 'sales'),
         ('warehouse',   crypt(:'DEV_WAREHOUSE_PASSWORD',   gen_salt('bf')), 'warehouse'),
-        ('procurement', crypt(:'DEV_PROCUREMENT_PASSWORD', gen_salt('bf')), 'procurement')
+        ('procurement', crypt(:'DEV_PROCUREMENT_PASSWORD', gen_salt('bf')), 'procurement'),
+        ('finance',     crypt(:'DEV_FINANCE_PASSWORD',     gen_salt('bf')), 'finance')
     ON CONFLICT (username) DO NOTHING;
     """
     psql_sql(sql, env_vars=required_vars)
-    print("  Seeded users: admin, sales, warehouse, procurement")
+    print("  Seeded users: admin, viewer, sales, warehouse, procurement, finance")
 
 
 def seed_inventory(dry_run: bool = False) -> None:

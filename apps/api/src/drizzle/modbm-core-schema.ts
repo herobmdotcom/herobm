@@ -5,6 +5,7 @@ import {
   numeric,
   boolean,
   timestamp,
+  date,
   uuid,
   jsonb,
 } from 'drizzle-orm/pg-core';
@@ -352,6 +353,7 @@ export const accounts = modbmCore.table('accounts', {
   gstPosition: text('gst_position'),
   currencyCode: text('currency_code').notNull().default('EUR'),
   customerDiscount: numeric('customer_discount').default('0'),
+  erpnextId: text('erpnext_id'),
   notes: text('notes'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -391,6 +393,7 @@ export const suppliers = modbmCore.table('suppliers', {
   paymentTerms: text('payment_terms'),
   currencyCode: text('currency_code').notNull().default('EUR'),
   stateCode: text('state_code').notNull().default('active'),
+  erpnextId: text('erpnext_id'),
   notes: text('notes'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -423,4 +426,158 @@ export const users = modbmCore.table('users', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// sales_invoices  (AR header)
+// ---------------------------------------------------------------------------
+export const salesInvoices = modbmCore.table('sales_invoices', {
+  invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
+  invoiceNumber: text('invoice_number').unique().notNull(),
+  salesOrderId: uuid('sales_order_id')
+    .notNull()
+    .references(() => salesOrders.salesOrderId),
+  erpnextJournalId: text('erpnext_journal_id'),
+  totalAmount: numeric('total_amount').notNull(),
+  taxAmount: numeric('tax_amount').default('0'),
+  currencyCode: text('currency_code').notNull().default('EUR'),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// sales_invoice_lines  (AR details)
+// ---------------------------------------------------------------------------
+export const salesInvoiceLines = modbmCore.table('sales_invoice_lines', {
+  invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
+  invoiceId: uuid('invoice_id')
+    .notNull()
+    .references(() => salesInvoices.invoiceId),
+  salesOrderLineId: uuid('sales_order_line_id')
+    .notNull()
+    .references(() => salesOrderLineItems.salesOrderLineId),
+  quantityInvoiced: numeric('quantity_invoiced').notNull(),
+  pricePerUnit: numeric('price_per_unit').notNull(),
+  amount: numeric('amount').notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_invoices  (AP header)
+// ---------------------------------------------------------------------------
+export const purchaseInvoices = modbmCore.table('purchase_invoices', {
+  invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
+  invoiceNumber: text('invoice_number').unique().notNull(),
+  purchaseOrderId: uuid('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.purchaseOrderId),
+  supplierInvoiceNumber: text('supplier_invoice_number'),
+  erpnextJournalId: text('erpnext_journal_id'),
+  totalAmount: numeric('total_amount').notNull(),
+  taxAmount: numeric('tax_amount').default('0'),
+  currencyCode: text('currency_code').notNull().default('EUR'),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_invoice_lines  (AP details)
+// ---------------------------------------------------------------------------
+export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
+  invoiceLineId: uuid('invoice_line_id').primaryKey().defaultRandom(),
+  invoiceId: uuid('invoice_id')
+    .notNull()
+    .references(() => purchaseInvoices.invoiceId),
+  purchaseOrderLineId: uuid('purchase_order_line_id')
+    .notNull()
+    .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+  quantityInvoiced: numeric('quantity_invoiced').notNull(),
+  pricePerUnit: numeric('price_per_unit').notNull(),
+  amount: numeric('amount').notNull(),
+});
+
+// ===========================================================================
+// GENERAL LEDGER (Native Double-Entry Accounting)
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// gl_accounts  (Chart of Accounts — hierarchical, customisable)
+// ---------------------------------------------------------------------------
+export const glAccounts = modbmCore.table('gl_accounts', {
+  glAccountId: uuid('gl_account_id').primaryKey().defaultRandom(),
+  accountCode: text('account_code').unique().notNull(),
+  name: text('name').notNull(),
+  accountType: text('account_type').notNull(), // asset | liability | equity | revenue | expense
+  parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
+  isGroup: boolean('is_group').notNull().default(false),
+  isSystem: boolean('is_system').notNull().default(false), // prevents deletion
+  currencyCode: text('currency_code').notNull().default('AUD'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// gl_journal_entries  (Journal Entry header — one per financial event)
+// ---------------------------------------------------------------------------
+export const glJournalEntries = modbmCore.table('gl_journal_entries', {
+  journalEntryId: uuid('journal_entry_id').primaryKey().defaultRandom(),
+  entryNumber: text('entry_number').unique().notNull(),
+  entryDate: date('entry_date').notNull(),
+  memo: text('memo'),
+  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | manual | adjustment
+  sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
+  isReversed: boolean('is_reversed').notNull().default(false),
+  reversedBy: uuid('reversed_by'), // self-ref to reversing JE
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// gl_journal_lines  (Debits and Credits — the core of double-entry)
+// ---------------------------------------------------------------------------
+export const glJournalLines = modbmCore.table('gl_journal_lines', {
+  journalLineId: uuid('journal_line_id').primaryKey().defaultRandom(),
+  journalEntryId: uuid('journal_entry_id')
+    .notNull()
+    .references(() => glJournalEntries.journalEntryId),
+  glAccountId: uuid('gl_account_id')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  partyType: text('party_type'), // 'customer' | 'supplier'
+  partyId: text('party_id'), // generic reference to mart_accounts/mart_suppliers
+  debit: numeric('debit').notNull().default('0'),
+  credit: numeric('credit').notNull().default('0'),
+  memo: text('memo'),
+});
+
+// ---------------------------------------------------------------------------
+// gl_settings  (Singleton config — fiscal year + default account mappings)
+// ---------------------------------------------------------------------------
+export const glSettings = modbmCore.table('gl_settings', {
+  settingsId: uuid('settings_id').primaryKey().defaultRandom(),
+  fiscalYearStartMonth: integer('fiscal_year_start_month').notNull().default(7), // AU: July
+  defaultArAccountId: uuid('default_ar_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultApAccountId: uuid('default_ap_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultRevenueAccountId: uuid('default_revenue_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultCogsAccountId: uuid('default_cogs_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultTaxAccountId: uuid('default_tax_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultExpenseAccountId: uuid('default_expense_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  baseCurrency: text('base_currency').notNull().default('AUD'),
 });

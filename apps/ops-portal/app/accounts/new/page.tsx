@@ -6,6 +6,7 @@ import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 
 export default function NewAccountPage() {
@@ -58,16 +59,19 @@ export default function NewAccountPage() {
   
   return (
     <Shell>
-            <EntityHeader
-        title={t('accounts.buttons.createAccount')}
-        subtitle={t('accounts.customerManagement')}
-        onBack={() => router.push('/accounts')}
-        isSaving={submitting}
-        isDirty={isValid}
-        onSave={handleSubmit}
-        saveLabel={t('accounts.buttons.createAccount')}
-      />
-
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={t('accounts.buttons.createAccount')}
+            subtitle={t('accounts.customerManagement')}
+            onBack={() => router.push('/accounts')}
+            isSaving={submitting}
+            isDirty={isValid}
+            onSave={handleSubmit}
+            saveLabel={t('accounts.buttons.createAccount')}
+          />
+        }
+      >
       <div className="max-w-5xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
           {/* LEFT COLUMN */}
@@ -317,6 +321,7 @@ export default function NewAccountPage() {
           </div>
         </div>
       </div>
+      </DetailsLayout>
     </Shell>
   );
 

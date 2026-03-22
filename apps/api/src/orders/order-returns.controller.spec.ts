@@ -23,7 +23,7 @@ describe('OrderReturnsController', () => {
     returnFee: '10.00',
   };
 
-  const mockReq = { user: { username: 'admin' } };
+  const mockUser = { userId: 'user-uuid-1', username: 'admin', role: 'admin' };
 
   beforeEach(async () => {
     const mockReturnsService = {
@@ -64,7 +64,7 @@ describe('OrderReturnsController', () => {
       const result = await controller.createReturn(
         'uuid-1',
         body as any,
-        mockReq,
+        mockUser,
       );
       expect(result).toEqual(mockReturn);
       expect(returnsService.createReturn).toHaveBeenCalledWith(
@@ -98,7 +98,7 @@ describe('OrderReturnsController', () => {
         'uuid-1',
         'ret-uuid-1',
         body,
-        mockReq,
+        mockUser,
       );
       expect(result).toEqual(mockReturn);
       expect(returnsService.updateReturn).toHaveBeenCalledWith(
@@ -115,7 +115,7 @@ describe('OrderReturnsController', () => {
         'uuid-1',
         'ret-uuid-1',
         'confirmed',
-        mockReq,
+        mockUser,
       );
       expect(result.stateCode).toBe('confirmed');
       expect(returnsService.changeReturnState).toHaveBeenCalledWith(
@@ -137,7 +137,7 @@ describe('OrderReturnsController', () => {
         'uuid-1',
         'ret-uuid-1',
         body as any,
-        mockReq,
+        mockUser,
       );
       expect(result).toEqual(mockReturnLine);
       expect(returnsService.addReturnLine).toHaveBeenCalledWith(
@@ -156,7 +156,7 @@ describe('OrderReturnsController', () => {
         'ret-uuid-1',
         'retline-uuid-1',
         body,
-        mockReq,
+        mockUser,
       );
       expect(result).toEqual(mockReturnLine);
       expect(returnsService.updateReturnLine).toHaveBeenCalledWith(
@@ -174,7 +174,7 @@ describe('OrderReturnsController', () => {
         'uuid-1',
         'ret-uuid-1',
         'retline-uuid-1',
-        mockReq,
+        mockUser,
       );
       expect(returnsService.removeReturnLine).toHaveBeenCalledWith(
         'ret-uuid-1',

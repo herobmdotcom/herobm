@@ -1,11 +1,10 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
   Patch,
   Param,
   Body,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -15,6 +14,8 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -34,13 +35,13 @@ export class OrderPickingController {
     @Param('id') id: string,
     @Param('lineId') lineId: string,
     @Body('quantityPicked') quantityPicked: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     return this.pickingService.pickLine(
       id,
       lineId,
       quantityPicked,
-      req.user.username,
+      user.username,
     );
   }
 
@@ -49,14 +50,14 @@ export class OrderPickingController {
   pickAllForLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.pickingService.pickAllForLine(id, lineId, req.user.username);
+    return this.pickingService.pickAllForLine(id, lineId, user.username);
   }
 
   @Post(':id/picking/pick-all')
   @CasbinAction('write')
-  pickAllOrder(@Param('id') id: string, @Req() req: any) {
-    return this.pickingService.pickAllOrder(id, req.user.username);
+  pickAllOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.pickingService.pickAllOrder(id, user.username);
   }
 }

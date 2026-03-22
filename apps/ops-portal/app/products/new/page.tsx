@@ -7,6 +7,7 @@ import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 
 export default function NewProductPage() {
@@ -49,17 +50,19 @@ export default function NewProductPage() {
 
   return (
     <Shell>
-      <EntityHeader
-        title={t('products.buttons.addProduct')}
-        subtitle={t('products.catalogManagement')}
-        onBack={() => router.push('/products')}
-        isSaving={submitting}
-        isDirty={isValid}
-        onSave={handleSubmit}
-        saveLabel={t('products.buttons.addProduct')}
-      />
-
-      <div className="scroll-area" style={{ flex: 1 }}>
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={t('products.buttons.addProduct')}
+            subtitle={t('products.catalogManagement')}
+            onBack={() => router.push('/products')}
+            isSaving={submitting}
+            isDirty={isValid}
+            onSave={handleSubmit}
+            saveLabel={t('products.buttons.addProduct')}
+          />
+        }
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           {/* Product Information Card */}
           <div className="card">
@@ -222,7 +225,7 @@ export default function NewProductPage() {
         </div>
 
         {/* Notes Card */}
-        <div className="card mb-6">
+        <div className="card">
           <h3
             className="text-sm font-semibold mb-4"
             style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
@@ -238,7 +241,7 @@ export default function NewProductPage() {
             disabled={submitting}
           />
         </div>
-      </div>
+      </DetailsLayout>
     </Shell>
   );
 }

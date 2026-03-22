@@ -73,8 +73,8 @@ export default function AccountsPage() {
   }, [router]);
 
   return (
-    <div className="h-full flex flex-col relative" style={{ margin: "-2rem", padding: "2rem" }}>
-      <Shell>
+    <Shell>
+      <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           {/* Removed aggressive background blur gradients */}
         
@@ -85,7 +85,6 @@ export default function AccountsPage() {
             gridKey="ops-accounts"
             searchPlaceholder={tAccounts('placeholders.searchAccounts')}
             exportFileName="accounts"
-            gridTheme="ag-theme-alpine"
             fetchAll
             showArchivedToggle
             onRowClicked={handleRowClicked}
@@ -113,7 +112,7 @@ export default function AccountsPage() {
                 
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {optionsButton}
-                  <Link href="/accounts/new" className="btn btn-secondary !rounded-lg !px-5 !py-2 !bg-[#006b5c] !text-white !border-none hover:brightness-110 shadow-none transition-all">
+                  <Link href="/accounts/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
                     {tAccounts('buttons.createAccount')}
                   </Link>
                 </div>
@@ -122,7 +121,7 @@ export default function AccountsPage() {
           />
         </div>
         </div>
-      </Shell>
-    </div>
+      </div>
+    </Shell>
   );
 }

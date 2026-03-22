@@ -1,4 +1,4 @@
-import {
+﻿import {
   Injectable,
   Inject,
   NotFoundException,
@@ -50,6 +50,14 @@ export class PurchaseOrdersService {
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
+  /** Event types that have active ERPNext mappers in the outbox-relay worker. */
+  private static readonly OUTBOX_EVENT_TYPES = new Set([
+    'goods_received',
+    'goods_dispatched',
+    'sales_invoiced',
+    'purchase_invoiced',
+  ]);
+
   private async writeEvent(
     tx: any,
     purchaseOrderId: string,
@@ -57,6 +65,7 @@ export class PurchaseOrdersService {
     payload: any,
     actor: string,
   ): Promise<void> {
+    // Always write to the entity event table (audit log)
     await tx.insert(purchaseOrderEvents).values({
       purchaseOrderId,
       eventType,
@@ -64,12 +73,15 @@ export class PurchaseOrdersService {
       actor,
     });
 
-    await tx.insert(outbox).values({
-      aggregateType: 'purchase_order',
-      aggregateId: purchaseOrderId,
-      eventType,
-      payload,
-    });
+    // Only enqueue to the outbox if the worker has a mapper for this type
+    if (PurchaseOrdersService.OUTBOX_EVENT_TYPES.has(eventType)) {
+      await tx.insert(outbox).values({
+        aggregateType: 'purchase_order',
+        aggregateId: purchaseOrderId,
+        eventType,
+        payload,
+      });
+    }
   }
 
   async create(createDto: any, userId: string) {
@@ -360,7 +372,7 @@ export class PurchaseOrdersService {
     // States where stock is on-order
     const ON_ORDER_STATES = ['ordered'];
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .update(purchaseOrders)
         .set({ stateCode, modifiedOn: new Date() })
@@ -412,7 +424,7 @@ export class PurchaseOrdersService {
       );
     }
 
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(purchaseOrders)
         .set({ stateCode: 'archived', modifiedOn: new Date() })
@@ -445,7 +457,7 @@ export class PurchaseOrdersService {
     }
 
     // Default to cancelled since no event store exists for POs yet
-    return await this.db.transaction(async (tx: any) => {
+    return await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(purchaseOrders)
         .set({ stateCode: 'cancelled', modifiedOn: new Date() })

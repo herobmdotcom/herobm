@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 4300",
+    "dev:local": "next dev --port 4301",
     "typecheck": "tsc --noEmit",
     "prebuild": "tsc --noEmit",
     "build": "next build",

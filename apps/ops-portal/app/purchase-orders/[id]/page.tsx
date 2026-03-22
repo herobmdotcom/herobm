@@ -11,6 +11,8 @@ import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 
 interface OrderLine {
   salesOrderLineId: string;
@@ -108,6 +110,16 @@ interface OrderReturn {
   lines: ReturnLine[];
 }
 
+interface PurchaseInvoice {
+  invoiceId: string;
+  invoiceNumber: string;
+  totalAmount: string;
+  totalTax: string;
+  createdOn: string;
+  createdBy: string;
+  erpnextJournalId: string | null;
+}
+
 import {
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
@@ -176,6 +188,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [returnsLoading, setReturnsLoading] = useState(false);
   const [showCreateReturn, setShowCreateReturn] = useState(false);
   const [newReturnNotes, setNewReturnNotes] = useState('');
+  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
+  const [invoicing, setInvoicing] = useState(false);
   const [newReturnLines, setNewReturnLines] = useState<Array<{
     salesOrderLineId: string;
     quantityReturned: string;
@@ -221,16 +235,26 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  const loadInvoices = async () => {
+    try {
+      const data = await apiFetch<PurchaseInvoice[]>(`/api/purchase-orders/${encodeURIComponent(id)}/invoices`);
+      setInvoices(data);
+    } catch (err) {
+      setInvoices([]);
+    }
+  };
+
   useEffect(() => {
     loadOrder();
     // Load GST categories
     apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id, source]);
 
-  // Load returns when order is received
+  // Load returns and invoices when order is received
   useEffect(() => {
     if (order?.stateCode === 'received' || order?.stateCode === 'legacy') {
       loadReturns();
+      loadInvoices();
     }
   }, [order?.stateCode, source]);
 
@@ -269,9 +293,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setSaving(true);
     try {
       await apiMutate(`/api/purchase-orders/${id}`, 'PATCH', {
-        name: editName || undefined,
-        customerOrderNumber: editPO || undefined,
-        notes: editNotes || undefined,
+        name: editName || null,
+        customerOrderNumber: editPO || null,
+        notes: editNotes || null,
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -403,88 +427,97 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   return (
     <Shell>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => router.push('/purchase-orders')}
-          >
-            ←
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
-              <StateBadge state={order.stateCode as ValidState} />
-              {saving && (
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {tCommon('saving')}
-                </span>
-              )}
-            </div>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {order.name || tPurchase('untitledOrder')}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={copyOrder}
-            disabled={copying}
-          >
-            {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
-          </button>
-          {(order.stateCode === 'received' || order.stateCode === 'legacy') && !showCreateReturn && (
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                setShowCreateReturn(true);
-                setNewReturnLines(
-                  order.lines.map((l) => ({
-                    salesOrderLineId: l.salesOrderLineId,
-                    quantityReturned: '',
-                    reason: '',
-                    returnFee: '0',
-                    feeMode: 'absolute' as const,
-                    originalAmount: parseFloat(l.amount || '0'),
-                  })),
-                );
-              }}
-            >
-              {tPurchase('buttons.createReturn')}
-            </button>
-          )}
-          {headerDirty && isHeaderEditable && (
-            <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
-              {tPurchase('buttons.save')}
-            </button>
-          )}
-          {[...allowedTransitions]
-            .sort((a, b) => {
-              const aBack = isBackTransition(order.stateCode, a);
-              const bBack = isBackTransition(order.stateCode, b);
-              if (aBack !== bBack) return aBack ? -1 : 1;
-              return 0;
-            })
-            .map((state) => {
-              const back = isBackTransition(order.stateCode, state);
-              return (
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={order.orderNumber}
+            subtitle={order.name || tPurchase('untitledOrder')}
+            onBack={() => router.push('/purchase-orders')}
+            isSaving={saving}
+            badges={<StateBadge state={order.stateCode as ValidState} />}
+            actions={
+              <>
                 <button
-                  key={state}
-                  className={`btn btn-sm ${state === 'cancelled' ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'
-                    }`}
-                  onClick={() => changeState(state)}
+                  className="btn btn-secondary btn-sm"
+                  onClick={copyOrder}
+                  disabled={copying}
                 >
-                  {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
+                  {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
                 </button>
-              );
-            })}
-        </div>
-      </div>
+                {(order.stateCode === 'received' || order.stateCode === 'legacy') && !showCreateReturn && (
+                  <>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={async () => {
+                        if (!confirm('Enter supplier bill? This will publish AP ledger entries to ERPNext.')) return;
+                        setSaving(true);
+                        try {
+                          await apiMutate(`/api/purchase-orders/${id}/invoice`, 'POST');
+                          await loadOrder(undefined, false);
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : 'Failed to generate supplier bill');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving || invoicing}
+                    >
+                      Enter Supplier Bill
+                    </button>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setShowCreateReturn(true);
+                        setNewReturnLines(
+                          order.lines.map((l) => ({
+                            salesOrderLineId: l.salesOrderLineId,
+                            quantityReturned: '',
+                            reason: '',
+                            returnFee: '0',
+                            feeMode: 'absolute' as const,
+                            originalAmount: parseFloat(l.amount || '0'),
+                          })),
+                        );
+                      }}
+                    >
+                      {tPurchase('buttons.createReturn')}
+                    </button>
+                  </>
+                )}
+                {headerDirty && isHeaderEditable && (
+                  <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
+                    {tPurchase('buttons.save')}
+                  </button>
+                )}
+                {[...allowedTransitions]
+                  .sort((a, b) => {
+                    const aBack = isBackTransition(order.stateCode, a);
+                    const bBack = isBackTransition(order.stateCode, b);
+                    if (aBack !== bBack) return aBack ? -1 : 1;
+                    return 0;
+                  })
+                  .map((state) => {
+                    const back = isBackTransition(order.stateCode, state);
+                    return (
+                      <button
+                        key={state}
+                        className={`btn btn-sm ${state === 'cancelled' ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
+                        onClick={() => changeState(state)}
+                      >
+                        {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
+                      </button>
+                    );
+                  })}
+              </>
+            }
+          />
+        }
+      >
+      <div className="flex flex-col gap-6">
 
       {error && (
         <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
+          className="px-4 py-3 rounded-lg text-sm"
           style={{
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -496,10 +529,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
       )}
 
-      <div className="scroll-area" style={{ flex: 1 }}>
-        <div className="mb-6">
           {/* Order info card */}
-          <div className="card col-span-2">
+          <div className="card">
             <h3
               className="text-sm font-semibold mb-4"
               style={{
@@ -571,10 +602,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
           </div>
-        </div>
 
         {/* Notes Card */}
-        <div className="card mb-6">
+        <div className="card">
           <h3
             className="text-sm font-semibold mb-4"
             style={{
@@ -597,7 +627,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         {/* Line items / Availability tabs */}
-        <div className="card mb-6">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-0">
               <button
@@ -847,11 +877,43 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} currencyCode={order.currencyCode || 'EUR'} />
 
-
+        {/* Invoices section */}
+        {(order.stateCode === 'received' || order.stateCode === 'legacy') && invoices.length > 0 && (
+            <div className="card">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Supplier Bills
+                    </h3>
+                </div>
+                <div className="space-y-3">
+                    {invoices.map(inv => (
+                        <div key={inv.invoiceId} style={{ padding: 14, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div className="flex flex-col">
+                                <span style={{ fontWeight: 700, fontSize: 13 }}>{inv.invoiceNumber}</span>
+                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                                    {new Date(inv.createdOn).toLocaleString()} {inv.createdBy && `by ${inv.createdBy}`}
+                                </span>
+                            </div>
+                            <div className="flex gap-4 items-center">
+                                <div className="text-right">
+                                    <div style={{ fontWeight: 700, fontSize: 14 }}>{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}</div>
+                                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Tax: {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}</div>
+                                </div>
+                                {inv.erpnextJournalId && (
+                                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }} title="ERPNext General Ledger Entry">
+                                        GL: {inv.erpnextJournalId}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
 
         {/* Returns section — only shown when returns exist or creating one */}
         {(order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
-          <div className="card mb-6">
+          <div className="card">
             <h3
               className="text-sm font-semibold mb-4"
               style={{
@@ -1318,6 +1380,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         {/* Audit timeline */}
         <ActivityTimeline events={order.events || []} />
       </div>
+      </DetailsLayout>
 
       {/* Global Toast Notification for Auto-Transitions */}
       <div

@@ -291,7 +291,7 @@ export default function NewOrderPage() {
 
       <div className="scroll-area" style={{ flex: 1 }}>
         {/* Order header */}
-        <div className="card mb-6">
+        <div className="card">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {t('salesOrders.orderDetails')}
           </h3>
@@ -429,7 +429,7 @@ export default function NewOrderPage() {
           </div>
 
         {/* Notes Card */}
-        <div className="card mb-6">
+        <div className="card">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {t('common.notesCardHeading')}
           </h3>
@@ -444,7 +444,7 @@ export default function NewOrderPage() {
         </div>
 
         {/* Line items */}
-        <div className="card mb-6">
+        <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               {t('salesOrders.lineItems')}

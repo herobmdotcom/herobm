@@ -11,6 +11,7 @@ import {
   reportError,
 } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
@@ -134,37 +135,41 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
   return (
     <Shell>
-      <EntityHeader
-        title={account.name}
-        subtitle={`${account.accountNumber} • ${account.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}`}
-        onBack={() => router.push('/accounts')}
-        isSaving={saving}
-        isDirty={isDirty}
-        onSave={handleSave}
-        badges={
-          <StateBadge state={account.stateCode as ValidState} />
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={account.name}
+            subtitle={`${account.accountNumber} • ${account.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}`}
+            onBack={() => router.push('/accounts')}
+            isSaving={saving}
+            isDirty={isDirty}
+            onSave={handleSave}
+            badges={
+              <StateBadge state={account.stateCode as ValidState} />
+            }
+            actions={
+              account.source === 'app' ? (
+                account.stateCode === 'archived' ? (
+                  <button className="btn btn-secondary btn-sm" onClick={unarchiveAccount} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
+                ) : (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                    onClick={archiveAccount}
+                    disabled={saving}
+                  >
+                    📦 {t('salesOrders.buttons.archive')}
+                  </button>
+                )
+              ) : null
+            }
+          />
         }
-        actions={
-          account.source === 'app' ? (
-            account.stateCode === 'archived' ? (
-              <button className="btn btn-secondary btn-sm" onClick={unarchiveAccount} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
-            ) : (
-              <button
-                className="btn btn-secondary btn-sm"
-                style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                onClick={archiveAccount}
-                disabled={saving}
-              >
-                📦 {t('salesOrders.buttons.archive')}
-              </button>
-            )
-          ) : null
-        }
-      />
+      >
 
       {account.stateCode === 'archived' && (
         <div
-          className="mb-6 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
           <span style={{ fontSize: '1.2rem' }}>📦</span>
@@ -174,11 +179,10 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         </div>
       )}
 
-      <div className="scroll-area" style={{ flex: 1 }}>
-        <div className="space-y-6 mb-8">
+      <div className="flex flex-col gap-6">
             {/* Basic Info Card */}
             <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t('accounts.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,9 +236,89 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               </div>
             </div>
 
+          {/* Pricing & Currency Card */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('accounts.pricingCurrency')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.currency')}
+                </label>
+                <select
+                  className="input"
+                  value={dto.currencyCode}
+                  onChange={(e) => updateField('currencyCode', e.target.value)}
+                  disabled={!isEditable || saving}
+                >
+                  <option value="EUR">EUR</option>
+                  <option value="USD">USD</option>
+                  <option value="GBP">GBP</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('accounts.columns.discountPct')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  className="input"
+                  value={dto.customerDiscount || '0'}
+                  onChange={(e) => updateField('customerDiscount', e.target.value)}
+                  disabled={!isEditable || saving}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('common.columns.state')}
+                </label>
+                <div
+                  className="flex items-center gap-3"
+                  style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                  onClick={() => {
+                    if (!isEditable || saving) return;
+                    updateField('stateCode', dto.stateCode === 'active' ? 'inactive' : 'active');
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 22,
+                      borderRadius: 11,
+                      background: dto.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
+                      position: 'relative',
+                      transition: 'background 0.2s ease',
+                      opacity: !isEditable || saving ? 0.5 : 1,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        position: 'absolute',
+                        top: 3,
+                        left: dto.stateCode === 'active' ? 21 : 3,
+                        transition: 'left 0.2s ease',
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {dto.stateCode ? <StateName state={dto.stateCode as ValidState} /> : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
             {/* Primary Contact Card */}
             <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t('common.columns.contact')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -279,7 +363,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
             {/* Address & Contact Card */}
             <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {t('common.columns.contactAddress')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -387,15 +471,15 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
           {/* Record Details Card */}
           <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {t('common.columns.activityTimeline')}
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Record Details
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                   {t('accounts.columns.accountId')}
                 </label>
-                <input className="input" disabled value={account.accountId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
+                <input className="input" disabled value={account.accountId} style={{ fontSize: 12 }} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -435,91 +519,10 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             )}
           </div>
 
-          {/* Pricing & Currency Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {t('accounts.pricingCurrency')}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.currency')}
-                </label>
-                <select
-                  className="input"
-                  value={dto.currencyCode}
-                  onChange={(e) => updateField('currencyCode', e.target.value)}
-                  disabled={!isEditable || saving}
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('accounts.columns.discountPct')}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  className="input"
-                  value={dto.customerDiscount || '0'}
-                  onChange={(e) => updateField('customerDiscount', e.target.value)}
-                  disabled={!isEditable || saving}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.state')}
-                </label>
-                <div
-                  className="flex items-center gap-3"
-                  style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
-                  onClick={() => {
-                    if (!isEditable || saving) return;
-                    updateField('stateCode', dto.stateCode === 'active' ? 'inactive' : 'active');
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 22,
-                      borderRadius: 11,
-                      background: dto.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
-                      position: 'relative',
-                      transition: 'background 0.2s ease',
-                      opacity: !isEditable || saving ? 0.5 : 1,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        position: 'absolute',
-                        top: 3,
-                        left: dto.stateCode === 'active' ? 21 : 3,
-                        transition: 'left 0.2s ease',
-                      }}
-                    />
-                  </div>
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    {dto.stateCode ? <StateName state={dto.stateCode as ValidState} /> : ''}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Activity Timeline */}
           <ActivityTimeline events={account.events || []} />
-
         </div>
-      </div>
+      </DetailsLayout>
     </Shell>
   );
 }

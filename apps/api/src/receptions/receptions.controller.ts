@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -6,7 +6,6 @@ import {
   Param,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { ReceptionsService } from './receptions.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,6 +16,8 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { CreateReceptionDto } from './dto';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('purchase-orders/:orderId/receptions')
@@ -29,10 +30,10 @@ export class ReceptionsController {
   async create(
     @Param('orderId') orderId: string,
     @Body() createReceptionDto: CreateReceptionDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
     // Optionally validate that orderId from path matches DTO if desired...
-    return this.receptionsService.create(createReceptionDto, req.user.username);
+    return this.receptionsService.create(createReceptionDto, user.username);
   }
 
   @Get()

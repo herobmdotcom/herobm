@@ -11,6 +11,7 @@ p, viewer, suppliers, read
 p, viewer, receptions, read
 p, viewer, dashboard, read
 p, viewer, gst-categories, read
+p, viewer, settings, read
 
 # admin — full access to everything
 p, admin, accounts, write
@@ -27,6 +28,13 @@ p, admin, sales-orders, archive
 p, admin, purchase-orders, archive
 p, admin, suppliers, archive
 p, admin, receptions, archive
+p, admin, settings, write
+p, admin, gl, read
+p, admin, gl, write
+
+# finance — viewer + GL read/write
+p, finance, gl, read
+p, finance, gl, write
 
 # sales — viewer + customer/order writes
 p, sales, accounts, write
@@ -43,6 +51,7 @@ p, procurement, purchase-orders, write
 
 # Role inheritance: all roles inherit viewer (read-all)
 g, admin, viewer
+g, finance, viewer
 g, sales, viewer
 g, warehouse, viewer
 g, procurement, viewer

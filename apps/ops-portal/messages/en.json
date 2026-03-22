@@ -164,6 +164,7 @@
     "notesCardPlaceholder": "Internal notes",
     "grid": {
       "options": "Options",
+      "export": "Export",
       "includeArchived": "Include Archived",
       "exportCsv": "Export CSV",
       "resetColumns": "Reset Columns",
@@ -172,6 +173,7 @@
       "page": "Page {page}",
       "next": "Next",
       "rows": "{count} rows",
+      "rowCountLabel": "Rows",
       "loadingEllipsis": "Loading…"
     },
     "orderReadView": {
@@ -577,7 +579,9 @@
     "groups": {
       "inventory": "Inventory",
       "sales": "Sales",
-      "purchasing": "Purchasing"
+      "purchasing": "Purchasing",
+      "finance": "Finance",
+      "admin": "Admin"
     },
     "items": {
       "dashboard": "Dashboard",
@@ -587,7 +591,12 @@
       "accounts": "Accounts",
       "salesOrders": "Sales Orders",
       "suppliers": "Suppliers",
-      "purchaseOrders": "Purchase Orders"
+      "purchaseOrders": "Purchase Orders",
+      "trialBalance": "Trial Balance",
+      "generalLedger": "General Ledger",
+      "journalEntries": "Journal Entries",
+      "eventQueue": "Event Queue",
+      "movements": "Movements"
     }
   },
   "accounts": {
@@ -661,8 +670,19 @@
   },
   "inventory": {
     "title": "Inventory",
+    "tabs": {
+      "products": "Products",
+      "binContents": "Bin Contents",
+      "movements": "Movements"
+    },
     "placeholders": {
-      "searchInventory": "Search by product name, number, or location…"
+      "searchInventory": "Search by product name, number, or location…",
+      "searchMovements": "Search by product, reference, or type…"
+    },
+    "filters": {
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days"
     },
     "columns": {
       "productNumber": "Product #",
@@ -673,7 +693,12 @@
       "maxQty": "Max Qty",
       "defaultBin": "Default Bin",
       "value": "Value",
-      "lastCost": "Last In Cost"
+      "lastCost": "Last In Cost",
+      "type": "Type",
+      "reference": "Ref / Document",
+      "stockIn": "Stock In",
+      "stockOut": "Stock Out",
+      "netChange": "Net Change"
     }
   },
   "products": {
@@ -709,6 +734,62 @@
       "productName": "e.g. Widget Deluxe",
       "barcode": "EAN / UPC barcode",
       "notes": "Handling instructions, storage requirements, or product description..."
+    }
+  },
+  "gl": {
+    "loading": "Loading…",
+    "trialBalance": {
+      "title": "Trial Balance",
+      "asOfDate": "As of Date",
+      "totals": "Totals",
+      "noData": "No transactions found for this period.",
+      "columns": {
+        "accountCode": "Code",
+        "accountName": "Account",
+        "accountType": "Type",
+        "debit": "Debit",
+        "credit": "Credit",
+        "balance": "Balance"
+      }
+    },
+    "generalLedger": {
+      "title": "General Ledger",
+      "allAccounts": "All Accounts",
+      "fromDate": "From",
+      "toDate": "To",
+      "noData": "No transactions found for the selected filters.",
+      "columns": {
+        "date": "Date",
+        "entryNumber": "Entry #",
+        "account": "Account",
+        "memo": "Memo",
+        "debit": "Debit",
+        "credit": "Credit",
+        "balance": "Balance"
+      }
+    },
+    "journalEntries": {
+      "title": "Journal Entries",
+      "newEntry": "New Entry",
+      "fromDate": "From",
+      "toDate": "To",
+      "allSources": "All Sources",
+      "sourceSalesInvoice": "Sales Invoice",
+      "sourcePurchaseInvoice": "Purchase Invoice",
+      "sourceManual": "Manual",
+      "noData": "No journal entries found.",
+      "lines": "Lines",
+      "columns": {
+        "entryNumber": "Entry #",
+        "date": "Date",
+        "memo": "Memo",
+        "source": "Source",
+        "totalDebit": "Total Debit",
+        "totalCredit": "Total Credit",
+        "account": "Account",
+        "debit": "Debit",
+        "credit": "Credit"
+      }
     }
   }
 }

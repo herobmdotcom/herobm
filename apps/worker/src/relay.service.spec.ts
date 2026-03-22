@@ -53,10 +53,17 @@ describe('relay.service', () => {
 
   describe('processEvent', () => {
     let mockErpClient: any;
+    let mockDb: any;
 
     beforeEach(() => {
       mockErpClient = {
-        createJournalEntry: vi.fn().mockResolvedValue(true)
+        createJournalEntry: vi.fn().mockResolvedValue({ name: 'JV-0001' }),
+        createResource: vi.fn().mockResolvedValue({ name: 'PARTY-0001' })
+      };
+      mockDb = {
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis()
       };
     });
 
@@ -73,7 +80,7 @@ describe('relay.service', () => {
         purchasePriceVariance: '0'
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
 
       expect(mockErpClient.createJournalEntry).toHaveBeenCalledTimes(1);
       const args = mockErpClient.createJournalEntry.mock.calls[0][0];
@@ -99,7 +106,7 @@ describe('relay.service', () => {
         purchasePriceVariance: '0'
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
       expect(mockErpClient.createJournalEntry).not.toHaveBeenCalled();
     });
 
@@ -110,7 +117,7 @@ describe('relay.service', () => {
         purchasePriceVariance: '25.50'
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
       
       const args = mockErpClient.createJournalEntry.mock.calls[0][0];
       expect(args.accounts).toHaveLength(2);
@@ -126,7 +133,7 @@ describe('relay.service', () => {
         purchasePriceVariance: '-10'
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
       
       const args = mockErpClient.createJournalEntry.mock.calls[0][0];
       // Credit COGS, Debit GRNI
@@ -143,7 +150,7 @@ describe('relay.service', () => {
         ]
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
 
       expect(mockErpClient.createJournalEntry).toHaveBeenCalledTimes(1);
       const args = mockErpClient.createJournalEntry.mock.calls[0][0];
@@ -168,7 +175,7 @@ describe('relay.service', () => {
         cogsDetails: []
       });
 
-      await processEvent(job, mockErpClient);
+      await processEvent(job, mockErpClient, mockDb);
       expect(mockErpClient.createJournalEntry).not.toHaveBeenCalled();
     });
   });

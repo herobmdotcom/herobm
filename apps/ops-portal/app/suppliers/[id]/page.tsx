@@ -14,6 +14,8 @@ import {
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 
 interface Supplier {
   vendorId: string;
@@ -172,50 +174,38 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   return (
     <Shell>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => router.push('/suppliers')}
-          >
-            ←
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{supplier.name}</h1>
-              <StateBadge state={supplier.stateCode as ValidState} />
-              {saving && (
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.saving')}
-                </span>
-              )}
-            </div>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {supplier.vendorNumber} · {supplier.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {supplier.source === 'app' && (
-            supplier.stateCode === 'archived' ? (
-              <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
-            ) : (
-              <button
-                className="btn btn-secondary btn-sm"
-                style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                onClick={archiveSupplier}
-                disabled={saving}
-              >
-                📦 {t('salesOrders.buttons.archive')}
-              </button>
-            )
-          )}
-        </div>
-      </div>
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title={supplier.name}
+            subtitle={`${supplier.vendorNumber} · ${supplier.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}`}
+            onBack={() => router.push('/suppliers')}
+            isSaving={saving}
+            badges={<StateBadge state={supplier.stateCode as ValidState} />}
+            actions={
+              supplier.source === 'app' ? (
+                supplier.stateCode === 'archived' ? (
+                  <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
+                ) : (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                    onClick={archiveSupplier}
+                    disabled={saving}
+                  >
+                    📦 {t('salesOrders.buttons.archive')}
+                  </button>
+                )
+              ) : null
+            }
+          />
+        }
+      >
+      <div className="flex flex-col gap-6">
 
       {supplier.stateCode === 'archived' && (
         <div
-          className="mb-6 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          className="px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
           <span style={{ fontSize: '1.2rem' }}>📦</span>
@@ -227,7 +217,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
       {error && (
         <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
+          className="px-4 py-3 rounded-lg text-sm"
           style={{
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -239,171 +229,79 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
       )}
 
-      <div className="scroll-area" style={{ flex: 1 }}>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-8">
-          {/* LEFT COLUMN */}
-          <div className="space-y-6">
-            {/* Basic Info Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {t('suppliers.generalInfo')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.name')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={() => saveField('name', editName, supplier.name)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('suppliers.columns.vendorNumber')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={supplier.vendorNumber}
-                    disabled
-                  />
-                </div>
-              </div>
-            </div>
-            {/* Notes Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {t('common.notesCardHeading')}
-              </h3>
-              <textarea
-                className="input w-full"
-                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-                value={editNotes}
-                onChange={(e) => setEditNotes(e.target.value)}
-                onBlur={() => saveField('notes', editNotes, supplier.notes)}
-                placeholder={t('common.notesCardPlaceholder')}
-                disabled={!isEditable || saving}
-              />
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div className="space-y-6">
-            {/* Contact & Location Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                {t('suppliers.contactLocation')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    onBlur={() => saveField('emailAddress1', editEmail, supplier.emailAddress1)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    onBlur={() => saveField('telephone1', editPhone, supplier.telephone1)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.address')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={editStreet}
-                    onChange={(e) => setEditStreet(e.target.value)}
-                    onBlur={() => saveField('address1Line1', editStreet, supplier.address1Line1)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={editCity}
-                    onChange={(e) => setEditCity(e.target.value)}
-                    onBlur={() => saveField('address1City', editCity, supplier.address1City)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Country
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={editCountry}
-                    onChange={(e) => setEditCountry(e.target.value)}
-                    onBlur={() => saveField('address1Country', editCountry, supplier.address1Country)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* Financials Card */}
+        {/* Top row: General Info (left) + Financials (right) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* General Info Card */}
           <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {t('suppliers.financials')}
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('suppliers.generalInfo')}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.currency')}
-                </label>
-                <select
-                  className="input"
-                  value={editCurrency}
-                  onChange={(e) => {
-                    setEditCurrency(e.target.value);
-                    saveField('currencyCode', e.target.value, supplier.currencyCode);
-                  }}
-                  disabled={!isEditable || saving}
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('suppliers.paymentTerms')}
+                  {t('common.columns.name')}
                 </label>
                 <input
                   type="text"
                   className="input"
-                  value={editPaymentTerms}
-                  onChange={(e) => setEditPaymentTerms(e.target.value)}
-                  onBlur={() => saveField('paymentTerms', editPaymentTerms, supplier.paymentTerms)}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={() => saveField('name', editName, supplier.name)}
                   disabled={!isEditable || saving}
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('suppliers.columns.vendorNumber')}
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={supplier.vendorNumber}
+                  disabled
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Financials Card */}
+          <div className="card">
+            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {t('suppliers.financials')}
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.currency')}
+                  </label>
+                  <select
+                    className="input"
+                    value={editCurrency}
+                    onChange={(e) => {
+                      setEditCurrency(e.target.value);
+                      saveField('currencyCode', e.target.value, supplier.currencyCode);
+                    }}
+                    disabled={!isEditable || saving}
+                  >
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="GBP">GBP</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('suppliers.paymentTerms')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={editPaymentTerms}
+                    onChange={(e) => setEditPaymentTerms(e.target.value)}
+                    onBlur={() => saveField('paymentTerms', editPaymentTerms, supplier.paymentTerms)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -445,61 +343,152 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Activity Timeline */}
-          <ActivityTimeline events={supplier.events || []} />
-            {/* Record Details Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {t('suppliers.recordDetails')}
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Vendor ID
-                </label>
-                <input className="input" disabled value={supplier.vendorId} style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 11 }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.source')}
-                </label>
-                <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
-              </div>
-              {supplier.createdOn && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created
-                  </label>
-                  <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
-                </div>
-              )}
-              {supplier.createdBy && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created By
-                  </label>
-                  <input className="input" disabled value={supplier.createdBy} />
-                </div>
-              )}
+        {/* Notes Card — full width */}
+        <div className="card">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('common.notesCardHeading')}
+          </h3>
+          <textarea
+            className="input w-full"
+            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
+            value={editNotes}
+            onChange={(e) => setEditNotes(e.target.value)}
+            onBlur={() => saveField('notes', editNotes, supplier.notes)}
+            placeholder={t('common.notesCardPlaceholder')}
+            disabled={!isEditable || saving}
+          />
+        </div>
+
+        {/* Contact & Location Card — full width */}
+        <div className="card">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('suppliers.contactLocation')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Email
+              </label>
+              <input
+                type="email"
+                className="input"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                onBlur={() => saveField('emailAddress1', editEmail, supplier.emailAddress1)}
+                disabled={!isEditable || saving}
+              />
             </div>
-            {supplier.modifiedOn && (
-              <div className="mt-4" style={{ maxWidth: '50%' }}>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Phone
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                onBlur={() => saveField('telephone1', editPhone, supplier.telephone1)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('common.columns.address')}
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editStreet}
+                onChange={(e) => setEditStreet(e.target.value)}
+                onBlur={() => saveField('address1Line1', editStreet, supplier.address1Line1)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                City
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editCity}
+                onChange={(e) => setEditCity(e.target.value)}
+                onBlur={() => saveField('address1City', editCity, supplier.address1City)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Country
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editCountry}
+                onChange={(e) => setEditCountry(e.target.value)}
+                onBlur={() => saveField('address1Country', editCountry, supplier.address1Country)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Record Details Card — full width */}
+        <div className="card">
+          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            {t('suppliers.recordDetails')}
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Vendor ID
+              </label>
+              <input className="input" disabled value={supplier.vendorId} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('common.columns.source')}
+              </label>
+              <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
+            </div>
+            {supplier.createdOn && (
+              <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Last Modified
+                  Created
                 </label>
-                <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
+                <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
               </div>
             )}
-            {isLegacy && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                {t('common.legacyRecordImported')}
-              </p>
+            {supplier.createdBy && (
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Created By
+                </label>
+                <input className="input" disabled value={supplier.createdBy} />
+              </div>
             )}
           </div>
-          </div>
-</div>
+          {supplier.modifiedOn && (
+            <div className="mt-4" style={{ maxWidth: '50%' }}>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Last Modified
+              </label>
+              <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
+            </div>
+          )}
+          {isLegacy && (
+            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+              {t('common.legacyRecordImported')}
+            </p>
+          )}
+        </div>
+
+        {/* Activity Timeline — full width */}
+        <ActivityTimeline events={supplier.events || []} />
       </div>
+      </DetailsLayout>
     </Shell>
   );
 }

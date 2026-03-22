@@ -1,4 +1,4 @@
-import {
+﻿import {
   Controller,
   Get,
   Post,
@@ -7,7 +7,6 @@ import {
   Body,
   Query,
   UseGuards,
-  Req,
 } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { SuppliersWriteService } from './suppliers-write.service';
@@ -22,6 +21,8 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('suppliers')
@@ -40,8 +41,8 @@ export class SuppliersController {
 
   @Post()
   @CasbinAction('write')
-  async create(@Body() dto: CreateSupplierDto, @Req() req: any) {
-    return this.suppliersWriteService.create(dto, req.user.username);
+  async create(@Body() dto: CreateSupplierDto, @AuthUser() user: JwtUser) {
+    return this.suppliersWriteService.create(dto, user.username);
   }
 
   @Get('by-product/:productId')
@@ -64,9 +65,9 @@ export class SuppliersController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateSupplierDto,
-    @Req() req: any,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.suppliersWriteService.update(id, dto, req.user.username);
+    return this.suppliersWriteService.update(id, dto, user.username);
   }
 
   @Get(':id/products')
@@ -77,13 +78,13 @@ export class SuppliersController {
 
   @Post(':id/archive')
   @CasbinAction('archive')
-  async archive(@Param('id') id: string, @Req() req: any) {
-    return this.suppliersWriteService.archive(id, req.user.username);
+  async archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.suppliersWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
   @CasbinAction('archive')
-  async unarchive(@Param('id') id: string, @Req() req: any) {
-    return this.suppliersWriteService.unarchive(id, req.user.username);
+  async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.suppliersWriteService.unarchive(id, user.username);
   }
 }

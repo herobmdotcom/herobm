@@ -33,7 +33,7 @@ describe('OrdersController', () => {
     pricePerUnit: '25.00',
   };
 
-  const mockReq = { user: { username: 'admin' } };
+  const mockUser = { userId: 'user-uuid-1', username: 'admin', role: 'admin' };
 
   beforeEach(async () => {
     const mockReadService = {
@@ -116,7 +116,7 @@ describe('OrdersController', () => {
         customerId: 'C001',
         lines: [{ productId: 'P001', quantity: '5', pricePerUnit: '10.00' }],
       };
-      const result = await controller.create(body as any, mockReq);
+      const result = await controller.create(body as any, mockUser);
       expect(result).toEqual(mockOrder);
       expect(writeService.create).toHaveBeenCalledWith(body, 'admin');
     });
@@ -125,7 +125,7 @@ describe('OrdersController', () => {
   describe('update', () => {
     it('should call writeService.update with id, body, and actor', async () => {
       const body = { name: 'Updated Order', notes: 'Changed notes' };
-      const result = await controller.update('uuid-1', body, mockReq);
+      const result = await controller.update('uuid-1', body, mockUser);
       expect(result).toEqual(mockOrder);
       expect(writeService.update).toHaveBeenCalledWith('uuid-1', body, 'admin');
     });
@@ -133,7 +133,7 @@ describe('OrdersController', () => {
 
   describe('changeState', () => {
     it('should call writeService.changeState with id, stateCode, and actor', async () => {
-      const result = await controller.changeState('uuid-1', 'quoted', mockReq);
+      const result = await controller.changeState('uuid-1', 'quoted', mockUser);
       expect(result.stateCode).toBe('quoted');
       expect(writeService.changeState).toHaveBeenCalledWith(
         'uuid-1',
@@ -146,7 +146,7 @@ describe('OrdersController', () => {
   describe('addLine', () => {
     it('should call writeService.addLine with orderId, body, and actor', async () => {
       const body = { productId: 'P001', quantity: '10', pricePerUnit: '25.00' };
-      const result = await controller.addLine('uuid-1', body as any, mockReq);
+      const result = await controller.addLine('uuid-1', body as any, mockUser);
       expect(result).toEqual(mockLine);
       expect(writeService.addLine).toHaveBeenCalledWith(
         'uuid-1',
@@ -163,7 +163,7 @@ describe('OrdersController', () => {
         'uuid-1',
         'line-uuid-1',
         body,
-        mockReq,
+        mockUser,
       );
       expect(result).toEqual(mockLine);
       expect(writeService.updateLine).toHaveBeenCalledWith(
@@ -177,7 +177,7 @@ describe('OrdersController', () => {
 
   describe('removeLine', () => {
     it('should call writeService.removeLine with orderId, lineId, and actor', async () => {
-      await controller.removeLine('uuid-1', 'line-uuid-1', mockReq);
+      await controller.removeLine('uuid-1', 'line-uuid-1', mockUser);
       expect(writeService.removeLine).toHaveBeenCalledWith(
         'uuid-1',
         'line-uuid-1',
