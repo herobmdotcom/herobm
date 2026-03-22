@@ -1,7 +1,0 @@
-
-apps/sales-portal/app/sales-orders/[id]/page.tsx
-apps/sales-portal/app/sales-orders/new/page.tsx
-apps/sales-portal/components/sales-orders/OrderTotalsCard.tsx
-apps/sales-portal/components/sales-orders/PickingSection.tsx
-apps/sales-portal/components/sales-orders/ProductSearchInput.tsx
-
