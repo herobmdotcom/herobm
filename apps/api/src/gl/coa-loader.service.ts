@@ -63,7 +63,9 @@ export class CoaLoaderService {
    * Load a chart of accounts from a JSON file.
    * Skips if accounts already exist in the database.
    */
-  async loadFromFile(filename: string): Promise<{ created: number; skipped: boolean }> {
+  async loadFromFile(
+    filename: string,
+  ): Promise<{ created: number; skipped: boolean }> {
     // Check if COA already loaded
     const [existing] = await this.db
       .select({ count: count() })

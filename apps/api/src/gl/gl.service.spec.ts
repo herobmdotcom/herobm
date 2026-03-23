@@ -32,7 +32,8 @@ function createChainProxy(resolveValue: any = []): any {
     get(_target, prop) {
       if (prop === 'then') {
         // Make the proxy thenable — await will resolve to resolveValue
-        return (resolve: any, reject: any) => Promise.resolve(resolveValue).then(resolve, reject);
+        return (resolve: any, reject: any) =>
+          Promise.resolve(resolveValue).then(resolve, reject);
       }
       if (prop === Symbol.iterator) {
         return undefined; // Not iterable
@@ -67,10 +68,10 @@ function createMockDb(): {
   onExecute: (...results: any[]) => void;
   onTransaction: (fn?: (tx: any) => any) => void;
 } {
-  let selectQueue: any[][] = [];
-  let insertQueue: any[][] = [];
-  let updateQueue: any[][] = [];
-  let executeQueue: any[] = [];
+  const selectQueue: any[][] = [];
+  const insertQueue: any[][] = [];
+  const updateQueue: any[][] = [];
+  const executeQueue: any[] = [];
 
   const db: MockDb = {
     select: jest.fn().mockImplementation(() => {
@@ -103,10 +104,18 @@ function createMockDb(): {
 
   return {
     db,
-    onSelect: (...results) => { selectQueue.push(...results); },
-    onInsert: (...results) => { insertQueue.push(...results); },
-    onUpdate: (...results) => { updateQueue.push(...results); },
-    onExecute: (...results) => { executeQueue.push(...results); },
+    onSelect: (...results) => {
+      selectQueue.push(...results);
+    },
+    onInsert: (...results) => {
+      insertQueue.push(...results);
+    },
+    onUpdate: (...results) => {
+      updateQueue.push(...results);
+    },
+    onExecute: (...results) => {
+      executeQueue.push(...results);
+    },
     onTransaction: (fn) => {
       if (fn) {
         db.transaction = jest.fn().mockImplementation(fn);
@@ -123,10 +132,7 @@ describe('GlService', () => {
     mock = createMockDb();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GlService,
-        { provide: DRIZZLE, useValue: mock.db },
-      ],
+      providers: [GlService, { provide: DRIZZLE, useValue: mock.db }],
     }).compile();
 
     service = module.get<GlService>(GlService);
@@ -186,8 +192,8 @@ describe('GlService', () => {
       try {
         await service.postJournalEntry(
           [
-            { accountCode: '1100', debit: 100.50, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 99.00 },
+            { accountCode: '1100', debit: 100.5, credit: 0 },
+            { accountCode: '4100', debit: 0, credit: 99.0 },
           ],
           { sourceType: 'manual' },
         );
@@ -231,7 +237,7 @@ describe('GlService', () => {
         service.postJournalEntry(
           [
             { accountCode: '1100', debit: 100.01, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 100.00 },
+            { accountCode: '4100', debit: 0, credit: 100.0 },
           ],
           { sourceType: 'manual' },
         ),
@@ -286,7 +292,13 @@ describe('GlService', () => {
 
     it('should reject when only one of two accounts exists', async () => {
       mock.onSelect([
-        { glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
+        {
+          glAccountId: 'id1',
+          accountCode: '1100',
+          isGroup: false,
+          isActive: true,
+          name: 'AR',
+        },
         // 4100 missing
       ]);
       await expect(
@@ -296,8 +308,20 @@ describe('GlService', () => {
 
     it('should reject posting to a group account', async () => {
       mock.onSelect([
-        { glAccountId: 'id1', accountCode: '1100', isGroup: true, isActive: true, name: 'Current Assets' },
-        { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Revenue' },
+        {
+          glAccountId: 'id1',
+          accountCode: '1100',
+          isGroup: true,
+          isActive: true,
+          name: 'Current Assets',
+        },
+        {
+          glAccountId: 'id2',
+          accountCode: '4100',
+          isGroup: false,
+          isActive: true,
+          name: 'Revenue',
+        },
       ]);
       await expect(
         service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
@@ -306,8 +330,20 @@ describe('GlService', () => {
 
     it('should include account code and name in group rejection message', async () => {
       mock.onSelect([
-        { glAccountId: 'id1', accountCode: '1000', isGroup: true, isActive: true, name: 'Assets' },
-        { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Revenue' },
+        {
+          glAccountId: 'id1',
+          accountCode: '1000',
+          isGroup: true,
+          isActive: true,
+          name: 'Assets',
+        },
+        {
+          glAccountId: 'id2',
+          accountCode: '4100',
+          isGroup: false,
+          isActive: true,
+          name: 'Revenue',
+        },
       ]);
       try {
         await service.postJournalEntry(
@@ -326,8 +362,20 @@ describe('GlService', () => {
 
     it('should reject posting to an inactive account', async () => {
       mock.onSelect([
-        { glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: false, name: 'AR (Closed)' },
-        { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Revenue' },
+        {
+          glAccountId: 'id1',
+          accountCode: '1100',
+          isGroup: false,
+          isActive: false,
+          name: 'AR (Closed)',
+        },
+        {
+          glAccountId: 'id2',
+          accountCode: '4100',
+          isGroup: false,
+          isActive: true,
+          name: 'Revenue',
+        },
       ]);
       await expect(
         service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
@@ -336,8 +384,20 @@ describe('GlService', () => {
 
     it('should include account code and name in inactive rejection message', async () => {
       mock.onSelect([
-        { glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: false, name: 'AR Old' },
-        { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Revenue' },
+        {
+          glAccountId: 'id1',
+          accountCode: '1100',
+          isGroup: false,
+          isActive: false,
+          name: 'AR Old',
+        },
+        {
+          glAccountId: 'id2',
+          accountCode: '4100',
+          isGroup: false,
+          isActive: true,
+          name: 'Revenue',
+        },
       ]);
       try {
         await service.postJournalEntry(balancedLines, { sourceType: 'manual' });
@@ -356,16 +416,28 @@ describe('GlService', () => {
   describe('postJournalEntry — success path', () => {
     it('should create entry and lines within a transaction', async () => {
       const accounts = [
-        { glAccountId: 'id-ar', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
-        { glAccountId: 'id-rev', accountCode: '4100', isGroup: false, isActive: true, name: 'Revenue' },
+        {
+          glAccountId: 'id-ar',
+          accountCode: '1100',
+          isGroup: false,
+          isActive: true,
+          name: 'AR',
+        },
+        {
+          glAccountId: 'id-rev',
+          accountCode: '4100',
+          isGroup: false,
+          isActive: true,
+          name: 'Revenue',
+        },
       ];
 
       mock.onSelect(
-        accounts,   // 1. Account resolution
-        [],          // 2. Entry number generation (no existing entries today)
+        accounts, // 1. Account resolution
+        [], // 2. Entry number generation (no existing entries today)
       );
 
-      let txInsertCalls: any[] = [];
+      const txInsertCalls: any[] = [];
       mock.onTransaction(async (fn: any) => {
         const tx = {
           insert: jest.fn().mockImplementation(() => {
@@ -384,7 +456,13 @@ describe('GlService', () => {
               return {
                 returning: jest.fn().mockResolvedValue(
                   insertCount === 1
-                    ? [{ journalEntryId: 'je-001', entryNumber: 'JE-20260322-0001', entryDate: '2026-03-22' }]
+                    ? [
+                        {
+                          journalEntryId: 'je-001',
+                          entryNumber: 'JE-20260322-0001',
+                          entryDate: '2026-03-22',
+                        },
+                      ]
                     : undefined,
                 ),
               };
@@ -400,7 +478,12 @@ describe('GlService', () => {
           { accountCode: '1100', debit: 500, credit: 0, memo: 'AR debit' },
           { accountCode: '4100', debit: 0, credit: 500, memo: 'Rev credit' },
         ],
-        { sourceType: 'sales_invoice', sourceId: 'inv-001', memo: 'Test', actor: 'admin' },
+        {
+          sourceType: 'sales_invoice',
+          sourceId: 'inv-001',
+          memo: 'Test',
+          actor: 'admin',
+        },
       );
 
       expect(result.journalEntryId).toBe('je-001');
@@ -432,8 +515,22 @@ describe('GlService', () => {
 
     it('should use entryDate from meta when provided', async () => {
       mock.onSelect(
-        [{ glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
-         { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Rev' }],
+        [
+          {
+            glAccountId: 'id1',
+            accountCode: '1100',
+            isGroup: false,
+            isActive: true,
+            name: 'AR',
+          },
+          {
+            glAccountId: 'id2',
+            accountCode: '4100',
+            isGroup: false,
+            isActive: true,
+            name: 'Rev',
+          },
+        ],
         [], // entry number
       );
 
@@ -449,7 +546,13 @@ describe('GlService', () => {
                 return {
                   returning: jest.fn().mockResolvedValue(
                     insertCount === 1
-                      ? [{ journalEntryId: 'je-date', entryNumber: 'JE-test', entryDate: '2025-12-31' }]
+                      ? [
+                          {
+                            journalEntryId: 'je-date',
+                            entryNumber: 'JE-test',
+                            entryDate: '2025-12-31',
+                          },
+                        ]
                       : undefined,
                   ),
                 };
@@ -473,8 +576,22 @@ describe('GlService', () => {
 
     it('should default entryDate to today when not provided', async () => {
       mock.onSelect(
-        [{ glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
-         { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Rev' }],
+        [
+          {
+            glAccountId: 'id1',
+            accountCode: '1100',
+            isGroup: false,
+            isActive: true,
+            name: 'AR',
+          },
+          {
+            glAccountId: 'id2',
+            accountCode: '4100',
+            isGroup: false,
+            isActive: true,
+            name: 'Rev',
+          },
+        ],
         [],
       );
 
@@ -488,9 +605,13 @@ describe('GlService', () => {
               values: jest.fn().mockImplementation((vals: any) => {
                 if (insertCount === 1) headerValues = vals;
                 return {
-                  returning: jest.fn().mockResolvedValue(
-                    insertCount === 1 ? [{ journalEntryId: 'je-today' }] : undefined,
-                  ),
+                  returning: jest
+                    .fn()
+                    .mockResolvedValue(
+                      insertCount === 1
+                        ? [{ journalEntryId: 'je-today' }]
+                        : undefined,
+                    ),
                 };
               }),
             };
@@ -514,7 +635,15 @@ describe('GlService', () => {
     it('should deduplicate account codes when same code appears multiple times', async () => {
       // Transfer within same account (zero-sum)
       mock.onSelect(
-        [{ glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' }],
+        [
+          {
+            glAccountId: 'id1',
+            accountCode: '1100',
+            isGroup: false,
+            isActive: true,
+            name: 'AR',
+          },
+        ],
         [],
       );
 
@@ -525,9 +654,13 @@ describe('GlService', () => {
             insertCount++;
             return {
               values: jest.fn().mockImplementation(() => ({
-                returning: jest.fn().mockResolvedValue(
-                  insertCount === 1 ? [{ journalEntryId: 'je-dup' }] : undefined,
-                ),
+                returning: jest
+                  .fn()
+                  .mockResolvedValue(
+                    insertCount === 1
+                      ? [{ journalEntryId: 'je-dup' }]
+                      : undefined,
+                  ),
               })),
             };
           }),
@@ -554,8 +687,22 @@ describe('GlService', () => {
   describe('postJournalEntry — entry number', () => {
     it('should generate JE-YYYYMMDD-0001 for first entry of the day', async () => {
       mock.onSelect(
-        [{ glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
-         { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Rev' }],
+        [
+          {
+            glAccountId: 'id1',
+            accountCode: '1100',
+            isGroup: false,
+            isActive: true,
+            name: 'AR',
+          },
+          {
+            glAccountId: 'id2',
+            accountCode: '4100',
+            isGroup: false,
+            isActive: true,
+            name: 'Rev',
+          },
+        ],
         [], // No existing entries
       );
 
@@ -570,7 +717,14 @@ describe('GlService', () => {
                 if (insertCount === 1) capturedNumber = vals.entryNumber;
                 return {
                   returning: jest.fn().mockResolvedValue(
-                    insertCount === 1 ? [{ journalEntryId: 'je-num1', entryNumber: vals.entryNumber }] : undefined,
+                    insertCount === 1
+                      ? [
+                          {
+                            journalEntryId: 'je-num1',
+                            entryNumber: vals.entryNumber,
+                          },
+                        ]
+                      : undefined,
                   ),
                 };
               }),
@@ -595,8 +749,22 @@ describe('GlService', () => {
     it('should increment sequence when entries already exist today', async () => {
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       mock.onSelect(
-        [{ glAccountId: 'id1', accountCode: '1100', isGroup: false, isActive: true, name: 'AR' },
-         { glAccountId: 'id2', accountCode: '4100', isGroup: false, isActive: true, name: 'Rev' }],
+        [
+          {
+            glAccountId: 'id1',
+            accountCode: '1100',
+            isGroup: false,
+            isActive: true,
+            name: 'AR',
+          },
+          {
+            glAccountId: 'id2',
+            accountCode: '4100',
+            isGroup: false,
+            isActive: true,
+            name: 'Rev',
+          },
+        ],
         [{ entryNumber: `JE-${today}-0003` }], // Existing max
       );
 
@@ -610,9 +778,13 @@ describe('GlService', () => {
               values: jest.fn().mockImplementation((vals: any) => {
                 if (insertCount === 1) capturedNumber = vals.entryNumber;
                 return {
-                  returning: jest.fn().mockResolvedValue(
-                    insertCount === 1 ? [{ journalEntryId: 'je-num4' }] : undefined,
-                  ),
+                  returning: jest
+                    .fn()
+                    .mockResolvedValue(
+                      insertCount === 1
+                        ? [{ journalEntryId: 'je-num4' }]
+                        : undefined,
+                    ),
                 };
               }),
             };
@@ -640,11 +812,41 @@ describe('GlService', () => {
   describe('getChartOfAccounts (tree builder)', () => {
     it('should build nested tree from flat accounts', async () => {
       mock.onSelect([
-        { glAccountId: 'a1', accountCode: '1000', name: 'Assets', parentAccountId: null, isGroup: true },
-        { glAccountId: 'a2', accountCode: '1100', name: 'AR', parentAccountId: 'a1', isGroup: false },
-        { glAccountId: 'a3', accountCode: '1200', name: 'GST Recv', parentAccountId: 'a1', isGroup: false },
-        { glAccountId: 'a4', accountCode: '2000', name: 'Liabilities', parentAccountId: null, isGroup: true },
-        { glAccountId: 'a5', accountCode: '2100', name: 'AP', parentAccountId: 'a4', isGroup: false },
+        {
+          glAccountId: 'a1',
+          accountCode: '1000',
+          name: 'Assets',
+          parentAccountId: null,
+          isGroup: true,
+        },
+        {
+          glAccountId: 'a2',
+          accountCode: '1100',
+          name: 'AR',
+          parentAccountId: 'a1',
+          isGroup: false,
+        },
+        {
+          glAccountId: 'a3',
+          accountCode: '1200',
+          name: 'GST Recv',
+          parentAccountId: 'a1',
+          isGroup: false,
+        },
+        {
+          glAccountId: 'a4',
+          accountCode: '2000',
+          name: 'Liabilities',
+          parentAccountId: null,
+          isGroup: true,
+        },
+        {
+          glAccountId: 'a5',
+          accountCode: '2100',
+          name: 'AP',
+          parentAccountId: 'a4',
+          isGroup: false,
+        },
       ]);
 
       const tree = await service.getChartOfAccounts();
@@ -660,9 +862,27 @@ describe('GlService', () => {
 
     it('should handle 3-level deep hierarchy', async () => {
       mock.onSelect([
-        { glAccountId: 'r1', accountCode: '1000', name: 'Assets', parentAccountId: null, isGroup: true },
-        { glAccountId: 'g1', accountCode: '1020', name: 'Bank', parentAccountId: 'r1', isGroup: true },
-        { glAccountId: 'l1', accountCode: '1021', name: 'Operating', parentAccountId: 'g1', isGroup: false },
+        {
+          glAccountId: 'r1',
+          accountCode: '1000',
+          name: 'Assets',
+          parentAccountId: null,
+          isGroup: true,
+        },
+        {
+          glAccountId: 'g1',
+          accountCode: '1020',
+          name: 'Bank',
+          parentAccountId: 'r1',
+          isGroup: true,
+        },
+        {
+          glAccountId: 'l1',
+          accountCode: '1021',
+          name: 'Operating',
+          parentAccountId: 'g1',
+          isGroup: false,
+        },
       ]);
 
       const tree = await service.getChartOfAccounts();
@@ -679,7 +899,13 @@ describe('GlService', () => {
 
     it('should not show orphaned accounts at root', async () => {
       mock.onSelect([
-        { glAccountId: 'a1', accountCode: '1100', name: 'Orphan', parentAccountId: 'deleted-parent', isGroup: false },
+        {
+          glAccountId: 'a1',
+          accountCode: '1100',
+          name: 'Orphan',
+          parentAccountId: 'deleted-parent',
+          isGroup: false,
+        },
       ]);
       const tree = await service.getChartOfAccounts();
       expect(tree).toEqual([]); // Orphan hangs off missing parent
@@ -687,7 +913,13 @@ describe('GlService', () => {
 
     it('should handle single root account with no children', async () => {
       mock.onSelect([
-        { glAccountId: 'a1', accountCode: '1000', name: 'Assets', parentAccountId: null, isGroup: true },
+        {
+          glAccountId: 'a1',
+          accountCode: '1000',
+          name: 'Assets',
+          parentAccountId: null,
+          isGroup: true,
+        },
       ]);
       const tree = await service.getChartOfAccounts();
       expect(tree).toHaveLength(1);
@@ -717,13 +949,21 @@ describe('GlService', () => {
   describe('createAccount', () => {
     it('should reject invalid account type', async () => {
       await expect(
-        service.createAccount({ accountCode: '9000', name: 'Bad', accountType: 'debit' }),
+        service.createAccount({
+          accountCode: '9000',
+          name: 'Bad',
+          accountType: 'debit',
+        }),
       ).rejects.toThrow('Invalid account type');
     });
 
     it('should list valid types in error message', async () => {
       try {
-        await service.createAccount({ accountCode: '9000', name: 'Bad', accountType: 'invalid' });
+        await service.createAccount({
+          accountCode: '9000',
+          name: 'Bad',
+          accountType: 'invalid',
+        });
         fail('Should have thrown');
       } catch (e: any) {
         expect(e.message).toContain('asset');
@@ -738,7 +978,9 @@ describe('GlService', () => {
       mock.onSelect([]); // Parent not found
       await expect(
         service.createAccount({
-          accountCode: '9001', name: 'Child', accountType: 'asset',
+          accountCode: '9001',
+          name: 'Child',
+          accountType: 'asset',
           parentAccountId: 'nonexistent',
         }),
       ).rejects.toThrow('Parent account not found');
@@ -748,7 +990,9 @@ describe('GlService', () => {
       mock.onSelect([{ glAccountId: 'p1', isGroup: false }]);
       await expect(
         service.createAccount({
-          accountCode: '9001', name: 'Child', accountType: 'asset',
+          accountCode: '9001',
+          name: 'Child',
+          accountType: 'asset',
           parentAccountId: 'p1',
         }),
       ).rejects.toThrow('must be a group');
@@ -756,10 +1000,14 @@ describe('GlService', () => {
 
     it('should accept valid account with group parent', async () => {
       mock.onSelect([{ glAccountId: 'p1', isGroup: true }]); // Parent check
-      mock.onInsert([{ glAccountId: 'new-1', accountCode: '9001', name: 'New' }]);
+      mock.onInsert([
+        { glAccountId: 'new-1', accountCode: '9001', name: 'New' },
+      ]);
 
       const result = await service.createAccount({
-        accountCode: '9001', name: 'New', accountType: 'expense',
+        accountCode: '9001',
+        name: 'New',
+        accountType: 'expense',
         parentAccountId: 'p1',
       });
       expect(result.glAccountId).toBe('new-1');
@@ -768,16 +1016,26 @@ describe('GlService', () => {
     it('should default isGroup to false', async () => {
       mock.onInsert([{ glAccountId: 'new-2', isGroup: false }]);
       const result = await service.createAccount({
-        accountCode: '9002', name: 'Leaf', accountType: 'asset',
+        accountCode: '9002',
+        name: 'Leaf',
+        accountType: 'asset',
       });
       expect(mock.db.insert).toHaveBeenCalled();
     });
 
     it('should accept all 5 valid account types', async () => {
-      for (const type of ['asset', 'liability', 'equity', 'revenue', 'expense']) {
+      for (const type of [
+        'asset',
+        'liability',
+        'equity',
+        'revenue',
+        'expense',
+      ]) {
         mock.onInsert([{ glAccountId: `id-${type}` }]);
         const result = await service.createAccount({
-          accountCode: `code-${type}`, name: `Name-${type}`, accountType: type,
+          accountCode: `code-${type}`,
+          name: `Name-${type}`,
+          accountType: type,
         });
         expect(result).toBeDefined();
       }
@@ -797,22 +1055,45 @@ describe('GlService', () => {
     });
 
     it('should reject deactivating a system account', async () => {
-      mock.onSelect([{ glAccountId: 'sys-1', accountCode: '1100', name: 'AR', isSystem: true }]);
+      mock.onSelect([
+        {
+          glAccountId: 'sys-1',
+          accountCode: '1100',
+          name: 'AR',
+          isSystem: true,
+        },
+      ]);
       await expect(
         service.updateAccount('sys-1', { isActive: false }),
       ).rejects.toThrow('cannot be deactivated');
     });
 
     it('should allow renaming a system account', async () => {
-      mock.onSelect([{ glAccountId: 'sys-1', accountCode: '1100', name: 'AR', isSystem: true }]);
+      mock.onSelect([
+        {
+          glAccountId: 'sys-1',
+          accountCode: '1100',
+          name: 'AR',
+          isSystem: true,
+        },
+      ]);
       mock.onUpdate([{ glAccountId: 'sys-1', name: 'Accounts Receivable' }]);
 
-      const result = await service.updateAccount('sys-1', { name: 'Accounts Receivable' });
+      const result = await service.updateAccount('sys-1', {
+        name: 'Accounts Receivable',
+      });
       expect(result.name).toBe('Accounts Receivable');
     });
 
     it('should allow deactivating a non-system account', async () => {
-      mock.onSelect([{ glAccountId: 'c1', accountCode: '9900', name: 'Custom', isSystem: false }]);
+      mock.onSelect([
+        {
+          glAccountId: 'c1',
+          accountCode: '9900',
+          name: 'Custom',
+          isSystem: false,
+        },
+      ]);
       mock.onUpdate([{ glAccountId: 'c1', isActive: false }]);
 
       const result = await service.updateAccount('c1', { isActive: false });
@@ -820,7 +1101,14 @@ describe('GlService', () => {
     });
 
     it('should allow setting isActive=true on system account (re-enable)', async () => {
-      mock.onSelect([{ glAccountId: 'sys-1', accountCode: '1100', name: 'AR', isSystem: true }]);
+      mock.onSelect([
+        {
+          glAccountId: 'sys-1',
+          accountCode: '1100',
+          name: 'AR',
+          isSystem: true,
+        },
+      ]);
       mock.onUpdate([{ glAccountId: 'sys-1', isActive: true }]);
 
       const result = await service.updateAccount('sys-1', { isActive: true });
@@ -835,17 +1123,38 @@ describe('GlService', () => {
   describe('getJournalEntry', () => {
     it('should throw NotFoundException for non-existent entry', async () => {
       mock.onSelect([]); // Not found
-      await expect(
-        service.getJournalEntry('nonexistent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.getJournalEntry('nonexistent')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return entry with hydrated lines', async () => {
       mock.onSelect(
-        [{ journalEntryId: 'je-1', entryNumber: 'JE-20260322-0001', entryDate: '2026-03-22', sourceType: 'manual' }],
         [
-          { journalLineId: 'jl-1', debit: '100', credit: '0', memo: 'DR', accountCode: '1100', accountName: 'AR' },
-          { journalLineId: 'jl-2', debit: '0', credit: '100', memo: 'CR', accountCode: '4100', accountName: 'Revenue' },
+          {
+            journalEntryId: 'je-1',
+            entryNumber: 'JE-20260322-0001',
+            entryDate: '2026-03-22',
+            sourceType: 'manual',
+          },
+        ],
+        [
+          {
+            journalLineId: 'jl-1',
+            debit: '100',
+            credit: '0',
+            memo: 'DR',
+            accountCode: '1100',
+            accountName: 'AR',
+          },
+          {
+            journalLineId: 'jl-2',
+            debit: '0',
+            credit: '100',
+            memo: 'CR',
+            accountCode: '4100',
+            accountName: 'Revenue',
+          },
         ],
       );
 
@@ -868,9 +1177,11 @@ describe('GlService', () => {
     });
 
     it('should return settings when they exist', async () => {
-      mock.onSelect([{ settingsId: 's1', fiscalYearStartMonth: 7, baseCurrency: 'AUD' }]);
+      mock.onSelect([
+        { settingsId: 's1', fiscalYearStartMonth: 7, baseCurrency: 'AUD' },
+      ]);
       const result = await service.getSettings();
-      expect(result!.baseCurrency).toBe('AUD');
+      expect(result.baseCurrency).toBe('AUD');
     });
   });
 
@@ -882,8 +1193,20 @@ describe('GlService', () => {
     it('should return rows from execute', async () => {
       mock.onExecute({
         rows: [
-          { account_code: '1100', name: 'AR', total_debit: 500, total_credit: 200, balance: 300 },
-          { account_code: '4100', name: 'Revenue', total_debit: 0, total_credit: 500, balance: -500 },
+          {
+            account_code: '1100',
+            name: 'AR',
+            total_debit: 500,
+            total_credit: 200,
+            balance: 300,
+          },
+          {
+            account_code: '4100',
+            name: 'Revenue',
+            total_debit: 0,
+            total_credit: 500,
+            balance: -500,
+          },
         ],
       });
 
@@ -912,7 +1235,14 @@ describe('GlService', () => {
   describe('getGeneralLedger', () => {
     it('should return ledger rows', async () => {
       mock.onExecute({
-        rows: [{ entry_number: 'JE-001', account_code: '1100', debit: 100, credit: 0 }],
+        rows: [
+          {
+            entry_number: 'JE-001',
+            account_code: '1100',
+            debit: 100,
+            credit: 0,
+          },
+        ],
       });
       const result = await service.getGeneralLedger({ accountCode: '1100' });
       expect(result).toHaveLength(1);

@@ -38,13 +38,19 @@ describe('API E2E — Purchase Order Receptions', () => {
     // Login
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD || 'password' })
+      .send({
+        username: 'admin',
+        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+      })
       .expect(201);
     adminToken = adminLogin.body.access_token;
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD || 'password' })
+      .send({
+        username: 'viewer',
+        password: process.env.DEV_VIEWER_PASSWORD || 'password',
+      })
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 
@@ -117,9 +123,7 @@ describe('API E2E — Purchase Order Receptions', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const lineIds = detail.body.lines.map(
-      (l: any) => l.purchaseOrderLineId,
-    );
+    const lineIds = detail.body.lines.map((l: any) => l.purchaseOrderLineId);
 
     return { purchaseOrderId, lineIds };
   }
@@ -202,9 +206,7 @@ describe('API E2E — Purchase Order Receptions', () => {
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
           purchaseOrderId,
-          lines: [
-            { purchaseOrderLineId: lineIds[0], quantityReceived: '5' },
-          ],
+          lines: [{ purchaseOrderLineId: lineIds[0], quantityReceived: '5' }],
         })
         .expect(403);
     });

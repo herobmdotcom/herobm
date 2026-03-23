@@ -1,6 +1,0 @@
-[
-  {
-    "account_id": "CMARINEXXXX",
-    "currency_code": "SGD"
-  }
-]

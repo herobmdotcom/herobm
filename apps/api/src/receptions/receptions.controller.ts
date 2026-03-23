@@ -38,7 +38,10 @@ export class ReceptionsController {
 
   @Get()
   @CasbinAction('read')
-  async findAll(@Param('orderId') orderId: string, @Query() query: PaginationQuery) {
+  async findAll(
+    @Param('orderId') orderId: string,
+    @Query() query: PaginationQuery,
+  ) {
     // Note: ReceptionsService.findAll currently doesn't filter by orderId,
     // this keeps the existing behavior but nests the route.
     return this.receptionsService.findAll(query);

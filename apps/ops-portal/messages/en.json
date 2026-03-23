@@ -162,6 +162,12 @@
     },
     "notesCardHeading": "Notes",
     "notesCardPlaceholder": "Internal notes",
+    "filters": {
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days",
+      "last1Year": "Last 1 Year",
+      "allTime": "All Time"
+    },
     "grid": {
       "options": "Options",
       "export": "Export",
@@ -438,8 +444,14 @@
       "returnQty": "Return Qty",
       "reason": "Reason",
       "fee": "Fee",
-      "qtyReturned": "Qty Returned"
+      "qtyReturned": "Qty Returned",
+      "invoiceNumber": "Invoice No.",
+      "orderNumber": "Order No.",
+      "customer": "Customer",
+      "date": "Date",
+      "state": "State"
     },
+    "invoicesCardHeading": "Sales Invoices",
     "returns": {
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees",
@@ -596,7 +608,9 @@
       "generalLedger": "General Ledger",
       "journalEntries": "Journal Entries",
       "eventQueue": "Event Queue",
-      "movements": "Movements"
+      "movements": "Movements",
+      "systemLogs": "System Logs",
+      "invoices": "Invoices"
     }
   },
   "accounts": {

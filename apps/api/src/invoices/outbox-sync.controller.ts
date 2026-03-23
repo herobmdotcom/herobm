@@ -1,6 +1,17 @@
-import { Controller, Get, Delete, Query, UseGuards, Inject } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Query,
+  UseGuards,
+  Inject,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/modbm-core-schema';

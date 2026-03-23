@@ -3,13 +3,15 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { FileLoggerService } from './common/file-logger.service';
 
 async function bootstrap() {
   // Prometheus default metrics (CPU, memory, event loop)
   collectDefaultMetrics();
 
+  const fileLogger = new FileLoggerService();
   const app = await NestFactory.create(AppModule, {
-    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+    logger: fileLogger,
   });
 
   app.setGlobalPrefix('api');

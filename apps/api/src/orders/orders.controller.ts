@@ -94,11 +94,7 @@ export class OrdersController {
     @Body('stateCode') stateCode: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.changeState(
-      id,
-      stateCode,
-      user.username,
-    );
+    return this.ordersWriteService.changeState(id, stateCode, user.username);
   }
 
   @Post(':id/archive')
@@ -131,12 +127,7 @@ export class OrdersController {
     @Body() body: UpdateOrderLineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.ordersWriteService.updateLine(
-      id,
-      lineId,
-      body,
-      user.username,
-    );
+    return this.ordersWriteService.updateLine(id, lineId, body, user.username);
   }
 
   @Delete(':id/lines/:lineId')

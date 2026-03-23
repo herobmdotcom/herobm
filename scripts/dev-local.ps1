@@ -7,7 +7,7 @@ Write-Host "Portal will start on port 4301" -ForegroundColor Cyan
 # Use the explicitly declared Node to run local dev securely and reliably.
 
 # Start API in a new window
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd apps/api; `$env:PORT=3002; npm run start:dev"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", "cd apps/api; `$env:PORT=3002; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev"
 
 # Start FE in a new window
 # We prefix `next dev` with passing `API_URL`

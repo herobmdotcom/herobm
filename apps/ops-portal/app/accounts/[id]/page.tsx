@@ -14,6 +14,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
+import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
 
 interface Account {
@@ -54,6 +55,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [dto, setDto] = useState<Partial<Account>>({});
+  const [activeTab, setActiveTab] = useState<'details' | 'invoices'>('details');
+
+
 
   useEffect(() => {
     apiFetch<Account>(`/api/accounts/${params.id}`)
@@ -179,7 +183,38 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         </div>
       )}
 
-      <div className="flex flex-col gap-6">
+      <div className="flex gap-4 border-b border-[rgba(196,198,205,0.4)] mb-6 px-2">
+          <button
+              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+              onClick={() => setActiveTab('details')}
+          >
+              {t('accounts.generalInfo', { defaultValue: 'Details' })}
+          </button>
+          <button
+              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'invoices' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+              onClick={() => setActiveTab('invoices')}
+          >
+              {t('salesOrders.invoicesCardHeading', { defaultValue: 'Invoices' })}
+          </button>
+      </div>
+
+      {activeTab === 'invoices' && (
+        <div style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
+            <DataGrid 
+                endpoint={`/api/sales-invoices?accountId=${params.id}&limit=50`}
+                columns={[
+                  { field: 'invoiceNumber', headerName: 'Invoice No.', width: 200 },
+                  { field: 'orderNumber', headerName: 'Order No.', width: 200 },
+                  { field: 'createdOn', headerName: 'Date', width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+                  { field: 'totalAmount', headerName: 'Amount', type: 'numericColumn', width: 150 },
+                  { field: 'stateCode', headerName: 'State', width: 150 },
+                ] as any[]}
+            />
+        </div>
+      )}
+
+      {activeTab === 'details' && (
+        <div className="flex flex-col gap-6">
             {/* Basic Info Card */}
             <div className="card">
               <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -522,6 +557,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
           <ActivityTimeline events={account.events || []} />
         </div>
+      )}
       </DetailsLayout>
     </Shell>
   );

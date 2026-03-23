@@ -31,7 +31,7 @@ The engine relies on 4 dedicated tables in the `modbm_core` schema:
 |-------|---------|-------------|
 | `gl_accounts` | The Chart of Accounts | `account_code` (PK), `name`, `account_type`, `is_group`, `parent_account_code`, `is_system`, `is_active` |
 | `gl_journal_entries` | Transaction headers | `journal_entry_id` (PK), `entry_number`, `entry_date`, `memo`, `source_type`, `source_id` |
-| `gl_journal_lines` | Transaction lines (debits/credits) | `journal_line_id` (PK), `journal_entry_id` (FK), `account_code` (FK), `debit`, `credit`, `memo` |
+| `gl_journal_lines` | Transaction lines (debits/credits) | `journal_line_id` (PK), `journal_entry_id` (FK), `account_code` (FK), `debit`, `credit`, `memo`, `party_type`, `party_id` |
 | `gl_settings` | Global configuration | `id` (PK), `company_name`, `currency` |
 
 > [!IMPORTANT]
@@ -57,15 +57,23 @@ The engine also enforces:
 ### Entry Number Generation
 Journal entries receive a sequential identifier formatted as `JE-YYYYMMDD-NNNN` (e.g., `JE-20260322-0001`). This sequence resets daily and is generated safely within a database transaction.
 
+## Immutable Event Sourcing (Triggers)
+
+Once a Journal Entry is committed, it forms the permanent financial record of the business. 
+To guarantee absolute audit continuity, the `gl_journal_entries` and `gl_journal_lines` tables are protected by native **PostgreSQL BEFORE UPDATE OR DELETE triggers**. 
+
+Any attempt to modify a posted journal line (even by an admin executing a raw SQL `UPDATE` statement) will be rejected by the database engine. Mistakes cannot be edited away; they must be reversed with a new, opposing Journal Entry.
+
 ## Integration with Subledgers
 
 Other modules (like Invoices) interact with the GL by injecting the `GlService`.
 
 ### Non-Fatal Posting Strategy
 When a subledger (e.g., Sales Invoice) attempts to post to the GL:
-1. It looks up the necessary system accounts (e.g., Accounts Receivable, Revenue).
-2. It constructs the balanced journal lines array.
-3. It calls `glService.postJournalEntry()`.
+1. It looks up the necessary system accounts (e.g., Accounts Receivable, Revenue). 
+2. It tags specific lines with `partyType: 'customer' | 'supplier'` and `partyId` (the supplier or customer UUID) for subledger reporting.
+3. It constructs the balanced journal lines array.
+4. It calls `glService.postJournalEntry()`.
 
 Crucially, this call is wrapped in a `try/catch` block within the subledger. If the GL rejects the entry (e.g., due to a missing account), the error is caught, logged, and the invoice is still permitted to save its primary state. This prevents obscure GL configuration issues from paralyzing business operations.
 

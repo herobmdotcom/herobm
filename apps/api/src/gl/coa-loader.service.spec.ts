@@ -19,8 +19,8 @@ import * as path from 'path';
 // ---------------------------------------------------------------------------
 
 function createMockDb() {
-  let insertCalls: any[] = [];
-  let updateCalls: any[] = [];
+  const insertCalls: any[] = [];
+  const updateCalls: any[] = [];
 
   const mockTx: any = {
     insert: jest.fn().mockImplementation((table: any) => {
@@ -30,11 +30,13 @@ function createMockDb() {
         values: jest.fn().mockImplementation((vals: any) => {
           call.values = vals;
           return {
-            returning: jest.fn().mockResolvedValue([{
-              glAccountId: `gen-${insertCalls.length}`,
-              accountCode: vals.accountCode || 'code',
-              name: vals.name || 'name',
-            }]),
+            returning: jest.fn().mockResolvedValue([
+              {
+                glAccountId: `gen-${insertCalls.length}`,
+                accountCode: vals.accountCode || 'code',
+                name: vals.name || 'name',
+              },
+            ]),
           };
         }),
       };
@@ -50,9 +52,9 @@ function createMockDb() {
 
   const mockDb: any = {
     select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(
-        Promise.resolve([{ count: countResult }]),
-      ),
+      from: jest
+        .fn()
+        .mockReturnValue(Promise.resolve([{ count: countResult }])),
     }),
     transaction: jest.fn().mockImplementation(async (fn: any) => fn(mockTx)),
   };
@@ -78,10 +80,7 @@ describe('CoaLoaderService', () => {
     mock = createMockDb();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CoaLoaderService,
-        { provide: DRIZZLE, useValue: mock.db },
-      ],
+      providers: [CoaLoaderService, { provide: DRIZZLE, useValue: mock.db }],
     }).compile();
 
     service = module.get<CoaLoaderService>(CoaLoaderService);
@@ -150,14 +149,14 @@ describe('CoaLoaderService', () => {
             root_type: 'Asset',
             is_group: 1,
             children: {
-              'Cash': { account_number: '1010', account_type: 'Cash' },
+              Cash: { account_number: '1010', account_type: 'Cash' },
             },
           },
           Revenue: {
             root_type: 'Income',
             is_group: 1,
             children: {
-              'Sales': { account_number: '4100' },
+              Sales: { account_number: '4100' },
             },
           },
         },
@@ -172,7 +171,7 @@ describe('CoaLoaderService', () => {
       expect(result.created).toBe(4); // Assets (group), Cash, Revenue (group), Sales
 
       // Verify insert calls
-      const insertedValues = mock.insertCalls.map(c => c.values);
+      const insertedValues = mock.insertCalls.map((c) => c.values);
 
       // Assets group
       expect(insertedValues[0]).toMatchObject({
@@ -253,11 +252,11 @@ describe('CoaLoaderService', () => {
             root_type: 'Expense',
             is_group: 1,
             children: {
-              'Operating': {
+              Operating: {
                 is_group: 1,
                 account_number: '6000',
                 children: {
-                  'Wages': { account_number: '6100' },
+                  Wages: { account_number: '6100' },
                 },
               },
             },
@@ -271,7 +270,9 @@ describe('CoaLoaderService', () => {
       await service.loadFromFile('_test_chart.json');
 
       // 'Wages' should inherit 'expense' from root Expenses
-      const wagesInsert = mock.insertCalls.find(c => c.values.name === 'Wages');
+      const wagesInsert = mock.insertCalls.find(
+        (c) => c.values.name === 'Wages',
+      );
       expect(wagesInsert!.values.accountType).toBe('expense');
     });
 
@@ -324,7 +325,7 @@ describe('CoaLoaderService', () => {
       mock.setExistingCount(0);
       await service.loadFromFile('au_standard.json');
 
-      const types = new Set(mock.insertCalls.map(c => c.values.accountType));
+      const types = new Set(mock.insertCalls.map((c) => c.values.accountType));
       expect(types).toContain('asset');
       expect(types).toContain('liability');
       expect(types).toContain('equity');
@@ -336,7 +337,7 @@ describe('CoaLoaderService', () => {
       mock.setExistingCount(0);
       await service.loadFromFile('au_standard.json');
 
-      const names = mock.insertCalls.map(c => c.values.name);
+      const names = mock.insertCalls.map((c) => c.values.name);
       expect(names).toContain('Accounts Receivable');
       expect(names).toContain('Accounts Payable');
       expect(names).toContain('Sales Revenue');
@@ -349,7 +350,9 @@ describe('CoaLoaderService', () => {
       await service.loadFromFile('au_standard.json');
 
       // All accounts except gl_settings should be isSystem: true
-      const accountInserts = mock.insertCalls.filter(c => c.values.isSystem !== undefined);
+      const accountInserts = mock.insertCalls.filter(
+        (c) => c.values.isSystem !== undefined,
+      );
       for (const insert of accountInserts) {
         expect(insert.values.isSystem).toBe(true);
       }

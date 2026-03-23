@@ -19,7 +19,15 @@ function resolveCasbinAsset(filename: string): string {
   const distPath = path.join(__dirname, 'casbin', filename);
   if (fs.existsSync(distPath)) return distPath;
   // Fallback: walk up from dist/auth → project root → src/auth/casbin
-  const srcPath = path.resolve(__dirname, '..', '..', 'src', 'auth', 'casbin', filename);
+  const srcPath = path.resolve(
+    __dirname,
+    '..',
+    '..',
+    'src',
+    'auth',
+    'casbin',
+    filename,
+  );
   if (fs.existsSync(srcPath)) return srcPath;
   // If neither exists, return the dist path so the original error surfaces
   return distPath;

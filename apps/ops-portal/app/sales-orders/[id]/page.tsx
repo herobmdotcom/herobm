@@ -1631,6 +1631,59 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
                 )}
 
+                {/* Invoices */}
+                {invoices.length > 0 && (
+                    <div className="card">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3
+                                className="text-sm font-semibold"
+                                style={{
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                }}
+                            >
+                                {tSales('invoicesCardHeading', { defaultValue: 'Invoices' })}
+                            </h3>
+                        </div>
+                        <div style={{
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            overflow: 'hidden',
+                            background: 'var(--surface)',
+                        }}>
+                            <table className="table-lines w-full text-sm">
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Invoice Number</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Date</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Created By</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax</th>
+                                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {invoices.map((inv) => (
+                                        <tr key={inv.invoiceId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '12px 16px', fontWeight: 600 }}>{inv.invoiceNumber}</td>
+                                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
+                                                {new Date(inv.createdOn).toLocaleString()}
+                                            </td>
+                                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{inv.createdBy || 'System'}</td>
+                                            <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}
+                                            </td>
+                                            <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                                {formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
                 {/* Audit timeline — only for app orders */}
                 {source === 'app' && (
                     <ActivityTimeline events={order.events || []} />

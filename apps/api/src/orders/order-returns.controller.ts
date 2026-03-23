@@ -60,11 +60,7 @@ export class OrderReturnsController {
     @Body() body: UpdateReturnDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.returnsWriteService.updateReturn(
-      returnId,
-      body,
-      user.username,
-    );
+    return this.returnsWriteService.updateReturn(returnId, body, user.username);
   }
 
   @Patch(':id/returns/:returnId/state')

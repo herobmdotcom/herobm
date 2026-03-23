@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
@@ -180,98 +180,91 @@ export default function JournalEntriesPage() {
                     : null;
 
                   return (
-                    <tr key={entry.journalEntryId} style={{ display: 'contents' }}>
-                      <td colSpan={7} style={{ display: 'contents' }}>
-                        {/* Main row */}
-                        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-                          <tbody>
-                            <tr
-                              className="transition-colors cursor-pointer"
-                              style={{ borderBottom: '1px solid var(--border)' }}
-                              onClick={() => toggleExpand(entry)}
-                              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
-                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                            >
-                              <td className="w-8 px-2 py-2.5 text-center">
-                                <span
-                                  className="material-symbols-outlined text-[16px] transition-transform"
-                                  style={{
-                                    color: 'var(--text-muted)',
-                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                                  }}
-                                >
-                                  {'chevron_right'}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--accent)' }}>{entry.entryNumber}</td>
-                              <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                {new Date(entry.entryDate).toLocaleDateString()}
-                              </td>
-                              <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>{entry.memo || '—'}</td>
-                              <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{sourceLabel(entry.sourceType)}</td>
-                              <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
-                                {debitTotal !== null ? fmt(debitTotal) : '—'}
-                              </td>
-                              <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
-                                {creditTotal !== null ? fmt(creditTotal) : '—'}
-                              </td>
-                            </tr>
+                    <React.Fragment key={entry.journalEntryId}>
+                      <tr
+                        className="transition-colors cursor-pointer"
+                        style={{ borderBottom: '1px solid var(--border)' }}
+                        onClick={() => toggleExpand(entry)}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <td className="w-8 px-2 py-2.5 text-center">
+                          <span
+                            className="material-symbols-outlined text-[16px] transition-transform"
+                            style={{
+                              color: 'var(--text-muted)',
+                              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                            }}
+                          >
+                            {'chevron_right'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--accent)' }}>{entry.entryNumber}</td>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {new Date(entry.entryDate).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>{entry.memo || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{sourceLabel(entry.sourceType)}</td>
+                        <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {debitTotal !== null ? fmt(debitTotal) : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {creditTotal !== null ? fmt(creditTotal) : '—'}
+                        </td>
+                      </tr>
 
-                            {/* Expanded detail lines */}
-                            {isExpanded && (
-                              <tr>
-                                <td colSpan={7} style={{ background: 'var(--bg-secondary)', padding: 0 }}>
-                                  <div className="px-8 py-3">
-                                    <p className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                                      {t('lines')}
-                                    </p>
-                                    {loadingLines ? (
-                                      <div className="animate-pulse text-xs py-2" style={{ color: 'var(--text-muted)' }}>
-                                        {tGeneral('loading')}
-                                      </div>
-                                    ) : (
-                                      <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
-                                        <thead>
-                                          <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                            <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.account')}</th>
-                                            <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>Party</th>
-                                            <th className="text-right px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.debit')}</th>
-                                            <th className="text-right px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.credit')}</th>
-                                            <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.memo')}</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {expandedLines.map((line) => (
-                                            <tr key={line.journalLineId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                              <td className="px-3 py-1.5" style={{ color: 'var(--text-primary)' }}>
-                                                <span className="font-mono" style={{ color: 'var(--text-muted)' }}>
-                                                  {line.accountCode}
-                                                </span>{' '}
-                                                {line.accountName}
-                                              </td>
-                                              <td className="px-3 py-1.5 capitalize text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                                {line.partyType ? (
-                                                  <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 border font-mono">
-                                                    {line.partyType}: {line.partyId?.substring(0, 8)}...
-                                                  </span>
-                                                ) : '—'}
-                                              </td>
-                                              <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(line.debit)}</td>
-                                              <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(line.credit)}</td>
-                                              <td className="px-3 py-1.5" style={{ color: 'var(--text-muted)' }}>{line.memo || '—'}</td>
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </td>
-                    </tr>
+                      {/* Expanded detail lines */}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={7} style={{ background: 'var(--bg-secondary)', padding: 0 }}>
+                            <div className="px-8 py-3">
+                              <p className="text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                                {t('lines')}
+                              </p>
+                              {loadingLines ? (
+                                <div className="animate-pulse text-xs py-2" style={{ color: 'var(--text-muted)' }}>
+                                  {tGeneral('loading')}
+                                </div>
+                              ) : (
+                                <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                      <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.account')}</th>
+                                      <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>Party</th>
+                                      <th className="text-right px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.debit')}</th>
+                                      <th className="text-right px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.credit')}</th>
+                                      <th className="text-left px-3 py-1.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.memo')}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {expandedLines.map((line) => (
+                                      <tr key={line.journalLineId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <td className="px-3 py-1.5" style={{ color: 'var(--text-primary)' }}>
+                                          <span className="font-mono" style={{ color: 'var(--text-muted)' }}>
+                                            {line.accountCode}
+                                          </span>{' '}
+                                          {line.accountName}
+                                        </td>
+                                        <td className="px-3 py-1.5 capitalize text-xs" style={{ color: 'var(--text-secondary)' }}>
+                                          {line.partyType ? (
+                                            <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 border font-mono">
+                                              {line.partyType}: {line.partyId?.substring(0, 8)}...
+                                            </span>
+                                          ) : '—'}
+                                        </td>
+                                        <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(line.debit)}</td>
+                                        <td className="px-3 py-1.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(line.credit)}</td>
+                                        <td className="px-3 py-1.5" style={{ color: 'var(--text-muted)' }}>{line.memo || '—'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}

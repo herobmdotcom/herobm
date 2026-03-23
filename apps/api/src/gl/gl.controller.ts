@@ -9,7 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 import { GlService, JournalLineDto, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 
@@ -146,9 +150,7 @@ export class GlController {
 
   @Post('seed')
   @CasbinAction('write')
-  async seedChartOfAccounts(
-    @Body() body?: { filename?: string },
-  ) {
+  async seedChartOfAccounts(@Body() body?: { filename?: string }) {
     const filename = body?.filename || 'au_standard.json';
     return this.coaLoader.loadFromFile(filename);
   }

@@ -67,7 +67,10 @@ describe('API E2E — Picking & Shipments', () => {
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD || 'password' })
+      .send({
+        username: 'viewer',
+        password: process.env.DEV_VIEWER_PASSWORD || 'password',
+      })
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 

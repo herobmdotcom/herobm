@@ -107,7 +107,7 @@ export class PurchaseOrdersService {
           const price = parseFloat(line.pricePerUnit || '0');
           const disc = parseFloat(line.discountPercentage || '0');
           const amount = (qty * price * (1 - disc / 100)).toFixed(2);
-          
+
           return {
             purchaseOrderId: order.purchaseOrderId,
             lineNumber: index + 1,

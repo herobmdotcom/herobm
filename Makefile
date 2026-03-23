@@ -31,20 +31,54 @@ ifeq ($(OS),Windows_NT)
 	)
 endif
 
-up: check-logs-volume
-	$(COMPOSE_CMD) up -d
+# --------------------------------------------------------------------------
+# Containerized Stacks
+# --------------------------------------------------------------------------
 
+# FE + API Core (The standard app stack)
+up-fe-api: check-logs-volume
+	$(COMPOSE_CMD) up -d custom-api ops-portal postgres-custom redis-broker
 
+down-fe-api:
+	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker
+	$(COMPOSE_CMD) rm -f custom-api ops-portal postgres-custom redis-broker
+
+# PLG (Prometheus, Loki, Grafana)
+up-plg: check-logs-volume
+	$(COMPOSE_CMD) --profile plg up -d
+
+down-plg:
+	$(COMPOSE_CMD) --profile plg down
+
+# ERPNext Financial Core
+up-erpnext: check-logs-volume
+	$(COMPOSE_CMD) --profile erpnext --profile finance up -d
+
+down-erpnext:
+	$(COMPOSE_CMD) --profile erpnext --profile finance down
+
+# Queue Worker (Outbox relay)
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
 
-up-erpnext: build-worker
-	$(COMPOSE_CMD) --profile erpnext --profile finance up -d
+up-queue: build-worker check-logs-volume
+	$(COMPOSE_CMD) --profile queue up -d outbox-worker
 
-down:
-	$(COMPOSE_CMD) down
+down-queue:
+	$(COMPOSE_CMD) stop outbox-worker
+	$(COMPOSE_CMD) rm -f outbox-worker
 
-restart: down up
+# Run absolutely everything
+up-all: build-worker check-logs-volume
+	$(COMPOSE_CMD) --profile "*" up -d
+
+down-all:
+	$(COMPOSE_CMD) --profile "*" down
+
+# Legacy aliases pointing to default FE+API core
+up: up-fe-api
+down: down-fe-api
+restart: down-all up-fe-api
 
 logs:
 	$(COMPOSE_CMD) logs -f
@@ -73,29 +107,6 @@ setup: init-env up init
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
 	powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
-
-# --- Infrastructure Tests ---
-
-test-infra:
-	powershell -ExecutionPolicy Bypass -File infra/tests/test_stack_health.ps1
-
-test-structural:
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_weak_defaults.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_secrets.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_wildcard_cors.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_print_in_pipelines.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_imports_pinned.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_inline_api_client.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_pipeline_observability.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_business_event_logging.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 
 # --- ELT Pipeline ---
 
@@ -133,11 +144,11 @@ extract-docker:
 extract-docker-dry:
 	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract --dry-run
 
-# --- Custom API ---
-
-dev-local:
+# --- Local Development ---
+# Hot-reloads FE and API natively, spins up Postgres automatically
+dev-fe-api: check-logs-volume
+	$(COMPOSE_CMD) up -d postgres-custom
 	powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
-
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
 
@@ -200,23 +211,33 @@ build-api:
 build-portal:
 	cd apps/ops-portal && npm run build
 
-# --- Quality Gates ---
+# --- Quality Gates & Verification ---
 
-# Scoped: API-only (unit tests + build)
-verify-api-only: test-api build-api
-
-# Scoped: portal typecheck
-verify-portal: typecheck-portal
-
-# Full API verification (unit + e2e)
-verify-api: test-api test-api-e2e
+verify-fe-api: typecheck-portal test-api test-api-e2e
 
 test-deps:
 	python infra/tests/test_dependency_completeness.py
+
+test-structural:
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_weak_defaults.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_secrets.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_wildcard_cors.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_print_in_pipelines.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_imports_pinned.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_inline_api_client.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_pipeline_observability.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_business_event_logging.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 
 test-all: test-api test-deps test-structural typecheck-portal
 
 build-all: build-api build-portal
 
-# Full verification — use before deployment, not after every change
-verify-all: test-all build-all test-api-e2e test-infra
+verify-all: verify-fe-api test-structural test-deps test-transform

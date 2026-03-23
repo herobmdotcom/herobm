@@ -33,7 +33,9 @@ describe('GlController', () => {
     };
 
     coaLoader = {
-      loadFromFile: jest.fn().mockResolvedValue({ created: 30, skipped: false }),
+      loadFromFile: jest
+        .fn()
+        .mockResolvedValue({ created: 30, skipped: false }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -95,12 +97,16 @@ describe('GlController', () => {
   describe('PATCH /gl/accounts/:id', () => {
     it('should delegate to updateAccount with id and body', async () => {
       await controller.updateAccount('uuid-1', { name: 'New Name' });
-      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-1', { name: 'New Name' });
+      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-1', {
+        name: 'New Name',
+      });
     });
 
     it('should support isActive updates', async () => {
       await controller.updateAccount('uuid-2', { isActive: false });
-      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-2', { isActive: false });
+      expect(glService.updateAccount).toHaveBeenCalledWith('uuid-2', {
+        isActive: false,
+      });
     });
   });
 
@@ -120,7 +126,11 @@ describe('GlController', () => {
     });
 
     it('should pass date range and source type filters', async () => {
-      await controller.getJournalEntries('2026-01-01', '2026-03-31', 'sales_invoice');
+      await controller.getJournalEntries(
+        '2026-01-01',
+        '2026-03-31',
+        'sales_invoice',
+      );
       expect(glService.getJournalEntries).toHaveBeenCalledWith({
         fromDate: '2026-01-01',
         toDate: '2026-03-31',
@@ -217,7 +227,12 @@ describe('GlController', () => {
     });
 
     it('should pass all filter parameters', async () => {
-      await controller.getGeneralLedger('1100', '2026-01-01', '2026-12-31', '50');
+      await controller.getGeneralLedger(
+        '1100',
+        '2026-01-01',
+        '2026-12-31',
+        '50',
+      );
       expect(glService.getGeneralLedger).toHaveBeenCalledWith({
         accountCode: '1100',
         fromDate: '2026-01-01',

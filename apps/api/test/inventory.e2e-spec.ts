@@ -70,7 +70,7 @@ describe('Inventory (e2e)', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toBeDefined();
     expect(Array.isArray(res.body.data)).toBe(true);
-    
+
     if (res.body.data.length > 0) {
       const movement = res.body.data[0];
       expect(movement.productNumber).toBeDefined();

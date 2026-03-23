@@ -13,6 +13,7 @@ import {
   glJournalEntries,
   glJournalLines,
   glSettings,
+  outbox,
 } from '../drizzle/modbm-core-schema';
 
 // ---------------------------------------------------------------------------
@@ -51,10 +52,7 @@ export class GlService {
   // Core: Post a balanced journal entry
   // -------------------------------------------------------------------------
 
-  async postJournalEntry(
-    lines: JournalLineDto[],
-    meta: JournalMeta,
-  ) {
+  async postJournalEntry(lines: JournalLineDto[], meta: JournalMeta) {
     if (!lines || lines.length < 2) {
       throw new BadRequestException(
         'A journal entry requires at least 2 lines.',
@@ -90,16 +88,12 @@ export class GlService {
         )})`,
       );
 
-    const accountMap = new Map(
-      accountRows.map((a) => [a.accountCode, a]),
-    );
+    const accountMap = new Map(accountRows.map((a) => [a.accountCode, a]));
 
     for (const code of accountCodes) {
       const acct = accountMap.get(code);
       if (!acct) {
-        throw new BadRequestException(
-          `Account code '${code}' does not exist.`,
-        );
+        throw new BadRequestException(`Account code '${code}' does not exist.`);
       }
       if (acct.isGroup) {
         throw new BadRequestException(
@@ -115,8 +109,7 @@ export class GlService {
 
     // 3. Generate entry number
     const entryNumber = await this.generateEntryNumber();
-    const entryDate =
-      meta.entryDate || new Date().toISOString().slice(0, 10);
+    const entryDate = meta.entryDate || new Date().toISOString().slice(0, 10);
 
     // 4. Insert in a single transaction
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -143,6 +136,20 @@ export class GlService {
       }));
 
       await tx.insert(glJournalLines).values(lineValues);
+
+      // Write 'gl_posted' outbox event for sync routing
+      await tx.insert(outbox).values({
+        aggregateType: 'journal_entry',
+        aggregateId: entry.journalEntryId,
+        eventType: 'gl_posted',
+        payload: {
+          entryNumber,
+          entryDate,
+          sourceType: meta.sourceType,
+          sourceId: meta.sourceId,
+          lines: lineValues,
+        },
+      });
 
       return entry;
     });
@@ -191,10 +198,7 @@ export class GlService {
   }
 
   async getAccountsList() {
-    return this.db
-      .select()
-      .from(glAccounts)
-      .orderBy(glAccounts.accountCode);
+    return this.db.select().from(glAccounts).orderBy(glAccounts.accountCode);
   }
 
   async createAccount(data: {
@@ -317,19 +321,13 @@ export class GlService {
     const conditions: any[] = [];
 
     if (filters.accountCode) {
-      conditions.push(
-        sql`a.account_code = ${filters.accountCode}`,
-      );
+      conditions.push(sql`a.account_code = ${filters.accountCode}`);
     }
     if (filters.fromDate) {
-      conditions.push(
-        sql`je.entry_date >= ${filters.fromDate}`,
-      );
+      conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
     }
     if (filters.toDate) {
-      conditions.push(
-        sql`je.entry_date <= ${filters.toDate}`,
-      );
+      conditions.push(sql`je.entry_date <= ${filters.toDate}`);
     }
 
     const whereClause =
@@ -382,9 +380,7 @@ export class GlService {
       );
     }
     if (filters.toDate) {
-      conditions.push(
-        sql`${glJournalEntries.entryDate} <= ${filters.toDate}`,
-      );
+      conditions.push(sql`${glJournalEntries.entryDate} <= ${filters.toDate}`);
     }
     if (filters.sourceType) {
       conditions.push(
@@ -393,9 +389,7 @@ export class GlService {
     }
 
     const whereClause =
-      conditions.length > 0
-        ? and(...conditions.map((c) => c))
-        : undefined;
+      conditions.length > 0 ? and(...conditions.map((c) => c)) : undefined;
 
     const limit = Math.min(filters.limit || 50, 200);
 
@@ -432,7 +426,10 @@ export class GlService {
         accountName: glAccounts.name,
       })
       .from(glJournalLines)
-      .innerJoin(glAccounts, eq(glJournalLines.glAccountId, glAccounts.glAccountId))
+      .innerJoin(
+        glAccounts,
+        eq(glJournalLines.glAccountId, glAccounts.glAccountId),
+      )
       .where(eq(glJournalLines.journalEntryId, journalEntryId));
 
     return { ...entry, lines };

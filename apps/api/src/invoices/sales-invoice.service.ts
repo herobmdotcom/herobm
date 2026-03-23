@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and, gte } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -76,9 +76,9 @@ export class SalesInvoiceService {
     }
 
     const order = orderRows[0];
-    if (order.stateCode !== 'dispatched') {
+    if (order.stateCode !== 'shipped') {
       throw new BadRequestException(
-        `Order ${order.orderNumber} must be in 'dispatched' state to generate an invoice. Currently: '${order.stateCode}'.`,
+        `Order ${order.orderNumber} must be in 'shipped' state to generate an invoice. Currently: '${order.stateCode}'.`,
       );
     }
 
@@ -86,17 +86,17 @@ export class SalesInvoiceService {
     let erpnextId: string | null = null;
     let customerName = 'Unknown Customer';
     if (order.customerId) {
-        // Find Party details to bind
-        const custRows = await this.db
-          .select({ erpnextId: accounts.erpnextId, name: accounts.name })
-          .from(accounts)
-          .where(eq(accounts.accountId, order.customerId))
-          .limit(1);
-        
-        if (custRows.length > 0) {
-            erpnextId = custRows[0].erpnextId;
-            customerName = custRows[0].name;
-        }
+      // Find Party details to bind
+      const custRows = await this.db
+        .select({ erpnextId: accounts.erpnextId, name: accounts.name })
+        .from(accounts)
+        .where(eq(accounts.accountId, order.customerId))
+        .limit(1);
+
+      if (custRows.length > 0) {
+        erpnextId = custRows[0].erpnextId;
+        customerName = custRows[0].name;
+      }
     }
 
     // 2. Load the structural Sales Order Line dimensions to invoice explicitly
@@ -228,22 +228,53 @@ export class SalesInvoiceService {
 
         const glAcct = glAccounts;
         const acctRows = await this.db
-          .select({ glAccountId: glAcct.glAccountId, accountCode: glAcct.accountCode })
+          .select({
+            glAccountId: glAcct.glAccountId,
+            accountCode: glAcct.accountCode,
+          })
           .from(glAcct)
-          .where(sql`${glAcct.glAccountId} IN (${sql.join(settingsIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(
+            sql`${glAcct.glAccountId} IN (${sql.join(
+              settingsIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          );
 
-        const idToCode = new Map(acctRows.map(a => [a.glAccountId, a.accountCode]));
-        const arCode = idToCode.get(settings.defaultArAccountId!);
-        const revCode = settings.defaultRevenueAccountId ? idToCode.get(settings.defaultRevenueAccountId) : null;
-        const taxCode = settings.defaultTaxAccountId ? idToCode.get(settings.defaultTaxAccountId) : null;
+        const idToCode = new Map(
+          acctRows.map((a) => [a.glAccountId, a.accountCode]),
+        );
+        const arCode = idToCode.get(settings.defaultArAccountId);
+        const revCode = settings.defaultRevenueAccountId
+          ? idToCode.get(settings.defaultRevenueAccountId)
+          : null;
+        const taxCode = settings.defaultTaxAccountId
+          ? idToCode.get(settings.defaultTaxAccountId)
+          : null;
 
         if (arCode && revCode) {
           const glLines: any[] = [
-            { accountCode: arCode, debit: combinedTotal, credit: 0, memo: `AR: ${invoiceNumber}` },
-            { accountCode: revCode, debit: 0, credit: totalAmount, memo: `Revenue: ${invoiceNumber}` },
+            {
+              accountCode: arCode,
+              debit: combinedTotal,
+              credit: 0,
+              memo: `AR: ${invoiceNumber}`,
+              partyType: 'customer',
+              partyId: order.customerId,
+            },
+            {
+              accountCode: revCode,
+              debit: 0,
+              credit: totalAmount,
+              memo: `Revenue: ${invoiceNumber}`,
+            },
           ];
           if (taxCode && taxAmount > 0) {
-            glLines.push({ accountCode: taxCode, debit: 0, credit: taxAmount, memo: `GST: ${invoiceNumber}` });
+            glLines.push({
+              accountCode: taxCode,
+              debit: 0,
+              credit: taxAmount,
+              memo: `GST: ${invoiceNumber}`,
+            });
           }
 
           await this.glService.postJournalEntry(glLines, {
@@ -253,7 +284,9 @@ export class SalesInvoiceService {
             actor,
           });
 
-          this.logger.log(`GL journal posted for sales invoice ${invoiceNumber}`);
+          this.logger.log(
+            `GL journal posted for sales invoice ${invoiceNumber}`,
+          );
         }
       }
     } catch (glErr) {
@@ -315,5 +348,54 @@ export class SalesInvoiceService {
       .orderBy(desc(salesInvoices.createdOn));
 
     return invoices;
+  }
+
+  /**
+   * Fetch a flattened, global list of Sales Invoices spanning multiple orders.
+   * Useful for the "All Invoices" page and Account Detail tabs.
+   */
+  async findActiveInvoices(query: {
+    days?: number;
+    accountId?: string;
+    limit?: number;
+  }) {
+    const { days = 30, accountId, limit = 100 } = query;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const conditions: any[] = [gte(salesInvoices.createdOn, cutoffDate)];
+
+    if (accountId) {
+      conditions.push(eq(salesOrders.customerId, accountId));
+    }
+
+    const data = await this.db
+      .select({
+        invoiceId: salesInvoices.invoiceId,
+        invoiceNumber: salesInvoices.invoiceNumber,
+        salesOrderId: salesInvoices.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        customerId: salesOrders.customerId,
+        customerName: accounts.name,
+        totalAmount: salesInvoices.totalAmount,
+        taxAmount: salesInvoices.taxAmount,
+        currencyCode: salesInvoices.currencyCode,
+        stateCode: salesInvoices.stateCode,
+        createdOn: salesInvoices.createdOn,
+      })
+      .from(salesInvoices)
+      .innerJoin(
+        salesOrders,
+        eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(
+        accounts,
+        sql`${salesOrders.customerId}::uuid = ${accounts.accountId}`,
+      )
+      .where(and(...conditions))
+      .orderBy(desc(salesInvoices.createdOn))
+      .limit(limit);
+
+    return data;
   }
 }

@@ -18,7 +18,6 @@ export async function resolveOrderDetail(
   ordersService: OrdersService,
   orderId: string,
   source?: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   if (source === 'app') {
     return ordersWriteService.findOne(orderId);
@@ -86,14 +85,8 @@ export function assembleOrderData(orderDetail: {
     };
   });
 
-  const subtotal = lines.reduce(
-    (sum, l) => sum + parseFloat(l.amount),
-    0,
-  );
-  const totalTax = lines.reduce(
-    (sum, l) => sum + parseFloat(l.tax),
-    0,
-  );
+  const subtotal = lines.reduce((sum, l) => sum + parseFloat(l.amount), 0);
+  const totalTax = lines.reduce((sum, l) => sum + parseFloat(l.tax), 0);
   const totalAmount = lines.reduce(
     (sum, l) => sum + parseFloat(l.totalAmount),
     0,

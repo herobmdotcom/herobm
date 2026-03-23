@@ -1,10 +1,23 @@
-import { Controller, Post, Get, Param, Body, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  Request,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { SalesInvoiceService } from './sales-invoice.service';
 import type { CreateSalesInvoiceDto } from './sales-invoice.service';
 import { PurchaseInvoiceService } from './purchase-invoice.service';
 import type { CreatePurchaseBillDto } from './purchase-invoice.service';
 import { AuthGuard } from '@nestjs/passport';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 
 /**
  * Sales-order–scoped invoice endpoints (AR).
@@ -30,7 +43,7 @@ export class SalesInvoiceController {
   @Get(':id/invoices')
   @CasbinAction('read')
   async getSalesInvoices(@Param('id') id: string) {
-    return this.salesInvoiceService.findByOrder(id);
+    return { data: await this.salesInvoiceService.findByOrder(id) };
   }
 }
 
@@ -42,7 +55,9 @@ export class SalesInvoiceController {
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('purchase-orders')
 export class PurchaseInvoiceController {
-  constructor(private readonly purchaseInvoiceService: PurchaseInvoiceService) {}
+  constructor(
+    private readonly purchaseInvoiceService: PurchaseInvoiceService,
+  ) {}
 
   @Post(':id/invoice')
   @CasbinAction('write')
@@ -58,7 +73,7 @@ export class PurchaseInvoiceController {
   @Get(':id/invoices')
   @CasbinAction('read')
   async getPurchaseBills(@Param('id') id: string) {
-    return this.purchaseInvoiceService.findByOrder(id);
+    return { data: await this.purchaseInvoiceService.findByOrder(id) };
   }
 }
 
@@ -78,6 +93,21 @@ export class InvoiceDetailController {
   @CasbinAction('read')
   async getSalesInvoiceDetails(@Param('id') id: string) {
     return this.salesInvoiceService.findOne(id);
+  }
+
+  @Get('sales-invoices')
+  @CasbinAction('read')
+  async getSalesInvoicesGlobal(
+    @Query('days') days?: string,
+    @Query('accountId') accountId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const data = await this.salesInvoiceService.findActiveInvoices({
+      days: days ? parseInt(days, 10) : undefined,
+      accountId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+    return { data };
   }
 
   @Get('purchase-invoices/:id')

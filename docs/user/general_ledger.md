@@ -26,6 +26,14 @@ Certain accounts are flagged as **System Accounts** (e.g., Accounts Receivable, 
 
 ---
 
+## Subledger Party Tracking (AR/AP)
+
+To support robust Accounts Receivable (AR) and Accounts Payable (AP) reporting, the GL supports tagging individual journal lines with a **Party Type** and **Party ID**. 
+
+When a transaction involves a customer or a supplier, the relevant line (e.g., the line hitting the Accounts Receivable system account) is tagged with that entity's unique ID. This allows the finance team to generate accurate aging reports and see exactly who owes the business money, or who the business owes, directly from the General Ledger without needing to cross-reference the native Sales or Procurement modules.
+
+---
+
 ## Double-Entry Accounting
 
 ModBM strictly enforces the principles of double-entry accounting. Every business event must be recorded as a **Journal Entry** consisting of two or more lines.

@@ -73,7 +73,9 @@ export class PurchaseInvoiceService {
       .limit(1);
 
     if (orderRows.length === 0) {
-      throw new NotFoundException(`Purchase Order '${purchaseOrderId}' not found`);
+      throw new NotFoundException(
+        `Purchase Order '${purchaseOrderId}' not found`,
+      );
     }
 
     const order = orderRows[0];
@@ -87,17 +89,17 @@ export class PurchaseInvoiceService {
     let erpnextId: string | null = null;
     let supplierName = 'Unknown Supplier';
     if (order.vendorId) {
-        // Find Party details to bind natively
-        const suppRows = await this.db
-          .select({ erpnextId: suppliers.erpnextId, name: suppliers.name })
-          .from(suppliers)
-          .where(eq(suppliers.vendorId, order.vendorId))
-          .limit(1);
-        
-        if (suppRows.length > 0) {
-            erpnextId = suppRows[0].erpnextId;
-            supplierName = suppRows[0].name;
-        }
+      // Find Party details to bind natively
+      const suppRows = await this.db
+        .select({ erpnextId: suppliers.erpnextId, name: suppliers.name })
+        .from(suppliers)
+        .where(eq(suppliers.vendorId, order.vendorId))
+        .limit(1);
+
+      if (suppRows.length > 0) {
+        erpnextId = suppRows[0].erpnextId;
+        supplierName = suppRows[0].name;
+      }
     }
 
     // 2. Load the structural PO Line dimensions to bill explicitly
@@ -107,7 +109,9 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrderId));
 
     if (orderLines.length === 0) {
-      throw new BadRequestException('Cannot enter a bill for an empty purchase order.');
+      throw new BadRequestException(
+        'Cannot enter a bill for an empty purchase order.',
+      );
     }
 
     const internalBillNumber = await this.generateBillNumber();
@@ -183,7 +187,11 @@ export class PurchaseInvoiceService {
       await tx.insert(purchaseOrderEvents).values({
         purchaseOrderId,
         eventType: 'purchase_invoiced',
-        payload: { invoiceId: invoice.invoiceId, internalBillNumber, supplierInvoiceNumber: dto.supplierInvoiceNumber },
+        payload: {
+          invoiceId: invoice.invoiceId,
+          internalBillNumber,
+          supplierInvoiceNumber: dto.supplierInvoiceNumber,
+        },
         actor,
       });
 
@@ -230,24 +238,53 @@ export class PurchaseInvoiceService {
 
         const glAcct = glAccounts;
         const acctRows = await this.db
-          .select({ glAccountId: glAcct.glAccountId, accountCode: glAcct.accountCode })
+          .select({
+            glAccountId: glAcct.glAccountId,
+            accountCode: glAcct.accountCode,
+          })
           .from(glAcct)
-          .where(sql`${glAcct.glAccountId} IN (${sql.join(settingsIds.map(id => sql`${id}`), sql`, `)})`);
+          .where(
+            sql`${glAcct.glAccountId} IN (${sql.join(
+              settingsIds.map((id) => sql`${id}`),
+              sql`, `,
+            )})`,
+          );
 
-        const idToCode = new Map(acctRows.map(a => [a.glAccountId, a.accountCode]));
-        const apCode = idToCode.get(settings.defaultApAccountId!);
-        const expCode = idToCode.get(settings.defaultExpenseAccountId!);
-        const taxCode = settings.defaultTaxAccountId ? idToCode.get(settings.defaultTaxAccountId) : null;
+        const idToCode = new Map(
+          acctRows.map((a) => [a.glAccountId, a.accountCode]),
+        );
+        const apCode = idToCode.get(settings.defaultApAccountId);
+        const expCode = idToCode.get(settings.defaultExpenseAccountId);
+        const taxCode = settings.defaultTaxAccountId
+          ? idToCode.get(settings.defaultTaxAccountId)
+          : null;
 
         if (apCode && expCode) {
           const glLines: any[] = [
-            { accountCode: expCode, debit: totalAmount, credit: 0, memo: `Expense: ${internalBillNumber}` },
+            {
+              accountCode: expCode,
+              debit: totalAmount,
+              credit: 0,
+              memo: `Expense: ${internalBillNumber}`,
+            },
           ];
           if (taxCode && taxAmount > 0) {
             // GST Paid is an asset (input tax credit)
-            glLines.push({ accountCode: taxCode, debit: taxAmount, credit: 0, memo: `GST Paid: ${internalBillNumber}` });
+            glLines.push({
+              accountCode: taxCode,
+              debit: taxAmount,
+              credit: 0,
+              memo: `GST Paid: ${internalBillNumber}`,
+            });
           }
-          glLines.push({ accountCode: apCode, debit: 0, credit: combinedTotal, memo: `AP: ${internalBillNumber}` });
+          glLines.push({
+            accountCode: apCode,
+            debit: 0,
+            credit: combinedTotal,
+            memo: `AP: ${internalBillNumber}`,
+            partyType: 'supplier',
+            partyId: order.vendorId,
+          });
 
           await this.glService.postJournalEntry(glLines, {
             sourceType: 'purchase_invoice',
@@ -256,10 +293,13 @@ export class PurchaseInvoiceService {
             actor,
           });
 
-          this.logger.log(`GL journal posted for purchase bill ${internalBillNumber}`);
+          this.logger.log(
+            `GL journal posted for purchase bill ${internalBillNumber}`,
+          );
         }
       }
     } catch (glErr) {
+      console.error('GL Error generating AP bill posting:', glErr);
       this.logger.warn(
         `GL posting failed for bill ${internalBillNumber}: ${(glErr as Error).message}`,
       );

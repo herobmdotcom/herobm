@@ -80,8 +80,8 @@ export default function MovementsView() {
               <select
                 value={days}
                 onChange={(e) => setDays(Number(e.target.value))}
-                className="input input-sm"
-                style={{ height: 32, fontSize: 13 }}
+                className="input text-sm"
+                style={{ minWidth: 150 }}
               >
                 <option value={7}>{tInventory('filters.last7Days')}</option>
                 <option value={30}>{tInventory('filters.last30Days')}</option>

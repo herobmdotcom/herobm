@@ -182,7 +182,8 @@ export default function DataGrid<T>({
     if (search) params.set("q", search);
     if (includeArchived) params.set("includeArchived", "true");
 
-    apiFetch<{ data: T[] }>(`${endpoint}?${params}`)
+    const separator = endpoint.includes('?') ? '&' : '?';
+    apiFetch<{ data: T[] }>(`${endpoint}${separator}${params}`)
       .then((res) => setData(res.data))
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));

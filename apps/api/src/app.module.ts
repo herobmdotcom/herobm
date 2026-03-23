@@ -17,6 +17,7 @@ import { ReceptionsModule } from './receptions/receptions.module';
 import { ReportsModule } from './reports/reports.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { GlModule } from './gl/gl.module';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { GlModule } from './gl/gl.module';
     ReceptionsModule,
     ReportsModule,
     GlModule,
+    SystemModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })

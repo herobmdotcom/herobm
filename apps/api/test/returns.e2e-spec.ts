@@ -62,13 +62,19 @@ describe('API E2E — Sales Order Returns', () => {
     // Login
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD || 'password' })
+      .send({
+        username: 'admin',
+        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+      })
       .expect(201);
     adminToken = adminLogin.body.access_token;
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'viewer', password: process.env.DEV_VIEWER_PASSWORD || 'password' })
+      .send({
+        username: 'viewer',
+        password: process.env.DEV_VIEWER_PASSWORD || 'password',
+      })
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
 
@@ -308,9 +314,7 @@ describe('API E2E — Sales Order Returns', () => {
         .post(`/api/sales-orders/${orderId}/returns`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
-          lines: [
-            { salesOrderLineId: lineIds[0], quantityReturned: '1' },
-          ],
+          lines: [{ salesOrderLineId: lineIds[0], quantityReturned: '1' }],
         })
         .expect(403);
     });

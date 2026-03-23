@@ -63,11 +63,7 @@ export class OrderShipmentsController {
     @Body() body: UpdateShipmentDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.shipmentService.updateShipment(
-      shipmentId,
-      body,
-      user.username,
-    );
+    return this.shipmentService.updateShipment(shipmentId, body, user.username);
   }
 
   @Patch(':id/shipments/:shipmentId/state')

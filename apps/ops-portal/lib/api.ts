@@ -77,7 +77,7 @@ export async function validateSession(): Promise<boolean> {
     });
     if (res.ok) return true;
     // Token is expired or invalid — clear it silently
-    reportError(new Error(`validateSession rejected token (Status: ${res.status})`), 'validateSession');
+    console.info(`[validateSession] Token rejected/expired (Status: ${res.status})`);
     clearSession();
     return false;
   } catch {
