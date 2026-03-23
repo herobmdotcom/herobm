@@ -156,7 +156,11 @@ describe('API E2E — Purchase Invoices', () => {
         .expect(200);
 
       const eventsList = dbRes.body.events || [];
-      const glEvent = eventsList.find((evt: any) => evt.eventType === 'gl_posted' && evt.aggregateId === je.journalEntryId);
+      const glEvent = eventsList.find(
+        (evt: any) =>
+          evt.eventType === 'gl_posted' &&
+          evt.aggregateId === je.journalEntryId,
+      );
       expect(glEvent).toBeDefined();
     });
   });

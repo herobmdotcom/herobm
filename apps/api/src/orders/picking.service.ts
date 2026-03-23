@@ -310,4 +310,28 @@ export class PickingService {
       );
     }
   }
+
+  /**
+   * Check if all lines on an order are fully shipped.
+   * Throws BadRequestException if not.
+   */
+  async assertFullyShipped(orderId: string): Promise<void> {
+    const summary = await this.getPickingSummary(orderId);
+
+    const unshipped = summary.lines.filter((l) => {
+      const ordered = parseFloat(l.quantity);
+      const shipped = parseFloat(l.quantityShipped ?? '0');
+      return shipped < ordered;
+    });
+
+    if (unshipped.length > 0) {
+      const details = unshipped.map(
+        (l) =>
+          `line ${l.lineNumber}: shipped ${l.quantityShipped ?? '0'} of ${l.quantity}`,
+      );
+      throw new BadRequestException(
+        `Cannot transition to 'shipped' — ${unshipped.length} line(s) not fully shipped: ${details.join('; ')}`,
+      );
+    }
+  }
 }

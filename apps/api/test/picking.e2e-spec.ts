@@ -50,6 +50,8 @@ describe('API E2E — Picking & Shipments', () => {
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
@@ -200,7 +202,7 @@ describe('API E2E — Picking & Shipments', () => {
         .send({ stateCode: 'shipped' })
         .expect(400);
 
-      expect(res.body.message).toContain('not fully picked');
+      expect(res.body.message).toContain('not fully shipped');
     });
 
     it('POST picking/lines/:lineId/pick-all — pick remaining for line 1', async () => {
@@ -236,12 +238,39 @@ describe('API E2E — Picking & Shipments', () => {
       expect(summary.body.isFullyPicked).toBe(true);
     });
 
-    it('picking → shipped ALLOWED when all lines picked', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/state`)
+    it('picking → shipped ALLOWED when all lines picked and shipped', async () => {
+      // Create shipments covering all quantities
+      const shipRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/shipments`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'shipped' })
+        .send({
+          lines: [
+            { salesOrderLineId: lineIds[0], quantityShipped: '10' },
+            { salesOrderLineId: lineIds[1], quantityShipped: '5' },
+          ],
+        });
+
+      expect(shipRes.status).toBe(201);
+      expect(shipRes.body).toHaveProperty('shipmentId');
+
+      // Dispatch the shipment — this may auto-transition the order to
+      // 'shipped' via evaluateLifecycleRules if all lines are fully shipped.
+      const dispatchRes = await request(app.getHttpServer())
+        .patch(
+          `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'dispatched' });
+
+      expect(dispatchRes.status).toBe(200);
+
+      // Verify the order is now in 'shipped' state (auto-transitioned)
+      const detail = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}?source=app`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+
+      expect(detail.body.stateCode).toBe('shipped');
     });
 
     it('shipped → invoiced completes lifecycle', async () => {

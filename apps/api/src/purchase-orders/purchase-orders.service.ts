@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Inject,
   NotFoundException,
@@ -17,7 +17,7 @@ import {
   purchaseOrderLines as abmPurchaseOrderLines,
   suppliers,
 } from '../drizzle/schema';
-import { eq, or, ilike, desc, sql, inArray } from 'drizzle-orm';
+import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -25,6 +25,7 @@ import {
   PURCHASE_ORDER_TRANSITIONS,
   getValidStates,
   getAllowedTransitions,
+  computeLinePriceForStorage,
 } from '@modbm/shared';
 
 export interface UnifiedPurchaseOrderRow {
@@ -103,10 +104,11 @@ export class PurchaseOrdersService {
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
         const lineValues = createDto.lines.map((line: any, index: number) => {
-          const qty = parseFloat(line.quantity || '0');
-          const price = parseFloat(line.pricePerUnit || '0');
-          const disc = parseFloat(line.discountPercentage || '0');
-          const amount = (qty * price * (1 - disc / 100)).toFixed(2);
+          const pricing = computeLinePriceForStorage({
+            quantity: parseFloat(line.quantity || '0'),
+            pricePerUnit: parseFloat(line.pricePerUnit || '0'),
+            discountPercentage: parseFloat(line.discountPercentage || '0'),
+          });
 
           return {
             purchaseOrderId: order.purchaseOrderId,
@@ -117,8 +119,8 @@ export class PurchaseOrdersService {
             pricePerUnit: line.pricePerUnit.toString(),
             discountPercentage: line.discountPercentage?.toString() || '0',
             unitOfMeasure: line.unitOfMeasure || 'EA',
-            amount: amount,
-            totalAmount: amount, // simplify for now, no tax logic needed here initially
+            amount: pricing.amount,
+            totalAmount: pricing.totalAmount,
           };
         });
 
@@ -190,8 +192,10 @@ export class PurchaseOrdersService {
       .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
       .$dynamic();
 
+    const conditions = [];
+
     if (searchTerm) {
-      appQuery = appQuery.where(
+      conditions.push(
         or(
           ilike(purchaseOrders.orderNumber, searchTerm),
           ilike(purchaseOrders.name, searchTerm),
@@ -201,7 +205,11 @@ export class PurchaseOrdersService {
     }
 
     if (!includeArchived) {
-      appQuery = appQuery.where(sql`${purchaseOrders.stateCode} != 'archived'`);
+      conditions.push(sql`${purchaseOrders.stateCode} != 'archived'`);
+    }
+
+    if (conditions.length > 0) {
+      appQuery = appQuery.where(and(...conditions));
     }
 
     const [appRows, abmRows] = await Promise.all([appQuery, abmQuery]);
@@ -495,7 +503,10 @@ export class PurchaseOrdersService {
 
       const qty = parseFloat(lineDto.quantity || '1');
       const price = parseFloat(lineDto.pricePerUnit || '0');
-      const amount = (qty * price).toString();
+      const pricing = computeLinePriceForStorage({
+        quantity: qty,
+        pricePerUnit: price,
+      });
 
       await tx.insert(purchaseOrderLineItems).values({
         purchaseOrderId: orderId,
@@ -506,8 +517,8 @@ export class PurchaseOrdersService {
         pricePerUnit: lineDto.pricePerUnit?.toString() || '0',
         discountPercentage: lineDto.discountPercentage?.toString() || '0',
         unitOfMeasure: lineDto.unitOfMeasure || 'EA',
-        amount,
-        totalAmount: amount,
+        amount: pricing.amount,
+        totalAmount: pricing.totalAmount,
       });
 
       await this.writeEvent(
@@ -566,9 +577,13 @@ export class PurchaseOrdersService {
             line?.discountPercentage ||
             '0',
         );
-        const amount = qty * price * (1 - disc / 100);
-        updateFields.amount = amount.toFixed(2);
-        updateFields.totalAmount = amount.toFixed(2);
+        const pricing = computeLinePriceForStorage({
+          quantity: qty,
+          pricePerUnit: price,
+          discountPercentage: disc,
+        });
+        updateFields.amount = pricing.amount;
+        updateFields.totalAmount = pricing.totalAmount;
       }
 
       await tx

@@ -12,6 +12,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
+import { computeLinePrice } from '@modbm/shared';
 
 interface Account {
   accountId: string;
@@ -31,13 +32,10 @@ interface GstCategory {
   isDefault: boolean;
 }
 
-function GstLabel({ category }: { category: GstCategory }) {
-    const t = useTranslations('common.gst');
-    if (category.type === 'exempt') return <>{t('exempt')}</>;
-    if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
+function getGstLabel(category: GstCategory) {
     const pct = parseFloat(category.rate || '0');
     const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-    return <>{t('pctGst', { pct: formattedPct })}</>;
+    return `${category.title} (${formattedPct}%)`;
 }
 
 interface LineItem {
@@ -77,7 +75,7 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
 }
 
 export default function NewOrderPage() {
-  const t = useTranslations();
+  const tSales = useTranslations();
   const router = useRouter();
   const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
 
@@ -159,7 +157,7 @@ export default function NewOrderPage() {
 
   const addLineFromProduct = (p: Product) => {
     if (lines.some((l) => l.productId === p.productId)) {
-      setError(t('toast.productAlreadyInOrder', { productNumber: p.productNumber }));
+      setError(tSales('toast.productAlreadyInOrder', { productNumber: p.productNumber }));
       return;
     }
     setError('');
@@ -194,26 +192,31 @@ export default function NewOrderPage() {
   };
 
   const computeAmount = (line: LineItem) => {
-    const qty = parseFloat(line.quantity) || 0;
-    const price = parseFloat(line.pricePerUnit) || 0;
-    const disc = parseFloat(line.discountPercentage) || 0;
-    return qty * price * (1 - disc / 100);
+    return computeLinePrice({
+      quantity: parseFloat(line.quantity) || 0,
+      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+      discountPercentage: parseFloat(line.discountPercentage) || 0,
+    }).amount;
   };
 
   const computeTax = (line: LineItem) => {
-    const amount = computeAmount(line);
     const cat = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
     const rate = cat ? parseFloat(cat.rate || '0') : 0;
-    return amount * (rate / 100);
+    return computeLinePrice({
+      quantity: parseFloat(line.quantity) || 0,
+      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+      discountPercentage: parseFloat(line.discountPercentage) || 0,
+      taxRate: rate,
+    }).tax;
   };
 
   const handleSubmit = async () => {
     if (!customerId) {
-      setError(t('common.errors.pleaseSelectCustomer'));
+      setError(tSales('common.errors.pleaseSelectCustomer'));
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
-      setError(t('common.errors.pleaseAddLineItem'));
+      setError(tSales('common.errors.pleaseAddLineItem'));
       return;
     }
 
@@ -240,7 +243,7 @@ export default function NewOrderPage() {
       });
       router.push(`/sales-orders/${order.salesOrderId}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('common.errors.failedToCreateOrder'));
+      setError(err instanceof Error ? err.message : tSales('common.errors.failedToCreateOrder'));
     } finally {
       setSubmitting(false);
     }
@@ -253,9 +256,9 @@ export default function NewOrderPage() {
     <Shell>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{t('salesOrders.buttons.createOrder')}</h1>
+          <h1 className="text-2xl font-bold">{tSales('salesOrders.buttons.createOrder')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {t('salesOrders.title')}
+            {tSales('salesOrders.title')}
           </p>
         </div>
         <div className="flex gap-3">
@@ -263,7 +266,7 @@ export default function NewOrderPage() {
             className="btn btn-secondary"
             onClick={() => router.push('/sales-orders')}
           >
-            {t('common.cancel')}
+            {tSales('common.cancel')}
           </button>
           <button
             id="btn-submit-order"
@@ -271,7 +274,7 @@ export default function NewOrderPage() {
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting ? t('common.saving') : t('salesOrders.buttons.createOrder')}
+            {submitting ? tSales('common.saving') : tSales('salesOrders.buttons.createOrder')}
           </button>
         </div>
       </div>
@@ -293,7 +296,7 @@ export default function NewOrderPage() {
         {/* Order header */}
         <div className="card">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('salesOrders.orderDetails')}
+            {tSales('salesOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             {/* Customer selector */}
@@ -302,7 +305,7 @@ export default function NewOrderPage() {
                 className="block text-xs font-medium mb-1.5"
                 style={{ color: 'var(--text-muted)' }}
               >
-                {t('salesOrders.labels.customer')} *
+                {tSales('salesOrders.labels.customer')} *
                 {customerId && (
                   <span
                     style={{
@@ -332,7 +335,7 @@ export default function NewOrderPage() {
                         letterSpacing: '0.04em',
                       }}
                     >
-                      {t('common.gst.exempt')}
+                      {tSales('common.gst.exempt')}
                     </span>
                 )}
                 {customerId && parseFloat(customerDiscount) > 0 && (
@@ -348,7 +351,7 @@ export default function NewOrderPage() {
                         letterSpacing: '0.04em',
                       }}
                     >
-                      {t('salesOrders.discountPercent', { disc: parseFloat(customerDiscount) })}
+                      {tSales('salesOrders.discountPercent', { disc: parseFloat(customerDiscount) })}
                     </span>
                 )}
               </label>
@@ -356,7 +359,7 @@ export default function NewOrderPage() {
                 id="order-customer"
                 className="input"
                 autoComplete="off"
-                placeholder={t('salesOrders.placeholders.searchCustomers')}
+                placeholder={tSales('salesOrders.placeholders.searchCustomers')}
                 value={customerSearch}
                 onChange={(e) => {
                   setCustomerSearch(e.target.value);
@@ -392,7 +395,7 @@ export default function NewOrderPage() {
                   ))}
                   {filteredAccounts.length === 0 && (
                     <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.noMatchingResults')}
+                      {tSales('common.noMatchingResults')}
                     </div>
                   )}
                 </div>
@@ -401,12 +404,12 @@ export default function NewOrderPage() {
 
              <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('salesOrders.labels.customerPO')}
+                {tSales('salesOrders.labels.customerPO')}
               </label>
               <input
                 id="order-po"
                 className="input"
-                placeholder={t('salesOrders.placeholders.customerPO')}
+                placeholder={tSales('salesOrders.placeholders.customerPO')}
                 value={customerOrderNumber}
                 onChange={(e) => setCustomerOrderNumber(e.target.value)}
               />
@@ -414,12 +417,12 @@ export default function NewOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('salesOrders.labels.orderName')}
+                {tSales('salesOrders.labels.orderName')}
               </label>
               <input
                 id="order-name"
                 className="input"
-                placeholder={t('salesOrders.placeholders.orderName')}
+                placeholder={tSales('salesOrders.placeholders.orderName')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -431,13 +434,13 @@ export default function NewOrderPage() {
         {/* Notes Card */}
         <div className="card">
           <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('common.notesCardHeading')}
+            {tSales('common.notesCardHeading')}
           </h3>
           <textarea
             id="order-notes"
             className="input w-full"
             style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-            placeholder={t('common.notesCardPlaceholder')}
+            placeholder={tSales('common.notesCardPlaceholder')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
@@ -447,16 +450,16 @@ export default function NewOrderPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {t('salesOrders.lineItems')}
+              {tSales('salesOrders.lineItems')}
             </h3>
             <div className="flex items-center gap-3">
               <ProductSearchInput
                 onSelect={addLineFromProduct}
-                placeholder={t('salesOrders.placeholders.searchProduct')}
+                placeholder={tSales('salesOrders.placeholders.searchProduct')}
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                + {t('salesOrders.buttons.blankLine')}
+                + {tSales('salesOrders.buttons.blankLine')}
               </button>
             </div>
           </div>
@@ -464,14 +467,14 @@ export default function NewOrderPage() {
           <table className="table-lines">
             <thead>
               <tr>
-                <th style={{ width: 40 }}>{t('salesOrders.columns.lineNumber')}</th>
-                <th>{t('salesOrders.columns.product')}</th>
-                <th>{t('salesOrders.columns.description')}</th>
-                <th style={{ width: 90, textAlign: 'right' }}>{t('salesOrders.columns.qty')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.unitPrice')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{t('salesOrders.columns.discountPct')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.gst')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('salesOrders.columns.amount')}</th>
+                <th style={{ width: 40 }}>{tSales('salesOrders.columns.lineNumber')}</th>
+                <th>{tSales('salesOrders.columns.product')}</th>
+                <th>{tSales('salesOrders.columns.description')}</th>
+                <th style={{ width: 90, textAlign: 'right' }}>{tSales('salesOrders.columns.qty')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.unitPrice')}</th>
+                <th style={{ width: 80, textAlign: 'right' }}>{tSales('salesOrders.columns.discountPct')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.gst')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
             </thead>
@@ -547,7 +550,7 @@ export default function NewOrderPage() {
                     >
                       {gstCategories.map((c) => (
                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                          <GstLabel category={c} />
+                          {getGstLabel(c)}
                         </option>
                       ))}
                     </select>
@@ -579,7 +582,7 @@ export default function NewOrderPage() {
                     colSpan={9}
                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                   >
-                    {t('salesOrders.noLineItems')}
+                    {tSales('salesOrders.noLineItems')}
                   </td>
                 </tr>
               )}

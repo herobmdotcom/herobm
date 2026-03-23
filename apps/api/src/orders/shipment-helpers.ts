@@ -12,6 +12,8 @@ import {
   salesOrderLineItems,
   salesOrderShipments,
   salesOrderShipmentLines,
+  salesInvoices,
+  salesInvoiceLines,
   orderEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
@@ -57,6 +59,37 @@ export async function getCommittedPerLine(
   }
 
   return shippedMap;
+}
+
+/**
+ * Sum invoiced quantities per order line.
+ */
+export async function getInvoicedPerLine(
+  db: DrizzleDB,
+  salesOrderId: string,
+): Promise<Map<string, number>> {
+  const priorInvoices = await db
+    .select({
+      salesOrderLineId: salesInvoiceLines.salesOrderLineId,
+      quantityInvoiced: salesInvoiceLines.quantityInvoiced,
+    })
+    .from(salesInvoiceLines)
+    .innerJoin(
+      salesInvoices,
+      eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId),
+    )
+    .where(eq(salesInvoices.salesOrderId, salesOrderId));
+
+  const invoicedQtyByLine = new Map<string, number>();
+  for (const invLine of priorInvoices) {
+    const current = invoicedQtyByLine.get(invLine.salesOrderLineId) || 0;
+    invoicedQtyByLine.set(
+      invLine.salesOrderLineId,
+      current + parseFloat(invLine.quantityInvoiced),
+    );
+  }
+
+  return invoicedQtyByLine;
 }
 
 /**

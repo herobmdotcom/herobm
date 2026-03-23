@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Inject,
   NotFoundException,
@@ -15,9 +15,13 @@ import {
   salesOrderReturnLines,
   orderEvents,
   outbox,
+  glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
+import { GlService } from '../gl/gl.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
+import { computeLinePrice } from '@modbm/shared';
 import {
   writeEvent as sharedWriteEvent,
   findOrder as sharedFindOrder,
@@ -63,6 +67,8 @@ export class ReturnsWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
+    private readonly glService: GlService,
+    private readonly gstService: GstCategoriesService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -360,6 +366,19 @@ export class ReturnsWriteService {
     this.logger.log(
       `Return ${existing.returnNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
     );
+
+    // ── GL Credit Note: post journal entry when return is processed ──
+    if (newState === 'processed') {
+      try {
+        await this.postCreditNoteGl(returnId, existing, actor);
+      } catch (glErr) {
+        // GL posting is non-fatal — log and continue
+        this.logger.error(
+          `GL credit note failed for return ${existing.returnNumber}: ${glErr}`,
+        );
+      }
+    }
+
     return result;
   }
 
@@ -644,5 +663,198 @@ export class ReturnsWriteService {
     }
 
     return rows[0];
+  }
+
+  // ---------------------------------------------------------------------------
+  // GL Credit Note posting
+  // ---------------------------------------------------------------------------
+
+  private async postCreditNoteGl(
+    returnId: string,
+    existing: { returnNumber: string; salesOrderId: string },
+    actor: string,
+  ) {
+    const settings = await this.glService.getSettings();
+    if (!settings?.defaultArAccountId || !settings?.defaultRevenueAccountId) {
+      this.logger.warn('GL settings incomplete — skipping credit note GL posting');
+      return;
+    }
+
+    // Resolve account codes from settings IDs
+    const settingsIds = [
+      settings.defaultArAccountId,
+      settings.defaultRevenueAccountId,
+      settings.defaultTaxAccountId,
+    ].filter(Boolean);
+
+    const acctRows = await this.db
+      .select({
+        glAccountId: glAccounts.glAccountId,
+        accountCode: glAccounts.accountCode,
+      })
+      .from(glAccounts)
+      .where(
+        sql`${glAccounts.glAccountId} IN (${sql.join(
+          settingsIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
+
+    const idToCode = new Map(acctRows.map((a) => [a.glAccountId, a.accountCode]));
+    const arCode = idToCode.get(settings.defaultArAccountId);
+    const revCode = settings.defaultRevenueAccountId
+      ? idToCode.get(settings.defaultRevenueAccountId)
+      : null;
+    const taxCode = settings.defaultTaxAccountId
+      ? idToCode.get(settings.defaultTaxAccountId)
+      : null;
+
+    if (!arCode || !revCode) {
+      this.logger.warn('AR or Revenue account code not found — skipping credit note GL');
+      return;
+    }
+
+    // Other Revenue account for fees (4900 by convention)
+    const feeAccountCode = '4900';
+
+    // Fetch order for customer info
+    const order = await sharedFindOrder(this.db, existing.salesOrderId);
+
+    // Fetch return lines + join to order lines for pricing + GST
+    const returnLines = await this.db
+      .select()
+      .from(salesOrderReturnLines)
+      .where(eq(salesOrderReturnLines.returnId, returnId));
+
+    let totalCreditAmount = 0;
+    let totalTaxAmount = 0;
+    let totalFees = 0;
+    const outboxLineDetails: any[] = [];
+
+    for (const rl of returnLines) {
+      const orderLine = await this.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
+        .limit(1)
+        .then((r: any[]) => r[0]);
+
+      if (!orderLine) continue;
+
+      const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
+      const disc = parseFloat(orderLine.discountPercentage || '0');
+      const qty = parseFloat(rl.quantityReturned || '0');
+      const fee = parseFloat(rl.returnFee || '0');
+
+      // Resolve per-line GST rate from the line's gstCategoryId
+      let gstRate = 0;
+      if (orderLine.gstCategoryId) {
+        try {
+          const cat = await this.gstService.getById(orderLine.gstCategoryId);
+          gstRate = parseFloat(cat.rate ?? '0');
+        } catch {
+          // Category not found — fall back to 0%
+        }
+      }
+
+      const pricing = computeLinePrice({
+        quantity: qty,
+        pricePerUnit: unitPrice,
+        discountPercentage: disc,
+        taxRate: gstRate,
+      });
+
+      totalCreditAmount += pricing.amount;
+      totalTaxAmount += pricing.tax;
+      totalFees += fee;
+
+      outboxLineDetails.push({
+        salesOrderLineId: rl.salesOrderLineId,
+        productId: orderLine.productId,
+        quantity: qty,
+        amount: pricing.amount,
+        tax: pricing.tax,
+        fee,
+      });
+    }
+
+    if (totalCreditAmount <= 0) {
+      this.logger.warn('No credit amount to post — skipping credit note GL');
+      return;
+    }
+
+    // Net AR credit = credit amount + tax - fees
+    const netArCredit = totalCreditAmount + totalTaxAmount - totalFees;
+
+    // Build balanced journal lines (reverse of sales invoice):
+    //   Debit Revenue (return the revenue)
+    //   Debit GST Payable (reverse the collected tax)
+    //   Credit AR (reduce customer receivable, net of fees)
+    //   Credit Other Revenue (restocking fee income, if any)
+    const glLines: any[] = [
+      {
+        accountCode: revCode,
+        debit: totalCreditAmount,
+        credit: 0,
+        memo: `Sales return: ${existing.returnNumber}`,
+      },
+      {
+        accountCode: arCode,
+        debit: 0,
+        credit: netArCredit,
+        memo: `Credit note: ${existing.returnNumber}`,
+        partyType: 'customer',
+        partyId: order.customerId,
+      },
+    ];
+
+    if (taxCode && totalTaxAmount > 0) {
+      glLines.push({
+        accountCode: taxCode,
+        debit: totalTaxAmount,
+        credit: 0,
+        memo: `GST reversal: ${existing.returnNumber}`,
+      });
+    }
+
+    if (totalFees > 0) {
+      glLines.push({
+        accountCode: feeAccountCode,
+        debit: 0,
+        credit: totalFees,
+        memo: `Restocking fee: ${existing.returnNumber}`,
+      });
+    }
+
+    await this.glService.postJournalEntry(glLines, {
+      sourceType: 'sales_credit_note',
+      sourceId: returnId,
+      memo: `Credit note for return ${existing.returnNumber} on order ${order.orderNumber}`,
+      actor,
+    });
+
+    // Write outbox event for downstream consumers (mirrors sales_invoiced pattern)
+    await this.db.insert(outbox).values({
+      aggregateType: 'sales_credit_note',
+      aggregateId: returnId,
+      eventType: 'credit_note_posted',
+      payload: {
+        returnId,
+        returnNumber: existing.returnNumber,
+        salesOrderId: existing.salesOrderId,
+        orderNumber: order.orderNumber,
+        customerId: order.customerId,
+        totalCredit: totalCreditAmount,
+        totalTax: totalTaxAmount,
+        totalFees,
+        netCredit: netArCredit,
+        currency: order.currencyCode,
+        lines: outboxLineDetails,
+      },
+    });
+
+    this.logger.log(
+      `GL credit note posted for return ${existing.returnNumber}: credit=${totalCreditAmount}, tax=${totalTaxAmount}, fees=${totalFees}, netAR=${netArCredit}`,
+    );
   }
 }

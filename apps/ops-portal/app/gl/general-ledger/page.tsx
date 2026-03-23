@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -49,7 +50,7 @@ export default function GeneralLedgerPage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (accountCode) params.set('accountCode', accountCode);
+    if (accountCode) params.set('account', accountCode);
     if (fromDate) params.set('fromDate', fromDate);
     if (toDate) params.set('toDate', toDate);
     const qs = params.toString() ? `?${params}` : '';
@@ -163,7 +164,16 @@ export default function GeneralLedgerPage() {
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                       {new Date(r.entry_date).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--accent)' }}>{r.entry_number}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs">
+                      <Link
+                        href={`/gl/journal-entries?entry=${encodeURIComponent(r.entry_number)}`}
+                        className="hover:underline"
+                        style={{ color: 'var(--accent)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {r.entry_number}
+                      </Link>
+                    </td>
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>
                       <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{r.account_code}</span>
                       {' '}{r.account_name}

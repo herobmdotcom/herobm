@@ -100,11 +100,13 @@ export class InvoiceDetailController {
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
     @Query('accountId') accountId?: string,
+    @Query('invoiceId') invoiceId?: string,
     @Query('limit') limit?: string,
   ) {
     const data = await this.salesInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
       accountId,
+      invoiceId,
       limit: limit ? parseInt(limit, 10) : undefined,
     });
     return { data };

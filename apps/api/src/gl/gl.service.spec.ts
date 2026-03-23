@@ -1268,11 +1268,12 @@ describe('GlService', () => {
 
   describe('getJournalEntries', () => {
     it('should return entries list', async () => {
-      mock.onSelect([
-        { journalEntryId: 'je-1', entryNumber: 'JE-001', sourceType: 'manual' },
-      ]);
+      mock.onSelect(
+        [{ journalEntryId: 'je-1', entryNumber: 'JE-001', sourceType: 'manual' }],
+        [{ count: 1 }],
+      );
       const result = await service.getJournalEntries({});
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
     });
 
     it('should pass filter parameters', async () => {

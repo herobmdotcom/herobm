@@ -1,14 +1,12 @@
 /* eslint-disable i18next/no-literal-string */
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { use, useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Shell from '@/components/Shell';
 
-import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import type { Product } from '@/components/shared/ProductSearchInput';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { apiMutate, reportError } from '@/lib/api';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
@@ -18,115 +16,15 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 
 import PickingSection from '@/components/shared/PickingSection';
 
-interface OrderLine {
-    salesOrderLineId: string;
-    lineNumber: number;
-    productId: string;
-    productNumber?: string;
-    productDescription: string;
-    quantity: string;
-    pricePerUnit: string;
-    discountPercentage: string;
-    amount: string;
-    gstCategoryId: string | null;
-    tax: string;
-    totalAmount: string;
-    unitOfMeasure: string;
-}
+import InvoicesSection from './InvoicesSection';
+import ReturnsSection from './ReturnsSection';
 
-interface GstCategory {
-    gstCategoryId: string;
-    code: string;
-    title: string;
-    type: string;
-    rate: string;
-    isDefault: boolean;
-}
-
-function GstLabel({ category }: { category: GstCategory }) {
-    const t = useTranslations('common.gst');
-    if (category.type === 'exempt') return <>{t('exempt')}</>;
-    if (category.type === 'zero_rated') return <>{t('zeroRated')}</>;
-    const pct = parseFloat(category.rate || '0');
-    const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-    return <>{t('pctGst', { pct: formattedPct })}</>;
-}
-
-interface OrderEvent {
-    eventId: string;
-    eventType: string;
-    payload: Record<string, unknown>;
-    actor: string;
-    createdOn: string;
-}
-
-interface OrderDetail {
-    salesOrderId: string | null;
-    orderNumber: string;
-    name: string | null;
-    customerId: string | null;
-    customerName: string | null;
-    customerOrderNumber: string | null;
-    stateCode: string;
-    currencyCode: string;
-    customerDiscount: string | null;
-    gstCategoryId: string | null;
-    notes: string | null;
-    createdBy: string | null;
-    createdOn: string;
-    modifiedOn: string;
-    source?: 'abm' | 'app';
-    lines: OrderLine[];
-    events: OrderEvent[];
-}
-
-interface InventoryLevel {
-    inventoryLevelId: string;
-    productId: string;
-    productNumber: string;
-    productName: string;
-    locationNo: string;
-    locationName: string;
-    quantityOnHand: string;
-    quantityCommitted: string;
-    quantityOnOrder: string;
-    quantityAvailable: string;
-    quantityReserved: string;
-}
-
-interface ReturnLine {
-    returnLineId: string;
-    salesOrderLineId: string;
-    quantityReturned: string;
-    reason: string | null;
-    returnFee: string;
-}
-
-interface OrderReturn {
-    returnId: string;
-    returnNumber: string;
-    salesOrderId: string;
-    stateCode: string;
-    notes: string | null;
-    createdBy: string | null;
-    createdOn: string;
-    modifiedOn: string;
-    lines: ReturnLine[];
-}
-
-interface SalesInvoice {
-    invoiceId: string;
-    invoiceNumber: string;
-    totalAmount: string;
-    totalTax: string;
-    createdOn: string;
-    createdBy: string;
-    erpnextJournalId: string | null;
-}
+import type { GstCategory } from './types';
+import { getGstLabel } from './types';
+import { useOrder } from './useOrder';
 
 import {
     RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
-    SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
     SALES_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
     RETURN_LIFECYCLE,
     isBackTransition as sharedIsBackTransition,
@@ -196,272 +94,28 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const tToast = useTranslations('toast');
     const tConfirm = useTranslations('confirm');
 
-    const [order, setOrder] = useState<OrderDetail | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [saving, setSaving] = useState(false);
-    const [copying, setCopying] = useState(false);
+    const o = useOrder(id, source);
 
-    // Editable header fields
-    const [editName, setEditName] = useState('');
-    const [editPO, setEditPO] = useState('');
-    const [editNotes, setEditNotes] = useState('');
-    const [headerDirty, setHeaderDirty] = useState(false);
+    /* ── Picking/Shipments visibility (driven by PickingSection's internal state) ── */
+    const [pickingVis, setPickingVis] = useState({ picking: false, shipments: false });
+    const onPickingVisibilityChange = useCallback(
+        (v: { picking: boolean; shipments: boolean }) => setPickingVis(v), [],
+    );
 
-    // Add-line product search is handled by shared ProductSearchInput
-
-    // GST categories
-    const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
-
-    // Tab state for line items / availability
-    const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
-    const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
-    const [inventoryLoading, setInventoryLoading] = useState(false);
-
-    // Returns state
-    const [returns, setReturns] = useState<OrderReturn[]>([]);
-    const [returnsLoading, setReturnsLoading] = useState(false);
-    const [showCreateReturn, setShowCreateReturn] = useState(false);
-    const [newReturnNotes, setNewReturnNotes] = useState('');
-    const [invoices, setInvoices] = useState<SalesInvoice[]>([]);
-    const [invoicing, setInvoicing] = useState(false);
-    const [newReturnLines, setNewReturnLines] = useState<Array<{
-        salesOrderLineId: string;
-        quantityReturned: string;
-        reason: string;
-        returnFee: string;
-        feeMode: 'absolute' | 'percentage';
-        originalAmount: number;
-    }>>([])
-
-
-    const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
-        if (showSpinner) setLoading(true);
-        try {
-            const data = await apiFetch<OrderDetail>(
-                `/api/sales-orders/${encodeURIComponent(id)}?source=${source}`,
-            );
-            setOrder(data);
-            setEditName(data.name || '');
-            setEditPO(data.customerOrderNumber || '');
-            setEditNotes(data.notes || '');
-            setHeaderDirty(false);
-
-            if (autoTransitions && autoTransitions.length > 0) {
-                const tr = autoTransitions[0];
-                toast(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as any), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
-        } finally {
-            if (showSpinner) setLoading(false);
-        }
-    };
-
-    const loadReturns = async () => {
-        setReturnsLoading(true);
-        try {
-            const data = await apiFetch<OrderReturn[]>(`/api/sales-orders/${encodeURIComponent(id)}/returns`);
-            setReturns(data);
-        } catch (err) {
-            // Returns might not exist yet, that's fine
-            setReturns([]);
-        } finally {
-            setReturnsLoading(false);
-        }
-    };
-
-    const loadInvoices = async () => {
-        try {
-            const data = await apiFetch<SalesInvoice[]>(`/api/sales-orders/${encodeURIComponent(id)}/invoices`);
-            setInvoices(data);
-        } catch (err) {
-            setInvoices([]);
-        }
-    };
-
+    // Scroll to hash fragment (e.g. #invoices-section) after data loads
     useEffect(() => {
-        loadOrder();
-        // Load GST categories
-        apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
-    }, [id, source]);
+        if (o.loading || !o.order) return;
+        const hash = window.location.hash;
+        if (!hash) return;
+        // Small delay to let sections render
+        const timer = setTimeout(() => {
+            const el = document.querySelector(hash);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [o.loading, o.order]);
 
-    // Load returns and invoices when order is invoiced
-    useEffect(() => {
-        if (order?.stateCode === 'invoiced' || order?.stateCode === 'legacy') {
-            loadReturns();
-            loadInvoices();
-        }
-    }, [order?.stateCode, source]);
-
-    // Load inventory when availability tab is selected
-    useEffect(() => {
-        if (activeTab !== 'availability' || !order || order.lines.length === 0) return;
-        const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
-        if (productIds.length === 0) return;
-        setInventoryLoading(true);
-        apiFetch<{ data: InventoryLevel[] }>(
-            `/api/inventory/by-products?productIds=${productIds.join(',')}`,
-        )
-            .then((res) => setInventoryData(res.data))
-            .catch((err) => reportError(err, 'OrderDetailPage'))
-            .finally(() => setInventoryLoading(false));
-    }, [activeTab, order]);
-
-    // Order details (name, PO, notes) editable until cancelled
-    const isOrderDetailsEditable = source === 'app'
-        && !['cancelled', 'legacy', 'archived'].includes(order?.stateCode ?? '');
-
-    // Line items only editable in draft
-    const isOrderLinesEditable = source === 'app'
-        && order?.stateCode === 'draft';
-
-    // Track header changes
-    useEffect(() => {
-        if (!order) return;
-        const changed =
-            editName !== (order.name || '') ||
-            editPO !== (order.customerOrderNumber || '') ||
-            editNotes !== (order.notes || '');
-        setHeaderDirty(changed);
-    }, [editName, editPO, editNotes, order]);
-
-    // Save header
-    const saveHeader = async () => {
-        if (!headerDirty) return;
-        setSaving(true);
-        try {
-            await apiMutate(`/api/sales-orders/${id}`, 'PATCH', {
-                name: editName || null,
-                customerOrderNumber: editPO || null,
-                notes: editNotes || null,
-            });
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // State transitions
-    const changeState = async (newState: string) => {
-        try {
-            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState });
-            toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
-        }
-    };
-
-    const archiveOrder = async () => {
-        if (!confirm(tConfirm('archiveOrder'))) return;
-        setSaving(true);
-        try {
-            await apiMutate(`/api/sales-orders/${id}/archive`, 'POST');
-            toast.success(tToast('orderArchived'));
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToArchive'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const unarchiveOrder = async () => {
-        setSaving(true);
-        try {
-            await apiMutate(`/api/sales-orders/${id}/unarchive`, 'POST');
-            toast.success(tToast('orderUnarchived'));
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToUnarchive'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    // Copy order → create new draft with same lines
-    const copyOrder = async () => {
-        if (!order) return;
-        setCopying(true);
-        try {
-            const newOrder = await apiMutate<{ salesOrderId: string }>('/api/sales-orders', 'POST', {
-                name: order.name ? `Copy of ${order.name}` : undefined,
-                customerId: order.customerId || undefined,
-                customerOrderNumber: order.customerOrderNumber || undefined,
-                notes: order.notes || undefined,
-                lines: order.lines.map((l) => ({
-                    productId: l.productId,
-                    productDescription: l.productDescription,
-                    quantity: l.quantity,
-                    pricePerUnit: l.pricePerUnit,
-                    discountPercentage: l.discountPercentage || '0',
-                    gstCategoryId: l.gstCategoryId || undefined,
-                    unitOfMeasure: l.unitOfMeasure || 'EA',
-                })),
-            });
-            router.push(`/sales-orders/${newOrder.salesOrderId}?source=app`);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
-        } finally {
-            setCopying(false);
-        }
-    };
-
-    // Line editing
-    const updateLine = async (lineId: string, field: string, value: string) => {
-        setSaving(true);
-        try {
-            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const removeLine = async (lineId: string) => {
-        if (!confirm(tConfirm('removeLine'))) return;
-        setSaving(true);
-        setError('');
-        try {
-            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'DELETE');
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const addLineFromProduct = async (p: Product) => {
-        if (order?.lines.some((l) => l.productId === p.productId)) {
-            toast.error(tToast('productAlreadyInOrder', { productNumber: p.productNumber }));
-            return;
-        }
-
-        setSaving(true);
-        try {
-            await apiMutate(`/api/sales-orders/${id}/lines`, 'POST', {
-                productId: p.productId,
-                productDescription: p.name,
-                quantity: '1',
-                pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
-                discountPercentage: '0',
-                unitOfMeasure: 'EA',
-            });
-            await loadOrder(undefined, false);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    if (loading) {
+    if (o.loading) {
         return (
             <Shell>
                 <div className="flex items-center justify-center flex-1">
@@ -471,12 +125,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         );
     }
 
-    if (!order) {
+    if (!o.order) {
         return (
             <Shell>
                 <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-                        {error || tSales('orderNotFound')}
+                        {o.error || tSales('orderNotFound')}
                     </p>
                     <button className="btn btn-secondary" onClick={() => router.push('/sales-orders')}>
                         {tSales('backToOrders')}
@@ -486,15 +140,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         );
     }
 
-    const allowedTransitions = source === 'app'
-        ? (STATE_TRANSITIONS[order.stateCode] || [])
-        : [];
-    const subtotal = order.lines.reduce(
-        (sum, l) => sum + parseFloat(l.amount || '0'), 0,
-    );
-    const totalTax = order.lines.reduce(
-        (sum, l) => sum + parseFloat(l.tax || '0'), 0,
-    );
+    // After null guard, destructure everything for JSX use
+    const {
+        order, error, setError, saving, copying,
+        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
+        gstCategories,
+        activeTab, setActiveTab, inventoryData, inventoryLoading,
+        returns, returnsLoading, showCreateReturn, setShowCreateReturn,
+        invoices, pickingSummary,
+        isOrderDetailsEditable, isOrderLinesEditable,
+        allowedTransitions, subtotal, totalTax,
+        saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
+        updateLine, removeLine, addLineFromProduct,
+        loadOrder, loadReturns, loadInvoices,
+    } = o;
+
+    /* ── Centralised section visibility rules ──────────────────────── */
+    const PICKING_INVOICE_STATES = ['picking', 'shipped', 'invoiced', 'legacy'];
+    const sections = {
+        details:   { id: 'details-section',   label: 'Details',   show: true },
+        lines:     { id: 'lines-section',     label: 'Lines',     show: true },
+        picking:   { id: 'picking-section',   label: 'Picking',   show: pickingVis.picking },
+        shipments: { id: 'shipments-section', label: 'Shipments', show: pickingVis.shipments },
+        invoices:  { id: 'invoices-section',  label: 'Invoices',  show: PICKING_INVOICE_STATES.includes(order.stateCode) && (invoices.length > 0 || source === 'app') },
+        returns:   { id: 'returns-section',   label: 'Returns',   show: PICKING_INVOICE_STATES.includes(order.stateCode) },
+        activity:  { id: 'activity-section',  label: 'Activity',  show: source === 'app' },
+    };
+    const visibleSections = Object.values(sections).filter(s => s.show);
 
     return (
         <Shell>
@@ -508,110 +180,34 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         badges={<StateBadge state={order.stateCode as ValidState} />}
                         actions={
                             <>
-                                {(order.stateCode === 'draft' || order.stateCode === 'quoted') && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={async () => {
-                                            try {
-                                                const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-quote-report?source=${source}`);
-                                                const url = URL.createObjectURL(blob);
-                                                window.open(url, '_blank');
-                                            } catch (err) {
-                                                reportError(err, 'OrderDetailPage:generateQuote');
-                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
-                                            }
-                                        }}
-                                    >
-                                        {tSales('buttons.createQuote')}
-                                    </button>
-                                )}
-                                {(order.stateCode === 'picking' || order.stateCode === 'shipped' || order.stateCode === 'invoiced') && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={async () => {
-                                            try {
-                                                const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-invoice-report?source=${source}`);
-                                                const url = URL.createObjectURL(blob);
-                                                window.open(url, '_blank');
-                                            } catch (err) {
-                                                const { reportError } = await import('@/lib/api');
-                                                reportError(err, 'OrderDetailPage:generateInvoice');
-                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
-                                            }
-                                        }}
-                                    >
-                                        Print Invoice PDF
-                                    </button>
-                                )}
-                                {(order.stateCode === 'shipped' || order.stateCode === 'picking') && source === 'app' && (
-                                    <button
-                                        className="btn btn-primary btn-sm"
-                                        onClick={async () => {
-                                            if (!confirm('Generate financial invoice? This will lock the order and publish AR ledger entries to ERPNext.')) return;
-                                            setSaving(true);
-                                            try {
-                                                await apiMutate(`/api/sales-orders/${id}/invoice`, 'POST');
-                                                toast.success('Invoice generated successfully!');
-                                                await loadOrder(undefined, false);
-                                            } catch (err) {
-                                                setError(err instanceof Error ? err.message : 'Failed to generate invoice');
-                                            } finally {
-                                                setSaving(false);
-                                            }
-                                        }}
-                                        disabled={saving || invoicing}
-                                    >
-                                        Generate Invoice
-                                    </button>
-                                )}
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    onClick={copyOrder}
-                                    disabled={copying}
+                                {/* Section quick nav */}
+                                <div
+                                    className="flex items-center gap-0.5 mr-5 px-1.5 rounded-md self-center"
+                                    style={{ border: '1px solid var(--accent)', height: 32 }}
                                 >
-                                    {copying ? tCommon('copying') : tSales('buttons.copyOrder')}
-                                </button>
-                                {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && !showCreateReturn && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={() => {
-                                            setShowCreateReturn(true);
-                                            setNewReturnLines(
-                                                order.lines.map((l) => ({
-                                                    salesOrderLineId: l.salesOrderLineId,
-                                                    quantityReturned: '',
-                                                    reason: '',
-                                                    returnFee: '0',
-                                                    feeMode: 'absolute' as const,
-                                                    originalAmount: parseFloat(l.amount || '0'),
-                                                })),
-                                            );
-                                        }}
-                                    >
-                                        {tSales('buttons.createReturn')}
-                                    </button>
-                                )}
-                                {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && source === 'app' && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                                        onClick={archiveOrder}
-                                        disabled={saving}
-                                    >
-                                        {tSales('buttons.archive')}
-                                    </button>
-                                )}
-                                {order.stateCode === 'archived' && source === 'app' && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        onClick={unarchiveOrder}
-                                        disabled={saving}
-                                    >
-                                        {tSales('buttons.unarchive')}
-                                    </button>
-                                )}
+                                    {visibleSections.map((section) => (
+                                        <button
+                                            key={section.id}
+                                            className="text-[11px] px-1.5 py-0.5 rounded transition-colors"
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'var(--text-muted)',
+                                                cursor: 'pointer',
+                                            }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
+                                            onClick={() => {
+                                                const el = document.getElementById(section.id);
+                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }}
+                                        >
+                                            {section.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+
                                 {headerDirty && isOrderDetailsEditable && (
                                     <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
                                         {tSales('buttons.save')}
@@ -642,6 +238,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     />
                 }
             >
+
             {error && (
                 <div
                     className="mb-4 px-4 py-3 rounded-lg text-sm"
@@ -672,19 +269,49 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
             )}
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-3">
                     {/* Order info card */}
-                    <div className="card col-span-2">
-                        <h3
-                            className="text-sm font-semibold mb-4"
-                            style={{
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                            }}
-                        >
-                            {tSales('orderDetails')}
-                        </h3>
+                    <div id="details-section" className="card !border-none col-span-2" style={{ paddingBottom: 6 }}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3
+                                className="text-sm font-semibold flex items-center gap-2 m-0"
+                                style={{
+                                    color: 'var(--text-muted)',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                }}
+                            >
+                                <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>receipt_long</span>
+                                {tSales('orderDetails')}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {(order.stateCode === 'draft' || order.stateCode === 'quoted') && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={async () => {
+                                            try {
+                                                const { apiFetchBlob } = await import('@/lib/api');
+                                                const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-quote-report?source=${source}`);
+                                                const url = URL.createObjectURL(blob);
+                                                window.open(url, '_blank');
+                                            } catch (err) {
+                                                reportError(err, 'OrderDetailPage:generateQuote');
+                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
+                                            }
+                                        }}
+                                    >
+                                        {tSales('buttons.createQuote')}
+                                    </button>
+                                )}
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={copyOrder}
+                                    disabled={copying}
+                                >
+                                    {copying ? tCommon('copying') : tSales('buttons.copyOrder')}
+                                </button>
+                            </div>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -742,7 +369,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     )}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                                    {order.customerName ? `${order.customerName} (${order.customerId})` : order.customerId || '—'}
+                                    {order.customerName
+                                        ? order.customerName
+                                        : order.customerId
+                                            ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{tSales('unnamedCustomer')}</span>
+                                            : '—'}
                                 </p>
                             </div>
                             <div>
@@ -779,45 +410,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     placeholder={tSales('placeholders.customerPO')}
                                 />
                             </div>
+                            <div className="col-span-2">
+                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                    {tCommon('notesCardHeading')}
+                                </label>
+                                <input
+                                    className="input"
+                                    disabled={!isOrderDetailsEditable}
+                                    value={editNotes}
+                                    onChange={(e) => setEditNotes(e.target.value)}
+                                    onBlur={saveHeader}
+                                    placeholder={tCommon('notesCardPlaceholder')}
+                                />
+                            </div>
                         </div>
                     </div>
 
-                {/* Notes Card */}
-                <div className="card">
-                    <h3
-                        className="text-sm font-semibold mb-4"
-                        style={{
-                            color: 'var(--text-muted)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                        }}
-                    >
-                        {tCommon('notesCardHeading')}
-                    </h3>
-                    <textarea
-                        className="input w-full"
-                        style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-                        disabled={!isOrderDetailsEditable}
-                        value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
-                        onBlur={saveHeader}
-                        placeholder={tCommon('notesCardPlaceholder')}
-                    />
-                </div>
-
                 {/* Line items / Availability tabs */}
-                <div className="card">
+                <div id="lines-section" className="card !border-none" style={{ paddingTop: 6 }}>
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex gap-0">
                             <button
-                                className="text-sm font-semibold px-3 py-1.5 rounded-l-lg"
+                                className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
                                 style={{
                                     color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
                                     background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
                                     border: '1px solid',
                                     borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
                                     cursor: 'pointer',
                                 }}
                                 onClick={() => setActiveTab('lines')}
@@ -825,15 +444,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 {tSales('lineItems')}
                             </button>
                             <button
-                                className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
+                                className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
                                 style={{
                                     color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
                                     background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
                                     border: '1px solid',
                                     borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
                                     borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
                                     cursor: 'pointer',
                                 }}
                                 onClick={() => setActiveTab('availability')}
@@ -937,7 +554,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                    {line.discountPercentage || '0'}%
+                                                    {parseFloat(line.discountPercentage || '0').toFixed(1)}%
                                                 </td>
                                             </>
                                         )}
@@ -953,7 +570,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 >
                                                     {gstCategories.map((c) => (
                                                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                                                            <GstLabel category={c} />
+                                                            {getGstLabel(c)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -962,7 +579,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             <td style={{ textAlign: 'right', fontSize: 12 }}>
                                                 {(() => {
                                                     const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
-                                                    if (c) return <GstLabel category={c} />;
+                                                    if (c) return getGstLabel(c);
                                                     // ABM legacy: derive effective rate from tax / amount
                                                     const amt = parseFloat(line.amount || '0');
                                                     const tax = parseFloat(line.tax || '0');
@@ -1007,6 +624,40 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         </td>
                                     </tr>
                                 )}
+                                {order.lines.length > 0 && (() => {
+                                    const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+                                    return (
+                                        <>
+                                            <tr style={{ borderTop: '2px solid var(--border)' }}>
+                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                                    {tCommon('subtotal')}
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                                                    {formatAmount(subtotal, order.currencyCode || 'EUR')}
+                                                </td>
+                                                {isOrderLinesEditable && <td></td>}
+                                            </tr>
+                                            <tr>
+                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                                    {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                                                    {formatAmount(totalTax, order.currencyCode || 'EUR')}
+                                                </td>
+                                                {isOrderLinesEditable && <td></td>}
+                                            </tr>
+                                            <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                                                    {tCommon('total')}
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                                                    {formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
+                                                </td>
+                                                {isOrderLinesEditable && <td></td>}
+                                            </tr>
+                                        </>
+                                    );
+                                })()}
                             </tbody>
                         </table>
                     ) : (
@@ -1121,572 +772,81 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     )}
                 </div>
 
-                <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} currencyCode={order.currencyCode || 'EUR'} />
-
                 {/* Picking section */}
+                <div id="picking-section">
                 <PickingSection
                     orderId={order.salesOrderId || id}
                     orderState={order.stateCode}
                     orderLines={order.lines}
                     onOrderUpdated={(autoTransitions?: any[]) => loadOrder(autoTransitions, false)}
+                    onVisibilityChange={onPickingVisibilityChange}
                 />
+                </div>
 
                 {/* Invoices section */}
-                {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && invoices.length > 0 && (
-                    <div className="card">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                Financial Invoices
-                            </h3>
-                        </div>
-                        <div className="space-y-3">
-                            {invoices.map(inv => (
-                                <div key={inv.invoiceId} style={{ padding: 14, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div className="flex flex-col">
-                                        <span style={{ fontWeight: 700, fontSize: 13 }}>{inv.invoiceNumber}</span>
-                                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                            {new Date(inv.createdOn).toLocaleString()} {inv.createdBy && `by ${inv.createdBy}`}
-                                        </span>
-                                    </div>
-                                    <div className="flex gap-4 items-center">
-                                        <div className="text-right">
-                                            <div style={{ fontWeight: 700, fontSize: 14 }}>{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}</div>
-                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Tax: {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}</div>
-                                        </div>
-                                        {inv.erpnextJournalId && (
-                                            <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }} title="ERPNext General Ledger Entry">
-                                                GL: {inv.erpnextJournalId}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                {sections.invoices.show && (
+                    <InvoicesSection
+                        orderId={id}
+                        order={order}
+                        source={source}
+                        invoices={invoices}
+                        gstCategories={gstCategories}
+                        pickingSummary={pickingSummary}
+                        setError={setError}
+                        loadInvoices={loadInvoices}
+                        loadOrder={loadOrder}
+                    />
+                )}
+
+                {/* Returns section */}
+                {sections.returns.show && (
+                    <div id="returns-section">
+                    <ReturnsSection
+                        orderId={id}
+                        order={order}
+                        returns={returns}
+                        returnsLoading={returnsLoading}
+                        showCreateReturn={showCreateReturn}
+                        setShowCreateReturn={setShowCreateReturn}
+                        setError={setError}
+                        loadReturns={loadReturns}
+                        loadOrder={loadOrder}
+                        pickingSummary={pickingSummary}
+                    />
                     </div>
                 )}
 
-                {/* Returns section — only shown when returns exist or creating one */}
-                {(order.stateCode === 'invoiced' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
-                    <div className="card">
-                        <h3
-                            className="text-sm font-semibold mb-4"
-                            style={{
-                                color: 'var(--text-muted)',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                            }}
-                        >
-                            {tSales('returns' as any)}
-                        </h3>
-
-                        {/* Create return form */}
-                        {showCreateReturn && (
-                            <div
-                                style={{
-                                    marginBottom: 16,
-                                    padding: 16,
-                                    borderRadius: 8,
-                                    background: 'rgba(168, 85, 247, 0.05)',
-                                    border: '1px solid rgba(168, 85, 247, 0.2)',
-                                }}
-                            >
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className="text-sm font-semibold" style={{ color: '#c084fc' }}>
-                                        {tSales('newReturn')}
-                                    </span>
-                                    <div className="flex gap-2">
-                                        <button
-                                            className="btn btn-secondary btn-sm"
-                                            onClick={() => {
-                                                setShowCreateReturn(false);
-                                                setNewReturnLines([]);
-                                                setNewReturnNotes('');
-                                            }}
-                                        >
-                                            {tCommon('cancel')}
-                                        </button>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            disabled={saving || newReturnLines.every((l) => !l.quantityReturned || parseFloat(l.quantityReturned) <= 0)}
-                                            onClick={async () => {
-                                                setSaving(true);
-                                                setError('');
-                                                try {
-                                                    const lines = newReturnLines
-                                                        .filter((l) => l.quantityReturned && parseFloat(l.quantityReturned) > 0)
-                                                        .map((l) => ({
-                                                            salesOrderLineId: l.salesOrderLineId,
-                                                            quantityReturned: l.quantityReturned,
-                                                            reason: l.reason || undefined,
-                                                            returnFee: l.returnFee || '0',
-                                                        }));
-                                                    await apiMutate(`/api/sales-orders/${id}/returns`, 'POST', {
-                                                        notes: newReturnNotes || undefined,
-                                                        lines,
-                                                    });
-                                                    setShowCreateReturn(false);
-                                                    setNewReturnLines([]);
-                                                    setNewReturnNotes('');
-                                                    await loadReturns();
-                                                    await loadOrder(undefined, false);
-                                                } catch (err) {
-                                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToCreateReturn'));
-                                                } finally {
-                                                    setSaving(false);
-                                                }
-                                            }}
-                                        >
-                                            {tSales('buttons.saveReturn')}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: 12 }}>
-                                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                                        {tCommon('notesCardHeading')}
-                                    </label>
-                                    <input
-                                        className="input"
-                                        value={newReturnNotes}
-                                        onChange={(e) => setNewReturnNotes(e.target.value)}
-                                        placeholder={tSales('placeholders.notes')}
-                                    />
-                                </div>
-
-                                <table className="table-lines">
-                                    <thead>
-                                        <tr>
-                                            <th style={{ width: 40 }}>{tSales('columns.lineNumber')}</th>
-                                            <th>{tSales('columns.product')}</th>
-                                            <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.originalQty')}</th>
-                                            <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
-                                            <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
-                                            <th style={{ width: 140, textAlign: 'right' }}>{tSales('columns.fee')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {order.lines.map((line, idx) => {
-                                            const rl = newReturnLines[idx];
-                                            if (!rl) return null;
-                                            return (
-                                                <tr key={line.salesOrderLineId}>
-                                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                                    <td>
-                                                        <span style={{ fontWeight: 600, fontSize: 12 }}>
-                                                            {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                                        </span>
-                                                        <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
-                                                            {line.productDescription || ''}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {line.quantity}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <input
-                                                            className="input"
-                                                            type="number"
-                                                            min="0"
-                                                            max={line.quantity}
-                                                            step="1"
-                                                            style={{ width: '100%', textAlign: 'right' }}
-                                                            value={rl.quantityReturned}
-                                                            onChange={(e) => {
-                                                                const updated = [...newReturnLines];
-                                                                updated[idx] = { ...rl, quantityReturned: e.target.value };
-                                                                setNewReturnLines(updated);
-                                                            }}
-                                                            placeholder={tSales('placeholders.zero')}
-                                                        />
-                                                    </td>
-                                                    <td>
-                                                        <input
-                                                            className="input"
-                                                            style={{ width: '100%' }}
-                                                            value={rl.reason}
-                                                            onChange={(e) => {
-                                                                const updated = [...newReturnLines];
-                                                                updated[idx] = { ...rl, reason: e.target.value };
-                                                                setNewReturnLines(updated);
-                                                            }}
-                                                            placeholder={tSales('placeholders.reason')}
-                                                        />
-                                                    </td>
-                                                    <td style={{ textAlign: 'right' }}>
-                                                        <div className="flex items-center gap-1">
-                                                            <select
-                                                                className="input"
-                                                                style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
-                                                                value={rl.feeMode}
-                                                                onChange={(e) => {
-                                                                    const updated = [...newReturnLines];
-                                                                    const mode = e.target.value as 'absolute' | 'percentage';
-                                                                    if (mode === 'percentage' && rl.feeMode === 'absolute') {
-                                                                        // Convert absolute to percentage for display
-                                                                        const pct = rl.originalAmount > 0
-                                                                            ? ((parseFloat(rl.returnFee || '0') / rl.originalAmount) * 100).toFixed(1)
-                                                                            : '0';
-                                                                        updated[idx] = { ...rl, feeMode: mode, returnFee: pct };
-                                                                    } else if (mode === 'absolute' && rl.feeMode === 'percentage') {
-                                                                        // Convert percentage to absolute for storage
-                                                                        const abs = (rl.originalAmount * parseFloat(rl.returnFee || '0') / 100).toFixed(2);
-                                                                        updated[idx] = { ...rl, feeMode: mode, returnFee: abs };
-                                                                    }
-                                                                    setNewReturnLines(updated);
-                                                                }}
-                                                            >
-                                                                <option value="absolute">$</option>
-                                                                <option value="percentage">%</option>
-                                                            </select>
-                                                            <input
-                                                                className="input"
-                                                                type="number"
-                                                                min="0"
-                                                                step="0.01"
-                                                                style={{ width: 80, textAlign: 'right' }}
-                                                                value={rl.returnFee}
-                                                                onChange={(e) => {
-                                                                    const updated = [...newReturnLines];
-                                                                    updated[idx] = { ...rl, returnFee: e.target.value };
-                                                                    setNewReturnLines(updated);
-                                                                }}
-                                                                onBlur={() => {
-                                                                    // If in percentage mode, convert to absolute for storage
-                                                                    if (rl.feeMode === 'percentage') {
-                                                                        const updated = [...newReturnLines];
-                                                                        const abs = (rl.originalAmount * parseFloat(rl.returnFee || '0') / 100).toFixed(2);
-                                                                        updated[idx] = { ...rl, feeMode: 'absolute', returnFee: abs };
-                                                                        setNewReturnLines(updated);
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-
-                        {/* Existing returns list */}
-                        {returnsLoading ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tSales('loadingReturns')}</p>
-                        ) : returns.length === 0 && !showCreateReturn ? (
-                            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tSales('noReturns')}</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {returns.map((ret) => {
-                                    const allowedRetTransitions = RETURN_STATE_TRANSITIONS[ret.stateCode] || [];
-                                    const isRetEditable = ret.stateCode === 'draft';
-                                    return (
-                                        <div
-                                            key={ret.returnId}
-                                            style={{
-                                                padding: 14,
-                                                borderRadius: 8,
-                                                border: '1px solid var(--border)',
-                                                background: 'var(--bg-secondary)',
-                                            }}
-                                        >
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span style={{ fontWeight: 700, fontSize: 13 }}>{ret.returnNumber}</span>
-                                                    <ReturnStateBadge state={ret.stateCode as ValidState} />
-                                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                                        {new Date(ret.createdOn).toLocaleString()}
-                                                        {ret.createdBy && ` ${tCommon('by')} ${ret.createdBy}`}
-                                                    </span>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    {allowedRetTransitions.map((s) => (
-                                                        <button
-                                                            key={s}
-                                                            className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
-                                                            onClick={async () => {
-                                                                try {
-                                                                    await apiMutate(`/api/sales-orders/${id}/returns/${ret.returnId}/state`, 'PATCH', { stateCode: s });
-                                                                    await loadReturns();
-                                                                    await loadOrder(undefined, false);
-                                                                } catch (err) {
-                                                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeReturnState'));
-                                                                }
-                                                            }}
-                                                        >
-                                                                → <StateName state={s as ValidState} />
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {ret.notes && (
-                                                <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-                                                    {ret.notes}
-                                                </p>
-                                            )}
-
-                                            <table className="table-lines">
-                                                <thead>
-                                                    <tr>
-                                                        <th>{tSales('columns.product')}</th>
-                                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.qtyReturned')}</th>
-                                                        <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.fee')}</th>
-                                                        <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.amount')}</th>
-                                                        {isRetEditable && <th style={{ width: 50 }}></th>}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {ret.lines.map((rl) => {
-                                                        const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
-                                                        return (
-                                                            <tr key={rl.returnLineId}>
-                                                                <td>
-                                                                    <span style={{ fontWeight: 600, fontSize: 12 }}>
-                                                                        {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
-                                                                    </span>
-                                                                    <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
-                                                                        {origLine?.productDescription || ''}
-                                                                    </span>
-                                                                </td>
-                                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                                    {isRetEditable ? (
-                                                                        <input
-                                                                            className="input"
-                                                                            type="number"
-                                                                            min="1"
-                                                                            step="1"
-                                                                            style={{ width: '100%', textAlign: 'right' }}
-                                                                            defaultValue={rl.quantityReturned}
-                                                                            key={`retqty-${rl.returnLineId}-${rl.quantityReturned}`}
-                                                                            onBlur={async (e) => {
-                                                                                if (e.target.value !== rl.quantityReturned) {
-                                                                                    try {
-                                                                                        await apiMutate(
-                                                                                            `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                                                                            'PATCH',
-                                                                                            { quantityReturned: e.target.value },
-                                                                                        );
-                                                                                        await loadReturns();
-                                                                                    } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        rl.quantityReturned
-                                                                    )}
-                                                                </td>
-                                                                <td>
-                                                                    {isRetEditable ? (
-                                                                        <input
-                                                                            className="input"
-                                                                            style={{ width: '100%' }}
-                                                                            defaultValue={rl.reason || ''}
-                                                                            key={`retrsn-${rl.returnLineId}-${rl.reason}`}
-                                                                            onBlur={async (e) => {
-                                                                                if (e.target.value !== (rl.reason || '')) {
-                                                                                    try {
-                                                                                        await apiMutate(
-                                                                                            `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                                                                            'PATCH',
-                                                                                            { reason: e.target.value },
-                                                                                        );
-                                                                                        await loadReturns();
-                                                                                    } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                            placeholder={tSales('placeholders.reason')}
-                                                                        />
-                                                                    ) : (
-                                                                        <span style={{ fontSize: 12 }}>{rl.reason || '—'}</span>
-                                                                    )}
-                                                                </td>
-                                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                                    {isRetEditable ? (
-                                                                        <input
-                                                                            className="input"
-                                                                            type="number"
-                                                                            min="0"
-                                                                            step="0.01"
-                                                                            style={{ width: '100%', textAlign: 'right' }}
-                                                                            defaultValue={parseFloat(rl.returnFee || '0').toFixed(2)}
-                                                                            key={`retfee-${rl.returnLineId}-${rl.returnFee}`}
-                                                                            onBlur={async (e) => {
-                                                                                const val = parseFloat(e.target.value);
-                                                                                const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
-                                                                                if (formatted !== parseFloat(rl.returnFee || '0').toFixed(2)) {
-                                                                                    try {
-                                                                                        await apiMutate(
-                                                                                            `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                                                                            'PATCH',
-                                                                                            { returnFee: formatted },
-                                                                                        );
-                                                                                        await loadReturns();
-                                                                                    } catch (err) {
-                                                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || 'EUR')
-                                                                    )}
-                                                                </td>
-                                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                                    {(() => {
-                                                                        const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                                                        const qty = parseFloat(rl.quantityReturned || '0');
-                                                                        return formatAmount(unitPrice * qty, order.currencyCode || 'EUR');
-                                                                    })()}
-                                                                </td>
-                                                                {isRetEditable && (
-                                                                    <td>
-                                                                        <button
-                                                                            className="btn btn-danger btn-sm"
-                                                                            onClick={async () => {
-                                                                                if (!confirm(tConfirm('removeReturnLine'))) return;
-                                                                                try {
-                                                                                    await apiMutate(
-                                                                                        `/api/sales-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                                                                        'DELETE',
-                                                                                    );
-                                                                                    await loadReturns();
-                                                                                } catch (err) {
-                                                                                    setError(err instanceof Error ? err.message : t('common.errors.failedToRemoveReturnLine'));
-                                                                                }
-                                                                            }}
-                                                                            title={t('salesOrders.buttons.removeReturnLine')}
-                                                                        >
-                                                                            ✕
-                                                                        </button>
-                                                                    </td>
-                                                                )}
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                    {ret.lines.length === 0 && (
-                                                        <tr>
-                                                            <td
-                                                                colSpan={isRetEditable ? 6 : 5}
-                                                                style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '12px 0' }}
-                                                            >
-                                                                {t('salesOrders.noReturnLines')}
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                    {ret.lines.length > 0 && (() => {
-                                                        const totalAmount = ret.lines.reduce((sum, rl) => {
-                                                            const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
-                                                            const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                                            return sum + unitPrice * parseFloat(rl.quantityReturned || '0');
-                                                        }, 0);
-                                                        const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
-                                                        const totalCredit = totalAmount - totalFees;
-                                                        const cc = order.currencyCode || 'EUR';
-                                                        return (
-                                                            <>
-                                                                <tr style={{ borderTop: '2px solid var(--border)' }}>
-                                                                    <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                                                        {t('salesOrders.returns.totalCredit')}
-                                                                    </td>
-                                                                    <td></td>
-                                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                                        {formatAmount(totalAmount, cc)}
-                                                                    </td>
-                                                                    {isRetEditable && <td></td>}
-                                                                </tr>
-                                                                <tr>
-                                                                    <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                                                        {t('salesOrders.returns.totalFees')}
-                                                                    </td>
-                                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: totalFees > 0 ? '#f87171' : undefined }}>
-                                                                        {totalFees > 0 ? `−${formatAmount(totalFees, cc)}` : formatAmount(0, cc)}
-                                                                    </td>
-                                                                    <td></td>
-                                                                    {isRetEditable && <td></td>}
-                                                                </tr>
-                                                                <tr>
-                                                                    <td colSpan={isRetEditable ? 5 : 4} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
-                                                                        {t('salesOrders.returns.netCredit')}
-                                                                    </td>
-                                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13, color: '#4ade80' }}>
-                                                                        {formatAmount(totalCredit, cc)}
-                                                                    </td>
-                                                                </tr>
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Invoices */}
-                {invoices.length > 0 && (
-                    <div className="card">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3
-                                className="text-sm font-semibold"
-                                style={{
-                                    color: 'var(--text-muted)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                }}
-                            >
-                                {tSales('invoicesCardHeading', { defaultValue: 'Invoices' })}
-                            </h3>
-                        </div>
-                        <div style={{
-                            border: '1px solid var(--border)',
-                            borderRadius: 8,
-                            overflow: 'hidden',
-                            background: 'var(--surface)',
-                        }}>
-                            <table className="table-lines w-full text-sm">
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Invoice Number</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Date</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'left' }}>Created By</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Tax</th>
-                                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {invoices.map((inv) => (
-                                        <tr key={inv.invoiceId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                            <td style={{ padding: '12px 16px', fontWeight: 600 }}>{inv.invoiceNumber}</td>
-                                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
-                                                {new Date(inv.createdOn).toLocaleString()}
-                                            </td>
-                                            <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{inv.createdBy || 'System'}</td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}
-                                            </td>
-                                            <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                {formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
 
                 {/* Audit timeline — only for app orders */}
-                {source === 'app' && (
-                    <ActivityTimeline events={order.events || []} />
+                {sections.activity.show && (
+                    <div id="activity-section">
+                        <ActivityTimeline events={order.events || []} />
+                    </div>
+                )}
+
+                {/* Archive / Unarchive — bottom right */}
+                {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && source === 'app' && (
+                    <div className="flex justify-end mt-4">
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                            onClick={archiveOrder}
+                            disabled={saving}
+                        >
+                            {tSales('buttons.archive')}
+                        </button>
+                    </div>
+                )}
+                {order.stateCode === 'archived' && source === 'app' && (
+                    <div className="flex justify-end mt-4">
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={unarchiveOrder}
+                            disabled={saving}
+                        >
+                            {tSales('buttons.unarchive')}
+                        </button>
+                    </div>
                 )}
             </div>
             </DetailsLayout>

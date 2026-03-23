@@ -13,6 +13,7 @@ import { GstModule } from '../gst/gst.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { ProductsModule } from '../products/products.module';
+import { GlModule } from '../gl/gl.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ProductsModule } from '../products/products.module';
     InventoryModule,
     AccountsModule,
     ProductsModule,
+    GlModule,
   ],
   controllers: [
     OrdersController,

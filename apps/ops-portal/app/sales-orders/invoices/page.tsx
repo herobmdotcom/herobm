@@ -1,25 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
+import StateBadge from '@/components/StateBadge';
+import { formatAmount } from '@/lib/currency';
+import { ValidState } from '@/types/states';
 
 
 
 export default function GlobalInvoicesPage() {
     const t = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const invoiceFilter = searchParams.get('invoice') || '';
     const [days, setDays] = useState('30');
 
-    const gridEndpoint = days !== '0' ? `/api/sales-invoices?days=${days}` : `/api/sales-invoices`;
+    const handleRowClicked = useCallback((row: any) => {
+        if (row.salesOrderId) {
+            router.push(`/sales-orders/${row.salesOrderId}?source=app#invoices-section`);
+        }
+    }, [router]);
+
+    // When filtering by specific invoiceId, pass it to the API (server skips date range)
+    const gridEndpoint = invoiceFilter
+        ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}`
+        : days !== '0' ? `/api/sales-invoices?days=${days}` : `/api/sales-invoices`;
     const gridColumns: any[] = [
+        { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber', { defaultValue: 'Invoice No.' }), width: 180 },
         { field: 'orderNumber', headerName: t('columns.orderNumber', { defaultValue: 'Order No.' }), width: 160 },
         { field: 'customerName', headerName: t('columns.customer', { defaultValue: 'Customer' }), width: 250 },
         { field: 'createdOn', headerName: t('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
-        { field: 'totalAmount', headerName: t('columns.amount', { defaultValue: 'Amount' }), type: 'numericColumn', width: 150 },
-        { field: 'stateCode', headerName: t('columns.state', { defaultValue: 'State' }), width: 130 },
+        { field: 'totalAmount', headerName: t('columns.amount', { defaultValue: 'Amount' }), type: 'numericColumn', width: 150,
+            valueGetter: (params: any) => {
+                if (!params.data?.totalAmount) return null;
+                return parseFloat(params.data.totalAmount);
+            },
+            valueFormatter: (params: any) => {
+                if (!params.value || params.value === 0) return '—';
+                return formatAmount(params.value, params.data?.currencyCode || 'EUR');
+            },
+        },
+        { 
+            field: 'stateCode', 
+            headerName: t('columns.state', { defaultValue: 'State' }), 
+            width: 140,
+            cellRenderer: (params: { value: string }) => {
+                if (!params.value) return null;
+                return <StateBadge state={params.value as ValidState} />;
+            }
+        },
     ];
 
     return (
@@ -31,6 +65,7 @@ export default function GlobalInvoicesPage() {
                         columns={gridColumns} 
                         gridKey="global-invoices"
                         fetchAll
+                        onRowClicked={handleRowClicked}
                         renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                             <div className="flex items-center justify-between px-6 py-4">
                                 <div className="flex items-center gap-4 flex-1">

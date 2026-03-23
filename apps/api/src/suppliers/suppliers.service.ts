@@ -6,7 +6,7 @@ import {
   suppliers as coreSuppliers,
   supplierEvents,
 } from '../drizzle/modbm-core-schema';
-import { eq, ilike, or, sql } from 'drizzle-orm';
+import { eq, ilike, or, sql, and } from 'drizzle-orm';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
 /** Normalize ABM status codes ('A', 'A2', 'S', 'H', '') to 'active' | 'inactive' */
@@ -51,8 +51,10 @@ export class SuppliersService {
       .from(coreSuppliers)
       .$dynamic();
 
+    const conditions = [];
+
     if (searchTerm) {
-      appQuery = appQuery.where(
+      conditions.push(
         or(
           ilike(coreSuppliers.name, searchTerm),
           ilike(coreSuppliers.vendorNumber, searchTerm),
@@ -61,7 +63,11 @@ export class SuppliersService {
     }
 
     if (!includeArchived) {
-      appQuery = appQuery.where(sql`${coreSuppliers.stateCode} != 'archived'`);
+      conditions.push(sql`${coreSuppliers.stateCode} != 'archived'`);
+    }
+
+    if (conditions.length > 0) {
+      appQuery = appQuery.where(and(...conditions));
     }
 
     // --- Mart suppliers (legacy ABM) ---

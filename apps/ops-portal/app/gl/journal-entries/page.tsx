@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -12,6 +13,7 @@ interface JournalEntry {
   entryDate: string;
   memo: string | null;
   sourceType: string;
+  sourceId: string | null;
   createdBy: string | null;
   lines?: JournalLine[];
 }
@@ -27,6 +29,13 @@ interface JournalLine {
   memo: string | null;
 }
 
+interface PaginatedResponse {
+  data: JournalEntry[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
 function fmt(v: string | number) {
   const n = typeof v === 'string' ? parseFloat(v) : v;
   if (!n || n === 0) return '—';
@@ -35,9 +44,9 @@ function fmt(v: string | number) {
 
 function sourceLabel(type: string) {
   const labels: Record<string, string> = {
-    sales_invoice: '📄 Sales Invoice',
-    purchase_invoice: '📄 Purchase Invoice',
-    manual: '✏️ Manual',
+    sales_invoice: 'Sales Invoice',
+    purchase_invoice: 'Purchase Invoice',
+    manual: 'Manual',
   };
   return labels[type] || type;
 }
@@ -50,10 +59,28 @@ export default function JournalEntriesPage() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [sourceType, setSourceType] = useState('');
+  const searchParams = useSearchParams();
+  const entryParam = searchParams.get('entry') || '';
+  const [searchTerm, setSearchTerm] = useState(entryParam);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [expandedLines, setExpandedLines] = useState<JournalLine[]>([]);
   const [loadingLines, setLoadingLines] = useState(false);
   const router = useRouter();
+  const autoExpandedRef = useRef(false);
+  const limit = 50;
+
+  // React to ?entry= changes during SPA navigation
+  const prevEntryParam = useRef(entryParam);
+  useEffect(() => {
+    if (entryParam !== prevEntryParam.current) {
+      prevEntryParam.current = entryParam;
+      autoExpandedRef.current = false;
+      setSearchTerm(entryParam);
+      setPage(1);
+    }
+  }, [entryParam]);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -61,14 +88,29 @@ export default function JournalEntriesPage() {
     if (fromDate) params.set('fromDate', fromDate);
     if (toDate) params.set('toDate', toDate);
     if (sourceType) params.set('sourceType', sourceType);
+    if (searchTerm) params.set('q', searchTerm);
+    params.set('page', String(page));
+    params.set('limit', String(limit));
     const qs = params.toString() ? `?${params}` : '';
-    apiFetch<JournalEntry[]>(`/api/gl/journal-entries${qs}`)
-      .then(setEntries)
+    apiFetch<PaginatedResponse>(`/api/gl/journal-entries${qs}`)
+      .then((res) => {
+        setEntries(res.data);
+        setTotal(res.total);
+      })
       .catch((err) => reportError(err, 'JournalEntriesPage'))
       .finally(() => setLoading(false));
-  }, [fromDate, toDate, sourceType]);
+  }, [fromDate, toDate, sourceType, searchTerm, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Reset to page 1 when filters change
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+  const handleFromDate = (value: string) => { setFromDate(value); setPage(1); };
+  const handleToDate = (value: string) => { setToDate(value); setPage(1); };
+  const handleSourceType = (value: string) => { setSourceType(value); setPage(1); };
 
   const toggleExpand = (entry: JournalEntry) => {
     if (expandedId === entry.journalEntryId) {
@@ -84,6 +126,18 @@ export default function JournalEntriesPage() {
       .finally(() => setLoadingLines(false));
   };
 
+  // Auto-expand the entry linked from ?entry= query param
+  useEffect(() => {
+    if (!entryParam || autoExpandedRef.current || loading || entries.length === 0) return;
+    const match = entries.find((e) => e.entryNumber === entryParam);
+    if (match) {
+      autoExpandedRef.current = true;
+      toggleExpand(match);
+    }
+  }, [entryParam, loading, entries]);
+
+  const totalPages = Math.ceil(total / limit) || 1;
+
   return (
     <Shell>
       <div className="h-full flex flex-col p-4 lg:p-6">
@@ -96,9 +150,31 @@ export default function JournalEntriesPage() {
             {t('title')}
           </h2>
           <div className="flex items-center gap-3 flex-wrap">
+            {/* Search */}
+            <div className="relative">
+              <span
+                className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px]"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder={t('searchPlaceholder', { defaultValue: 'Search entry number…' })}
+                className="text-sm pl-8 pr-3 py-1.5 rounded-lg border"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--text-primary)',
+                  minWidth: 200,
+                }}
+              />
+            </div>
             <select
               value={sourceType}
-              onChange={(e) => setSourceType(e.target.value)}
+              onChange={(e) => handleSourceType(e.target.value)}
               className="text-sm px-3 py-1.5 rounded-lg border"
               style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
             >
@@ -112,7 +188,7 @@ export default function JournalEntriesPage() {
               <input
                 type="date"
                 value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
+                onChange={(e) => handleFromDate(e.target.value)}
                 className="text-sm px-3 py-1.5 rounded-lg border"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
               />
@@ -122,7 +198,7 @@ export default function JournalEntriesPage() {
               <input
                 type="date"
                 value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
+                onChange={(e) => handleToDate(e.target.value)}
                 className="text-sm px-3 py-1.5 rounded-lg border"
                 style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
               />
@@ -204,7 +280,20 @@ export default function JournalEntriesPage() {
                           {new Date(entry.entryDate).toLocaleDateString()}
                         </td>
                         <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>{entry.memo || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>{sourceLabel(entry.sourceType)}</td>
+                        <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {entry.sourceType === 'sales_invoice' && entry.sourceId ? (
+                            <Link
+                              href={`/sales-orders/invoices?invoice=${encodeURIComponent(entry.sourceId)}`}
+                              className="hover:underline"
+                              style={{ color: 'var(--accent)' }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {sourceLabel(entry.sourceType)}
+                            </Link>
+                          ) : (
+                            sourceLabel(entry.sourceType)
+                          )}
+                        </td>
                         <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>
                           {debitTotal !== null ? fmt(debitTotal) : '—'}
                         </td>
@@ -271,6 +360,46 @@ export default function JournalEntriesPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {total > 0 && (
+          <div className="flex items-center justify-between mt-3 px-1">
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {total.toLocaleString()} {t('totalEntries', { defaultValue: 'entries' })}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                className="px-3 py-1 text-xs font-medium rounded border transition-colors"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border)',
+                  color: page <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                }}
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                ← Prev
+              </button>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                {page} / {totalPages}
+              </span>
+              <button
+                className="px-3 py-1 text-xs font-medium rounded border transition-colors"
+                style={{
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border)',
+                  color: page >= totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                }}
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next →
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </Shell>
   );

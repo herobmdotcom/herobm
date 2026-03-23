@@ -19,6 +19,8 @@ import {
   glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { GlService } from '../gl/gl.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
+import { computeLinePrice } from '@modbm/shared';
 
 export interface CreatePurchaseBillDto {
   supplierInvoiceNumber?: string;
@@ -32,6 +34,7 @@ export class PurchaseInvoiceService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
+    private readonly gstService: GstCategoriesService,
   ) {}
 
   /**
@@ -126,26 +129,44 @@ export class PurchaseInvoiceService {
       // ModBM natively bills the expected received quantity (committed lines)
       const qty = parseFloat(line.quantity);
       const price = parseFloat(line.pricePerUnit);
-      const taxParam = parseFloat(line.tax ?? '0');
-      const amount = qty * price;
-      const computedTax = (amount * taxParam) / 100;
+      const disc = parseFloat(line.discountPercentage ?? '0');
 
-      rawTotal += amount;
-      rawTax += computedTax;
+      // Resolve GST rate from the line's category
+      let gstRate = 0;
+      if ((line as any).gstCategoryId) {
+        try {
+          const cat = await this.gstService.getById(
+            (line as any).gstCategoryId,
+          );
+          gstRate = parseFloat(cat.rate ?? '0');
+        } catch {
+          // Category not found — fall back to 0% tax
+        }
+      }
+
+      const pricing = computeLinePrice({
+        quantity: qty,
+        pricePerUnit: price,
+        discountPercentage: disc,
+        taxRate: gstRate,
+      });
+
+      rawTotal += pricing.amount;
+      rawTax += pricing.tax;
 
       invoiceLineValues.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
         quantityInvoiced: String(qty),
         pricePerUnit: String(price),
-        amount: String(amount),
+        amount: String(pricing.amount),
       });
 
       outboxLineDetails.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
         productId: line.productId,
         quantity: qty,
-        amount: amount,
-        tax: computedTax,
+        amount: pricing.amount,
+        tax: pricing.tax,
       });
     }
 

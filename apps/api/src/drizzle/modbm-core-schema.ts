@@ -529,7 +529,7 @@ export const glJournalEntries = modbmCore.table('gl_journal_entries', {
   entryNumber: text('entry_number').unique().notNull(),
   entryDate: date('entry_date').notNull(),
   memo: text('memo'),
-  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | manual | adjustment
+  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | manual | adjustment
   sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
   isReversed: boolean('is_reversed').notNull().default(false),
   reversedBy: uuid('reversed_by'), // self-ref to reversing JE

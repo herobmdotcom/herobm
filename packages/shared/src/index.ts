@@ -17,3 +17,10 @@ export {
   isBackTransition,
   cap,
 } from './state-machines';
+
+export {
+  computeLinePrice,
+  computeLinePriceForStorage,
+} from './pricing';
+
+export type { LinePricingInput, LinePricingResult } from './pricing';

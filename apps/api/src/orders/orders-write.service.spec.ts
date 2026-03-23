@@ -137,6 +137,7 @@ describe('OrdersWriteService', () => {
 
     mockPickingService = {
       assertFullyPicked: jest.fn().mockResolvedValue(undefined),
+      assertFullyShipped: jest.fn().mockResolvedValue(undefined),
     };
 
     mockInventoryService = {

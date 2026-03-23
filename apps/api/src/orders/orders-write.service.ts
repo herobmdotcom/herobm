@@ -13,13 +13,14 @@ import {
   salesOrderLineItems,
   orderEvents,
   outbox,
+  accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   writeEvent as sharedWriteEvent,
   findOrderLine as sharedFindOrderLine,
 } from './shipment-helpers';
-import { accounts } from '../drizzle/schema';
+import { accounts as martAccounts } from '../drizzle/schema';
 import { products } from '../drizzle/schema';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { PickingService } from './picking.service';
@@ -29,6 +30,7 @@ import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
+  computeLinePriceForStorage,
 } from '@modbm/shared';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
@@ -118,6 +120,7 @@ export class OrdersWriteService {
   /**
    * Compute line amount: qty × price × (1 − discount/100)
    * Tax is auto-calculated from the GST rate.
+   * Delegates to the shared pricing module.
    */
   private computeLineAmount(
     quantity: string,
@@ -125,16 +128,12 @@ export class OrdersWriteService {
     discountPercentage: string,
     gstRate: number,
   ): { amount: string; tax: string; totalAmount: string } {
-    const qty = parseFloat(quantity);
-    const price = parseFloat(pricePerUnit);
-    const disc = parseFloat(discountPercentage || '0');
-    const amount = qty * price * (1 - disc / 100);
-    const tax = amount * (gstRate / 100);
-    return {
-      amount: amount.toFixed(2),
-      tax: tax.toFixed(2),
-      totalAmount: (amount + tax).toFixed(2),
-    };
+    return computeLinePriceForStorage({
+      quantity: parseFloat(quantity),
+      pricePerUnit: parseFloat(pricePerUnit),
+      discountPercentage: parseFloat(discountPercentage || '0'),
+      taxRate: gstRate,
+    });
   }
   // ABM gst_category text → our GST category code mapping
   private static readonly GST_CATEGORY_MAP: Record<string, string> = {
@@ -442,9 +441,9 @@ export class OrdersWriteService {
       );
     }
 
-    // Gate: picking → shipped requires all lines fully picked
+    // Gate: picking → shipped requires all lines fully shipped
     if (existing.stateCode === 'picking' && newState === 'shipped') {
-      await this.pickingService.assertFullyPicked(id);
+      await this.pickingService.assertFullyShipped(id);
     }
 
     // Fetch order lines (needed for inventory mutations)
@@ -833,6 +832,7 @@ export class OrdersWriteService {
         totalAmount: salesOrderLineItems.totalAmount,
         unitOfMeasure: salesOrderLineItems.unitOfMeasure,
         quantityPicked: salesOrderLineItems.quantityPicked,
+        gstCategoryId: salesOrderLineItems.gstCategoryId,
       })
       .from(salesOrderLineItems)
       .leftJoin(products, eq(salesOrderLineItems.productId, products.productId))
@@ -860,10 +860,11 @@ export class OrdersWriteService {
     const rows = await this.db
       .select({
         order: salesOrders,
-        customerName: accounts.name,
+        customerName: sql<string | null>`COALESCE(${coreAccounts.name}, ${martAccounts.name})`,
       })
       .from(salesOrders)
-      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+      .leftJoin(coreAccounts, sql`${salesOrders.customerId}::text = ${coreAccounts.accountId}::text`)
+      .leftJoin(martAccounts, eq(salesOrders.customerId, martAccounts.accountId))
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);
 

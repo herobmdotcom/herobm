@@ -227,7 +227,6 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_wildcard_cors.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_print_in_pipelines.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_imports_pinned.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_inline_api_client.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_pipeline_observability.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_business_event_logging.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1

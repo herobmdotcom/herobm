@@ -72,6 +72,12 @@
   border: none;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .btn-primary {
   background: var(--accent);
   color: white;
@@ -88,6 +94,7 @@
 .btn-secondary:hover {
   background: var(--bg-card-hover);
   color: var(--text-primary);
+  border-color: var(--accent);
 }
 
 .btn-danger {
@@ -167,11 +174,13 @@
   --bg-primary: #F2F4F6;
   --bg-secondary: #E9ECEF;
   --bg-card: #FFFFFF; /* Cards are now white */
+  --bg-card-hover: #F8F9FA;
   --text-primary: #041627;
   --text-secondary: #44474C;
   --text-muted: #5d6f82;
   --border: rgba(196, 198, 205, 0.4);
-  --accent: #006b5c; 
+  --accent: #006b5c;
+  --accent-hover: #005145;
   --accent-glow: #FFFFFF;
   --brand-navy: #041627;
 

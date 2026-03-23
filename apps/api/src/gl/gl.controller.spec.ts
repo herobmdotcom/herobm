@@ -121,7 +121,9 @@ describe('GlController', () => {
         fromDate: undefined,
         toDate: undefined,
         sourceType: undefined,
+        entryNumber: undefined,
         limit: undefined,
+        page: undefined,
       });
     });
 
@@ -135,17 +137,21 @@ describe('GlController', () => {
         fromDate: '2026-01-01',
         toDate: '2026-03-31',
         sourceType: 'sales_invoice',
+        entryNumber: undefined,
         limit: undefined,
+        page: undefined,
       });
     });
 
     it('should parse limit string to integer', async () => {
-      await controller.getJournalEntries(undefined, undefined, undefined, '25');
+      await controller.getJournalEntries(undefined, undefined, undefined, undefined, '25');
       expect(glService.getJournalEntries).toHaveBeenCalledWith({
         fromDate: undefined,
         toDate: undefined,
         sourceType: undefined,
+        entryNumber: undefined,
         limit: 25,
+        page: undefined,
       });
     });
   });

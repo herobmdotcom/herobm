@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql } from 'drizzle-orm';
+import { eq, ilike, or, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { products as martProducts } from '../drizzle/schema';
@@ -41,8 +41,10 @@ export class ProductsService {
       .from(coreProducts)
       .$dynamic();
 
+    const conditions = [];
+
     if (searchTerm) {
-      appQuery = appQuery.where(
+      conditions.push(
         or(
           ilike(coreProducts.name, searchTerm),
           ilike(coreProducts.productNumber, searchTerm),
@@ -52,7 +54,11 @@ export class ProductsService {
     }
 
     if (!includeArchived) {
-      appQuery = appQuery.where(sql`${coreProducts.stateCode} != 'archived'`);
+      conditions.push(sql`${coreProducts.stateCode} != 'archived'`);
+    }
+
+    if (conditions.length > 0) {
+      appQuery = appQuery.where(and(...conditions));
     }
 
     // --- Mart products (legacy ABM) ---

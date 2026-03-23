@@ -233,7 +233,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived order is excluded from default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/sales-orders')
+        .get('/api/sales-orders?limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -243,7 +243,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived order appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/sales-orders?includeArchived=true')
+        .get('/api/sales-orders?includeArchived=true&limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -345,7 +345,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived PO is excluded from default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/purchase-orders')
+        .get('/api/purchase-orders?limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -355,7 +355,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived PO appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/purchase-orders?includeArchived=true')
+        .get('/api/purchase-orders?includeArchived=true&limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -376,7 +376,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('unarchived PO reappears in default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/purchase-orders')
+        .get('/api/purchase-orders?limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

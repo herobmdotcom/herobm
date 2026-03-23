@@ -19,9 +19,16 @@ import {
   glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { GlService } from '../gl/gl.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
+import { getCommittedPerLine } from '../orders/shipment-helpers';
+import { computeLinePrice } from '@modbm/shared';
 
 export interface CreateSalesInvoiceDto {
   notes?: string;
+  lines?: {
+    salesOrderLineId: string;
+    quantityToInvoice: number;
+  }[];
 }
 
 @Injectable()
@@ -31,6 +38,7 @@ export class SalesInvoiceService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
+    private readonly gstService: GstCategoriesService,
   ) {}
 
   /**
@@ -76,9 +84,9 @@ export class SalesInvoiceService {
     }
 
     const order = orderRows[0];
-    if (order.stateCode !== 'shipped') {
+    if (!['shipped', 'picking'].includes(order.stateCode)) {
       throw new BadRequestException(
-        `Order ${order.orderNumber} must be in 'shipped' state to generate an invoice. Currently: '${order.stateCode}'.`,
+        `Order ${order.orderNumber} must be in 'shipped' or 'picking' state to generate an invoice. Currently: '${order.stateCode}'.`,
       );
     }
 
@@ -87,10 +95,19 @@ export class SalesInvoiceService {
     let customerName = 'Unknown Customer';
     if (order.customerId) {
       // Find Party details to bind
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          order.customerId,
+        );
+
       const custRows = await this.db
         .select({ erpnextId: accounts.erpnextId, name: accounts.name })
         .from(accounts)
-        .where(eq(accounts.accountId, order.customerId))
+        .where(
+          isUuid
+            ? eq(accounts.accountId, order.customerId)
+            : eq(accounts.erpnextId, order.customerId),
+        )
         .limit(1);
 
       if (custRows.length > 0) {
@@ -111,42 +128,130 @@ export class SalesInvoiceService {
 
     const invoiceNumber = await this.generateInvoiceNumber();
 
+    // Fetch previously invoiced lines for this order natively
+    const priorInvoices = await this.db
+      .select({
+        salesOrderLineId: salesInvoiceLines.salesOrderLineId,
+        quantityInvoiced: salesInvoiceLines.quantityInvoiced,
+      })
+      .from(salesInvoiceLines)
+      .innerJoin(
+        salesInvoices,
+        eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId),
+      )
+      .where(eq(salesInvoices.salesOrderId, salesOrderId));
+
+    const invoicedQtyByLine = new Map<string, number>();
+    for (const invLine of priorInvoices) {
+      const current = invoicedQtyByLine.get(invLine.salesOrderLineId) || 0;
+      invoicedQtyByLine.set(
+        invLine.salesOrderLineId,
+        current + parseFloat(invLine.quantityInvoiced),
+      );
+    }
+
+    // Fetch shipped quantities strictly natively to enforce invoicing bounds
+    const shippedQtyMap = await getCommittedPerLine(this.db, salesOrderId);
+
     // 3. Compute the strictly typed AR payload bounds natively
     let rawTotal = 0;
     let rawTax = 0;
     const invoiceLineValues: any[] = [];
     const outboxLineDetails: any[] = [];
 
-    for (const line of orderLines) {
-      // ModBM Phase 2 simplification natively invoices exactly the committed qty
-      const qty = parseFloat(line.quantity);
-      const price = parseFloat(line.pricePerUnit);
-      const taxParam = parseFloat(line.tax ?? '0');
-      const amount = qty * price;
-      const computedTax = (amount * taxParam) / 100;
+    let totalOrderedQty = 0;
+    let totalInvoicedSoFar = 0;
+    let totalInvoicingNow = 0;
 
-      rawTotal += amount;
-      rawTax += computedTax;
+    for (const line of orderLines) {
+      const orderedQty = parseFloat(line.quantity);
+      totalOrderedQty += orderedQty;
+
+      const prevInvoicedQty = invoicedQtyByLine.get(line.salesOrderLineId) || 0;
+      totalInvoicedSoFar += prevInvoicedQty;
+
+      const shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
+
+      // Determine how much to invoice dynamically
+      let qtyToInvoice = 0;
+      if (dto.lines) {
+        const reqLine = dto.lines.find(
+          (l) => l.salesOrderLineId === line.salesOrderLineId,
+        );
+        qtyToInvoice = reqLine ? reqLine.quantityToInvoice : 0;
+      } else {
+        // Default fallback logic natively caps at strictly the shipped quantities
+        qtyToInvoice = Math.max(0, shippedQty - prevInvoicedQty);
+      }
+
+      if (qtyToInvoice <= 0) {
+        continue;
+      }
+
+      // We allow strict bounds locally natively
+      // If there are rounding issues we may need to tune this, but mathematically
+      // we check for precision mathematically:
+      if (prevInvoicedQty + qtyToInvoice > shippedQty + 0.001) {
+        throw new BadRequestException(
+          `Cannot invoice more than shipped quantity for line ${line.lineNumber}. Requested: ${qtyToInvoice}, Remaining Shipped: ${Math.max(0, shippedQty - prevInvoicedQty)}`,
+        );
+      }
+
+      totalInvoicingNow += qtyToInvoice;
+
+      const price = parseFloat(line.pricePerUnit);
+      const disc = parseFloat(line.discountPercentage ?? '0');
+
+      // Resolve GST rate from the line's category (not the stored tax dollar amount)
+      let gstRate = 0;
+      if (line.gstCategoryId) {
+        try {
+          const cat = await this.gstService.getById(line.gstCategoryId);
+          gstRate = parseFloat(cat.rate ?? '0');
+        } catch {
+          // Category not found — fall back to 0% tax
+        }
+      }
+
+      const pricing = computeLinePrice({
+        quantity: qtyToInvoice,
+        pricePerUnit: price,
+        discountPercentage: disc,
+        taxRate: gstRate,
+      });
+
+      rawTotal += pricing.amount;
+      rawTax += pricing.tax;
 
       invoiceLineValues.push({
         salesOrderLineId: line.salesOrderLineId,
-        quantityInvoiced: String(qty),
+        quantityInvoiced: String(qtyToInvoice),
         pricePerUnit: String(price),
-        amount: String(amount),
+        amount: String(pricing.amount),
       });
 
       outboxLineDetails.push({
         salesOrderLineId: line.salesOrderLineId,
         productId: line.productId,
-        quantity: qty,
-        amount: amount,
-        tax: computedTax,
+        quantity: qtyToInvoice,
+        amount: pricing.amount,
+        tax: pricing.tax,
       });
+    }
+
+    if (invoiceLineValues.length === 0) {
+      throw new BadRequestException(
+        'No quantities available to invoice, or invalid quantities provided.',
+      );
     }
 
     const totalAmount = rawTotal;
     const taxAmount = rawTax;
     const combinedTotal = totalAmount + taxAmount;
+
+    // Check strict transition bound tolerance cleanly using floating point fallback mathematically
+    const isFullyInvoiced =
+      totalInvoicedSoFar + totalInvoicingNow >= totalOrderedQty - 0.001;
 
     // 4. Begin transactional generation
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -173,10 +278,12 @@ export class SalesInvoiceService {
       await tx.insert(salesInvoiceLines).values(preparedLines);
 
       // C. Transition originating Order cleanly
-      await tx
-        .update(salesOrders)
-        .set({ stateCode: 'invoiced', modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, salesOrderId));
+      if (isFullyInvoiced) {
+        await tx
+          .update(salesOrders)
+          .set({ stateCode: 'invoiced', modifiedOn: new Date() })
+          .where(eq(salesOrders.salesOrderId, salesOrderId));
+      }
 
       await tx.insert(orderEvents).values({
         salesOrderId,
@@ -347,6 +454,42 @@ export class SalesInvoiceService {
       .where(eq(salesInvoices.salesOrderId, salesOrderId))
       .orderBy(desc(salesInvoices.createdOn));
 
+    // Hydrate lines for each invoice
+    if (invoices.length === 0) return [];
+
+    const invoiceIds = invoices.map((i) => i.invoiceId);
+    if (invoiceIds.length > 0) {
+      const allLines = await this.db
+        .select({
+          lineId: salesInvoiceLines.invoiceLineId,
+          invoiceId: salesInvoiceLines.invoiceId,
+          salesOrderLineId: salesInvoiceLines.salesOrderLineId,
+          quantityInvoiced: salesInvoiceLines.quantityInvoiced,
+          pricePerUnit: salesInvoiceLines.pricePerUnit,
+          amount: salesInvoiceLines.amount,
+        })
+        .from(salesInvoiceLines)
+        .where(
+          sql`${salesInvoiceLines.invoiceId} IN (${sql.join(
+            invoiceIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})`,
+        );
+
+      const groupedLines = new Map<string, any[]>();
+      for (const line of allLines) {
+        if (!groupedLines.has(line.invoiceId)) {
+          groupedLines.set(line.invoiceId, []);
+        }
+        groupedLines.get(line.invoiceId)!.push(line);
+      }
+
+      return invoices.map((inv) => ({
+        ...inv,
+        lines: groupedLines.get(inv.invoiceId) || [],
+      }));
+    }
+
     return invoices;
   }
 
@@ -357,13 +500,21 @@ export class SalesInvoiceService {
   async findActiveInvoices(query: {
     days?: number;
     accountId?: string;
+    invoiceId?: string;
     limit?: number;
   }) {
-    const { days = 30, accountId, limit = 100 } = query;
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const { days = 30, accountId, invoiceId, limit = 100 } = query;
 
-    const conditions: any[] = [gte(salesInvoices.createdOn, cutoffDate)];
+    const conditions: any[] = [];
+
+    // When filtering by specific invoiceId, skip the date range filter
+    if (invoiceId) {
+      conditions.push(eq(salesInvoices.invoiceId, invoiceId));
+    } else {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      conditions.push(gte(salesInvoices.createdOn, cutoffDate));
+    }
 
     if (accountId) {
       conditions.push(eq(salesOrders.customerId, accountId));
@@ -390,7 +541,7 @@ export class SalesInvoiceService {
       )
       .leftJoin(
         accounts,
-        sql`${salesOrders.customerId}::uuid = ${accounts.accountId}`,
+        sql`${salesOrders.customerId} = ${accounts.accountId}::text OR ${salesOrders.customerId} = ${accounts.erpnextId}`,
       )
       .where(and(...conditions))
       .orderBy(desc(salesInvoices.createdOn))

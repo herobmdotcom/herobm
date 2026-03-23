@@ -55,14 +55,14 @@ export default function ActivityTimeline({
   events,
   title,
   emptyMessage,
-  defaultOpen = true,
+  defaultOpen = false,
 }: ActivityTimelineProps) {
   const t = useTranslations('common');
   const displayTitle = title || t('activityTimeline');
   const displayEmptyMessage = emptyMessage || t('noEvents');
   if (!events || events.length === 0) {
     return (
-      <div className="card">
+      <div>
         <h3
           className="text-sm font-semibold mb-4"
           style={{
@@ -71,7 +71,7 @@ export default function ActivityTimeline({
             letterSpacing: '0.05em',
           }}
         >
-          {displayTitle}
+          <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         </h3>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           {displayEmptyMessage}
@@ -81,7 +81,7 @@ export default function ActivityTimeline({
   }
 
   return (
-    <details className="card" open={defaultOpen}>
+    <details open={defaultOpen || undefined}>
       <summary
         className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
         style={{
@@ -92,7 +92,7 @@ export default function ActivityTimeline({
         }}
       >
         <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
-        {displayTitle}
+        <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
       </summary>
       <div className="space-y-3" style={{ marginTop: 16 }}>

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Inject,
   BadRequestException,
@@ -25,6 +25,8 @@ import {
   findShipmentLine,
   assertShipmentQtyAvailable,
   writeEvent,
+  getInvoicedPerLine,
+  getCommittedPerLine,
 } from './shipment-helpers';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
@@ -341,8 +343,42 @@ export class ShipmentService {
         shipment.stateCode === 'dispatched' &&
         (newState === 'draft' || newState === 'cancelled')
       ) {
+        // [GUARD]: Check if reverting drops shipped below invoiced
+        const invoicedMap = await getInvoicedPerLine(tx, shipment.salesOrderId);
+        const shippedMap = await getCommittedPerLine(tx, shipment.salesOrderId);
+
+        for (const line of shipmentLines) {
+          const invoiced = invoicedMap.get(line.salesOrderLineId) || 0;
+          const currentlyShipped = shippedMap.get(line.salesOrderLineId) || 0;
+          const newShipped =
+            currentlyShipped - parseFloat(line.quantityShipped);
+
+          if (invoiced > newShipped) {
+            const orderLine = await findOrderLine(
+              tx,
+              line.salesOrderLineId,
+              shipment.salesOrderId,
+            );
+            throw new BadRequestException(
+              `Cannot transition shipment: reverting line ${orderLine.lineNumber} drops shipped quantity (${newShipped}) below already invoiced quantity (${invoiced}). Please reverse the invoice via a Credit Note first.`,
+            );
+          }
+        }
+
         // Reversing or cancelling a dispatch: restore on-hand and re-commit
         await this.inventoryService.restoreStock(tx, stockLines);
+
+        // Record reversal outbox event to mathematically restore COGS dynamically
+        await tx.insert(outbox).values({
+          aggregateType: 'sales_order_shipment',
+          aggregateId: shipmentId,
+          eventType: 'goods_dispatch_reverted',
+          payload: {
+            shipmentId,
+            shipmentNumber: shipment.shipmentNumber,
+            salesOrderId: shipment.salesOrderId,
+          },
+        });
       }
 
       const eventType =

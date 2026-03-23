@@ -31,7 +31,7 @@ export interface JournalLineDto {
 }
 
 export interface JournalMeta {
-  sourceType: 'sales_invoice' | 'purchase_invoice' | 'manual' | 'adjustment';
+  sourceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'manual' | 'adjustment';
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
@@ -370,7 +370,9 @@ export class GlService {
     fromDate?: string;
     toDate?: string;
     sourceType?: string;
+    entryNumber?: string;
     limit?: number;
+    page?: number;
   }) {
     const conditions: any[] = [];
 
@@ -387,18 +389,39 @@ export class GlService {
         sql`${glJournalEntries.sourceType} = ${filters.sourceType}`,
       );
     }
+    if (filters.entryNumber) {
+      conditions.push(
+        sql`${glJournalEntries.entryNumber} ILIKE ${'%' + filters.entryNumber + '%'}`,
+      );
+    }
 
     const whereClause =
       conditions.length > 0 ? and(...conditions.map((c) => c)) : undefined;
 
+    const page = filters.page ?? 1;
     const limit = Math.min(filters.limit || 50, 200);
+    const offset = (page - 1) * limit;
 
-    return this.db
-      .select()
-      .from(glJournalEntries)
-      .where(whereClause || undefined)
-      .orderBy(sql`${glJournalEntries.entryDate} DESC`)
-      .limit(limit);
+    const [entries, countResult] = await Promise.all([
+      this.db
+        .select()
+        .from(glJournalEntries)
+        .where(whereClause || undefined)
+        .orderBy(sql`${glJournalEntries.entryDate} DESC`)
+        .limit(limit)
+        .offset(offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(glJournalEntries)
+        .where(whereClause || undefined),
+    ]);
+
+    return {
+      data: entries,
+      page,
+      limit,
+      total: countResult[0]?.count ?? 0,
+    };
   }
 
   async getJournalEntry(journalEntryId: string) {

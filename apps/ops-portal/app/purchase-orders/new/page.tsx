@@ -10,6 +10,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
+import { computeLinePrice } from '@modbm/shared';
 
 interface Supplier {
   vendorId: string;
@@ -124,9 +125,10 @@ export default function NewPurchaseOrderPage() {
   };
 
   const computeAmount = (line: LineItem) => {
-    const qty = parseFloat(line.quantity) || 0;
-    const price = parseFloat(line.pricePerUnit) || 0;
-    return qty * price;
+    return computeLinePrice({
+      quantity: parseFloat(line.quantity) || 0,
+      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+    }).amount;
   };
 
   const handleSubmit = async () => {

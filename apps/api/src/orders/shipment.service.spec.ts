@@ -367,15 +367,17 @@ describe('ShipmentService', () => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
         let txSelectCall = 0;
+        // Shared counter across all catch-all .where() calls in the tx
+        let catchAllWhereCount = 0;
         tx.select = jest.fn().mockReturnValue({
           from: jest.fn().mockImplementation(() => {
             txSelectCall++;
             if (txSelectCall === 1) {
-              // Inventory hook: fetch shipment lines
+              // Fetch shipment lines
               return createMockQueryBuilder([MOCK_SHIPMENT_LINE]);
             }
             if (txSelectCall === 2) {
-              // Inventory hook: findOrderLine for the shipment line
+              // findOrderLine for the shipment line
               return {
                 where: jest.fn().mockReturnValue(
                   Object.assign(Promise.resolve([ORDER_LINE]), {
@@ -384,16 +386,45 @@ describe('ShipmentService', () => {
                 ),
               };
             }
-            // Add a catch-all that tries to infer what is being queried, or just pad it:
-            return {
-              where: jest.fn().mockImplementation(() => {
-                const resolvedArray = Promise.resolve([PICKING_ORDER]);
-                return Object.assign(resolvedArray, {
-                  orderBy: jest.fn().mockReturnValue(resolvedArray),
-                  limit: jest.fn().mockResolvedValue([PICKING_ORDER]),
-                });
-              }),
-            };
+            // Calls 3+: flexible catch-all.
+            // getInvoicedPerLine uses .innerJoin() → returns empty.
+            // getCommittedPerLine makes 2 .where() calls:
+            //   1st: shipments → [MOCK_SHIPMENT]
+            //   2nd: shipment lines → [MOCK_SHIPMENT_LINE]
+            // Subsequent: findOrder, COGS → [PICKING_ORDER]
+            const catchAllQb: any = {};
+            catchAllQb.where = jest.fn().mockImplementation(() => {
+              catchAllWhereCount++;
+              let data: any[];
+              if (catchAllWhereCount === 1) {
+                data = [{ ...MOCK_SHIPMENT, stateCode: currentState }];
+              } else if (catchAllWhereCount === 2) {
+                data = [MOCK_SHIPMENT_LINE];
+              } else {
+                data = [PICKING_ORDER];
+              }
+              const resolved = Promise.resolve(data);
+              return Object.assign(resolved, {
+                orderBy: jest.fn().mockReturnValue(
+                  Object.assign(Promise.resolve(data), {
+                    limit: jest.fn().mockResolvedValue(data),
+                  }),
+                ),
+                limit: jest.fn().mockResolvedValue(data),
+              });
+            });
+            catchAllQb.innerJoin = jest.fn().mockImplementation(() => {
+              const emptyQb: any = {};
+              emptyQb.where = jest.fn().mockReturnValue(
+                Object.assign(Promise.resolve([]), {
+                  orderBy: jest.fn().mockReturnValue(Promise.resolve([])),
+                  limit: jest.fn().mockResolvedValue([]),
+                }),
+              );
+              emptyQb.innerJoin = jest.fn().mockReturnValue(emptyQb);
+              return emptyQb;
+            });
+            return catchAllQb;
           }),
         });
         return cb(tx);

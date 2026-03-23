@@ -1,0 +1,12 @@
+
+> api@0.0.1 test:cov
+> jest --coverage src/invoices
+
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\Users\Marcel\volz\modbm\modbm\apps\api\src
+  119 files checked.
+  testMatch:  - 0 matches
+  testPathIgnorePatterns: \\node_modules\\ - 119 matches
+  testRegex: .*\.spec\.ts$ - 39 matches
+Pattern: src/invoices - 0 matches

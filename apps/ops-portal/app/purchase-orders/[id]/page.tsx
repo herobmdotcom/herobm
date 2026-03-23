@@ -10,6 +10,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
+import { computeLinePrice } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
@@ -1287,7 +1288,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                   {(() => {
                                     const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
                                     const qty = parseFloat(rl.quantityReturned || '0');
-                                    return formatAmount(unitPrice * qty, order.currencyCode || 'EUR');
+                                    return formatAmount(computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount, order.currencyCode || 'EUR');
                                   })()}
                                 </td>
                                 {isRetEditable && (
@@ -1329,7 +1330,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             const totalAmount = ret.lines.reduce((sum, rl) => {
                               const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                               const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                              return sum + unitPrice * parseFloat(rl.quantityReturned || '0');
+                              const qty = parseFloat(rl.quantityReturned || '0');
+                              return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount;
                             }, 0);
                             const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
                             const totalCredit = totalAmount - totalFees;

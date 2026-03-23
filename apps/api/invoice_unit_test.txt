@@ -1,0 +1,41 @@
+PASS src/invoices/purchase-invoice.service.spec.ts
+  ΓùÅ Console
+
+    console.error
+      GL Error generating AP bill posting: Error: GL down
+          at Object.<anonymous> (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\purchase-invoice.service.spec.ts:288:56)
+          at Promise.finally.completed (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:1497:10)
+          at _callCircusTest (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:1007:40)
+          at processTicksAndRejections (node:internal/process/task_queues:103:5)
+          at _runTest (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:947:3)
+          at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:857:11)
+          at _runTestsForDescribeBlock (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:857:11)
+          at run (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\jestAdapterInit.js:1918:21)
+          at jestAdapter (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-circus\build\runner.js:101:19)
+          at runTestInternal (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-runner\build\testWorker.js:275:16)
+          at runTest (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-runner\build\testWorker.js:343:7)
+          at Object.worker (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\jest-runner\build\testWorker.js:497:12)
+
+      300 |       }
+      301 |     } catch (glErr) {
+    > 302 |       console.error('GL Error generating AP bill posting:', glErr);
+          |               ^
+      303 |       this.logger.warn(
+      304 |         `GL posting failed for bill ${internalBillNumber}: ${(glErr as Error).message}`,
+      305 |       );
+
+      at PurchaseInvoiceService.createBill (invoices/purchase-invoice.service.ts:302:15)
+      at Object.<anonymous> (invoices/purchase-invoice.service.spec.ts:290:22)
+
+PASS src/invoices/sales-invoice.service.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       30 passed, 30 total
+Snapshots:   0 total
+Time:        1.066 s
+Ran all test suites matching src/invoices.

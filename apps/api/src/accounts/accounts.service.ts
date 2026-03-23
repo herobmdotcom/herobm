@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql } from 'drizzle-orm';
+import { eq, ilike, or, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { accounts as martAccounts } from '../drizzle/schema';
@@ -56,8 +56,10 @@ export class AccountsService {
       .from(coreAccounts)
       .$dynamic();
 
+    const conditions = [];
+
     if (searchTerm) {
-      appQuery = appQuery.where(
+      conditions.push(
         or(
           ilike(coreAccounts.name, searchTerm),
           ilike(coreAccounts.accountNumber, searchTerm),
@@ -67,7 +69,11 @@ export class AccountsService {
     }
 
     if (!includeArchived) {
-      appQuery = appQuery.where(sql`${coreAccounts.stateCode} != 'archived'`);
+      conditions.push(sql`${coreAccounts.stateCode} != 'archived'`);
+    }
+
+    if (conditions.length > 0) {
+      appQuery = appQuery.where(and(...conditions));
     }
 
     // --- Mart accounts (legacy ABM) ---

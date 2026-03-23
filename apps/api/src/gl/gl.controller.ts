@@ -74,14 +74,19 @@ export class GlController {
     @Query('from') fromDate?: string,
     @Query('to') toDate?: string,
     @Query('sourceType') sourceType?: string,
+    @Query('q') entryNumber?: string,
     @Query('limit') limitStr?: string,
+    @Query('page') pageStr?: string,
   ) {
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    const page = pageStr ? parseInt(pageStr, 10) : undefined;
     return this.glService.getJournalEntries({
       fromDate,
       toDate,
       sourceType,
+      entryNumber,
       limit,
+      page,
     });
   }
 

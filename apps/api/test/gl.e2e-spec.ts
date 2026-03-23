@@ -128,8 +128,12 @@ describe('API E2E — General Ledger', () => {
 
       const trialBalance = res.body;
 
-      const debitNode = trialBalance.find((node: any) => node.account_code === debitAccountCode);
-      const creditNode = trialBalance.find((node: any) => node.account_code === creditAccountCode);
+      const debitNode = trialBalance.find(
+        (node: any) => node.account_code === debitAccountCode,
+      );
+      const creditNode = trialBalance.find(
+        (node: any) => node.account_code === creditAccountCode,
+      );
 
       expect(debitNode).toBeDefined();
       expect(creditNode).toBeDefined();

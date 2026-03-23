@@ -22,9 +22,9 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 
 /* ── localStorage column-state helpers ────────────────────────────── */
 
-const STORAGE_PREFIX = "datagrid-cols-";
+export const STORAGE_PREFIX = "datagrid-cols-";
 
-function saveColumnState(gridKey: string, state: ColumnState[]): void {
+export function saveColumnState(gridKey: string, state: ColumnState[]): void {
   try {
     localStorage.setItem(`${STORAGE_PREFIX}${gridKey}`, JSON.stringify(state));
   } catch {
@@ -32,7 +32,7 @@ function saveColumnState(gridKey: string, state: ColumnState[]): void {
   }
 }
 
-function loadColumnState(gridKey: string): ColumnState[] | null {
+export function loadColumnState(gridKey: string): ColumnState[] | null {
   try {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}`);
     if (!raw) return null;
@@ -43,7 +43,7 @@ function loadColumnState(gridKey: string): ColumnState[] | null {
   }
 }
 
-function clearColumnState(gridKey: string): void {
+export function clearColumnState(gridKey: string): void {
   try {
     localStorage.removeItem(`${STORAGE_PREFIX}${gridKey}`);
   } catch {
@@ -84,10 +84,12 @@ export interface DataGridProps<T> {
   }) => React.ReactNode;
   /** Optional theme override for AG grid wrapper. Defaults to ag-theme-alpine-dark */
   gridTheme?: string;
+  /** Optional initial search term to seed the quick filter */
+  initialSearch?: string;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
-function numericFormatter(params: { value: unknown }) {
+export function numericFormatter(params: { value: unknown }) {
   if (params.value == null) return "";
   const n = Number(params.value);
   if (isNaN(n)) return String(params.value);
@@ -112,15 +114,25 @@ export default function DataGrid<T>({
   showArchivedToggle,
   renderHeader,
   gridTheme = "ag-theme-alpine-dark",
+  initialSearch,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const [includeArchived, setIncludeArchived] = useState(false);
   const [page, setPage] = useState(1);
   const limit = fetchAll ? 99999 : 200;
+
+  // Sync initialSearch prop changes (e.g. SPA navigation with new query params)
+  const prevInitialSearch = useRef(initialSearch);
+  useEffect(() => {
+    if (initialSearch !== prevInitialSearch.current) {
+      prevInitialSearch.current = initialSearch;
+      setSearch(initialSearch ?? "");
+    }
+  }, [initialSearch]);
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
@@ -644,6 +656,7 @@ export default function DataGrid<T>({
           onSortChanged={onSortChanged}
           onRowClicked={onRowClicked ? handleRowClicked : undefined}
           tooltipShowDelay={300}
+          {...(fetchAll ? { quickFilterText: search } : {})}
         />
       </div>
       </div>

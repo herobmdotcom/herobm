@@ -1,9 +1,9 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, desc, sql, inArray } from 'drizzle-orm';
+import { eq, ilike, or, desc, sql, inArray, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrderLines, accounts } from '../drizzle/schema';
-import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
+import { salesOrderLines, accounts as martAccounts } from '../drizzle/schema';
+import { salesOrders, salesOrderLineItems, accounts as coreAccounts } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
 /**
@@ -71,7 +71,7 @@ export class OrdersService {
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         name: salesOrders.name,
-        customerName: accounts.name,
+        customerName: sql<string | null>`COALESCE(${coreAccounts.name}, ${martAccounts.name})`,
         customerOrderNumber: salesOrders.customerOrderNumber,
         stateCode: salesOrders.stateCode,
         source: sql<string>`'app'`.as('source'),
@@ -80,22 +80,30 @@ export class OrdersService {
         currencyCode: salesOrders.currencyCode,
       })
       .from(salesOrders)
-      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+      .leftJoin(coreAccounts, sql`${salesOrders.customerId}::text = ${coreAccounts.accountId}::text`)
+      .leftJoin(martAccounts, eq(salesOrders.customerId, martAccounts.accountId))
       .$dynamic();
 
+    const conditions = [];
+
     if (searchTerm) {
-      appQuery = appQuery.where(
+      conditions.push(
         or(
           ilike(salesOrders.orderNumber, searchTerm),
           ilike(salesOrders.name, searchTerm),
           ilike(salesOrders.customerOrderNumber, searchTerm),
-          ilike(accounts.name, searchTerm),
+          ilike(coreAccounts.name, searchTerm),
+          ilike(martAccounts.name, searchTerm),
         ),
       );
     }
 
     if (!includeArchived) {
-      appQuery = appQuery.where(sql`${salesOrders.stateCode} != 'archived'`);
+      conditions.push(sql`${salesOrders.stateCode} != 'archived'`);
+    }
+
+    if (conditions.length > 0) {
+      appQuery = appQuery.where(and(...conditions));
     }
 
     // Execute both and merge (app first, then ABM)

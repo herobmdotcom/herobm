@@ -13,6 +13,8 @@ export interface EntityHeaderProps {
   onSave?: () => void;
   saveLabel?: string;
   actions?: React.ReactNode;
+  /** Optional section quick-nav rendered below the subtitle */
+  nav?: React.ReactNode;
 }
 
 export default function EntityHeader({
@@ -25,6 +27,7 @@ export default function EntityHeader({
   onSave,
   saveLabel,
   actions,
+  nav,
 }: EntityHeaderProps) {
   const t = useTranslations('common');
   return (
@@ -54,6 +57,7 @@ export default function EntityHeader({
               {subtitle}
             </p>
           )}
+          {nav}
         </div>
       </div>
       <div className="flex gap-2">

@@ -65,7 +65,7 @@ export default function ProductSearchInput({
     if (!term || term.length < 2) { setResults([]); setStockMap({}); return; }
     try {
       const data = await apiFetch<{ data: Product[] }>(
-        `/api/products?search=${encodeURIComponent(term)}&limit=10`,
+        `/api/products?q=${encodeURIComponent(term)}&limit=10`,
       );
       setResults(data.data);
 

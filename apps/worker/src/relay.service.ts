@@ -1,13 +1,14 @@
 import { Job, Queue } from 'bullmq';
 import { ERPNextClient, JournalEntry } from '@modbm/erpnext-client';
 import { outbox, accounts, suppliers, salesInvoices, purchaseInvoices } from './schema';
-import { eq, isNull, inArray } from 'drizzle-orm';
+import { eq, isNull, inArray, and, desc } from 'drizzle-orm';
 import { relayLogger, processingLogger } from './logger';
 
 /** Event types that have active mappers in processEvent. */
 const HANDLED_EVENT_TYPES = [
   'goods_received',
   'goods_dispatched',
+  'goods_dispatch_reverted',
   'sales_invoiced',
   'purchase_invoiced',
 ] as const;
@@ -125,6 +126,37 @@ export async function processEvent(job: Job, erpClient: Pick<ERPNextClient, 'cre
 
     await erpClient.createJournalEntry(je);
     processingLogger.info({ eventId, eventType: type, shipmentNumber: payload.shipmentNumber, totalCogs }, 'Created Journal Entry for Shipment');
+
+  } else if (type === 'goods_dispatch_reverted') {
+     const originalDispatch = await db.select({ payload: outbox.payload })
+         .from(outbox)
+         .where(and(eq(outbox.aggregateId, payload.shipmentId), eq(outbox.eventType, 'goods_dispatched')))
+         .orderBy(desc(outbox.createdOn))
+         .limit(1);
+     
+     if (originalDispatch.length > 0) {
+         let totalCogs = 0;
+         const origPayload = originalDispatch[0].payload as any;
+         if (origPayload.cogsDetails) {
+             origPayload.cogsDetails.forEach((c: any) => { totalCogs += parseFloat(c.cogsAmount || '0'); });
+         }
+
+         if (totalCogs > 0) {
+             const je: JournalEntry = {
+               title: `Shipment Reverted ${payload.shipmentNumber}`,
+               company: 'ModBM',
+               posting_date: new Date().toISOString().slice(0, 10),
+               user_remark: `Auto-generated reversal for Shipment ${payload.shipmentNumber}`,
+               accounts: [
+                  { account: 'Inventory', debit_in_account_currency: totalCogs, credit_in_account_currency: 0 },
+                  { account: 'Cost of Goods Sold', debit_in_account_currency: 0, credit_in_account_currency: totalCogs }
+               ]
+             };
+
+             await erpClient.createJournalEntry(je);
+             processingLogger.info({ eventId, eventType: type, shipmentNumber: payload.shipmentNumber, totalCogs }, 'Created Reversal Journal Entry for Shipment');
+         }
+     }
 
   } else if (type === 'sales_invoiced') {
     // 1. JIT Master Data Sync for Customer

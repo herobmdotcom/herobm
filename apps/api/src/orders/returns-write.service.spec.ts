@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReturnsWriteService } from './returns-write.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { GlService } from '../gl/gl.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -98,6 +100,8 @@ describe('ReturnsWriteService', () => {
   let service: ReturnsWriteService;
   let mockDb: any;
   let mockInventoryService: any;
+  let mockGlService: any;
+  let mockGstService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -151,11 +155,22 @@ describe('ReturnsWriteService', () => {
       receiveStock: jest.fn().mockResolvedValue(undefined),
     };
 
+    mockGlService = {
+      getSettings: jest.fn().mockResolvedValue(null),
+      postJournalEntry: jest.fn().mockResolvedValue({ journalEntryId: 'je-001', entryNumber: 'JE-20260323-0001' }),
+    };
+
+    mockGstService = {
+      getById: jest.fn().mockResolvedValue({ rate: '0' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReturnsWriteService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },
+        { provide: GlService, useValue: mockGlService },
+        { provide: GstCategoriesService, useValue: mockGstService },
       ],
     }).compile();
 
@@ -406,6 +421,310 @@ describe('ReturnsWriteService', () => {
       await service.changeReturnState('ret-001', 'processed', 'admin');
       // Verify the transaction was called (event is written inside)
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // =========================================================================
+  // GL Credit Note posting (via changeReturnState → processed)
+  //
+  // postCreditNoteGl is private, tested indirectly through changeReturnState.
+  // After the transaction, the method makes additional DB calls:
+  //   1. glAccounts select (resolve account codes from settings IDs)
+  //   2. sharedFindOrder (fetch order for customer info)  
+  //   3. salesOrderReturnLines select (fetch return lines)
+  //   4. salesOrderLineItems select per return line (fetch pricing + GST)
+  //   5. outbox insert (write credit_note_posted event)
+  // =========================================================================
+
+  describe('GL Credit Note posting', () => {
+    const GL_SETTINGS = {
+      defaultArAccountId: 'ar-acct-id',
+      defaultRevenueAccountId: 'rev-acct-id',
+      defaultTaxAccountId: 'tax-acct-id',
+    };
+
+    const GL_ACCOUNT_ROWS = [
+      { glAccountId: 'ar-acct-id', accountCode: '1100' },
+      { glAccountId: 'rev-acct-id', accountCode: '4100' },
+      { glAccountId: 'tax-acct-id', accountCode: '2200' },
+    ];
+
+    const RETURN_LINE_WITH_FEE = {
+      returnLineId: 'retline-001',
+      returnId: 'ret-001',
+      salesOrderLineId: 'line-001',
+      quantityReturned: '5',
+      reason: 'Defective',
+      returnFee: '10.00',
+    };
+
+    const RETURN_LINE_NO_FEE = {
+      ...RETURN_LINE_WITH_FEE,
+      returnFee: '0',
+    };
+
+    const ORDER_LINE_WITH_GST = {
+      ...ORDER_LINE,
+      gstCategoryId: 'gst-cat-001',
+      discountPercentage: '0',
+    };
+
+    const ORDER_LINE_NO_GST = {
+      ...ORDER_LINE,
+      gstCategoryId: null,
+      discountPercentage: '0',
+    };
+
+    /**
+     * Sets up the full call sequence for changeReturnState → processed,
+     * including the post-transaction GL posting path.
+     */
+    function setupGlTest(opts: {
+      settings?: any;
+      glAccountRows?: any[];
+      returnLines?: any[];
+      orderLine?: any;
+      gstRate?: string;
+    }) {
+      const settings = opts.settings !== undefined ? opts.settings : GL_SETTINGS;
+      const glAccountRows = opts.glAccountRows ?? GL_ACCOUNT_ROWS;
+      const returnLines = opts.returnLines ?? [RETURN_LINE_WITH_FEE];
+      const orderLine = opts.orderLine ?? ORDER_LINE_WITH_GST;
+      const gstRate = opts.gstRate ?? '10';
+
+      // GL settings
+      mockGlService.getSettings.mockResolvedValue(settings);
+
+      // GST service
+      mockGstService.getById.mockResolvedValue({ rate: gstRate });
+
+      // The changeReturnState call sequence:
+      // Phase 1 (before tx): select #1 = findReturn
+      // Phase 2 (in tx): tx.update, tx.select (return lines for inventory), tx.select (order line), tx.insert (event)
+      // Phase 3 (after tx - GL): select #2,3,4,5... = gl accounts, order, return lines, order line per line
+
+      let selectCallCount = 0;
+      const selectResponses: Record<number, any[]> = {
+        1: [{ ...MOCK_RETURN, stateCode: 'confirmed' }], // findReturn
+        2: glAccountRows,                                   // GL account codes
+        3: [INVOICED_ORDER],                               // sharedFindOrder
+        4: returnLines,                                     // return lines
+        5: [orderLine],                                    // order line (1st return line)
+      };
+
+      // Add more order line lookups for additional return lines
+      for (let i = 1; i < returnLines.length; i++) {
+        selectResponses[5 + i] = [orderLine];
+      }
+
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockImplementation(() => {
+          selectCallCount++;
+          const data = selectResponses[selectCallCount] ?? [];
+          const qb = createMockQueryBuilder(data);
+          qb.innerJoin = jest.fn().mockReturnValue(qb);
+          return qb;
+        }),
+      });
+
+      // Transaction: inventory restock + event
+      const txUpdateQb = createMockQueryBuilder([
+        { ...MOCK_RETURN, stateCode: 'processed' },
+      ]);
+      const txReturnLines = createMockQueryBuilder(returnLines);
+      const txOrderLine = createMockQueryBuilder([orderLine]);
+      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
+        const tx = createMockTx();
+        tx.update = jest.fn().mockReturnValue(txUpdateQb);
+        let txSelectCount = 0;
+        tx.select = jest.fn().mockReturnValue({
+          from: jest.fn().mockImplementation(() => {
+            txSelectCount++;
+            if (txSelectCount === 1) return txReturnLines; // return lines for inventory
+            return txOrderLine; // order line for each
+          }),
+        });
+        return cb(tx);
+      });
+
+      // Insert for outbox event (after GL posting)
+      mockDb.insert = jest.fn().mockReturnValue(createMockQueryBuilder([]));
+    }
+
+    it('should post GL journal with correct lines (revenue + GST + fees)', async () => {
+      setupGlTest({ gstRate: '10' });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      // 5 qty × $50.00 = $250.00 (credit amount)
+      // 10% GST on $250 = $25.00
+      // Fee = $10.00
+      // Net AR = $250 + $25 - $10 = $265.00
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
+
+      const [glLines, meta] = mockGlService.postJournalEntry.mock.calls[0];
+
+      // Verify sourceType
+      expect(meta.sourceType).toBe('sales_credit_note');
+      expect(meta.sourceId).toBe('ret-001');
+
+      // Revenue debit
+      const revLine = glLines.find((l: any) => l.accountCode === '4100');
+      expect(revLine).toBeDefined();
+      expect(revLine.debit).toBe(250);
+      expect(revLine.credit).toBe(0);
+
+      // AR credit with customer partyId
+      const arLine = glLines.find((l: any) => l.accountCode === '1100');
+      expect(arLine).toBeDefined();
+      expect(arLine.debit).toBe(0);
+      expect(arLine.credit).toBe(265); // 250 + 25 - 10
+      expect(arLine.partyType).toBe('customer');
+      expect(arLine.partyId).toBe('CUST-001');
+
+      // GST debit
+      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
+      expect(taxLine).toBeDefined();
+      expect(taxLine.debit).toBe(25);
+      expect(taxLine.credit).toBe(0);
+
+      // Fee credit
+      const feeLine = glLines.find((l: any) => l.accountCode === '4900');
+      expect(feeLine).toBeDefined();
+      expect(feeLine.debit).toBe(0);
+      expect(feeLine.credit).toBe(10);
+
+      // Balance invariant: total debits = total credits
+      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      expect(totalDebit).toBeCloseTo(totalCredit, 2);
+    });
+
+    it('should omit fee line when no fees', async () => {
+      setupGlTest({
+        returnLines: [RETURN_LINE_NO_FEE],
+        gstRate: '10',
+      });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
+
+      // No fee line
+      const feeLine = glLines.find((l: any) => l.accountCode === '4900');
+      expect(feeLine).toBeUndefined();
+
+      // AR credit = 250 + 25 = 275 (no fee deduction)
+      const arLine = glLines.find((l: any) => l.accountCode === '1100');
+      expect(arLine.credit).toBe(275);
+
+      // 3 lines only: Revenue, AR, GST
+      expect(glLines).toHaveLength(3);
+
+      // Balance invariant
+      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      expect(totalDebit).toBeCloseTo(totalCredit, 2);
+    });
+
+    it('should omit GST line when no tax applies', async () => {
+      setupGlTest({
+        orderLine: ORDER_LINE_NO_GST,
+        gstRate: '0',
+      });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
+
+      // No tax line
+      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
+      expect(taxLine).toBeUndefined();
+
+      // AR credit = 250 - 10 = 240 (no tax)
+      const arLine = glLines.find((l: any) => l.accountCode === '1100');
+      expect(arLine.credit).toBe(240);
+
+      // Balance invariant
+      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      expect(totalDebit).toBeCloseTo(totalCredit, 2);
+    });
+
+    it('should skip GL posting when settings are incomplete', async () => {
+      setupGlTest({ settings: null });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
+    });
+
+    it('should skip GL posting when AR account ID is missing', async () => {
+      setupGlTest({
+        settings: { ...GL_SETTINGS, defaultArAccountId: null },
+      });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
+    });
+
+    it('should not throw when GL posting fails (non-fatal)', async () => {
+      setupGlTest({});
+      mockGlService.postJournalEntry.mockRejectedValue(
+        new Error('GL service unavailable'),
+      );
+
+      // Should not throw — GL failure is non-fatal
+      await expect(
+        service.changeReturnState('ret-001', 'processed', 'admin'),
+      ).resolves.toBeDefined();
+
+      // State transition still succeeded
+      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('should write outbox event with correct payload', async () => {
+      setupGlTest({ gstRate: '10' });
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      // Outbox insert should have been called
+      expect(mockDb.insert).toHaveBeenCalled();
+
+      const insertCall = mockDb.insert.mock.calls[0];
+      // The insert is into the outbox table — we verify via .values()
+      const valuesCall = mockDb.insert.mock.results[0].value.values.mock.calls[0][0];
+
+      expect(valuesCall.aggregateType).toBe('sales_credit_note');
+      expect(valuesCall.eventType).toBe('credit_note_posted');
+      expect(valuesCall.payload.returnId).toBe('ret-001');
+      expect(valuesCall.payload.customerId).toBe('CUST-001');
+      expect(valuesCall.payload.totalCredit).toBe(250);
+      expect(valuesCall.payload.totalTax).toBe(25);
+      expect(valuesCall.payload.totalFees).toBe(10);
+      expect(valuesCall.payload.netCredit).toBe(265);
+      expect(valuesCall.payload.lines).toHaveLength(1);
+      expect(valuesCall.payload.lines[0].productId).toBe('PROD-001');
+    });
+
+    it('should use per-line GST from gstCategoryId', async () => {
+      setupGlTest({ gstRate: '15' }); // 15% GST
+
+      await service.changeReturnState('ret-001', 'processed', 'admin');
+
+      // Verify gstService.getById was called with the line's category
+      expect(mockGstService.getById).toHaveBeenCalledWith('gst-cat-001');
+
+      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
+
+      // 5 × $50 = $250, 15% GST = $37.50
+      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
+      expect(taxLine.debit).toBe(37.5);
+
+      // AR = 250 + 37.5 - 10 = 277.5
+      const arLine = glLines.find((l: any) => l.accountCode === '1100');
+      expect(arLine.credit).toBe(277.5);
     });
   });
 
