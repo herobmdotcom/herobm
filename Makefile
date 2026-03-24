@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural check-env extract extract-dry transform test-transform transform-select elt extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local
+.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local verify-local
 
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
@@ -126,7 +126,11 @@ test-transform:
 transform-select:
 	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt: extract transform schema-ref
+elt: extract transform import-legacy schema-ref
+
+import-legacy:
+	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" run-operation sync_sales_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 # --- Schema Reference ---
 
@@ -239,4 +243,23 @@ test-all: test-api test-deps test-structural typecheck-portal
 
 build-all: build-api build-portal
 
-verify-all: verify-fe-api test-structural test-deps test-transform
+verify-all: build-api verify-fe-api test-structural test-deps test-transform
+
+test-structural-local:
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1 -SkipLive
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_weak_defaults.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_secrets.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_wildcard_cors.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_print_in_pipelines.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_imports_pinned.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_pipeline_observability.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_business_event_logging.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
+
+verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform

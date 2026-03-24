@@ -105,32 +105,28 @@ describe('Products (e2e)', () => {
     expect(res.body.notes).toBe('Testing patching');
   });
 
-  it('PATCH /api/products/:id — fails on legacy product (admin)', async () => {
-    // 1. Find a legacy product
+  it('PATCH /api/products/:id — ABM products are now editable in core (admin)', async () => {
+    // Since ABM products are now migrated to core, they should be editable
     const listRes = await request(app.getHttpServer())
       .get('/api/products?limit=50')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const legacyProduct = listRes.body.data.find(
-      (p: any) => p.source === 'abm',
-    );
+    const abmProduct = listRes.body.data.find((p: any) => p.source === 'abm');
 
-    if (!legacyProduct) {
+    if (!abmProduct) {
       console.warn(
-        'No legacy products found in test environment, skipping legacy patch test',
+        'No ABM products found in test environment, skipping ABM edit test',
       );
       return;
     }
 
-    // 2. Attempt to update
+    // ABM products migrated to core should be fully editable
     const res = await request(app.getHttpServer())
-      .patch(`/api/products/${legacyProduct.productId}`)
+      .patch(`/api/products/${abmProduct.productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Should Fail' });
+      .send({ notes: 'Updated ABM product' });
 
-    expect(res.status).toBe(400);
-    expect(res.body.message).toContain(
-      'legacy ABM product and cannot be edited',
-    );
+    expect(res.status).toBe(200);
+    expect(res.body.notes).toBe('Updated ABM product');
   });
 });

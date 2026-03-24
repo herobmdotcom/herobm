@@ -19,7 +19,7 @@ describe('OrdersController', () => {
   const mockOrder = {
     salesOrderId: 'uuid-1',
     orderNumber: 'ORD-001',
-    customerId: 'C001',
+    customerId: 'c0000000-0000-0000-0000-000000000001',
     stateCode: 'draft',
     lines: [],
     events: [],
@@ -38,8 +38,6 @@ describe('OrdersController', () => {
   beforeEach(async () => {
     const mockReadService = {
       findAll: jest.fn().mockResolvedValue(mockOrdersList),
-      findOne: jest.fn().mockResolvedValue(mockOrder),
-      findAbmOrder: jest.fn().mockResolvedValue(mockOrder),
     };
 
     const mockWriteService = {
@@ -87,22 +85,10 @@ describe('OrdersController', () => {
   });
 
   describe('findOne', () => {
-    it('should route to ordersService.findOne with no source', async () => {
+    it('should route to writeService.findOne', async () => {
       const result = await controller.findOne('uuid-1');
       expect(result).toEqual(mockOrder);
-      expect(readService.findOne).toHaveBeenCalledWith('uuid-1');
-    });
-
-    it('should route to writeService.findOne when source=app', async () => {
-      await controller.findOne('uuid-1', 'app');
       expect(writeService.findOne).toHaveBeenCalledWith('uuid-1');
-      expect(readService.findOne).not.toHaveBeenCalled();
-    });
-
-    it('should route to ordersService.findAbmOrder when source=abm', async () => {
-      await controller.findOne('uuid-1', 'abm');
-      expect(readService.findAbmOrder).toHaveBeenCalledWith('uuid-1');
-      expect(writeService.findOne).not.toHaveBeenCalled();
     });
   });
 
@@ -113,7 +99,7 @@ describe('OrdersController', () => {
   describe('create', () => {
     it('should call writeService.create with body and actor', async () => {
       const body = {
-        customerId: 'C001',
+        customerId: 'c0000000-0000-0000-0000-000000000001',
         lines: [{ productId: 'P001', quantity: '5', pricePerUnit: '10.00' }],
       };
       const result = await controller.create(body as any, mockUser);

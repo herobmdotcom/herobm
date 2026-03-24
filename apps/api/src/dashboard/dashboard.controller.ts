@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { DashboardService } from './dashboard.service';
 import {
@@ -17,5 +17,11 @@ export class DashboardController {
   @CasbinAction('read')
   getSummary() {
     return this.dashboardService.getSummary();
+  }
+
+  @Get('search')
+  @CasbinAction('read')
+  search(@Query('q') q: string) {
+    return this.dashboardService.universalSearch(q);
   }
 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
@@ -12,10 +13,12 @@ import {
 } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { formatAmount } from '@/lib/currency';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
+import PageNav from '@/components/shared/PageNav';
 
 interface Account {
   accountId: string;
@@ -48,6 +51,8 @@ interface Account {
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const t = useTranslations();
+  const tSales = useTranslations('salesOrders');
+  const tCommon = useTranslations('common');
   const params = use(paramsPromise);
   const router = useRouter();
   const [account, setAccount] = useState<Account | null>(null);
@@ -55,7 +60,74 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [dto, setDto] = useState<Partial<Account>>({});
-  const [activeTab, setActiveTab] = useState<'details' | 'invoices'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
+
+  const handleOrderRowClicked = useCallback((order: any) => {
+    if (order.source === 'app') {
+      router.push(`/sales-orders/${order.id}?source=app`);
+    } else {
+      router.push(`/sales-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
+    }
+  }, [router]);
+
+  const handleInvoiceRowClicked = useCallback((row: any) => {
+    if (row.salesOrderId) {
+        router.push(`/sales-orders/${row.salesOrderId}?source=app#invoices-section`);
+    }
+  }, [router]);
+
+  const orderColumns = useMemo(() => [
+    { field: 'orderNumber', headerName: tCommon('columns.orderNumber'), width: 150, pinned: 'left' as const },
+    { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 160 },
+    {
+      field: 'stateCode',
+      headerName: tCommon('columns.status'),
+      width: 110,
+      cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null,
+    },
+    {
+      field: 'source',
+      headerName: tCommon('columns.source'),
+      width: 90,
+      cellRenderer: (p: { value: string }) => {
+        if (!p.value) return null;
+        const label = p.value === 'abm' ? tCommon('sources.abm') : tCommon('sources.app');
+        return <span className={`badge badge-${p.value}`}>{label}</span>;
+      },
+    },
+    { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
+    {
+      field: 'totalPrice',
+      headerName: tCommon('columns.totalPrice'),
+      width: 120,
+      type: 'numericColumn',
+      valueGetter: (p: any) => p.data?.totalPrice ? parseFloat(p.data.totalPrice) : null,
+      valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || 'EUR'),
+    },
+    {
+      field: 'createdOn',
+      headerName: tCommon('columns.date'),
+      width: 110,
+      valueFormatter: (p: any) => p.value ? new Date(p.value as string).toLocaleDateString() : '—',
+    },
+  ], [tCommon]);
+
+  const invoiceColumns = useMemo(() => [
+      { field: 'invoiceId', headerName: 'ID', hide: true },
+      { field: 'invoiceNumber', headerName: tSales('columns.invoiceNumber', { defaultValue: 'Invoice No.' }), width: 180 },
+      { field: 'orderNumber', headerName: tSales('columns.orderNumber', { defaultValue: 'Order No.' }), width: 160 },
+      { field: 'createdOn', headerName: tSales('columns.date', { defaultValue: 'Date' }), width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+      { field: 'totalAmount', headerName: tSales('columns.amount', { defaultValue: 'Amount' }), type: 'numericColumn', width: 150,
+          valueGetter: (p: any) => p.data?.totalAmount ? parseFloat(p.data.totalAmount) : null,
+          valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || 'EUR'),
+      },
+      { 
+          field: 'stateCode', 
+          headerName: tSales('columns.state', { defaultValue: 'State' }), 
+          width: 140,
+          cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null,
+      },
+  ], [tSales]);
 
 
 
@@ -68,6 +140,18 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       .catch((err) => reportError(err, 'AccountDetailPage'))
       .finally(() => setLoading(false));
   }, [params.id]);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!isDirty || saving || account?.source === 'abm') return;
+
+    const handler = setTimeout(() => {
+      handleSave();
+    }, 1000);
+
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dto]);
 
   const updateField = (field: keyof Account, value: any) => {
     if (account?.source === 'abm') return;
@@ -105,7 +189,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
     setSaving(true);
     try {
       await apiMutate(`/api/accounts/${params.id}/archive`, 'POST');
-      toast.success(t('toast.orderArchived'), { icon: '📦' });
+      toast.success(t('toast.orderArchived'));
       const refreshed = await apiFetch<Account>(`/api/accounts/${params.id}`);
       setAccount(refreshed);
       setDto(refreshed);
@@ -120,7 +204,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
     setSaving(true);
     try {
       await apiMutate(`/api/accounts/${params.id}/unarchive`, 'POST');
-      toast.success(t('toast.orderUnarchived'), { icon: '📦' });
+      toast.success(t('toast.orderUnarchived'));
       const refreshed = await apiFetch<Account>(`/api/accounts/${params.id}`);
       setAccount(refreshed);
       setDto(refreshed);
@@ -137,6 +221,37 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const isLegacy = account.source === 'abm';
   const isEditable = !isLegacy && account.stateCode !== 'archived';
 
+  const visibleSections = [
+    {
+      id: 'tab-details',
+      label: t('accounts.overview', { defaultValue: 'Overview' }),
+      isSubPage: true,
+      isActive: activeTab === 'details',
+      onClick: () => setActiveTab('details'),
+      subtargets: [
+        { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'pricing-section', label: 'Pricing', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'address-section', label: 'Company', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('address-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'contact-section', label: 'Contact', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+      ],
+    },
+    {
+      id: 'tab-sales',
+      label: t('accounts.orders', { defaultValue: 'Orders' }),
+      isSubPage: true,
+      isActive: activeTab === 'salesOrders',
+      onClick: () => setActiveTab('salesOrders'),
+    },
+    {
+      id: 'tab-invoices',
+      label: t('accounts.invoices', { defaultValue: 'Invoices' }),
+      isSubPage: true,
+      isActive: activeTab === 'invoices',
+      onClick: () => setActiveTab('invoices'),
+    }
+  ];
+
   return (
     <Shell>
       <DetailsLayout
@@ -152,20 +267,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               <StateBadge state={account.stateCode as ValidState} />
             }
             actions={
-              account.source === 'app' ? (
-                account.stateCode === 'archived' ? (
-                  <button className="btn btn-secondary btn-sm" onClick={unarchiveAccount} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
-                ) : (
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                    onClick={archiveAccount}
-                    disabled={saving}
-                  >
-                    📦 {t('salesOrders.buttons.archive')}
-                  </button>
-                )
-              ) : null
+              <PageNav sections={visibleSections} />
             }
           />
         }
@@ -183,41 +285,93 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         </div>
       )}
 
-      <div className="flex gap-4 border-b border-[rgba(196,198,205,0.4)] mb-6 px-2">
-          <button
-              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'details' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-              onClick={() => setActiveTab('details')}
-          >
-              {t('accounts.generalInfo', { defaultValue: 'Details' })}
-          </button>
-          <button
-              className={`pb-2 px-1 text-sm font-medium border-b-2 transition-colors ${activeTab === 'invoices' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
-              onClick={() => setActiveTab('invoices')}
-          >
-              {t('salesOrders.invoicesCardHeading', { defaultValue: 'Invoices' })}
-          </button>
-      </div>
+      {activeTab === 'salesOrders' && (
+        <div style={{ height: 'calc(100vh - 260px)', minHeight: 400 }} className="p-4 lg:p-6">
+          <div className="h-full flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid 
+                endpoint={`/api/sales-orders?accountId=${encodeURIComponent(params.id)}&limit=50`}
+                columns={orderColumns}
+                gridKey="account-orders"
+                searchPlaceholder={tSales('placeholders.searchOrders')}
+                exportFileName={`orders-${account.accountNumber}`}
+                fetchAll
+                onRowClicked={handleOrderRowClicked}
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        {tSales('title')}
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                      <Link href={`/sales-orders/new?accountId=${params.id}`} className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
+                        {tSales('buttons.createOrder')}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
 
       {activeTab === 'invoices' && (
-        <div style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
+        <div style={{ height: 'calc(100vh - 260px)', minHeight: 400 }} className="p-4 lg:p-6">
+          <div className="h-full flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
-                endpoint={`/api/sales-invoices?accountId=${params.id}&limit=50`}
-                columns={[
-                  { field: 'invoiceNumber', headerName: 'Invoice No.', width: 200 },
-                  { field: 'orderNumber', headerName: 'Order No.', width: 200 },
-                  { field: 'createdOn', headerName: 'Date', width: 200, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
-                  { field: 'totalAmount', headerName: 'Amount', type: 'numericColumn', width: 150 },
-                  { field: 'stateCode', headerName: 'State', width: 150 },
-                ] as any[]}
+                endpoint={`/api/sales-invoices?accountId=${encodeURIComponent(params.id)}&days=0&limit=50`}
+                columns={invoiceColumns}
+                gridKey="account-invoices"
+                fetchAll
+                onRowClicked={handleInvoiceRowClicked}
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        {tSales('invoicesCardHeading', { defaultValue: 'Sales Invoices' })}
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
             />
+          </div>
         </div>
       )}
 
       {activeTab === 'details' && (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-3">
             {/* Basic Info Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div id="info-section" className="card">
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">info</span>
                 {t('accounts.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -268,12 +422,26 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     disabled={!isEditable || saving}
                   />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.notesCardHeading')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.notes || ''}
+                    onChange={(e) => updateField('notes', e.target.value)}
+                    placeholder={t('common.notesCardPlaceholder')}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
               </div>
             </div>
 
           {/* Pricing & Currency Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div id="pricing-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">payments</span>
               {t('accounts.pricingCurrency')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -351,55 +519,11 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             </div>
           </div>
 
-            {/* Primary Contact Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {t('common.columns.contact')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactName')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactName || ''}
-                    onChange={(e) => updateField('primaryContactName', e.target.value)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactEmail')}
-                  </label>
-                  <input
-                    type="email"
-                    className="input"
-                    value={dto.primaryContactEmail || ''}
-                    onChange={(e) => updateField('primaryContactEmail', e.target.value)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactPhone')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactPhone || ''}
-                    onChange={(e) => updateField('primaryContactPhone', e.target.value)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Address & Contact Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {t('common.columns.contactAddress')}
+            <div id="address-section" className="card">
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">location_on</span>
+                {t('accounts.company', { defaultValue: 'Company' })}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -489,73 +613,80 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               </div>
             </div>
 
-            {/* Notes Card */}
-            <div className="card">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {t('common.notesCardHeading')}
+
+            {/* Contact Card */}
+            <div id="contact-section" className="card h-fit">
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">person</span>
+                {t('common.columns.contact')}
               </h3>
-              <textarea
-                className="input w-full"
-                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-                value={dto.notes || ''}
-                onChange={(e) => updateField('notes', e.target.value)}
-                placeholder={t('common.notesCardPlaceholder')}
-                disabled={!isEditable || saving}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactName')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.primaryContactName || ''}
+                    onChange={(e) => updateField('primaryContactName', e.target.value)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactEmail')}
+                  </label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={dto.primaryContactEmail || ''}
+                    onChange={(e) => updateField('primaryContactEmail', e.target.value)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactPhone')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.primaryContactPhone || ''}
+                    onChange={(e) => updateField('primaryContactPhone', e.target.value)}
+                    disabled={!isEditable || saving}
+                  />
+                </div>
+              </div>
             </div>
 
-          {/* Record Details Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Record Details
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('accounts.columns.accountId')}
-                </label>
-                <input className="input" disabled value={account.accountId} style={{ fontSize: 12 }} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.source')}
-                </label>
-                <input className="input" disabled value={account.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
-              </div>
-              {account.createdOn && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.createdOn')}
-                  </label>
-                  <input className="input" disabled value={new Date(account.createdOn).toLocaleDateString()} />
-                </div>
-              )}
-              {account.createdBy && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.createdBy')}
-                  </label>
-                  <input className="input" disabled value={account.createdBy} />
-                </div>
-              )}
-            </div>
-            {account.modifiedOn && (
-              <div className="mt-4" style={{ maxWidth: '50%' }}>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.modifiedOn')}
-                </label>
-                <input className="input" disabled value={new Date(account.modifiedOn).toLocaleString()} />
-              </div>
-            )}
-            {isLegacy && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                {t('common.legacyRecordImported')}
-              </p>
-            )}
+          <div id="activity-section" className="card">
+            <ActivityTimeline events={account.events || []} />
           </div>
 
-
-          <ActivityTimeline events={account.events || []} />
+          {/* Bottom Actions */}
+          {account.source === 'app' && (
+            <div className="flex justify-end mt-4">
+              {account.stateCode === 'archived' ? (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={unarchiveAccount}
+                  disabled={saving}
+                >
+                  {t('salesOrders.buttons.unarchive')}
+                </button>
+              ) : (
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                  onClick={archiveAccount}
+                  disabled={saving}
+                >
+                  {t('salesOrders.buttons.archive')}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
       </DetailsLayout>

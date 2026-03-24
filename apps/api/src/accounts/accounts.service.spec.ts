@@ -8,24 +8,32 @@ describe('AccountsService', () => {
 
   const mockAccounts = [
     {
-      accountId: 'C001',
+      accountId: '12345678-1234-1234-1234-1234567890ab',
       accountNumber: 'ACME',
       name: 'Acme Corp',
       address1Line1: '123 Main St',
-      stateCode: 'Active',
-      deliveryAddressCount: 2,
+      stateCode: 'active',
+      source: 'abm',
+      sourceId: 'C001',
     },
     {
-      accountId: 'C002',
+      accountId: '22345678-1234-1234-1234-1234567890ab',
       accountNumber: 'WIDGET',
       name: 'Widget Industries',
       address1Line1: '456 Oak Ave',
-      stateCode: 'Active',
-      deliveryAddressCount: 1,
+      stateCode: 'active',
+      source: 'app',
+      sourceId: null,
     },
   ];
 
-  // Chainable mock for Drizzle $dynamic() query builder
+  const mockEvent = {
+    eventId: 'e1',
+    eventType: 'imported',
+    createdOn: new Date(),
+  };
+
+  // Chainable mock for Drizzle query builder
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
@@ -44,14 +52,12 @@ describe('AccountsService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    // $dynamic() must return the same chainable object
     mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
     mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
     mockQueryBuilder.then = jest
       .fn()
       .mockImplementation((cb) => cb(mockAccounts));
 
-    // Restore default mockDb.select implementation in case it was overwritten
     mockDb.select = jest.fn().mockReturnValue({
       from: jest.fn().mockReturnValue(mockQueryBuilder),
     });
@@ -90,37 +96,43 @@ describe('AccountsService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single account', async () => {
-      mockQueryBuilder.then = jest
-        .fn()
-        .mockImplementation((cb) => cb([mockAccounts[0]]));
-      const result = await service.findOne('C001');
-      expect(result).toEqual({
-        ...mockAccounts[0],
-        stateCode: 'active',
-        source: 'abm',
-        events: [],
-      });
-    });
-
-    it('should return an app account with events if ID is UUID', async () => {
-      const uuid = '12345678-1234-1234-1234-1234567890ab';
-      const mockAppAccount = { ...mockAccounts[0], accountId: uuid };
-      const mockEvent = {
-        eventId: 'e1',
-        eventType: 'created',
-        createdOn: new Date(),
-      };
-
-      // Mock database calls for findOne with UUID
+    it('should return an account by sourceId for non-UUID IDs', async () => {
+      // Mock: first select().from().where().limit() returns the account,
+      //       second select().from().where().orderBy() returns events
       mockDb.select = jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
           where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockImplementation((limit) => ({
+            limit: jest.fn().mockImplementation(() => ({
               then: jest.fn().mockImplementation((cb) => {
-                // First call for account, second for events
                 if (mockDb.select.mock.calls.length === 1) {
-                  return cb([mockAppAccount]);
+                  return cb([mockAccounts[0]]);
+                }
+                return cb([mockEvent]);
+              }),
+            })),
+            orderBy: jest.fn().mockImplementation(() => ({
+              then: jest.fn().mockImplementation((cb) => cb([mockEvent])),
+            })),
+          }),
+        }),
+      });
+
+      const result = await service.findOne('C001');
+      expect(result).toHaveProperty('source', 'abm');
+      expect(result).toHaveProperty('events');
+      expect(result.events).toHaveLength(1);
+    });
+
+    it('should return an account by UUID with events', async () => {
+      const uuid = '12345678-1234-1234-1234-1234567890ab';
+
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockImplementation(() => ({
+              then: jest.fn().mockImplementation((cb) => {
+                if (mockDb.select.mock.calls.length === 1) {
+                  return cb([mockAccounts[0]]);
                 }
                 return cb([mockEvent]);
               }),
@@ -133,14 +145,23 @@ describe('AccountsService', () => {
       });
 
       const result = await service.findOne(uuid);
-      expect(result).toHaveProperty('source', 'app');
+      expect(result).toHaveProperty('source', 'abm');
       expect(result).toHaveProperty('events');
       expect(result.events).toHaveLength(1);
       expect(result.events[0]).toEqual(mockEvent);
     });
 
     it('should throw NotFoundException for unknown ID', async () => {
-      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb([]));
+      mockDb.select = jest.fn().mockReturnValue({
+        from: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({
+            limit: jest.fn().mockImplementation(() => ({
+              then: jest.fn().mockImplementation((cb) => cb([])),
+            })),
+          }),
+        }),
+      });
+
       await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
         NotFoundException,
       );

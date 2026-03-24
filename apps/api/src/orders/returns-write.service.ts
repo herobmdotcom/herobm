@@ -676,7 +676,9 @@ export class ReturnsWriteService {
   ) {
     const settings = await this.glService.getSettings();
     if (!settings?.defaultArAccountId || !settings?.defaultRevenueAccountId) {
-      this.logger.warn('GL settings incomplete — skipping credit note GL posting');
+      this.logger.warn(
+        'GL settings incomplete — skipping credit note GL posting',
+      );
       return;
     }
 
@@ -700,7 +702,9 @@ export class ReturnsWriteService {
         )})`,
       );
 
-    const idToCode = new Map(acctRows.map((a) => [a.glAccountId, a.accountCode]));
+    const idToCode = new Map(
+      acctRows.map((a) => [a.glAccountId, a.accountCode]),
+    );
     const arCode = idToCode.get(settings.defaultArAccountId);
     const revCode = settings.defaultRevenueAccountId
       ? idToCode.get(settings.defaultRevenueAccountId)
@@ -710,7 +714,9 @@ export class ReturnsWriteService {
       : null;
 
     if (!arCode || !revCode) {
-      this.logger.warn('AR or Revenue account code not found — skipping credit note GL');
+      this.logger.warn(
+        'AR or Revenue account code not found — skipping credit note GL',
+      );
       return;
     }
 

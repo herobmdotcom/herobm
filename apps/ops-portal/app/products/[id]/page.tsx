@@ -12,6 +12,7 @@ import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 
 export default function ProductDetailPage() {
   const t = useTranslations();
@@ -89,7 +90,7 @@ export default function ProductDetailPage() {
     setSaving(true);
     try {
       await apiMutate(`/api/products/${id}/archive`, 'POST');
-      toast.success(t('toast.productUpdated'), { icon: '📦' });
+      toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
       toast.error(err.message);
@@ -102,7 +103,7 @@ export default function ProductDetailPage() {
     setSaving(true);
     try {
       await apiMutate(`/api/products/${id}/unarchive`, 'POST');
-      toast.success(t('toast.productUpdated'), { icon: '📦' });
+      toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
       toast.error(err.message);
@@ -116,6 +117,14 @@ export default function ProductDetailPage() {
 
   const isLegacy = product.source === 'abm';
   const isEditable = !isLegacy && product.stateCode !== 'archived';
+
+  const sections = {
+    info: { id: 'info-section', label: 'Info' },
+    pricing: { id: 'pricing-section', label: 'Pricing' },
+    notes: { id: 'notes-section', label: 'Notes' },
+    activity: { id: 'activity-section', label: 'Activity' },
+  };
+  const visibleSections = Object.values(sections);
 
   return (
     <Shell>
@@ -133,26 +142,15 @@ export default function ProductDetailPage() {
           </>
         }
         actions={
-          product.source === 'app' ? (
-            product.stateCode === 'archived' ? (
-              <button className="btn btn-secondary btn-sm" onClick={unarchiveProduct} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
-            ) : (
-              <button
-                className="btn btn-secondary btn-sm"
-                style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                onClick={archiveProduct}
-                disabled={saving}
-              >
-                📦 {t('salesOrders.buttons.archive')}
-              </button>
-            )
-          ) : null
+          <>
+            <PageNav sections={visibleSections} />
+          </>
         }
       />
     }
   >
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
         {product.stateCode === 'archived' && (
           <div
             className="px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
@@ -165,14 +163,12 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* Product Information Card */}
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-            >
-              {t('products.productInformation')}
+          <div id="info-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">info</span>
+              {t('products.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -253,158 +249,95 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Pricing & Financials Card */}
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-            >
+          <div id="pricing-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.listPrice')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-
-                    disabled={!isEditable || saving}
-                    value={dto.listPrice}
-                    onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
-                    onBlur={(e) => handleBlur('listPrice', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.stdCost')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-
-                    disabled={!isEditable || saving}
-                    value={dto.standardCost}
-                    onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
-                    onBlur={(e) => handleBlur('standardCost', e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.tradePrice')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-
-                    disabled={!isEditable || saving}
-                    value={dto.tradePrice}
-                    onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
-                    onBlur={(e) => handleBlur('tradePrice', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.priceLevel3')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-
-                    disabled={!isEditable || saving}
-                    value={dto.priceLevel3}
-                    onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
-                    onBlur={(e) => handleBlur('priceLevel3', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.priceLevel4')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-
-                    disabled={!isEditable || saving}
-                    value={dto.priceLevel4}
-                    onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
-                    onBlur={(e) => handleBlur('priceLevel4', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Record Details Card - full width */}
-        <div className="card">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-          >
-            {t('products.recordDetails')}
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Product ID
+                  {t('products.columns.listPrice')}
                 </label>
-                <input className="input" disabled value={product.productId} style={{ fontSize: 12 }} />
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+
+                  disabled={!isEditable || saving}
+                  value={dto.listPrice}
+                  onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
+                  onBlur={(e) => handleBlur('listPrice', e.target.value)}
+                />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.source')}
+                  {t('products.columns.tradePrice')}
                 </label>
-                <input className="input" disabled value={product.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+
+                  disabled={!isEditable || saving}
+                  value={dto.tradePrice}
+                  onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
+                  onBlur={(e) => handleBlur('tradePrice', e.target.value)}
+                />
               </div>
-              {product.createdOn && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created
-                  </label>
-                  <input className="input" disabled value={new Date(product.createdOn).toLocaleDateString()} />
-                </div>
-              )}
-              {product.createdBy && (
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Created By
-                  </label>
-                  <input className="input" disabled value={product.createdBy} />
-                </div>
-              )}
-            </div>
-            {product.modifiedOn && (
-              <div style={{ maxWidth: '50%' }}>
+              <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Last Modified
+                  {t('products.columns.priceLevel3')}
                 </label>
-                <input className="input" disabled value={new Date(product.modifiedOn).toLocaleString()} />
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+
+                  disabled={!isEditable || saving}
+                  value={dto.priceLevel3}
+                  onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
+                  onBlur={(e) => handleBlur('priceLevel3', e.target.value)}
+                />
               </div>
-            )}
-            {isLegacy && (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                {t('common.legacyRecordImported')}
-              </p>
-            )}
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.priceLevel4')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+
+                  disabled={!isEditable || saving}
+                  value={dto.priceLevel4}
+                  onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
+                  onBlur={(e) => handleBlur('priceLevel4', e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.stdCost')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+
+                  disabled={!isEditable || saving}
+                  value={dto.standardCost}
+                  onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
+                  onBlur={(e) => handleBlur('standardCost', e.target.value)}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Notes Card - full width */}
-        <div className="card">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-          >
+        <div id="notes-section" className="card">
+          <h3 className="section-heading">
+             <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>
           <textarea
@@ -419,7 +352,33 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Activity Timeline */}
-        <ActivityTimeline events={product.events || []} />
+        <div id="activity-section" className="card">
+          <ActivityTimeline events={product.events || []} />
+        </div>
+
+        {/* Bottom Actions */}
+        {product.source === 'app' && (
+          <div className="flex justify-end mt-4">
+            {product.stateCode === 'archived' ? (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={unarchiveProduct}
+                disabled={saving}
+              >
+                {t('salesOrders.buttons.unarchive')}
+              </button>
+            ) : (
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                onClick={archiveProduct}
+                disabled={saving}
+              >
+                {t('salesOrders.buttons.archive')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
       </DetailsLayout>
     </Shell>

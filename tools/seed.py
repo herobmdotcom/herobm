@@ -130,11 +130,23 @@ def seed_inventory(dry_run: bool = False) -> None:
     print("  Seeded inventory_levels from mart_inventory")
 
 
+def seed_products(dry_run: bool = False) -> None:
+    """Products are now imported via dbt import models (make import-legacy)."""
+    print("  SKIP: Products are imported via 'make import-legacy' (dbt import models)")
+
+
+def seed_suppliers(dry_run: bool = False) -> None:
+    """Suppliers are now imported via dbt import models (make import-legacy)."""
+    print("  SKIP: Suppliers are imported via 'make import-legacy' (dbt import models)")
+
+
 def main() -> None:
     dry_run = "--dry-run" in sys.argv
     users_only = "--users" in sys.argv
     inventory_only = "--inventory" in sys.argv
-    seed_all = not users_only and not inventory_only
+    products_only = "--products" in sys.argv
+    suppliers_only = "--suppliers" in sys.argv
+    seed_all = not users_only and not inventory_only and not products_only and not suppliers_only
 
     if dry_run:
         print("Dry run mode -- no data will be written.\n")
@@ -147,9 +159,18 @@ def main() -> None:
         print("Seeding inventory...")
         seed_inventory(dry_run)
 
+    if seed_all or products_only:
+        print("Seeding products...")
+        seed_products(dry_run)
+
+    if seed_all or suppliers_only:
+        print("Seeding suppliers...")
+        seed_suppliers(dry_run)
+
     if not dry_run:
         print("\nDone.")
 
 
 if __name__ == "__main__":
     main()
+

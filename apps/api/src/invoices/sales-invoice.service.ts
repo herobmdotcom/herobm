@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, gte } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -517,7 +517,12 @@ export class SalesInvoiceService {
     }
 
     if (accountId) {
-      conditions.push(eq(salesOrders.customerId, accountId));
+      conditions.push(
+        or(
+          eq(salesOrders.customerId, accountId),
+          eq(accounts.erpnextId, accountId),
+        ),
+      );
     }
 
     const data = await this.db
@@ -539,10 +544,7 @@ export class SalesInvoiceService {
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(
-        accounts,
-        sql`${salesOrders.customerId} = ${accounts.accountId}::text OR ${salesOrders.customerId} = ${accounts.erpnextId}`,
-      )
+      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
       .where(and(...conditions))
       .orderBy(desc(salesInvoices.createdOn))
       .limit(limit);

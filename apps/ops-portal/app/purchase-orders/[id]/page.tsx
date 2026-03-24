@@ -14,6 +14,7 @@ import { computeLinePrice } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 
 interface OrderLine {
   salesOrderLineId: string;
@@ -379,7 +380,27 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         productId: p.productId,
         productDescription: p.name,
         quantity: '1',
-        pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
+        pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
+        discountPercentage: '0',
+        unitOfMeasure: 'EA',
+      });
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addBlankLine = async () => {
+    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    setSaving(true);
+    try {
+      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
+        productId: CUSTOM_LINE_ID,
+        productDescription: '',
+        quantity: '1',
+        pricePerUnit: '0.00',
         discountPercentage: '0',
         unitOfMeasure: 'EA',
       });
@@ -426,6 +447,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     (sum, l) => sum + parseFloat(l.tax || '0'), 0,
   );
 
+  const sections = {
+    details: { id: 'details-section', label: 'Details', show: true },
+    notes: { id: 'notes-section', label: 'Notes', show: true },
+    lines: { id: 'lines-section', label: 'Lines', show: true },
+    invoices: { id: 'invoices-section', label: 'Invoices', show: (order.stateCode === 'received' || order.stateCode === 'legacy') && invoices.length > 0 },
+    returns: { id: 'returns-section', label: 'Returns', show: (order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) },
+    activity: { id: 'activity-section', label: 'Activity', show: true },
+  };
+  const visibleSections = Object.values(sections).filter(s => s.show);
+
   return (
     <Shell>
       <DetailsLayout
@@ -438,6 +469,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             badges={<StateBadge state={order.stateCode as ValidState} />}
             actions={
               <>
+                <PageNav sections={visibleSections} />
                 <button
                   className="btn btn-secondary btn-sm"
                   onClick={copyOrder}
@@ -514,7 +546,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           />
         }
       >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
 
       {error && (
         <div
@@ -531,15 +563,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       )}
 
           {/* Order info card */}
-          <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
+          <div id="details-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">receipt_long</span>
               {tPurchase('orderDetails')}
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -601,45 +627,33 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
                   </p>
                 </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tCommon('notesCardHeading')}
+                  </label>
+                  <input
+                    className="input w-full"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    onBlur={saveHeader}
+                    disabled={!isHeaderEditable}
+                    placeholder={tCommon('notesCardPlaceholder')}
+                  />
+                </div>
               </div>
           </div>
 
-        {/* Notes Card */}
-        <div className="card">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{
-              color: 'var(--text-muted)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            {tCommon('notesCardHeading')}
-          </h3>
-          <textarea
-            className="input w-full"
-            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-            value={editNotes}
-            onChange={(e) => setEditNotes(e.target.value)}
-            onBlur={saveHeader}
-            disabled={!isHeaderEditable}
-            placeholder={tCommon('notesCardPlaceholder')}
-          />
-        </div>
-
         {/* Line items / Availability tabs */}
-        <div className="card">
+        <div id="lines-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-0">
               <button
-                className="text-sm font-semibold px-3 py-1.5 rounded-l-lg"
+                className="text-xs font-medium px-3 py-1.5 rounded-l-lg"
                 style={{
                   color: activeTab === 'lines' ? 'var(--accent)' : 'var(--text-muted)',
                   background: activeTab === 'lines' ? 'rgba(59,130,246,0.1)' : 'transparent',
                   border: '1px solid',
                   borderColor: activeTab === 'lines' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   cursor: 'pointer',
                 }}
                 onClick={() => setActiveTab('lines')}
@@ -647,28 +661,35 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {tPurchase('lineItems')}
               </button>
               <button
-                className="text-sm font-semibold px-3 py-1.5 rounded-r-lg"
+                className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
                 style={{
                   color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
                   background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
                   border: '1px solid',
                   borderColor: activeTab === 'availability' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
                   borderLeft: activeTab === 'availability' ? '1px solid rgba(59,130,246,0.3)' : 'none',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
                   cursor: 'pointer',
                 }}
                 onClick={() => setActiveTab('availability')}
               >
-                📦 Availability
+                {tPurchase('availability')}
               </button>
             </div>
             {isLinesEditable && activeTab === 'lines' && (
-              <ProductSearchInput
-                onSelect={addLineFromProduct}
-                placeholder="Add product… (search)"
-                style={{ width: 240 }}
-              />
+              <>
+                <ProductSearchInput
+                  onSelect={addLineFromProduct}
+                  placeholder="Add product… (search)"
+                  style={{ width: 240 }}
+                />
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={addBlankLine}
+                  disabled={saving}
+                >
+                  + {tPurchase('buttons.customLine')}
+                </button>
+              </>
             )}
           </div>
 
@@ -692,7 +713,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                       {line.productNumber || line.productId?.substring(0, 8) || '—'}
                     </td>
-                    <td>{line.productDescription || '—'}</td>
+                    <td>
+                      {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
+                        <input
+                          className="input"
+                          style={{ width: '100%', fontSize: 13 }}
+                          defaultValue={line.productDescription || ''}
+                          key={`desc-${line.salesOrderLineId}-${line.productDescription}`}
+                          onBlur={(e) => {
+                            if (e.target.value !== (line.productDescription || '')) {
+                              updateLine(line.salesOrderLineId, 'productDescription', e.target.value);
+                            }
+                          }}
+                          placeholder="Custom description..."
+                        />
+                      ) : (
+                        line.productDescription || '—'
+                      )}
+                    </td>
                     <td style={{ textAlign: 'right' }}>
                       <input
                         className="input"
@@ -762,6 +800,40 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </td>
                   </tr>
                 )}
+                {order.lines.length > 0 && (() => {
+                  const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+                  return (
+                    <>
+                      <tr style={{ borderTop: '2px solid var(--border)' }}>
+                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          {tCommon('subtotal')}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {formatAmount(subtotal, order.currencyCode || 'EUR')}
+                        </td>
+                        {isLinesEditable && <td></td>}
+                      </tr>
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                          {formatAmount(totalTax, order.currencyCode || 'EUR')}
+                        </td>
+                        {isLinesEditable && <td></td>}
+                      </tr>
+                      <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                          {tCommon('total')}
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                          {formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}
+                        </td>
+                        {isLinesEditable && <td></td>}
+                      </tr>
+                    </>
+                  );
+                })()}
               </tbody>
             </table>
           ) : (
@@ -876,11 +948,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
 
-        <OrderTotalsCard subtotal={subtotal} totalTax={totalTax} currencyCode={order.currencyCode || 'EUR'} />
-
         {/* Invoices section */}
         {(order.stateCode === 'received' || order.stateCode === 'legacy') && invoices.length > 0 && (
-            <div className="card">
+            <div id="invoices-section" className="card">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Supplier Bills
@@ -914,7 +984,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         {/* Returns section — only shown when returns exist or creating one */}
         {(order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
-          <div className="card">
+          <div id="returns-section" className="card">
             <h3
               className="text-sm font-semibold mb-4"
               style={{
@@ -1380,7 +1450,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         )}
 
         {/* Audit timeline */}
-        <ActivityTimeline events={order.events || []} />
+        <div id="activity-section" className="card">
+          <ActivityTimeline events={order.events || []} />
+        </div>
       </div>
       </DetailsLayout>
 

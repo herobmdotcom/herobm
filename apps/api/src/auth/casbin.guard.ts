@@ -16,21 +16,28 @@ import * as fs from 'fs';
  * survives a dist/ wipe from `nest start --watch`.
  */
 function resolveCasbinAsset(filename: string): string {
-  const distPath = path.join(__dirname, 'casbin', filename);
-  if (fs.existsSync(distPath)) return distPath;
-  // Fallback: walk up from dist/auth → project root → src/auth/casbin
-  const srcPath = path.resolve(
+  // 1. Normal dist/auth/casbin or src/auth/casbin (ts-node)
+  const dirPath = path.join(__dirname, 'casbin', filename);
+  if (fs.existsSync(dirPath)) return dirPath;
+
+  // 2. If tsc inferred root differently and compiled to dist/src/auth
+  // but nest-cli assets copied to dist/auth
+  const distAuthPath = path.join(
     __dirname,
     '..',
     '..',
-    'src',
     'auth',
     'casbin',
     filename,
   );
+  if (fs.existsSync(distAuthPath)) return distAuthPath;
+
+  // 3. Fallback to raw src/ directory based on process cwd (apps/api)
+  const srcPath = path.join(process.cwd(), 'src', 'auth', 'casbin', filename);
   if (fs.existsSync(srcPath)) return srcPath;
-  // If neither exists, return the dist path so the original error surfaces
-  return distPath;
+
+  // If neither exists, return the direct path so the original error surfaces with expected structure
+  return dirPath;
 }
 
 // Decorators for controllers

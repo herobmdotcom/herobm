@@ -7,8 +7,11 @@ import {
 import { eq } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
-import { products as martProducts } from '../drizzle/schema';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  products as coreProducts,
+} from '../drizzle/modbm-core-schema';
 import {
   findOrder,
   findOrderLine,
@@ -235,12 +238,12 @@ export class PickingService {
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         quantityPicked: salesOrderLineItems.quantityPicked,
-        productNumber: martProducts.productNumber,
+        productNumber: coreProducts.productNumber,
       })
       .from(salesOrderLineItems)
       .leftJoin(
-        martProducts,
-        eq(salesOrderLineItems.productId, martProducts.productId),
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);

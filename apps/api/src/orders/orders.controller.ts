@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -57,14 +57,8 @@ export class OrdersController {
 
   @Get(':id')
   @CasbinAction('read')
-  findOne(@Param('id') id: string, @Query('source') source?: string) {
-    if (source === 'app') {
-      return this.ordersWriteService.findOne(id);
-    }
-    if (source === 'abm') {
-      return this.ordersService.findAbmOrder(id);
-    }
-    return this.ordersService.findOne(id);
+  findOne(@Param('id') id: string) {
+    return this.ordersWriteService.findOne(id);
   }
 
   // -------------------------------------------------------------------------

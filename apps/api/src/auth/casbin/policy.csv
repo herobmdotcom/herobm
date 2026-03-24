@@ -12,8 +12,10 @@ p, viewer, receptions, read
 p, viewer, dashboard, read
 p, viewer, gst-categories, read
 p, viewer, settings, read
+p, viewer, report, read
 
 # admin — full access to everything
+p, admin, report, write
 p, admin, accounts, write
 p, admin, products, write
 p, admin, sales-orders, write

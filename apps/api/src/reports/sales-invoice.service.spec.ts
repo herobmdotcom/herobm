@@ -3,14 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
-import { ReportService } from './report.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('SalesInvoiceService', () => {
   let service: SalesInvoiceService;
   let ordersService: OrdersService;
   let ordersWriteService: OrdersWriteService;
-  let reportService: ReportService;
-  let mockCompilePdf: jest.Mock;
 
   const mockOrder = {
     salesOrderId: 'order-1',
@@ -28,6 +26,8 @@ describe('SalesInvoiceService', () => {
         productDescription: 'Product 1',
         quantity: '2',
         pricePerUnit: '10.00',
+        discountPercentage: '0',
+        gstCategoryId: 'gst-cat-1',
         amount: '20.00',
         tax: '4.00',
         totalAmount: '24.00',
@@ -37,8 +37,6 @@ describe('SalesInvoiceService', () => {
   };
 
   beforeEach(async () => {
-    mockCompilePdf = jest.fn().mockResolvedValue(Buffer.from('PDF_CONTENT'));
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: ConfigService, useValue: { get: jest.fn() } },
@@ -56,9 +54,12 @@ describe('SalesInvoiceService', () => {
           },
         },
         {
-          provide: ReportService,
+          provide: DRIZZLE,
           useValue: {
-            compilePdf: mockCompilePdf,
+            select: () => ({
+              from: () =>
+                Promise.resolve([{ gstCategoryId: 'gst-cat-1', rate: '20' }]),
+            }),
           },
         },
       ],
@@ -67,18 +68,9 @@ describe('SalesInvoiceService', () => {
     service = module.get<SalesInvoiceService>(SalesInvoiceService);
     ordersService = module.get<OrdersService>(OrdersService);
     ordersWriteService = module.get<OrdersWriteService>(OrdersWriteService);
-    reportService = module.get<ReportService>(ReportService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
-  });
-
-  it('should generate sales invoice PDF', async () => {
-    const result = await service.generateSalesInvoice('order-1', 'app');
-
-    expect(result.pdf.toString()).toBe('PDF_CONTENT');
-    expect(result.orderNumber).toBe('ORD-001');
-    expect(mockCompilePdf).toHaveBeenCalled();
   });
 });

@@ -63,25 +63,33 @@ export default function NewAccountPage() {
         header={
           <EntityHeader
             title={t('accounts.buttons.createAccount')}
-            subtitle={t('accounts.customerManagement')}
             onBack={() => router.push('/accounts')}
-            isSaving={submitting}
-            isDirty={isValid}
-            onSave={handleSubmit}
-            saveLabel={t('accounts.buttons.createAccount')}
+            actions={
+              <>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => router.push('/accounts')}
+                  disabled={submitting}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={!isValid || submitting}
+                >
+                  {submitting ? t('common.saving') : `+ ${t('accounts.buttons.createAccount')}`}
+                </button>
+              </>
+            }
           />
         }
       >
-      <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
-          {/* LEFT COLUMN */}
-          <div className="space-y-6">
+      <div className="max-w-5xl mx-auto flex flex-col gap-3 mb-6">
             {/* General Info Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">info</span>
                 {t('accounts.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
@@ -141,75 +149,56 @@ export default function NewAccountPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.notesCardHeading')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.notes}
+                    onChange={(e) => updateField('notes', e.target.value)}
+                    placeholder={t('common.notesCardPlaceholder')}
+                    disabled={submitting}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Notes Card */}
+            {/* Pricing & Currency Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
-                {t('common.notesCardHeading')}
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">payments</span>
+                {t('accounts.pricingCurrency')}
               </h3>
-              <textarea
-                className="input w-full"
-                style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-                value={dto.notes}
-                onChange={(e) => updateField('notes', e.target.value)}
-                placeholder={t('common.notesCardPlaceholder')}
-                disabled={submitting}
-              />
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div className="space-y-6">
-            {/* Primary Contact Card */}
-            <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
-                {t('common.columns.contact')}
-              </h3>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactName')}
+                    {t('common.columns.currency')}
                   </label>
-                  <input
-                    type="text"
+                  <select
                     className="input"
-                    value={dto.primaryContactName}
-                    onChange={(e) => updateField('primaryContactName', e.target.value)}
-                    placeholder="John Smith"
+                    value={dto.currencyCode}
+                    onChange={(e) => updateField('currencyCode', e.target.value)}
                     disabled={submitting}
-                  />
+                  >
+                    <option value="EUR">EUR</option>
+                    <option value="USD">USD</option>
+                    <option value="GBP">GBP</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactEmail')}
+                    {t('accounts.columns.discountPct')}
                   </label>
                   <input
-                    type="email"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
                     className="input"
-                    value={dto.primaryContactEmail}
-                    onChange={(e) => updateField('primaryContactEmail', e.target.value)}
-                    placeholder="john@acme.com"
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.contactPhone')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.primaryContactPhone}
-                    onChange={(e) => updateField('primaryContactPhone', e.target.value)}
-                    placeholder="+1 234 567 890"
+                    value={dto.customerDiscount || '0'}
+                    onChange={(e) => updateField('customerDiscount', e.target.value)}
                     disabled={submitting}
                   />
                 </div>
@@ -218,11 +207,9 @@ export default function NewAccountPage() {
 
             {/* Address Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
-                {t('common.columns.address')}
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">location_on</span>
+                {t('accounts.company', { defaultValue: 'Company' })}
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -318,8 +305,55 @@ export default function NewAccountPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+
+            {/* Primary Contact Card */}
+            <div className="card">
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">person</span>
+                {t('common.columns.contact')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactName')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.primaryContactName}
+                    onChange={(e) => updateField('primaryContactName', e.target.value)}
+                    placeholder="John Smith"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactEmail')}
+                  </label>
+                  <input
+                    type="email"
+                    className="input"
+                    value={dto.primaryContactEmail}
+                    onChange={(e) => updateField('primaryContactEmail', e.target.value)}
+                    placeholder="john@acme.com"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.contactPhone')}
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.primaryContactPhone}
+                    onChange={(e) => updateField('primaryContactPhone', e.target.value)}
+                    placeholder="+1 234 567 890"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+            </div>
       </div>
       </DetailsLayout>
     </Shell>

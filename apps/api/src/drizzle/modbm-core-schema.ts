@@ -8,6 +8,7 @@ import {
   date,
   uuid,
   jsonb,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -53,7 +54,7 @@ export const salesOrders = modbmCore.table('sales_orders', {
   salesOrderId: uuid('sales_order_id').primaryKey().defaultRandom(),
   orderNumber: text('order_number').unique().notNull(),
   name: text('name'),
-  customerId: text('customer_id'),
+  customerId: uuid('customer_id').references(() => accounts.accountId),
   customerOrderNumber: text('customer_order_number'),
   stateCode: text('state_code').notNull().default('draft'),
   customerDiscount: numeric('customer_discount').default('0'),
@@ -63,6 +64,8 @@ export const salesOrders = modbmCore.table('sales_orders', {
   currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
   customFields: jsonb('custom_fields'),
+  sourceId: text('source_id').unique(),
+  source: text('source').notNull().default('app'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -77,7 +80,7 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
     .notNull()
     .references(() => salesOrders.salesOrderId),
   lineNumber: integer('line_number').notNull(),
-  productId: text('product_id'),
+  productId: uuid('product_id').references(() => products.productId),
   productDescription: text('product_description'),
   quantity: numeric('quantity').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
@@ -182,7 +185,7 @@ export const purchaseOrders = modbmCore.table('purchase_orders', {
   purchaseOrderId: uuid('purchase_order_id').primaryKey().defaultRandom(),
   orderNumber: text('order_number').unique().notNull(),
   name: text('name'),
-  vendorId: text('vendor_id'),
+  vendorId: uuid('vendor_id').references(() => suppliers.vendorId),
   invoiceNumber: text('invoice_number'),
   stateCode: text('state_code').notNull().default('draft'),
   currencyCode: text('currency_code').notNull().default('EUR'),
@@ -204,7 +207,7 @@ export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
     .notNull()
     .references(() => purchaseOrders.purchaseOrderId),
   lineNumber: integer('line_number').notNull(),
-  productId: text('product_id'),
+  productId: uuid('product_id').references(() => products.productId),
   productDescription: text('product_description'),
   quantity: numeric('quantity').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
@@ -300,6 +303,7 @@ export const products = modbmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
+  productGroupName: text('product_group_name'),
   barcode: text('barcode'),
   listPrice: numeric('list_price').default('0'),
   standardCost: numeric('standard_cost').default('0'),
@@ -308,8 +312,12 @@ export const products = modbmCore.table('products', {
   priceLevel4: numeric('price_level_4').default('0'),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
   quantityOnHand: numeric('quantity_on_hand').default('0'),
+  gstCategory: text('gst_category'),
+  scNumber: text('sc_number'),
   stateCode: text('state_code').notNull().default('active'),
   notes: text('notes'),
+  sourceId: text('source_id').unique(),
+  source: text('source').notNull().default('app'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -354,6 +362,9 @@ export const accounts = modbmCore.table('accounts', {
   currencyCode: text('currency_code').notNull().default('EUR'),
   customerDiscount: numeric('customer_discount').default('0'),
   erpnextId: text('erpnext_id'),
+  sourceId: text('source_id').unique(),
+  source: text('source').notNull().default('app'),
+  priceTier: text('price_tier'),
   notes: text('notes'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -381,6 +392,7 @@ export const suppliers = modbmCore.table('suppliers', {
   vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
   vendorNumber: text('vendor_number').unique().notNull(),
   name: text('name').notNull(),
+  vendorGroup: text('vendor_group'),
   address1Line1: text('address1_line1'),
   address1Line2: text('address1_line2'),
   address1City: text('address1_city'),
@@ -395,6 +407,8 @@ export const suppliers = modbmCore.table('suppliers', {
   stateCode: text('state_code').notNull().default('active'),
   erpnextId: text('erpnext_id'),
   notes: text('notes'),
+  sourceId: text('source_id').unique(),
+  source: text('source').notNull().default('app'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -581,3 +595,45 @@ export const glSettings = modbmCore.table('gl_settings', {
   ),
   baseCurrency: text('base_currency').notNull().default('AUD'),
 });
+
+// ===========================================================================
+// DYNAMIC REPORTING
+// ===========================================================================
+
+export const reports = modbmCore.table('reports', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: text('slug').unique().notNull(),
+  name: text('name').notNull(),
+  template: text('template').notNull(),
+  mockData: jsonb('mock_data').$type<Record<string, any>>(),
+  outputNamePattern: text('output_name_pattern').default('Report.pdf'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const reportContexts = modbmCore.table(
+  'report_contexts',
+  {
+    reportId: uuid('report_id')
+      .references(() => reports.id, { onDelete: 'cascade' })
+      .notNull(),
+    context: text('context').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.reportId, t.context] }),
+  }),
+);
+
+export const reportHookAssignments = modbmCore.table(
+  'report_hook_assignments',
+  {
+    hookSlug: text('hook_slug').primaryKey(),
+    reportId: uuid('report_id')
+      .references(() => reports.id, { onDelete: 'cascade' })
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+);

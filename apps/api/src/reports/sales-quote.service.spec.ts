@@ -3,14 +3,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SalesQuoteService } from './sales-quote.service';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
-import { ReportService } from './report.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('SalesQuoteService', () => {
   let service: SalesQuoteService;
   let ordersService: OrdersService;
   let ordersWriteService: OrdersWriteService;
-  let reportService: ReportService;
-  let mockCompilePdf: jest.Mock;
 
   const mockOrder = {
     salesOrderId: 'order-1',
@@ -28,6 +26,8 @@ describe('SalesQuoteService', () => {
         productDescription: 'Product 1',
         quantity: '2',
         pricePerUnit: '10.00',
+        discountPercentage: '0',
+        gstCategoryId: 'gst-cat-1',
         amount: '20.00',
         tax: '4.00',
         totalAmount: '24.00',
@@ -37,8 +37,6 @@ describe('SalesQuoteService', () => {
   };
 
   beforeEach(async () => {
-    mockCompilePdf = jest.fn().mockResolvedValue(Buffer.from('PDF_CONTENT'));
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: ConfigService, useValue: { get: jest.fn() } },
@@ -56,9 +54,12 @@ describe('SalesQuoteService', () => {
           },
         },
         {
-          provide: ReportService,
+          provide: DRIZZLE,
           useValue: {
-            compilePdf: mockCompilePdf,
+            select: () => ({
+              from: () =>
+                Promise.resolve([{ gstCategoryId: 'gst-cat-1', rate: '20' }]),
+            }),
           },
         },
       ],
@@ -67,7 +68,6 @@ describe('SalesQuoteService', () => {
     service = module.get<SalesQuoteService>(SalesQuoteService);
     ordersService = module.get<OrdersService>(OrdersService);
     ordersWriteService = module.get<OrdersWriteService>(OrdersWriteService);
-    reportService = module.get<ReportService>(ReportService);
   });
 
   it('should be defined', () => {
@@ -83,13 +83,5 @@ describe('SalesQuoteService', () => {
     expect(data.summary.subtotal).toBe(20);
     expect(data.summary.totalTax).toBe(4);
     expect(data.summary.totalAmount).toBe(24);
-  });
-
-  it('should generate sales quote PDF', async () => {
-    const result = await service.generateSalesQuote('order-1', 'app');
-
-    expect(result.pdf.toString()).toBe('PDF_CONTENT');
-    expect(result.orderNumber).toBe('ORD-001');
-    expect(mockCompilePdf).toHaveBeenCalled();
   });
 });

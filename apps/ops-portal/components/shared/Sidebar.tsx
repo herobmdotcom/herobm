@@ -39,10 +39,15 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
       style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
     >
       <div className="px-5 py-5">
-        <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
-          {title}
-        </h1>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            H
+          </div>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
+            {title}
+          </h1>
+        </div>
+        <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
           {subtitle}
         </p>
       </div>

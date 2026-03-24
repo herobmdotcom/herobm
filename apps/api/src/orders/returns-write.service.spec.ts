@@ -58,14 +58,14 @@ const INVOICED_ORDER = {
   salesOrderId: 'order-001',
   orderNumber: 'ORD-20260315-0001',
   stateCode: 'invoiced',
-  customerId: 'CUST-001',
+  customerId: 'c0000000-0000-0000-0000-000000000001',
 };
 
 const DRAFT_ORDER = {
   salesOrderId: 'order-002',
   orderNumber: 'ORD-20260315-0002',
   stateCode: 'draft',
-  customerId: 'CUST-001',
+  customerId: 'c0000000-0000-0000-0000-000000000001',
 };
 
 const ORDER_LINE = {
@@ -157,7 +157,10 @@ describe('ReturnsWriteService', () => {
 
     mockGlService = {
       getSettings: jest.fn().mockResolvedValue(null),
-      postJournalEntry: jest.fn().mockResolvedValue({ journalEntryId: 'je-001', entryNumber: 'JE-20260323-0001' }),
+      postJournalEntry: jest.fn().mockResolvedValue({
+        journalEntryId: 'je-001',
+        entryNumber: 'JE-20260323-0001',
+      }),
     };
 
     mockGstService = {
@@ -430,7 +433,7 @@ describe('ReturnsWriteService', () => {
   // postCreditNoteGl is private, tested indirectly through changeReturnState.
   // After the transaction, the method makes additional DB calls:
   //   1. glAccounts select (resolve account codes from settings IDs)
-  //   2. sharedFindOrder (fetch order for customer info)  
+  //   2. sharedFindOrder (fetch order for customer info)
   //   3. salesOrderReturnLines select (fetch return lines)
   //   4. salesOrderLineItems select per return line (fetch pricing + GST)
   //   5. outbox insert (write credit_note_posted event)
@@ -486,7 +489,8 @@ describe('ReturnsWriteService', () => {
       orderLine?: any;
       gstRate?: string;
     }) {
-      const settings = opts.settings !== undefined ? opts.settings : GL_SETTINGS;
+      const settings =
+        opts.settings !== undefined ? opts.settings : GL_SETTINGS;
       const glAccountRows = opts.glAccountRows ?? GL_ACCOUNT_ROWS;
       const returnLines = opts.returnLines ?? [RETURN_LINE_WITH_FEE];
       const orderLine = opts.orderLine ?? ORDER_LINE_WITH_GST;
@@ -506,10 +510,10 @@ describe('ReturnsWriteService', () => {
       let selectCallCount = 0;
       const selectResponses: Record<number, any[]> = {
         1: [{ ...MOCK_RETURN, stateCode: 'confirmed' }], // findReturn
-        2: glAccountRows,                                   // GL account codes
-        3: [INVOICED_ORDER],                               // sharedFindOrder
-        4: returnLines,                                     // return lines
-        5: [orderLine],                                    // order line (1st return line)
+        2: glAccountRows, // GL account codes
+        3: [INVOICED_ORDER], // sharedFindOrder
+        4: returnLines, // return lines
+        5: [orderLine], // order line (1st return line)
       };
 
       // Add more order line lookups for additional return lines
@@ -580,7 +584,7 @@ describe('ReturnsWriteService', () => {
       expect(arLine.debit).toBe(0);
       expect(arLine.credit).toBe(265); // 250 + 25 - 10
       expect(arLine.partyType).toBe('customer');
-      expect(arLine.partyId).toBe('CUST-001');
+      expect(arLine.partyId).toBe('c0000000-0000-0000-0000-000000000001');
 
       // GST debit
       const taxLine = glLines.find((l: any) => l.accountCode === '2200');
@@ -596,7 +600,10 @@ describe('ReturnsWriteService', () => {
 
       // Balance invariant: total debits = total credits
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      const totalCredit = glLines.reduce(
+        (s: number, l: any) => s + l.credit,
+        0,
+      );
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
@@ -623,7 +630,10 @@ describe('ReturnsWriteService', () => {
 
       // Balance invariant
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      const totalCredit = glLines.reduce(
+        (s: number, l: any) => s + l.credit,
+        0,
+      );
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
@@ -647,7 +657,10 @@ describe('ReturnsWriteService', () => {
 
       // Balance invariant
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
+      const totalCredit = glLines.reduce(
+        (s: number, l: any) => s + l.credit,
+        0,
+      );
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
@@ -694,12 +707,15 @@ describe('ReturnsWriteService', () => {
 
       const insertCall = mockDb.insert.mock.calls[0];
       // The insert is into the outbox table — we verify via .values()
-      const valuesCall = mockDb.insert.mock.results[0].value.values.mock.calls[0][0];
+      const valuesCall =
+        mockDb.insert.mock.results[0].value.values.mock.calls[0][0];
 
       expect(valuesCall.aggregateType).toBe('sales_credit_note');
       expect(valuesCall.eventType).toBe('credit_note_posted');
       expect(valuesCall.payload.returnId).toBe('ret-001');
-      expect(valuesCall.payload.customerId).toBe('CUST-001');
+      expect(valuesCall.payload.customerId).toBe(
+        'c0000000-0000-0000-0000-000000000001',
+      );
       expect(valuesCall.payload.totalCredit).toBe(250);
       expect(valuesCall.payload.totalTax).toBe(25);
       expect(valuesCall.payload.totalFees).toBe(10);

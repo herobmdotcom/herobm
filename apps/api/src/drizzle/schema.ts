@@ -44,28 +44,6 @@ export const accounts = marts.table('mart_accounts', {
 });
 
 // ---------------------------------------------------------------------------
-// mart_products  (CDM: Product)
-// ---------------------------------------------------------------------------
-export const products = marts.table('mart_products', {
-  productId: text('product_id').primaryKey(),
-  productNumber: text('product_number'),
-  name: text('name'),
-  productGroupName: text('product_group_name'),
-  defaultVendorId: text('default_vendor_id'),
-  defaultVendorName: text('default_vendor_name'),
-  standardCost: numeric('standard_cost'),
-  listPrice: numeric('list_price'),
-  tradePrice: numeric('trade_price'),
-  priceLevel3: numeric('price_level_3'),
-  priceLevel4: numeric('price_level_4'),
-  barcode: text('barcode'),
-  stateCode: text('state_code'),
-  gstCategory: text('gst_category'),
-  scNumber: text('sc_number'),
-  createdOn: timestamp('created_on'),
-});
-
-// ---------------------------------------------------------------------------
 // mart_inventory  (Schema.org: InventoryLevel)
 // ---------------------------------------------------------------------------
 export const inventory = marts.table('mart_inventory', {
@@ -139,28 +117,6 @@ export const salesOrderLines = marts.table('mart_sales_order_lines', {
   isFullyDelivered: boolean('is_fully_delivered'),
   isFullyInvoiced: boolean('is_fully_invoiced'),
   documentTotalIncTax: numeric('document_total_inc_tax'),
-});
-
-// ---------------------------------------------------------------------------
-// mart_suppliers  (CDM: Vendor)
-// ---------------------------------------------------------------------------
-export const suppliers = marts.table('mart_suppliers', {
-  vendorId: text('vendor_id').primaryKey(),
-  vendorNumber: text('vendor_number'),
-  name: text('name'),
-  vendorGroup: text('vendor_group'),
-  address1Line1: text('address1_line1'),
-  address1Line2: text('address1_line2'),
-  address1City: text('address1_city'),
-  address1StateOrProvince: text('address1_state_or_province'),
-  address1PostalCode: text('address1_postal_code'),
-  address1Country: text('address1_country'),
-  telephone1: text('telephone1'),
-  fax: text('fax'),
-  emailAddress1: text('email_address1'),
-  stateCode: text('state_code'),
-  createdOn: timestamp('created_on'),
-  productCount: integer('product_count'),
 });
 
 // ---------------------------------------------------------------------------

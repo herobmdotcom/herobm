@@ -12,11 +12,9 @@ import {
   purchaseOrderLineItems,
   purchaseOrderEvents,
   outbox,
+  suppliers as coreSuppliers,
 } from '../drizzle/modbm-core-schema';
-import {
-  purchaseOrderLines as abmPurchaseOrderLines,
-  suppliers,
-} from '../drizzle/schema';
+import { purchaseOrderLines as abmPurchaseOrderLines } from '../drizzle/schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { PaginationQuery, parsePagination } from '../common/pagination';
@@ -180,7 +178,7 @@ export class PurchaseOrdersService {
         id: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
         name: purchaseOrders.name,
-        vendorName: suppliers.name,
+        vendorName: coreSuppliers.name,
         invoiceNumber: purchaseOrders.invoiceNumber,
         stateCode: purchaseOrders.stateCode,
         source: sql<string>`'app'`.as('source'),
@@ -189,7 +187,10 @@ export class PurchaseOrdersService {
         currencyCode: purchaseOrders.currencyCode,
       })
       .from(purchaseOrders)
-      .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
       .$dynamic();
 
     const conditions = [];
@@ -199,7 +200,7 @@ export class PurchaseOrdersService {
         or(
           ilike(purchaseOrders.orderNumber, searchTerm),
           ilike(purchaseOrders.name, searchTerm),
-          ilike(suppliers.name, searchTerm),
+          ilike(coreSuppliers.name, searchTerm),
         ),
       );
     }

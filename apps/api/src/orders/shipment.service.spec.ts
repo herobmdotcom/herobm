@@ -59,7 +59,7 @@ const PICKING_ORDER = {
   salesOrderId: 'order-001',
   orderNumber: 'ORD-20260316-0001',
   stateCode: 'picking',
-  customerId: 'CUST-001',
+  customerId: 'c0000000-0000-0000-0000-000000000001',
 };
 
 const ORDER_LINE = {

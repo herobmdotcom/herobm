@@ -15,6 +15,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 
 import PickingSection from '@/components/shared/PickingSection';
+import PageNav from '@/components/shared/PageNav';
 
 import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
@@ -151,7 +152,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct,
+        updateLine, removeLine, addLineFromProduct, addBlankLine,
         loadOrder, loadReturns, loadInvoices,
     } = o;
 
@@ -181,31 +182,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         actions={
                             <>
                                 {/* Section quick nav */}
-                                <div
-                                    className="flex items-center gap-0.5 mr-5 px-1.5 rounded-md self-center"
-                                    style={{ border: '1px solid var(--accent)', height: 32 }}
-                                >
-                                    {visibleSections.map((section) => (
-                                        <button
-                                            key={section.id}
-                                            className="text-[11px] px-1.5 py-0.5 rounded transition-colors"
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: 'var(--text-muted)',
-                                                cursor: 'pointer',
-                                            }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(0,107,92,0.08)'; }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
-                                            onClick={() => {
-                                                const el = document.getElementById(section.id);
-                                                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                            }}
-                                        >
-                                            {section.label}
-                                        </button>
-                                    ))}
-                                </div>
+                                <PageNav sections={visibleSections} />
 
 
                                 {headerDirty && isOrderDetailsEditable && (
@@ -271,17 +248,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
             <div className="flex flex-col gap-3">
                     {/* Order info card */}
-                    <div id="details-section" className="card !border-none col-span-2" style={{ paddingBottom: 6 }}>
+                    <div id="details-section" className="card col-span-2">
                         <div className="flex items-center justify-between mb-4">
-                            <h3
-                                className="text-sm font-semibold flex items-center gap-2 m-0"
-                                style={{
-                                    color: 'var(--text-muted)',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em',
-                                }}
-                            >
-                                <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>receipt_long</span>
+                            <h3 className="section-heading !mb-0">
+                                <span className="material-symbols-outlined">receipt_long</span>
                                 {tSales('orderDetails')}
                             </h3>
                             <div className="flex items-center gap-2">
@@ -291,7 +261,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         onClick={async () => {
                                             try {
                                                 const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/sales-orders/${id}/sales-quote-report?source=${source}`);
+                                                const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-quote/run?id=${id}&context=sales-order`, { method: 'POST' });
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
                                             } catch (err) {
@@ -427,7 +397,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     </div>
 
                 {/* Line items / Availability tabs */}
-                <div id="lines-section" className="card !border-none" style={{ paddingTop: 6 }}>
+                <div id="lines-section" className="card">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex gap-0">
                             <button
@@ -459,11 +429,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             </button>
                         </div>
                         {isOrderLinesEditable && activeTab === 'lines' && (
-                            <ProductSearchInput
-                                onSelect={addLineFromProduct}
-                                placeholder={tSales('placeholders.searchProduct')}
-                                style={{ width: 240 }}
-                            />
+                            <>
+                                <ProductSearchInput
+                                    onSelect={addLineFromProduct}
+                                    placeholder={tSales('placeholders.searchProduct')}
+                                    style={{ width: 240 }}
+                                />
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={addBlankLine}
+                                    disabled={saving}
+                                >
+                                    + {tSales('buttons.customLine')}
+                                </button>
+                            </>
                         )}
                     </div>
 
@@ -489,7 +468,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
                                             {line.productNumber || line.productId?.substring(0, 8) || '—'}
                                         </td>
-                                        <td>{line.productDescription || '—'}</td>
+                                        <td>
+                                            {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isOrderLinesEditable ? (
+                                                <input
+                                                    className="input"
+                                                    style={{ width: '100%', fontSize: 13 }}
+                                                    defaultValue={line.productDescription || ''}
+                                                    key={`desc-${line.salesOrderLineId}-${line.productDescription}`}
+                                                    onBlur={(e) => {
+                                                        if (e.target.value !== (line.productDescription || '')) {
+                                                            updateLine(line.salesOrderLineId, 'productDescription', e.target.value);
+                                                        }
+                                                    }}
+                                                    placeholder="Custom description..."
+                                                />
+                                            ) : (
+                                                line.productDescription || '—'
+                                            )}
+                                        </td>
                                         {isOrderLinesEditable ? (
                                             <>
                                                 <td style={{ textAlign: 'right' }}>
@@ -812,6 +808,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         loadReturns={loadReturns}
                         loadOrder={loadOrder}
                         pickingSummary={pickingSummary}
+                        gstCategories={gstCategories}
                     />
                     </div>
                 )}
@@ -819,7 +816,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                 {/* Audit timeline — only for app orders */}
                 {sections.activity.show && (
-                    <div id="activity-section">
+                    <div id="activity-section" className="card">
                         <ActivityTimeline events={order.events || []} />
                     </div>
                 )}

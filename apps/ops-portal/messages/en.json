@@ -4,54 +4,88 @@
     "subtitle": "Manage customer accounts",
     "totalAccounts": "TOTAL ACCOUNTS",
     "generalInfo": "General Information",
+    "company": "Company",
     "pricingCurrency": "Pricing & Currency",
     "columns": {
       "accountId": "Account ID",
       "accountNumber": "Account Number",
-      "discountPct": "Discount %"
-    }
+      "discountPct": "Customer Discount %",
+      "accountType": "Type"
+    },
+    "buttons": {
+      "createAccount": "Create Account"
+    },
+    "placeholders": {
+      "searchAccounts": "Search by name, account number, or email…"
+    },
+    "financials": "Financials",
+    "management": "Account Management",
+    "customerManagement": "Customer Management",
+    "overview": "Overview",
+    "orders": "Orders",
+    "invoices": "Invoices"
   },
   "suppliers": {
     "title": "Suppliers",
-    "subtitle": "Manage vendor accounts and terms",
+    "subtitle": "Manage supplier records",
     "buttons": {
-      "createSupplier": "Create Supplier",
+      "createSupplier": "+ Create Supplier",
       "editSupplier": "Edit Supplier",
       "save": "Save Supplier"
     },
     "placeholders": {
-      "searchSuppliers": "Search suppliers..."
+      "searchSuppliers": "Search suppliers…",
+      "vendorNumber": "e.g. VEND-001",
+      "name": "e.g. ACME Corp",
+      "paymentTerms": "e.g. NET30",
+      "email": "vendor@example.com",
+      "phone": "+1 234 567 890",
+      "address": "123 Main St",
+      "city": "City",
+      "country": "Country",
+      "notes": "Key relationship details, preferred delivery methods, etc."
     },
     "columns": {
-      "vendorNumber": "Vendor ID",
+      "vendorNumber": "Vendor #",
       "paymentTerms": "Payment Terms",
-      "productCount": "Products"
+      "productCount": "Products",
+      "name": "Name"
     },
     "generalInfo": "General Information",
     "labels": {
       "vendorName": "Vendor Name",
       "email": "Email Address",
       "phone": "Phone Number"
-    }
+    },
+    "paymentCurrency": "Payment & Currency",
+    "management": "Vendor Management",
+    "contactLocation": "Contact & Location",
+    "recordDetails": "Record Details",
+    "financials": "Financials",
+    "paymentTerms": "Payment Terms"
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
-    "subtitle": "Manage supplier orders",
+    "subtitle": "Manage purchase orders",
     "buttons": {
-      "createPO": "Create PO",
-      "copyOrder": "Copy Order",
-      "createReturn": "Create Return",
-      "save": "Save"
+      "createPO": "+ Create PO",
+      "copyOrder": "📋 Copy Order",
+      "createReturn": "↩ Create Return",
+      "save": "💾 Save",
+      "customLine": "Custom Line"
     },
     "placeholders": {
-      "searchOrders": "Search orders...",
-      "invoiceNumber": "Invoice number...",
-      "orderName": "Order name...",
-      "notes": "Notes..."
+      "searchOrders": "Search purchase orders…",
+      "invoiceNumber": "Supplier invoice reference",
+      "orderName": "Order name",
+      "notes": "Internal notes",
+      "searchProduct": "Add product… (search)",
+      "searchSuppliers": "Search suppliers…",
+      "reason": "Reason"
     },
     "labels": {
       "supplier": "Supplier",
-      "invoiceNumber": "Invoice Number",
+      "invoiceNumber": "Invoice #",
       "orderName": "Order Name",
       "created": "Created",
       "notes": "Notes"
@@ -70,27 +104,37 @@
       "reserved": "Reserved",
       "available": "Available",
       "status": "Status",
-      "qtyReturned": "Returned",
+      "qtyReturned": "Qty Returned",
       "reason": "Reason",
       "fee": "Fee"
     },
     "orderNotFound": "Order not found",
-    "backToOrders": "Back to orders",
-    "untitledOrder": "Untitled Order",
+    "backToOrders": "← Back to Orders",
+    "untitledOrder": "Untitled order",
     "unnamedCustomer": "Unnamed customer",
     "orderDetails": "Order Details",
-    "lineItems": "Line Items",
-    "noLineItems": "No line items added.",
-    "noLineItemsShort": "No items added.",
-    "loadingInventory": "Loading inventory data...",
-    "noInventoryData": "No inventory data available for this line.",
-    "newReturn": "New Return"
+    "lineItems": "Line items",
+    "noLineItems": "No line items — use the search above to add products",
+    "noLineItemsShort": "No line items",
+    "loadingInventory": "Loading inventory data…",
+    "noInventoryData": "No inventory data",
+    "newReturn": "New Return",
+    "availability": "Availability",
+    "returnsHeading": "Returns",
+    "noReturns": "No returns",
+    "noReturnLines": "No return lines",
+    "loadingReturns": "Loading returns…",
+    "returns": {
+      "totalCredit": "Total Credit",
+      "totalFees": "Total Fees",
+      "netCredit": "Net Credit"
+    }
   },
   "salesOrders": {
     "title": "Sales Orders",
     "subtitle": "Manage customer orders and quotes",
     "buttons": {
-      "createOrder": "Create Order",
+      "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
       "createInvoice": "Create Invoice",
       "copyOrder": "Copy Order",
@@ -98,19 +142,26 @@
       "archive": "Archive",
       "unarchive": "Unarchive",
       "save": "Save",
-      "removeLine": "Remove Line"
+      "removeLine": "Remove line",
+      "saveReturn": "Create Return",
+      "removeReturnLine": "Remove return line",
+      "customLine": "Custom Line"
     },
     "placeholders": {
-      "searchOrders": "Search orders...",
-      "orderName": "Order name...",
-      "customerPO": "Customer PO...",
-      "notes": "Notes...",
-      "searchProduct": "Search products..."
+      "searchOrders": "Search by order number, customer, or PO…",
+      "orderName": "Order name",
+      "customerPO": "Customer purchase order",
+      "notes": "Internal notes",
+      "searchProduct": "Add product… (search)",
+      "returnNotes": "Return reason / notes",
+      "reason": "Reason",
+      "searchCustomers": "Search customers…",
+      "zero": "0"
     },
     "labels": {
       "customer": "Customer",
       "orderName": "Order Name",
-      "customerPO": "Customer PO",
+      "customerPO": "Customer PO #",
       "created": "Created",
       "notes": "Notes"
     },
@@ -120,8 +171,8 @@
       "description": "Description",
       "qty": "Qty",
       "unitPrice": "Unit Price",
-      "discountPct": "Discount %",
-      "gst": "Tax",
+      "discountPct": "Disc %",
+      "gst": "GST",
       "amount": "Amount",
       "ordered": "Ordered",
       "location": "Location",
@@ -129,18 +180,46 @@
       "committed": "Committed",
       "reserved": "Reserved",
       "available": "Available",
-      "status": "Status"
+      "status": "Status",
+      "originalQty": "Original Qty",
+      "returnQty": "Return Qty",
+      "reason": "Reason",
+      "fee": "Fee",
+      "qtyReturned": "Qty Returned",
+      "invoiceNumber": "Invoice No.",
+      "orderNumber": "Order No.",
+      "customer": "Customer",
+      "date": "Date",
+      "state": "State"
     },
-    "archivedBannerTitle": "Archived",
-    "archivedBannerBody": "This order has been archived and is read-only.",
+    "archivedBannerTitle": "This record is archived.",
+    "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
     "orderNotFound": "Order not found",
-    "backToOrders": "Back to orders",
-    "untitledOrder": "Untitled Order",
+    "backToOrders": "← Back to Orders",
+    "untitledOrder": "Untitled order",
     "orderDetails": "Order Details",
-    "lineItems": "Line Items",
-    "availability": "Inventory Availability",
-    "noLineItems": "No line items added.",
-    "loadingInventory": "Loading inventory data..."
+    "lineItems": "Line items",
+    "availability": "Availability",
+    "noLineItems": "No line items — use the search above to add products",
+    "loadingInventory": "Loading inventory data…",
+    "unnamedCustomer": "Unnamed customer",
+    "returnsHeading": "Returns",
+    "noLineItemsShort": "No products ordered yet.",
+    "noReturnLines": "No return lines",
+    "newReturn": "New Return",
+    "noInventoryData": "No inventory data",
+    "loadingReturns": "Loading returns…",
+    "noReturns": "No returns for this order.",
+    "discountPercent": "{disc}% disc",
+    "invoicesCardHeading": "Sales Invoices",
+    "returns": {
+      "totalCredit": "Total Credit",
+      "totalFees": "Total Fees",
+      "netCredit": "Net Credit"
+    },
+    "timeline": {
+      "by": "by {actor}"
+    }
   },
   "common": {
     "save": "Save",
@@ -374,167 +453,6 @@
     "removeShipmentLine": "Remove this shipment line?",
     "removeReturnLineItem": "Remove this return line item?"
   },
-  "salesOrders": {
-    "title": "Sales Orders",
-    "backToOrders": "← Back to Orders",
-    "orderNotFound": "Order not found",
-    "untitledOrder": "Untitled order",
-    "unnamedCustomer": "Unnamed customer",
-    "orderDetails": "Order Details",
-    "lineItems": "Line items",
-    "availability": "Availability",
-    "returnsHeading": "Returns",
-    "noLineItems": "No line items — use the search above to add products",
-    "noLineItemsShort": "No products ordered yet.",
-    "noReturnLines": "No return lines",
-    "newReturn": "New Return",
-    "loadingInventory": "Loading inventory data…",
-    "noInventoryData": "No inventory data",
-    "loadingReturns": "Loading returns…",
-    "noReturns": "No returns for this order.",
-    "discountPercent": "{disc}% disc",
-    "archivedBannerTitle": "This record is archived.",
-    "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
-    "labels": {
-      "customer": "Customer",
-      "created": "Created",
-      "orderName": "Order Name",
-      "customerPO": "Customer PO #"
-    },
-    "placeholders": {
-      "orderName": "Order name",
-      "customerPO": "Customer purchase order",
-      "notes": "Internal notes",
-      "searchProduct": "Add product… (search)",
-      "returnNotes": "Return reason / notes",
-      "reason": "Reason",
-      "searchOrders": "Search by order number, customer, or PO…",
-      "searchCustomers": "Search customers…",
-      "zero": "0"
-    },
-    "buttons": {
-      "createOrder": "+ Create Order",
-      "createQuote": "Create Quote",
-      "createInvoice": "Create Invoice",
-      "copyOrder": "Copy Order",
-      "createReturn": "Create Return",
-      "archive": "Archive",
-      "unarchive": "Unarchive",
-      "save": "Save",
-      "saveReturn": "Create Return",
-      "removeLine": "Remove line",
-      "removeReturnLine": "Remove return line",
-      "blankLine": "Blank Line"
-    },
-    "columns": {
-      "lineNumber": "#",
-      "product": "Product",
-      "description": "Description",
-      "qty": "Qty",
-      "unitPrice": "Unit Price",
-      "discountPct": "Disc %",
-      "gst": "GST",
-      "amount": "Amount",
-      "ordered": "Ordered",
-      "location": "Location",
-      "onHand": "On Hand",
-      "committed": "Committed",
-      "reserved": "Reserved",
-      "available": "Available",
-      "status": "Status",
-      "originalQty": "Original Qty",
-      "returnQty": "Return Qty",
-      "reason": "Reason",
-      "fee": "Fee",
-      "qtyReturned": "Qty Returned",
-      "invoiceNumber": "Invoice No.",
-      "orderNumber": "Order No.",
-      "customer": "Customer",
-      "date": "Date",
-      "state": "State"
-    },
-    "invoicesCardHeading": "Sales Invoices",
-    "returns": {
-      "totalCredit": "Total Credit",
-      "totalFees": "Total Fees",
-      "netCredit": "Net Credit"
-    },
-    "timeline": {
-      "by": "by {actor}"
-    }
-  },
-  "purchaseOrders": {
-    "title": "Purchase Orders",
-    "subtitle": "Manage purchase orders",
-    "backToOrders": "← Back to Orders",
-    "orderNotFound": "Order not found",
-    "untitledOrder": "Untitled order",
-    "orderDetails": "Order Details",
-    "lineItems": "Line items",
-    "availability": "Availability",
-    "returnsHeading": "Returns",
-    "newReturn": "New Return",
-    "noLineItems": "No line items — use the search above to add products",
-    "loadingInventory": "Loading inventory data…",
-    "noInventoryData": "No inventory data",
-    "labels": {
-      "supplier": "Supplier",
-      "invoiceNumber": "Invoice #",
-      "orderName": "Order Name",
-      "created": "Created"
-    },
-    "placeholders": {
-      "searchOrders": "Search purchase orders…",
-      "orderName": "Order name",
-      "invoiceNumber": "Supplier invoice reference",
-      "notes": "Internal notes",
-      "searchProduct": "Add product… (search)",
-      "searchSuppliers": "Search suppliers…"
-    },
-    "buttons": {
-      "createPO": "+ Create PO",
-      "copyOrder": "📋 Copy Order",
-      "createReturn": "↩ Create Return",
-      "save": "💾 Save",
-      "blankLine": "Blank Line"
-    },
-    "columns": {
-      "lineNumber": "#",
-      "product": "Product",
-      "description": "Description",
-      "qty": "Qty",
-      "unitPrice": "Unit Price",
-      "amount": "Amount",
-      "ordered": "Ordered",
-      "location": "Location",
-      "onHand": "On Hand",
-      "committed": "Committed",
-      "reserved": "Reserved",
-      "available": "Available",
-      "status": "Status",
-      "qtyReturned": "Qty Returned",
-      "reason": "Reason",
-      "fee": "Fee"
-    },
-    "noLineItemsShort": "No line items",
-    "noReturns": "No returns",
-    "noReturnLines": "No return lines",
-    "loadingReturns": "Loading returns…",
-    "returns": {
-      "totalCredit": "Total Credit",
-      "totalFees": "Total Fees",
-      "netCredit": "Net Credit"
-    },
-    "placeholders": {
-      "searchOrders": "Search purchase orders…",
-      "orderName": "Order name",
-      "invoiceNumber": "Supplier invoice reference",
-      "notes": "Internal notes",
-      "searchProduct": "Add product… (search)",
-      "searchSuppliers": "Search suppliers…",
-      "reason": "Reason"
-    }
-  },
   "picking": {
     "title": "Picking",
     "printPickingSlip": "Print Picking Slip",
@@ -585,11 +503,23 @@
       "products": "Products",
       "inventoryLevels": "Inventory Levels",
       "orderLines": "Order Lines"
+    },
+    "search": {
+      "placeholder": "Search products, accounts, orders, suppliers…",
+      "noResults": "No results found",
+      "typeMinChars": "Type at least 2 characters…",
+      "types": {
+        "product": "Products",
+        "account": "Accounts",
+        "sales_order": "Sales Orders",
+        "supplier": "Suppliers",
+        "purchase_order": "Purchase Orders"
+      }
     }
   },
   "sidebar": {
-    "title": "modbm",
-    "subtitle": "Business Management",
+    "title": "herobm",
+    "subtitle": "Your business, your data",
     "footer": "Phase 3 • modbm",
     "groups": {
       "inventory": "Inventory",
@@ -615,59 +545,6 @@
       "systemLogs": "System Logs",
       "invoices": "Invoices"
     }
-  },
-  "accounts": {
-    "title": "Accounts",
-    "totalAccounts": "TOTAL ACCOUNTS",
-    "buttons": {
-      "createAccount": "+ Create Account"
-    },
-    "placeholders": {
-      "searchAccounts": "Search by name, account number, or email…"
-    },
-    "generalInfo": "General Information",
-    "financials": "Financials",
-    "management": "Account Management",
-    "customerManagement": "Customer Management",
-    "pricingCurrency": "Pricing & Currency",
-    "columns": {
-      "accountNumber": "Account Number",
-      "accountId": "Account ID",
-      "accountType": "Type",
-      "discountPct": "Customer Discount %"
-    }
-  },
-  "suppliers": {
-    "title": "Suppliers",
-    "subtitle": "Manage supplier records",
-    "generalInfo": "General Information",
-    "paymentCurrency": "Payment & Currency",
-    "management": "Vendor Management",
-    "buttons": {
-      "createSupplier": "+ Create Supplier"
-    },
-    "placeholders": {
-      "searchSuppliers": "Search suppliers…",
-      "vendorNumber": "e.g. VEND-001",
-      "name": "e.g. ACME Corp",
-      "paymentTerms": "e.g. NET30",
-      "email": "vendor@example.com",
-      "phone": "+1 234 567 890",
-      "address": "123 Main St",
-      "city": "City",
-      "country": "Country",
-      "notes": "Key relationship details, preferred delivery methods, etc."
-    },
-    "columns": {
-      "vendorNumber": "Vendor #",
-      "name": "Name",
-      "paymentTerms": "Payment Terms",
-      "productCount": "Products"
-    },
-    "contactLocation": "Contact & Location",
-    "recordDetails": "Record Details",
-    "financials": "Financials",
-    "paymentTerms": "Payment Terms"
   },
   "bins": {
     "title": "Bin Contents",
@@ -721,13 +598,13 @@
   "products": {
     "title": "Products",
     "buttons": {
-      "addProduct": "+ Add Product"
+      "addProduct": "Add Product"
     },
     "columns": {
       "productNumber": "Product # (SKU)",
       "productId": "Product ID",
       "vendor": "Default Vendor",
-      "stdCost": "Std Cost",
+      "stdCost": "Standard cost",
       "listPrice": "List Price",
       "tradePrice": "Trade Price",
       "priceLevel3": "Level 3",

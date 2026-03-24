@@ -7,7 +7,7 @@ import { apiMutate } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { computeLinePrice } from '@modbm/shared';
 
-import type { OrderDetail, OrderReturn } from './types';
+import type { OrderDetail, OrderReturn, GstCategory } from './types';
 import {
     RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
     RETURN_LIFECYCLE,
@@ -41,12 +41,13 @@ interface ReturnsSectionProps {
     loadReturns: () => Promise<void>;
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
     pickingSummary?: any;
+    gstCategories: GstCategory[];
 }
 
 export default function ReturnsSection({
     orderId, order, returns, returnsLoading,
     showCreateReturn, setShowCreateReturn,
-    setError, loadReturns, loadOrder, pickingSummary,
+    setError, loadReturns, loadOrder, pickingSummary, gstCategories,
 }: ReturnsSectionProps) {
     const t = useTranslations();
     const tCommon = useTranslations('common');
@@ -109,16 +110,10 @@ export default function ReturnsSection({
     };
 
     return (
-        <div className="card !border-none">
+        <div className="card">
             <div className="flex items-center justify-between mb-2">
-                <h3
-                    className="text-sm font-semibold flex items-center gap-2"
-                    style={{
-                        color: 'var(--text-muted)', textTransform: 'uppercase',
-                        letterSpacing: '0.05em', margin: 0,
-                    }}
-                >
-                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>assignment_return</span>
+                <h3 className="section-heading">
+                    <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
                 {!showCreateReturn && (
@@ -394,7 +389,10 @@ export default function ReturnsSection({
                                     <thead>
                                         <tr>
                                             <th>{tSales('columns.product')}</th>
-                                            <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.qtyReturned')}</th>
+                                            <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tSales('columns.gst')}</th>
                                             <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
                                             <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.fee')}</th>
                                             <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.amount')}</th>
@@ -404,6 +402,16 @@ export default function ReturnsSection({
                                     <tbody>
                                         {ret.lines.map((rl) => {
                                             const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
+                                            const disc = parseFloat(origLine?.discountPercentage || '0');
+                                            const gstCat = gstCategories.find(c => c.gstCategoryId === origLine?.gstCategoryId);
+                                            const gstRate = parseFloat(gstCat?.rate || '0');
+                                            const cc = order.currencyCode || 'EUR';
+                                            const pricing = computeLinePrice({
+                                                quantity: parseFloat(rl.quantityReturned || '0'),
+                                                pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
+                                                discountPercentage: disc,
+                                                taxRate: gstRate,
+                                            });
                                             return (
                                                 <tr key={rl.returnLineId}>
                                                     <td>
@@ -442,6 +450,15 @@ export default function ReturnsSection({
                                                         ) : (
                                                             rl.quantityReturned
                                                         )}
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                        {formatAmount(parseFloat(origLine?.pricePerUnit || '0'), cc)}
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                        {disc.toFixed(1)}%
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', color: gstRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                        {gstRate.toFixed(1)}%
                                                     </td>
                                                     <td>
                                                         {isRetEditable ? (
@@ -502,11 +519,7 @@ export default function ReturnsSection({
                                                         )}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {(() => {
-                                                            const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                                            const qty = parseFloat(rl.quantityReturned || '0');
-                                                            return formatAmount(computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount, order.currencyCode || 'EUR');
-                                                        })()}
+                                                        {formatAmount(pricing.amount, order.currencyCode || 'EUR')}
                                                     </td>
                                                     {isRetEditable && (
                                                         <td>
@@ -536,7 +549,7 @@ export default function ReturnsSection({
                                         {ret.lines.length === 0 && (
                                             <tr>
                                                 <td
-                                                    colSpan={isRetEditable ? 6 : 5}
+                                                    colSpan={isRetEditable ? 9 : 8}
                                                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '12px 0' }}
                                                 >
                                                     {t('salesOrders.noReturnLines')}
@@ -547,8 +560,11 @@ export default function ReturnsSection({
                                             const totalAmount = ret.lines.reduce((sum, rl) => {
                                                 const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                                 const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
+                                                const disc = parseFloat(origLine?.discountPercentage || '0');
+                                                const gstCat = gstCategories.find(c => c.gstCategoryId === origLine?.gstCategoryId);
+                                                const gstRate = parseFloat(gstCat?.rate || '0');
                                                 const qty = parseFloat(rl.quantityReturned || '0');
-                                                return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount;
+                                                return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice, discountPercentage: disc, taxRate: gstRate }).amount;
                                             }, 0);
                                             const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
                                             const totalCredit = totalAmount - totalFees;
@@ -556,7 +572,7 @@ export default function ReturnsSection({
                                             return (
                                                 <>
                                                     <tr style={{ borderTop: '2px solid var(--border)' }}>
-                                                        <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
                                                             {t('salesOrders.returns.totalCredit')}
                                                         </td>
                                                         <td></td>
@@ -566,7 +582,7 @@ export default function ReturnsSection({
                                                         {isRetEditable && <td></td>}
                                                     </tr>
                                                     <tr>
-                                                        <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
                                                             {t('salesOrders.returns.totalFees')}
                                                         </td>
                                                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
@@ -576,7 +592,7 @@ export default function ReturnsSection({
                                                         {isRetEditable && <td></td>}
                                                     </tr>
                                                     <tr>
-                                                        <td colSpan={3} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
+                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
                                                             {t('salesOrders.returns.netCredit')}
                                                         </td>
                                                         <td></td>

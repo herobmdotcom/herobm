@@ -144,7 +144,13 @@ describe('GlController', () => {
     });
 
     it('should parse limit string to integer', async () => {
-      await controller.getJournalEntries(undefined, undefined, undefined, undefined, '25');
+      await controller.getJournalEntries(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        '25',
+      );
       expect(glService.getJournalEntries).toHaveBeenCalledWith({
         fromDate: undefined,
         toDate: undefined,

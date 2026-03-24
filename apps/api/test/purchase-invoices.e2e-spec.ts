@@ -133,7 +133,9 @@ describe('API E2E — Purchase Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const je = glRes.body.find((j: any) => j.sourceId === createdInvoiceId);
+      const je = glRes.body.data.find(
+        (j: any) => j.sourceId === createdInvoiceId,
+      );
       expect(je).toBeDefined();
 
       const detailRes = await request(app.getHttpServer())

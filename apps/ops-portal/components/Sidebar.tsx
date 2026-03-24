@@ -19,7 +19,7 @@ export default function Sidebar() {
     {
       label: t('groups.inventory'),
       items: [
-        { href: '/products', label: t('items.products'), icon: 'inventory_2' },
+        { href: '/products', label: t('items.products'), icon: 'category' },
         { 
           href: '/inventory', 
           label: t('items.inventory'), 
@@ -73,6 +73,7 @@ export default function Sidebar() {
     sections.push({
       label: t('groups.admin'),
       items: [
+        { href: '/admin/reporting', label: 'Reporting', icon: 'architecture' },
         { href: '/admin/event-queue', label: t('items.eventQueue'), icon: 'sync' },
         { href: '/admin/system-logs', label: t('items.systemLogs'), icon: 'terminal' },
       ],

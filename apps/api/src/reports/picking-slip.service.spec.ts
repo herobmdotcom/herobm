@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PickingSlipService } from './picking-slip.service';
-import { ReportService } from './report.service';
+import { PickingSlipService } from './picking-slip.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 
 // ---------------------------------------------------------------------------
@@ -101,7 +101,6 @@ const SUPPLIERS = [
 describe('PickingSlipService', () => {
   let service: PickingSlipService;
   let mockDb: any;
-  let mockReportService: { compilePdf: jest.Mock };
 
   function mockSelectChain(responses: Record<number, any[]>) {
     let call = 0;
@@ -120,16 +119,8 @@ describe('PickingSlipService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockDb = createMockDb();
-    mockReportService = {
-      compilePdf: jest.fn().mockResolvedValue(Buffer.from('%PDF-fake')),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PickingSlipService,
-        { provide: ReportService, useValue: mockReportService },
-        { provide: DRIZZLE, useValue: mockDb },
-      ],
+      providers: [PickingSlipService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
 
     service = module.get<PickingSlipService>(PickingSlipService);
@@ -234,40 +225,6 @@ describe('PickingSlipService', () => {
       const data = await service.assembleData('order-001');
       expect(data.generatedAt).toBeTruthy();
       expect(typeof data.generatedAt).toBe('string');
-    });
-  });
-
-  // =========================================================================
-  // generatePickingSlip
-  // =========================================================================
-
-  describe('generatePickingSlip', () => {
-    it('should pass template path and data object to compilePdf', async () => {
-      mockSelectChain({
-        1: [ORDER_HEADER],
-        2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
-      });
-
-      const result = await service.generatePickingSlip('order-001');
-
-      expect(mockReportService.compilePdf).toHaveBeenCalledTimes(1);
-
-      // First arg: template path (should end with picking-slip.typ)
-      const [templatePath, data] = mockReportService.compilePdf.mock.calls[0];
-      expect(templatePath).toContain('picking-slip.typ');
-
-      // Second arg: data object with the expected shape
-      expect(data.header.orderNumber).toBe('ORD-20260317-0001');
-      expect(data.header.customerName).toBe('Acme Corp');
-      expect(data.pickingLines).toHaveLength(2);
-      expect(data.backOrderLines).toHaveLength(1);
-      expect(data.generatedAt).toBeTruthy();
-
-      expect(Buffer.isBuffer(result.pdf)).toBe(true);
-      expect(result.orderNumber).toBe('ORD-20260317-0001');
     });
   });
 });

@@ -3,14 +3,12 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { join } from 'path';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
 import {
-  accounts,
-  inventory,
-  products as martProducts,
-  productSuppliers,
-} from '../drizzle/schema';
-import { ReportService } from './report.service';
+  salesOrders,
+  salesOrderLineItems,
+  products as coreProducts,
+} from '../drizzle/modbm-core-schema';
+import { accounts, inventory, productSuppliers } from '../drizzle/schema';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
@@ -42,38 +40,11 @@ export interface PickingSlipData {
   generatedAt: string;
 }
 
-// ─── Template path ──────────────────────────────────────────────────────────
-
-const TEMPLATE_PATH = join(
-  __dirname,
-  'templates',
-  'orders',
-  'picking-slip.typ',
-);
-
 @Injectable()
 export class PickingSlipService {
-  constructor(
-    @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly reportService: ReportService,
-  ) {}
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   private readonly logger = new Logger(PickingSlipService.name);
-
-  /**
-   * Assemble the data for a picking slip and compile it to PDF.
-   */
-  async generatePickingSlip(
-    orderId: string,
-  ): Promise<{ pdf: Buffer; orderNumber: string }> {
-    const data = await this.assembleData(orderId);
-    const pdf = await this.reportService.compilePdf(TEMPLATE_PATH, data);
-    this.logger.log(
-      `Generated picking slip for order ${data.header.orderNumber}: ` +
-        `${data.pickingLines.length} pick lines, ${data.backOrderLines.length} back-order lines`,
-    );
-    return { pdf, orderNumber: data.header.orderNumber };
-  }
 
   /**
    * Query all required data for the picking slip.
@@ -103,7 +74,7 @@ export class PickingSlipService {
       .select({
         salesOrderLineId: salesOrderLineItems.salesOrderLineId,
         productId: salesOrderLineItems.productId,
-        productNumber: martProducts.productNumber,
+        productNumber: coreProducts.productNumber,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         quantityPicked: salesOrderLineItems.quantityPicked,
@@ -111,8 +82,8 @@ export class PickingSlipService {
       })
       .from(salesOrderLineItems)
       .leftJoin(
-        martProducts,
-        eq(salesOrderLineItems.productId, martProducts.productId),
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
@@ -193,7 +164,11 @@ export class PickingSlipService {
       const ordered = parseFloat(line.quantity);
       const picked = parseFloat(line.quantityPicked ?? '0');
       const toPick = ordered - picked;
-      const productCode = line.productNumber || line.productId || '';
+      const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+      const isCustomLine = line.productId === CUSTOM_LINE_ID;
+      const productCode = isCustomLine
+        ? ''
+        : line.productNumber || line.productId || '';
       const description = line.productDescription || '';
 
       if (toPick > 0) {

@@ -14,14 +14,14 @@ import {
   orderEvents,
   outbox,
   accounts as coreAccounts,
+  products as coreProducts,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   writeEvent as sharedWriteEvent,
   findOrderLine as sharedFindOrderLine,
 } from './shipment-helpers';
-import { accounts as martAccounts } from '../drizzle/schema';
-import { products } from '../drizzle/schema';
+
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -226,7 +226,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Look up a product from mart_products.
+   * Look up a product from modbm_core.products.
    * Throws BadRequestException if not found.
    * Returns productId and gstCategory.
    */
@@ -249,7 +249,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Validate that a product exists in mart_products.
+   * Validate that a product exists in modbm_core.products.
    */
   private async validateProduct(productId: string): Promise<void> {
     await this.lookupProduct(productId);
@@ -293,7 +293,11 @@ export class OrdersWriteService {
     }
 
     // Check for duplicate product IDs in the input lines
-    const productIds = dto.lines.map((l) => l.productId).filter(Boolean);
+    // Exemption: The system custom line product can be added multiple times.
+    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    const productIds = dto.lines
+      .map((l) => l.productId)
+      .filter((id) => id && id !== CUSTOM_LINE_ID);
     const uniqueProductIds = new Set(productIds);
     if (uniqueProductIds.size !== productIds.length) {
       throw new BadRequestException('Order cannot contain duplicate products');
@@ -597,22 +601,25 @@ export class OrdersWriteService {
       );
     }
 
+    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     if (dto.productId) {
       await this.validateProduct(dto.productId);
 
-      // Check if product already exists in this order
-      const existingLine = await this.db
-        .select({ id: salesOrderLineItems.salesOrderLineId })
-        .from(salesOrderLineItems)
-        .where(
-          sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
-        )
-        .limit(1);
+      // Check if product already exists in this order (exempting Custom Lines)
+      if (dto.productId !== CUSTOM_LINE_ID) {
+        const existingLine = await this.db
+          .select({ id: salesOrderLineItems.salesOrderLineId })
+          .from(salesOrderLineItems)
+          .where(
+            sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
+          )
+          .limit(1);
 
-      if (existingLine.length > 0) {
-        throw new BadRequestException(
-          `Product '${dto.productId}' is already present in this order.`,
-        );
+        if (existingLine.length > 0) {
+          throw new BadRequestException(
+            `Product '${dto.productId}' is already present in this order.`,
+          );
+        }
       }
     }
 
@@ -822,7 +829,7 @@ export class OrdersWriteService {
         salesOrderId: salesOrderLineItems.salesOrderId,
         lineNumber: salesOrderLineItems.lineNumber,
         productId: salesOrderLineItems.productId,
-        productNumber: products.productNumber,
+        productNumber: coreProducts.productNumber,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         pricePerUnit: salesOrderLineItems.pricePerUnit,
@@ -835,7 +842,10 @@ export class OrdersWriteService {
         gstCategoryId: salesOrderLineItems.gstCategoryId,
       })
       .from(salesOrderLineItems)
-      .leftJoin(products, eq(salesOrderLineItems.productId, products.productId))
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
       .where(eq(salesOrderLineItems.salesOrderId, id))
       .orderBy(salesOrderLineItems.lineNumber);
 
@@ -857,14 +867,25 @@ export class OrdersWriteService {
       throw new BadRequestException(`Invalid order ID: ${id}`);
     }
 
+    // sales_order_id is uuid — reject non-UUID strings early
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
+    if (!isUuid) {
+      throw new NotFoundException(`Order '${id}' not found`);
+    }
+
     const rows = await this.db
       .select({
         order: salesOrders,
-        customerName: sql<string | null>`COALESCE(${coreAccounts.name}, ${martAccounts.name})`,
+        customerName: coreAccounts.name,
       })
       .from(salesOrders)
-      .leftJoin(coreAccounts, sql`${salesOrders.customerId}::text = ${coreAccounts.accountId}::text`)
-      .leftJoin(martAccounts, eq(salesOrders.customerId, martAccounts.accountId))
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);
 

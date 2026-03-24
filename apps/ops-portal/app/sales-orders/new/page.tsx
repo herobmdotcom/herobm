@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
@@ -53,9 +54,10 @@ interface LineItem {
 let lineKey = 0;
 
 function emptyLine(defaultDiscount = '0', defaultGstCategoryId = ''): LineItem {
+  const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
   return {
     key: ++lineKey,
-    productId: '',
+    productId: CUSTOM_LINE_ID,
     productNumber: '',
     productDescription: '',
     quantity: '1',
@@ -254,48 +256,50 @@ export default function NewOrderPage() {
 
   return (
     <Shell>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{tSales('salesOrders.buttons.createOrder')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {tSales('salesOrders.title')}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            className="btn btn-secondary"
-            onClick={() => router.push('/sales-orders')}
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title="Create Sales Order"
+            onBack={() => router.push('/sales-orders')}
+            actions={
+              <>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => router.push('/sales-orders')}
+                  disabled={submitting}
+                >
+                  {tSales('common.cancel')}
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                >
+                  {submitting ? tSales('common.saving') : tSales('salesOrders.buttons.createOrder')}
+                </button>
+              </>
+            }
+          />
+        }
+      >
+        {error && (
+          <div
+            className="mb-4 px-4 py-3 rounded-lg text-sm"
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+            }}
           >
-            {tSales('common.cancel')}
-          </button>
-          <button
-            id="btn-submit-order"
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? tSales('common.saving') : tSales('salesOrders.buttons.createOrder')}
-          </button>
-        </div>
-      </div>
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div className="scroll-area" style={{ flex: 1 }}>
+        <div className="flex flex-col gap-3">
         {/* Order header */}
         <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">receipt_long</span>
             {tSales('salesOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -428,28 +432,28 @@ export default function NewOrderPage() {
               />
             </div>
 
+            <div className="col-span-2 mt-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tSales('common.notesCardHeading')}
+              </label>
+              <textarea
+                id="order-notes"
+                className="input w-full"
+                style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                placeholder={tSales('common.notesCardPlaceholder')}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+
             </div>
           </div>
-
-        {/* Notes Card */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {tSales('common.notesCardHeading')}
-          </h3>
-          <textarea
-            id="order-notes"
-            className="input w-full"
-            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-            placeholder={tSales('common.notesCardPlaceholder')}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
 
         {/* Line items */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">list</span>
               {tSales('salesOrders.lineItems')}
             </h3>
             <div className="flex items-center gap-3">
@@ -459,7 +463,7 @@ export default function NewOrderPage() {
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                + {tSales('salesOrders.buttons.blankLine')}
+                + {tSales('salesOrders.buttons.customLine')}
               </button>
             </div>
           </div>
@@ -483,14 +487,14 @@ export default function NewOrderPage() {
                 <tr key={line.key}>
                   <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
                   <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
-                    {line.productId ? (
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
                         <button
                           className="text-xs cursor-pointer"
                           style={{ color: 'var(--text-muted)' }}
                           onClick={() => {
-                            updateLine(idx, 'productId', '');
+                            updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
                             updateLine(idx, 'productNumber', '');
                             updateLine(idx, 'productDescription', '');
                           }}
@@ -502,7 +506,19 @@ export default function NewOrderPage() {
                       <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
                     )}
                   </td>
-                  <td>{line.productDescription || '—'}</td>
+                  <td>
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                      line.productDescription || '—'
+                    ) : (
+                      <input
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder="Custom description..."
+                      />
+                    )}
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
@@ -586,16 +602,45 @@ export default function NewOrderPage() {
                   </td>
                 </tr>
               )}
+              {lines.length > 0 && (() => {
+                const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+                return (
+                  <>
+                    <tr style={{ borderTop: '2px solid var(--border)' }}>
+                      <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        {tSales('common.subtotal')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(subtotal, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        {tSales('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(totalTax, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+                      <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                        {tSales('common.total')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(subtotal + totalTax, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </>
+                );
+              })()}
             </tbody>
           </table>
         </div>
-
-        <OrderTotalsCard
-          subtotal={subtotal}
-          totalTax={totalTax}
-          currencyCode={currencyCode}
-        />
-      </div>
+        </div>
+      </DetailsLayout>
     </Shell>
   );
 }

@@ -132,7 +132,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived account appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts?includeArchived=true')
+        .get('/api/accounts?includeArchived=true&limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -152,7 +152,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('unarchived account reappears in default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts')
+        .get('/api/accounts?limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

@@ -17,6 +17,7 @@ interface Product {
   name: string;
   listPrice: string;
   tradePrice: string;
+  standardCost?: string | null;
 }
 
 interface InventoryLevel {

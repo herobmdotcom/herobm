@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -299,6 +301,26 @@ export function useOrder(id: string, source: string) {
         }
     };
 
+    const addBlankLine = async () => {
+        const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${id}/lines`, 'POST', {
+                productId: CUSTOM_LINE_ID,
+                productDescription: '',
+                quantity: '1',
+                pricePerUnit: '0.00',
+                discountPercentage: '0',
+                unitOfMeasure: 'EA',
+            });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
     /* ── Computed values ─────────────────────────────────────────── */
 
     const isOrderDetailsEditable = source === 'app'
@@ -349,7 +371,7 @@ export function useOrder(id: string, source: string) {
 
         // Mutations
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct,
+        updateLine, removeLine, addLineFromProduct, addBlankLine,
         loadOrder, loadReturns, loadInvoices,
     };
 }

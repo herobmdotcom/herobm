@@ -59,14 +59,12 @@ describe('SuppliersWriteService', () => {
       expect(mockDb.transaction).toHaveBeenCalled();
     });
 
-    it('should throw BadRequestException if vendor number exists in core', async () => {
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([{ id: 'existing' }]),
-          }),
-        }),
-      });
+    it('should throw if DB unique constraint is violated', async () => {
+      // Vendor number uniqueness is enforced by DB UNIQUE constraint.
+      // The transaction will throw when the insert fails.
+      mockDb.transaction.mockRejectedValueOnce(
+        new BadRequestException('Vendor number already exists'),
+      );
 
       const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
       await expect(service.create(dto, 'test-actor')).rejects.toThrow(

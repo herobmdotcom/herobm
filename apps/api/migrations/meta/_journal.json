@@ -43,6 +43,13 @@
       "when": 1774216208969,
       "tag": "0005_worried_pestilence",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774344395717,
+      "tag": "0006_add_dynamic_reports",
+      "breakpoints": true
     }
   ]
 }

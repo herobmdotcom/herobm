@@ -16,6 +16,7 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
 
 interface Supplier {
   vendorId: string;
@@ -172,6 +173,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const isLegacy = supplier.source === 'abm';
   const isEditable = !isLegacy && supplier.stateCode !== 'archived';
 
+  const sections = {
+    info: { id: 'info-section', label: 'Info' },
+    financials: { id: 'financials-section', label: 'Financials' },
+    notes: { id: 'notes-section', label: 'Notes' },
+    contact: { id: 'contact-section', label: 'Contact' },
+    activity: { id: 'activity-section', label: 'Activity' },
+  };
+  const visibleSections = Object.values(sections);
+
   return (
     <Shell>
       <DetailsLayout
@@ -183,7 +193,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             isSaving={saving}
             badges={<StateBadge state={supplier.stateCode as ValidState} />}
             actions={
-              supplier.source === 'app' ? (
+              <>
+                <PageNav sections={visibleSections} />
+                {supplier.source === 'app' ? (
                 supplier.stateCode === 'archived' ? (
                   <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
                 ) : (
@@ -196,12 +208,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     📦 {t('salesOrders.buttons.archive')}
                   </button>
                 )
-              ) : null
+              ) : null}
+              </>
             }
           />
         }
       >
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3">
 
       {supplier.stateCode === 'archived' && (
         <div
@@ -230,10 +243,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       )}
 
         {/* Top row: General Info (left) + Financials (right) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {/* General Info Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div id="info-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">info</span>
               {t('suppliers.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
@@ -265,8 +279,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
 
           {/* Financials Card */}
-          <div className="card">
-            <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div id="financials-section" className="card">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">payments</span>
               {t('suppliers.financials')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
@@ -346,8 +361,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
 
         {/* Notes Card — full width */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div id="notes-section" className="card">
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>
           <textarea
@@ -362,8 +378,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
 
         {/* Contact & Location Card — full width */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div id="contact-section" className="card">
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">location_on</span>
             {t('suppliers.contactLocation')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -435,58 +452,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
         </div>
 
-        {/* Record Details Card — full width */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('suppliers.recordDetails')}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Vendor ID
-              </label>
-              <input className="input" disabled value={supplier.vendorId} />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.source')}
-              </label>
-              <input className="input" disabled value={supplier.source === 'abm' ? t('common.sources.abm') : t('common.sources.app')} />
-            </div>
-            {supplier.createdOn && (
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Created
-                </label>
-                <input className="input" disabled value={new Date(supplier.createdOn).toLocaleDateString()} />
-              </div>
-            )}
-            {supplier.createdBy && (
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Created By
-                </label>
-                <input className="input" disabled value={supplier.createdBy} />
-              </div>
-            )}
-          </div>
-          {supplier.modifiedOn && (
-            <div className="mt-4" style={{ maxWidth: '50%' }}>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Last Modified
-              </label>
-              <input className="input" disabled value={new Date(supplier.modifiedOn).toLocaleString()} />
-            </div>
-          )}
-          {isLegacy && (
-            <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-              {t('common.legacyRecordImported')}
-            </p>
-          )}
-        </div>
 
         {/* Activity Timeline — full width */}
-        <ActivityTimeline events={supplier.events || []} />
+        {/* Activity Timeline — full width */}
+        <div id="activity-section" className="card">
+          <ActivityTimeline events={supplier.events || []} />
+        </div>
       </div>
       </DetailsLayout>
     </Shell>

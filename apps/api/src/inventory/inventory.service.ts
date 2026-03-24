@@ -140,7 +140,7 @@ export class InventoryService {
         JOIN modbm_core.sales_order_lines sol ON sol.sales_order_line_id = retl.sales_order_line_id
         WHERE ret.state_code != 'cancelled' AND ret.created_on >= ${cutoffIso}
       ) m
-      JOIN public_marts.mart_products p ON p.product_id = m.product_id
+      JOIN modbm_core.products p ON p.product_id = m.product_id
       WHERE m.quantity::numeric > 0
       GROUP BY p.product_number, p.name
       ORDER BY p.name ASC

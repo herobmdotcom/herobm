@@ -1,94 +1,142 @@
 import {
   Controller,
   Get,
+  Post,
+  Patch,
   Param,
-  Res,
   Query,
+  Res,
+  Req,
+  Body,
   UseGuards,
-  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
+import { ReportsService } from './reports.service';
+import { AuthGuard } from '@nestjs/passport';
 import {
   CasbinGuard,
-  CasbinResource,
   CasbinAction,
+  CasbinResource,
 } from '../auth/casbin.guard';
-import { PickingSlipService } from './picking-slip.service';
-import { SalesQuoteService } from './sales-quote.service';
-import { SalesInvoiceService } from './sales-invoice.service';
 
-/**
- * Report endpoints.
- *
- * All report endpoints reuse existing Casbin resource policies
- * (e.g. 'orders' for order-related reports).
- */
-@Controller('sales-orders')
+@Controller('reports')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('sales-orders')
+@CasbinResource('report')
 export class ReportsController {
-  constructor(
-    private readonly pickingSlipService: PickingSlipService,
-    private readonly salesQuoteService: SalesQuoteService,
-    private readonly salesInvoiceService: SalesInvoiceService,
-  ) {}
+  constructor(private readonly reportsService: ReportsService) {}
 
-  private readonly logger = new Logger(ReportsController.name);
-
-  @Get(':id/picking-slip-report')
+  @Post('hooks/:hookSlug/run')
   @CasbinAction('read')
-  async getPickingSlip(@Param('id') id: string, @Res() res: Response) {
-    const { pdf, orderNumber } =
-      await this.pickingSlipService.generatePickingSlip(id);
-
-    this.logger.log(`Serving picking slip PDF for order ${orderNumber}`);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="picking-slip-${orderNumber}.pdf"`,
-      'Content-Length': pdf.length.toString(),
-    });
-    res.send(pdf);
-  }
-
-  @Get(':id/sales-quote-report')
-  @CasbinAction('read')
-  async getSalesQuote(
-    @Param('id') id: string,
-    @Query('source') source: string,
+  async runHook(
+    @Param('hookSlug') hookSlug: string,
+    @Query('id') id: string,
+    @Query('context') context: string,
+    @Req() req: any,
     @Res() res: Response,
   ) {
-    const { pdf, orderNumber } =
-      await this.salesQuoteService.generateSalesQuote(id, source);
+    if (!id || !context) {
+      throw new UnauthorizedException('Missing id or context parameter');
+    }
 
-    this.logger.log(`Serving sales quote PDF for order ${orderNumber}`);
+    const { pdfBuffer, fileName } = await this.reportsService.runHook(
+      hookSlug,
+      id,
+      context,
+      req.user,
+    );
 
     res.set({
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="sales-quote-${orderNumber}.pdf"`,
-      'Content-Length': pdf.length.toString(),
+      'Content-Disposition': `attachment; filename="${fileName}"`,
     });
-    res.send(pdf);
+
+    res.send(pdfBuffer);
   }
 
-  @Get(':id/sales-invoice-report')
+  @Get()
   @CasbinAction('read')
-  async getSalesInvoice(
+  async getAllReports() {
+    const data = await this.reportsService.getReports();
+    return { data };
+  }
+
+  @Get('hooks')
+  @CasbinAction('read')
+  async getHooks() {
+    const data = await this.reportsService.getHooksList();
+    return { data };
+  }
+
+  @Get('hooks/:slug/random-id')
+  @CasbinAction('read')
+  async getRandomId(@Param('slug') slug: string) {
+    const id = await this.reportsService.getRandomIdForContext(slug);
+    return { data: { id } };
+  }
+
+  @Get(':id')
+  @CasbinAction('read')
+  async getReport(@Param('id') id: string) {
+    const data = await this.reportsService.getReportById(id);
+    return { data };
+  }
+
+  @Post()
+  @CasbinAction('write')
+  async createReport(
+    @Body()
+    body: {
+      name: string;
+      slug: string;
+      description?: string;
+      template: string;
+      outputNamePattern?: string;
+    },
+  ) {
+    const data = await this.reportsService.createReport(body);
+    return { data };
+  }
+
+  @Patch(':id')
+  @CasbinAction('write')
+  async updateReport(
     @Param('id') id: string,
-    @Query('source') source: string,
+    @Body()
+    body: {
+      name?: string;
+      slug?: string;
+      description?: string;
+      template?: string;
+      outputNamePattern?: string;
+    },
+  ) {
+    const data = await this.reportsService.updateReport(id, body);
+    return { data };
+  }
+
+  @Post('preview')
+  @CasbinAction('read')
+  async preview(
+    @Body()
+    body: {
+      template: string;
+      mockData?: any;
+      hookSlug?: string;
+      entityId?: string;
+    },
+    @Req() req: any,
     @Res() res: Response,
   ) {
-    const { pdf, orderNumber } =
-      await this.salesInvoiceService.generateSalesInvoice(id, source);
+    const pdfBuffer = await this.reportsService.renderPreview(
+      body.template,
+      body.mockData,
+      body.hookSlug,
+      body.entityId,
+      req.user,
+    );
 
-    this.logger.log(`Serving sales invoice PDF for order ${orderNumber}`);
-
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `inline; filename="sales-invoice-${orderNumber}.pdf"`,
-      'Content-Length': pdf.length.toString(),
-    });
-    res.send(pdf);
+    res.set({ 'Content-Type': 'application/pdf' });
+    res.send(pdfBuffer);
   }
 }

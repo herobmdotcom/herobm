@@ -313,7 +313,11 @@ describe('InvoicesSection — PDF download', () => {
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         await user.click(screen.getByText('Print PDF'));
 
+        const { apiFetchBlob } = require('@/lib/api');
         await waitFor(() => {
+            expect(apiFetchBlob).toHaveBeenCalledWith(
+                expect.stringContaining('invoiceId=inv-1'),
+            );
             expect(mockOpen).toHaveBeenCalledWith('blob:mock-url', '_blank');
         });
 

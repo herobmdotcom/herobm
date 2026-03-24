@@ -152,7 +152,7 @@ describe('OrdersWriteService', () => {
     };
     mockAccountsService = {
       findOne: jest.fn().mockResolvedValue({
-        accountId: 'CUST-001',
+        accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
         gstPosition: 'taxable',
@@ -246,7 +246,7 @@ describe('OrdersWriteService', () => {
 
   describe('create', () => {
     const validDto = {
-      customerId: 'CUST-001',
+      customerId: 'c0000000-0000-0000-0000-000000000001',
       lines: [{ productId: 'PROD-001', quantity: '10', pricePerUnit: '5.00' }],
     };
 
@@ -262,7 +262,7 @@ describe('OrdersWriteService', () => {
       const currency = opts?.currency ?? 'EUR';
 
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: 'CUST-001',
+        accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: disc,
         currencyCode: currency,
         gstPosition: gstPos,
@@ -278,7 +278,7 @@ describe('OrdersWriteService', () => {
       mockSelectChain({});
 
       mockTransaction({
-        salesOrderId: 'uuid-001',
+        salesOrderId: '00000000-0000-4000-a000-000000000001',
         orderNumber: 'ORD-20260313-0001',
         stateCode: 'draft',
         customerDiscount: disc,
@@ -290,7 +290,10 @@ describe('OrdersWriteService', () => {
     it('should create an order in draft state', async () => {
       setupCreate();
       const result = await service.create(validDto, 'admin');
-      expect(result).toHaveProperty('salesOrderId', 'uuid-001');
+      expect(result).toHaveProperty(
+        'salesOrderId',
+        '00000000-0000-4000-a000-000000000001',
+      );
       expect(result).toHaveProperty('stateCode', 'draft');
     });
 
@@ -323,14 +326,14 @@ describe('OrdersWriteService', () => {
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: 'CUST-001',
+        accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
         gstPosition: 'exempt',
       });
       mockSelectChain({});
       mockTransaction({
-        salesOrderId: 'uuid-001',
+        salesOrderId: '00000000-0000-4000-a000-000000000001',
         orderNumber: 'ORD-20260313-0001',
         stateCode: 'draft',
         customerDiscount: '0',
@@ -372,7 +375,10 @@ describe('OrdersWriteService', () => {
         gstCategoryId: 'gst-default',
       });
 
-      const dto = { customerId: 'CUST-001', lines: [] };
+      const dto = {
+        customerId: 'c0000000-0000-0000-0000-000000000001',
+        lines: [],
+      };
       const result = await service.create(dto, 'admin');
       expect(result).toHaveProperty('salesOrderId');
     });
@@ -394,7 +400,7 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode,
               name: 'Old Name',
               customerOrderNumber: null,
@@ -407,7 +413,7 @@ describe('OrdersWriteService', () => {
 
       const txUpdateQb = createMockQueryBuilder([
         {
-          salesOrderId: 'uuid-001',
+          salesOrderId: '00000000-0000-4000-a000-000000000001',
           name: 'New Name',
           stateCode,
         },
@@ -422,7 +428,7 @@ describe('OrdersWriteService', () => {
     it('should update header fields on a draft order', async () => {
       setupForUpdate('draft');
       const result = await service.update(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         { name: 'New Name' },
         'admin',
       );
@@ -432,7 +438,7 @@ describe('OrdersWriteService', () => {
     it('should update header fields on a quoted order', async () => {
       setupForUpdate('quoted');
       const result = await service.update(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         { name: 'New Name' },
         'admin',
       );
@@ -442,14 +448,22 @@ describe('OrdersWriteService', () => {
     it('should reject update on invoiced order', async () => {
       setupForUpdate('invoiced');
       await expect(
-        service.update('uuid-001', { name: 'Test' }, 'admin'),
+        service.update(
+          '00000000-0000-4000-a000-000000000001',
+          { name: 'Test' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on cancelled order', async () => {
       setupForUpdate('cancelled');
       await expect(
-        service.update('uuid-001', { notes: 'Test' }, 'admin'),
+        service.update(
+          '00000000-0000-4000-a000-000000000001',
+          { notes: 'Test' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -470,7 +484,10 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: currentState },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: currentState,
+            },
             customerName: 'Test Customer',
           },
         ],
@@ -478,7 +495,7 @@ describe('OrdersWriteService', () => {
       });
 
       const txUpdateQb = createMockQueryBuilder([
-        { salesOrderId: 'uuid-001', stateCode: '' },
+        { salesOrderId: '00000000-0000-4000-a000-000000000001', stateCode: '' },
       ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -502,7 +519,11 @@ describe('OrdersWriteService', () => {
     ])('should allow transition %s → %s', async (from, to) => {
       setupWithState(from);
       await expect(
-        service.changeState('uuid-001', to, 'admin'),
+        service.changeState(
+          '00000000-0000-4000-a000-000000000001',
+          to,
+          'admin',
+        ),
       ).resolves.toBeDefined();
     });
 
@@ -518,13 +539,21 @@ describe('OrdersWriteService', () => {
     ])('should reject transition %s → %s', async (from, to) => {
       setupWithState(from);
       await expect(
-        service.changeState('uuid-001', to, 'admin'),
+        service.changeState(
+          '00000000-0000-4000-a000-000000000001',
+          to,
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject unknown state name', async () => {
       await expect(
-        service.changeState('uuid-001', 'nonexistent_state', 'admin'),
+        service.changeState(
+          '00000000-0000-4000-a000-000000000001',
+          'nonexistent_state',
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -534,7 +563,10 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: 'quoted' },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: 'quoted',
+            },
             customerName: 'Test Customer',
           },
         ],
@@ -542,7 +574,10 @@ describe('OrdersWriteService', () => {
       });
 
       const txUpdateQb = createMockQueryBuilder([
-        { salesOrderId: 'uuid-001', stateCode: 'confirmed' },
+        {
+          salesOrderId: '00000000-0000-4000-a000-000000000001',
+          stateCode: 'confirmed',
+        },
       ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -550,7 +585,11 @@ describe('OrdersWriteService', () => {
         return cb(tx);
       });
 
-      await service.changeState('uuid-001', 'confirmed', 'admin');
+      await service.changeState(
+        '00000000-0000-4000-a000-000000000001',
+        'confirmed',
+        'admin',
+      );
       expect(mockInventoryService.commitStock).toHaveBeenCalledTimes(1);
     });
 
@@ -558,7 +597,10 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: 'confirmed' },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: 'confirmed',
+            },
             customerName: 'Test Customer',
           },
         ],
@@ -566,7 +608,10 @@ describe('OrdersWriteService', () => {
       });
 
       const txUpdateQb = createMockQueryBuilder([
-        { salesOrderId: 'uuid-001', stateCode: 'cancelled' },
+        {
+          salesOrderId: '00000000-0000-4000-a000-000000000001',
+          stateCode: 'cancelled',
+        },
       ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -574,13 +619,21 @@ describe('OrdersWriteService', () => {
         return cb(tx);
       });
 
-      await service.changeState('uuid-001', 'cancelled', 'admin');
+      await service.changeState(
+        '00000000-0000-4000-a000-000000000001',
+        'cancelled',
+        'admin',
+      );
       expect(mockInventoryService.releaseStock).toHaveBeenCalledTimes(1);
     });
 
     it('should NOT call commitStock when transitioning draft → quoted', async () => {
       setupWithState('draft');
-      await service.changeState('uuid-001', 'quoted', 'admin');
+      await service.changeState(
+        '00000000-0000-4000-a000-000000000001',
+        'quoted',
+        'admin',
+      );
       expect(mockInventoryService.commitStock).not.toHaveBeenCalled();
     });
 
@@ -588,7 +641,10 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: 'draft' },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: 'draft',
+            },
             customerName: 'Test Customer',
           },
         ],
@@ -596,7 +652,10 @@ describe('OrdersWriteService', () => {
       });
 
       const txUpdateQb = createMockQueryBuilder([
-        { salesOrderId: 'uuid-001', stateCode: 'cancelled' },
+        {
+          salesOrderId: '00000000-0000-4000-a000-000000000001',
+          stateCode: 'cancelled',
+        },
       ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
@@ -604,7 +663,11 @@ describe('OrdersWriteService', () => {
         return cb(tx);
       });
 
-      await service.changeState('uuid-001', 'cancelled', 'admin');
+      await service.changeState(
+        '00000000-0000-4000-a000-000000000001',
+        'cancelled',
+        'admin',
+      );
       expect(mockInventoryService.releaseStock).not.toHaveBeenCalled();
     });
   });
@@ -629,7 +692,7 @@ describe('OrdersWriteService', () => {
 
     function setupForAddLine(orderState: string, maxLineNumber = 0) {
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: 'CUST-001',
+        accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '10',
         currencyCode: 'EUR',
         gstPosition: 'taxable',
@@ -645,10 +708,10 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: orderState,
               orderNumber: 'ORD-123',
-              customerId: 'CUST-001',
+              customerId: 'c0000000-0000-0000-0000-000000000001',
               customerDiscount: '10',
               gstCategoryId: 'gst-default',
             },
@@ -674,14 +737,22 @@ describe('OrdersWriteService', () => {
 
     it('should add a line to a draft order', async () => {
       setupForAddLine('draft', 2);
-      const result = await service.addLine('uuid-001', lineDto, 'admin');
+      const result = await service.addLine(
+        '00000000-0000-4000-a000-000000000001',
+        lineDto,
+        'admin',
+      );
       expect(result).toHaveProperty('salesOrderLineId');
       expect(result.lineNumber).toBe(3);
     });
 
     it('should resolve GST via product category', async () => {
       setupForAddLine('draft');
-      await service.addLine('uuid-001', lineDto, 'admin');
+      await service.addLine(
+        '00000000-0000-4000-a000-000000000001',
+        lineDto,
+        'admin',
+      );
       // resolveGstForLine should call getByCode with the mapped product GST code
       expect(mockGstService.getByCode).toHaveBeenCalledWith('GST');
     });
@@ -689,7 +760,7 @@ describe('OrdersWriteService', () => {
     it('should use per-line GST override when provided', async () => {
       setupForAddLine('draft');
       await service.addLine(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         { ...lineDto, gstCategoryId: 'gst-exempt' },
         'admin',
       );
@@ -699,27 +770,39 @@ describe('OrdersWriteService', () => {
     it('should reject adding to an invoiced order', async () => {
       setupForAddLine('invoiced');
       await expect(
-        service.addLine('uuid-001', lineDto, 'admin'),
+        service.addLine(
+          '00000000-0000-4000-a000-000000000001',
+          lineDto,
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject adding to a shipped order', async () => {
       setupForAddLine('shipped');
       await expect(
-        service.addLine('uuid-001', lineDto, 'admin'),
+        service.addLine(
+          '00000000-0000-4000-a000-000000000001',
+          lineDto,
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject adding to a cancelled order', async () => {
       setupForAddLine('cancelled');
       await expect(
-        service.addLine('uuid-001', lineDto, 'admin'),
+        service.addLine(
+          '00000000-0000-4000-a000-000000000001',
+          lineDto,
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should use zero-rate for zero-rated product', async () => {
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: 'CUST-001',
+        accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
         gstPosition: 'taxable',
@@ -734,10 +817,10 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'draft',
               orderNumber: 'ORD-123',
-              customerId: 'CUST-001',
+              customerId: 'c0000000-0000-0000-0000-000000000001',
               customerDiscount: '0',
               gstCategoryId: 'gst-default',
             },
@@ -757,7 +840,7 @@ describe('OrdersWriteService', () => {
       });
 
       await service.addLine(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         { ...lineDto, productId: 'PROD-ZR' },
         'admin',
       );
@@ -775,7 +858,7 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: orderState,
               gstCategoryId: 'gst-default',
             },
@@ -785,7 +868,7 @@ describe('OrdersWriteService', () => {
         2: [
           {
             salesOrderLineId: 'line-001',
-            salesOrderId: 'uuid-001',
+            salesOrderId: '00000000-0000-4000-a000-000000000001',
             quantity: '10',
             pricePerUnit: '5.00',
             discountPercentage: '0',
@@ -812,7 +895,7 @@ describe('OrdersWriteService', () => {
     it('should update line quantity on a draft order', async () => {
       setupForUpdateLine('draft');
       const result = await service.updateLine(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         'line-001',
         { quantity: '20' },
         'admin',
@@ -823,7 +906,7 @@ describe('OrdersWriteService', () => {
     it('should resolve GST category for recomputation', async () => {
       setupForUpdateLine('draft');
       await service.updateLine(
-        'uuid-001',
+        '00000000-0000-4000-a000-000000000001',
         'line-001',
         { quantity: '20' },
         'admin',
@@ -834,21 +917,36 @@ describe('OrdersWriteService', () => {
     it('should reject update on invoiced order', async () => {
       setupForUpdateLine('invoiced');
       await expect(
-        service.updateLine('uuid-001', 'line-001', { quantity: '20' }, 'admin'),
+        service.updateLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          { quantity: '20' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on shipped order', async () => {
       setupForUpdateLine('shipped');
       await expect(
-        service.updateLine('uuid-001', 'line-001', { quantity: '20' }, 'admin'),
+        service.updateLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          { quantity: '20' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on cancelled order', async () => {
       setupForUpdateLine('cancelled');
       await expect(
-        service.updateLine('uuid-001', 'line-001', { quantity: '20' }, 'admin'),
+        service.updateLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          { quantity: '20' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -862,14 +960,17 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: orderState },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: orderState,
+            },
             customerName: 'Test Customer',
           },
         ],
         2: [
           {
             salesOrderLineId: 'line-001',
-            salesOrderId: 'uuid-001',
+            salesOrderId: '00000000-0000-4000-a000-000000000001',
             productId: 'PROD-001',
             quantity: '10',
           },
@@ -883,34 +984,54 @@ describe('OrdersWriteService', () => {
     it('should remove a line from a draft order', async () => {
       setupForRemoveLine('draft');
       await expect(
-        service.removeLine('uuid-001', 'line-001', 'admin'),
+        service.removeLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          'admin',
+        ),
       ).resolves.toBeUndefined();
     });
 
     it('should call transaction for removal', async () => {
       setupForRemoveLine('draft');
-      await service.removeLine('uuid-001', 'line-001', 'admin');
+      await service.removeLine(
+        '00000000-0000-4000-a000-000000000001',
+        'line-001',
+        'admin',
+      );
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
 
     it('should reject removal from invoiced order', async () => {
       setupForRemoveLine('invoiced');
       await expect(
-        service.removeLine('uuid-001', 'line-001', 'admin'),
+        service.removeLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from shipped order', async () => {
       setupForRemoveLine('shipped');
       await expect(
-        service.removeLine('uuid-001', 'line-001', 'admin'),
+        service.removeLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from cancelled order', async () => {
       setupForRemoveLine('cancelled');
       await expect(
-        service.removeLine('uuid-001', 'line-001', 'admin'),
+        service.removeLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -924,7 +1045,10 @@ describe('OrdersWriteService', () => {
       mockSelectChain({
         1: [
           {
-            order: { salesOrderId: 'uuid-001', stateCode: 'draft' },
+            order: {
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
+              stateCode: 'draft',
+            },
             customerName: 'Test Customer',
           },
         ],
@@ -932,8 +1056,13 @@ describe('OrdersWriteService', () => {
         3: [{ eventId: 'evt-001', eventType: 'created' }],
       });
 
-      const result = await service.findOne('uuid-001');
-      expect(result).toHaveProperty('salesOrderId', 'uuid-001');
+      const result = await service.findOne(
+        '00000000-0000-4000-a000-000000000001',
+      );
+      expect(result).toHaveProperty(
+        'salesOrderId',
+        '00000000-0000-4000-a000-000000000001',
+      );
       expect(result.lines).toHaveLength(1);
       expect(result.events).toHaveLength(1);
     });
@@ -952,7 +1081,7 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'draft',
               gstCategoryId: 'gst-default',
             },
@@ -963,7 +1092,12 @@ describe('OrdersWriteService', () => {
       });
 
       await expect(
-        service.updateLine('uuid-001', 'line-NOPE', { quantity: '1' }, 'admin'),
+        service.updateLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-NOPE',
+          { quantity: '1' },
+          'admin',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -972,7 +1106,7 @@ describe('OrdersWriteService', () => {
         1: [
           {
             order: {
-              salesOrderId: 'uuid-001',
+              salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'draft',
               gstCategoryId: 'gst-default',
             },
@@ -990,7 +1124,12 @@ describe('OrdersWriteService', () => {
       });
 
       await expect(
-        service.updateLine('uuid-001', 'line-001', { quantity: '20' }, 'admin'),
+        service.updateLine(
+          '00000000-0000-4000-a000-000000000001',
+          'line-001',
+          { quantity: '20' },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });

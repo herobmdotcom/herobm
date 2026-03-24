@@ -4,13 +4,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Shell from '@/components/Shell';
-import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
-import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import type { Product } from '@/components/shared/ProductSearchInput';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice } from '@modbm/shared';
+import { apiFetch, apiMutate } from '@/lib/api';
+import ProductSearchInput from '@/components/shared/ProductSearchInput';
+import type { Product } from '@/components/shared/ProductSearchInput';
 
 interface Supplier {
   vendorId: string;
@@ -95,6 +96,22 @@ export default function NewPurchaseOrderPage() {
     setShowSupplierDropdown(false);
   };
 
+  const addBlankLine = () => {
+    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    setLines((prev) => [
+      ...prev,
+      {
+        key: ++lineKey, // Assuming 'key' is still needed for React lists
+        productId: CUSTOM_LINE_ID,
+        productNumber: '', // Added to match LineItem interface
+        productDescription: '',
+        quantity: '1',
+        pricePerUnit: '0.00',
+        unitOfMeasure: 'EA',
+      },
+    ]);
+  };
+
   const addLineFromProduct = (p: Product) => {
     setLines((prev) => [
       ...prev,
@@ -104,7 +121,7 @@ export default function NewPurchaseOrderPage() {
         productNumber: p.productNumber,
         productDescription: p.name,
         quantity: '1',
-        pricePerUnit: parseFloat(p.tradePrice || p.listPrice || '0').toFixed(2),
+        pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         unitOfMeasure: 'EA',
       },
     ]);
@@ -174,47 +191,50 @@ export default function NewPurchaseOrderPage() {
 
   return (
     <Shell>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t('purchaseOrders.buttons.createPO')}</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {t('purchaseOrders.subtitle')}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            className="btn btn-secondary"
-            onClick={() => router.push('/purchase-orders')}
+      <DetailsLayout
+        header={
+          <EntityHeader
+            title="Create Purchase Order"
+            onBack={() => router.push('/purchase-orders')}
+            actions={
+              <>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => router.push('/purchase-orders')}
+                  disabled={submitting}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                >
+                  {submitting ? t('common.saving') : t('purchaseOrders.buttons.createPO')}
+                </button>
+              </>
+            }
+          />
+        }
+      >
+        {error && (
+          <div
+            className="mb-4 px-4 py-3 rounded-lg text-sm"
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+            }}
           >
-            {t('common.cancel')}
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={submitting}
-          >
-            {submitting ? t('common.saving') : t('purchaseOrders.buttons.createPO')}
-          </button>
-        </div>
-      </div>
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div
-          className="mb-4 px-4 py-3 rounded-lg text-sm"
-          style={{
-            background: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            color: '#f87171',
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      <div className="scroll-area" style={{ flex: 1 }}>
-        {/* Order header */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div className="flex flex-col gap-3">
+          {/* Order header */}
+          <div className="card">
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">receipt_long</span>
             {t('purchaseOrders.orderDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
@@ -328,28 +348,28 @@ export default function NewPurchaseOrderPage() {
               />
             </div>
 
+            <div className="col-span-2 mt-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('common.notesCardHeading')}
+              </label>
+              <textarea
+                id="order-notes"
+                className="input w-full"
+                style={{ minHeight: 80, paddingTop: 12, resize: 'vertical' }}
+                placeholder={t('common.notesCardPlaceholder')}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+
             </div>
           </div>
-
-        {/* Notes Card */}
-        <div className="card">
-          <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {t('common.notesCardHeading')}
-          </h3>
-          <textarea
-            id="order-notes"
-            className="input w-full"
-            style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
-            placeholder={t('common.notesCardPlaceholder')}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </div>
 
         {/* Line items */}
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">list</span>
               {t('purchaseOrders.lineItems')}
             </h3>
             <div className="flex items-center gap-3">
@@ -359,7 +379,7 @@ export default function NewPurchaseOrderPage() {
                 style={{ width: 240 }}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                + {t('purchaseOrders.buttons.blankLine')}
+                + {t('purchaseOrders.buttons.customLine')}
               </button>
             </div>
           </div>
@@ -381,14 +401,14 @@ export default function NewPurchaseOrderPage() {
                 <tr key={line.key}>
                   <td style={{ color: 'var(--text-muted)' }}>{idx + 1}</td>
                   <td style={{ color: 'var(--accent)', fontWeight: 600, fontSize: 12 }}>
-                    {line.productId ? (
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
                         <button
                           className="text-xs cursor-pointer"
                           style={{ color: 'var(--text-muted)' }}
                           onClick={() => {
-                            updateLine(idx, 'productId', '');
+                            updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
                             updateLine(idx, 'productNumber', '');
                             updateLine(idx, 'productDescription', '');
                           }}
@@ -400,7 +420,19 @@ export default function NewPurchaseOrderPage() {
                       <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
                     )}
                   </td>
-                  <td>{line.productDescription || '—'}</td>
+                  <td>
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                      line.productDescription || '—'
+                    ) : (
+                      <input
+                        className="input"
+                        style={{ width: '100%', fontSize: 13 }}
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder="Custom description..."
+                      />
+                    )}
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
@@ -458,16 +490,35 @@ export default function NewPurchaseOrderPage() {
                   </td>
                 </tr>
               )}
+              {lines.length > 0 && (() => {
+                return (
+                  <>
+                    <tr style={{ borderTop: '2px solid var(--border)' }}>
+                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        {t('common.subtotal')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(subtotal, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
+                    <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                        {t('common.total')}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(subtotal, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
+                  </>
+                );
+              })()}
             </tbody>
           </table>
         </div>
-
-        <OrderTotalsCard
-          subtotal={subtotal}
-          totalTax={0}
-          currencyCode={currencyCode}
-        />
-      </div>
+        </div>
+      </DetailsLayout>
     </Shell>
   );
 }

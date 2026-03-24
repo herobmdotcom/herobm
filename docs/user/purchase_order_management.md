@@ -37,7 +37,24 @@ stateDiagram-v2
 
 ---
 
+## Custom Lines
+
+Users can add "Custom Lines" to purchase orders for ad-hoc products or services that do not exist in the formal product catalogue. 
+
+Under the hood, all Custom Lines are mapped to a reserved system product (`SYSTEM-CUSTOM-LINE` with UUID `00000000-0000-0000-0000-000000000000`). This ensures referential integrity in the database while allowing users to override the description freely. 
+
+---
+
 ## Pricing
+
+### Default Line Pricing
+
+When adding a product to a purchase order from the catalogue, the system automatically defaults the line's unit price using the following priority fallback:
+
+1. **Standard Cost** (`standardCost`) — The primary wholesale cost.
+2. **Trade Price** (`tradePrice`) — Price Level 2, used if no standard cost is recorded.
+3. **List Price** (`listPrice`) — Price Level 1 (Retail), used as a last resort.
+4. **0.00** — Defaults to zero if no pricing data exists.
 
 ### Line Amount Calculation
 

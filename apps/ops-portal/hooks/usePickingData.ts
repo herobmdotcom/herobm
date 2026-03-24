@@ -133,7 +133,7 @@ export function usePickingData(
   const printPickingSlip = async () => {
     setError('');
     try {
-      const blob = await apiFetchBlob(`/api/sales-orders/${orderId}/picking-slip-report`);
+      const blob = await apiFetchBlob(`/api/reports/hooks/picking-slip/run?id=${orderId}&context=picking-slip`, { method: 'POST' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
     } catch (err) {

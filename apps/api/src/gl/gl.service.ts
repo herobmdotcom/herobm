@@ -31,7 +31,12 @@ export interface JournalLineDto {
 }
 
 export interface JournalMeta {
-  sourceType: 'sales_invoice' | 'purchase_invoice' | 'sales_credit_note' | 'manual' | 'adjustment';
+  sourceType:
+    | 'sales_invoice'
+    | 'purchase_invoice'
+    | 'sales_credit_note'
+    | 'manual'
+    | 'adjustment';
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Inject,
   NotFoundException,
@@ -12,7 +12,7 @@ import {
   accountEvents,
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
-import { accounts as martAccounts } from '../drizzle/schema';
+
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 
 const isUuid = (id: string) =>
@@ -83,18 +83,7 @@ export class AccountsWriteService {
       );
     }
 
-    // 2. Check if account number exists in mart (legacy)
-    const martExisting = await this.db
-      .select({ id: martAccounts.accountId })
-      .from(martAccounts)
-      .where(eq(martAccounts.accountNumber, dto.accountNumber))
-      .limit(1);
-
-    if (martExisting.length > 0) {
-      throw new BadRequestException(
-        `Account number '${dto.accountNumber}' already exists in legacy ABM data`,
-      );
-    }
+    // Legacy ABM accounts are now in core — the check above covers both.
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [account] = await tx
@@ -122,31 +111,18 @@ export class AccountsWriteService {
   }
 
   async update(id: string, dto: UpdateAccountDto, actor: string) {
-    let existing: any[] = [];
-    if (isUuid(id)) {
-      existing = await this.db
-        .select()
-        .from(coreAccounts)
-        .where(eq(coreAccounts.accountId, id))
-        .limit(1);
-    }
+    const existing = await this.db
+      .select()
+      .from(coreAccounts)
+      .where(
+        isUuid(id)
+          ? eq(coreAccounts.accountId, id)
+          : eq(coreAccounts.sourceId, id),
+      )
+      .limit(1);
 
     if (existing.length === 0) {
-      const isLegacy = await this.db
-        .select({ id: martAccounts.accountId })
-        .from(martAccounts)
-        .where(eq(martAccounts.accountId, id))
-        .limit(1);
-
-      if (isLegacy.length > 0) {
-        throw new BadRequestException(
-          `Account '${id}' is a legacy ABM record and cannot be edited.`,
-        );
-      }
-
-      throw new NotFoundException(
-        `Account '${id}' not found in application data`,
-      );
+      throw new NotFoundException(`Account '${id}' not found`);
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {

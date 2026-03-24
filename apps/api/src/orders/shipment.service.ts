@@ -15,7 +15,6 @@ import {
   products as coreProducts,
   outbox,
 } from '../drizzle/modbm-core-schema';
-import { products as martProducts } from '../drizzle/schema';
 import { ConfigService } from '@nestjs/config';
 import { getValuationStrategy } from '../inventory/valuation';
 import {
@@ -606,7 +605,7 @@ export class ShipmentService {
         salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
         quantityShipped: salesOrderShipmentLines.quantityShipped,
         productId: salesOrderLineItems.productId,
-        productNumber: martProducts.productNumber,
+        productNumber: coreProducts.productNumber,
       })
       .from(salesOrderShipmentLines)
       .innerJoin(
@@ -617,8 +616,8 @@ export class ShipmentService {
         ),
       )
       .leftJoin(
-        martProducts,
-        eq(salesOrderLineItems.productId, martProducts.productId),
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .where(eq(salesOrderShipmentLines.shipmentId, shipmentId));
 
@@ -640,7 +639,7 @@ export class ShipmentService {
           salesOrderLineId: salesOrderShipmentLines.salesOrderLineId,
           quantityShipped: salesOrderShipmentLines.quantityShipped,
           productId: salesOrderLineItems.productId,
-          productNumber: martProducts.productNumber,
+          productNumber: coreProducts.productNumber,
         })
         .from(salesOrderShipmentLines)
         .innerJoin(
@@ -651,8 +650,8 @@ export class ShipmentService {
           ),
         )
         .leftJoin(
-          martProducts,
-          eq(salesOrderLineItems.productId, martProducts.productId),
+          coreProducts,
+          eq(salesOrderLineItems.productId, coreProducts.productId),
         )
         .where(eq(salesOrderShipmentLines.shipmentId, shipment.shipmentId));
       result.push({ ...shipment, lines });

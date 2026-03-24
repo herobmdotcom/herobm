@@ -8,22 +8,24 @@ describe('ProductsService', () => {
 
   const mockProducts = [
     {
-      productId: 'P001',
+      productId: '11111111-1111-1111-1111-111111111111',
       productNumber: 'BOLT-M8',
       name: 'M8 Hex Bolt',
       productGroupName: 'Fasteners',
       standardCost: '1.25',
       barcode: '9312000001',
-      stateCode: 'Active',
+      stateCode: 'active',
+      source: 'abm',
     },
     {
-      productId: 'P002',
+      productId: '22222222-2222-2222-2222-222222222222',
       productNumber: 'NUT-M8',
       name: 'M8 Hex Nut',
       productGroupName: 'Fasteners',
       standardCost: '0.45',
       barcode: '9312000002',
-      stateCode: 'Active',
+      stateCode: 'active',
+      source: 'app',
     },
   ];
 
@@ -47,9 +49,14 @@ describe('ProductsService', () => {
     jest.clearAllMocks();
     mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
     mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.then = jest
-      .fn()
-      .mockImplementation((cb) => cb(mockProducts));
+    // Default: findAll returns products, count query returns [{count: 2}]
+    let callCount = 0;
+    mockQueryBuilder.then = jest.fn().mockImplementation((cb) => {
+      callCount++;
+      // First call = data query, second call = count query
+      if (callCount % 2 === 0) return cb([{ count: 2 }]);
+      return cb(mockProducts);
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ProductsService, { provide: DRIZZLE, useValue: mockDb }],
@@ -59,11 +66,12 @@ describe('ProductsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return paginated products', async () => {
+    it('should return paginated products with total count', async () => {
       const result = await service.findAll();
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('page', 1);
       expect(result).toHaveProperty('limit', 50);
+      expect(result).toHaveProperty('total');
     });
 
     it('should apply search filter when q is provided', async () => {
@@ -78,19 +86,26 @@ describe('ProductsService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single product', async () => {
-      mockQueryBuilder.then = jest
-        .fn()
-        .mockImplementation((cb) => cb([mockProducts[0]]));
-      const result = await service.findOne('P001');
-      expect(result).toEqual({ ...mockProducts[0], source: 'abm', events: [] });
+    it('should return a single product with events', async () => {
+      // First call returns product, second returns events
+      let call = 0;
+      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => {
+        call++;
+        if (call === 1) return cb([mockProducts[0]]);
+        return cb([]); // no events
+      });
+      const result = await service.findOne(
+        '11111111-1111-1111-1111-111111111111',
+      );
+      expect(result.productNumber).toBe('BOLT-M8');
+      expect(result.events).toEqual([]);
     });
 
     it('should throw NotFoundException for unknown ID', async () => {
       mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb([]));
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.findOne('99999999-9999-9999-9999-999999999999'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

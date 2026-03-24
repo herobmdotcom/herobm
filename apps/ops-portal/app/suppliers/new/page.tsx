@@ -65,15 +65,13 @@ export default function NewSupplierPage() {
         }
       >
       <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start mb-6">
           {/* LEFT COLUMN */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-3">
             {/* General Info Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">info</span>
                 {t('suppliers.generalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
@@ -140,10 +138,8 @@ export default function NewSupplierPage() {
 
             {/* Notes Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">notes</span>
                 {t('common.notesCardHeading')}
               </h3>
               <textarea
@@ -158,13 +154,11 @@ export default function NewSupplierPage() {
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-3">
             {/* Contact Details Card */}
             <div className="card">
-              <h3
-                className="text-sm font-semibold mb-4"
-                style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              >
+              <h3 className="section-heading">
+                <span className="material-symbols-outlined">location_on</span>
                 {t('common.columns.address')}
               </h3>
               <div className="grid grid-cols-1 gap-4">

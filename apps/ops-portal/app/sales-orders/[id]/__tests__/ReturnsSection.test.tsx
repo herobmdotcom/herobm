@@ -92,6 +92,7 @@ const draftReturn: OrderReturn = {
     notes: 'Damaged goods',
     createdBy: 'admin',
     createdOn: '2024-02-01',
+    modifiedOn: '2024-02-01',
     lines: [{
         returnLineId: 'rl-1',
         salesOrderLineId: 'L1',
@@ -119,6 +120,7 @@ const defaultProps = {
     setError: jest.fn(),
     loadReturns: jest.fn().mockResolvedValue(undefined),
     loadOrder: jest.fn().mockResolvedValue(undefined),
+    gstCategories: [],
 };
 
 // ── Tests — rendering ────────────────────────────────────────────────

@@ -1,19 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ReportService } from './report.service';
-import { PickingSlipService } from './picking-slip.service';
-import { SalesQuoteService } from './sales-quote.service';
 import { ReportsController } from './reports.controller';
-import { OrdersModule } from '../orders/orders.module';
-import { SalesInvoiceService } from './sales-invoice.service';
+import { ReportsService } from './reports.service';
+import { ReportsRegistry } from './reports.registry';
+import { DrizzleModule } from '../drizzle/drizzle.module';
 
 @Module({
-  imports: [OrdersModule],
+  imports: [DrizzleModule],
   controllers: [ReportsController],
-  providers: [
-    ReportService,
-    PickingSlipService,
-    SalesQuoteService,
-    SalesInvoiceService,
-  ],
+  providers: [ReportsService, ReportsRegistry],
+  exports: [ReportsService, ReportsRegistry],
 })
 export class ReportsModule {}

@@ -200,31 +200,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       firstLineId = res.body.lines[0].salesOrderLineId;
     });
 
-    it('GET /api/sales-orders/:id/sales-quote-report?source=app — generates a PDF', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}/sales-quote-report?source=app`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      expect(res.header['content-type']).toBe('application/pdf');
-      expect(res.header['content-disposition']).toContain(
-        `sales-quote-${orderNumber}.pdf`,
-      );
-      expect(res.body.length).toBeGreaterThan(0);
-    });
-
-    it('GET /api/sales-orders/:id/sales-invoice-report?source=app — generates a PDF', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}/sales-invoice-report?source=app`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      expect(res.header['content-type']).toBe('application/pdf');
-      expect(res.header['content-disposition']).toContain(
-        `sales-invoice-${orderNumber}.pdf`,
-      );
-      expect(res.body.length).toBeGreaterThan(0);
-    });
+    // NOTE: Legacy PDF report routes (sales-quote-report, sales-invoice-report)
+    // were removed during the Typst migration. PDF generation is now handled
+    // by the dynamic reports engine: POST /api/reports/hooks/:hookSlug/run
 
     it('PATCH /api/sales-orders/:id — updates order header', async () => {
       const res = await request(app.getHttpServer())

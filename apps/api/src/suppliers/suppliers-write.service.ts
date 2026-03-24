@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   Inject,
   NotFoundException,
@@ -12,11 +12,7 @@ import {
   suppliers as coreSuppliers,
   supplierEvents,
 } from '../drizzle/modbm-core-schema';
-import { suppliers as martSuppliers } from '../drizzle/schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-
-const isUuid = (id: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
 export interface CreateSupplierDto {
   vendorNumber: string;
@@ -60,35 +56,9 @@ export class SuppliersWriteService {
 
   /**
    * Create a new supplier in modbm_core.
-   * Ensures the vendor number is unique across both core and mart data.
+   * Vendor number uniqueness is enforced by the DB UNIQUE constraint.
    */
   async create(dto: CreateSupplierDto, actor: string) {
-    // 1. Check if vendor number exists in core
-    const coreExisting = await this.db
-      .select({ id: coreSuppliers.vendorId })
-      .from(coreSuppliers)
-      .where(eq(coreSuppliers.vendorNumber, dto.vendorNumber))
-      .limit(1);
-
-    if (coreExisting.length > 0) {
-      throw new BadRequestException(
-        `Supplier number '${dto.vendorNumber}' already exists in application data`,
-      );
-    }
-
-    // 2. Check if vendor number exists in mart (legacy)
-    const martExisting = await this.db
-      .select({ id: martSuppliers.vendorId })
-      .from(martSuppliers)
-      .where(eq(martSuppliers.vendorNumber, dto.vendorNumber))
-      .limit(1);
-
-    if (martExisting.length > 0) {
-      throw new BadRequestException(
-        `Supplier number '${dto.vendorNumber}' already exists in legacy ABM data`,
-      );
-    }
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [supplier] = await tx
         .insert(coreSuppliers)
@@ -115,36 +85,17 @@ export class SuppliersWriteService {
   }
 
   /**
-   * Update an application-owned supplier.
-   * Throws NotFoundException if the ID is not in modbm_core.
+   * Update a supplier.
    */
   async update(id: string, dto: UpdateSupplierDto, actor: string) {
-    let existing: any[] = [];
-
-    if (isUuid(id)) {
-      existing = await this.db
-        .select()
-        .from(coreSuppliers)
-        .where(eq(coreSuppliers.vendorId, id))
-        .limit(1);
-    }
+    const existing = await this.db
+      .select()
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, id))
+      .limit(1);
 
     if (existing.length === 0) {
-      const isLegacy = await this.db
-        .select({ id: martSuppliers.vendorId })
-        .from(martSuppliers)
-        .where(eq(martSuppliers.vendorId, id))
-        .limit(1);
-
-      if (isLegacy.length > 0) {
-        throw new BadRequestException(
-          `Supplier '${id}' is a legacy ABM supplier and cannot be edited.`,
-        );
-      }
-
-      throw new NotFoundException(
-        `Supplier '${id}' not found in application data`,
-      );
+      throw new NotFoundException(`Supplier '${id}' not found`);
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -197,12 +148,6 @@ export class SuppliersWriteService {
    * Archive a supplier.
    */
   async archive(id: string, actor: string) {
-    if (!isUuid(id)) {
-      throw new BadRequestException(
-        `Supplier '${id}' is a legacy ABM supplier and cannot be archived.`,
-      );
-    }
-
     const existing = await this.db
       .select()
       .from(coreSuppliers)
@@ -210,9 +155,7 @@ export class SuppliersWriteService {
       .limit(1);
 
     if (existing.length === 0) {
-      throw new NotFoundException(
-        `Supplier '${id}' not found in application data`,
-      );
+      throw new NotFoundException(`Supplier '${id}' not found`);
     }
 
     if (existing[0].stateCode === 'archived') {
@@ -244,12 +187,6 @@ export class SuppliersWriteService {
    * Unarchive a supplier.
    */
   async unarchive(id: string, actor: string) {
-    if (!isUuid(id)) {
-      throw new BadRequestException(
-        `Supplier '${id}' is a legacy ABM supplier.`,
-      );
-    }
-
     const existing = await this.db
       .select()
       .from(coreSuppliers)

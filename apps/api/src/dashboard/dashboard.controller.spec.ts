@@ -6,14 +6,34 @@ describe('DashboardController', () => {
   let controller: DashboardController;
 
   const mockSummary = {
-    totalAccounts: 17,
-    totalProducts: 14896,
-    totalInventoryValue: 123456.78,
-    recentOrders: 5,
+    accounts: 17,
+    products: 14896,
+    inventoryLevels: 500,
+    orderLines: 5,
+  };
+
+  const mockSearchResults = {
+    results: [
+      {
+        id: 'p1',
+        type: 'product',
+        label: 'Widget',
+        subtitle: 'PROD-001',
+        href: '/products/p1',
+      },
+      {
+        id: 'a1',
+        type: 'account',
+        label: 'Acme',
+        subtitle: 'ACC-001',
+        href: '/accounts/a1',
+      },
+    ],
   };
 
   const mockService = {
     getSummary: jest.fn().mockResolvedValue(mockSummary),
+    universalSearch: jest.fn().mockResolvedValue(mockSearchResults),
   };
 
   beforeEach(async () => {
@@ -31,6 +51,14 @@ describe('DashboardController', () => {
       const result = await controller.getSummary();
       expect(result).toEqual(mockSummary);
       expect(mockService.getSummary).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('search', () => {
+    it('should delegate to universalSearch and return results', async () => {
+      const result = await controller.search('widget');
+      expect(result).toEqual(mockSearchResults);
+      expect(mockService.universalSearch).toHaveBeenCalledWith('widget');
     });
   });
 });

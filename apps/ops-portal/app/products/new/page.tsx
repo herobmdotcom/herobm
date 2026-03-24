@@ -54,23 +54,35 @@ export default function NewProductPage() {
         header={
           <EntityHeader
             title={t('products.buttons.addProduct')}
-            subtitle={t('products.catalogManagement')}
             onBack={() => router.push('/products')}
-            isSaving={submitting}
-            isDirty={isValid}
-            onSave={handleSubmit}
-            saveLabel={t('products.buttons.addProduct')}
+            actions={
+              <>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => router.push('/products')}
+                  disabled={submitting}
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSubmit}
+                  disabled={!isValid || submitting}
+                >
+                  {submitting ? t('common.saving') : `+ ${t('products.buttons.addProduct')}`}
+                </button>
+              </>
+            }
           />
         }
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Product Information Card */}
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Product Information Card */}
           <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-            >
-              {t('products.productInformation')}
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">info</span>
+              {t('products.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -134,91 +146,75 @@ export default function NewProductPage() {
 
           {/* Pricing & Financials Card */}
           <div className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-            >
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.listPrice')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    value={dto.listPrice}
-                    onChange={(e) => updateField('listPrice', e.target.value)}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.stdCost')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    value={dto.standardCost}
-                    onChange={(e) => updateField('standardCost', e.target.value)}
-                    disabled={submitting}
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.listPrice')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+                  value={dto.listPrice}
+                  onChange={(e) => updateField('listPrice', e.target.value)}
+                  disabled={submitting}
+                />
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.tradePrice')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    value={dto.tradePrice}
-                    onChange={(e) => updateField('tradePrice', e.target.value)}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.priceLevel3')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    value={dto.priceLevel3}
-                    onChange={(e) => updateField('priceLevel3', e.target.value)}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.priceLevel4')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="input"
-                    style={{ fontFamily: 'var(--font-mono, monospace)' }}
-                    value={dto.priceLevel4}
-                    onChange={(e) => updateField('priceLevel4', e.target.value)}
-                    disabled={submitting}
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.tradePrice')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+                  value={dto.tradePrice}
+                  onChange={(e) => updateField('tradePrice', e.target.value)}
+                  disabled={submitting}
+                />
               </div>
-              <div className="mt-4 p-4 rounded-lg bg-base-200/50 border border-base-300">
-                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.pricingCostsInfo')}
-                </p>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.priceLevel3')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+                  value={dto.priceLevel3}
+                  onChange={(e) => updateField('priceLevel3', e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.priceLevel4')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+                  value={dto.priceLevel4}
+                  onChange={(e) => updateField('priceLevel4', e.target.value)}
+                  disabled={submitting}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.stdCost')}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className="input"
+                  value={dto.standardCost}
+                  onChange={(e) => updateField('standardCost', e.target.value)}
+                  disabled={submitting}
+                />
               </div>
             </div>
           </div>
@@ -226,10 +222,8 @@ export default function NewProductPage() {
 
         {/* Notes Card */}
         <div className="card">
-          <h3
-            className="text-sm font-semibold mb-4"
-            style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-          >
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>
           <textarea
@@ -240,6 +234,7 @@ export default function NewProductPage() {
             placeholder={t('products.placeholders.notes')}
             disabled={submitting}
           />
+        </div>
         </div>
       </DetailsLayout>
     </Shell>

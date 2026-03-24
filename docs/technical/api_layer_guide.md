@@ -128,6 +128,13 @@ export class AccountsController {
 }
 ```
 
+## Data Validation & Integrity
+
+The API enforces strict data hygiene rules during mutations (e.g. Sales Orders, Purchase Orders, Returns):
+- **Pricing & Tax**: Lines calculate their own total derived from `computeLinePriceForStorage` (`@modbm/shared`).
+- **Duplicate Line Prevention**: The `OrdersWriteService` throws a `BadRequestException` if multiple lines reference the same `productId`. 
+  - **Exception (`SYSTEM-CUSTOM-LINE`)**: The UUID `00000000-0000-0000-0000-000000000000` is explicitly exempted from duplicate product checks. This allows the frontend to submit multiple "Custom Lines" on a single order while maintaining valid foreign key constraints to the `modbm_core.products` table.
+
 ## Observability
 
 ### Structured logging

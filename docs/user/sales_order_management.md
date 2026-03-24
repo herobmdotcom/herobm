@@ -46,6 +46,16 @@ Any order (including historical ABM orders) can be copied to create a new Draft 
 
 ---
 
+## Custom Lines
+
+Users can add "Custom Lines" to orders for ad-hoc items that do not exist in the product catalogue. 
+
+Under the hood, all Custom Lines are mapped to a reserved system product (`SYSTEM-CUSTOM-LINE` with UUID `00000000-0000-0000-0000-000000000000`). This ensures referential integrity in the database while allowing users to override the description freely. 
+
+**Duplicate Validation Exemption:** Normally, the system prevents adding the exact same product twice to an order (users should increase the line quantity instead). However, Custom Lines are explicitly exempted from this rule; you can add as many Custom Lines to a single order as needed, representing different ad-hoc items.
+
+---
+
 ## Pricing
 
 ### Price Levels

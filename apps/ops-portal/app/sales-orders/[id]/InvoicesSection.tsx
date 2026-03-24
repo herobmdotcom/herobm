@@ -8,6 +8,7 @@ import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
 import type { OrderDetail, GstCategory, SalesInvoice } from './types';
+import { computeLinePrice } from '@modbm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 
@@ -77,16 +78,10 @@ export default function InvoicesSection({
     };
 
     return (
-        <div id="invoices-section" className="card !border-none">
+        <div id="invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
-                <h3
-                    className="text-sm font-semibold flex items-center gap-2"
-                    style={{
-                        color: 'var(--text-muted)', textTransform: 'uppercase',
-                        letterSpacing: '0.05em', margin: 0
-                    }}
-                >
-                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>request_quote</span>
+                <h3 className="section-heading">
+                    <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
                 {['shipped', 'picking'].includes(order.stateCode) && source === 'app' && !showCreateInvoice && (
@@ -210,7 +205,7 @@ export default function InvoicesSection({
                                 onClick={async () => {
                                     try {
                                         const { apiFetchBlob } = await import('@/lib/api');
-                                        const blob = await apiFetchBlob(`/api/sales-orders/${orderId}/sales-invoice-report?source=${source}`);
+                                        const blob = await apiFetchBlob(`/api/reports/hooks/sales-invoice/run?id=${inv.invoiceId}&context=sales-invoice`, { method: 'POST' });
                                         const url = URL.createObjectURL(blob);
                                         window.open(url, '_blank');
                                     } catch (err) {
@@ -232,9 +227,26 @@ export default function InvoicesSection({
                                 const bIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === b.salesOrderLineId);
                                 return aIdx - bIdx;
                             });
-                            const subtotal = sortedLines.reduce((s, il) => s + parseFloat(il.amount || '0'), 0);
-                            const taxTotal = parseFloat(inv.totalTax || '0');
-                            const grandTotal = parseFloat(inv.totalAmount || '0');
+
+                            // Centralised pricing — compute per-line then sum
+                            let subtotal = 0;
+                            let taxTotal = 0;
+                            const linePricing = sortedLines.map((il) => {
+                                const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
+                                const disc = parseFloat(orderLine?.discountPercentage || '0');
+                                const gstCat = gstCategories.find(c => c.gstCategoryId === orderLine?.gstCategoryId);
+                                const gstRate = parseFloat(gstCat?.rate || '0');
+                                const pricing = computeLinePrice({
+                                    quantity: parseFloat(il.quantityInvoiced),
+                                    pricePerUnit: parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'),
+                                    discountPercentage: disc,
+                                    taxRate: gstRate,
+                                });
+                                subtotal += pricing.amount;
+                                taxTotal += pricing.tax;
+                                return { il, orderLine, disc, gstRate, pricing };
+                            });
+                            const grandTotal = subtotal + taxTotal;
                             return (
                                 <table className="table-lines">
                                     <thead>
@@ -249,12 +261,7 @@ export default function InvoicesSection({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sortedLines.map((il) => {
-                                            const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
-                                            const disc = parseFloat(orderLine?.discountPercentage || '0');
-                                            const gstCat = gstCategories.find(c => c.gstCategoryId === orderLine?.gstCategoryId);
-                                            const gstRate = parseFloat(gstCat?.rate || '0');
-                                            return (
+                                        {linePricing.map(({ il, orderLine, disc, gstRate, pricing }) => (
                                                 <tr key={il.lineId || il.invoiceLineId}>
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                                                         {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
@@ -271,23 +278,20 @@ export default function InvoicesSection({
                                                         {gstRate.toFixed(1)}%
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                        {formatAmount(parseFloat(il.amount || '0'), cc)}
+                                                        {formatAmount(pricing.amount, cc)}
                                                     </td>
                                                 </tr>
-                                            );
-                                        })}
+                                            ))}
                                     </tbody>
                                     <tfoot>
                                         <tr style={{ borderTop: '1px solid var(--border)' }}>
                                             <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>Subtotal</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
                                         </tr>
-                                        {taxTotal > 0 && (
-                                            <tr>
-                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>Tax</td>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(taxTotal, cc)}</td>
-                                            </tr>
-                                        )}
+                                        <tr>
+                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>Tax</td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(taxTotal, cc)}</td>
+                                        </tr>
                                         <tr>
                                             <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>Total</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
