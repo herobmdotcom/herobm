@@ -175,9 +175,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       orderNumber = res.body.orderNumber;
     });
 
-    it('GET /api/sales-orders/:id?source=app — retrieves the order with lines and events', async () => {
+    it('GET /api/sales-orders/:id — retrieves the order with lines and events', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -254,7 +254,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Verify line count is back to 2
       const detail = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(detail.body.lines).toHaveLength(2);
@@ -288,7 +288,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('event log captures the full history', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -472,9 +472,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('unknown order ID returns 404', async () => {
       await request(app.getHttpServer())
-        .get(
-          '/api/sales-orders/00000000-0000-0000-0000-000000000000?source=app',
-        )
+        .get('/api/sales-orders/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
     });
@@ -512,9 +510,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
   // =========================================================================
 
   describe('App order listing', () => {
-    it('GET /api/sales-orders?source=app — returns app-created orders', async () => {
+    it('GET /api/sales-orders — returns orders', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/sales-orders?source=app')
+        .get('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -523,8 +521,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       // We created orders in previous tests, should have at least 1
       expect(res.body.data.length).toBeGreaterThan(0);
       // Verify the listing contains our app-created orders
-      const appOrders = res.body.data.filter(
-        (o: any) => o.source === 'app' || o.orderNumber?.startsWith('ORD-'),
+      const appOrders = res.body.data.filter((o: any) =>
+        o.orderNumber?.startsWith('ORD-'),
       );
       expect(appOrders.length).toBeGreaterThan(0);
       expect(appOrders[0]).toHaveProperty('id');

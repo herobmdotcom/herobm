@@ -82,7 +82,6 @@ describe('Suppliers (e2e)', () => {
       s.vendorNumber.startsWith('E2E-V-'),
     );
     expect(found).toBeDefined();
-    expect(found.source).toBe('app');
   });
 
   it('PATCH /api/suppliers/:id -> should update the supplier', async () => {

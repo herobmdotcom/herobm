@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -73,7 +72,7 @@ export default function AccountsPage() {
   }, [router]);
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           {/* Removed aggressive background blur gradients */}
@@ -122,6 +121,6 @@ export default function AccountsPage() {
         </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

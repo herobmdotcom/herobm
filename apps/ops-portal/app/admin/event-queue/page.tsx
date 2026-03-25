@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import Shell from '@/components/Shell';
 import { apiFetch, apiMutate } from '@/lib/api';
 
 interface SyncSummary {
@@ -115,16 +114,16 @@ export default function EventQueueDashboard() {
 
   if (loading) {
     return (
-      <Shell>
+      <>
         <div className="flex items-center justify-center flex-1">
           <p style={{ color: 'var(--text-muted)' }}>Loading event queue…</p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   return (
-    <Shell>
+    <>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -486,6 +485,6 @@ export default function EventQueueDashboard() {
           </>
         )}
       </div>
-    </Shell>
+    </>
   );
 }

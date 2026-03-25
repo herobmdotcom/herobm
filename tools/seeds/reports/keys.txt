@@ -1,0 +1,9 @@
+--- sales-quote.typ ---
+Data keys: ['generatedAt', 'header.currencyCode', 'header.customerName', 'header.customerOrderNumber', 'header.name', 'header.orderDate', 'header.orderNumber', 'lines', 'summary.subtotal', 'summary.totalAmount', 'summary.totalTax']
+Line keys: ['amount', 'description', 'discountPercentage', 'gstRate', 'pricePerUnit', 'productNumber', 'quantity']
+--- sales-invoice.typ ---
+Data keys: ['generatedAt', 'header.currencyCode', 'header.customerName', 'header.customerOrderNumber', 'header.name', 'header.orderDate', 'header.orderNumber', 'lines', 'summary.subtotal', 'summary.totalAmount', 'summary.totalTax']
+Line keys: ['amount', 'description', 'discountPercentage', 'gstRate', 'pricePerUnit', 'productNumber', 'quantity']
+--- picking-slip.typ ---
+Data keys: ['backOrderLines', 'backOrderLines.len', 'generatedAt', 'header.customerName', 'header.customerOrderNumber', 'header.orderDate', 'header.orderNumber', 'pickingLines', 'pickingLines.len']
+Line keys: ['binNumber', 'description', 'productCode', 'qtyToOrder', 'qtyToPick', 'supplierName']

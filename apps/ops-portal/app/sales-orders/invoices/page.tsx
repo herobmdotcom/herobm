@@ -3,7 +3,6 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
@@ -57,7 +56,7 @@ export default function GlobalInvoicesPage() {
     ];
 
     return (
-        <Shell>
+        <>
             <div className="h-full flex flex-col relative p-4 lg:p-6">
                 <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
                     <DataGrid 
@@ -106,6 +105,6 @@ export default function GlobalInvoicesPage() {
                     />
                 </div>
             </div>
-        </Shell>
+        </>
     );
 }

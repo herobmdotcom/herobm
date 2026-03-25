@@ -3,6 +3,7 @@
 # Load .env into Make variables and export to subprocesses (dbt, etc.)
 -include .env
 export
+export PYTHONUTF8=1
 
 # --- Platform-specific Compose override ---
 # Promtail needs a platform-specific config for container log collection.
@@ -35,7 +36,15 @@ endif
 # Containerized Stacks
 # --------------------------------------------------------------------------
 
-# FE + API Core (The standard app stack)
+# DB Backend Core (Local FE + API run path)
+up-db: check-logs-volume
+	$(COMPOSE_CMD) up -d postgres-custom redis-broker
+
+down-db:
+	$(COMPOSE_CMD) stop postgres-custom redis-broker
+	$(COMPOSE_CMD) rm -f postgres-custom redis-broker
+
+# FE + API Core (The standard full-container app stack)
 up-fe-api: check-logs-volume
 	$(COMPOSE_CMD) up -d custom-api ops-portal postgres-custom redis-broker
 
@@ -104,6 +113,8 @@ init: build-api migrate elt seed
 # Setup from scratch: configure .env, start containers, then full init.
 setup: init-env up init
 
+setup-no-extract: init-env up init-no-extract
+
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
 	powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
@@ -122,11 +133,18 @@ transform:
 test-transform:
 	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-# Rebuild a single model: make transform-select MODEL=mart_sales_order_lines
+# Rebuild a single model: make transform-select MODEL=import_accounts
 transform-select:
 	"$(DBT)" run --select $(MODEL) --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
+transform-refresh:
+	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
 elt: extract transform import-legacy schema-ref
+	"$(VENV_PYTHON)" tools/elt_report.py
+
+elt-no-extract: transform import-legacy schema-ref
+	"$(VENV_PYTHON)" tools/elt_report.py
 
 import-legacy:
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
@@ -207,6 +225,10 @@ migrate-dry:
 seed:
 	"$(VENV_PYTHON)" tools/seed.py
 
+init: migrate elt seed
+
+init-no-extract: migrate elt-no-extract seed
+
 # --- Typechecks & Builds ---
 
 typecheck-portal:
@@ -226,6 +248,7 @@ test-deps:
 	python infra/tests/test_dependency_completeness.py
 
 test-structural:
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
@@ -242,13 +265,17 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 
-test-all: test-api test-deps test-structural typecheck-portal
+test-data:
+	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
+
+test-all: test-api test-deps test-structural typecheck-portal test-data
 
 build-all: build-api build-portal
 
-verify-all: build-api verify-fe-api test-structural test-deps test-transform
+verify-all: build-api verify-fe-api test-structural test-deps test-transform test-data
 
 test-structural-local:
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1 -SkipLive
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1

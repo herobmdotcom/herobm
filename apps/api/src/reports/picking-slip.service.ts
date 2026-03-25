@@ -8,8 +8,8 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   inventoryLevels,
+  accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
-import { accounts, productSuppliers } from '../drizzle/schema';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
@@ -30,7 +30,6 @@ export interface PickingLine {
 export interface BackOrderLine {
   productCode: string;
   description: string;
-  supplierName: string;
   qtyToOrder: number;
 }
 
@@ -56,12 +55,15 @@ export class PickingSlipService {
     const orderRows = await this.db
       .select({
         orderNumber: salesOrders.orderNumber,
-        customerName: accounts.name,
+        customerName: coreAccounts.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         createdOn: salesOrders.createdOn,
       })
       .from(salesOrders)
-      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
       .where(eq(salesOrders.salesOrderId, orderId))
       .limit(1);
 
@@ -100,30 +102,6 @@ export class PickingSlipService {
       .filter((id): id is string => id !== null && id !== undefined);
 
     const binMap = new Map<string, string>();
-
-    // 4. Supplier names from mart_product_suppliers (preferred supplier)
-    const supplierMap = new Map<string, string>();
-    if (productIds.length > 0) {
-      const suppRows = await this.db
-        .select({
-          productId: productSuppliers.productId,
-          vendorName: productSuppliers.vendorName,
-          isPreferred: productSuppliers.isPreferred,
-        })
-        .from(productSuppliers)
-        .where(
-          and(
-            inArray(productSuppliers.productId, productIds),
-            eq(productSuppliers.isPreferred, true),
-          ),
-        );
-
-      for (const row of suppRows) {
-        if (row.productId && row.vendorName) {
-          supplierMap.set(row.productId, row.vendorName);
-        }
-      }
-    }
 
     // 5. Get on-hand quantities from inventoryLevels for back-order logic
     const onHandMap = new Map<string, number>();
@@ -174,7 +152,6 @@ export class PickingSlipService {
         backOrderLines.push({
           productCode,
           description,
-          supplierName: supplierMap.get(productCode) ?? '—',
           qtyToOrder,
         });
       }

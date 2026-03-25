@@ -47,7 +47,6 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
         createdBy: 'admin',
         createdOn: '2024-01-01',
         modifiedOn: '2024-01-01',
-        source: 'app',
         lines: [
             {
                 salesOrderLineId: 'line-1',
@@ -105,7 +104,7 @@ describe('useOrder — computed values', () => {
         const order = makeOrder();
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         // 500 + 450 = 950
@@ -116,7 +115,7 @@ describe('useOrder — computed values', () => {
         const order = makeOrder();
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         // 50 + 45 = 95
@@ -127,7 +126,7 @@ describe('useOrder — computed values', () => {
         const order = makeOrder({ stateCode: 'draft' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         expect(result.current.isOrderDetailsEditable).toBe(true);
@@ -139,28 +138,28 @@ describe('useOrder — computed values', () => {
             const order = makeOrder({ stateCode: state });
             setupMocks(order);
 
-            const { result } = renderHook(() => useOrder('so-001', 'app'));
+            const { result } = renderHook(() => useOrder('so-001'));
             await waitFor(() => expect(result.current.order).toBeTruthy());
 
             expect(result.current.isOrderDetailsEditable).toBe(false);
         },
     );
 
-    it('isOrderDetailsEditable is false for abm source', async () => {
+    it('isOrderDetailsEditable is true for editable state', async () => {
         const order = makeOrder({ stateCode: 'draft' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'abm'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
-        expect(result.current.isOrderDetailsEditable).toBe(false);
+        expect(result.current.isOrderDetailsEditable).toBe(true);
     });
 
     it('isOrderLinesEditable is true only for app + draft', async () => {
         const order = makeOrder({ stateCode: 'draft' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         expect(result.current.isOrderLinesEditable).toBe(true);
@@ -170,7 +169,7 @@ describe('useOrder — computed values', () => {
         const order = makeOrder({ stateCode: 'confirmed' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         expect(result.current.isOrderLinesEditable).toBe(false);
@@ -180,27 +179,27 @@ describe('useOrder — computed values', () => {
         const order = makeOrder({ stateCode: 'draft' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         expect(result.current.allowedTransitions).toEqual(['quoted', 'cancelled']);
     });
 
-    it('allowedTransitions is empty for abm source', async () => {
+    it('allowedTransitions reflects state transitions', async () => {
         const order = makeOrder({ stateCode: 'draft' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'abm'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
-        expect(result.current.allowedTransitions).toEqual([]);
+        expect(result.current.allowedTransitions).toEqual(['quoted', 'cancelled']);
     });
 
     it('allowedTransitions is empty for terminal states', async () => {
         const order = makeOrder({ stateCode: 'invoiced' });
         setupMocks(order);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         expect(result.current.allowedTransitions).toEqual([]);
@@ -214,7 +213,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('saveHeader calls PATCH with correct body', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         // Simulate header edit to make it dirty
@@ -231,7 +230,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('changeState calls PATCH with stateCode', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.changeState('quoted'); });
@@ -244,7 +243,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('updateLine calls PATCH on the correct endpoint', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.updateLine('line-1', 'quantity', '20'); });
@@ -259,7 +258,7 @@ describe('useOrder — mutations', () => {
     it('copyOrder calls POST and navigates to new order', async () => {
         mockApiMutate.mockResolvedValueOnce({ salesOrderId: 'so-002' });
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.copyOrder(); });
@@ -275,13 +274,13 @@ describe('useOrder — mutations', () => {
                 ]),
             }),
         );
-        expect(mockPush).toHaveBeenCalledWith('/sales-orders/so-002?source=app');
+        expect(mockPush).toHaveBeenCalledWith('/sales-orders/so-002');
     });
 
     it('archiveOrder calls POST after confirm', async () => {
         jest.spyOn(window, 'confirm').mockReturnValue(true);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.archiveOrder(); });
@@ -297,7 +296,7 @@ describe('useOrder — mutations', () => {
     it('archiveOrder does nothing when confirm is cancelled', async () => {
         jest.spyOn(window, 'confirm').mockReturnValue(false);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
         mockApiMutate.mockClear();
 
@@ -308,7 +307,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('unarchiveOrder calls POST', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.unarchiveOrder(); });
@@ -322,7 +321,7 @@ describe('useOrder — mutations', () => {
     it('removeLine calls DELETE after confirm', async () => {
         jest.spyOn(window, 'confirm').mockReturnValue(true);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         await act(async () => { await result.current.removeLine('line-1'); });
@@ -338,7 +337,7 @@ describe('useOrder — mutations', () => {
     it('removeLine does nothing when confirm is cancelled', async () => {
         jest.spyOn(window, 'confirm').mockReturnValue(false);
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
         mockApiMutate.mockClear();
 
@@ -349,7 +348,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('addLineFromProduct calls POST with product data', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         const product = {
@@ -377,7 +376,7 @@ describe('useOrder — mutations', () => {
     it('addLineFromProduct rejects duplicates with toast error', async () => {
         const { toast } = require('react-hot-toast');
 
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
         mockApiMutate.mockClear();
 
@@ -396,7 +395,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('saveHeader sets error on failure', async () => {
-        const { result } = renderHook(() => useOrder('so-001', 'app'));
+        const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
 
         act(() => result.current.setEditName('Changed'));

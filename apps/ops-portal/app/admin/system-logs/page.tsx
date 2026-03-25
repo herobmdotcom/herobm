@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Shell from '@/components/Shell';
 import { apiFetch } from '@/lib/api';
 
 interface LogsResponse {
@@ -54,7 +53,7 @@ export default function SystemLogsPage() {
   };
 
   return (
-    <Shell>
+    <>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
@@ -162,6 +161,6 @@ export default function SystemLogsPage() {
           )}
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

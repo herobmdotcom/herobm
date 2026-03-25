@@ -61,13 +61,13 @@ export default function Sidebar() {
     sections.push({
       label: t('groups.finance'),
       items: [
-        { href: '/gl/trial-balance', label: t('items.trialBalance'), icon: 'account_balance' },
         { 
           href: '/general-ledger', 
           label: t('items.generalLedger'), 
           icon: 'menu_book',
           subItems: [
             { href: '/general-ledger', label: t('items.generalLedger') },
+            { href: '/general-ledger/trial-balance', label: t('items.trialBalance') },
             { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
           ]
         },

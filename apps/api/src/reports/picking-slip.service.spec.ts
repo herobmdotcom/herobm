@@ -89,11 +89,6 @@ const INVENTORY = [
   { productId: 'PROD-C', defaultBinNumber: 'C-05-02', quantityOnHand: '5' }, // less than ordered
 ];
 
-const SUPPLIERS = [
-  { productId: 'PROD-A', vendorName: 'Supplier One', isPreferred: true },
-  { productId: 'PROD-C', vendorName: 'Supplier Three', isPreferred: true },
-];
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -149,8 +144,7 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: SUPPLIERS,
-        4: INVENTORY,
+        3: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -163,8 +157,7 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: SUPPLIERS,
-        4: INVENTORY,
+        3: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -183,8 +176,7 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: SUPPLIERS,
-        4: INVENTORY,
+        3: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -196,8 +188,7 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: SUPPLIERS,
-        4: INVENTORY,
+        3: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -206,15 +197,13 @@ describe('PickingSlipService', () => {
       expect(data.backOrderLines).toHaveLength(1);
       expect(data.backOrderLines[0].productCode).toBe('PROD-C');
       expect(data.backOrderLines[0].qtyToOrder).toBe(15);
-      expect(data.backOrderLines[0].supplierName).toBe('Supplier Three');
     });
 
     it('should include generatedAt timestamp', async () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: SUPPLIERS,
-        4: INVENTORY,
+        3: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');

@@ -3,7 +3,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
@@ -190,7 +189,7 @@ export default function NewPurchaseOrderPage() {
   const subtotal = lines.reduce((sum, l) => sum + computeAmount(l), 0);
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -519,6 +518,6 @@ export default function NewPurchaseOrderPage() {
         </div>
         </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

@@ -168,7 +168,7 @@ describe('Audit Events (e2e)', () => {
 
       // 4. Verify event
       const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       const updatedEvent = res.body.events.find(
@@ -191,7 +191,7 @@ describe('Audit Events (e2e)', () => {
         .get('/api/sales-orders?limit=50')
         .set('Authorization', `Bearer ${adminToken}`);
       const invoicedOrder = orderRes.body.data.find(
-        (o: any) => o.stateCode === 'invoiced' && o.source === 'app',
+        (o: any) => o.stateCode === 'invoiced',
       );
 
       if (!invoicedOrder) {
@@ -218,7 +218,7 @@ describe('Audit Events (e2e)', () => {
 
       // 4. Verify event
       const res = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${salesOrderId}?source=app`)
+        .get(`/api/sales-orders/${salesOrderId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       const returnEvent = res.body.events.find(

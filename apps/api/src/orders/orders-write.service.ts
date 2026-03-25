@@ -180,16 +180,29 @@ export class OrdersWriteService {
     if (productId) {
       const product = await this.lookupProduct(productId);
       if (product.gstCategory) {
+        // Try mapping from legacy ABM string first
         const code =
           OrdersWriteService.GST_CATEGORY_MAP[
             product.gstCategory.toLowerCase()
           ];
+
         if (code) {
           const cat = await this.gstService.getByCode(code);
           return {
             gstCategoryId: cat.gstCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
           };
+        }
+
+        // If not mapped, maybe it's already a code (e.g. 'GST', 'ZR', 'EXE')
+        try {
+          const cat = await this.gstService.getByCode(product.gstCategory);
+          return {
+            gstCategoryId: cat.gstCategoryId,
+            rate: parseFloat(cat.rate ?? '0'),
+          };
+        } catch (err) {
+          // Not a recognized code, ignore and let it fall back
         }
       }
     }
@@ -203,7 +216,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Resolve a customer from mart_accounts.
+   * Resolve a customer from modbm_core.accounts.
    * Throws BadRequestException if not found.
    * Returns the customer discount percentage.
    */

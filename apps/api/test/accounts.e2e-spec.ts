@@ -58,31 +58,26 @@ describe('Accounts (e2e)', () => {
     expect(Array.isArray(res.body.data)).toBe(true);
   });
 
-  it('GET /api/accounts/:id — returns a legacy account (viewer)', async () => {
-    // 1. Find a legacy account ID
+  it('GET /api/accounts/:id — returns an account by ID (viewer)', async () => {
+    // 1. Find an account ID
     const listRes = await request(app.getHttpServer())
       .get('/api/accounts')
       .set('Authorization', `Bearer ${viewerToken}`);
 
-    const legacyAccount = listRes.body.data.find(
-      (a: any) => a.source === 'abm',
-    );
+    const account = listRes.body.data[0];
 
-    if (!legacyAccount) {
-      console.warn(
-        'No legacy account found in test data, skipping GET by ID test',
-      );
+    if (!account) {
+      console.warn('No account found in test data, skipping GET by ID test');
       return;
     }
 
     // 2. Fetch by ID
     const res = await request(app.getHttpServer())
-      .get(`/api/accounts/${legacyAccount.accountId}`)
+      .get(`/api/accounts/${account.accountId}`)
       .set('Authorization', `Bearer ${viewerToken}`);
 
     expect(res.status).toBe(200);
-    expect(res.body.accountId).toBe(legacyAccount.accountId);
-    expect(res.body.source).toBe('abm');
+    expect(res.body.accountId).toBe(account.accountId);
   });
 
   it('POST /api/accounts — creates a new account (admin)', async () => {
@@ -138,32 +133,26 @@ describe('Accounts (e2e)', () => {
     expect(res.body.notes).toBe('Testing patching');
   });
 
-  it('PATCH /api/accounts/:id — fails on legacy account (admin)', async () => {
-    // 1. Find a legacy account
+  it('PATCH /api/accounts/:id — all accounts are now editable (admin)', async () => {
+    // All accounts are first-class entities after ABM decommissioning
     const listRes = await request(app.getHttpServer())
       .get('/api/accounts?limit=50')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const legacyAccount = listRes.body.data.find(
-      (a: any) => a.source === 'abm',
-    );
+    const account = listRes.body.data[0];
 
-    if (!legacyAccount) {
-      console.warn(
-        'No legacy accounts found in test environment, skipping legacy patch test',
-      );
+    if (!account) {
+      console.warn('No accounts found in test environment, skipping edit test');
       return;
     }
 
-    // 2. Attempt to update
+    // All accounts should be editable now
     const res = await request(app.getHttpServer())
-      .patch(`/api/accounts/${legacyAccount.accountId}`)
+      .patch(`/api/accounts/${account.accountId}`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ name: 'Should Fail' });
+      .send({ notes: 'E2E: verified editable' });
 
-    expect(res.status).toBe(400);
-    expect(res.body.message).toContain(
-      'legacy ABM record and cannot be edited',
-    );
+    expect(res.status).toBe(200);
+    expect(res.body.notes).toBe('E2E: verified editable');
   });
 });

@@ -3,28 +3,41 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
-import { apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+
+const formatMoney = (val: string | number | undefined | null) => {
+  if (!val) return '0.00';
+  const num = typeof val === 'string' ? parseFloat(val) : val;
+  if (isNaN(num)) return '0.00';
+  return num.toFixed(2);
+};
 
 export default function NewProductPage() {
   const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [gstCategories, setGstCategories] = useState<any[]>([]);
   const [dto, setDto] = useState({
     productNumber: '',
     name: '',
     barcode: '',
-    listPrice: '0',
-    standardCost: '0',
-    tradePrice: '0',
-    priceLevel3: '0',
-    priceLevel4: '0',
+    listPrice: '0.00',
+    standardCost: '0.00',
+    tradePrice: '0.00',
+    priceLevel3: '0.00',
+    priceLevel4: '0.00',
+    gstCategory: '',
+    scNumber: '',
     stateCode: 'active',
     notes: '',
+  });
+
+  useState(() => {
+    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
   });
 
   const handleSubmit = async () => {
@@ -49,7 +62,7 @@ export default function NewProductPage() {
   const isValid = dto.productNumber.trim() !== '' && dto.name.trim() !== '';
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -141,6 +154,39 @@ export default function NewProductPage() {
                   </select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    SC Number
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.scNumber}
+                    onChange={(e) => updateField('scNumber', e.target.value)}
+                    placeholder="SC Number"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.gstCategory')}
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.gstCategory}
+                    onChange={(e) => updateField('gstCategory', e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="">(None)</option>
+                    {gstCategories.map((cat) => (
+                      <option key={cat.gstCategoryId} value={cat.code}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -161,6 +207,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.listPrice}
                   onChange={(e) => updateField('listPrice', e.target.value)}
+                  onBlur={(e) => updateField('listPrice', formatMoney(e.target.value))}
                   disabled={submitting}
                 />
               </div>
@@ -174,6 +221,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.tradePrice}
                   onChange={(e) => updateField('tradePrice', e.target.value)}
+                  onBlur={(e) => updateField('tradePrice', formatMoney(e.target.value))}
                   disabled={submitting}
                 />
               </div>
@@ -187,6 +235,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.priceLevel3}
                   onChange={(e) => updateField('priceLevel3', e.target.value)}
+                  onBlur={(e) => updateField('priceLevel3', formatMoney(e.target.value))}
                   disabled={submitting}
                 />
               </div>
@@ -200,6 +249,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.priceLevel4}
                   onChange={(e) => updateField('priceLevel4', e.target.value)}
+                  onBlur={(e) => updateField('priceLevel4', formatMoney(e.target.value))}
                   disabled={submitting}
                 />
               </div>
@@ -213,6 +263,7 @@ export default function NewProductPage() {
                   className="input"
                   value={dto.standardCost}
                   onChange={(e) => updateField('standardCost', e.target.value)}
+                  onBlur={(e) => updateField('standardCost', formatMoney(e.target.value))}
                   disabled={submitting}
                 />
               </div>
@@ -237,6 +288,6 @@ export default function NewProductPage() {
         </div>
         </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

@@ -3,10 +3,11 @@
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 export default function ProductsPage() {
   const router = useRouter();
@@ -31,7 +32,15 @@ export default function ProductsPage() {
       valueFormatter: (p: any) => p.value && parseFloat(p.value) > 0 ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'barcode', headerName: tProducts('columns.barcode'), width: 130 },
     { field: 'gstCategory', headerName: tProducts('columns.gstCategory'), width: 120, hide: true },
-    { field: 'stateCode', headerName: tCommon('columns.status'), width: 90 },
+    {
+      field: 'stateCode',
+      headerName: tCommon('columns.status'),
+      width: 120,
+      cellRenderer: (params: any) => {
+        if (!params.value) return null;
+        return <StateBadge state={params.value as ValidState} />;
+      }
+    },
     { field: 'notes', headerName: tCommon('columns.notes'), width: 150, hide: true },
     { field: 'createdBy', headerName: tCommon('columns.createdBy'), width: 120, hide: true },
     {
@@ -41,21 +50,10 @@ export default function ProductsPage() {
       hide: true,
       valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '—',
     },
-    {
-      field: 'source',
-      headerName: tCommon('columns.source'),
-      width: 90,
-      hide: true,
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        const label = params.value === 'abm' ? tCommon('sources.abm') : tCommon('sources.app');
-        return <span className={`badge badge-${params.value}`}>{label}</span>;
-      },
-    },
   ], [tCommon, tProducts]);
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
@@ -101,6 +99,6 @@ export default function ProductsPage() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

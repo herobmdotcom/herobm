@@ -105,6 +105,85 @@ def seed_suppliers(dry_run: bool = False) -> None:
     print("  SKIP: Suppliers are imported via 'make import-legacy' (dbt import models)")
 
 
+
+
+def seed_gst_categories(dry_run: bool = False) -> None:
+    if dry_run:
+        print("  [DRY RUN] Would seed GST categories")
+        return
+    sql = """
+    INSERT INTO modbm_core.gst_categories (code, title, type, rate) VALUES
+        ('GST', 'GST 9%', 'gst_applies', '9'),
+        ('ZR', 'Zero Rated', 'zero_rated', '0'),
+        ('EXE', 'Exempt', 'exempt', '0')
+    ON CONFLICT (code) DO UPDATE SET rate = EXCLUDED.rate, title = EXCLUDED.title, type = EXCLUDED.type;
+    """
+    psql_sql(sql)
+
+def seed_system_records(dry_run: bool = False) -> None:
+    if dry_run:
+        print("  [DRY RUN] Would seed system records")
+        return
+    sql = """
+    INSERT INTO modbm_core.products (product_id, product_number, name) 
+      VALUES ('00000000-0000-0000-0000-000000000000', 'CUSTOM', 'Custom Line Product') 
+      ON CONFLICT DO NOTHING;
+
+    INSERT INTO modbm_core.bins (bin_number, location_no, source) 
+      VALUES ('SHIPPING', 'MAIN', 'custom'), ('DOCK', 'MAIN', 'custom') 
+      ON CONFLICT DO NOTHING;
+    """
+    psql_sql(sql)
+
+
+def seed_reports(dry_run: bool = False) -> None:
+    if dry_run:
+        print("  [DRY RUN] Would seed report templates")
+        return
+
+    def read_escape(filename):
+        path = os.path.join('tools', 'seeds', 'reports', filename)
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read().replace("'", "'")
+        except FileNotFoundError:
+            return ""
+
+    q = read_escape('sales-quote.typ')
+    p = read_escape('picking-slip.typ')
+    i = read_escape('sales-invoice.typ')
+
+    if not q or not p or not i:
+        print("  [WARN] Missing robust report templates in tools/seeds/reports/, skipping...")
+        return
+
+    # Use single quotes properly escaped in python f-string inside SQL string
+    sql = f"""
+    INSERT INTO modbm_core.reports (id, slug, name, template, output_name_pattern) VALUES
+        ('a0000000-0000-0000-0000-000000000001', 'sales-order-quote', 'Sales Order Quote', '{q}', 'Quote-${{orderNumber}}.pdf'),
+        ('a0000000-0000-0000-0000-000000000002', 'picking-slip-template', 'Picking Slip', '{p}', 'PickingSlip-${{orderNumber}}.pdf'),
+        ('a0000000-0000-0000-0000-000000000003', 'sales-invoice-template', 'Sales Invoice', '{i}', 'Invoice-${{orderNumber}}.pdf')
+    ON CONFLICT (id) DO UPDATE SET
+        template = EXCLUDED.template,
+        name = EXCLUDED.name,
+        slug = EXCLUDED.slug,
+        output_name_pattern = EXCLUDED.output_name_pattern;
+
+    INSERT INTO modbm_core.report_hook_assignments (hook_slug, report_id) VALUES
+        ('sales-order-quote', 'a0000000-0000-0000-0000-000000000001'),
+        ('picking-slip',      'a0000000-0000-0000-0000-000000000002'),
+        ('sales-invoice',     'a0000000-0000-0000-0000-000000000003')
+    ON CONFLICT (hook_slug) DO UPDATE SET
+        report_id = EXCLUDED.report_id;
+
+    INSERT INTO modbm_core.report_contexts (report_id, context) VALUES
+        ('a0000000-0000-0000-0000-000000000001', 'sales-order'),
+        ('a0000000-0000-0000-0000-000000000002', 'picking-slip'),
+        ('a0000000-0000-0000-0000-000000000003', 'sales-invoice')
+    ON CONFLICT (report_id, context) DO NOTHING;
+    """
+    psql_sql(sql)
+
 def main() -> None:
     dry_run = "--dry-run" in sys.argv
     users_only = "--users" in sys.argv
@@ -131,6 +210,12 @@ def main() -> None:
     if seed_all or suppliers_only:
         print("Seeding suppliers...")
         seed_suppliers(dry_run)
+
+
+    if seed_all:
+        seed_system_records(dry_run)
+        seed_gst_categories(dry_run)
+        seed_reports(dry_run)
 
     if not dry_run:
         print("\nDone.")

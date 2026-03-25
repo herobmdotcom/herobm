@@ -35,6 +35,8 @@ export interface ValuationStrategy {
     qtyReceived: number,
     actualUnitCost: string,
   ): GoodsReceiptValuation;
+  onReturn(product: ProductCostData, qtyReturned: number): ProductCostData;
+  onDispatch(product: ProductCostData, qtyShipped: number): ProductCostData;
 }
 
 export class WeightedAverageStrategy implements ValuationStrategy {
@@ -70,6 +72,22 @@ export class WeightedAverageStrategy implements ValuationStrategy {
       purchasePriceVariance: '0.00', // WAC never records variance at receipt
     };
   }
+
+  onReturn(product: ProductCostData, qtyReturned: number): ProductCostData {
+    const currentQoh = parseFloat(product.quantityOnHand || '0');
+    return {
+      ...product,
+      quantityOnHand: (currentQoh + qtyReturned).toString(),
+    };
+  }
+
+  onDispatch(product: ProductCostData, qtyShipped: number): ProductCostData {
+    const currentQoh = parseFloat(product.quantityOnHand || '0');
+    return {
+      ...product,
+      quantityOnHand: (currentQoh - qtyShipped).toString(),
+    };
+  }
 }
 
 export class StandardCostStrategy implements ValuationStrategy {
@@ -96,6 +114,22 @@ export class StandardCostStrategy implements ValuationStrategy {
       newQuantityOnHand: (currentQoh + qtyReceived).toString(),
       inventoryValueAdded: inventoryValueAdded.toFixed(2),
       purchasePriceVariance: totalVariance.toFixed(2),
+    };
+  }
+
+  onReturn(product: ProductCostData, qtyReturned: number): ProductCostData {
+    const currentQoh = parseFloat(product.quantityOnHand || '0');
+    return {
+      ...product,
+      quantityOnHand: (currentQoh + qtyReturned).toString(),
+    };
+  }
+
+  onDispatch(product: ProductCostData, qtyShipped: number): ProductCostData {
+    const currentQoh = parseFloat(product.quantityOnHand || '0');
+    return {
+      ...product,
+      quantityOnHand: (currentQoh - qtyShipped).toString(),
     };
   }
 }

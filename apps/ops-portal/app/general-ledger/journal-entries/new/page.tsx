@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
@@ -131,7 +130,7 @@ export default function NewJournalEntryPage() {
   };
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col p-4 lg:p-6 overflow-auto">
         <div className="max-w-5xl mx-auto w-full">
           {/* Header */}
@@ -337,6 +336,6 @@ export default function NewJournalEntryPage() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

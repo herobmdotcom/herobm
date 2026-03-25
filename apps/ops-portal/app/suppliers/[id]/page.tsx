@@ -3,7 +3,6 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import {
@@ -34,7 +33,7 @@ interface Supplier {
   currencyCode: string;
   stateCode: string;
   notes: string | null;
-  source: 'abm' | 'app';
+
   createdBy?: string | null;
   createdOn?: string | null;
   modifiedOn?: string | null;
@@ -89,7 +88,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   /** Save a single field on blur if it changed */
   const saveField = async (field: string, value: string, original: string | null) => {
     if (value === (original || '')) return;
-    if (supplier?.source === 'abm') return;
     setSaving(true);
     setError('');
     try {
@@ -104,7 +102,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   /** Toggle state code (active/inactive) */
   const toggleState = async () => {
-    if (!supplier || supplier.source === 'abm' || saving) return;
+    if (!supplier || saving) return;
     const newState = supplier.stateCode === 'active' ? 'inactive' : 'active';
     setSaving(true);
     setError('');
@@ -147,17 +145,17 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   if (loading) {
     return (
-      <Shell>
+      <>
         <div className="flex items-center justify-center flex-1">
           <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (!supplier) {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center flex-1">
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
             {error || t('common.noMatchingResults')}
@@ -166,12 +164,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             ← {t('sidebar.items.suppliers')}
           </button>
         </div>
-      </Shell>
+      </>
     );
   }
 
-  const isLegacy = supplier.source === 'abm';
-  const isEditable = !isLegacy && supplier.stateCode !== 'archived';
+  const isEditable = supplier.stateCode !== 'archived';
 
   const sections = {
     info: { id: 'info-section', label: 'Info' },
@@ -183,20 +180,19 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const visibleSections = Object.values(sections);
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
             title={supplier.name}
-            subtitle={`${supplier.vendorNumber} · ${supplier.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}`}
+            subtitle={supplier.vendorNumber}
             onBack={() => router.push('/suppliers')}
             isSaving={saving}
             badges={<StateBadge state={supplier.stateCode as ValidState} />}
             actions={
               <>
                 <PageNav sections={visibleSections} />
-                {supplier.source === 'app' ? (
-                supplier.stateCode === 'archived' ? (
+                {supplier.stateCode === 'archived' ? (
                   <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
                 ) : (
                   <button
@@ -207,8 +203,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   >
                     📦 {t('salesOrders.buttons.archive')}
                   </button>
-                )
-              ) : null}
+                )}
               </>
             }
           />
@@ -460,6 +455,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
       </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

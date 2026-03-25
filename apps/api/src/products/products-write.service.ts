@@ -23,6 +23,8 @@ export interface CreateProductDto {
   tradePrice?: string;
   priceLevel3?: string;
   priceLevel4?: string;
+  gstCategory?: string;
+  scNumber?: string;
   notes?: string;
   stateCode?: string;
 }
@@ -35,6 +37,8 @@ export interface UpdateProductDto {
   tradePrice?: string;
   priceLevel3?: string;
   priceLevel4?: string;
+  gstCategory?: string;
+  scNumber?: string;
   notes?: string;
   stateCode?: string;
 }

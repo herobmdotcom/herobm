@@ -50,7 +50,7 @@ export interface OrderDetailData {
   createdBy: string | null;
   createdOn: string;
   modifiedOn: string;
-  source?: 'abm' | 'app';
+
   lines: OrderLine[];
   events?: OrderEvent[];
 }
@@ -102,9 +102,6 @@ export default function OrderDetailReadView({
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">{order.orderNumber}</h1>
             <StateBadge state={order.stateCode} />
-            {order.source === 'abm' && (
-              <span className="badge badge-abm">ABM</span>
-            )}
           </div>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {order.name || tRV('untitledOrder')}

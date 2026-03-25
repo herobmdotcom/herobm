@@ -1,10 +1,9 @@
 import { Module, Global, OnApplicationShutdown, Inject } from '@nestjs/common';
 import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as martsSchema from './schema';
 import * as coreSchema from './modbm-core-schema';
 
-const schema = { ...martsSchema, ...coreSchema };
+const schema = { ...coreSchema };
 
 function requireEnv(name: string): string {
   const value = process.env[name];

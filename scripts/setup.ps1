@@ -100,18 +100,61 @@ if ($podmanCmd) {
         }
     } else {
         Write-Host "  [OK] Podman machine exists: $machineList" -ForegroundColor Green
+        Write-Host "  Ensuring Podman machine is running..." -ForegroundColor Yellow
+        try {
+            podman machine start 2>&1 | Out-Null
+        } catch {
+            # Ignore "already running" errors
+        }
     }
 
     # Configure global k8s-file log driver inside the VM
     Write-Host "  Configuring Podman log driver (k8s-file)..." -ForegroundColor Yellow
-    podman machine ssh "mkdir -p /home/user/.config/containers && echo '[containers]' > /home/user/.config/containers/containers.conf && echo 'log_driver = `"k8s-file`"' >> /home/user/.config/containers/containers.conf" 2>$null
+    try {
+        podman machine ssh 'mkdir -p ~/.config/containers && printf "[containers]\nlog_driver = \"k8s-file\"\n" > ~/.config/containers/containers.conf' 2>&1 | Out-Null
+    } catch {
+        # Ignore errors if already configured or SSH fails sporadically
+    }
     
     # Pre-create the named volume for Promtail log scraping
     Write-Host "  Creating podman_logs shared volume..." -ForegroundColor Yellow
-    podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>$null | Out-Null
+    try {
+        podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
+    } catch {
+        # Ignore if volume already exists
+    }
 }
 
 # --- Setup Auto-Start ---
+Write-Host "`n--- Installation Profile Selection ---" -ForegroundColor Cyan
+Write-Host "Please select how you want to run the application code:"
+Write-Host "  1) Local native Node.js (Recommended for fullstack developers)"
+Write-Host "  2) Full Containerization (Recommended for pure evaluation/ops)"
+$pathChoice = Read-Host "Enter option [1 or 2]"
+
+$installPlg = Read-Host "Enable PLG Stack (Prometheus/Loki/Grafana)? [y/N]"
+$installErpnext = Read-Host "Enable ERPNext Integration Stack? [y/N]"
+
+$makeTargets = @()
+if ($pathChoice -eq "1") {
+    $makeTargets += "up-db"
+    Write-Host "  -> Selected Local Dev path (DBs containerized, FE/API local)" -ForegroundColor Gray
+} else {
+    $makeTargets += "up-fe-api"
+    Write-Host "  -> Selected Full Containerization path" -ForegroundColor Gray
+}
+
+if ($installPlg -match "^[yY]") {
+    $makeTargets += "up-plg"
+    Write-Host "  -> Enabled PLG Stack" -ForegroundColor Gray
+}
+if ($installErpnext -match "^[yY]") {
+    $makeTargets += "up-erpnext"
+    Write-Host "  -> Enabled ERPNext Stack" -ForegroundColor Gray
+}
+
+$makeCmdString = "make " + ($makeTargets -join " ")
+
 Write-Host "`n--- Startup Automation ---" -ForegroundColor Cyan
 try {
     $startupFolder = [Environment]::GetFolderPath('Startup')
@@ -119,15 +162,15 @@ try {
     $wshShell = New-Object -ComObject WScript.Shell
     $shortcut = $wshShell.CreateShortcut($shortcutPath)
     
-    # Target powershell to run hidden, start the machine, and run make up
+    # Target powershell to run hidden, start the machine, and run the constructed make command
     $shortcut.TargetPath = "powershell.exe"
     $projectDir = (Get-Item $PSScriptRoot).Parent.FullName
     $logFile = Join-Path $projectDir "logs\autostart.log"
-    $shortcut.Arguments = "-WindowStyle Hidden -Command `"Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; make up 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append`""
+    $shortcut.Arguments = "-WindowStyle Hidden -Command `"Set-Location '$projectDir'; `$logFile = '$logFile'; '--- Autostart: ' + (Get-Date) | Out-File `$logFile; podman machine start 2>&1 | Tee-Object -FilePath `$logFile -Append; $makeCmdString 2>&1 | Tee-Object -FilePath `$logFile -Append; '--- Done: ' + (Get-Date) | Out-File `$logFile -Append`""
     $shortcut.WorkingDirectory = $projectDir
-    $shortcut.Description = "Starts Podman machine and ModBM containers on boot (logs to logs/autostart.log)"
+    $shortcut.Description = "Starts Podman machine and ModBM containers ($makeCmdString) on boot"
     $shortcut.Save()
-    Write-Host "  [OK] Created Windows Startup shortcut for Podman and containers" -ForegroundColor Green
+    Write-Host "  [OK] Created Windows Startup shortcut: $makeCmdString" -ForegroundColor Green
 } catch {
     Write-Host "  [WARNING] Could not create startup shortcut: $($_.Exception.Message)" -ForegroundColor Yellow
 }
@@ -144,7 +187,8 @@ if ($failed.Count -gt 0) {
     Write-Host "  Failed/Manual: $($failed -join ', ')" -ForegroundColor Red
     Write-Host "`n  Please install failed items manually, then re-run this script." -ForegroundColor Yellow
 } else {
-    Write-Host "`n  All prerequisites installed!" -ForegroundColor Green
-    Write-Host "  Next step: .\scripts\init-env.ps1  (if no .env yet)" -ForegroundColor White
-    Write-Host "  Then:      make setup" -ForegroundColor White
+    Write-Host "`n  All prerequisites installed! Auto-starting your chosen environment...`n" -ForegroundColor Green
+    $initCmd = "make init-env " + ($makeTargets -join " ") + " init"
+    Write-Host "  Running: $initCmd" -ForegroundColor Cyan
+    Invoke-Expression $initCmd
 }

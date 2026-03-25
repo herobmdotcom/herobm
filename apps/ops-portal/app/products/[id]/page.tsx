@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { apiFetch, apiMutate } from '@/lib/api';
@@ -14,6 +13,13 @@ import { ValidState } from '@/types/states';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 
+const formatMoney = (val: string | number | undefined | null) => {
+  if (!val) return '0.00';
+  const num = typeof val === 'string' ? parseFloat(val) : val;
+  if (isNaN(num)) return '0.00';
+  return num.toFixed(2);
+};
+
 export default function ProductDetailPage() {
   const t = useTranslations();
   const router = useRouter();
@@ -21,6 +27,7 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [product, setProduct] = useState<any>(null);
+  const [gstCategories, setGstCategories] = useState<any[]>([]);
   const [dto, setDto] = useState<any>({
     name: '',
     barcode: '',
@@ -29,6 +36,8 @@ export default function ProductDetailPage() {
     tradePrice: '0',
     priceLevel3: '0',
     priceLevel4: '0',
+    gstCategory: '',
+    scNumber: '',
     notes: '',
     stateCode: 'active',
   });
@@ -41,11 +50,13 @@ export default function ProductDetailPage() {
       setDto({
         name: data.name || '',
         barcode: data.barcode || '',
-        listPrice: data.listPrice || '0',
-        standardCost: data.standardCost || '0',
-        tradePrice: data.tradePrice || '0',
-        priceLevel3: data.priceLevel3 || '0',
-        priceLevel4: data.priceLevel4 || '0',
+        listPrice: formatMoney(data.listPrice),
+        standardCost: formatMoney(data.standardCost),
+        tradePrice: formatMoney(data.tradePrice),
+        priceLevel3: formatMoney(data.priceLevel3),
+        priceLevel4: formatMoney(data.priceLevel4),
+        gstCategory: data.gstCategory || '',
+        scNumber: data.scNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
       });
@@ -58,10 +69,11 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
+    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
   }, [fetchProduct]);
 
   const saveProduct = async (updatedValues: any) => {
-    if (product?.source === 'abm' || saving) return;
+    if (saving) return;
     setSaving(true);
 
     try {
@@ -112,11 +124,10 @@ export default function ProductDetailPage() {
     }
   };
 
-  if (loading) return <Shell><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></Shell>;
-  if (!product) return <Shell><div className="text-center py-20">{t('common.noMatchingResults')}</div></Shell>;
+  if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
+  if (!product) return <><div className="text-center py-20">{t('common.noMatchingResults')}</div></>;
 
-  const isLegacy = product.source === 'abm';
-  const isEditable = !isLegacy && product.stateCode !== 'archived';
+  const isEditable = product.stateCode !== 'archived';
 
   const sections = {
     info: { id: 'info-section', label: 'Info' },
@@ -127,7 +138,7 @@ export default function ProductDetailPage() {
   const visibleSections = Object.values(sections);
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -138,7 +149,6 @@ export default function ProductDetailPage() {
         badges={
           <>
             {product.stateCode && <StateBadge state={product.stateCode as ValidState} />}
-            {isLegacy && <span className="badge badge-abm">{t('common.sources.abm')}</span>}
           </>
         }
         actions={
@@ -215,8 +225,7 @@ export default function ProductDetailPage() {
                   </select>
                 </div>
               </div>
-              {/* Legacy-only: Product Group */}
-              {isLegacy && product.productGroupName && (
+              {product.productGroupName && (
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('products.productGroup')}
@@ -224,27 +233,43 @@ export default function ProductDetailPage() {
                   <input className="input" disabled value={product.productGroupName} />
                 </div>
               )}
-              {/* Legacy-only: SC Number + GST Category */}
-              {isLegacy && (product.scNumber || product.gstCategory) && (
-                <div className="grid grid-cols-2 gap-4">
-                  {product.scNumber && (
-                    <div>
-                      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                        SC Number
-                      </label>
-                      <input className="input" disabled value={product.scNumber} />
-                    </div>
-                  )}
-                  {product.gstCategory && (
-                    <div>
-                      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                        {t('products.columns.gstCategory')}
-                      </label>
-                      <input className="input" disabled value={product.gstCategory} />
-                    </div>
-                  )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    SC Number
+                  </label>
+                  <input
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={dto.scNumber}
+                    onChange={(e) => setDto({ ...dto, scNumber: e.target.value })}
+                    onBlur={(e) => handleBlur('scNumber', e.target.value)}
+                    placeholder="SC Number"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.gstCategory')}
+                  </label>
+                  <select
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={dto.gstCategory}
+                    onChange={(e) => handleSelectChange('gstCategory', e.target.value)}
+                  >
+                    <option value="">(None)</option>
+                    {gstCategories.map((cat) => (
+                      <option key={cat.gstCategoryId} value={cat.code}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                    {/* Fallback for legacy values not in current categories */}
+                    {dto.gstCategory && !gstCategories.find(c => c.code === dto.gstCategory) && (
+                      <option value={dto.gstCategory}>{dto.gstCategory}</option>
+                    )}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -267,7 +292,11 @@ export default function ProductDetailPage() {
                   disabled={!isEditable || saving}
                   value={dto.listPrice}
                   onChange={(e) => setDto({ ...dto, listPrice: e.target.value })}
-                  onBlur={(e) => handleBlur('listPrice', e.target.value)}
+                  onBlur={(e) => {
+                    const formatted = formatMoney(e.target.value);
+                    setDto({ ...dto, listPrice: formatted });
+                    handleBlur('listPrice', formatted);
+                  }}
                 />
               </div>
               <div>
@@ -282,7 +311,11 @@ export default function ProductDetailPage() {
                   disabled={!isEditable || saving}
                   value={dto.tradePrice}
                   onChange={(e) => setDto({ ...dto, tradePrice: e.target.value })}
-                  onBlur={(e) => handleBlur('tradePrice', e.target.value)}
+                  onBlur={(e) => {
+                    const formatted = formatMoney(e.target.value);
+                    setDto({ ...dto, tradePrice: formatted });
+                    handleBlur('tradePrice', formatted);
+                  }}
                 />
               </div>
               <div>
@@ -297,7 +330,11 @@ export default function ProductDetailPage() {
                   disabled={!isEditable || saving}
                   value={dto.priceLevel3}
                   onChange={(e) => setDto({ ...dto, priceLevel3: e.target.value })}
-                  onBlur={(e) => handleBlur('priceLevel3', e.target.value)}
+                  onBlur={(e) => {
+                    const formatted = formatMoney(e.target.value);
+                    setDto({ ...dto, priceLevel3: formatted });
+                    handleBlur('priceLevel3', formatted);
+                  }}
                 />
               </div>
               <div>
@@ -312,7 +349,11 @@ export default function ProductDetailPage() {
                   disabled={!isEditable || saving}
                   value={dto.priceLevel4}
                   onChange={(e) => setDto({ ...dto, priceLevel4: e.target.value })}
-                  onBlur={(e) => handleBlur('priceLevel4', e.target.value)}
+                  onBlur={(e) => {
+                    const formatted = formatMoney(e.target.value);
+                    setDto({ ...dto, priceLevel4: formatted });
+                    handleBlur('priceLevel4', formatted);
+                  }}
                 />
               </div>
               <div>
@@ -327,7 +368,11 @@ export default function ProductDetailPage() {
                   disabled={!isEditable || saving}
                   value={dto.standardCost}
                   onChange={(e) => setDto({ ...dto, standardCost: e.target.value })}
-                  onBlur={(e) => handleBlur('standardCost', e.target.value)}
+                  onBlur={(e) => {
+                    const formatted = formatMoney(e.target.value);
+                    setDto({ ...dto, standardCost: formatted });
+                    handleBlur('standardCost', formatted);
+                  }}
                 />
               </div>
             </div>
@@ -343,7 +388,7 @@ export default function ProductDetailPage() {
           <textarea
             className="input w-full"
             style={{ height: 110, paddingTop: 12 }}
-            disabled={isLegacy || saving}
+            disabled={!isEditable || saving}
             value={dto.notes}
             onChange={(e) => setDto({ ...dto, notes: e.target.value })}
             onBlur={(e) => handleBlur('notes', e.target.value)}
@@ -357,8 +402,7 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Bottom Actions */}
-        {product.source === 'app' && (
-          <div className="flex justify-end mt-4">
+        <div className="flex justify-end mt-4">
             {product.stateCode === 'archived' ? (
               <button
                 className="btn btn-secondary btn-sm"
@@ -378,9 +422,8 @@ export default function ProductDetailPage() {
               </button>
             )}
           </div>
-        )}
       </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

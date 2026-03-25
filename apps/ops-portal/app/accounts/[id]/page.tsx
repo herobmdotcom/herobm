@@ -3,7 +3,6 @@
 import { useState, useEffect, use, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import {
@@ -42,7 +41,7 @@ interface Account {
   customerDiscount: string | null;
   stateCode: ValidState;
   notes: string | null;
-  source: 'abm' | 'app';
+
   createdOn: string | null;
   createdBy: string | null;
   modifiedOn: string | null;
@@ -63,16 +62,12 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
 
   const handleOrderRowClicked = useCallback((order: any) => {
-    if (order.source === 'app') {
-      router.push(`/sales-orders/${order.id}?source=app`);
-    } else {
-      router.push(`/sales-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
-    }
+    router.push(`/sales-orders/${order.id}`);
   }, [router]);
 
   const handleInvoiceRowClicked = useCallback((row: any) => {
     if (row.salesOrderId) {
-        router.push(`/sales-orders/${row.salesOrderId}?source=app#invoices-section`);
+        router.push(`/sales-orders/${row.salesOrderId}#invoices-section`);
     }
   }, [router]);
 
@@ -84,16 +79,6 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       headerName: tCommon('columns.status'),
       width: 110,
       cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null,
-    },
-    {
-      field: 'source',
-      headerName: tCommon('columns.source'),
-      width: 90,
-      cellRenderer: (p: { value: string }) => {
-        if (!p.value) return null;
-        const label = p.value === 'abm' ? tCommon('sources.abm') : tCommon('sources.app');
-        return <span className={`badge badge-${p.value}`}>{label}</span>;
-      },
     },
     { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
     {
@@ -143,7 +128,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
   // Auto-save effect
   useEffect(() => {
-    if (!isDirty || saving || account?.source === 'abm') return;
+    if (!isDirty || saving) return;
 
     const handler = setTimeout(() => {
       handleSave();
@@ -154,13 +139,12 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   }, [dto]);
 
   const updateField = (field: keyof Account, value: any) => {
-    if (account?.source === 'abm') return;
     setDto((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
   };
 
   const handleSave = async () => {
-    if (!isDirty || saving || account?.source === 'abm') return;
+    if (!isDirty || saving) return;
     setSaving(true);
 
     try {
@@ -169,8 +153,8 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         'PATCH',
         dto,
       );
-      setAccount({ ...updated, source: 'app', events: account?.events });
-      setDto({ ...updated, source: 'app', events: account?.events });
+      setAccount({ ...updated, events: account?.events });
+      setDto({ ...updated, events: account?.events });
       setIsDirty(false);
       toast.success(t('toast.accountUpdated'));
       // Refresh to get updated events
@@ -215,11 +199,10 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
     }
   };
 
-  if (loading) return <Shell><div className="p-8">{t('common.loading')}</div></Shell>;
-  if (!account) return <Shell><div className="p-8">{t('common.noMatchingResults')}</div></Shell>;
+  if (loading) return <><div className="p-8">{t('common.loading')}</div></>;
+  if (!account) return <><div className="p-8">{t('common.noMatchingResults')}</div></>;
 
-  const isLegacy = account.source === 'abm';
-  const isEditable = !isLegacy && account.stateCode !== 'archived';
+  const isEditable = account.stateCode !== 'archived';
 
   const visibleSections = [
     {
@@ -253,12 +236,12 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   ];
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
             title={account.name}
-            subtitle={`${account.accountNumber} • ${account.source === 'app' ? t('common.sources.app') : t('common.sources.abm')}`}
+            subtitle={account.accountNumber}
             onBack={() => router.push('/accounts')}
             isSaving={saving}
             isDirty={isDirty}
@@ -665,8 +648,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
           </div>
 
           {/* Bottom Actions */}
-          {account.source === 'app' && (
-            <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-4">
               {account.stateCode === 'archived' ? (
                 <button
                   className="btn btn-secondary btn-sm"
@@ -686,10 +668,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </button>
               )}
             </div>
-          )}
         </div>
       )}
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

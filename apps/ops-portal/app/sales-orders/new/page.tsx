@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
@@ -255,7 +254,7 @@ export default function NewOrderPage() {
   const totalTax = lines.reduce((sum, l) => sum + computeTax(l), 0);
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -641,6 +640,6 @@ export default function NewOrderPage() {
         </div>
         </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 }

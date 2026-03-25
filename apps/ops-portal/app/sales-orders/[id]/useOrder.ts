@@ -32,7 +32,7 @@ export interface NewReturnLine {
 
 /* ── Hook ────────────────────────────────────────────────────────── */
 
-export function useOrder(id: string, source: string) {
+export function useOrder(id: string) {
     const router = useRouter();
     const tCommon = useTranslations('common');
     const tToast = useTranslations('toast');
@@ -81,7 +81,7 @@ export function useOrder(id: string, source: string) {
         try {
             const [data, pData] = await Promise.all([
                 apiFetch<any>(
-                    `/api/sales-orders/${encodeURIComponent(id)}?source=${source}`,
+                    `/api/sales-orders/${encodeURIComponent(id)}`,
                 ),
                 apiFetch<any>(
                     `/api/sales-orders/${encodeURIComponent(id)}/picking`,
@@ -132,7 +132,7 @@ export function useOrder(id: string, source: string) {
     useEffect(() => {
         loadOrder();
         apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
-    }, [id, source]);
+    }, [id]);
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
@@ -142,7 +142,7 @@ export function useOrder(id: string, source: string) {
         if (order?.stateCode === 'invoiced' || order?.stateCode === 'legacy') {
             loadReturns();
         }
-    }, [order?.stateCode, source]);
+    }, [order?.stateCode]);
 
     // Load inventory when availability tab is selected
     useEffect(() => {
@@ -243,7 +243,7 @@ export function useOrder(id: string, source: string) {
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
-            router.push(`/sales-orders/${newOrder.salesOrderId}?source=app`);
+            router.push(`/sales-orders/${newOrder.salesOrderId}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {
@@ -323,15 +323,12 @@ export function useOrder(id: string, source: string) {
 
     /* ── Computed values ─────────────────────────────────────────── */
 
-    const isOrderDetailsEditable = source === 'app'
-        && !['cancelled', 'legacy', 'archived'].includes(order?.stateCode ?? '');
+    const isOrderDetailsEditable =
+        !['cancelled', 'legacy', 'archived'].includes(order?.stateCode ?? '');
 
-    const isOrderLinesEditable = source === 'app'
-        && order?.stateCode === 'draft';
+    const isOrderLinesEditable = order?.stateCode === 'draft';
 
-    const allowedTransitions = source === 'app'
-        ? (STATE_TRANSITIONS[order?.stateCode ?? ''] || [])
-        : [];
+    const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
 
     const subtotal = order?.lines.reduce(
         (sum, l) => sum + parseFloat(l.amount || '0'), 0,

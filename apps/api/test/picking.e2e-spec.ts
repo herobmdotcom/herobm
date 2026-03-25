@@ -142,7 +142,7 @@ describe('API E2E — Picking & Shipments', () => {
 
     // Get line IDs
     const detail = await request(app.getHttpServer())
-      .get(`/api/sales-orders/${orderId}?source=app`)
+      .get(`/api/sales-orders/${orderId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
@@ -182,6 +182,9 @@ describe('API E2E — Picking & Shipments', () => {
         .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ quantityPicked: '7' })
+        .expect((res: any) => {
+          if (res.status !== 200) console.error('E2E ERROR BODY:', res.body);
+        })
         .expect(200);
 
       expect(res.body.quantityPicked).toBe('7');
@@ -278,7 +281,7 @@ describe('API E2E — Picking & Shipments', () => {
 
       // Verify the order is now in 'shipped' state (auto-transitioned)
       const detail = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -651,7 +654,7 @@ describe('API E2E — Picking & Shipments', () => {
 
       const orderId = res.body.salesOrderId;
       const detail = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

@@ -33,20 +33,6 @@ export interface SidebarProps {
 export default function Sidebar({ title, subtitle, sections, footer }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations('common.auth');
-  const navRef = useRef<HTMLElement>(null);
-
-  useLayoutEffect(() => {
-    const saved = sessionStorage.getItem('sidebar-scroll');
-    if (saved && navRef.current) {
-      navRef.current.scrollTop = parseInt(saved, 10);
-    }
-  }, []);
-
-  const handleScroll = () => {
-    if (navRef.current) {
-      sessionStorage.setItem('sidebar-scroll', navRef.current.scrollTop.toString());
-    }
-  };
 
   return (
     <aside
@@ -66,7 +52,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
           {subtitle}
         </p>
       </div>
-      <nav ref={navRef} onScroll={handleScroll} className="flex-1 px-3 mt-2 overflow-y-auto">
+      <nav className="flex-1 px-3 mt-2 overflow-y-auto">
         {sections.map((section, si) => (
           <div key={si} className={si > 0 ? 'mt-4' : ''}>
             {section.label && (

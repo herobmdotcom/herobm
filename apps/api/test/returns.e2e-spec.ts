@@ -157,7 +157,7 @@ describe('API E2E — Sales Order Returns', () => {
 
     // Get line IDs
     const detail = await request(app.getHttpServer())
-      .get(`/api/sales-orders/${orderId}?source=app`)
+      .get(`/api/sales-orders/${orderId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 

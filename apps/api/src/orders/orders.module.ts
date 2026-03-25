@@ -31,6 +31,7 @@ import { ProductsModule } from '../products/products.module';
 import { GlModule } from '../gl/gl.module';
 import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
+import { SalesQuoteService } from '../reports/sales-quote.service';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sal
     ShipmentService,
     PickingSlipService,
     ReportSalesInvoiceService,
+    SalesQuoteService,
   ],
   exports: [OrdersService, OrdersWriteService],
 })
@@ -64,41 +66,17 @@ export class OrdersModule implements OnModuleInit {
     private readonly reportsRegistry: ReportsRegistry,
     private readonly pickingSlipService: PickingSlipService,
     private readonly reportSalesInvoiceService: ReportSalesInvoiceService,
+    private readonly salesQuoteService: SalesQuoteService,
     @Inject(DRIZZLE) private db: DrizzleDB,
   ) {}
 
   onModuleInit() {
     this.reportsRegistry.register('sales-order', {
       resolveData: async (id: string, user: any) => {
-        const orderRows = await this.db
-          .select()
-          .from(salesOrders)
-          .where(eq(salesOrders.salesOrderId, id))
-          .limit(1);
-        if (orderRows.length === 0) {
-          throw new NotFoundException(
-            `Order ${id} not found for report generation`,
-          );
-        }
-        const order = orderRows[0];
-
-        const lines = await this.db
-          .select()
-          .from(salesOrderLineItems)
-          .where(eq(salesOrderLineItems.salesOrderId, id));
-
-        // Attempt to fetch customer. Not all orders have a customerId mapped to core accounts.
-        let customer = null;
-        if (order.customerId) {
-          const custRows = await this.db
-            .select()
-            .from(coreAccounts)
-            .where(eq(coreAccounts.accountId, order.customerId))
-            .limit(1);
-          if (custRows.length > 0) customer = custRows[0];
-        }
-
-        return { order, lines, customer, generatedBy: user.username };
+        return (await this.salesQuoteService.assembleData(
+          id,
+          'app',
+        )) as unknown as Record<string, any>;
       },
       getRandomId: async () => {
         const rows = await this.db

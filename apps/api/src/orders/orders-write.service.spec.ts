@@ -130,7 +130,8 @@ describe('OrdersWriteService', () => {
       getByCode: jest.fn().mockImplementation(async (code: string) => {
         if (code === 'EXE') return GST_EXEMPT;
         if (code === 'ZR') return GST_ZERO;
-        return GST_DEFAULT;
+        if (code === 'GST') return GST_DEFAULT;
+        throw new Error('GST category not found by code');
       }),
       getById: jest.fn().mockResolvedValue(GST_DEFAULT),
     };

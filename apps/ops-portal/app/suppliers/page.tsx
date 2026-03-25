@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
@@ -20,7 +19,6 @@ interface UnifiedSupplierRow {
   address1Country: string;
   currencyCode: string;
   stateCode: string;
-  source: 'abm' | 'app';
 }
 
 export default function SuppliersPage() {
@@ -69,16 +67,6 @@ export default function SuppliersPage() {
       },
     },
     { field: 'productCount', headerName: tSuppliers('columns.productCount'), width: 100, type: 'numericColumn', hide: true },
-    {
-      field: 'source',
-      headerName: tCommon('columns.source'),
-      width: 90,
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        const label = params.value === 'abm' ? tCommon('sources.abm') : tCommon('sources.app');
-        return <span className={`badge badge-${params.value}`}>{label}</span>;
-      },
-    },
   ], [tCommon, tSuppliers]);
 
   const handleRowClicked = useCallback((supplier: UnifiedSupplierRow) => {
@@ -86,7 +74,7 @@ export default function SuppliersPage() {
   }, [router]);
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
@@ -132,6 +120,6 @@ export default function SuppliersPage() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

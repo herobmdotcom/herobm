@@ -4,6 +4,7 @@ import ErrorReporter from '@/components/ErrorReporter';
 import { Toaster } from 'react-hot-toast';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import Shell from '@/components/Shell';
 
 export const metadata: Metadata = {
   title: 'modbm',
@@ -50,7 +51,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               },
             }}
           />
-          {children}
+          <Shell>
+            {children}
+          </Shell>
         </NextIntlClientProvider>
       </body>
     </html>

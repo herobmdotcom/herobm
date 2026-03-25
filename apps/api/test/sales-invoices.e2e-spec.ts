@@ -83,7 +83,7 @@ describe('API E2E — Sales Invoices', () => {
       orderId = createRes.body.salesOrderId;
 
       const linesRes = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -124,7 +124,7 @@ describe('API E2E — Sales Invoices', () => {
 
       // Check state is STILL 'shipped' (not fully invoiced)
       const checkState1 = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(checkState1.body.stateCode).toBe('shipped');
@@ -146,7 +146,7 @@ describe('API E2E — Sales Invoices', () => {
 
       // Check state transitioned to 'invoiced' natively
       const checkState2 = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}?source=app`)
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       expect(checkState2.body.stateCode).toBe('invoiced');
@@ -172,7 +172,7 @@ describe('API E2E — Sales Invoices', () => {
       const testOrderId = createRes.body.salesOrderId;
 
       const linesRes = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${testOrderId}?source=app`)
+        .get(`/api/sales-orders/${testOrderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
       const testLineId = linesRes.body.lines[0].salesOrderLineId;

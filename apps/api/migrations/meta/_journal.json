@@ -5,50 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1773672044936,
-      "tag": "0000_sticky_sasquatch",
+      "when": 1774449166564,
+      "tag": "0000_initial_schema",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1773933841761,
-      "tag": "0001_breezy_jubilee",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1774199107555,
-      "tag": "0017_far_switch",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1774203051054,
-      "tag": "0018_invoicing_schemas",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1774211300301,
-      "tag": "0004_fat_patriot",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1774216208969,
-      "tag": "0005_worried_pestilence",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1774344395717,
-      "tag": "0006_add_dynamic_reports",
+      "when": 1774467879708,
+      "tag": "0001_bitter_siren",
       "breakpoints": true
     }
   ]

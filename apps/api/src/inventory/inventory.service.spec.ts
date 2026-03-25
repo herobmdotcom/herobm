@@ -166,27 +166,28 @@ describe('InventoryService', () => {
       insertedLedger = [];
       insertedOutbox = [];
 
-      let insertCallCount = 0;
       mockTx = {
         insert: jest.fn().mockImplementation(() => {
-          insertCallCount++;
           return {
             values: jest.fn().mockImplementation((payload: any) => {
-              if (insertCallCount === 1) {
+              const chainObj: any = {};
+              chainObj.onConflictDoUpdate = jest.fn().mockReturnValue(chainObj);
+              chainObj.returning = jest.fn();
+              chainObj.then = (cb: any) => cb([]);
+
+              if (payload && payload.entryNumber !== undefined) {
                 insertedEntries.push(payload);
-                return {
-                  returning: jest
-                    .fn()
-                    .mockResolvedValue([{ entryId: 'entry-uuid-001' }]),
-                };
-              } else if (insertCallCount === 2) {
+                chainObj.returning.mockResolvedValue([
+                  { entryId: 'entry-uuid-001' },
+                ]);
+              } else if (Array.isArray(payload)) {
                 insertedLedger.push(payload);
-                return Promise.resolve();
-              } else {
-                // outbox
+              } else if (payload && payload.actualQuantity !== undefined) {
+                // Bin contents cache
+              } else if (payload && payload.eventType !== undefined) {
                 insertedOutbox.push(payload);
-                return Promise.resolve();
               }
+              return chainObj;
             }),
           };
         }),
@@ -208,8 +209,8 @@ describe('InventoryService', () => {
     it('should insert an entry header, ledger lines, and outbox event', async () => {
       await service.recordInventoryMovement(mockTx, baseLedgerParams);
 
-      // 3 inserts: entries, ledger, outbox
-      expect(mockTx.insert).toHaveBeenCalledTimes(3);
+      // 5 inserts: entries, ledger, 2x bin contents, outbox
+      expect(mockTx.insert).toHaveBeenCalledTimes(5);
 
       // Header
       expect(insertedEntries).toHaveLength(1);

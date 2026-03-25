@@ -105,28 +105,26 @@ describe('Products (e2e)', () => {
     expect(res.body.notes).toBe('Testing patching');
   });
 
-  it('PATCH /api/products/:id — ABM products are now editable in core (admin)', async () => {
-    // Since ABM products are now migrated to core, they should be editable
+  it('PATCH /api/products/:id — all products are editable (admin)', async () => {
+    // All products are first-class entities after ABM decommissioning
     const listRes = await request(app.getHttpServer())
       .get('/api/products?limit=50')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    const abmProduct = listRes.body.data.find((p: any) => p.source === 'abm');
+    const product = listRes.body.data[0];
 
-    if (!abmProduct) {
-      console.warn(
-        'No ABM products found in test environment, skipping ABM edit test',
-      );
+    if (!product) {
+      console.warn('No products found in test environment, skipping edit test');
       return;
     }
 
-    // ABM products migrated to core should be fully editable
+    // All products should be fully editable
     const res = await request(app.getHttpServer())
-      .patch(`/api/products/${abmProduct.productId}`)
+      .patch(`/api/products/${product.productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ notes: 'Updated ABM product' });
+      .send({ notes: 'E2E: verified editable' });
 
     expect(res.status).toBe(200);
-    expect(res.body.notes).toBe('Updated ABM product');
+    expect(res.body.notes).toBe('E2E: verified editable');
   });
 });

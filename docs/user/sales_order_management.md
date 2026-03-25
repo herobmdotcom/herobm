@@ -230,7 +230,7 @@ ABM orders appear in the order list alongside app orders and can be viewed in fu
 
 ## Inventory Visibility
 
-Stock information is sourced exclusively from `mart_inventory` (the single source of truth for all stock data). Product-level tables do not carry stock fields.
+Stock information is sourced from the `modbm_core.inventory_levels` view (the single source of truth for all stock data). Product-level tables do not carry stock fields.
 
 ### Product Search
 

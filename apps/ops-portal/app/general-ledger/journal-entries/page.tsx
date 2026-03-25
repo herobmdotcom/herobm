@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
@@ -139,7 +138,7 @@ export default function JournalEntriesPage() {
   const totalPages = Math.ceil(total / limit) || 1;
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col p-4 lg:p-6">
         {/* Header + Filters */}
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -401,6 +400,6 @@ export default function JournalEntriesPage() {
           </div>
         )}
       </div>
-    </Shell>
+    </>
   );
 }

@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
@@ -18,7 +17,6 @@ interface UnifiedPurchaseOrderRow {
   vendorName: string;
   invoiceNumber: string;
   stateCode: string;
-  source: 'abm' | 'app';
   createdBy: string;
   createdOn: string | null;
   totalPrice: string | null;
@@ -46,16 +44,6 @@ export default function PurchaseOrdersPage() {
       cellRenderer: (params: any) => {
         if (!params.value) return null;
         return <StateBadge state={params.value as ValidState} />;
-      },
-    },
-    {
-      field: 'source',
-      headerName: tCommon('columns.source'),
-      width: 90,
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        const label = params.value === 'abm' ? tCommon('sources.abm') : tCommon('sources.app');
-        return <span className={`badge badge-${params.value}`}>{label}</span>;
       },
     },
     { field: 'invoiceNumber', headerName: tCommon('columns.invoiceNumber'), width: 140 },
@@ -86,15 +74,11 @@ export default function PurchaseOrdersPage() {
   ], [tCommon]);
 
   const handleRowClicked = useCallback((order: UnifiedPurchaseOrderRow) => {
-    if (order.source === 'app') {
-      router.push(`/purchase-orders/${order.id}?source=app`);
-    } else {
-      router.push(`/purchase-orders/${encodeURIComponent(order.orderNumber)}?source=abm`);
-    }
+    router.push(`/purchase-orders/${order.id}`);
   }, [router]);
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
@@ -140,6 +124,6 @@ export default function PurchaseOrdersPage() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

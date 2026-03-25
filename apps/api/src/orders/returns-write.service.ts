@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -17,6 +18,7 @@ import {
   outbox,
   glAccounts,
   bins,
+  products as coreProducts,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
@@ -33,6 +35,7 @@ import {
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
 } from '@modbm/shared';
+import { getValuationStrategy } from '../inventory/valuation';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
@@ -70,6 +73,7 @@ export class ReturnsWriteService {
     private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
     private readonly gstService: GstCategoriesService,
+    private readonly configService: ConfigService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -372,6 +376,40 @@ export class ReturnsWriteService {
             userId: actor,
             lines: receiveLines,
           });
+        }
+
+        // Update product global QOH
+        const method = this.configService.get<string>(
+          'INVENTORY_VALUATION_METHOD',
+        );
+        const strategy = getValuationStrategy(method);
+
+        for (const line of stockLines) {
+          if (!line.productId) continue;
+          const [product] = await tx
+            .select()
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, line.productId));
+
+          if (product) {
+            const updatedProduct = strategy.onReturn(
+              {
+                productId: product.productId,
+                standardCost: product.standardCost || '0',
+                weightedAverageCost: product.weightedAverageCost || '0',
+                quantityOnHand: product.quantityOnHand || '0',
+              },
+              parseFloat(line.quantity),
+            );
+
+            await tx
+              .update(coreProducts)
+              .set({
+                quantityOnHand: updatedProduct.quantityOnHand,
+                modifiedOn: new Date(),
+              })
+              .where(eq(coreProducts.productId, product.productId));
+          }
         }
       }
 

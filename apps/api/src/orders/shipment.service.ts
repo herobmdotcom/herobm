@@ -349,6 +349,25 @@ export class ShipmentService {
               parseFloat(line.quantity),
             );
 
+            // Update product global QOH
+            const updatedProduct = strategy.onDispatch(
+              {
+                productId: product.productId,
+                standardCost: product.standardCost || '0',
+                weightedAverageCost: product.weightedAverageCost || '0',
+                quantityOnHand: product.quantityOnHand || '0',
+              },
+              parseFloat(line.quantity),
+            );
+
+            await tx
+              .update(coreProducts)
+              .set({
+                quantityOnHand: updatedProduct.quantityOnHand,
+                modifiedOn: new Date(),
+              })
+              .where(eq(coreProducts.productId, product.productId));
+
             cogsDetails.push({
               productId: line.productId,
               quantity: line.quantity,

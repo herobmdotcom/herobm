@@ -1,212 +1,33 @@
 """
 generate_schema_reference.py
 
-Reads dbt's manifest.json and catalog.json to produce an agent-friendly
-schema_reference.md in docs/. Only documents the public_marts schema —
-staging is internal and should not be queried directly.
+Introspects the live Postgres `modbm_core` schema and produces an agent-friendly
+docs/technical/schema_reference.md documenting every table, column, constraint,
+and FK relationship.
 
-Run after `dbt docs generate` or via `make schema-ref`.
+Run via `make schema-ref`.
 
 Usage:
     python tools/generate_schema_reference.py
 """
-import json
 import os
-import re
 import subprocess
+import json
 from datetime import datetime, timezone
 from pathlib import Path
-from collections import defaultdict
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
-DBT_TARGET = PROJECT_ROOT / "pipelines" / "abm_transform" / "target"
-OUTPUT_FILE = PROJECT_ROOT / "docs" / "schema_reference.md"
+OUTPUT_FILE = PROJECT_ROOT / "docs" / "technical" / "schema_reference.md"
 
-MANIFEST_PATH = DBT_TARGET / "manifest.json"
-CATALOG_PATH = DBT_TARGET / "catalog.json"
-
-# ---------------------------------------------------------------------------
-# Known data quirks (Improvement #4)
-# These are documented per-model and rendered as callouts.
-# ---------------------------------------------------------------------------
-DATA_QUIRKS = {
-    "mart_accounts": [
-        "Status codes include legacy classifications `A1`, `A2`, `A28` beyond standard `A`/`S`/`H`.",
-    ],
-    "mart_products": [
-        "Includes system pseudo-products (e.g., `Discount`, `GST`) that have zero stock "
-        "and anomalous `last_in_unit_cost` values. These are not real inventory items.",
-    ],
-    "mart_inventory": [
-        "`quantity_available` can be legitimately negative (oversold stock: `qty_on_hand - qty_customer_orders`).",
-        "`value_on_hand` has 28 sub-cent rounding residuals (max magnitude $0.008) on "
-        "zero-stock items — ERP moving-average artefact.",
-        "`last_in_unit_cost` is negative for 3 pseudo-products (`Discount`, `GST`, one fitting) — "
-        "side-effect of routing non-stock line items through the costing engine.",
-    ],
-    "mart_sales_order_lines": [
-        "ABM models **discounts as negative line items** (`product_number = 'Discount'`). "
-        "`price_per_unit`, `amount`, `tax`, and `total_amount` are intentionally negative on these rows. "
-        "`not_negative` is intentionally **not** applied to financial columns.",
-        "`document_date` is cast from `text` → `timestamp with time zone` in the mart SQL.",
-    ],
-    "mart_bin_contents": [],
-}
+SCHEMA = "modbm_core"
+CONTAINER = "postgres-custom"
 
 
-def load_json(path: Path) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-# ---------------------------------------------------------------------------
-# Parse manifest
-# ---------------------------------------------------------------------------
-def parse_manifest(manifest: dict) -> dict:
-    """Extract models, their columns, constraints, and tests."""
-    models = {}
-
-    for key, node in manifest["nodes"].items():
-        if node["resource_type"] != "model":
-            continue
-        # Only document marts (public_marts schema)
-        if node.get("schema", "") != "public_marts":
-            continue
-
-        cols = []
-        for col_name, col in node.get("columns", {}).items():
-            constraints = []
-            for c in col.get("constraints", []):
-                ctype = c.get("type", "")
-                detail = ""
-                if ctype == "foreign_key" and c.get("to"):
-                    to_raw = c["to"]
-                    to_model = to_raw.replace("ref('", "").replace("')", "")
-                    if '"' in to_model:
-                        to_model = to_model.split('"')[-2]
-                    to_cols = c.get("to_columns", [])
-                    detail = f" → {to_model}({', '.join(to_cols)})"
-                constraints.append(f"{ctype}{detail}")
-
-            cols.append({
-                "name": col.get("name", col_name),
-                "data_type": col.get("data_type", ""),
-                "description": col.get("description", ""),
-                "constraints": constraints,
-            })
-
-        models[node["name"]] = {
-            "unique_id": key,
-            "schema": node.get("schema", ""),
-            "description": node.get("description", "").strip(),
-            "materialized": node.get("config", {}).get("materialized", "view"),
-            "contract_enforced": node.get("contract", {}).get("enforced", False),
-            "columns": cols,
-            "depends_on_models": [
-                d.split(".")[-1]
-                for d in node.get("depends_on", {}).get("nodes", [])
-                if d.startswith("model.")
-            ],
-            "depends_on_sources": [
-                d.split(".")[-1]
-                for d in node.get("depends_on", {}).get("nodes", [])
-                if d.startswith("source.")
-            ],
-        }
-
-    # Parse tests -> map to model+column
-    test_map = defaultdict(list)
-    for key, node in manifest["nodes"].items():
-        if node["resource_type"] != "test":
-            continue
-        test_meta = node.get("test_metadata")
-        if test_meta:
-            test_name = test_meta.get("name", node["name"])
-            kwargs = test_meta.get("kwargs", {})
-            model_ref = kwargs.get("model", "")
-            col_ref = kwargs.get("column_name", "")
-            if model_ref and "ref('" in model_ref:
-                m = re.search(r"ref\('([^']+)'\)", model_ref)
-                model_name = m.group(1) if m else ""
-                severity = node.get("config", {}).get("severity", "error")
-                if test_name == "accepted_values":
-                    vals = kwargs.get("values", [])
-                    desc = f"accepted_values({', '.join(repr(v) for v in vals)})"
-                elif test_name == "not_null" and severity == "warn":
-                    desc = "not_null (warn)"
-                elif test_name == "not_negative" and severity == "warn":
-                    desc = "not_negative (warn)"
-                else:
-                    desc = test_name
-                test_map[(model_name, col_ref)].append(desc)
-        else:
-            for dep in node.get("depends_on", {}).get("nodes", []):
-                if dep.startswith("model."):
-                    model_name = dep.split(".")[-1]
-                    test_map[(model_name, "")].append(node["name"])
-
-    # Attach tests to models
-    for model_name, model in models.items():
-        model["model_tests"] = test_map.get((model_name, ""), [])
-        for col in model["columns"]:
-            col["tests"] = test_map.get((model_name, col["name"]), [])
-
-    return models
-
-
-# ---------------------------------------------------------------------------
-# Parse catalog (row counts, actual types)
-# ---------------------------------------------------------------------------
-def parse_catalog(catalog: dict) -> dict:
-    """Extract actual Postgres metadata per model."""
-    cat_info = {}
-    for key, node in catalog.get("nodes", {}).items():
-        meta = node.get("metadata", {})
-        name = meta.get("name", "")
-        stats = node.get("stats", {})
-        row_count = None
-        if "row_count" in stats:
-            try:
-                row_count = int(float(stats["row_count"].get("value", 0)))
-            except (ValueError, TypeError):
-                pass
-        cat_info[name] = {
-            "table_type": meta.get("type", ""),
-            "row_count": row_count,
-            "columns": {
-                col_name: {
-                    "type": col.get("type", ""),
-                    "index": col.get("index", 0),
-                }
-                for col_name, col in node.get("columns", {}).items()
-            },
-        }
-    for key, node in catalog.get("sources", {}).items():
-        meta = node.get("metadata", {})
-        name = meta.get("name", "")
-        cat_info[name] = {
-            "table_type": meta.get("type", ""),
-            "row_count": None,
-            "columns": {
-                col_name: {
-                    "type": col.get("type", ""),
-                    "index": col.get("index", 0),
-                }
-                for col_name, col in node.get("columns", {}).items()
-            },
-        }
-    return cat_info
-
-
-# ---------------------------------------------------------------------------
-# Get row counts from Postgres (Improvement #2)
-# ---------------------------------------------------------------------------
-def get_row_counts() -> dict:
-    """Query Postgres for current row counts in public_marts."""
+def load_env() -> dict:
     env_file = PROJECT_ROOT / ".env"
     env = os.environ.copy()
     if env_file.exists():
@@ -216,228 +37,230 @@ def get_row_counts() -> dict:
                 if line and not line.startswith("#") and "=" in line:
                     k, _, v = line.partition("=")
                     env[k.strip()] = v.strip()
+    return env
 
+
+def psql(query: str, env: dict) -> str:
     user = env.get("POSTGRES_USER", "postgres")
     db = env.get("POSTGRES_DB", "custom_app")
-
-    # Get table list first
-    try:
-        result = subprocess.run(
-            ["docker", "exec", "postgres-custom", "psql", "-U", user, "-d", db,
-             "-t", "-A", "-c",
-             "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public_marts' ORDER BY 1;"],
-            capture_output=True, text=True, timeout=10, env=env,
-        )
-        tables = [t.strip() for t in result.stdout.strip().splitlines() if t.strip()]
-    except Exception:
-        return {}
-
-    counts = {}
-    for table in tables:
-        try:
-            result = subprocess.run(
-                ["docker", "exec", "postgres-custom", "psql", "-U", user, "-d", db,
-                 "-t", "-A", "-c", f"SELECT count(*) FROM public_marts.{table};"],
-                capture_output=True, text=True, timeout=10, env=env,
-            )
-            val = result.stdout.strip()
-            if val:
-                counts[table] = int(val)
-        except Exception:
-            pass
-    return counts
-
-
-# ---------------------------------------------------------------------------
-# Get source freshness (Improvement #3)
-# ---------------------------------------------------------------------------
-def get_source_freshness() -> dict:
-    """Query the latest _dlt_load_id from a representative source table."""
-    env_file = PROJECT_ROOT / ".env"
-    env = os.environ.copy()
-    if env_file.exists():
-        with open(env_file) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    k, _, v = line.partition("=")
-                    env[k.strip()] = v.strip()
-
-    user = env.get("POSTGRES_USER", "postgres")
-    db = env.get("POSTGRES_DB", "custom_app")
-
-    query = (
-        "SELECT to_timestamp(max(_dlt_load_id::double precision)) AS last_load "
-        "FROM raw_abm.customers;"
+    result = subprocess.run(
+        ["podman", "exec", "-i", CONTAINER, "psql", "-U", user, "-d", db,
+         "-t", "-A", "-c", query],
+        capture_output=True, text=True, timeout=15, env=env,
     )
+    if result.returncode != 0:
+        print(f"  SQL error: {result.stderr.strip()}")
+        return ""
+    return result.stdout.strip()
+
+
+def psql_json(query: str, env: dict) -> list:
+    """Run a query that returns JSON rows."""
+    raw = psql(query, env)
+    if not raw:
+        return []
     try:
-        result = subprocess.run(
-            ["docker", "exec", "postgres-custom", "psql", "-U", user, "-d", db, "-t", "-A", "-c", query],
-            capture_output=True, text=True, timeout=15,
-        )
-        ts = result.stdout.strip()
-        if ts:
-            return {"last_load": ts, "status": "ok"}
-    except Exception:
-        pass
-    return {"last_load": "unknown", "status": "unavailable"}
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Introspect schema
+# ---------------------------------------------------------------------------
+def get_tables(env: dict) -> list[dict]:
+    """Get all tables with row counts."""
+    query = f"""
+    SELECT json_agg(t ORDER BY table_name) FROM (
+        SELECT
+            c.table_name,
+            (SELECT n_live_tup FROM pg_stat_user_tables
+             WHERE schemaname = '{SCHEMA}' AND relname = c.table_name) AS row_count
+        FROM information_schema.tables c
+        WHERE c.table_schema = '{SCHEMA}' AND c.table_type = 'BASE TABLE'
+    ) t;
+    """
+    return psql_json(query, env) or []
+
+
+def get_columns(env: dict) -> list[dict]:
+    """Get all columns for all tables."""
+    query = f"""
+    SELECT json_agg(t ORDER BY table_name, ordinal_position) FROM (
+        SELECT
+            table_name,
+            column_name,
+            ordinal_position,
+            data_type,
+            udt_name,
+            is_nullable,
+            column_default
+        FROM information_schema.columns
+        WHERE table_schema = '{SCHEMA}'
+    ) t;
+    """
+    return psql_json(query, env) or []
+
+
+def get_constraints(env: dict) -> list[dict]:
+    """Get all PK, FK, UNIQUE constraints."""
+    query = f"""
+    SELECT json_agg(t ORDER BY table_name, constraint_type, constraint_name) FROM (
+        SELECT
+            tc.table_name,
+            tc.constraint_name,
+            tc.constraint_type,
+            kcu.column_name,
+            ccu.table_schema AS ref_schema,
+            ccu.table_name AS ref_table,
+            ccu.column_name AS ref_column
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+        LEFT JOIN information_schema.constraint_column_usage ccu
+            ON tc.constraint_name = ccu.constraint_name
+            AND tc.table_schema = ccu.table_schema
+        WHERE tc.table_schema = '{SCHEMA}'
+            AND tc.constraint_type IN ('PRIMARY KEY', 'FOREIGN KEY', 'UNIQUE')
+    ) t;
+    """
+    return psql_json(query, env) or []
 
 
 # ---------------------------------------------------------------------------
 # Render markdown
 # ---------------------------------------------------------------------------
-def render_markdown(models: dict, catalog: dict, row_counts: dict, freshness: dict) -> str:
-    lines = []
+def render(tables: list, columns: list, constraints: list) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    # --- Header ---
-    lines.append("# Schema Reference")
-    lines.append("")
-    lines.append("> Auto-generated from dbt metadata. Only documents the **mart layer**.")
-    lines.append(f"> Last generated: {now}")
-    lines.append("> Regenerate with: `make schema-ref`")
-    lines.append("")
-    lines.append("**Postgres schema:** `public_marts`")
-    lines.append("")
-    lines.append("All mart tables use **dbt Model Contracts** (🔒) with enforced data types and database-level constraints.")
-    lines.append("")
+    # Organize data
+    col_map: dict[str, list] = {}
+    for c in columns:
+        col_map.setdefault(c["table_name"], []).append(c)
 
-    # --- Source freshness (Improvement #3) ---
-    lines.append("**Source freshness:**")
-    if freshness.get("status") == "ok":
-        lines.append(f" Last raw data load: `{freshness['last_load']}`")
-        lines.append(f" Freshness checks: warn after 36h, error after 72h")
-    else:
-        lines.append(f" Status: {freshness.get('status', 'unknown')}")
-    lines.append("")
+    con_map: dict[str, list] = {}
+    for c in constraints:
+        con_map.setdefault(c["table_name"], []).append(c)
 
-    sorted_models = sorted(models.items())
+    lines = [
+        "# Schema Reference — `modbm_core`",
+        "",
+        f"> Auto-generated from live Postgres introspection. Last generated: {now}",
+        "> Regenerate with: `make schema-ref`",
+        "",
+        f"**Postgres schema:** `{SCHEMA}`",
+        "",
+        "All tables are managed by Drizzle ORM with UUID primary keys and enforced FK constraints.",
+        "",
+    ]
 
-    # --- Table of contents with row counts (Improvements #1 & #2) ---
-    lines.append("## Models")
+    # Table of contents
+    lines.append("## Tables")
     lines.append("")
-    lines.append("| Model | Rows | Description |")
-    lines.append("|-------|------|-------------|")
-    for name, model in sorted_models:
-        count = row_counts.get(name)
-        count_str = f"{count:,}" if count is not None else "—"
-        desc = model["description"].split(".")[0] if model["description"] else ""
-        lines.append(f"| [`{name}`](#{name}) | {count_str} | {desc} |")
-    lines.append("")
+    lines.append("| Table | Rows | PK | Description |")
+    lines.append("|-------|------|----|-------------|")
 
+    for t in tables:
+        name = t["table_name"]
+        rows = t.get("row_count")
+        row_str = f"{rows:,}" if rows is not None else "—"
+
+        # Find PK column
+        pk_cols = [c["column_name"] for c in con_map.get(name, [])
+                   if c["constraint_type"] == "PRIMARY KEY"]
+        pk_str = ", ".join(f"`{c}`" for c in sorted(set(pk_cols))) if pk_cols else "—"
+
+        lines.append(f"| [`{name}`](#{name}) | {row_str} | {pk_str} | |")
+
+    lines.append("")
     lines.append("---")
     lines.append("")
 
-    # --- Lineage DAG (Improvement #5) ---
+    # FK relationship map
+    fk_entries = []
+    for c in constraints:
+        if c["constraint_type"] == "FOREIGN KEY":
+            fk_entries.append(c)
+
+    if fk_entries:
+        lines.append("## Foreign Key Relationships")
+        lines.append("")
+        lines.append("| From Table | Column | → To Table | Column |")
+        lines.append("|-----------|--------|-----------|--------|")
+        seen = set()
+        for fk in fk_entries:
+            key = (fk["table_name"], fk["column_name"], fk["ref_table"], fk["ref_column"])
+            if key not in seen:
+                seen.add(key)
+                lines.append(f"| `{fk['table_name']}` | `{fk['column_name']}` | `{fk['ref_table']}` | `{fk['ref_column']}` |")
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+
+    # Lineage DAG
     lines.append("## Lineage")
     lines.append("")
     lines.append("```mermaid")
     lines.append("graph LR")
 
-    # Collect all staging models referenced
-    all_stg = set()
-    for name, model in sorted_models:
-        for dep in model["depends_on_models"]:
-            if dep.startswith("stg_"):
-                all_stg.add(dep)
+    for t in tables:
+        name = t["table_name"]
+        lines.append(f'    {name}["{name}"]')
 
-    # Render staging nodes
-    for stg in sorted(all_stg):
-        lines.append(f'    {stg}["{stg}"]')
+    seen_edges = set()
+    for fk in fk_entries:
+        edge = (fk["ref_table"], fk["table_name"])
+        if edge not in seen_edges:
+            seen_edges.add(edge)
+            lines.append(f"    {fk['ref_table']} --> {fk['table_name']}")
 
-    # Render mart nodes with different style
-    for name, _ in sorted_models:
-        lines.append(f'    {name}["{name}"]:::mart')
-
-    # Render edges
-    for name, model in sorted_models:
-        for dep in model["depends_on_models"]:
-            lines.append(f"    {dep} --> {name}")
-
-    lines.append("    classDef mart fill:#2d6a4f,stroke:#1b4332,color:#fff")
     lines.append("```")
     lines.append("")
-
     lines.append("---")
     lines.append("")
 
-    # --- Join reference ---
-    lines.append("## Join Reference")
-    lines.append("")
-    lines.append("| From | Join column | → To | Key column |")
-    lines.append("|------|------------|------|------------|")
+    # Per-table detail
+    for t in tables:
+        name = t["table_name"]
+        rows = t.get("row_count")
+        row_str = f" ({rows:,} rows)" if rows is not None else ""
 
-    for name, model in sorted_models:
-        for col in model["columns"]:
-            for c in col.get("constraints", []):
-                if c.startswith("foreign_key"):
-                    parts = c.split(" → ")
-                    if len(parts) == 2:
-                        target = parts[1]
-                        to_table = target.split("(")[0]
-                        to_col = target.split("(")[1].rstrip(")")
-                        lines.append(f"| `{name}` | `{col['name']}` | `{to_table}` | `{to_col}` |")
-
-    lines.append("")
-    lines.append("---")
-    lines.append("")
-
-    # --- Model detail sections ---
-    for name, model in sorted_models:
-        count = row_counts.get(name)
-        count_str = f" ({count:,} rows)" if count is not None else ""
-
-        lines.append(f"### `public_marts.{name}`{count_str}")
+        lines.append(f"### `{SCHEMA}.{name}`{row_str}")
         lines.append("")
 
-        if model["description"]:
-            lines.append(f"{model['description']}")
-            lines.append("")
+        # Column table
+        table_cols = col_map.get(name, [])
+        table_cons = con_map.get(name, [])
 
-        # Dependencies
-        if model["depends_on_models"]:
-            mart_deps = [d for d in model["depends_on_models"] if d.startswith("mart_")]
-            stg_deps = [d for d in model["depends_on_models"] if d.startswith("stg_")]
-            if mart_deps:
-                lines.append(f"**Mart dependencies:** {', '.join(f'`{d}`' for d in mart_deps)}")
-            if stg_deps:
-                lines.append(f"**Staging sources:** {', '.join(f'`{d}`' for d in stg_deps)}")
-            lines.append("")
+        # Build constraint annotations per column
+        col_annotations: dict[str, list] = {}
+        for c in table_cons:
+            col = c["column_name"]
+            if c["constraint_type"] == "PRIMARY KEY":
+                col_annotations.setdefault(col, []).append("🔑 PK")
+            elif c["constraint_type"] == "FOREIGN KEY":
+                col_annotations.setdefault(col, []).append(
+                    f"FK → {c['ref_table']}.{c['ref_column']}")
+            elif c["constraint_type"] == "UNIQUE":
+                col_annotations.setdefault(col, []).append("UNIQUE")
 
-        # Model-level tests
-        if model.get("model_tests"):
-            tests = ", ".join(f"`{t}`" for t in model["model_tests"])
-            lines.append(f"**Model tests:** {tests}")
-            lines.append("")
+        lines.append("| # | Column | Type | Nullable | Default | Constraints |")
+        lines.append("|---|--------|------|----------|---------|------------|")
 
-        # Columns table
-        lines.append("| # | Column | Type | Constraints | Tests | Description |")
-        lines.append("|---|--------|------|-------------|-------|-------------|")
+        for i, col in enumerate(table_cols, 1):
+            cname = col["column_name"]
+            dtype = col.get("udt_name", col.get("data_type", ""))
+            nullable = "✓" if col["is_nullable"] == "YES" else ""
+            default = col.get("column_default", "") or ""
+            # Truncate long defaults
+            if default and len(default) > 40:
+                default = default[:37] + "..."
+            annotations = ", ".join(col_annotations.get(cname, []))
 
-        for i, col in enumerate(model["columns"], 1):
-            cname = col["name"]
-            dtype = col.get("data_type", "")
-
-            if not dtype and name in catalog:
-                cat_col = catalog[name].get("columns", {}).get(cname, {})
-                dtype = cat_col.get("type", "")
-
-            constraints = ", ".join(col.get("constraints", []))
-            tests = ", ".join(col.get("tests", []))
-            desc = col.get("description", "").replace("|", "\\|")
-
-            lines.append(f"| {i} | `{cname}` | `{dtype}` | {constraints} | {tests} | {desc} |")
+            lines.append(f"| {i} | `{cname}` | `{dtype}` | {nullable} | {default} | {annotations} |")
 
         lines.append("")
-
-        # Data quirks (Improvement #4)
-        quirks = DATA_QUIRKS.get(name, [])
-        if quirks:
-            lines.append("> [!NOTE]")
-            lines.append("> **Data quirks:**")
-            for q in quirks:
-                lines.append(f"> - {q}")
-            lines.append("")
 
     return "\n".join(lines)
 
@@ -446,34 +269,26 @@ def render_markdown(models: dict, catalog: dict, row_counts: dict, freshness: di
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    if not MANIFEST_PATH.exists():
-        print(f"ERROR: {MANIFEST_PATH} not found. Run `make docs-generate` first.")
+    env = load_env()
+
+    print("Introspecting modbm_core schema from Postgres...")
+
+    print("  Fetching tables...")
+    tables = get_tables(env)
+    if not tables:
+        print("ERROR: No tables found. Is the database running?")
         return
+    print(f"  Found {len(tables)} tables")
 
-    print(f"Reading {MANIFEST_PATH}...")
-    manifest = load_json(MANIFEST_PATH)
+    print("  Fetching columns...")
+    columns = get_columns(env)
+    print(f"  Found {len(columns)} columns")
 
-    print(f"Reading {CATALOG_PATH}...")
-    catalog_raw = load_json(CATALOG_PATH)
+    print("  Fetching constraints...")
+    constraints = get_constraints(env)
+    print(f"  Found {len(constraints)} constraint entries")
 
-    models = parse_manifest(manifest)
-    catalog = parse_catalog(catalog_raw)
-
-    print(f"Found {len(models)} mart models")
-
-    # Live data enrichment
-    print("Querying row counts from Postgres...")
-    row_counts = get_row_counts()
-    if row_counts:
-        print(f"  Got row counts for {len(row_counts)} tables")
-    else:
-        print("  WARNING: Could not query row counts (Postgres may be down)")
-
-    print("Querying source freshness...")
-    freshness = get_source_freshness()
-    print(f"  Last load: {freshness.get('last_load', 'unknown')}")
-
-    md = render_markdown(models, catalog, row_counts, freshness)
+    md = render(tables, columns, constraints)
 
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:

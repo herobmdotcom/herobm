@@ -217,6 +217,25 @@ export class InventoryService {
     }));
     await tx.insert(inventoryLedger).values(ledgerPayload);
 
+    // 3. Update Cache (bin_contents)
+    for (const line of params.lines) {
+      await tx
+        .insert(binContents)
+        .values({
+          binId: line.binId,
+          productId: line.productId,
+          actualQuantity: line.quantity.toString(),
+          modifiedOn: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [binContents.binId, binContents.productId],
+          set: {
+            actualQuantity: sql`${binContents.actualQuantity} + ${line.quantity.toString()}`,
+            modifiedOn: new Date(),
+          },
+        });
+    }
+
     // 4. Emit Outbox Event for ERP sync
     await tx.insert(outbox).values({
       eventType: 'INVENTORY_ENTRY_CREATED',

@@ -51,7 +51,6 @@ describe('DashboardService', () => {
       const result = await service.getSummary();
       expect(result).toHaveProperty('accounts', 42);
       expect(result).toHaveProperty('products', 42);
-      expect(result).toHaveProperty('inventoryLevels', 42);
       expect(result).toHaveProperty('orderLines', 42);
     });
   });

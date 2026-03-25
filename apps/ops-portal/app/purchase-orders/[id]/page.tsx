@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Shell from '@/components/Shell';
+import { useRouter } from 'next/navigation';
 import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -73,7 +72,7 @@ interface OrderDetail {
   createdBy: string | null;
   createdOn: string;
   modifiedOn: string;
-  source?: 'abm' | 'app';
+
   lines: OrderLine[];
   events: OrderEvent[];
 }
@@ -150,8 +149,6 @@ function ReturnStateBadge({ state }: { state: ValidState }) {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const source = searchParams.get('source') || 'app';
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
   const tToast = useTranslations('toast');
@@ -205,7 +202,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (showSpinner) setLoading(true);
     try {
       const data = await apiFetch<OrderDetail>(
-        `/api/purchase-orders/${encodeURIComponent(id)}?source=${source}`,
+        `/api/purchase-orders/${encodeURIComponent(id)}`,
       );
       setOrder(data);
       setEditName(data.name || '');
@@ -250,7 +247,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     loadOrder();
     // Load GST categories
     apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
-  }, [id, source]);
+  }, [id]);
 
   // Load returns and invoices when order is received
   useEffect(() => {
@@ -258,7 +255,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       loadReturns();
       loadInvoices();
     }
-  }, [order?.stateCode, source]);
+  }, [order?.stateCode]);
 
   // Load inventory when availability tab is selected
   useEffect(() => {
@@ -274,10 +271,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       .finally(() => setInventoryLoading(false));
   }, [activeTab, order]);
 
-  // Header editable in all states except cancelled and legacy
-  const isHeaderEditable = source === 'app' && order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
+  const isHeaderEditable = order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
   // Lines editable only in draft
-  const isLinesEditable = source === 'app' && order?.stateCode === 'draft';
+  const isLinesEditable = order?.stateCode === 'draft';
 
   // Track header changes
   useEffect(() => {
@@ -338,7 +334,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
       });
-      router.push(`/purchase-orders/${newOrder.purchaseOrderId}?source=app`);
+      router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
     } finally {
@@ -414,17 +410,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   if (loading) {
     return (
-      <Shell>
+      <>
         <div className="flex items-center justify-center flex-1">
           <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
         </div>
-      </Shell>
+      </>
     );
   }
 
   if (!order) {
     return (
-      <Shell>
+      <>
         <div className="flex flex-col items-center justify-center flex-1">
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
             {error || tPurchase('orderNotFound')}
@@ -433,13 +429,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             {tPurchase('backToOrders')}
           </button>
         </div>
-      </Shell>
+      </>
     );
   }
 
-  const allowedTransitions = source === 'app'
-    ? (STATE_TRANSITIONS[order.stateCode] || [])
-    : [];
+  const allowedTransitions = STATE_TRANSITIONS[order.stateCode] || [];
   const subtotal = order.lines.reduce(
     (sum, l) => sum + parseFloat(l.amount || '0'), 0,
   );
@@ -458,7 +452,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const visibleSections = Object.values(sections).filter(s => s.show);
 
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -1477,6 +1471,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </p>
       </div>
-    </Shell>
+    </>
   );
 }

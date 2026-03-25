@@ -3,7 +3,7 @@
 The dbt staging layer (`stg_*` models) provides a clean, type-safe interface over the raw ABM data loaded by `dlt` into the `raw_abm` schema. All staging models live in `pipelines/abm_transform/models/staging/` and materialise in the `public_staging` schema.
 
 - **Most models** materialise as **views** (default).
-- **Z-table models** (sales/purchasing operations) materialise as **tables** via `{{ config(materialized='table') }}`. This ensures their varchar→numeric casts happen once at `dbt run` time rather than on every downstream query, preventing runtime cast failures from propagating to marts/APIs.
+- **Z-table models** (sales/purchasing operations) materialise as **tables** via `{{ config(materialized='table') }}`. This ensures their varchar→numeric casts happen once at `dbt run` time rather than on every downstream query, preventing runtime cast failures from propagating to import models.
 
 ## Architecture
 
@@ -15,9 +15,9 @@ raw_abm schema (Postgres)     ← Raw, dlt-managed tables
   │  dbt views + tables
   ▼
 public_staging schema          ← This layer (20 views + 6 tables)
-  │  dbt tables (future)
+  │  dbt incremental models
   ▼
-public_marts schema            ← Business-ready marts (CDM/Schema.org naming)
+modbm_core schema              ← Application-owned tables (Drizzle ORM)
 ```
 
 ## What staging models do
@@ -28,7 +28,7 @@ Each `stg_*` model applies three transformations to the corresponding raw table:
 2. **Clean** — `trim()` whitespace from varchar fields, `coalesce()` nulls to sensible defaults (`''` for strings, `0` for numbers, `false` for booleans).
 3. **Cast** — Fix type mismatches introduced by ABM's storage model and dlt's type inference (see [Type Handling](#type-handling) below).
 
-Staging models do **not** join tables, apply business logic, or filter rows. That work belongs in the marts layer.
+Staging models do **not** join tables, apply business logic, or filter rows. That work belongs in the import models (`models/import/`).
 
 ## Model inventory
 
@@ -145,7 +145,7 @@ Per [Phase 1 Requirements §4](phase_1_requirements.md), the staging layer uses 
 - Timestamps as `*_date`, `*_at`, or descriptive names (`trading_date`, `updated_at`)
 - Booleans as `is_*` or `has_*` (`is_primary`, `is_outstanding`, `has_been_printed`)
 
-The **marts layer** (above staging) will converge on [Microsoft CDM](https://learn.microsoft.com/en-us/common-data-model/) and [Schema.org](https://schema.org/) vocabularies.
+The **import layer** (above staging) uses [Microsoft CDM](https://learn.microsoft.com/en-us/common-data-model/) and [Schema.org](https://schema.org/) naming conventions when writing into `modbm_core`.
 
 ## How to add a new staging model
 

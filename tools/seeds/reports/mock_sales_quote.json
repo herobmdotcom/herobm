@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-03-25 10:00:00",
+  "header": {
+    "orderNumber": "Q-1000",
+    "name": "Pre-Validation Quote",
+    "currencyCode": "EUR",
+    "customerName": "Test Client Ltda",
+    "orderDate": "2026-03-25",
+    "customerOrderNumber": "TST-999"
+  },
+  "summary": {
+    "subtotal": 1250.0,
+    "taxAmount": 250.0,
+    "totalAmount": 1500.0
+  },
+  "lines": [
+    {
+      "productNumber": "PRD-X99",
+      "description": "High Performance Widget",
+      "quantity": 10,
+      "uom": "pcs",
+      "unitPrice": 125.0,
+      "discount": 0,
+      "amount": 1250.0,
+      "gstRate": "20%"
+    }
+  ]
+}

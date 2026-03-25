@@ -77,7 +77,7 @@ const picking = {
 const defaultProps = {
     orderId: 'so-001',
     order: baseOrder,
-    source: 'app',
+
     invoices: [] as SalesInvoice[],
     gstCategories,
     pickingSummary: null,
@@ -152,9 +152,9 @@ describe('InvoicesSection — rendering', () => {
         expect(screen.getByText('Print PDF')).toBeInTheDocument();
     });
 
-    it('shows Create Invoice button for shipped state with app source', () => {
+    it('shows Create Invoice button for shipped state', () => {
         render(
-            <InvoicesSection {...defaultProps} source="app" pickingSummary={picking} />,
+            <InvoicesSection {...defaultProps} pickingSummary={picking} />,
         );
         expect(screen.getByText('Create Invoice')).toBeInTheDocument();
     });
@@ -164,7 +164,6 @@ describe('InvoicesSection — rendering', () => {
             <InvoicesSection
                 {...defaultProps}
                 order={{ ...baseOrder, stateCode: 'shipped' }}
-                source="app"
                 pickingSummary={{ lines: [] }}
             />,
         );
@@ -172,11 +171,11 @@ describe('InvoicesSection — rendering', () => {
         expect(btn).toBeDisabled();
     });
 
-    it('hides Create Invoice button for abm source', () => {
+    it('shows Create Invoice button for picking state too', () => {
         render(
-            <InvoicesSection {...defaultProps} source="abm" pickingSummary={picking} />,
+            <InvoicesSection {...defaultProps} order={{ ...baseOrder, stateCode: 'picking' }} pickingSummary={picking} />,
         );
-        expect(screen.queryByText('Create Invoice')).not.toBeInTheDocument();
+        expect(screen.getByText('Create Invoice')).toBeInTheDocument();
     });
 });
 

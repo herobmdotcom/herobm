@@ -2,8 +2,7 @@
 'use client';
 
 import { use, useEffect, useState, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Shell from '@/components/Shell';
+import { useRouter } from 'next/navigation';
 
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { apiMutate, reportError } from '@/lib/api';
@@ -87,15 +86,13 @@ function ReturnStateBadge({ state }: { state: ValidState }) {
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const source = searchParams.get('source') || 'app';
     const t = useTranslations();
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
     const tToast = useTranslations('toast');
     const tConfirm = useTranslations('confirm');
 
-    const o = useOrder(id, source);
+    const o = useOrder(id);
 
     /* ── Picking/Shipments visibility (driven by PickingSection's internal state) ── */
     const [pickingVis, setPickingVis] = useState({ picking: false, shipments: false });
@@ -118,17 +115,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     if (o.loading) {
         return (
-            <Shell>
+            <>
                 <div className="flex items-center justify-center flex-1">
                     <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
                 </div>
-            </Shell>
+            </>
         );
     }
 
     if (!o.order) {
         return (
-            <Shell>
+            <>
                 <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
                         {o.error || tSales('orderNotFound')}
@@ -137,7 +134,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {tSales('backToOrders')}
                     </button>
                 </div>
-            </Shell>
+            </>
         );
     }
 
@@ -163,14 +160,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         lines:     { id: 'lines-section',     label: 'Lines',     show: true },
         picking:   { id: 'picking-section',   label: 'Picking',   show: pickingVis.picking },
         shipments: { id: 'shipments-section', label: 'Shipments', show: pickingVis.shipments },
-        invoices:  { id: 'invoices-section',  label: 'Invoices',  show: PICKING_INVOICE_STATES.includes(order.stateCode) && (invoices.length > 0 || source === 'app') },
+        invoices:  { id: 'invoices-section',  label: 'Invoices',  show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         returns:   { id: 'returns-section',   label: 'Returns',   show: PICKING_INVOICE_STATES.includes(order.stateCode) },
-        activity:  { id: 'activity-section',  label: 'Activity',  show: source === 'app' },
+        activity:  { id: 'activity-section',  label: 'Activity',  show: true },
     };
     const visibleSections = Object.values(sections).filter(s => s.show);
 
     return (
-        <Shell>
+        <>
             <DetailsLayout
                 header={
                     <EntityHeader
@@ -749,7 +746,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <InvoicesSection
                         orderId={id}
                         order={order}
-                        source={source}
                         invoices={invoices}
                         gstCategories={gstCategories}
                         pickingSummary={pickingSummary}
@@ -787,7 +783,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 )}
 
                 {/* Archive / Unarchive — bottom right */}
-                {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && source === 'app' && (
+                {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && (
                     <div className="flex justify-end mt-4">
                         <button
                             className="btn btn-secondary btn-sm"
@@ -799,7 +795,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </button>
                     </div>
                 )}
-                {order.stateCode === 'archived' && source === 'app' && (
+                {order.stateCode === 'archived' && (
                     <div className="flex justify-end mt-4">
                         <button
                             className="btn btn-secondary btn-sm"
@@ -812,6 +808,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 )}
             </div>
             </DetailsLayout>
-        </Shell>
+        </>
     );
 }

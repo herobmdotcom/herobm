@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 
@@ -35,7 +34,7 @@ export default function ReportingPage() {
   }, [router]);
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
@@ -80,6 +79,6 @@ export default function ReportingPage() {
           </div>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

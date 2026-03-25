@@ -77,10 +77,10 @@ export class SuppliersService {
     throw new NotFoundException(`Supplier '${id}' not found`);
   }
 
-  /** Products supplied by a given vendor (legacy mart) */
+  /** Products supplied by a given vendor */
   async findSupplierProducts(vendorId: string) {
-    // Note: this queries mart_product_suppliers — separate migration scope
-    const { productSuppliers } = await import('../drizzle/schema.js');
+    const { productSuppliers } =
+      await import('../drizzle/modbm-core-schema.js');
     return this.db
       .select()
       .from(productSuppliers)

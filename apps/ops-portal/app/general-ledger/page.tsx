@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Shell from '@/components/Shell';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
@@ -70,7 +69,7 @@ export default function GeneralLedgerPage() {
   });
 
   return (
-    <Shell>
+    <>
       <div className="h-full flex flex-col p-4 lg:p-6">
         {/* Header + Filters */}
         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -191,6 +190,6 @@ export default function GeneralLedgerPage() {
           </table>
         </div>
       </div>
-    </Shell>
+    </>
   );
 }

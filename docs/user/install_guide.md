@@ -51,7 +51,12 @@ This checks for and installs:
 - **Typst** — report generation engine
 - **podman-compose** — orchestrates the containers (installed via `pip`)
 - **Make** — task runner (may need manual install, the script will tell you)
-- **Auto-Start Shortcut** — creates a Windows Startup shortcut to automatically start the Podman machine and run `make up` every time you log into Windows.
+
+During installation, the script will interactive prompt you to choose your **Installation Profile**:
+1. **Local Native (FE + API)**: Runs the databases in containers, but assumes you will run the UI and API locally via Node.js. (Best for developers).
+2. **Full Containerization**: Runs everything, including the UI and API, inside containers. (Best for ops/evaluation).
+
+It will also ask if you want to explicitly enable the **PLG Stack** (Observability) or the **ERPNext Integration** (Financial core). Based on your choices, it generates a custom Windows Startup shortcut to automatically start your chosen configuration whenever you log into Windows!
 
 ### Permissions
 
@@ -106,24 +111,33 @@ If you don't have the ABM details yet, press Enter to skip — you can fill them
 
 ## Step 3: Start the Platform
 
+Depending on what you chose during the `setup.ps1` script, your platform configurations might already be starting in the background if you reboot. To start them manually (or if you don't want to reboot):
+
+**Path 1: Full Containerization (Options: none)**
 ```powershell
-make up
+make up-fe-api
+```
+*(Starts the DB, Redis, App API, and Ops Portal containers).*
+
+**Path 2: Local Native FE + API (Options: none)**
+```powershell
+make up-db
+```
+*(Starts only the DB and Redis containers. You must run `make dev-local` to start the frontend and API from source).*
+
+### Optional Modules
+
+If you want to run the optional modules (like PLG or ERPNext) independently, or add them on top of your base layer, you can stack commands!
+
+For example, to run the Local DB layer + PLG observability + ERPNext integration:
+```powershell
+make up-db up-plg up-erpnext
 ```
 
-This starts all 8 core services (including the ops-portal). The first run will download container images (roughly 1.5 GB), which takes a few minutes on a typical connection. Subsequent starts are fast.
-
-### Optional: ERPNext Financial Ledger Integration
-
-ModBM supports an optional, headless integration with ERPNext for General Ledger capabilities (Chart of Accounts, Journal Entries, Tax Templates). 
-
-To start the platform **with** ERPNext enabled:
-
+To run Full Containerization + ERPNext:
 ```powershell
-make up-erpnext
+make up-fe-api up-erpnext
 ```
-*(Use this instead of just `make up`)*
-
-This will download and run the additional Frappe, MariaDB, and Redis containers.
 
 Check that everything is running:
 
@@ -131,7 +145,7 @@ Check that everything is running:
 make ps
 ```
 
-You should see all services listed as `Up` with `(healthy)` next to most of them. Give it about 30 seconds after `make up` for health checks to complete.
+You should see your chosen services listed as `Up` with `(healthy)` next to most of them. Give it about 30 seconds after `make up-...` for health checks to complete.
 
 ---
 
@@ -141,11 +155,19 @@ You should see all services listed as `Up` with `(healthy)` next to most of them
 make init
 ```
 
+> [!TIP]
+> **Resuming a Failed Setup**
+> If your setup fails *after* the initial 15-minute ABM extraction completes (e.g., during DB transformation or seeding), do not run `make init` again as it will re-download the ABM snapshot from scratch. 
+> Instead, safely resume by running:
+> ```powershell
+> make init-no-extract
+> ```
+
 This runs four steps automatically:
 
 1. **Build** — compiles the API application
-2. **Migrate** — creates all database tables
-3. **ELT** — imports data from the ABM system (requires ABM connection in `.env`)
+2. **Migrate** — creates all database tables (using a unified Drizzle schema)
+3. **ELT** — imports data from the ABM system (requires ABM connection in `.env`). This step concludes by printing a **Pipeline Summary Report** to verify data alignment between systems.
 4. **Seed** — creates portal user accounts and populates inventory
 
 This takes 2–3 minutes. If the ELT step fails (e.g. ABM not reachable), the tables and users are still created — you can re-run `make elt` and `make seed` later when the connection is available.
@@ -155,10 +177,10 @@ This takes 2–3 minutes. If the ELT step fails (e.g. ABM not reachable), the ta
 ## Step 5: Verify
 
 ```powershell
-make test-infra
+make test-all
 ```
 
-You should see `24/24 passed`. If any tests fail, check `make ps` to ensure all containers are healthy.
+You should see tests passing across the API endpoints, structural architecture policies, and data synchronization checks. If any tests fail, check `make ps` to ensure all containers are healthy.
 
 ---
 
@@ -182,11 +204,12 @@ Other portal accounts: `sales`, `warehouse`, `procurement` — each with their o
 
 | Action | Command |
 |---|---|
-| Start the platform | `make up` |
-| Stop the platform | `make down` |
+| Start chosen configuration | Your designated `make up-...` commands! |
+| Stop all containers | `make down-all` |
 | View logs | `make logs` |
 | Check container status | `make ps` |
 | Refresh data from ABM | `make elt` |
+| View ELT pipeline report | `python tools/elt_report.py` |
 | Run API in dev mode | `make dev-api` |
 | Rebuild portal after changes | `make rebuild-portal` |
 | Rebuild API after changes | `make rebuild-api` |

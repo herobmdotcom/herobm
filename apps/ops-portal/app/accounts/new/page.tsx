@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Shell from '@/components/Shell';
 import { toast } from 'react-hot-toast';
 import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -58,7 +57,7 @@ export default function NewAccountPage() {
   
   
   return (
-    <Shell>
+    <>
       <DetailsLayout
         header={
           <EntityHeader
@@ -356,7 +355,7 @@ export default function NewAccountPage() {
             </div>
       </div>
       </DetailsLayout>
-    </Shell>
+    </>
   );
 
 }

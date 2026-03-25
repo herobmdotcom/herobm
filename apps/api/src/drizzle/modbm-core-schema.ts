@@ -15,12 +15,11 @@ import {
 
 /**
  * Drizzle schema for modbm_core — application-owned operational data.
- * Phase 3: read-write order management.
  *
  * Column naming follows Microsoft CDM conventions (snake_case in Postgres).
- * Cross-schema references (customer_id → mart_accounts, product_id → mart_products)
- * are enforced at the application level, not via database FK — because dbt
- * drops/recreates mart tables on every pipeline run.
+ * All tables use UUID primary keys with gen_random_uuid() defaults.
+ * Foreign keys reference other modbm_core tables (e.g. customer_id → accounts).
+ * Schema is managed via migrations in apps/api/migrations/.
  */
 export const modbmCore = pgSchema('modbm_core');
 
@@ -386,11 +385,17 @@ export const products = modbmCore.table('products', {
   name: text('name').notNull(),
   productGroupName: text('product_group_name'),
   barcode: text('barcode'),
-  listPrice: numeric('list_price').default('0'),
-  standardCost: numeric('standard_cost').default('0'),
-  tradePrice: numeric('trade_price').default('0'),
-  priceLevel3: numeric('price_level_3').default('0'),
-  priceLevel4: numeric('price_level_4').default('0'),
+  listPrice: numeric('list_price', { precision: 12, scale: 2 }).default('0'),
+  standardCost: numeric('standard_cost', { precision: 12, scale: 2 }).default(
+    '0',
+  ),
+  tradePrice: numeric('trade_price', { precision: 12, scale: 2 }).default('0'),
+  priceLevel3: numeric('price_level_3', { precision: 12, scale: 2 }).default(
+    '0',
+  ),
+  priceLevel4: numeric('price_level_4', { precision: 12, scale: 2 }).default(
+    '0',
+  ),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
   quantityOnHand: numeric('quantity_on_hand').default('0'),
   gstCategory: text('gst_category'),
@@ -698,7 +703,7 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
     .notNull()
     .references(() => glAccounts.glAccountId),
   partyType: text('party_type'), // 'customer' | 'supplier'
-  partyId: text('party_id'), // generic reference to mart_accounts/mart_suppliers
+  partyId: text('party_id'), // generic reference to accounts/suppliers
   debit: numeric('debit').notNull().default('0'),
   credit: numeric('credit').notNull().default('0'),
   memo: text('memo'),

@@ -50,7 +50,6 @@ export interface OrderDetail {
     createdBy: string | null;
     createdOn: string;
     modifiedOn: string;
-    source?: 'abm' | 'app';
     lines: OrderLine[];
     events: OrderEvent[];
 }

@@ -32,7 +32,7 @@ export interface UnifiedPurchaseOrderRow {
   vendorName: string;
   invoiceNumber: string;
   stateCode: string;
-  source: 'abm' | 'app';
+
   createdBy: string;
   createdOn: string | null;
   totalPrice: string | null;
@@ -207,8 +207,6 @@ export class PurchaseOrdersService {
     }
 
     const unified: UnifiedPurchaseOrderRow[] = appRows.map((r) => {
-      // If the creator is abm-import, flag source as 'abm' for the frontend.
-      const isAbm = r.createdBy === 'abm-import';
       return {
         id: r.id,
         orderNumber: r.orderNumber ?? '',
@@ -216,7 +214,6 @@ export class PurchaseOrdersService {
         vendorName: r.vendorName ?? '',
         invoiceNumber: r.invoiceNumber ?? '',
         stateCode: r.stateCode ?? 'draft',
-        source: isAbm ? 'abm' : 'app',
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
         totalPrice: appTotalMap.get(r.id) ?? null,

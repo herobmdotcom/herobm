@@ -2,7 +2,6 @@ import { Injectable, Inject } from '@nestjs/common';
 import { sql, ilike, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrderLines } from '../drizzle/schema';
 import {
   products as coreProducts,
   accounts as coreAccounts,
@@ -10,6 +9,7 @@ import {
   suppliers as coreSuppliers,
   purchaseOrders as corePurchaseOrders,
   binContents as coreBinContents,
+  salesOrderLineItems as coreSalesOrderLines,
 } from '../drizzle/modbm-core-schema';
 
 export interface SearchResult {
@@ -33,18 +33,13 @@ export class DashboardService {
       .select({ count: sql<number>`count(*)::int` })
       .from(coreProducts);
 
-    const [inventoryCount] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(coreBinContents);
-
     const [orderLineCount] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(salesOrderLines);
+      .from(coreSalesOrderLines);
 
     return {
       accounts: accountCount.count,
       products: productCount.count,
-      inventoryLevels: inventoryCount.count,
       orderLines: orderLineCount.count,
     };
   }

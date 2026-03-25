@@ -15,7 +15,7 @@ import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 interface InvoicesSectionProps {
     orderId: string;
     order: OrderDetail;
-    source: string;
+
     invoices: SalesInvoice[];
     gstCategories: GstCategory[];
     pickingSummary: any;
@@ -25,7 +25,7 @@ interface InvoicesSectionProps {
 }
 
 export default function InvoicesSection({
-    orderId, order, source, invoices, gstCategories,
+    orderId, order, invoices, gstCategories,
     pickingSummary, setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
     const tCommon = useTranslations('common');
@@ -84,7 +84,7 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
-                {['shipped', 'picking'].includes(order.stateCode) && source === 'app' && !showCreateInvoice && (
+                {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={(() => {
