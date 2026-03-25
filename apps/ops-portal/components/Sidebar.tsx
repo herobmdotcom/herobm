@@ -62,8 +62,15 @@ export default function Sidebar() {
       label: t('groups.finance'),
       items: [
         { href: '/gl/trial-balance', label: t('items.trialBalance'), icon: 'account_balance' },
-        { href: '/gl/general-ledger', label: t('items.generalLedger'), icon: 'menu_book' },
-        { href: '/gl/journal-entries', label: t('items.journalEntries'), icon: 'edit_note' },
+        { 
+          href: '/general-ledger', 
+          label: t('items.generalLedger'), 
+          icon: 'menu_book',
+          subItems: [
+            { href: '/general-ledger', label: t('items.generalLedger') },
+            { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
+          ]
+        },
       ],
     });
   }

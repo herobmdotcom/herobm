@@ -4,6 +4,7 @@ import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { InventoryService } from '../inventory/inventory.service';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -26,8 +27,13 @@ function createMockQueryBuilder(resolvedValue: any = []) {
   return qb;
 }
 
-function createMockTx() {
+function createMockTx(selectResponses?: any[][]) {
+  let selectCall = 0;
   return {
+    select: jest.fn().mockImplementation(() => {
+      const resp = selectResponses ? selectResponses[selectCall++] || [] : [];
+      return createMockQueryBuilder(resp);
+    }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
@@ -96,8 +102,8 @@ describe('PickingService', () => {
     });
   }
 
-  function mockTransaction(result: any) {
-    const mockTx = createMockTx();
+  function mockTransaction(result: any, selectResponses: any[][] = []) {
+    const mockTx = createMockTx(selectResponses);
     const txQb = createMockQueryBuilder(
       Array.isArray(result) ? result : [result],
     );
@@ -108,9 +114,15 @@ describe('PickingService', () => {
     return mockTx;
   }
 
+  let mockInventoryService: any;
+
   beforeEach(async () => {
     jest.clearAllMocks();
     mockDb = createMockDb();
+
+    mockInventoryService = {
+      recordInventoryMovement: jest.fn(),
+    };
 
     const mockShipmentService = {
       createShipment: jest.fn().mockResolvedValue({
@@ -124,6 +136,7 @@ describe('PickingService', () => {
         { provide: ConfigService, useValue: { get: jest.fn() } },
         PickingService,
         { provide: ShipmentService, useValue: mockShipmentService },
+        { provide: InventoryService, useValue: mockInventoryService },
         { provide: DRIZZLE, useValue: mockDb },
       ],
     }).compile();
@@ -141,7 +154,10 @@ describe('PickingService', () => {
         1: [{ ...PICKING_ORDER, stateCode: orderState }],
         2: [ORDER_LINE],
       });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '5' });
+      mockTransaction({ ...ORDER_LINE, quantityPicked: '5' }, [
+        [{ binId: 'ship-bin', locationNo: 'MAIN' }], // SHIPPING bin
+        [{ binId: 'bin-1', locationNo: 'MAIN', actualQuantity: '10' }], // Available bin
+      ]);
     }
 
     it('should update quantity_picked on a picking order', async () => {
@@ -182,7 +198,10 @@ describe('PickingService', () => {
         1: [PICKING_ORDER],
         2: [{ ...ORDER_LINE, quantityPicked: '5' }],
       });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '0' });
+      mockTransaction({ ...ORDER_LINE, quantityPicked: '0' }, [
+        [{ binId: 'ship-bin', locationNo: 'MAIN' }], // SHIPPING bin
+        [{ binId: 'main-bin', locationNo: 'MAIN' }], // MAIN bin (since delta < 0, it asks for MAIN bin)
+      ]);
       const result = await service.pickLine(
         'order-001',
         'line-001',
@@ -210,7 +229,10 @@ describe('PickingService', () => {
         1: [PICKING_ORDER],
         2: [ORDER_LINE],
       });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '10' });
+      mockTransaction({ ...ORDER_LINE, quantityPicked: '10' }, [
+        [{ binId: 'ship-bin', locationNo: 'MAIN' }], // SHIPPING bin
+        [{ binId: 'bin-1', locationNo: 'MAIN', actualQuantity: '20' }], // Available bin
+      ]);
       const result = await service.pickAllForLine(
         'order-001',
         'line-001',
@@ -299,7 +321,14 @@ describe('PickingService', () => {
         3: [],
       });
 
-      mockTransaction({});
+      mockTransaction({}, [
+        // For line-1
+        [{ binId: 'ship-bin', locationNo: 'MAIN' }],
+        [{ binId: 'bin-1', locationNo: 'MAIN', actualQuantity: '20' }],
+        // For line-2
+        [{ binId: 'ship-bin', locationNo: 'MAIN' }],
+        [{ binId: 'bin-1', locationNo: 'MAIN', actualQuantity: '20' }],
+      ]);
 
       const result = await service.pickAllOrder('order-001', 'admin');
 
@@ -349,7 +378,7 @@ describe('PickingService', () => {
         ],
       });
 
-      mockTransaction({});
+      mockTransaction({}, []);
 
       const mockShipmentService: any = service['shipmentService'];
       mockShipmentService.createShipment.mockClear();
@@ -447,6 +476,125 @@ describe('PickingService', () => {
       expect(line2.remaining).toBe('3');
       expect(line2.quantityShipped).toBe('0');
       expect(line2.isFullyPicked).toBe(false);
+    });
+  });
+
+  // =========================================================================
+  // allocatePickDelta
+  // =========================================================================
+
+  describe('allocatePickDelta', () => {
+    beforeEach(() => {
+      mockInventoryService.recordInventoryMovement.mockClear();
+    });
+
+    it('should ignore zero delta', async () => {
+      const tx = createMockTx();
+      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 0, 'admin');
+      expect(tx.select).not.toHaveBeenCalled();
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should throw if no SHIPPING bin is configured', async () => {
+      const tx = createMockTx([
+        [], // No SHIPPING bin
+      ]);
+      await expect(
+        service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin'),
+      ).rejects.toThrow('System SHIPPING bin is not configured.');
+    });
+
+    it('should pick from highest-stock non-staging bins first', async () => {
+      const tx = createMockTx([
+        [{ binId: 'bin-shipping', locationNo: 'L2' }], // SHIPPING bin
+        [
+          // Available bins for P1
+          { binId: 'bin-b1', locationNo: 'L1', actualQuantity: '10' },
+          { binId: 'bin-b2', locationNo: 'L1', actualQuantity: '5' },
+        ],
+      ]);
+
+      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 12, 'admin');
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
+      const params = args[1];
+
+      expect(params.lines).toHaveLength(4); // 2 lines per bin taken from
+      expect(params.lines[0]).toMatchObject({ binId: 'bin-b1', quantity: -10 });
+      expect(params.lines[1]).toMatchObject({
+        binId: 'bin-shipping',
+        quantity: 10,
+      });
+      expect(params.lines[2]).toMatchObject({ binId: 'bin-b2', quantity: -2 });
+      expect(params.lines[3]).toMatchObject({
+        binId: 'bin-shipping',
+        quantity: 2,
+      });
+    });
+
+    it('should use fallback bin if available bins run dry', async () => {
+      const tx = createMockTx([
+        [{ binId: 'bin-shipping', locationNo: 'L2' }], // SHIPPING bin
+        [{ binId: 'bin-b1', locationNo: 'L1', actualQuantity: '2' }], // Available bins
+        [{ binId: 'bin-fallback', locationNo: 'L1' }], // Fallback bin
+      ]);
+
+      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin');
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
+      const params = args[1];
+
+      expect(params.lines).toHaveLength(4);
+      expect(params.lines[0]).toMatchObject({ binId: 'bin-b1', quantity: -2 });
+      expect(params.lines[2]).toMatchObject({
+        binId: 'bin-fallback',
+        quantity: -3,
+      });
+    });
+
+    it('should throw if fallback bin is missing when running out of stock', async () => {
+      const tx = createMockTx([
+        [{ binId: 'bin-shipping', locationNo: 'L2' }], // SHIPPING bin
+        [], // No Available bins
+        [], // No fallback bin
+      ]);
+
+      await expect(
+        service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin'),
+      ).rejects.toThrow('No storage bins defined in the system.');
+    });
+
+    it('should revert stock from SHIPPING to fallback bin on negative delta', async () => {
+      const tx = createMockTx([
+        [{ binId: 'bin-shipping', locationNo: 'L2' }], // SHIPPING bin
+        [{ binId: 'bin-fallback', locationNo: 'L1' }], // Fallback bin
+      ]);
+
+      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', -4, 'admin');
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
+      const params = args[1];
+
+      expect(params.lines).toHaveLength(2);
+      expect(params.lines[0]).toMatchObject({
+        binId: 'bin-shipping',
+        quantity: -4,
+      });
+      expect(params.lines[1]).toMatchObject({
+        binId: 'bin-fallback',
+        quantity: 4,
+      });
     });
   });
 });

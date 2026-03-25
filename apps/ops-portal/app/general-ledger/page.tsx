@@ -166,7 +166,7 @@ export default function GeneralLedgerPage() {
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs">
                       <Link
-                        href={`/gl/journal-entries?entry=${encodeURIComponent(r.entry_number)}`}
+                        href={`/general-ledger/journal-entries?entry=${encodeURIComponent(r.entry_number)}`}
                         className="hover:underline"
                         style={{ color: 'var(--accent)' }}
                         onClick={(e) => e.stopPropagation()}

@@ -302,41 +302,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                             {order.currencyCode}
                                         </span>
                                     )}
-                                    {order.gstCategoryId && (() => {
-                                        const c = gstCategories.find((g) => g.gstCategoryId === order.gstCategoryId);
-                                        return c?.type === 'exempt' ? (
-                                            <span
-                                                style={{
-                                                    marginLeft: 4,
-                                                    padding: '1px 6px',
-                                                    borderRadius: 4,
-                                                    background: 'rgba(245,158,11,0.15)',
-                                                    color: '#f59e0b',
-                                                    fontWeight: 600,
-                                                    fontSize: 10,
-                                                    letterSpacing: '0.04em',
-                                                }}
-                                            >
-                                                {tCommon('gst.exempt').toUpperCase()}
-                                            </span>
-                                        ) : null;
-                                    })()}
-                                    {parseFloat(order.customerDiscount || '0') > 0 && (
-                                        <span
-                                            style={{
-                                                marginLeft: 4,
-                                                padding: '1px 6px',
-                                                borderRadius: 4,
-                                                background: 'rgba(74,222,128,0.15)',
-                                                color: '#4ade80',
-                                                fontWeight: 600,
-                                                fontSize: 10,
-                                                letterSpacing: '0.04em',
-                                            }}
-                                        >
-                                            {tSales('discountPercent', { disc: parseFloat(order.customerDiscount!) })}
-                                        </span>
-                                    )}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
                                     {order.customerName

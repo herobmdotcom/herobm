@@ -26,6 +26,7 @@ describe('API E2E — Picking & Shipments', () => {
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
+  let db: any;
 
   beforeAll(async () => {
     register.clear();
@@ -38,7 +39,7 @@ describe('API E2E — Picking & Shipments', () => {
     app.setGlobalPrefix('api');
     await app.init();
 
-    const db = app.get(DRIZZLE);
+    db = app.get(DRIZZLE);
     await db.execute(sql`
       DO $$ 
       DECLARE
@@ -236,6 +237,17 @@ describe('API E2E — Picking & Shipments', () => {
         .expect(200);
 
       expect(summary.body.isFullyPicked).toBe(true);
+    });
+
+    it('verifies ledger stock movement created for picking', async () => {
+      // Direct DB assertion to verify the InventoryLedger entry was created
+      const entries = await db.execute(sql`
+        SELECT * FROM modbm_core.inventory_entries 
+        WHERE source_id = ${orderId} AND source_type = 'SO_PICK'
+      `);
+
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries[0].memo).toContain('Sales Order Pick');
     });
 
     it('picking → shipped ALLOWED when all lines picked and shipped', async () => {

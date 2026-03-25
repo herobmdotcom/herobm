@@ -2,13 +2,14 @@ import { Injectable, Inject } from '@nestjs/common';
 import { sql, ilike, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { inventory, salesOrderLines } from '../drizzle/schema';
+import { salesOrderLines } from '../drizzle/schema';
 import {
   products as coreProducts,
   accounts as coreAccounts,
   salesOrders as coreSalesOrders,
   suppliers as coreSuppliers,
   purchaseOrders as corePurchaseOrders,
+  binContents as coreBinContents,
 } from '../drizzle/modbm-core-schema';
 
 export interface SearchResult {
@@ -34,7 +35,7 @@ export class DashboardService {
 
     const [inventoryCount] = await this.db
       .select({ count: sql<number>`count(*)::int` })
-      .from(inventory);
+      .from(coreBinContents);
 
     const [orderLineCount] = await this.db
       .select({ count: sql<number>`count(*)::int` })

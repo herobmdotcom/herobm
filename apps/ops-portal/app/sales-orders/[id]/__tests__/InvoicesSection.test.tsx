@@ -46,8 +46,6 @@ const baseOrder: OrderDetail = {
     customerOrderNumber: null,
     stateCode: 'shipped',
     currencyCode: 'AUD',
-    customerDiscount: null,
-    gstCategoryId: null,
     notes: null,
     createdBy: 'admin',
     createdOn: '2024-01-01',

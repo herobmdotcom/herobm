@@ -43,8 +43,6 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
         customerOrderNumber: 'PO-123',
         stateCode: 'draft',
         currencyCode: 'AUD',
-        customerDiscount: null,
-        gstCategoryId: null,
         notes: 'Some notes',
         createdBy: 'admin',
         createdOn: '2024-01-01',

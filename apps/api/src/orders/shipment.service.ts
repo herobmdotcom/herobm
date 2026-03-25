@@ -14,6 +14,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   outbox,
+  bins,
 } from '../drizzle/modbm-core-schema';
 import { ConfigService } from '@nestjs/config';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -286,8 +287,37 @@ export class ShipmentService {
         );
         const strategy = getValuationStrategy(method);
 
-        // Dispatching: deduct on-hand, release committed
-        await this.inventoryService.deductStock(tx, stockLines);
+        const [shippingBin] = await tx
+          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .from(bins)
+          .where(eq(bins.binNumber, 'SHIPPING'))
+          .limit(1);
+
+        if (!shippingBin) {
+          throw new BadRequestException('System SHIPPING bin is missing.');
+        }
+
+        const dispatchLines = stockLines.map((line) => ({
+          productId: line.productId!,
+          binId: shippingBin.binId,
+          locationNo: shippingBin.locationNo,
+          quantity: -parseFloat(line.quantity),
+        }));
+
+        if (dispatchLines.length > 0) {
+          await this.inventoryService.recordInventoryMovement(tx, {
+            entryNumber:
+              'DSP-' +
+              shipment.shipmentNumber +
+              '-' +
+              Date.now().toString().slice(-4),
+            sourceType: 'SO_SHIPMENT',
+            sourceId: shipmentId,
+            memo: 'Goods Dispatched',
+            userId: actor,
+            lines: dispatchLines,
+          });
+        }
 
         // Calculate COGS and record outbox event for GL mapping
         const cogsDetails = [];
@@ -364,8 +394,37 @@ export class ShipmentService {
           }
         }
 
-        // Reversing or cancelling a dispatch: restore on-hand and re-commit
-        await this.inventoryService.restoreStock(tx, stockLines);
+        const [shippingBin] = await tx
+          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .from(bins)
+          .where(eq(bins.binNumber, 'SHIPPING'))
+          .limit(1);
+
+        if (!shippingBin) {
+          throw new BadRequestException('System SHIPPING bin is missing.');
+        }
+
+        const returnLines = stockLines.map((line) => ({
+          productId: line.productId!,
+          binId: shippingBin.binId,
+          locationNo: shippingBin.locationNo,
+          quantity: parseFloat(line.quantity),
+        }));
+
+        if (returnLines.length > 0) {
+          await this.inventoryService.recordInventoryMovement(tx, {
+            entryNumber:
+              'REV-' +
+              shipment.shipmentNumber +
+              '-' +
+              Date.now().toString().slice(-4),
+            sourceType: 'SO_SHIPMENT',
+            sourceId: shipmentId,
+            memo: 'Dispatch Reversed',
+            userId: actor,
+            lines: returnLines,
+          });
+        }
 
         // Record reversal outbox event to mathematically restore COGS dynamically
         await tx.insert(outbox).values({

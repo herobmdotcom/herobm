@@ -8,18 +8,21 @@ import {
   purchaseOrderLineItems,
   products,
   outbox,
+  bins,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { ConfigService } from '@nestjs/config';
 import { getValuationStrategy } from '../inventory/valuation';
+import { InventoryService } from '../inventory/inventory.service';
 
 @Injectable()
 export class ReceptionsService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private configService: ConfigService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   async create(createDto: any, userId: string) {
@@ -53,6 +56,8 @@ export class ReceptionsService {
         }));
 
         await tx.insert(purchaseOrderReceptionLines).values(lineValues);
+
+        const ledgerLines = [];
 
         // Update PO Line received quantities
         for (const line of createDto.lines) {
@@ -90,6 +95,11 @@ export class ReceptionsService {
                 receivedQty,
                 poLinePrice,
               );
+
+              ledgerLines.push({
+                productId: productRow.productId,
+                quantity: receivedQty,
+              });
 
               // Update product costs and global QOH
               await tx
@@ -137,6 +147,37 @@ export class ReceptionsService {
           .update(purchaseOrders)
           .set({ stateCode: 'received', modifiedOn: new Date() })
           .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId));
+
+        if (ledgerLines.length > 0) {
+          const [dockBin] = await tx
+            .select({ binId: bins.binId, locationNo: bins.locationNo })
+            .from(bins)
+            .where(eq(bins.binNumber, 'DOCK'))
+            .limit(1);
+
+          if (!dockBin) {
+            throw new NotFoundException('System DOCK bin is missing.');
+          }
+
+          const resolvedLedgerLines = ledgerLines.map((l) => ({
+            ...l,
+            binId: dockBin.binId,
+            locationNo: dockBin.locationNo,
+          }));
+
+          await this.inventoryService.recordInventoryMovement(tx, {
+            entryNumber:
+              'REC-' +
+              reception.receptionNumber +
+              '-' +
+              Date.now().toString().slice(-4),
+            sourceType: 'PO_RECEPTION',
+            sourceId: reception.receptionId,
+            memo: 'Goods Received to Dock',
+            userId: userId,
+            lines: resolvedLedgerLines,
+          });
+        }
       }
 
       return this.findOne(reception.receptionId, tx);

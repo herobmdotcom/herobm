@@ -123,7 +123,7 @@ export default function NewJournalEntryPage() {
           lines: payloadLines,
         }),
       });
-      router.push('/gl/journal-entries');
+      router.push('/general-ledger/journal-entries');
     } catch (err) {
       reportError(err, 'NewJournalEntryPage');
       setSubmitting(false);

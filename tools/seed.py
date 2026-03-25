@@ -91,43 +91,8 @@ def seed_users(dry_run: bool = False) -> None:
 
 
 def seed_inventory(dry_run: bool = False) -> None:
-    """Seed inventory_levels from mart_inventory (if mart exists)."""
-    # Check if mart table exists
-    exists = psql(
-        "SELECT 1 FROM information_schema.tables "
-        "WHERE table_schema = 'public_marts' AND table_name = 'mart_inventory';",
-        capture=True,
-    )
-    if not exists:
-        print("  SKIP: public_marts.mart_inventory does not exist (run 'make elt' first)")
-        return
-
-    if dry_run:
-        count = psql(
-            "SELECT count(*) FROM public_marts.mart_inventory WHERE product_id IS NOT NULL;",
-            capture=True,
-        )
-        print(f"  [DRY RUN] Would seed {count} inventory rows from mart_inventory")
-        return
-
-    sql = """
-    INSERT INTO modbm_core.inventory_levels (
-        product_id, location_no, quantity_on_hand,
-        quantity_committed, quantity_on_order, modified_on
-    )
-    SELECT
-        product_id,
-        COALESCE(location_no, 'MAIN'),
-        COALESCE(quantity_on_hand::numeric, 0),
-        COALESCE(quantity_committed::numeric, 0),
-        COALESCE(quantity_on_order::numeric, 0),
-        NOW()
-    FROM public_marts.mart_inventory
-    WHERE product_id IS NOT NULL
-    ON CONFLICT (product_id, location_no) DO NOTHING;
-    """
-    psql_sql(sql)
-    print("  Seeded inventory_levels from mart_inventory")
+    """Inventory levels are now imported via dbt import models (make import-legacy)."""
+    print("  SKIP: Inventory levels are imported via 'make import-legacy' (dbt import models)")
 
 
 def seed_products(dry_run: bool = False) -> None:

@@ -149,9 +149,8 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
+        3: SUPPLIERS,
+        4: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -164,9 +163,8 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
+        3: SUPPLIERS,
+        4: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -185,23 +183,21 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
+        3: SUPPLIERS,
+        4: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
-      expect(data.pickingLines[0].binNumber).toBe('A-01-03');
-      expect(data.pickingLines[1].binNumber).toBe('C-05-02');
+      expect(data.pickingLines[0].binNumber).toBe('—');
+      expect(data.pickingLines[1].binNumber).toBe('—');
     });
 
     it('should identify back-order lines where ordered > on-hand', async () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
+        3: SUPPLIERS,
+        4: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');
@@ -217,9 +213,8 @@ describe('PickingSlipService', () => {
       mockSelectChain({
         1: [ORDER_HEADER],
         2: ORDER_LINES,
-        3: INVENTORY,
-        4: SUPPLIERS,
-        5: INVENTORY,
+        3: SUPPLIERS,
+        4: INVENTORY,
       });
 
       const data = await service.assembleData('order-001');

@@ -114,14 +114,7 @@ describe('ShipmentService', () => {
     mockDb = createMockDb();
 
     mockInventoryService = {
-      commitStock: jest.fn().mockResolvedValue(undefined),
-      releaseStock: jest.fn().mockResolvedValue(undefined),
-      deductStock: jest.fn().mockResolvedValue(undefined),
-      restoreStock: jest.fn().mockResolvedValue(undefined),
-      returnStock: jest.fn().mockResolvedValue(undefined),
-      placeOnOrder: jest.fn().mockResolvedValue(undefined),
-      cancelOnOrder: jest.fn().mockResolvedValue(undefined),
-      receiveStock: jest.fn().mockResolvedValue(undefined),
+      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -401,7 +394,17 @@ describe('ShipmentService', () => {
               } else if (catchAllWhereCount === 2) {
                 data = [MOCK_SHIPMENT_LINE];
               } else {
-                data = [PICKING_ORDER];
+                data = [
+                  {
+                    ...PICKING_ORDER,
+                    productId: 'PROD-001',
+                    binId: 'sh-bin-1',
+                    locationNo: 'MAIN',
+                    standardCost: '10',
+                    quantityOnHand: '100',
+                    weightedAverageCost: '10',
+                  },
+                ];
               }
               const resolved = Promise.resolve(data);
               return Object.assign(resolved, {

@@ -4,14 +4,17 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesOrders,
   salesOrderLineItems,
   products as coreProducts,
+  bins,
+  binContents,
 } from '../drizzle/modbm-core-schema';
+import { InventoryService } from '../inventory/inventory.service';
 import {
   findOrder,
   findOrderLine,
@@ -25,6 +28,7 @@ export class PickingService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly shipmentService: ShipmentService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   private readonly logger = new Logger(PickingService.name);
@@ -32,6 +36,130 @@ export class PickingService {
   // -------------------------------------------------------------------------
   // Picking operations
   // -------------------------------------------------------------------------
+
+  private async allocatePickDelta(
+    tx: DrizzleDB,
+    orderId: string,
+    lineNumber: number,
+    productId: string,
+    delta: number,
+    actor: string,
+  ) {
+    if (delta === 0) return;
+
+    const [shippingBin] = await tx
+      .select({ binId: bins.binId, locationNo: bins.locationNo })
+      .from(bins)
+      .where(eq(bins.binNumber, 'SHIPPING'))
+      .limit(1);
+
+    if (!shippingBin) {
+      throw new BadRequestException('System SHIPPING bin is not configured.');
+    }
+
+    const ledgerLines = [];
+
+    if (delta > 0) {
+      const availableBins = await tx
+        .select({
+          binId: binContents.binId,
+          locationNo: bins.locationNo,
+          actualQuantity: binContents.actualQuantity,
+        })
+        .from(binContents)
+        .innerJoin(bins, eq(binContents.binId, bins.binId))
+        .where(
+          and(
+            eq(binContents.productId, productId),
+            sql`${binContents.actualQuantity} > 0`,
+            sql`${bins.binType} IS DISTINCT FROM 'staging'`,
+          ),
+        )
+        .orderBy(desc(binContents.actualQuantity));
+
+      let remainingToPick = delta;
+
+      for (const b of availableBins) {
+        if (remainingToPick <= 0) break;
+        const available = parseFloat(b.actualQuantity);
+        const take = Math.min(available, remainingToPick);
+
+        ledgerLines.push({
+          productId,
+          binId: b.binId,
+          locationNo: b.locationNo,
+          quantity: -take,
+        });
+        ledgerLines.push({
+          productId,
+          binId: shippingBin.binId,
+          locationNo: shippingBin.locationNo,
+          quantity: take,
+        });
+        remainingToPick -= take;
+      }
+
+      if (remainingToPick > 0) {
+        const [fallbackBin] = await tx
+          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .from(bins)
+          .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
+          .limit(1);
+
+        if (!fallbackBin) {
+          throw new BadRequestException(
+            'No storage bins defined in the system.',
+          );
+        }
+
+        ledgerLines.push({
+          productId,
+          binId: fallbackBin.binId,
+          locationNo: fallbackBin.locationNo,
+          quantity: -remainingToPick,
+        });
+        ledgerLines.push({
+          productId,
+          binId: shippingBin.binId,
+          locationNo: shippingBin.locationNo,
+          quantity: remainingToPick,
+        });
+      }
+    } else {
+      const returnQty = Math.abs(delta);
+      const [fallbackBin] = await tx
+        .select({ binId: bins.binId, locationNo: bins.locationNo })
+        .from(bins)
+        .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
+        .limit(1);
+
+      if (!fallbackBin) {
+        throw new BadRequestException('No storage bins defined in the system.');
+      }
+
+      ledgerLines.push({
+        productId,
+        binId: shippingBin.binId,
+        locationNo: shippingBin.locationNo,
+        quantity: -returnQty,
+      });
+      ledgerLines.push({
+        productId,
+        binId: fallbackBin.binId,
+        locationNo: fallbackBin.locationNo,
+        quantity: returnQty,
+      });
+    }
+
+    await this.inventoryService.recordInventoryMovement(tx, {
+      entryNumber: `PCK-${orderId.substring(0, 8)}-${lineNumber}-${Date.now().toString().slice(-4)}`,
+      sourceType: 'SO_PICK',
+      sourceId: orderId,
+      memo: `Sales Order Pick \${delta > 0 ? 'Allocation' : 'Reversion'}`,
+      userId: actor,
+      lines: ledgerLines,
+    });
+  }
 
   /**
    * Set the picked quantity for a single order line.
@@ -72,6 +200,18 @@ export class PickingService {
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const delta = qty - parseFloat(line.quantityPicked ?? '0');
+      if (delta !== 0) {
+        await this.allocatePickDelta(
+          tx,
+          orderId,
+          line.lineNumber,
+          line.productId!,
+          delta,
+          actor,
+        );
+      }
+
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked })
@@ -115,6 +255,19 @@ export class PickingService {
     const line = await findOrderLine(this.db, lineId, orderId);
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const delta =
+        parseFloat(line.quantity) - parseFloat(line.quantityPicked ?? '0');
+      if (delta !== 0) {
+        await this.allocatePickDelta(
+          tx,
+          orderId,
+          line.lineNumber,
+          line.productId!,
+          delta,
+          actor,
+        );
+      }
+
       const [updated] = await tx
         .update(salesOrderLineItems)
         .set({ quantityPicked: line.quantity })
@@ -169,6 +322,19 @@ export class PickingService {
     // First, set all lines as fully picked
     await this.db.transaction(async (tx: DrizzleDB) => {
       for (const line of lines) {
+        const delta =
+          parseFloat(line.quantity) - parseFloat(line.quantityPicked ?? '0');
+        if (delta !== 0) {
+          await this.allocatePickDelta(
+            tx,
+            orderId,
+            line.lineNumber,
+            line.productId!,
+            delta,
+            actor,
+          );
+        }
+
         await tx
           .update(salesOrderLineItems)
           .set({ quantityPicked: line.quantity })

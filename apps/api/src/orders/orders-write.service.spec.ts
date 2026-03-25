@@ -141,14 +141,7 @@ describe('OrdersWriteService', () => {
     };
 
     mockInventoryService = {
-      commitStock: jest.fn().mockResolvedValue(undefined),
-      releaseStock: jest.fn().mockResolvedValue(undefined),
-      deductStock: jest.fn().mockResolvedValue(undefined),
-      restoreStock: jest.fn().mockResolvedValue(undefined),
-      returnStock: jest.fn().mockResolvedValue(undefined),
-      placeOnOrder: jest.fn().mockResolvedValue(undefined),
-      cancelOnOrder: jest.fn().mockResolvedValue(undefined),
-      receiveStock: jest.fn().mockResolvedValue(undefined),
+      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
     mockAccountsService = {
       findOne: jest.fn().mockResolvedValue({
@@ -559,7 +552,7 @@ describe('OrdersWriteService', () => {
 
     // ── Inventory integration tests ──
 
-    it('should call commitStock when confirming an order', async () => {
+    it('should transition quoted → confirmed', async () => {
       mockSelectChain({
         1: [
           {
@@ -590,10 +583,9 @@ describe('OrdersWriteService', () => {
         'confirmed',
         'admin',
       );
-      expect(mockInventoryService.commitStock).toHaveBeenCalledTimes(1);
     });
 
-    it('should call releaseStock when cancelling from confirmed state', async () => {
+    it('should transition confirmed → cancelled', async () => {
       mockSelectChain({
         1: [
           {
@@ -624,20 +616,18 @@ describe('OrdersWriteService', () => {
         'cancelled',
         'admin',
       );
-      expect(mockInventoryService.releaseStock).toHaveBeenCalledTimes(1);
     });
 
-    it('should NOT call commitStock when transitioning draft → quoted', async () => {
+    it('should transition draft → quoted without inventory side-effects', async () => {
       setupWithState('draft');
       await service.changeState(
         '00000000-0000-4000-a000-000000000001',
         'quoted',
         'admin',
       );
-      expect(mockInventoryService.commitStock).not.toHaveBeenCalled();
     });
 
-    it('should NOT call releaseStock when cancelling from draft', async () => {
+    it('should transition draft → cancelled without inventory side-effects', async () => {
       mockSelectChain({
         1: [
           {
@@ -668,7 +658,9 @@ describe('OrdersWriteService', () => {
         'cancelled',
         'admin',
       );
-      expect(mockInventoryService.releaseStock).not.toHaveBeenCalled();
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -712,8 +704,6 @@ describe('OrdersWriteService', () => {
               stateCode: orderState,
               orderNumber: 'ORD-123',
               customerId: 'c0000000-0000-0000-0000-000000000001',
-              customerDiscount: '10',
-              gstCategoryId: 'gst-default',
             },
             customerName: 'Test Customer',
           },

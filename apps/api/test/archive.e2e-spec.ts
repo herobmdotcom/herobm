@@ -428,7 +428,9 @@ describe('Archive E2E — Full Round-Trip', () => {
 
     it('archived product appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/products?includeArchived=true&q=E2E%20Archive%20Test')
+        .get(
+          '/api/products?includeArchived=true&q=E2E%20Archive%20Test&limit=100000',
+        )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

@@ -14,7 +14,6 @@ import {
   outbox,
   suppliers as coreSuppliers,
 } from '../drizzle/modbm-core-schema';
-import { purchaseOrderLines as abmPurchaseOrderLines } from '../drizzle/schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { PaginationQuery, parsePagination } from '../common/pagination';
@@ -146,32 +145,6 @@ export class PurchaseOrdersService {
       parsePagination(query);
     const stateFilter = query?.state ?? null;
 
-    // --- ABM legacy orders ---
-    let abmQuery = this.db
-      .selectDistinctOn([abmPurchaseOrderLines.documentNumber], {
-        id: abmPurchaseOrderLines.purchaseOrderLineId,
-        orderNumber: abmPurchaseOrderLines.documentNumber,
-        name: sql<string>`''`.as('name'),
-        vendorName: abmPurchaseOrderLines.vendorName,
-        invoiceNumber: sql<string>`''`.as('invoice_number'),
-        stateCode: sql<string>`'legacy'`.as('state_code_unified'),
-        source: sql<string>`'abm'`.as('source'),
-        createdBy: sql<string>`''`.as('created_by'),
-        createdOn: abmPurchaseOrderLines.documentDate,
-        totalPrice: abmPurchaseOrderLines.documentTotalIncTax,
-      })
-      .from(abmPurchaseOrderLines)
-      .$dynamic();
-
-    if (searchTerm) {
-      abmQuery = abmQuery.where(
-        or(
-          ilike(abmPurchaseOrderLines.documentNumber, searchTerm),
-          ilike(abmPurchaseOrderLines.vendorName, searchTerm),
-        ),
-      );
-    }
-
     // --- App orders ---
     let appQuery = this.db
       .select({
@@ -213,7 +186,7 @@ export class PurchaseOrdersService {
       appQuery = appQuery.where(and(...conditions));
     }
 
-    const [appRows, abmRows] = await Promise.all([appQuery, abmQuery]);
+    const appRows = await appQuery;
 
     // --- Aggregate line totals per app order ---
     const appTotalMap = new Map<string, string>();
@@ -233,34 +206,23 @@ export class PurchaseOrdersService {
       }
     }
 
-    const unified: UnifiedPurchaseOrderRow[] = [
-      ...appRows.map((r) => ({
+    const unified: UnifiedPurchaseOrderRow[] = appRows.map((r) => {
+      // If the creator is abm-import, flag source as 'abm' for the frontend.
+      const isAbm = r.createdBy === 'abm-import';
+      return {
         id: r.id,
         orderNumber: r.orderNumber ?? '',
         name: r.name ?? '',
         vendorName: r.vendorName ?? '',
         invoiceNumber: r.invoiceNumber ?? '',
         stateCode: r.stateCode ?? 'draft',
-        source: 'app' as const,
+        source: isAbm ? 'abm' : 'app',
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
         currencyCode: r.currencyCode ?? 'EUR',
-      })),
-      ...abmRows.map((r) => ({
-        id: r.id,
-        orderNumber: r.orderNumber ?? '',
-        name: r.name ?? '',
-        vendorName: r.vendorName ?? '',
-        invoiceNumber: r.invoiceNumber ?? '',
-        stateCode: 'legacy',
-        source: 'abm' as const,
-        createdBy: '',
-        createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
-        totalPrice: r.totalPrice ?? null,
-        currencyCode: null,
-      })),
-    ];
+      };
+    });
 
     const paginated = unified.slice(offset, offset + limit);
 
@@ -306,51 +268,6 @@ export class PurchaseOrdersService {
     };
   }
 
-  async findAbmPurchaseOrder(documentNumber: string) {
-    const lines = await this.db
-      .select()
-      .from(abmPurchaseOrderLines)
-      .where(eq(abmPurchaseOrderLines.documentNumber, documentNumber));
-
-    if (lines.length === 0) {
-      throw new NotFoundException(
-        `ABM Purchase Order ${documentNumber} not found`,
-      );
-    }
-
-    return {
-      orderNumber: documentNumber,
-      vendorName: lines[0].vendorName,
-      stateCode: 'legacy',
-      source: 'abm' as const,
-      createdOn: lines[0].documentDate
-        ? new Date(lines[0].documentDate).toISOString()
-        : null,
-      documentTotalIncTax: lines[0].documentTotalIncTax,
-      documentTotalExTax: lines[0].documentTotalExTax,
-      documentTotalTax: lines[0].documentTotalTax,
-      lines: lines.map((l) => ({
-        purchaseOrderLineId: l.purchaseOrderLineId,
-        salesOrderLineId: l.purchaseOrderLineId,
-        lineNumber: l.lineNumber,
-        productId: l.productId,
-        productNumber: l.productNumber,
-        productDescription: l.productDescription,
-        supplierPartNumber: l.supplierPartNumber,
-        unitOfMeasure: l.unitOfMeasure,
-        quantity: l.quantity,
-        pricePerUnit: l.pricePerUnit,
-        discountPercentage: l.discountPercentage,
-        amount: l.amount,
-        tax: l.tax,
-        totalAmount: l.totalAmount,
-        quantityDelivered: l.quantityDelivered,
-        quantityReceived: l.quantityDelivered,
-      })),
-      events: [], // Legacy orders have no audit trail
-    };
-  }
-
   async changeState(id: string, stateCode: string) {
     const validStates = getValidStates(PURCHASE_ORDER_TRANSITIONS);
     if (!validStates.includes(stateCode)) {
@@ -373,35 +290,11 @@ export class PurchaseOrdersService {
       );
     }
 
-    const stockLines = existing.lines.map((l: any) => ({
-      productId: l.productId,
-      quantity: l.quantity,
-    }));
-
-    // States where stock is on-order
-    const ON_ORDER_STATES = ['ordered'];
-
     return await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .update(purchaseOrders)
         .set({ stateCode, modifiedOn: new Date() })
         .where(eq(purchaseOrders.purchaseOrderId, id));
-
-      // ── Inventory hooks ──
-      // Ordering → place on order
-      if (
-        stateCode === 'ordered' &&
-        !ON_ORDER_STATES.includes(existing.stateCode)
-      ) {
-        await this.inventoryService.placeOnOrder(tx, stockLines);
-      }
-      // Cancelling from ordered → cancel on order
-      if (
-        stateCode === 'cancelled' &&
-        ON_ORDER_STATES.includes(existing.stateCode)
-      ) {
-        await this.inventoryService.cancelOnOrder(tx, stockLines);
-      }
 
       await this.writeEvent(
         tx,

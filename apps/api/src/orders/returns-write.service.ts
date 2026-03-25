@@ -16,6 +16,7 @@ import {
   orderEvents,
   outbox,
   glAccounts,
+  bins,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
@@ -341,7 +342,37 @@ export class ReturnsWriteService {
           }
         }
 
-        await this.inventoryService.returnStock(tx, stockLines);
+        const [dockBin] = await tx
+          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .from(bins)
+          .where(eq(bins.binNumber, 'DOCK'))
+          .limit(1);
+
+        if (!dockBin) {
+          throw new BadRequestException('System DOCK bin is missing.');
+        }
+
+        const receiveLines = stockLines.map((line) => ({
+          productId: line.productId,
+          binId: dockBin.binId,
+          locationNo: dockBin.locationNo,
+          quantity: parseFloat(line.quantity),
+        }));
+
+        if (receiveLines.length > 0) {
+          await this.inventoryService.recordInventoryMovement(tx, {
+            entryNumber:
+              'RET-' +
+              existing.returnNumber +
+              '-' +
+              Date.now().toString().slice(-4),
+            sourceType: 'SO_RETURN',
+            sourceId: returnId,
+            memo: 'RMA Received to Dock',
+            userId: actor,
+            lines: receiveLines,
+          });
+        }
       }
 
       const eventType =

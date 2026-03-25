@@ -39,7 +39,13 @@ describe('Suppliers (e2e)', () => {
         SELECT vendor_id FROM modbm_core.suppliers WHERE vendor_number LIKE 'E2E-%'
       )
     `);
-    await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
+    try {
+      await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
+    } catch (e) {
+      console.warn(
+        'Could not clean up all E2E suppliers (some have POs attached)',
+      );
+    }
   });
 
   afterAll(async () => {
@@ -66,7 +72,7 @@ describe('Suppliers (e2e)', () => {
 
   it('GET /api/suppliers -> should list unified suppliers', async () => {
     const res = await request(app.getHttpServer())
-      .get('/api/suppliers')
+      .get('/api/suppliers?q=E2E-V-')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 

@@ -9,6 +9,8 @@ import {
   uuid,
   jsonb,
   primaryKey,
+  unique,
+  pgView,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -57,10 +59,6 @@ export const salesOrders = modbmCore.table('sales_orders', {
   customerId: uuid('customer_id').references(() => accounts.accountId),
   customerOrderNumber: text('customer_order_number'),
   stateCode: text('state_code').notNull().default('draft'),
-  customerDiscount: numeric('customer_discount').default('0'),
-  gstCategoryId: uuid('gst_category_id').references(
-    () => gstCategories.gstCategoryId,
-  ),
   currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
   customFields: jsonb('custom_fields'),
@@ -269,19 +267,88 @@ export const purchaseOrderReceptionLines = modbmCore.table(
   },
 );
 
+// inventory_levels — Legacy table removed. Now defined as a dynamic VIEW below.
+
 // ---------------------------------------------------------------------------
-// inventory_levels  (App-owned inventory, seeded from mart_inventory)
+// bins  (Physical storage locations within a location)
 // ---------------------------------------------------------------------------
-export const inventoryLevels = modbmCore.table('inventory_levels', {
-  inventoryLevelId: uuid('inventory_level_id').primaryKey().defaultRandom(),
-  productId: text('product_id').notNull(),
-  locationNo: text('location_no').notNull().default('MAIN'),
-  quantityOnHand: numeric('quantity_on_hand').notNull().default('0'),
-  quantityCommitted: numeric('quantity_committed').notNull().default('0'),
-  quantityOnOrder: numeric('quantity_on_order').notNull().default('0'),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+export const bins = modbmCore.table(
+  'bins',
+  {
+    binId: uuid('bin_id').primaryKey().defaultRandom(),
+    binNumber: text('bin_number').notNull(),
+    locationNo: text('location_no').notNull().default('MAIN'),
+    binType: text('bin_type'),
+    isConsignment: boolean('is_consignment').default(false),
+    isBonded: boolean('is_bonded').default(false),
+    isUnavailable: boolean('is_unavailable').default(false),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    unq: unique('bins_bin_number_location_unq').on(t.binNumber, t.locationNo),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// inventory_entries (Header grouping for stock movements)
+// ---------------------------------------------------------------------------
+export const inventoryEntries = modbmCore.table('inventory_entries', {
+  entryId: uuid('entry_id').primaryKey().defaultRandom(),
+  entryNumber: text('entry_number').unique().notNull(), // e.g. STK-20260325-001
+  entryDate: timestamp('entry_date', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  memo: text('memo'),
+  sourceType: text('source_type').notNull(), // INITIAL_IMPORT, PO_RECEIPT, SO_SHIPMENT, RETURN, ADJUSTMENT, TRANSFER
+  sourceId: uuid('source_id'), // FK to originating document
+  isReversed: boolean('is_reversed').notNull().default(false),
+  reversedBy: uuid('reversed_by'), // self-ref to reversing entry
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
-// UNIQUE(product_id, location_no) — enforced via migration
+
+// ---------------------------------------------------------------------------
+// inventory_ledger (Immutable double-entry ledger of all stock movement lines)
+// ---------------------------------------------------------------------------
+export const inventoryLedger = modbmCore.table('inventory_ledger', {
+  ledgerId: uuid('ledger_id').primaryKey().defaultRandom(),
+  entryId: uuid('entry_id')
+    .notNull()
+    .references(() => inventoryEntries.entryId),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.productId),
+  binId: uuid('bin_id')
+    .notNull()
+    .references(() => bins.binId),
+  locationNo: text('location_no').notNull(),
+  quantity: numeric('quantity').notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// bin_contents (Real-time calculated snapshot cache of current stock)
+// ---------------------------------------------------------------------------
+export const binContents = modbmCore.table(
+  'bin_contents',
+  {
+    binContentId: uuid('bin_content_id').primaryKey().defaultRandom(),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    actualQuantity: numeric('actual_quantity').notNull().default('0'),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    unq: unique('bin_contents_bin_product_unq').on(t.binId, t.productId),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // outbox  (Transactional outbox for async BullMQ/ERPNext sync)
@@ -297,7 +364,21 @@ export const outbox = modbmCore.table('outbox', {
 });
 
 // ---------------------------------------------------------------------------
-// products  (CDM: Product)
+// inventory_levels  (Dynamic stock resourcing view)
+// ---------------------------------------------------------------------------
+export const inventoryLevels = modbmCore
+  .view('inventory_levels', {
+    inventoryLevelId: uuid('inventory_level_id'), // Fake ID for backwards compatibility
+    locationNo: text('location_no'),
+    productId: uuid('product_id'),
+    quantityOnHand: numeric('quantity_on_hand'),
+    quantityCommitted: numeric('quantity_committed'),
+    quantityOnOrder: numeric('quantity_on_order'),
+  })
+  .existing();
+
+// ---------------------------------------------------------------------------
+// products  (Native schema structure mapped to CDM product definitions)
 // ---------------------------------------------------------------------------
 export const products = modbmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
@@ -427,6 +508,60 @@ export const supplierEvents = modbmCore.table('supplier_events', {
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// product_suppliers  (Native product-supplier catalogue mapping)
+// ---------------------------------------------------------------------------
+export const productSuppliers = modbmCore.table(
+  'product_suppliers',
+  {
+    productSupplierId: uuid('product_supplier_id').primaryKey().defaultRandom(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    vendorId: uuid('vendor_id')
+      .notNull()
+      .references(() => suppliers.vendorId),
+    supplierPartNumber: text('supplier_part_number'),
+    costPrice: numeric('cost_price').default('0'),
+    discountPercent: numeric('discount_percent').default('0'),
+    priceBreakQuantity: numeric('price_break_quantity'),
+    isPreferred: boolean('is_preferred').notNull().default(false),
+    minPurchaseQty: numeric('min_purchase_qty'),
+    purchaseUnit: text('purchase_unit'),
+    effectiveFrom: timestamp('effective_from', { withTimezone: true }),
+    effectiveTo: timestamp('effective_to', { withTimezone: true }),
+    stateCode: text('state_code').notNull().default('active'),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    unq: unique('product_suppliers_supplier_product_unq').on(
+      t.vendorId,
+      t.productId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// product_supplier_events  (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const productSupplierEvents = modbmCore.table(
+  'product_supplier_events',
+  {
+    eventId: uuid('event_id').primaryKey().defaultRandom(),
+    productSupplierId: uuid('product_supplier_id')
+      .notNull()
+      .references(() => productSuppliers.productSupplierId),
+    eventType: text('event_type').notNull(),
+    payload: jsonb('payload'),
+    actor: text('actor'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+);
 
 // ---------------------------------------------------------------------------
 // users  (Application users for portal auth + RBAC)

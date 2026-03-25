@@ -7,14 +7,7 @@ describe('PurchaseOrdersService', () => {
   let service: PurchaseOrdersService;
 
   const mockInventoryService = {
-    commitStock: jest.fn().mockResolvedValue(undefined),
-    releaseStock: jest.fn().mockResolvedValue(undefined),
-    deductStock: jest.fn().mockResolvedValue(undefined),
-    restoreStock: jest.fn().mockResolvedValue(undefined),
-    returnStock: jest.fn().mockResolvedValue(undefined),
-    placeOnOrder: jest.fn().mockResolvedValue(undefined),
-    cancelOnOrder: jest.fn().mockResolvedValue(undefined),
-    receiveStock: jest.fn().mockResolvedValue(undefined),
+    recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {

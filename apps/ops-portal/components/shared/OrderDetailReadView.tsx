@@ -46,8 +46,6 @@ export interface OrderDetailData {
   customerOrderNumber: string | null;
   stateCode: string;
   currencyCode: string;
-  customerDiscount?: string | null;
-  gstCategoryId?: string | null;
   notes: string | null;
   createdBy: string | null;
   createdOn: string;
@@ -149,38 +147,6 @@ export default function OrderDetailReadView({
                   }}
                 >
                   {order.currencyCode}
-                </span>
-              )}
-              {order.gstCategoryId && (
-                <span
-                  style={{
-                    marginLeft: 4,
-                    padding: '1px 6px',
-                    borderRadius: 4,
-                    background: 'rgba(245,158,11,0.15)',
-                    color: '#f59e0b',
-                    fontWeight: 600,
-                    fontSize: 10,
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {tRV('exempt')}
-                </span>
-              )}
-              {parseFloat(order.customerDiscount || '0') > 0 && (
-                <span
-                  style={{
-                    marginLeft: 4,
-                    padding: '1px 6px',
-                    borderRadius: 4,
-                    background: 'rgba(74,222,128,0.15)',
-                    color: '#4ade80',
-                    fontWeight: 600,
-                    fontSize: 10,
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {tRV('discPct', { disc: String(parseFloat(order.customerDiscount!)) })}
                 </span>
               )}
             </span>

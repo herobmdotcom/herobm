@@ -205,7 +205,7 @@ export default function JournalEntriesPage() {
             </div>
             <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-1"></div>
             <button
-              onClick={() => router.push('/gl/journal-entries/new')}
+              onClick={() => router.push('/general-ledger/journal-entries/new')}
               className="px-3 py-1.5 text-xs font-bold rounded shadow-sm hover:opacity-90 transition-opacity"
               style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'Manrope, sans-serif' }}
             >

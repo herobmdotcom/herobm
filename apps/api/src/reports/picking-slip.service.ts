@@ -7,8 +7,9 @@ import {
   salesOrders,
   salesOrderLineItems,
   products as coreProducts,
+  inventoryLevels,
 } from '../drizzle/modbm-core-schema';
-import { accounts, inventory, productSuppliers } from '../drizzle/schema';
+import { accounts, productSuppliers } from '../drizzle/schema';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
@@ -92,27 +93,13 @@ export class PickingSlipService {
       throw new NotFoundException(`Order '${orderId}' has no lines`);
     }
 
-    // 3. Bin numbers from mart_inventory (keyed by productId)
+    // 3. Bin numbers from modbm_core (keyed by productId)
+    // Removed because defaultBinNumber was dropped during the ABM to Core inventory_levels migration.
     const productIds = lines
       .map((l) => l.productId)
       .filter((id): id is string => id !== null && id !== undefined);
 
     const binMap = new Map<string, string>();
-    if (productIds.length > 0) {
-      const invRows = await this.db
-        .select({
-          productId: inventory.productId,
-          defaultBinNumber: inventory.defaultBinNumber,
-        })
-        .from(inventory)
-        .where(inArray(inventory.productId, productIds));
-
-      for (const row of invRows) {
-        if (row.productId && row.defaultBinNumber) {
-          binMap.set(row.productId, row.defaultBinNumber);
-        }
-      }
-    }
 
     // 4. Supplier names from mart_product_suppliers (preferred supplier)
     const supplierMap = new Map<string, string>();
@@ -138,16 +125,16 @@ export class PickingSlipService {
       }
     }
 
-    // 5. Get on-hand quantities from mart_inventory for back-order logic
+    // 5. Get on-hand quantities from inventoryLevels for back-order logic
     const onHandMap = new Map<string, number>();
     if (productIds.length > 0) {
       const invRows = await this.db
         .select({
-          productId: inventory.productId,
-          quantityOnHand: inventory.quantityOnHand,
+          productId: inventoryLevels.productId,
+          quantityOnHand: inventoryLevels.quantityOnHand,
         })
-        .from(inventory)
-        .where(inArray(inventory.productId, productIds));
+        .from(inventoryLevels)
+        .where(inArray(inventoryLevels.productId, productIds));
 
       for (const row of invRows) {
         if (row.productId) {

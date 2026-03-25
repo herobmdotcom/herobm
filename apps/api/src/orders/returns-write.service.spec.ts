@@ -145,14 +145,7 @@ describe('ReturnsWriteService', () => {
     mockDb = createMockDb();
 
     mockInventoryService = {
-      commitStock: jest.fn().mockResolvedValue(undefined),
-      releaseStock: jest.fn().mockResolvedValue(undefined),
-      deductStock: jest.fn().mockResolvedValue(undefined),
-      restoreStock: jest.fn().mockResolvedValue(undefined),
-      returnStock: jest.fn().mockResolvedValue(undefined),
-      placeOnOrder: jest.fn().mockResolvedValue(undefined),
-      cancelOnOrder: jest.fn().mockResolvedValue(undefined),
-      receiveStock: jest.fn().mockResolvedValue(undefined),
+      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
 
     mockGlService = {
@@ -384,6 +377,15 @@ describe('ReturnsWriteService', () => {
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);
+        tx.select = jest.fn().mockReturnValue({
+          from: jest
+            .fn()
+            .mockReturnValue(
+              createMockQueryBuilder([
+                { binId: 'bin-dock', locationNo: 'DOCK' },
+              ]),
+            ),
+        });
         return cb(tx);
       });
     }
@@ -536,7 +538,9 @@ describe('ReturnsWriteService', () => {
         { ...MOCK_RETURN, stateCode: 'processed' },
       ]);
       const txReturnLines = createMockQueryBuilder(returnLines);
-      const txOrderLine = createMockQueryBuilder([orderLine]);
+      const txOrderLine = createMockQueryBuilder([
+        { ...orderLine, binId: 'dock-bin-1', locationNo: 'DOCK' },
+      ]);
       mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
         const tx = createMockTx();
         tx.update = jest.fn().mockReturnValue(txUpdateQb);

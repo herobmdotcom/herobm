@@ -2,49 +2,69 @@ import { Injectable, Inject } from '@nestjs/common';
 import { ilike, or, eq, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { inventory, binContents } from '../drizzle/schema';
-import { inventoryLevels } from '../drizzle/modbm-core-schema';
+import {
+  inventoryLevels,
+  products,
+  bins,
+  binContents,
+  inventoryEntries,
+  inventoryLedger,
+  outbox,
+} from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
-
-/** A line with productId + quantity for stock mutations. */
-export interface StockLine {
-  productId: string | null;
-  quantity: string;
-}
 
 @Injectable()
 export class InventoryService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   // =========================================================================
-  // Read-only queries (existing — from mart_inventory)
+  // Read-only queries (from inventory_levels view / bin_contents cache)
   // =========================================================================
 
   async findAll(query?: PaginationQuery & { locationNo?: string }) {
     const { page, limit, offset, searchTerm } = parsePagination(query);
 
-    let qb = this.db.select().from(inventory).$dynamic();
+    let qb = this.db
+      .select({
+        inventoryLevelId: inventoryLevels.inventoryLevelId,
+        productId: inventoryLevels.productId,
+        productNumber: products.productNumber,
+        productName: products.name,
+        locationNo: inventoryLevels.locationNo,
+        locationName: sql<string>`${inventoryLevels.locationNo}`,
+        quantityOnHand: inventoryLevels.quantityOnHand,
+        quantityCommitted: inventoryLevels.quantityCommitted,
+        quantityOnOrder: inventoryLevels.quantityOnOrder,
+        quantityAvailable: sql<number>`(${inventoryLevels.quantityOnHand} - ${inventoryLevels.quantityCommitted})`,
+      })
+      .from(inventoryLevels)
+      .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+      .$dynamic();
 
     if (searchTerm) {
       qb = qb.where(
         or(
-          ilike(inventory.productName, searchTerm),
-          ilike(inventory.productNumber, searchTerm),
-          ilike(inventory.locationName, searchTerm),
+          ilike(products.name, searchTerm),
+          ilike(products.productNumber, searchTerm),
+          ilike(inventoryLevels.locationNo, searchTerm),
         ),
       );
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(inventory.locationNo, query.locationNo));
+      qb = qb.where(eq(inventoryLevels.locationNo, query.locationNo));
     }
 
-    const rows = await qb
-      .orderBy(inventory.productName)
-      .limit(limit)
-      .offset(offset);
+    const rows = await qb.orderBy(products.name).limit(limit).offset(offset);
 
-    return { data: rows, page, limit };
+    // Provide default backward-compatible fields
+    const mappedRows = rows.map((r) => ({
+      ...r,
+      scNumber: null,
+      defaultBinNumber: null,
+    }));
+
+    return { data: mappedRows, page, limit };
   }
 
   /**
@@ -55,35 +75,68 @@ export class InventoryService {
     if (productIds.length === 0) return { data: [] };
 
     const rows = await this.db
-      .select()
-      .from(inventory)
-      .where(inArray(inventory.productId, productIds))
-      .orderBy(inventory.productName, inventory.locationName);
+      .select({
+        inventoryLevelId: inventoryLevels.inventoryLevelId,
+        productId: inventoryLevels.productId,
+        productNumber: products.productNumber,
+        productName: products.name,
+        locationNo: inventoryLevels.locationNo,
+        locationName: sql<string>`${inventoryLevels.locationNo}`,
+        quantityOnHand: inventoryLevels.quantityOnHand,
+        quantityCommitted: inventoryLevels.quantityCommitted,
+        quantityOnOrder: inventoryLevels.quantityOnOrder,
+        quantityAvailable: sql<number>`(${inventoryLevels.quantityOnHand} - ${inventoryLevels.quantityCommitted})`,
+      })
+      .from(inventoryLevels)
+      .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+      .where(inArray(inventoryLevels.productId, productIds))
+      .orderBy(products.name, inventoryLevels.locationNo);
 
-    return { data: rows };
+    // Provide default backward-compatible fields
+    const mappedRows = rows.map((r) => ({
+      ...r,
+      scNumber: null,
+      defaultBinNumber: null,
+    }));
+
+    return { data: mappedRows };
   }
 
   async findBins(query?: PaginationQuery & { locationNo?: string }) {
     const { page, limit, offset, searchTerm } = parsePagination(query);
 
-    let qb = this.db.select().from(binContents).$dynamic();
+    let qb = this.db
+      .select({
+        binContentId: binContents.binContentId,
+        binId: binContents.binId,
+        binNumber: bins.binNumber,
+        locationNo: bins.locationNo,
+        productId: binContents.productId,
+        productNumber: products.productNumber,
+        productName: products.name,
+        actualQuantity: binContents.actualQuantity,
+      })
+      .from(binContents)
+      .innerJoin(bins, eq(binContents.binId, bins.binId))
+      .innerJoin(products, eq(binContents.productId, products.productId))
+      .$dynamic();
 
     if (searchTerm) {
       qb = qb.where(
         or(
-          ilike(binContents.productName, searchTerm),
-          ilike(binContents.productNumber, searchTerm),
-          ilike(binContents.binNumber, searchTerm),
+          ilike(products.name, searchTerm),
+          ilike(products.productNumber, searchTerm),
+          ilike(bins.binNumber, searchTerm),
         ),
       );
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(binContents.locationNo, query.locationNo));
+      qb = qb.where(eq(bins.locationNo, query.locationNo));
     }
 
     const rows = await qb
-      .orderBy(binContents.binNumber)
+      .orderBy(bins.binNumber, products.name)
       .limit(limit)
       .offset(offset);
 
@@ -99,50 +152,16 @@ export class InventoryService {
       SELECT
         p.product_number AS "productNumber",
         p.name AS "productName",
-        SUM(CASE WHEN m.type = 'IN' THEN m.quantity::numeric ELSE 0 END) AS "stockIn",
-        SUM(CASE WHEN m.type = 'OUT' THEN m.quantity::numeric ELSE 0 END) AS "stockOut",
-        SUM(CASE WHEN m.type = 'IN' THEN m.quantity::numeric ELSE -(m.quantity::numeric) END) AS "netChange"
-      FROM (
-        SELECT
-          sh.created_on as date,
-          'OUT' as type,
-          sh.shipment_number as reference,
-          sol.product_id,
-          shl.quantity_shipped as quantity
-        FROM modbm_core.sales_order_shipments sh
-        JOIN modbm_core.sales_order_shipment_lines shl ON sh.shipment_id = shl.shipment_id
-        JOIN modbm_core.sales_order_lines sol ON sol.sales_order_line_id = shl.sales_order_line_id
-        WHERE sh.state_code != 'cancelled' AND sh.created_on >= ${cutoffIso}
-        
-        UNION ALL
-        
-        SELECT
-          re.created_on as date,
-          'IN' as type,
-          re.reception_number as reference,
-          pol.product_id,
-          rel.quantity_received as quantity
-        FROM modbm_core.purchase_order_receptions re
-        JOIN modbm_core.purchase_order_reception_lines rel ON re.reception_id = rel.reception_id
-        JOIN modbm_core.purchase_order_lines pol ON pol.purchase_order_line_id = rel.purchase_order_line_id
-        WHERE re.state_code != 'cancelled' AND re.created_on >= ${cutoffIso}
-
-        UNION ALL
-
-        SELECT
-          ret.created_on as date,
-          'IN' as type,
-          ret.return_number as reference,
-          sol.product_id,
-          retl.quantity_returned as quantity
-        FROM modbm_core.sales_order_returns ret
-        JOIN modbm_core.sales_order_return_lines retl ON ret.return_id = retl.return_id
-        JOIN modbm_core.sales_order_lines sol ON sol.sales_order_line_id = retl.sales_order_line_id
-        WHERE ret.state_code != 'cancelled' AND ret.created_on >= ${cutoffIso}
-      ) m
-      JOIN modbm_core.products p ON p.product_id = m.product_id
-      WHERE m.quantity::numeric > 0
+        SUM(CASE WHEN l.quantity::numeric > 0 THEN l.quantity::numeric ELSE 0 END) AS "stockIn",
+        SUM(CASE WHEN l.quantity::numeric < 0 THEN ABS(l.quantity::numeric) ELSE 0 END) AS "stockOut",
+        SUM(l.quantity::numeric) AS "netChange"
+      FROM modbm_core.inventory_ledger l
+      JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
+      JOIN modbm_core.products p ON p.product_id = l.product_id
+      WHERE e.entry_date >= ${cutoffIso}
+        AND e.source_type != 'INITIAL_IMPORT'
       GROUP BY p.product_number, p.name
+      HAVING SUM(ABS(l.quantity::numeric)) > 0
       ORDER BY p.name ASC
     `;
 
@@ -151,95 +170,59 @@ export class InventoryService {
     return { data: rows };
   }
 
-  // =========================================================================
-  // Stock mutations (write to modbm_core.inventory_levels)
-  //
-  // All methods accept a `tx` so they run inside the caller's transaction.
-  // They use upsert: if the row doesn't exist yet, it's created with the delta.
-  // =========================================================================
+  // ── Ledger Mutations (Modern Approach) ───────────────────────────────
 
   /**
-   * Apply a delta to an inventory column using INSERT … ON CONFLICT UPDATE.
-   * `column` must be one of 'quantity_on_hand', 'quantity_committed', 'quantity_on_order'.
+   * Record a strictly balanced inventory movement in the immutable ledger.
+   * This creates a header (inventory_entries), the ledger lines (inventory_ledger),
+   * updates the cache (bin_contents), and emits an outbox event.
    */
-  private async applyDelta(
+  async recordInventoryMovement(
     tx: any,
-    productId: string,
-    locationNo: string,
-    column: 'quantity_on_hand' | 'quantity_committed' | 'quantity_on_order',
-    delta: number,
-  ): Promise<void> {
-    await tx.execute(sql`
-      INSERT INTO modbm_core.inventory_levels (product_id, location_no, ${sql.raw(column)}, modified_on)
-      VALUES (${productId}, ${locationNo}, ${delta.toString()}, NOW())
-      ON CONFLICT (product_id, location_no) DO UPDATE
-      SET ${sql.raw(column)} = (modbm_core.inventory_levels.${sql.raw(column)}::numeric + ${delta.toString()}::numeric),
-          modified_on = NOW()
-    `);
-  }
+    params: {
+      entryNumber: string;
+      sourceType: string;
+      sourceId?: string;
+      memo?: string;
+      userId?: string;
+      lines: {
+        productId: string;
+        binId: string;
+        locationNo: string;
+        quantity: number;
+      }[];
+    },
+  ) {
+    if (params.lines.length === 0) return;
 
-  /**
-   * Apply multiple deltas at once for a list of lines.
-   */
-  private async applyLineDelta(
-    tx: any,
-    lines: StockLine[],
-    locationNo: string,
-    column: 'quantity_on_hand' | 'quantity_committed' | 'quantity_on_order',
-    sign: 1 | -1,
-  ): Promise<void> {
-    for (const line of lines) {
-      if (!line.productId) continue;
-      const qty = parseFloat(line.quantity || '0');
-      if (qty <= 0) continue;
-      await this.applyDelta(tx, line.productId, locationNo, column, sign * qty);
-    }
-  }
+    // 1. Create Header
+    const [entry] = await tx
+      .insert(inventoryEntries)
+      .values({
+        entryNumber: params.entryNumber,
+        sourceType: params.sourceType,
+        sourceId: params.sourceId,
+        memo: params.memo,
+        createdBy: params.userId,
+      })
+      .returning({ entryId: inventoryEntries.entryId });
 
-  // ── Sales Order lifecycle ──────────────────────────────────────────────
+    // 2. Create Ledger Lines
+    const ledgerPayload = params.lines.map((l) => ({
+      entryId: entry.entryId,
+      productId: l.productId,
+      binId: l.binId,
+      locationNo: l.locationNo,
+      quantity: l.quantity.toString(),
+    }));
+    await tx.insert(inventoryLedger).values(ledgerPayload);
 
-  /** Order confirmed → commit stock (reserve for this order) */
-  async commitStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_committed', 1);
-  }
-
-  /** Order cancelled (from confirmed+) → release committed stock */
-  async releaseStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_committed', -1);
-  }
-
-  /** Shipment dispatched → deduct on-hand and release committed */
-  async deductStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_hand', -1);
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_committed', -1);
-  }
-
-  /** Shipment reversed (dispatched → draft) → restore on-hand and re-commit */
-  async restoreStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_hand', 1);
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_committed', 1);
-  }
-
-  /** Return processed → restore on-hand */
-  async returnStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_hand', 1);
-  }
-
-  // ── Purchase Order lifecycle ───────────────────────────────────────────
-
-  /** PO ordered → increase on-order */
-  async placeOnOrder(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_order', 1);
-  }
-
-  /** PO cancelled → decrease on-order */
-  async cancelOnOrder(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_order', -1);
-  }
-
-  /** PO reception completed → increase on-hand, decrease on-order */
-  async receiveStock(tx: any, lines: StockLine[], locationNo = 'MAIN') {
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_hand', 1);
-    await this.applyLineDelta(tx, lines, locationNo, 'quantity_on_order', -1);
+    // 4. Emit Outbox Event for ERP sync
+    await tx.insert(outbox).values({
+      eventType: 'INVENTORY_ENTRY_CREATED',
+      aggregateId: entry.entryId,
+      aggregateType: 'inventory_entries',
+      payload: { header: params, lines: ledgerPayload },
+    });
   }
 }

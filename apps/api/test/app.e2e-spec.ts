@@ -235,10 +235,10 @@ describe('API E2E — Data Pipeline Verification', () => {
   });
 
   // =========================================================================
-  // Inventory  (data from mart_inventory → Drizzle → API)
+  // Inventory  (data from inventory_levels view → API)
   // =========================================================================
 
-  describe('Inventory — mart_inventory data pipeline', () => {
+  describe('Inventory — inventory_levels view data pipeline', () => {
     it('GET /api/inventory — returns paginated stock levels', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/inventory')
@@ -292,7 +292,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       expect(res.body.data.length).toBeGreaterThan(0);
 
       const first = res.body.data[0];
-      expect(first).toHaveProperty('binContentsId');
+      expect(first).toHaveProperty('binContentId');
       expect(first).toHaveProperty('binNumber');
       expect(first).toHaveProperty('productNumber');
       expect(first).toHaveProperty('actualQuantity');

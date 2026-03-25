@@ -278,13 +278,7 @@ export class OrdersWriteService {
   async create(dto: CreateOrderDto, actor: string) {
     const customer = await this.resolveCustomer(dto.customerId);
 
-    // Resolve order-level GST from the first line's product, or customer default
-    const firstProductId =
-      dto.lines.length > 0 ? dto.lines[0].productId : undefined;
-    const headerGst = await this.resolveGstForLine(
-      dto.customerId,
-      firstProductId,
-    );
+    // Per-line GST is resolved inside the line loop
 
     for (const line of dto.lines) {
       if (line.productId) {
@@ -314,8 +308,6 @@ export class OrdersWriteService {
           customerId: dto.customerId,
           customerOrderNumber: dto.customerOrderNumber,
           stateCode: 'draft',
-          customerDiscount: customer.customerDiscount,
-          gstCategoryId: headerGst.gstCategoryId,
           currencyCode: customer.currencyCode,
           notes: dto.notes,
           createdBy: actor,
@@ -456,36 +448,12 @@ export class OrdersWriteService {
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, id));
 
-    const stockLines = orderLines.map((l: any) => ({
-      productId: l.productId,
-      quantity: l.quantity,
-    }));
-
-    // States where stock has been committed
-    const COMMITTED_STATES = ['confirmed', 'picking', 'shipped'];
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
-
-      // ── Inventory hooks ──
-      // Confirming → commit stock
-      if (
-        newState === 'confirmed' &&
-        !COMMITTED_STATES.includes(existing.stateCode)
-      ) {
-        await this.inventoryService.commitStock(tx, stockLines);
-      }
-      // Cancelling from a committed state → release stock
-      if (
-        newState === 'cancelled' &&
-        COMMITTED_STATES.includes(existing.stateCode)
-      ) {
-        await this.inventoryService.releaseStock(tx, stockLines);
-      }
 
       await this.writeEvent(
         tx,
@@ -642,8 +610,9 @@ export class OrdersWriteService {
     const gstCategoryId = lineGst.gstCategoryId;
     const gstRate = lineGst.rate;
 
+    const customer = await this.resolveCustomer(order.customerId ?? '');
     const lineDiscount =
-      dto.discountPercentage ?? order.customerDiscount ?? '0';
+      dto.discountPercentage ?? customer.customerDiscount ?? '0';
 
     const computed = this.computeLineAmount(
       dto.quantity,
@@ -714,18 +683,27 @@ export class OrdersWriteService {
 
     const existingLine = await this.findLine(lineId, orderId);
 
-    // Resolve GST: dto override → existing line category → product-based resolution
-    let gstCategoryId = existingLine.gstCategoryId ?? order.gstCategoryId;
+    // Resolve GST: DTO override → existing line category → default product/customer resolution
+    let gstCategoryId = existingLine.gstCategoryId;
     let gstRate = 0;
+
     if (dto.gstCategoryId) {
-      // Explicit override via DTO
+      // 1. Explicit override via DTO
       const cat = await this.gstService.getById(dto.gstCategoryId);
       gstCategoryId = cat.gstCategoryId;
       gstRate = parseFloat(cat.rate ?? '0');
     } else if (gstCategoryId) {
-      // Keep existing line or order category
+      // 2. Keep existing line category
       const cat = await this.gstService.getById(gstCategoryId);
       gstRate = parseFloat(cat.rate ?? '0');
+    } else {
+      // 3. Re-resolve dynamically from product x customer rules
+      const resolved = await this.resolveGstForLine(
+        order.customerId ?? '',
+        existingLine.productId ?? undefined,
+      );
+      gstCategoryId = resolved.gstCategoryId;
+      gstRate = resolved.rate;
     }
 
     const quantity = dto.quantity ?? existingLine.quantity;

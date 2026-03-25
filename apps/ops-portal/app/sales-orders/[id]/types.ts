@@ -46,8 +46,6 @@ export interface OrderDetail {
     customerOrderNumber: string | null;
     stateCode: string;
     currencyCode: string;
-    customerDiscount: string | null;
-    gstCategoryId: string | null;
     notes: string | null;
     createdBy: string | null;
     createdOn: string;
