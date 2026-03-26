@@ -92,6 +92,8 @@ export async function getInvoicedPerLine(
   return invoicedQtyByLine;
 }
 
+import { validateShipmentQuantity } from './shipment-math.utils';
+
 /**
  * Assert that a requested shipment quantity is available for a given order line.
  * Available = quantityPicked - alreadyShipped (across all non-cancelled shipments).
@@ -107,10 +109,6 @@ export async function assertShipmentQtyAvailable(
   lineNumber: number | string,
   excludeShipmentLineId?: string,
 ): Promise<void> {
-  if (isNaN(requestedQty) || requestedQty <= 0) {
-    throw new BadRequestException('Shipped quantity must be greater than 0');
-  }
-
   const orderLine = await findOrderLine(db, salesOrderLineId, salesOrderId);
   const picked = parseFloat(orderLine.quantityPicked ?? '0');
   const committedMap = await getCommittedPerLine(db, salesOrderId);
@@ -122,13 +120,7 @@ export async function assertShipmentQtyAvailable(
     alreadyCommitted -= parseFloat(existing.quantityShipped);
   }
 
-  const available = picked - alreadyCommitted;
-
-  if (requestedQty > available) {
-    throw new BadRequestException(
-      `Cannot ship ${requestedQty} of line ${lineNumber} — only ${available} available (${picked} picked, ${alreadyCommitted} already committed).`,
-    );
-  }
+  validateShipmentQuantity(requestedQty, picked, alreadyCommitted, lineNumber);
 }
 
 // ============================================================================

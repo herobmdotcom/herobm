@@ -37,6 +37,7 @@ import {
   getValidStates,
 } from '@modbm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
+import { validateReturnQuantity } from './returns-math.utils';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
@@ -181,12 +182,12 @@ export class ReturnsWriteService {
       const alreadyReturned = await this.getAlreadyReturnedQty(
         line.salesOrderLineId,
       );
-      
+
       validateReturnQuantity(
-        line.quantityReturned, 
-        orderLine.quantity, 
-        alreadyReturned, 
-        orderLine.lineNumber
+        line.quantityReturned,
+        orderLine.quantity,
+        alreadyReturned,
+        orderLine.lineNumber,
       );
 
       if (line.returnFee) {

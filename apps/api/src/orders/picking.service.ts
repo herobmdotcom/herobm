@@ -66,23 +66,26 @@ export class PickingService {
       return bin.binId;
     };
 
-    const availableBins = delta > 0 ? await tx
-      .select({
-        binId: binContents.binId,
-        actualQuantity: binContents.actualQuantity,
-        locationId: zones.locationId,
-      })
-      .from(binContents)
-      .innerJoin(bins, eq(binContents.binId, bins.binId))
-      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-      .where(
-        and(
-          eq(binContents.productId, productId),
-          sql`${binContents.actualQuantity} > 0`,
-          sql`${bins.binType} IS DISTINCT FROM 'staging'`,
-        ),
-      )
-      .orderBy(desc(binContents.actualQuantity)) : [];
+    const availableBins =
+      delta > 0
+        ? await tx
+            .select({
+              binId: binContents.binId,
+              actualQuantity: binContents.actualQuantity,
+              locationId: zones.locationId,
+            })
+            .from(binContents)
+            .innerJoin(bins, eq(binContents.binId, bins.binId))
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(binContents.productId, productId),
+                sql`${binContents.actualQuantity} > 0`,
+                sql`${bins.binType} IS DISTINCT FROM 'staging'`,
+              ),
+            )
+            .orderBy(desc(binContents.actualQuantity))
+        : [];
 
     const [fallbackBin] = await tx
       .select({ binId: bins.binId, locationId: zones.locationId })
@@ -91,7 +94,7 @@ export class PickingService {
       .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
       .limit(1);
 
-    const mappedAvailableBins = availableBins.map(b => ({
+    const mappedAvailableBins = availableBins.map((b) => ({
       ...b,
       actualQuantity: parseFloat(b.actualQuantity),
     }));
@@ -99,7 +102,7 @@ export class PickingService {
     const allocations = calculatePickAllocations(
       delta,
       mappedAvailableBins,
-      fallbackBin || null
+      fallbackBin || null,
     );
 
     const ledgerLines = [];

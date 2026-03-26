@@ -10,9 +10,18 @@ export function validateReturnQuantity(
   alreadyReturned: number | string,
   lineNumber: number | string,
 ): void {
-  const reqQty = typeof requestedQuantity === 'string' ? parseFloat(requestedQuantity) : requestedQuantity;
-  const origQty = typeof originalShipped === 'string' ? parseFloat(originalShipped) : originalShipped;
-  const returnedQty = typeof alreadyReturned === 'string' ? parseFloat(alreadyReturned) : alreadyReturned;
+  const reqQty =
+    typeof requestedQuantity === 'string'
+      ? parseFloat(requestedQuantity)
+      : requestedQuantity;
+  const origQty =
+    typeof originalShipped === 'string'
+      ? parseFloat(originalShipped)
+      : originalShipped;
+  const returnedQty =
+    typeof alreadyReturned === 'string'
+      ? parseFloat(alreadyReturned)
+      : alreadyReturned;
 
   if (isNaN(reqQty) || reqQty <= 0) {
     throw new BadRequestException('Return quantity must be greater than 0');
@@ -21,8 +30,8 @@ export function validateReturnQuantity(
   if (reqQty > origQty - returnedQty) {
     throw new BadRequestException(
       `Cannot return ${reqQty} of line ${lineNumber}. ` +
-      `Original qty: ${origQty}, already returned: ${returnedQty}, ` +
-      `remaining returnable: ${origQty - returnedQty}`
+        `Original qty: ${origQty}, already returned: ${returnedQty}, ` +
+        `remaining returnable: ${origQty - returnedQty}`,
     );
   }
 }
