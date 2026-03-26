@@ -16,7 +16,7 @@ export default function GlobalInvoicesPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const invoiceFilter = searchParams.get('invoice') || '';
-    const [days, setDays] = useState('30');
+    const [days, setDays] = useState('0');
 
     const handleRowClicked = useCallback((row: any) => {
         if (row.salesOrderId) {
@@ -26,8 +26,8 @@ export default function GlobalInvoicesPage() {
 
     // When filtering by specific invoiceId, pass it to the API (server skips date range)
     const gridEndpoint = invoiceFilter
-        ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}`
-        : days !== '0' ? `/api/sales-invoices?days=${days}` : `/api/sales-invoices`;
+        ? `/api/sales-invoices?invoiceId=${encodeURIComponent(invoiceFilter)}&limit=0`
+        : `/api/sales-invoices?days=${days}&limit=0`;
     const gridColumns: any[] = [
         { field: 'invoiceId', headerName: 'ID', hide: true },
         { field: 'invoiceNumber', headerName: t('columns.invoiceNumber', { defaultValue: 'Invoice No.' }), width: 180 },

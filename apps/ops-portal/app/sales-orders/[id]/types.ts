@@ -44,6 +44,7 @@ export interface OrderDetail {
     customerId: string | null;
     customerName: string | null;
     customerOrderNumber: string | null;
+    fulfillmentLocationId?: string | null;
     stateCode: string;
     currencyCode: string;
     notes: string | null;
@@ -52,6 +53,15 @@ export interface OrderDetail {
     modifiedOn: string;
     lines: OrderLine[];
     events: OrderEvent[];
+    backorders?: {
+        productId: string;
+        productNumber?: string;
+        quantity: string;
+        stateCode: string;
+        purchaseOrderId?: string;
+        purchaseOrderNumber?: string;
+        createdOn: string;
+    }[];
 }
 
 export interface InventoryLevel {

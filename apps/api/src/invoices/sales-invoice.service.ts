@@ -510,7 +510,7 @@ export class SalesInvoiceService {
     // When filtering by specific invoiceId, skip the date range filter
     if (invoiceId) {
       conditions.push(eq(salesInvoices.invoiceId, invoiceId));
-    } else {
+    } else if (days > 0) {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
       conditions.push(gte(salesInvoices.createdOn, cutoffDate));
@@ -525,7 +525,7 @@ export class SalesInvoiceService {
       );
     }
 
-    const data = await this.db
+    const dataQuery = this.db
       .select({
         invoiceId: salesInvoices.invoiceId,
         invoiceNumber: salesInvoices.invoiceNumber,
@@ -546,9 +546,11 @@ export class SalesInvoiceService {
       )
       .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
       .where(and(...conditions))
-      .orderBy(desc(salesInvoices.createdOn))
-      .limit(limit);
+      .orderBy(desc(salesInvoices.createdOn));
 
-    return data;
+    if (limit > 0) {
+      return await dataQuery.limit(limit);
+    }
+    return await dataQuery;
   }
 }

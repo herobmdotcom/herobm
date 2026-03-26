@@ -219,18 +219,6 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             actions={
               <>
                 <PageNav sections={visibleSections} />
-                {supplier.stateCode === 'archived' ? (
-                  <button className="btn btn-secondary btn-sm" onClick={unarchiveSupplier} disabled={saving}>📦 {t('salesOrders.buttons.unarchive')}</button>
-                ) : (
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                    onClick={archiveSupplier}
-                    disabled={saving}
-                  >
-                    📦 {t('salesOrders.buttons.archive')}
-                  </button>
-                )}
               </>
             }
           />
@@ -518,6 +506,23 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Activity Timeline — full width */}
         <div id="activity-section" className="card">
           <ActivityTimeline events={supplier.events || []} />
+        </div>
+
+        <div className="flex justify-end pt-2">
+          {supplier.stateCode === 'archived' ? (
+            <button className="btn btn-secondary" onClick={unarchiveSupplier} disabled={saving}>
+              📦 {t('salesOrders.buttons.unarchive')}
+            </button>
+          ) : (
+            <button
+              className="btn btn-secondary"
+              style={{ color: '#ef4444', borderColor: '#ef4444' }}
+              onClick={archiveSupplier}
+              disabled={saving}
+            >
+              📦 {t('salesOrders.buttons.archive')}
+            </button>
+          )}
         </div>
       </div>
       )}

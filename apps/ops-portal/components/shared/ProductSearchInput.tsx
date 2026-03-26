@@ -39,6 +39,8 @@ interface ProductSearchInputProps {
   placeholder?: string;
   /** Optional inline style for the container */
   style?: React.CSSProperties;
+  /** Optional fulfillment location to constrain stock search */
+  fulfillmentLocationId?: string;
 }
 
 function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
@@ -55,6 +57,7 @@ export default function ProductSearchInput({
   onSelect,
   placeholder,
   style,
+  fulfillmentLocationId,
 }: ProductSearchInputProps) {
   const t = useTranslations('common.productSearch');
   const [search, setSearch] = useState('');
@@ -74,8 +77,9 @@ export default function ProductSearchInput({
       const ids = data.data.map((p) => p.productId).filter(Boolean);
       if (ids.length > 0) {
         try {
+          const locQuery = fulfillmentLocationId ? `&locationId=${fulfillmentLocationId}` : '';
           const inv = await apiFetch<{ data: InventoryLevel[] }>(
-            `/api/inventory/by-products?productIds=${ids.join(',')}`,
+            `/api/inventory/by-products?productIds=${ids.join(',')}${locQuery}`,
           );
           // Aggregate per product (sum across locations)
           const map: Record<string, ProductStock> = {};
@@ -90,7 +94,7 @@ export default function ProductSearchInput({
         }
       }
     } catch { setResults([]); setStockMap({}); }
-  }, []);
+  }, [fulfillmentLocationId]);
 
   const debouncedSearch = useDebounce(
     (term: unknown) => searchProducts(term as string), 300,

@@ -12,6 +12,7 @@ import { ValidState } from '@/types/states';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
+import AddSupplierModal from '@/components/products/AddSupplierModal';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -28,6 +29,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'suppliers'>('details');
+  const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
+  const [refreshGrid, setRefreshGrid] = useState(0);
   const [product, setProduct] = useState<any>(null);
   const [gstCategories, setGstCategories] = useState<any[]>([]);
   const [dto, setDto] = useState<any>({
@@ -126,6 +129,21 @@ export default function ProductDetailPage() {
     }
   };
 
+  const unarchiveSupplier = async (vendorId: string) => {
+      // Re-linking a previously removed supplier is handled seamlessly by adding them again via the modal upsert!
+  };
+
+  const removeSupplier = async (vendorId: string, vendorName: string) => {
+    if (!window.confirm(`Are you sure you want to unlink ${vendorName} from this product?`)) return;
+    try {
+      await apiMutate(`/api/products/${id}/suppliers/${vendorId}`, 'DELETE');
+      toast.success('Supplier successfully unlinked');
+      setRefreshGrid(prev => prev + 1);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
   const supplierColumns: any[] = useMemo(() => [
     { field: 'vendorName', headerName: tCommon('columns.name'), flex: 1, minWidth: 160 },
     { field: 'vendorNumber', headerName: 'Number', width: 140 },
@@ -133,6 +151,23 @@ export default function ProductDetailPage() {
     { field: 'costPrice', headerName: 'Cost Price', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'discountPercent', headerName: 'Discount %', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
     { field: 'stateCode', headerName: tCommon('columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
+    {
+      headerName: '',
+      field: 'vendorId',
+      width: 70,
+      suppressMenu: true,
+      sortable: false,
+      onCellClicked: (p: any) => p.event?.stopPropagation(), // prevent triggering row click
+      cellRenderer: (p: { value: string, data: any }) => (
+        <button 
+          onClick={(e) => { e.stopPropagation(); removeSupplier(p.value, p.data.vendorName); }}
+          className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
+          title="Unlink Supplier"
+        >
+          <span className="material-symbols-outlined text-[16px]">link_off</span>
+        </button>
+      )
+    }
   ], [tCommon, t]);
 
   if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
@@ -201,10 +236,10 @@ export default function ProductDetailPage() {
       {activeTab === 'suppliers' && (
         <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid 
-                endpoint={`/api/suppliers/by-product/${encodeURIComponent(id as string)}`}
+              <DataGrid 
+                endpoint={`/api/suppliers/by-product/${encodeURIComponent(id as string)}?r=${refreshGrid}`}
                 columns={supplierColumns}
-                gridKey="product-suppliers"
+                gridKey={`product-suppliers-grid`}
                 fetchAll
                 onRowClicked={(row: any) => router.push(`/suppliers/${row.vendorId}`)}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
@@ -228,6 +263,14 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       {optionsButton}
+                      <button 
+                        className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                        onClick={() => setIsAddSupplierOpen(true)}
+                        disabled={!isEditable}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">add_link</span>
+                        Link Supplier
+                      </button>
                     </div>
                   </div>
                 )}
@@ -491,6 +534,14 @@ export default function ProductDetailPage() {
       </div>
       )}
       </DetailsLayout>
+      <AddSupplierModal 
+        isOpen={isAddSupplierOpen}
+        onClose={() => setIsAddSupplierOpen(false)}
+        productId={id as string}
+        productName={product?.name || ''}
+        productNumber={product?.productNumber || ''}
+        onSuccess={() => setRefreshGrid(prev => prev + 1)}
+      />
     </>
   );
 }

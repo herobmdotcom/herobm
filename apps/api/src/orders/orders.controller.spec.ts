@@ -125,6 +125,7 @@ describe('OrdersController', () => {
         'uuid-1',
         'quoted',
         'admin',
+        undefined,
       );
     });
   });

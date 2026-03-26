@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { apiFetch, apiMutate, reportError, ApiError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS } from '@modbm/shared';
 
@@ -45,6 +45,14 @@ export function useOrder(id: string) {
     const [saving, setSaving] = useState(false);
     const [copying, setCopying] = useState(false);
 
+    const [locations, setLocations] = useState<{ locationId: string; name: string }[]>([]);
+
+    useEffect(() => {
+        apiFetch<{ data: { locationId: string; name: string }[] }>('/api/inventory/locations')
+            .then(res => setLocations(res.data))
+            .catch(err => reportError(err, 'Locations_Fetch'));
+    }, []);
+
     /* ── Editable header fields ──────────────────────────────────── */
     const [editName, setEditName] = useState('');
     const [editPO, setEditPO] = useState('');
@@ -54,8 +62,8 @@ export function useOrder(id: string) {
     /* ── GST categories ──────────────────────────────────────────── */
     const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
 
-    /* ── Tab state for line items / availability ──────────────────── */
-    const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+    /* ── Tab state for line items / availability / backorders ────── */
+    const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'backorders'>('lines');
     const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
     const [inventoryLoading, setInventoryLoading] = useState(false);
 
@@ -187,14 +195,18 @@ export function useOrder(id: string) {
         }
     };
 
-    const changeState = async (newState: string) => {
+    const changeState = async (newState: string, generateBackorders?: boolean) => {
         try {
-            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState });
+            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState, generateBackorders });
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err) {
+            if (err instanceof ApiError && err.status === 409 && err.data?.message === 'INVENTORY_GAP') {
+                return err.data.gaps;
+            }
             setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
         }
+        return null;
     };
 
     const archiveOrder = async () => {
@@ -342,7 +354,7 @@ export function useOrder(id: string) {
 
     return {
         // Core
-        order, loading, error, setError, saving, setSaving, copying,
+        order, loading, error, setError, saving, setSaving, copying, locations,
 
         // Header editing
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,

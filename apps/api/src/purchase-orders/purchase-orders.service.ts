@@ -13,6 +13,7 @@ import {
   purchaseOrderEvents,
   outbox,
   suppliers as coreSuppliers,
+  products,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
@@ -227,22 +228,48 @@ export class PurchaseOrdersService {
   }
 
   async findOne(id: string, tx: any = this.db) {
-    const order = await tx
+    const rawOrder = await tx
       .select()
       .from(purchaseOrders)
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
       .where(eq(purchaseOrders.purchaseOrderId, id))
       .limit(1)
       .then((res: any[]) => res[0]);
 
-    if (!order) {
+    if (!rawOrder) {
       throw new NotFoundException(`Purchase Order ${id} not found`);
     }
 
-    const lines = await tx
+    // Support both tuple JOIN structure (drizzle live engine) and flat structure (jest mocks)
+    const poEntity = rawOrder.purchase_orders || rawOrder;
+    const vendorName = rawOrder.suppliers?.name || poEntity.vendorId;
+
+    const order = {
+      ...poEntity,
+      vendorName,
+      customerName: vendorName,
+    };
+
+    const rawLines = await tx
       .select()
       .from(purchaseOrderLineItems)
+      .leftJoin(
+        products,
+        eq(purchaseOrderLineItems.productId, products.productId),
+      )
       .where(eq(purchaseOrderLineItems.purchaseOrderId, id))
       .orderBy(purchaseOrderLineItems.lineNumber);
+
+    const lines = rawLines.map((r: any) => {
+      const lineEntity = r.purchase_order_lines || r;
+      return {
+        ...lineEntity,
+        productNumber: r.products?.productNumber || lineEntity.productId,
+      };
+    });
 
     const events = await tx
       .select()

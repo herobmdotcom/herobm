@@ -14,6 +14,7 @@ import {
   bins,
   zones,
   binContents,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -375,11 +376,16 @@ export class PickingService {
         quantity: salesOrderLineItems.quantity,
         quantityPicked: salesOrderLineItems.quantityPicked,
         productNumber: coreProducts.productNumber,
+        locationName: locations.name,
       })
       .from(salesOrderLineItems)
       .leftJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        locations,
+        eq(salesOrderLineItems.fulfillmentLocationId, locations.locationId),
       )
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
@@ -396,6 +402,7 @@ export class PickingService {
         productId: line.productId,
         productNumber: line.productNumber,
         productDescription: line.productDescription,
+        locationName: line.locationName || 'System Default',
         quantity: line.quantity,
         quantityPicked: line.quantityPicked ?? '0',
         quantityShipped: String(committed),

@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { ilike, or, eq, inArray, sql } from 'drizzle-orm';
+import { ilike, or, eq, inArray, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -74,8 +74,13 @@ export class InventoryService {
    * Batch lookup: return all inventory rows for the given product IDs.
    * Used by the Sales Portal availability tab to show per-line stock info.
    */
-  async findByProductIds(productIds: string[]) {
+  async findByProductIds(productIds: string[], locationId?: string) {
     if (productIds.length === 0) return { data: [] };
+
+    const filters = [inArray(inventoryLevels.productId, productIds)];
+    if (locationId) {
+      filters.push(eq(inventoryLevels.locationId, locationId));
+    }
 
     const rows = await this.db
       .select({
@@ -93,7 +98,7 @@ export class InventoryService {
       .from(inventoryLevels)
       .leftJoin(products, eq(inventoryLevels.productId, products.productId))
       .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
-      .where(inArray(inventoryLevels.productId, productIds))
+      .where(and(...filters))
       .orderBy(products.name, locations.code);
 
     // Provide default backward-compatible fields

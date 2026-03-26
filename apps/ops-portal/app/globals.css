@@ -18,8 +18,12 @@
 .badge-draft { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
 .badge-quoted { background: rgba(238, 127, 0, 0.2); color: #F59E42; }
 .badge-confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.badge-ordered { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 .badge-picking { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 .badge-shipped { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-received { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-dispatched { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-processed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 .badge-invoiced { background: rgba(16, 185, 129, 0.3); color: #10b981; }
 .badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 .badge-legacy { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }

@@ -62,6 +62,7 @@ interface OrderDetail {
   name: string | null;
   customerId: string | null;
   vendorId: string | null;
+  vendorName?: string | null;
   customerOrderNumber: string | null;
   stateCode: string;
   currencyCode: string;
@@ -583,7 +584,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     )}
                   </label>
                   <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {order.vendorId || '—'}
+                    {order.vendorName || order.vendorId || '—'}
                   </p>
                 </div>
                 <div>
@@ -695,6 +696,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <th>{tPurchase('columns.description')}</th>
                   <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
+                  <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.tax')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                   {isLinesEditable && <th style={{ width: 50 }}></th>}
                 </tr>
@@ -764,6 +766,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <td
                       style={{
                         textAlign: 'right',
+                        color: 'var(--text-muted)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
+                    </td>
+                    <td
+                      style={{
+                        textAlign: 'right',
                         fontWeight: 600,
                         fontVariantNumeric: 'tabular-nums',
                       }}
@@ -786,7 +797,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {order.lines.length === 0 && (
                   <tr>
                     <td
-                      colSpan={isLinesEditable ? 6 : 5}
+                      colSpan={isLinesEditable ? 8 : 7}
                       style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                     >
                       {tPurchase('noLineItems')}
@@ -798,7 +809,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   return (
                     <>
                       <tr style={{ borderTop: '2px solid var(--border)' }}>
-                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('subtotal')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -807,7 +818,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr>
-                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -816,7 +827,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                        <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                           {tCommon('total')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>

@@ -25,14 +25,17 @@ export class InventoryController {
 
   @Get('by-products')
   @CasbinAction('read')
-  findByProductIds(@Query('productIds') productIds?: string) {
+  findByProductIds(
+    @Query('productIds') productIds?: string,
+    @Query('locationId') locationId?: string,
+  ) {
     const ids = productIds
       ? productIds
           .split(',')
           .map((id) => id.trim())
           .filter(Boolean)
       : [];
-    return this.inventoryService.findByProductIds(ids);
+    return this.inventoryService.findByProductIds(ids, locationId);
   }
 
   @Get('bins')

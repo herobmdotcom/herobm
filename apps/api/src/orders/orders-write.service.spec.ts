@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersWriteService } from './orders-write.service';
+import { BackordersService } from './backorders.service';
 import { PickingService } from './picking.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -81,6 +82,7 @@ describe('OrdersWriteService', () => {
   let mockAccountsService: any;
   let mockProductsService: any;
   let mockGstService: any;
+  let mockBackordersService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -137,6 +139,11 @@ describe('OrdersWriteService', () => {
       getById: jest.fn().mockResolvedValue(GST_DEFAULT),
     };
 
+    mockBackordersService = {
+      evaluateGaps: jest.fn().mockResolvedValue([]),
+      triggerBackorders: jest.fn().mockResolvedValue(undefined),
+    };
+
     mockPickingService = {
       assertFullyPicked: jest.fn().mockResolvedValue(undefined),
       assertFullyShipped: jest.fn().mockResolvedValue(undefined),
@@ -171,6 +178,7 @@ describe('OrdersWriteService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: AccountsService, useValue: mockAccountsService },
         { provide: ProductsService, useValue: mockProductsService },
+        { provide: BackordersService, useValue: mockBackordersService },
       ],
     }).compile();
 

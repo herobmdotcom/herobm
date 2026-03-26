@@ -21,6 +21,7 @@ import { OrderPickingController } from './order-picking.controller';
 import { OrderShipmentsController } from './order-shipments.controller';
 import { OrdersService } from './orders.service';
 import { OrdersWriteService } from './orders-write.service';
+import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
@@ -52,6 +53,7 @@ import { SalesQuoteService } from '../reports/sales-quote.service';
   providers: [
     OrdersService,
     OrdersWriteService,
+    BackordersService,
     ReturnsWriteService,
     PickingService,
     ShipmentService,
@@ -59,7 +61,7 @@ import { SalesQuoteService } from '../reports/sales-quote.service';
     ReportSalesInvoiceService,
     SalesQuoteService,
   ],
-  exports: [OrdersService, OrdersWriteService],
+  exports: [OrdersService, OrdersWriteService, BackordersService],
 })
 export class OrdersModule implements OnModuleInit {
   constructor(

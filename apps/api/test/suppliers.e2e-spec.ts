@@ -36,15 +36,21 @@ describe('Suppliers (e2e)', () => {
     await db.execute(sql`
       DELETE FROM modbm_core.supplier_events
       WHERE vendor_id IN (
-        SELECT vendor_id FROM modbm_core.suppliers WHERE vendor_number LIKE 'E2E-%'
+        SELECT vendor_id FROM modbm_core.suppliers 
+        WHERE vendor_number LIKE 'E2E-V-%' 
+           OR vendor_number LIKE 'E2E-PATCH-%' 
+           OR vendor_number LIKE 'E2E-DETAIL-%'
       )
     `);
     try {
-      await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
+      await db.execute(sql`
+        DELETE FROM modbm_core.suppliers 
+        WHERE vendor_number LIKE 'E2E-V-%' 
+           OR vendor_number LIKE 'E2E-PATCH-%' 
+           OR vendor_number LIKE 'E2E-DETAIL-%'
+      `);
     } catch (e) {
-      console.warn(
-        'Could not clean up all E2E suppliers (some have POs attached)',
-      );
+      // Quiet fail if external tests linked the suppliers
     }
   });
 

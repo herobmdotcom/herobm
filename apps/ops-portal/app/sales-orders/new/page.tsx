@@ -22,6 +22,11 @@ interface Account {
   gstPosition: string | null;
 }
 
+interface Location {
+  locationId: string;
+  name: string;
+}
+
 interface GstCategory {
   gstCategoryId: string;
   code: string;
@@ -100,6 +105,21 @@ export default function NewOrderPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [fulfillmentLocationId, setFulfillmentLocationId] = useState('');
+
+  // Load locations on mount
+  useEffect(() => {
+    apiFetch<{ data: Location[] }>('/api/inventory/locations')
+      .then((res) => {
+        setLocations(res.data);
+        if (res.data.length > 0) {
+          setFulfillmentLocationId(res.data[0].locationId);
+        }
+      })
+      .catch((err) => reportError(err, 'NewOrderPage_Locations'));
+  }, []);
 
   // Load GST categories on mount
   useEffect(() => {
@@ -228,6 +248,7 @@ export default function NewOrderPage() {
         name: name || undefined,
         customerId,
         customerOrderNumber: customerOrderNumber || undefined,
+        fulfillmentLocationId: fulfillmentLocationId || undefined,
         notes: notes || undefined,
         lines: lines
           .filter((l) => l.productId)
@@ -430,6 +451,24 @@ export default function NewOrderPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Fulfillment Location *
+              </label>
+              <select
+                className="input"
+                value={fulfillmentLocationId}
+                onChange={(e) => setFulfillmentLocationId(e.target.value)}
+              >
+                {locations.length === 0 && <option value="">Loading locations...</option>}
+                {locations.map((loc) => (
+                  <option key={loc.locationId} value={loc.locationId}>
+                    {loc.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="col-span-2 mt-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 {tSales('common.notesCardHeading')}
@@ -459,6 +498,7 @@ export default function NewOrderPage() {
                 onSelect={addLineFromProduct}
                 placeholder={tSales('salesOrders.placeholders.searchProduct')}
                 style={{ width: 240 }}
+                fulfillmentLocationId={fulfillmentLocationId}
               />
               <button className="btn btn-secondary btn-sm" onClick={addLine}>
                 + {tSales('salesOrders.buttons.customLine')}

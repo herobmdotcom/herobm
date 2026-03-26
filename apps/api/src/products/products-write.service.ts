@@ -11,6 +11,8 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   products as coreProducts,
   productEvents,
+  productSuppliers,
+  productSupplierEvents,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 
@@ -42,6 +44,8 @@ export interface UpdateProductDto {
   notes?: string;
   stateCode?: string;
 }
+
+import { AddSupplierDto } from './dto';
 
 @Injectable()
 export class ProductsWriteService {
@@ -228,6 +232,87 @@ export class ProductsWriteService {
       });
 
       return updated;
+    });
+  }
+
+  /**
+   * Add or Upsert a supplier to a product.
+   */
+  async addSupplier(productId: string, dto: AddSupplierDto, actor: string) {
+    // Verify product exists
+    const existingProduct = await this.db
+      .select({ id: coreProducts.productId })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!existingProduct.length) {
+      throw new NotFoundException(`Product not found`);
+    }
+
+    const payload = {
+      productId,
+      vendorId: dto.vendorId,
+      supplierPartNumber: dto.supplierPartNumber || null,
+      costPrice: dto.costPrice ? dto.costPrice.toString() : '0',
+      effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
+      effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
+      stateCode: 'active',
+      modifiedOn: new Date(),
+    };
+
+    return await this.db.transaction(async (tx) => {
+      const [mapping] = await tx
+        .insert(productSuppliers)
+        .values({
+          ...payload,
+          createdBy: actor,
+          createdOn: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [productSuppliers.vendorId, productSuppliers.productId],
+          set: {
+            ...payload, // This brings back archived versions as "active" with the latest data
+          },
+        })
+        .returning();
+
+      await tx.insert(productSupplierEvents).values({
+        productSupplierId: mapping.productSupplierId,
+        eventType: 'linked',
+        payload: dto,
+        actor,
+      });
+
+      return mapping;
+    });
+  }
+
+  /**
+   * Remove (Archive) a supplier from a product.
+   */
+  async removeSupplier(productId: string, vendorId: string, actor: string) {
+    return await this.db.transaction(async (tx) => {
+      const [mapping] = await tx
+        .update(productSuppliers)
+        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        .where(
+          sql`${productSuppliers.productId} = ${productId} AND ${productSuppliers.vendorId} = ${vendorId}`,
+        )
+        .returning();
+
+      if (!mapping) {
+        throw new NotFoundException('Supplier mapping not found');
+      }
+
+      await tx.insert(productSupplierEvents).values({
+        productSupplierId: mapping.productSupplierId,
+        eventType: 'unlinked',
+        payload: { stateCode: 'archived' },
+        actor,
+      });
+
+      return mapping;
     });
   }
 }

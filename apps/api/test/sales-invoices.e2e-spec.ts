@@ -101,7 +101,7 @@ describe('API E2E — Sales Invoices', () => {
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${orderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: state })
+          .send({ stateCode: state, generateBackorders: false })
           .expect(200);
       }
 
@@ -182,7 +182,7 @@ describe('API E2E — Sales Invoices', () => {
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${testOrderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: state })
+          .send({ stateCode: state, generateBackorders: false })
           .expect(200);
       }
 

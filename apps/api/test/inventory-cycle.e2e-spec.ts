@@ -155,7 +155,7 @@ describe('Inventory Cycle (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${soId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'confirmed' })
+      .send({ stateCode: 'confirmed', generateBackorders: false })
       .expect(200);
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${soId}/state`)
@@ -243,7 +243,7 @@ describe('Inventory Cycle (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${soId}/returns/${returnId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'confirmed' })
+      .send({ stateCode: 'confirmed', generateBackorders: false })
       .expect(200);
 
     await request(app.getHttpServer())

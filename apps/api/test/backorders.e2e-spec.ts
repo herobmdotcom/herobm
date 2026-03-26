@@ -1,0 +1,166 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import { AppModule } from '../src/app.module';
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const request = require('supertest');
+
+describe('Backorders Workflow (e2e)', () => {
+  let app: INestApplication;
+  let adminToken: string;
+  let productId: string;
+  let accountId: string;
+  let vendorId: string;
+
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
+    await app.init();
+
+    // Login as admin
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({
+        username: 'admin',
+        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+      })
+      .expect(201);
+    adminToken = loginRes.body.access_token;
+
+    // Fetch dependencies
+    const accounts = await request(app.getHttpServer())
+      .get('/api/accounts?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    accountId = accounts.body.data[0].accountId;
+
+    const suppliers = await request(app.getHttpServer())
+      .get('/api/suppliers?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    vendorId = suppliers.body.data[0].vendorId;
+
+    // 1. Create a fresh product (0 on hand)
+    const productRes = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        productNumber: `BACKORDER-E2E-${Date.now()}`,
+        name: 'Backorder E2E Test Product',
+      })
+      .expect(201);
+    productId = productRes.body.productId;
+
+    // 2. Assign the preferred supplier to ensure a Draft PO can be generated
+    await request(app.getHttpServer())
+      .post(`/api/products/${productId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId,
+        isPreferred: true,
+        costPrice: '10.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('should detect inventory gaps and subsequently generate backorders', async () => {
+    const server = app.getHttpServer();
+
+    // 3. Create a Sales Order
+    const soRes = await request(server)
+      .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        customerId: accountId,
+        orderNumber: `SO-BO-${Date.now()}`,
+        lines: [],
+      })
+      .expect(201);
+
+    const salesOrderId = soRes.body.salesOrderId;
+
+    // 4. Add a Line Item (qty: 50, which is higher than the 0 on hand)
+    await request(server)
+      .post(`/api/sales-orders/${salesOrderId}/lines`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        productId,
+        quantity: 50,
+        pricePerUnit: '100.00',
+      })
+      .expect(201);
+
+    // 4.5 Move it forward in the State Machine properly to Quoted, before jumping to Confirmed
+    await request(server)
+      .patch(`/api/sales-orders/${salesOrderId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        stateCode: 'quoted',
+      })
+      .expect(200);
+
+    // 5. Try to confirm -> expect HTTP 409 Conflict with INVENTORY_GAP payload
+    const conflictRes = await request(server)
+      .patch(`/api/sales-orders/${salesOrderId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        stateCode: 'confirmed',
+      })
+      .expect(409);
+
+    expect(conflictRes.body.message).toBe('INVENTORY_GAP');
+    expect(conflictRes.body.gaps).toBeDefined();
+    expect(conflictRes.body.gaps).toHaveLength(1);
+    expect(conflictRes.body.gaps[0].shortage).toBe(50);
+    expect(conflictRes.body.gaps[0].productId).toBe(productId);
+
+    // 6. Confirm WITH generateBackorders: true
+    await request(server)
+      .patch(`/api/sales-orders/${salesOrderId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        stateCode: 'confirmed',
+        generateBackorders: true,
+      })
+      .expect(200);
+
+    // 7. Verify backorder and PO got generated
+    // Best way in black-box integration is just querying the recently generated POs
+    const posRes = await request(server)
+      .get(`/api/purchase-orders?limit=1000`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    let generatedPo = null;
+    for (const poRow of posRes.body.data) {
+      const detailRes = await request(server)
+        .get(`/api/purchase-orders/${poRow.id}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      if (detailRes.body.notes && detailRes.body.notes.includes(salesOrderId)) {
+        generatedPo = detailRes.body;
+        break;
+      }
+    }
+
+    expect(generatedPo).toBeDefined();
+    expect(generatedPo.stateCode).toBe('draft');
+    expect(generatedPo.vendorId).toBe(vendorId);
+
+    // Verify the PO line shortage mapped correctly
+    expect(generatedPo.lines).toBeDefined();
+    const line = generatedPo.lines.find((l: any) => l.productId === productId);
+    expect(line).toBeDefined();
+    expect(parseFloat(line.quantity)).toBe(50);
+  });
+});

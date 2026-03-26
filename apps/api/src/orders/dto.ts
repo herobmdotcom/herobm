@@ -36,6 +36,10 @@ export class CreateOrderLineDto {
   @IsOptional()
   @IsString()
   unitOfMeasure?: string;
+
+  @IsOptional()
+  @IsString()
+  fulfillmentLocationId?: string;
 }
 
 export class UpdateOrderLineDto {
@@ -62,6 +66,10 @@ export class UpdateOrderLineDto {
   @IsOptional()
   @IsString()
   unitOfMeasure?: string;
+
+  @IsOptional()
+  @IsString()
+  fulfillmentLocationId?: string;
 }
 
 // ── Order Header DTOs ──
@@ -83,6 +91,10 @@ export class CreateOrderDto {
   @IsString()
   notes?: string;
 
+  @IsOptional()
+  @IsString() // We can use @IsUUID() but string is safer for compatibility/stubs
+  fulfillmentLocationId?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderLineDto)
@@ -101,6 +113,10 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  fulfillmentLocationId?: string;
 }
 
 // ── Return DTOs ──

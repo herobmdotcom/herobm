@@ -1,3 +1,5 @@
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { BackordersService, InventoryGap } from './backorders.service';
 import {
   Injectable,
   Inject,
@@ -15,6 +17,8 @@ import {
   outbox,
   accounts as coreAccounts,
   products as coreProducts,
+  backorders,
+  purchaseOrders,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
@@ -65,6 +69,7 @@ interface AddLineDto {
   discountPercentage?: string;
   gstCategoryId?: string;
   unitOfMeasure?: string;
+  fulfillmentLocationId?: string;
 }
 
 interface UpdateLineDto {
@@ -74,6 +79,7 @@ interface UpdateLineDto {
   gstCategoryId?: string;
   productDescription?: string;
   unitOfMeasure?: string;
+  fulfillmentLocationId?: string;
 }
 
 @Injectable()
@@ -85,6 +91,7 @@ export class OrdersWriteService {
     private readonly inventoryService: InventoryService,
     private readonly accountsService: AccountsService,
     private readonly productsService: ProductsService,
+    private readonly backordersService: BackordersService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
@@ -320,6 +327,7 @@ export class OrdersWriteService {
           name: dto.name || orderNumber,
           customerId: dto.customerId,
           customerOrderNumber: dto.customerOrderNumber,
+          fulfillmentLocationId: dto.fulfillmentLocationId,
           stateCode: 'draft',
           currencyCode: customer.currencyCode,
           notes: dto.notes,
@@ -357,6 +365,8 @@ export class OrdersWriteService {
           tax: computed.tax,
           totalAmount: computed.totalAmount,
           unitOfMeasure: line.unitOfMeasure,
+          fulfillmentLocationId:
+            line.fulfillmentLocationId || dto.fulfillmentLocationId,
         });
       }
 
@@ -435,7 +445,12 @@ export class OrdersWriteService {
   /**
    * Transition order state (e.g. draft → quoted → confirmed).
    */
-  async changeState(id: string, newState: string, actor: string) {
+  async changeState(
+    id: string,
+    newState: string,
+    actor: string,
+    generateBackorders?: boolean,
+  ) {
     if (!VALID_STATES.includes(newState)) {
       throw new BadRequestException(`Invalid state: '${newState}'`);
     }
@@ -455,13 +470,36 @@ export class OrdersWriteService {
       await this.pickingService.assertFullyShipped(id);
     }
 
-    // Fetch order lines (needed for inventory mutations)
     const orderLines = await this.db
       .select()
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, id));
 
+    // INVENTORY GAP CHECK - Ensure we evaluate backorders upon Sales confirmation
+    let gaps: InventoryGap[] = [];
+    if (newState === 'confirmed') {
+      gaps = await this.backordersService.evaluateGaps(id);
+
+      if (gaps.length > 0 && generateBackorders === undefined) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            message: 'INVENTORY_GAP',
+            gaps,
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      if (
+        newState === 'confirmed' &&
+        generateBackorders === true &&
+        gaps.length > 0
+      ) {
+        await this.backordersService.triggerBackorders(id, gaps, actor, tx);
+      }
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -831,6 +869,7 @@ export class OrdersWriteService {
         unitOfMeasure: salesOrderLineItems.unitOfMeasure,
         quantityPicked: salesOrderLineItems.quantityPicked,
         gstCategoryId: salesOrderLineItems.gstCategoryId,
+        fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -846,7 +885,26 @@ export class OrdersWriteService {
       .where(eq(orderEvents.salesOrderId, id))
       .orderBy(orderEvents.createdOn);
 
-    return { ...order, lines, events };
+    const backorderList = await this.db
+      .select({
+        productId: backorders.productId,
+        productNumber: coreProducts.productNumber,
+        quantity: backorders.quantity,
+        stateCode: backorders.stateCode,
+        purchaseOrderId: backorders.purchaseOrderId,
+        purchaseOrderNumber: purchaseOrders.orderNumber,
+        createdOn: backorders.createdOn,
+      })
+      .from(backorders)
+      .leftJoin(coreProducts, eq(backorders.productId, coreProducts.productId))
+      .leftJoin(
+        purchaseOrders,
+        eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .where(eq(backorders.salesOrderId, order.salesOrderId))
+      .orderBy(backorders.createdOn);
+
+    return { ...order, lines, events, backorders: backorderList };
   }
 
   // -------------------------------------------------------------------------

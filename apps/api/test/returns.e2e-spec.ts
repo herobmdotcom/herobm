@@ -144,7 +144,7 @@ describe('API E2E — Sales Order Returns', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: state })
+        .send({ stateCode: state, generateBackorders: false })
         .expect(200);
     }
 
@@ -158,7 +158,7 @@ describe('API E2E — Sales Order Returns', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: state })
+        .send({ stateCode: state, generateBackorders: false })
         .expect(200);
     }
 
@@ -291,7 +291,7 @@ describe('API E2E — Sales Order Returns', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'confirmed' })
+        .send({ stateCode: 'confirmed', generateBackorders: false })
         .expect(200);
 
       const res = await request(app.getHttpServer())

@@ -87,8 +87,14 @@ export class OrdersController {
     @Param('id') id: string,
     @Body('stateCode') stateCode: string,
     @AuthUser() user: JwtUser,
+    @Body('generateBackorders') generateBackorders?: boolean,
   ) {
-    return this.ordersWriteService.changeState(id, stateCode, user.username);
+    return this.ordersWriteService.changeState(
+      id,
+      stateCode,
+      user.username,
+      generateBackorders,
+    );
   }
 
   @Post(':id/archive')

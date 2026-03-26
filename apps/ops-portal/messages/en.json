@@ -107,7 +107,8 @@
       "status": "Status",
       "qtyReturned": "Qty Returned",
       "reason": "Reason",
-      "fee": "Fee"
+      "fee": "Fee",
+      "tax": "Tax"
     },
     "orderNotFound": "Order not found",
     "backToOrders": "← Back to Orders",

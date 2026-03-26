@@ -5,6 +5,17 @@
  * and direct URL navigation. The in-memory variables act as a fast cache.
  */
 
+export class ApiError extends Error {
+  public status: number;
+  public data: any;
+  constructor(message: string, status: number, data?: any) {
+    super(message);
+    this.status = status;
+    this.data = data;
+    this.name = 'ApiError';
+  }
+}
+
 const TOKEN_KEY = 'modbm_token';
 const ROLE_KEY = 'modbm_role';
 
@@ -134,7 +145,7 @@ export async function apiMutate<T = unknown>(
   if (res.status === 401) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
-    throw new Error(errData?.message ?? `API error: ${res.status}`);
+    throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);
   }
   // Empty response (DELETE, void methods)
   const contentLength = res.headers.get('content-length');

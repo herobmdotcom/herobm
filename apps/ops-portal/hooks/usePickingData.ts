@@ -13,6 +13,7 @@ export interface PickingSummaryLine {
   productId: string;
   productNumber?: string;
   productDescription: string;
+  locationName: string;
   quantity: string;
   quantityPicked: string;
   quantityShipped: string;

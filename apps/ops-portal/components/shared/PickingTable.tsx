@@ -33,6 +33,7 @@ export default function PickingTable({
           <th style={{ width: 50 }}>{tPicking('columns.lineNumber')}</th>
           <th>{tPicking('columns.product')}</th>
           <th>{tPicking('columns.description')}</th>
+          <th style={{ width: 140 }}>Location</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
           <th style={{ width: 110, textAlign: 'right' }}>{tPicking('columns.picked')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.shipped')}</th>
@@ -48,6 +49,7 @@ export default function PickingTable({
               {line.productNumber || line.productId?.substring(0, 8) || '—'}
             </td>
             <td>{line.productDescription || '—'}</td>
+            <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{line.locationName}</td>
             <td style={{ textAlign: 'right' }}>{line.quantity}</td>
             <td style={{ textAlign: 'right' }}>
               {isPickingState && editingLineId === line.salesOrderLineId ? (

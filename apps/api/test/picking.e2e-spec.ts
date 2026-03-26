@@ -136,7 +136,7 @@ describe('API E2E — Picking & Shipments', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: state })
+        .send({ stateCode: state, generateBackorders: false })
         .expect(200);
     }
 

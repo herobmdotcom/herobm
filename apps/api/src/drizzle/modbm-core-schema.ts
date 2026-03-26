@@ -57,6 +57,9 @@ export const salesOrders = modbmCore.table('sales_orders', {
   name: text('name'),
   customerId: uuid('customer_id').references(() => accounts.accountId),
   customerOrderNumber: text('customer_order_number'),
+  fulfillmentLocationId: uuid('fulfillment_location_id').references(
+    () => locations.locationId,
+  ),
   stateCode: text('state_code').notNull().default('draft'),
   currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
@@ -90,6 +93,9 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
   totalAmount: numeric('total_amount'),
   unitOfMeasure: text('unit_of_measure'),
   quantityPicked: numeric('quantity_picked').default('0'),
+  fulfillmentLocationId: uuid('fulfillment_location_id').references(
+    () => locations.locationId,
+  ),
 });
 
 // ---------------------------------------------------------------------------
@@ -229,6 +235,31 @@ export const purchaseOrderEvents = modbmCore.table('purchase_order_events', {
   eventType: text('event_type').notNull(),
   payload: jsonb('payload'),
   actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// backorders (Order Allocations for Cross-Dock/Picked bridging)
+// ---------------------------------------------------------------------------
+export const backorders = modbmCore.table('backorders', {
+  backorderId: uuid('backorder_id').primaryKey().defaultRandom(),
+  salesOrderId: uuid('sales_order_id')
+    .notNull()
+    .references(() => salesOrders.salesOrderId),
+  salesOrderLineId: uuid('sales_order_line_id')
+    .notNull()
+    .references(() => salesOrderLineItems.salesOrderLineId),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.productId),
+  purchaseOrderId: uuid('purchase_order_id').references(
+    () => purchaseOrders.purchaseOrderId,
+  ),
+  purchaseOrderLineId: uuid('purchase_order_line_id').references(
+    () => purchaseOrderLineItems.purchaseOrderLineId,
+  ),
+  quantity: numeric('quantity').notNull(),
+  stateCode: text('state_code').notNull().default('pending_supply'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 

@@ -152,10 +152,10 @@ elt-no-extract: transform import-legacy schema-ref
 
 import-legacy:
 	"$(DBT)" run --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
-	"$(DBT)" run-operation sync_sales_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+	"$(DBT)" test --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 # --- Schema Reference ---
 

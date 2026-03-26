@@ -56,11 +56,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn(JSON.stringify(logPayload));
     }
 
+    // If the exception has a rich object response (e.g. { message: 'INVENTORY_GAP', gaps: [...] }) we want to pass that out.
+    let additionalProps = {};
+    if (exception instanceof HttpException) {
+      const resp = exception.getResponse();
+      if (typeof resp === 'object' && resp !== null) {
+        additionalProps = { ...resp };
+      }
+    }
+
     response.status(statusCode).json({
       statusCode,
       message,
       timestamp: logPayload.timestamp,
       path: request.url,
+      ...additionalProps,
     });
   }
 }

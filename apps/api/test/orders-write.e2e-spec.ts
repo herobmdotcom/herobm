@@ -423,7 +423,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${invoicedId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: state })
+          .send({ stateCode: state, generateBackorders: false })
           .expect(200);
       }
 

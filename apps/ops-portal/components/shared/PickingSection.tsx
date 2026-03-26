@@ -6,6 +6,12 @@ import { usePickingData } from '../../hooks/usePickingData';
 import type { OrderLine } from '../../hooks/usePickingData';
 import PickingTable from './PickingTable';
 import ShipmentCard from './ShipmentCard';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+
+interface Location {
+  locationId: string;
+  name: string;
+}
 
 // ---------------------------------------------------------------------------
 // PickingSection — Orchestrator
@@ -30,6 +36,8 @@ export default function PickingSection({
   enableShippedFloorCheck?: boolean;
   /** Called whenever the section's internal visibility changes */
   onVisibilityChange?: (visibility: { picking: boolean; shipments: boolean }) => void;
+  /** Active Location for Fulfillment */
+  fulfillmentLocationId?: string;
 }) {
   const tCommon = useTranslations('common');
   const tPicking = useTranslations('picking');
@@ -59,6 +67,7 @@ export default function PickingSection({
       loadPickingData();
     }
   }, [orderState, loadPickingData]);
+
 
   // Create-shipment form state
   const [showCreateShipment, setShowCreateShipment] = useState(false);
@@ -151,6 +160,8 @@ export default function PickingSection({
             {tPicking('title')}
           </h3>
 
+          <div className="flex items-center gap-4">
+
           {isPickingState && (
             <div className="flex items-center gap-2">
               <button className="btn btn-secondary btn-sm" onClick={printPickingSlip}>
@@ -172,6 +183,7 @@ export default function PickingSection({
               </button>
             </div>
           )}
+          </div>
         </div>
 
         {/* Progress bar */}

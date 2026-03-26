@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Param,
@@ -7,10 +7,12 @@
   Post,
   Patch,
   Body,
+  Delete,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
+import { AddSupplierDto } from './dto';
 import {
   CasbinGuard,
   CasbinResource,
@@ -63,5 +65,29 @@ export class ProductsController {
   @CasbinAction('archive')
   unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.productsWriteService.unarchive(id, user.username);
+  }
+
+  @Post(':id/suppliers')
+  @CasbinAction('write')
+  addSupplier(
+    @Param('id') productId: string,
+    @Body() dto: AddSupplierDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.addSupplier(productId, dto, user.username);
+  }
+
+  @Delete(':id/suppliers/:vendorId')
+  @CasbinAction('write')
+  removeSupplier(
+    @Param('id') productId: string,
+    @Param('vendorId') vendorId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.removeSupplier(
+      productId,
+      vendorId,
+      user.username,
+    );
   }
 }

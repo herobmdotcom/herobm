@@ -15,6 +15,9 @@ Usage:
 import subprocess
 import sys
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 CONTAINER = "postgres-custom"
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
