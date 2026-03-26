@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -47,11 +47,11 @@ export class SuppliersController {
 
   @Get('by-product/:productId')
   @CasbinAction('read')
-  async findByProduct(@Param('productId') productId: string) {
-    // Note: this still points to legacy findProductSuppliers (which is now in SuppliersService)
-    // Actually, SuppliersService.findProductSuppliers was removed in my previous edit?
-    // Wait, let me check SuppliersService again.
-    return this.suppliersService.findSupplierProducts(productId);
+  async findByProduct(
+    @Param('productId') productId: string,
+    @Query() query: PaginationQuery,
+  ) {
+    return this.suppliersService.findProductSuppliers(productId, query);
   }
 
   @Get(':id')

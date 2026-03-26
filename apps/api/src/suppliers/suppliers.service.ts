@@ -86,4 +86,44 @@ export class SuppliersService {
       .from(productSuppliers)
       .where(eq(productSuppliers.vendorId, vendorId));
   }
+
+  /** Suppliers that provide a given product */
+  async findProductSuppliers(productId: string, params: PaginationQuery) {
+    const { page, limit, offset } = parsePagination(params);
+
+    const { productSuppliers, suppliers } =
+      await import('../drizzle/modbm-core-schema.js');
+
+    const baseQuery = this.db
+      .select({
+        productSupplierId: productSuppliers.productSupplierId,
+        productId: productSuppliers.productId,
+        vendorId: productSuppliers.vendorId,
+        supplierPartNumber: productSuppliers.supplierPartNumber,
+        costPrice: productSuppliers.costPrice,
+        discountPercent: productSuppliers.discountPercent,
+        priceBreakQuantity: productSuppliers.priceBreakQuantity,
+        isPreferred: productSuppliers.isPreferred,
+        stateCode: productSuppliers.stateCode,
+        vendorName: suppliers.name,
+        vendorNumber: suppliers.vendorNumber,
+      })
+      .from(productSuppliers)
+      .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
+      .where(eq(productSuppliers.productId, productId));
+
+    const data = await baseQuery
+      .orderBy(suppliers.name)
+      .limit(limit)
+      .offset(offset);
+
+    const countQuery = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(productSuppliers)
+      .where(eq(productSuppliers.productId, productId));
+
+    const [{ count: total }] = await countQuery;
+
+    return { data, page, limit, total: Number(total) };
+  }
 }

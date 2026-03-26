@@ -99,7 +99,7 @@ export default function TopographyView() {
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
                 style={{ fontFamily: 'Manrope, sans-serif' }}
               >
-                {tCommon('columns.city', { defaultValue: 'Locations' })}
+                {tCommon('columns.location', { defaultValue: 'Location' })}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
                 {loading ? '...' : locations.length}

@@ -27,7 +27,8 @@ export default function Sidebar() {
           subItems: [
             { href: '/inventory', label: tInventory('tabs.products') },
             { href: '/inventory/bins', label: tInventory('tabs.binContents') },
-            { href: '/inventory/movements', label: t('items.movements') }
+            { href: '/inventory/movements', label: t('items.movements') },
+            { href: '/inventory/locations', label: tInventory('tabs.locations', { defaultValue: 'Locations' }) }
           ]
         },
       ],

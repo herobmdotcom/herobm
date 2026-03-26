@@ -14,7 +14,7 @@ export default function ProductStockView() {
     { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'scNumber', headerName: tInventory('columns.scNumber'), width: 140 },
     { field: 'locationNo', headerName: tInventory('columns.locationNo'), width: 110, hide: true },
-    { field: 'locationName', headerName: tCommon('columns.city'), width: 140 }, // Using city for locationName
+    { field: 'locationName', headerName: tCommon('columns.location', { defaultValue: 'Location' }), width: 140 },
     { field: 'quantityOnHand', headerName: tCommon('columns.onHand'), width: 100, type: 'numericColumn' },
     { field: 'quantityCommitted', headerName: tCommon('columns.committed'), width: 110, type: 'numericColumn' },
     { field: 'quantityAvailable', headerName: tCommon('columns.available'), width: 100, type: 'numericColumn' },
