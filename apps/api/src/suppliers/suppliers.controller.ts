@@ -72,8 +72,11 @@ export class SuppliersController {
 
   @Get(':id/products')
   @CasbinAction('read')
-  async findSupplierProducts(@Param('id') id: string) {
-    return this.suppliersService.findSupplierProducts(id);
+  async findSupplierProducts(
+    @Param('id') id: string,
+    @Query() query: PaginationQuery,
+  ) {
+    return this.suppliersService.findSupplierProducts(id, query);
   }
 
   @Post(':id/archive')

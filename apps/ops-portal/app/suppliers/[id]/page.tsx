@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,7 @@ import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
+import DataGrid from '@/components/DataGrid';
 
 interface Supplier {
   vendorId: string;
@@ -43,6 +44,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const t = useTranslations();
   const params = use(paramsPromise);
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'details' | 'products'>('details');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -142,6 +144,15 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     }
   };
 
+  const productColumns: any[] = useMemo(() => [
+    { field: 'productNumber', headerName: 'Product No.', width: 140 },
+    { field: 'productName', headerName: 'Name', flex: 1, minWidth: 160 },
+    { field: 'supplierPartNumber', headerName: 'Supplier Part No.', width: 150 },
+    { field: 'costPrice', headerName: 'Cost Price', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+    { field: 'discountPercent', headerName: 'Discount %', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
+    { field: 'productStateCode', headerName: 'Status', width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
+  ], []);
+
   if (loading) {
     return (
       <>
@@ -169,14 +180,31 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
   const isEditable = supplier.stateCode !== 'archived';
 
-  const sections = {
-    info: { id: 'info-section', label: 'Info' },
-    financials: { id: 'financials-section', label: 'Financials' },
-    notes: { id: 'notes-section', label: 'Notes' },
-    contact: { id: 'contact-section', label: 'Contact' },
-    activity: { id: 'activity-section', label: 'Activity' },
-  };
-  const visibleSections = Object.values(sections);
+
+
+  const visibleSections = [
+    {
+      id: 'tab-details',
+      label: 'Overview',
+      isSubPage: true,
+      isActive: activeTab === 'details',
+      onClick: () => setActiveTab('details'),
+      subtargets: [
+        { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'financials-section', label: 'Financials', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('financials-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'notes-section', label: 'Notes', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'contact-section', label: 'Contact', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+      ]
+    },
+    {
+      id: 'tab-products',
+      label: 'Products',
+      isSubPage: true,
+      isActive: activeTab === 'products',
+      onClick: () => setActiveTab('products')
+    }
+  ];
 
   return (
     <>
@@ -208,11 +236,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           />
         }
       >
-      <div className="flex flex-col gap-3">
-
       {supplier.stateCode === 'archived' && (
         <div
-          className="px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
+          className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
         >
           <span style={{ fontSize: '1.2rem' }}>📦</span>
@@ -221,6 +247,47 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           </div>
         </div>
       )}
+
+      {activeTab === 'products' && (
+        <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+            <DataGrid 
+                endpoint={`/api/suppliers/${encodeURIComponent(params.id)}/products`}
+                columns={productColumns}
+                gridKey="supplier-products"
+                fetchAll
+                onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Products
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          ROWS
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'details' && (
+        <div className="flex flex-col gap-3">
 
       {error && (
         <div
@@ -453,6 +520,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <ActivityTimeline events={supplier.events || []} />
         </div>
       </div>
+      )}
       </DetailsLayout>
     </>
   );

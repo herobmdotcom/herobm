@@ -115,13 +115,15 @@ describe('OrderReturnsController', () => {
         'uuid-1',
         'ret-uuid-1',
         'confirmed',
-        mockUser,
+        undefined,
+        mockUser as any,
       );
       expect(result.stateCode).toBe('confirmed');
       expect(returnsService.changeReturnState).toHaveBeenCalledWith(
         'ret-uuid-1',
         'confirmed',
         'admin',
+        undefined,
       );
     });
   });

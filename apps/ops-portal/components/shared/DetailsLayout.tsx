@@ -10,8 +10,8 @@ export default function DetailsLayout({ header, children }: { header: React.Reac
           {header}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 lg:px-6 pt-6 pb-12 bg-white detail-content">
-        <div className="w-full">
+      <div className="flex-1 overflow-y-auto bg-white detail-content flex flex-col min-h-0">
+        <div className="w-full px-4 lg:px-6 pt-6 pb-12 flex flex-col flex-1 h-full min-h-[500px] relative">
           {children}
         </div>
       </div>

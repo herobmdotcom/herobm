@@ -78,13 +78,44 @@ export class SuppliersService {
   }
 
   /** Products supplied by a given vendor */
-  async findSupplierProducts(vendorId: string) {
-    const { productSuppliers } =
+  async findSupplierProducts(vendorId: string, params: PaginationQuery) {
+    const { page, limit, offset } = parsePagination(params);
+
+    const { productSuppliers, products } =
       await import('../drizzle/modbm-core-schema.js');
-    return this.db
-      .select()
+
+    const baseQuery = this.db
+      .select({
+        productSupplierId: productSuppliers.productSupplierId,
+        productId: productSuppliers.productId,
+        vendorId: productSuppliers.vendorId,
+        supplierPartNumber: productSuppliers.supplierPartNumber,
+        costPrice: productSuppliers.costPrice,
+        discountPercent: productSuppliers.discountPercent,
+        priceBreakQuantity: productSuppliers.priceBreakQuantity,
+        isPreferred: productSuppliers.isPreferred,
+        stateCode: productSuppliers.stateCode,
+        productName: products.name,
+        productNumber: products.productNumber,
+        productStateCode: products.stateCode,
+      })
+      .from(productSuppliers)
+      .innerJoin(products, eq(productSuppliers.productId, products.productId))
+      .where(eq(productSuppliers.vendorId, vendorId));
+
+    const data = await baseQuery
+      .orderBy(products.name)
+      .limit(limit)
+      .offset(offset);
+
+    const countQuery = this.db
+      .select({ count: sql<number>`count(*)` })
       .from(productSuppliers)
       .where(eq(productSuppliers.vendorId, vendorId));
+
+    const [{ count: total }] = await countQuery;
+
+    return { data, page, limit, total: Number(total) };
   }
 
   /** Suppliers that provide a given product */

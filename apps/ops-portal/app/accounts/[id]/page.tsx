@@ -269,8 +269,8 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       )}
 
       {activeTab === 'salesOrders' && (
-        <div style={{ height: 'calc(100vh - 260px)', minHeight: 400 }} className="p-4 lg:p-6">
-          <div className="h-full flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+        <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/sales-orders?accountId=${encodeURIComponent(params.id)}&limit=50`}
                 columns={orderColumns}
@@ -312,8 +312,8 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       )}
 
       {activeTab === 'invoices' && (
-        <div style={{ height: 'calc(100vh - 260px)', minHeight: 400 }} className="p-4 lg:p-6">
-          <div className="h-full flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+        <div className="flex-1 min-h-0 flex flex-col w-full h-full p-4 lg:p-6">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid 
                 endpoint={`/api/sales-invoices?accountId=${encodeURIComponent(params.id)}&days=0&limit=50`}
                 columns={invoiceColumns}
