@@ -156,6 +156,7 @@ describe('PickingService', () => {
       });
       mockTransaction({ ...ORDER_LINE, quantityPicked: '5' }, [
         [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '10' }], // Available bin
+        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
         [{ binId: 'ship-bin' }], // SHIPPING bin
       ]);
     }
@@ -231,6 +232,7 @@ describe('PickingService', () => {
       });
       mockTransaction({ ...ORDER_LINE, quantityPicked: '10' }, [
         [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }], // Available bin
+        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
         [{ binId: 'ship-bin' }], // SHIPPING bin
       ]);
       const result = await service.pickAllForLine(
@@ -324,9 +326,12 @@ describe('PickingService', () => {
       mockTransaction({}, [
         // For line-1
         [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }],
+        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
         [{ binId: 'ship-bin' }],
         // For line-2
         [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }],
+        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
+        // shipping bin is cached, no extra query
         [{ binId: 'ship-bin' }],
       ]);
 
@@ -515,6 +520,7 @@ describe('PickingService', () => {
           { binId: 'bin-b1', locationId: 'loc-1', actualQuantity: '10' },
           { binId: 'bin-b2', locationId: 'loc-1', actualQuantity: '5' },
         ],
+        [{ binId: 'fallback-bin', locationId: 'loc-1' }], // Fallback bin
         [{ binId: 'bin-shipping' }], // SHIPPING bin
       ]);
 
@@ -542,8 +548,9 @@ describe('PickingService', () => {
     it('should use fallback bin if available bins run dry', async () => {
       const tx = createMockTx([
         [{ binId: 'bin-b1', locationId: 'loc-1', actualQuantity: '2' }], // Available bins
-        [{ binId: 'bin-shipping' }], // SHIPPING bin for loc-1
         [{ binId: 'bin-fallback', locationId: 'loc-1' }], // Fallback bin
+        [{ binId: 'bin-shipping', locationId: 'loc-1' }], // SHIPPING bin for loc-1
+        [{ binId: 'bin-shipping', locationId: 'loc-1' }], // SHIPPING bin for fallback
       ]);
 
       await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin');
@@ -589,12 +596,12 @@ describe('PickingService', () => {
 
       expect(params.lines).toHaveLength(2);
       expect(params.lines[0]).toMatchObject({
-        binId: 'bin-shipping',
-        quantity: -4,
-      });
-      expect(params.lines[1]).toMatchObject({
         binId: 'bin-fallback',
         quantity: 4,
+      });
+      expect(params.lines[1]).toMatchObject({
+        binId: 'bin-shipping',
+        quantity: -4,
       });
     });
   });
