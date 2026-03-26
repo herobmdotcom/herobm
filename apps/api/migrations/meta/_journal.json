@@ -43,6 +43,13 @@
       "when": 1774523174968,
       "tag": "0005_lovely_wallow",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774532886444,
+      "tag": "0007_handling_zones_and_bins",
+      "breakpoints": true
     }
   ]
 }

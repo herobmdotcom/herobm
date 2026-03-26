@@ -50,7 +50,7 @@ def psql_sql(sql: str, env_vars: list[str] | None = None) -> None:
             val = os.environ.get(env_key, "")
             if val:
                 cmd.extend(["-v", f"{env_key}={val}"])
-    result = subprocess.run(cmd, input=sql, capture_output=True, text=True)
+    result = subprocess.run(cmd, input=sql, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
         print(f"ERROR: {result.stderr.strip()}", file=sys.stderr)
         sys.exit(1)
@@ -112,11 +112,11 @@ def seed_gst_categories(dry_run: bool = False) -> None:
         print("  [DRY RUN] Would seed GST categories")
         return
     sql = """
-    INSERT INTO modbm_core.gst_categories (code, title, type, rate) VALUES
-        ('GST', 'GST 9%', 'gst_applies', '9'),
-        ('ZR', 'Zero Rated', 'zero_rated', '0'),
-        ('EXE', 'Exempt', 'exempt', '0')
-    ON CONFLICT (code) DO UPDATE SET rate = EXCLUDED.rate, title = EXCLUDED.title, type = EXCLUDED.type;
+    INSERT INTO modbm_core.gst_categories (code, title, type, rate, is_default) VALUES
+        ('GST', 'GST 9%', 'gst_applies', '9', true),
+        ('ZR', 'Zero Rated', 'zero_rated', '0', false),
+        ('EXE', 'Exempt', 'exempt', '0', false)
+    ON CONFLICT (code) DO UPDATE SET rate = EXCLUDED.rate, title = EXCLUDED.title, type = EXCLUDED.type, is_default = EXCLUDED.is_default;
     """
     psql_sql(sql)
 
@@ -129,13 +129,6 @@ def seed_system_records(dry_run: bool = False) -> None:
       VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM-CUSTOM-LINE', 'Custom Line Product') 
       ON CONFLICT (product_id) DO UPDATE SET product_number = 'SYSTEM-CUSTOM-LINE';
 
-    INSERT INTO modbm_core.bins (bin_number, zone_id, source, bin_type, is_unavailable)
-      SELECT 'SHIPPING', zone_id, 'system', 'staging', true FROM modbm_core.zones WHERE code = 'MAIN'
-      ON CONFLICT (bin_number, zone_id) DO UPDATE SET source = 'system', bin_type = 'staging', is_unavailable = true;
-
-    INSERT INTO modbm_core.bins (bin_number, zone_id, source, bin_type, is_unavailable)
-      SELECT 'DOCK', zone_id, 'system', 'staging', true FROM modbm_core.zones WHERE code = 'MAIN'
-      ON CONFLICT (bin_number, zone_id) DO UPDATE SET source = 'system', bin_type = 'staging', is_unavailable = true;
 
     INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code)
       VALUES ('00000000-0000-0000-0000-000000000001', 'LEGACY-SALES', 'legacy')

@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -69,12 +69,14 @@ export class OrderReturnsController {
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @Body('stateCode') stateCode: string,
+    @Body('locationId') locationId: string | undefined,
     @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.changeReturnState(
       returnId,
       stateCode,
       user.username,
+      locationId,
     );
   }
 

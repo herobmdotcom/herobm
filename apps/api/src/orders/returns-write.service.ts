@@ -18,6 +18,7 @@ import {
   outbox,
   glAccounts,
   bins,
+  zones,
   products as coreProducts,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
@@ -298,7 +299,12 @@ export class ReturnsWriteService {
   /**
    * Transition return state.
    */
-  async changeReturnState(returnId: string, newState: string, actor: string) {
+  async changeReturnState(
+    returnId: string,
+    newState: string,
+    actor: string,
+    locationId?: string,
+  ) {
     if (!VALID_RETURN_STATES.includes(newState)) {
       throw new BadRequestException(`Invalid return state: '${newState}'`);
     }
@@ -346,14 +352,28 @@ export class ReturnsWriteService {
           }
         }
 
+        if (!locationId) {
+          throw new BadRequestException(
+            'A location context is required to process a return and receive items into inventory.',
+          );
+        }
+
         const [dockBin] = await tx
           .select({ binId: bins.binId })
           .from(bins)
-          .where(eq(bins.binNumber, 'DOCK'))
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(bins.binNumber, 'RECEIVING'),
+              eq(zones.locationId, locationId),
+            ),
+          )
           .limit(1);
 
         if (!dockBin) {
-          throw new BadRequestException('System DOCK bin is missing.');
+          throw new BadRequestException(
+            `No RECEIVING bin found for location '${locationId}'.`,
+          );
         }
 
         const receiveLines = stockLines.map((line) => ({

@@ -425,6 +425,7 @@ describe('ShipmentService', () => {
                 }),
               );
               emptyQb.innerJoin = jest.fn().mockReturnValue(emptyQb);
+              emptyQb.groupBy = jest.fn().mockReturnValue(emptyQb);
               return emptyQb;
             });
             return catchAllQb;

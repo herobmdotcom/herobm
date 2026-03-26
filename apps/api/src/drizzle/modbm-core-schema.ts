@@ -183,6 +183,9 @@ export const purchaseOrders = modbmCore.table('purchase_orders', {
   orderNumber: text('order_number').unique().notNull(),
   name: text('name'),
   vendorId: uuid('vendor_id').references(() => suppliers.vendorId),
+  deliveryLocationId: uuid('delivery_location_id').references(
+    () => locations.locationId,
+  ),
   invoiceNumber: text('invoice_number'),
   stateCode: text('state_code').notNull().default('draft'),
   currencyCode: text('currency_code').notNull().default('EUR'),

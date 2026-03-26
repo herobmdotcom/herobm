@@ -9,6 +9,7 @@ import {
   products,
   outbox,
   bins,
+  zones,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -149,14 +150,42 @@ export class ReceptionsService {
           .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId));
 
         if (ledgerLines.length > 0) {
-          const [dockBin] = await tx
-            .select({ binId: bins.binId })
-            .from(bins)
-            .where(eq(bins.binNumber, 'DOCK'))
+          const [po] = await tx
+            .select({ deliveryLocationId: purchaseOrders.deliveryLocationId })
+            .from(purchaseOrders)
+            .where(
+              eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId),
+            )
             .limit(1);
 
+          let dockBin;
+          if (po && po.deliveryLocationId) {
+            const result = await tx
+              .select({ binId: bins.binId })
+              .from(bins)
+              .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+              .where(
+                and(
+                  eq(bins.binNumber, 'RECEIVING'),
+                  eq(zones.locationId, po.deliveryLocationId),
+                ),
+              )
+              .limit(1);
+            dockBin = result[0];
+          }
+
           if (!dockBin) {
-            throw new NotFoundException('System DOCK bin is missing.');
+            // Fallback for POs with missing delivery locations
+            const result = await tx
+              .select({ binId: bins.binId })
+              .from(bins)
+              .where(eq(bins.binNumber, 'RECEIVING'))
+              .limit(1);
+            dockBin = result[0];
+          }
+
+          if (!dockBin) {
+            throw new NotFoundException('System RECEIVING bin is missing.');
           }
 
           const resolvedLedgerLines = ledgerLines.map((l) => ({
@@ -172,7 +201,7 @@ export class ReceptionsService {
               Date.now().toString().slice(-4),
             sourceType: 'PO_RECEPTION',
             sourceId: reception.receptionId,
-            memo: 'Goods Received to Dock',
+            memo: 'Goods Received',
             userId: userId,
             lines: resolvedLedgerLines,
           });

@@ -12,6 +12,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   bins,
+  zones,
   binContents,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
@@ -47,15 +48,22 @@ export class PickingService {
   ) {
     if (delta === 0) return;
 
-    const [shippingBin] = await tx
-      .select({ binId: bins.binId })
-      .from(bins)
-      .where(eq(bins.binNumber, 'SHIPPING'))
-      .limit(1);
-
-    if (!shippingBin) {
-      throw new BadRequestException('System SHIPPING bin is not configured.');
-    }
+    const shippingBinCache = new Map<string, string>();
+    const getShippingBin = async (locId: string) => {
+      if (shippingBinCache.has(locId)) return shippingBinCache.get(locId)!;
+      const [bin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(and(eq(bins.binNumber, 'SHIPPING'), eq(zones.locationId, locId)))
+        .limit(1);
+      if (!bin)
+        throw new BadRequestException(
+          `No SHIPPING staging bin found for location ${locId}.`,
+        );
+      shippingBinCache.set(locId, bin.binId);
+      return bin.binId;
+    };
 
     const ledgerLines = [];
 
@@ -64,9 +72,11 @@ export class PickingService {
         .select({
           binId: binContents.binId,
           actualQuantity: binContents.actualQuantity,
+          locationId: zones.locationId,
         })
         .from(binContents)
         .innerJoin(bins, eq(binContents.binId, bins.binId))
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
         .where(
           and(
             eq(binContents.productId, productId),
@@ -83,6 +93,8 @@ export class PickingService {
         const available = parseFloat(b.actualQuantity);
         const take = Math.min(available, remainingToPick);
 
+        const shippingBinId = await getShippingBin(b.locationId);
+
         ledgerLines.push({
           productId,
           binId: b.binId,
@@ -90,7 +102,7 @@ export class PickingService {
         });
         ledgerLines.push({
           productId,
-          binId: shippingBin.binId,
+          binId: shippingBinId,
           quantity: take,
         });
         remainingToPick -= take;
@@ -98,8 +110,9 @@ export class PickingService {
 
       if (remainingToPick > 0) {
         const [fallbackBin] = await tx
-          .select({ binId: bins.binId })
+          .select({ binId: bins.binId, locationId: zones.locationId })
           .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
           .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
           .limit(1);
 
@@ -109,6 +122,8 @@ export class PickingService {
           );
         }
 
+        const shippingBinId = await getShippingBin(fallbackBin.locationId);
+
         ledgerLines.push({
           productId,
           binId: fallbackBin.binId,
@@ -116,15 +131,16 @@ export class PickingService {
         });
         ledgerLines.push({
           productId,
-          binId: shippingBin.binId,
+          binId: shippingBinId,
           quantity: remainingToPick,
         });
       }
     } else {
       const returnQty = Math.abs(delta);
       const [fallbackBin] = await tx
-        .select({ binId: bins.binId })
+        .select({ binId: bins.binId, locationId: zones.locationId })
         .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
         .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
         .limit(1);
 
@@ -132,9 +148,11 @@ export class PickingService {
         throw new BadRequestException('No storage bins defined in the system.');
       }
 
+      const shippingBinId = await getShippingBin(fallbackBin.locationId);
+
       ledgerLines.push({
         productId,
-        binId: shippingBin.binId,
+        binId: shippingBinId,
         quantity: -returnQty,
       });
       ledgerLines.push({

@@ -4,7 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -15,6 +15,8 @@ import {
   products as coreProducts,
   outbox,
   bins,
+  inventoryEntries,
+  inventoryLedger,
 } from '../drizzle/modbm-core-schema';
 import { ConfigService } from '@nestjs/config';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -287,21 +289,52 @@ export class ShipmentService {
         );
         const strategy = getValuationStrategy(method);
 
-        const [shippingBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .where(eq(bins.binNumber, 'SHIPPING'))
-          .limit(1);
+        const pickHistory = await tx
+          .select({
+            binId: inventoryLedger.binId,
+            productId: inventoryLedger.productId,
+            netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`,
+          })
+          .from(inventoryLedger)
+          .innerJoin(
+            inventoryEntries,
+            eq(inventoryLedger.entryId, inventoryEntries.entryId),
+          )
+          .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
+          .where(
+            and(
+              eq(inventoryEntries.sourceId, shipment.salesOrderId),
+              eq(inventoryEntries.sourceType, 'SO_PICK'),
+              eq(bins.binNumber, 'SHIPPING'),
+            ),
+          )
+          .groupBy(inventoryLedger.binId, inventoryLedger.productId);
 
-        if (!shippingBin) {
-          throw new BadRequestException('System SHIPPING bin is missing.');
+        const dispatchLines = [];
+        for (const line of stockLines) {
+          let remainingToShip = parseFloat(line.quantity);
+          const availablePicks = pickHistory.filter(
+            (p) => p.productId === line.productId && p.netPicked > 0,
+          );
+
+          for (const pick of availablePicks) {
+            if (remainingToShip <= 0) break;
+            const take = Math.min(remainingToShip, pick.netPicked);
+            dispatchLines.push({
+              productId: line.productId!,
+              binId: pick.binId,
+              quantity: -take,
+            });
+            pick.netPicked -= take;
+            remainingToShip -= take;
+          }
+
+          if (remainingToShip > 0) {
+            throw new BadRequestException(
+              `System Integrity Error: Could not find enough successfully picked stock in SHIPPING bins for product ${line.productId} to dispatch ${line.quantity}. Missing ${remainingToShip}`,
+            );
+          }
         }
-
-        const dispatchLines = stockLines.map((line) => ({
-          productId: line.productId!,
-          binId: shippingBin.binId,
-          quantity: -parseFloat(line.quantity),
-        }));
 
         if (dispatchLines.length > 0) {
           await this.inventoryService.recordInventoryMovement(tx, {
@@ -412,21 +445,50 @@ export class ShipmentService {
           }
         }
 
-        const [shippingBin] = await tx
-          .select({ binId: bins.binId })
-          .from(bins)
-          .where(eq(bins.binNumber, 'SHIPPING'))
-          .limit(1);
+        const previousDispatch = await tx
+          .select({
+            binId: inventoryLedger.binId,
+            productId: inventoryLedger.productId,
+            shippedQty: sql<number>`SUM(ABS(${inventoryLedger.quantity}::numeric))`,
+          })
+          .from(inventoryLedger)
+          .innerJoin(
+            inventoryEntries,
+            eq(inventoryLedger.entryId, inventoryEntries.entryId),
+          )
+          .where(
+            and(
+              eq(inventoryEntries.sourceId, shipmentId),
+              eq(inventoryEntries.sourceType, 'SO_SHIPMENT'),
+            ),
+          )
+          .groupBy(inventoryLedger.binId, inventoryLedger.productId);
 
-        if (!shippingBin) {
-          throw new BadRequestException('System SHIPPING bin is missing.');
+        const returnLines = [];
+        for (const line of stockLines) {
+          let remainingToRevert = parseFloat(line.quantity);
+          const availableDispatches = previousDispatch.filter(
+            (p) => p.productId === line.productId && p.shippedQty > 0,
+          );
+
+          for (const prev of availableDispatches) {
+            if (remainingToRevert <= 0) break;
+            const putBack = Math.min(remainingToRevert, prev.shippedQty);
+            returnLines.push({
+              productId: line.productId!,
+              binId: prev.binId,
+              quantity: putBack,
+            });
+            prev.shippedQty -= putBack;
+            remainingToRevert -= putBack;
+          }
+
+          if (remainingToRevert > 0) {
+            throw new BadRequestException(
+              `System Integrity Error: Could not map reverted shipment quantities back to their original shipping bins for product ${line.productId}.`,
+            );
+          }
         }
-
-        const returnLines = stockLines.map((line) => ({
-          productId: line.productId!,
-          binId: shippingBin.binId,
-          quantity: parseFloat(line.quantity),
-        }));
 
         if (returnLines.length > 0) {
           await this.inventoryService.recordInventoryMovement(tx, {

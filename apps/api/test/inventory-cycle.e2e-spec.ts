@@ -131,7 +131,7 @@ describe('Inventory Cycle (e2e)', () => {
         name: 'SO Cycle Test',
         lines: [{ productId, quantity: '4', pricePerUnit: '50.00' }],
       });
-    
+
     if (soRes.status !== 201) {
       console.log('Failed to create sales order, got status', soRes.status);
       console.log('Response Error Body:', soRes.body);
