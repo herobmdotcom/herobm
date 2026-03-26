@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
@@ -7,6 +6,7 @@ import { apiFetch, apiMutate } from '@/lib/api';
 interface SyncSummary {
   pending: number;
   processed: number;
+  failed: number;
   total: number;
 }
 
@@ -15,6 +15,7 @@ interface TypeBreakdown {
   total: number;
   pending: number;
   processed: number;
+  failed: number;
 }
 
 interface OutboxEvent {
@@ -25,6 +26,7 @@ interface OutboxEvent {
   payload: any;
   createdOn: string;
   processedAt: string | null;
+  lastError: string | null;
 }
 
 interface SyncData {
@@ -81,7 +83,7 @@ export default function EventQueueDashboard() {
     setDrawerExpandedId(null);
     try {
       const res = await apiFetch<{ events: OutboxEvent[] }>(
-        `/api/settings/erpnext-sync/events?type=${encodeURIComponent(eventType)}&limit=50`,
+        `/api/settings/erpnext-sync/events?type=${encodeURIComponent(eventType)}&status=failed&limit=50`,
       );
       setDrawerEvents(res.events);
     } catch {
@@ -164,7 +166,7 @@ export default function EventQueueDashboard() {
         {data && (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               <div
                 className="card"
                 style={{
@@ -189,6 +191,24 @@ export default function EventQueueDashboard() {
                 </div>
                 <div className="text-3xl font-bold" style={{ color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
                   {data.summary.processed}
+                </div>
+              </div>
+              <div
+                className="card"
+                style={{
+                  textAlign: 'center',
+                  background: data.summary.failed > 0 ? 'rgba(239, 68, 68, 0.08)' : undefined,
+                  border: data.summary.failed > 0 ? '1px solid rgba(239, 68, 68, 0.3)' : undefined,
+                }}
+              >
+                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Failed
+                </div>
+                <div
+                  className="text-3xl font-bold"
+                  style={{ color: data.summary.failed > 0 ? '#ef4444' : 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {data.summary.failed}
                 </div>
               </div>
               <div className="card" style={{ textAlign: 'center' }}>
@@ -216,6 +236,7 @@ export default function EventQueueDashboard() {
                       <th>Event Type</th>
                       <th style={{ width: 80, textAlign: 'right' }}>Total</th>
                       <th style={{ width: 80, textAlign: 'right' }}>Pending</th>
+                      <th style={{ width: 80, textAlign: 'right' }}>Failed</th>
                       <th style={{ width: 80, textAlign: 'right' }}>Processed</th>
                       <th style={{ width: 110 }}>Status</th>
                       <th style={{ width: 160, textAlign: 'right' }}>Actions</th>
@@ -244,9 +265,14 @@ export default function EventQueueDashboard() {
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: row.pending > 0 ? '#f59e0b' : undefined }}>
                             {row.pending}
                           </td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: row.failed > 0 ? '#ef4444' : undefined }}>
+                            {row.failed}
+                          </td>
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{row.processed}</td>
                           <td>
-                            {row.pending === 0 ? (
+                            {row.failed > 0 ? (
+                               <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>✕ {row.failed} Error(s)</span>
+                            ) : row.pending === 0 ? (
                               <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓ All synced</span>
                             ) : (
                               <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳ {row.pending} pending</span>
@@ -300,7 +326,7 @@ export default function EventQueueDashboard() {
                                   </div>
                                 ) : drawerEvents.length === 0 ? (
                                   <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                    No pending events of this type.
+                                    No events of this type found.
                                   </div>
                                 ) : (
                                   <table className="table-lines" style={{ margin: 0 }}>
@@ -323,11 +349,7 @@ export default function EventQueueDashboard() {
                                               {evt.aggregateType}:{evt.aggregateId.substring(0, 12)}
                                             </td>
                                             <td style={{ fontSize: 10 }}>
-                                              {evt.processedAt ? (
-                                                <span style={{ color: '#4ade80', fontWeight: 700 }}>✓</span>
-                                              ) : (
-                                                <span style={{ color: '#f59e0b', fontWeight: 700 }}>⏳</span>
-                                              )}
+                                              {evt.lastError ? (<span style={{ color: '#ef4444', fontWeight: 700 }} title={evt.lastError}>✕</span>) : evt.processedAt ? (<span style={{ color: '#4ade80', fontWeight: 700 }}>✓</span>) : (<span style={{ color: '#f59e0b', fontWeight: 700 }}>⏳</span>)}
                                             </td>
                                             <td>
                                               <button
@@ -360,6 +382,11 @@ export default function EventQueueDashboard() {
                                                     margin: 0,
                                                   }}
                                                 >
+                                                  {evt.lastError && (
+                                                    <span style={{ display: 'block', color: '#ef4444', marginBottom: '8px', fontWeight: 'bold' }}>
+                                                      Error: {evt.lastError}
+                                                    </span>
+                                                  )}
                                                   {JSON.stringify(evt.payload, null, 2)}
                                                 </pre>
                                               </td>
@@ -430,7 +457,9 @@ export default function EventQueueDashboard() {
                             {evt.processedAt ? new Date(evt.processedAt).toLocaleString() : '—'}
                           </td>
                           <td style={{ textAlign: 'center' }}>
-                            {evt.processedAt ? (
+                            {evt.lastError ? (
+                              <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }} title={evt.lastError}>✕</span>
+                            ) : evt.processedAt ? (
                               <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓</span>
                             ) : (
                               <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳</span>

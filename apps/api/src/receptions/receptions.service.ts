@@ -150,7 +150,7 @@ export class ReceptionsService {
 
         if (ledgerLines.length > 0) {
           const [dockBin] = await tx
-            .select({ binId: bins.binId, locationNo: bins.locationNo })
+            .select({ binId: bins.binId })
             .from(bins)
             .where(eq(bins.binNumber, 'DOCK'))
             .limit(1);
@@ -162,7 +162,6 @@ export class ReceptionsService {
           const resolvedLedgerLines = ledgerLines.map((l) => ({
             ...l,
             binId: dockBin.binId,
-            locationNo: dockBin.locationNo,
           }));
 
           await this.inventoryService.recordInventoryMovement(tx, {

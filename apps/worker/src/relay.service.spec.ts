@@ -10,8 +10,8 @@ describe('relay.service', () => {
 
     beforeEach(() => {
       pendingEvents = [
-        { id: 1, type: 'goods_received', payload: { foo: 'bar' } },
-        { id: 2, type: 'goods_dispatched', payload: { baz: 'qux' } }
+        { id: 1, type: 'sales_invoiced', payload: { foo: 'bar' } },
+        { id: 2, type: 'purchase_invoiced', payload: { baz: 'qux' } }
       ];
 
       mockDb = {
@@ -30,18 +30,9 @@ describe('relay.service', () => {
 
     it('should poll pending events and enqueue them', async () => {
       await pollOutbox(mockDb, mockQueue);
-
-      // Verify jobs were queued
       expect(mockQueue.add).toHaveBeenCalledTimes(2);
-      expect(mockQueue.add).toHaveBeenNthCalledWith(
-        1,
-        'process-event',
-        { eventId: 1, type: 'goods_received', payload: { foo: 'bar' } },
-        { jobId: 1, removeOnComplete: true }
-      );
-
-      // Verify DB was updated
       expect(mockDb.update).toHaveBeenCalledTimes(2);
+      expect(mockDb.set).toHaveBeenCalledWith({ lockedUntil: expect.any(Date) });
     });
 
     it('should handle empty result gracefully', async () => {
@@ -57,7 +48,6 @@ describe('relay.service', () => {
 
     beforeEach(() => {
       mockErpClient = {
-        createJournalEntry: vi.fn().mockResolvedValue({ name: 'JV-0001' }),
         createResource: vi.fn().mockResolvedValue({ name: 'PARTY-0001' })
       };
       mockDb = {
@@ -73,110 +63,62 @@ describe('relay.service', () => {
       } as unknown as Job;
     };
 
-    it('should create JE for goods_received with value', async () => {
-      const job = createJob('goods_received', {
-        receptionNumber: 'REC-001',
-        inventoryValueAdded: '100',
-        purchasePriceVariance: '0'
+    it('should JIT sync customer for sales_invoiced', async () => {
+      const job = createJob('sales_invoiced', {
+        customerId: 'CUST-1',
+        customerName: 'Acme Corp',
+        invoiceNumber: 'INV-1'
       });
 
       await processEvent(job, mockErpClient, mockDb);
 
-      expect(mockErpClient.createJournalEntry).toHaveBeenCalledTimes(1);
-      const args = mockErpClient.createJournalEntry.mock.calls[0][0];
+      expect(mockErpClient.createResource).toHaveBeenCalledTimes(1);
+      expect(mockErpClient.createResource).toHaveBeenCalledWith('Customer', {
+        customer_name: 'Acme Corp',
+        customer_type: 'Company',
+        customer_group: 'Commercial',
+        territory: 'All Territories'
+      });
+      // Called once to save the JIT ID to the account, and once to mark the outbox successful
+      expect(mockDb.update).toHaveBeenCalledTimes(2);
+      expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
+    });
+
+    it('should skip customer sync if erpnextId exists', async () => {
+      const job = createJob('sales_invoiced', {
+        erpnextId: 'EXISTING-CUST',
+        customerId: 'CUST-1',
+      });
+      await processEvent(job, mockErpClient, mockDb);
+      expect(mockErpClient.createResource).not.toHaveBeenCalled();
+    });
+
+    it('should JIT sync supplier for purchase_invoiced', async () => {
+      const job = createJob('purchase_invoiced', {
+        supplierId: 'SUPP-1',
+        supplierName: 'Global Dist',
+      });
+
+      await processEvent(job, mockErpClient, mockDb);
+
+      expect(mockErpClient.createResource).toHaveBeenCalledWith('Supplier', expect.anything());
+      expect(mockDb.update).toHaveBeenCalledTimes(2);
+    });
+
+    it('should log an error to lastError if processEvent throws', async () => {
+      const job = createJob('sales_invoiced', {
+         customerId: 'CUST-FAIL',
+         customerName: 'Fail Corp'
+      });
+
+      mockErpClient.createResource.mockRejectedValue(new Error('Network Error'));
+
+      await expect(processEvent(job, mockErpClient, mockDb)).rejects.toThrow('Network Error');
       
-      expect(args.title).toBe('Goods Receipt REC-001');
-      expect(args.accounts).toHaveLength(2);
-      expect(args.accounts[0]).toEqual({
-         account: 'Inventory',
-         debit_in_account_currency: 100,
-         credit_in_account_currency: 0
+      expect(mockDb.set).toHaveBeenCalledWith({
+         lastError: 'Network Error',
+         lockedUntil: null
       });
-      expect(args.accounts[1]).toEqual({
-         account: 'Goods Received Not Invoiced',
-         debit_in_account_currency: 0,
-         credit_in_account_currency: 100
-      });
-    });
-
-    it('should skip goods_received if value is zero', async () => {
-      const job = createJob('goods_received', {
-        receptionNumber: 'REC-002',
-        inventoryValueAdded: '0',
-        purchasePriceVariance: '0'
-      });
-
-      await processEvent(job, mockErpClient, mockDb);
-      expect(mockErpClient.createJournalEntry).not.toHaveBeenCalled();
-    });
-
-    it('should create JE for goods_received with positive variance', async () => {
-      const job = createJob('goods_received', {
-        receptionNumber: 'REC-003',
-        inventoryValueAdded: '0',
-        purchasePriceVariance: '25.50'
-      });
-
-      await processEvent(job, mockErpClient, mockDb);
-      
-      const args = mockErpClient.createJournalEntry.mock.calls[0][0];
-      expect(args.accounts).toHaveLength(2);
-      // Debit COGS, Credit GRNI
-      expect(args.accounts[0]).toMatchObject({ account: 'Cost of Goods Sold', debit_in_account_currency: 25.5 });
-      expect(args.accounts[1]).toMatchObject({ account: 'Goods Received Not Invoiced', credit_in_account_currency: 25.5 });
-    });
-
-    it('should create JE for goods_received with negative variance', async () => {
-      const job = createJob('goods_received', {
-        receptionNumber: 'REC-004',
-        inventoryValueAdded: '0',
-        purchasePriceVariance: '-10'
-      });
-
-      await processEvent(job, mockErpClient, mockDb);
-      
-      const args = mockErpClient.createJournalEntry.mock.calls[0][0];
-      // Credit COGS, Debit GRNI
-      expect(args.accounts[0]).toMatchObject({ account: 'Cost of Goods Sold', credit_in_account_currency: 10 });
-      expect(args.accounts[1]).toMatchObject({ account: 'Goods Received Not Invoiced', debit_in_account_currency: 10 });
-    });
-
-    it('should create JE for goods_dispatched with cogs', async () => {
-      const job = createJob('goods_dispatched', {
-        shipmentNumber: 'SHIP-001',
-        cogsDetails: [
-          { cogsAmount: '50' },
-          { cogsAmount: '120.5' }
-        ]
-      });
-
-      await processEvent(job, mockErpClient, mockDb);
-
-      expect(mockErpClient.createJournalEntry).toHaveBeenCalledTimes(1);
-      const args = mockErpClient.createJournalEntry.mock.calls[0][0];
-      
-      expect(args.title).toBe('Goods Dispatched SHIP-001');
-      expect(args.accounts).toHaveLength(2);
-      expect(args.accounts[0]).toEqual({
-         account: 'Cost of Goods Sold',
-         debit_in_account_currency: 170.5,
-         credit_in_account_currency: 0
-      });
-      expect(args.accounts[1]).toEqual({
-         account: 'Inventory',
-         debit_in_account_currency: 0,
-         credit_in_account_currency: 170.5
-      });
-    });
-
-    it('should skip goods_dispatched if cogs is zero', async () => {
-      const job = createJob('goods_dispatched', {
-        shipmentNumber: 'SHIP-002',
-        cogsDetails: []
-      });
-
-      await processEvent(job, mockErpClient, mockDb);
-      expect(mockErpClient.createJournalEntry).not.toHaveBeenCalled();
     });
   });
 });

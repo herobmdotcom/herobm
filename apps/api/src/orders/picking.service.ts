@@ -48,7 +48,7 @@ export class PickingService {
     if (delta === 0) return;
 
     const [shippingBin] = await tx
-      .select({ binId: bins.binId, locationNo: bins.locationNo })
+      .select({ binId: bins.binId })
       .from(bins)
       .where(eq(bins.binNumber, 'SHIPPING'))
       .limit(1);
@@ -63,7 +63,6 @@ export class PickingService {
       const availableBins = await tx
         .select({
           binId: binContents.binId,
-          locationNo: bins.locationNo,
           actualQuantity: binContents.actualQuantity,
         })
         .from(binContents)
@@ -87,13 +86,11 @@ export class PickingService {
         ledgerLines.push({
           productId,
           binId: b.binId,
-          locationNo: b.locationNo,
           quantity: -take,
         });
         ledgerLines.push({
           productId,
           binId: shippingBin.binId,
-          locationNo: shippingBin.locationNo,
           quantity: take,
         });
         remainingToPick -= take;
@@ -101,7 +98,7 @@ export class PickingService {
 
       if (remainingToPick > 0) {
         const [fallbackBin] = await tx
-          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .select({ binId: bins.binId })
           .from(bins)
           .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
           .limit(1);
@@ -115,20 +112,18 @@ export class PickingService {
         ledgerLines.push({
           productId,
           binId: fallbackBin.binId,
-          locationNo: fallbackBin.locationNo,
           quantity: -remainingToPick,
         });
         ledgerLines.push({
           productId,
           binId: shippingBin.binId,
-          locationNo: shippingBin.locationNo,
           quantity: remainingToPick,
         });
       }
     } else {
       const returnQty = Math.abs(delta);
       const [fallbackBin] = await tx
-        .select({ binId: bins.binId, locationNo: bins.locationNo })
+        .select({ binId: bins.binId })
         .from(bins)
         .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
         .limit(1);
@@ -140,13 +135,11 @@ export class PickingService {
       ledgerLines.push({
         productId,
         binId: shippingBin.binId,
-        locationNo: shippingBin.locationNo,
         quantity: -returnQty,
       });
       ledgerLines.push({
         productId,
         binId: fallbackBin.binId,
-        locationNo: fallbackBin.locationNo,
         quantity: returnQty,
       });
     }

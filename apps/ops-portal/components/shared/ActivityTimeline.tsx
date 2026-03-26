@@ -71,6 +71,7 @@ export default function ActivityTimeline({
             letterSpacing: '0.05em',
           }}
         >
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         </h3>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -92,6 +93,7 @@ export default function ActivityTimeline({
         }}
       >
         <span className="details-chevron" style={{ fontSize: 10, transition: 'transform 200ms' }}>▶</span>
+        {/* eslint-disable-next-line i18next/no-literal-string */}
         <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>history</span> {displayTitle}
         <span style={{ fontSize: 11, fontWeight: 400 }}>({events.length})</span>
       </summary>

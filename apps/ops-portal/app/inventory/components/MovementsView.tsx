@@ -44,6 +44,14 @@ export default function MovementsView() {
         return val > 0 ? `+${val.toLocaleString()}` : val.toLocaleString();
       }
     },
+    {
+      field: 'onHand',
+      headerName: tInventory('columns.onHand', { fallback: 'On Hand' }),
+      width: 140,
+      type: 'numericColumn',
+      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString() : '0',
+      cellStyle: () => ({ fontWeight: 'bold', color: '#041627' })
+    },
   ], [tCommon, tInventory]);
 
   return (

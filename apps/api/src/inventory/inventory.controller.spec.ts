@@ -19,9 +19,28 @@ describe('InventoryController', () => {
     total: 1,
   };
 
+  const mockLocationsResult = {
+    data: [
+      {
+        locationId: 'LOC001',
+        code: 'SIN',
+        name: 'Singapore',
+        zones: [
+          {
+            zoneId: 'Z001',
+            code: 'MAIN',
+            name: 'Main Zone',
+            bins: [{ binId: 'B001', binNumber: 'SHIPPING' }],
+          },
+        ],
+      },
+    ],
+  };
+
   const mockService = {
     findAll: jest.fn().mockResolvedValue(mockResult),
     findBins: jest.fn().mockResolvedValue(mockBinsResult),
+    findAllLocations: jest.fn().mockResolvedValue(mockLocationsResult),
   };
 
   beforeEach(async () => {
@@ -81,6 +100,21 @@ describe('InventoryController', () => {
         limit: 10,
         locationNo: 'LOC01',
       });
+    });
+  });
+
+  describe('findAllLocations', () => {
+    it('should return the full topography hierarchy', async () => {
+      const result = await controller.findAllLocations();
+      expect(result).toEqual(mockLocationsResult);
+      expect(mockService.findAllLocations).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return nested zones and bins', async () => {
+      const result = await controller.findAllLocations();
+      expect(result.data[0].zones).toHaveLength(1);
+      expect(result.data[0].zones[0].bins).toHaveLength(1);
+      expect(result.data[0].zones[0].bins[0].binNumber).toBe('SHIPPING');
     });
   });
 });

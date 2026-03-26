@@ -10,10 +10,14 @@ export const outbox = modbmCore.table('outbox', {
   payload: jsonb('payload'),
   createdOn: timestamp('created_on', { withTimezone: true }),
   processedAt: timestamp('processed_at', { withTimezone: true }),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  lastError: text('last_error'),
 });
 
 export const accounts = modbmCore.table('accounts', {
   accountId: uuid('account_id').primaryKey(),
+  accountNumber: text('account_number').notNull(),
+  name: text('name').notNull(),
   erpnextId: text('erpnext_id'),
 });
 
@@ -22,12 +26,4 @@ export const suppliers = modbmCore.table('suppliers', {
   erpnextId: text('erpnext_id'),
 });
 
-export const salesInvoices = modbmCore.table('sales_invoices', {
-  invoiceId: uuid('invoice_id').primaryKey(),
-  erpnextJournalId: text('erpnext_journal_id'),
-});
 
-export const purchaseInvoices = modbmCore.table('purchase_invoices', {
-  invoiceId: uuid('invoice_id').primaryKey(),
-  erpnextJournalId: text('erpnext_journal_id'),
-});

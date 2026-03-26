@@ -266,6 +266,48 @@ export const purchaseOrderReceptionLines = modbmCore.table(
   },
 );
 
+// ---------------------------------------------------------------------------
+// locations  (Physical warehouses or regional centers)
+// ---------------------------------------------------------------------------
+export const locations = modbmCore.table('locations', {
+  locationId: uuid('location_id').primaryKey().defaultRandom(),
+  code: text('code').notNull().unique(), // e.g. "SIN"
+  name: text('name').notNull(),
+  addressLine1: text('address_line_1'),
+  city: text('city'),
+  state: text('state'),
+  country: text('country'),
+  postCode: text('post_code'),
+  sourceId: text('source_id').unique(),
+  source: text('source').notNull().default('app'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// zones  (Logical or physical areas within a location, e.g. 'Bulk', 'Picking')
+// ---------------------------------------------------------------------------
+export const zones = modbmCore.table(
+  'zones',
+  {
+    zoneId: uuid('zone_id').primaryKey().defaultRandom(),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    code: text('code').notNull(),
+    name: text('name').notNull(),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    unq: unique('zones_code_location_unq').on(t.code, t.locationId),
+  }),
+);
+
 // inventory_levels — Legacy table removed. Now defined as a dynamic VIEW below.
 
 // ---------------------------------------------------------------------------
@@ -276,7 +318,9 @@ export const bins = modbmCore.table(
   {
     binId: uuid('bin_id').primaryKey().defaultRandom(),
     binNumber: text('bin_number').notNull(),
-    locationNo: text('location_no').notNull().default('MAIN'),
+    zoneId: uuid('zone_id')
+      .notNull()
+      .references(() => zones.zoneId),
     binType: text('bin_type'),
     isConsignment: boolean('is_consignment').default(false),
     isBonded: boolean('is_bonded').default(false),
@@ -288,7 +332,7 @@ export const bins = modbmCore.table(
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },
   (t) => ({
-    unq: unique('bins_bin_number_location_unq').on(t.binNumber, t.locationNo),
+    unq: unique('bins_bin_number_zone_unq').on(t.binNumber, t.zoneId),
   }),
 );
 
@@ -324,7 +368,12 @@ export const inventoryLedger = modbmCore.table('inventory_ledger', {
   binId: uuid('bin_id')
     .notNull()
     .references(() => bins.binId),
-  locationNo: text('location_no').notNull(),
+  locationId: uuid('location_id')
+    .notNull()
+    .references(() => locations.locationId),
+  zoneId: uuid('zone_id')
+    .notNull()
+    .references(() => zones.zoneId),
   quantity: numeric('quantity').notNull(),
 });
 
@@ -360,6 +409,8 @@ export const outbox = modbmCore.table('outbox', {
   payload: jsonb('payload'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
+  lockedUntil: timestamp('locked_until', { withTimezone: true }),
+  lastError: text('last_error'),
 });
 
 // ---------------------------------------------------------------------------
@@ -368,7 +419,7 @@ export const outbox = modbmCore.table('outbox', {
 export const inventoryLevels = modbmCore
   .view('inventory_levels', {
     inventoryLevelId: uuid('inventory_level_id'), // Fake ID for backwards compatibility
-    locationNo: text('location_no'),
+    locationId: uuid('location_id'),
     productId: uuid('product_id'),
     quantityOnHand: numeric('quantity_on_hand'),
     quantityCommitted: numeric('quantity_committed'),
@@ -377,13 +428,63 @@ export const inventoryLevels = modbmCore
   .existing();
 
 // ---------------------------------------------------------------------------
+// account_groups  (Administrative grouping and GL routing)
+// ---------------------------------------------------------------------------
+export const accountGroups = modbmCore.table('account_groups', {
+  accountGroupId: uuid('account_group_id').primaryKey().defaultRandom(),
+  groupCode: text('group_code').unique().notNull(),
+  name: text('name').notNull(),
+  defaultDiscountPercentage: numeric('default_discount_percentage').default(
+    '0',
+  ),
+  defaultArAccountId: uuid('default_ar_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultRevenueAccountId: uuid('default_revenue_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// supplier_groups  (Administrative grouping and GL routing)
+// ---------------------------------------------------------------------------
+export const supplierGroups = modbmCore.table('supplier_groups', {
+  supplierGroupId: uuid('supplier_group_id').primaryKey().defaultRandom(),
+  groupCode: text('group_code').unique().notNull(),
+  name: text('name').notNull(),
+  defaultDiscountPercentage: numeric('default_discount_percentage').default(
+    '0',
+  ),
+  defaultApAccountId: uuid('default_ap_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// product_groups  (Administrative grouping and GL routing)
+// ---------------------------------------------------------------------------
+export const productGroups = modbmCore.table('product_groups', {
+  productGroupId: uuid('product_group_id').primaryKey().defaultRandom(),
+  groupCode: text('group_code').unique().notNull(),
+  name: text('name').notNull(),
+  defaultRevenueAccountId: uuid('default_revenue_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultExpenseAccountId: uuid('default_expense_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+});
+
+// ---------------------------------------------------------------------------
 // products  (Native schema structure mapped to CDM product definitions)
 // ---------------------------------------------------------------------------
 export const products = modbmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
-  productGroupName: text('product_group_name'),
+  productGroupId: uuid('product_group_id').references(
+    () => productGroups.productGroupId,
+  ),
   barcode: text('barcode'),
   listPrice: numeric('list_price', { precision: 12, scale: 2 }).default('0'),
   standardCost: numeric('standard_cost', { precision: 12, scale: 2 }).default(
@@ -442,7 +543,9 @@ export const accounts = modbmCore.table('accounts', {
   primaryContactName: text('primary_contact_name'),
   primaryContactEmail: text('primary_contact_email'),
   primaryContactPhone: text('primary_contact_phone'),
-  customerGroup: text('customer_group'),
+  accountGroupId: uuid('account_group_id').references(
+    () => accountGroups.accountGroupId,
+  ),
   stateCode: text('state_code').notNull().default('active'),
   gstPosition: text('gst_position'),
   currencyCode: text('currency_code').notNull().default('EUR'),
@@ -478,7 +581,9 @@ export const suppliers = modbmCore.table('suppliers', {
   vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
   vendorNumber: text('vendor_number').unique().notNull(),
   name: text('name').notNull(),
-  vendorGroup: text('vendor_group'),
+  supplierGroupId: uuid('supplier_group_id').references(
+    () => supplierGroups.supplierGroupId,
+  ),
   address1Line1: text('address1_line1'),
   address1Line2: text('address1_line2'),
   address1City: text('address1_city'),

@@ -80,6 +80,7 @@ describe('OrdersWriteService', () => {
   let mockInventoryService: any;
   let mockAccountsService: any;
   let mockProductsService: any;
+  let mockGstService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -294,7 +295,7 @@ describe('OrdersWriteService', () => {
     it('should snapshot customer discount onto the order', async () => {
       setupCreate({ disc: '15' });
       const result = await service.create(validDto, 'admin');
-      expect(result.customerDiscount).toBe('15');
+      expect((result as any).customerDiscount).toBe('15');
     });
 
     it('should snapshot non-EUR currency onto the order (ADV-034)', async () => {

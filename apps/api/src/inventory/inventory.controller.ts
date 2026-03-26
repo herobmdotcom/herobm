@@ -44,6 +44,12 @@ export class InventoryController {
     return this.inventoryService.findBins({ ...query, locationNo });
   }
 
+  @Get('locations')
+  @CasbinAction('read')
+  findAllLocations() {
+    return this.inventoryService.findAllLocations();
+  }
+
   @Get('movements')
   @CasbinAction('read')
   getMovements(@Query('days') days?: string) {

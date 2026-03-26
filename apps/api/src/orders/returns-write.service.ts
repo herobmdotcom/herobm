@@ -347,7 +347,7 @@ export class ReturnsWriteService {
         }
 
         const [dockBin] = await tx
-          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .select({ binId: bins.binId })
           .from(bins)
           .where(eq(bins.binNumber, 'DOCK'))
           .limit(1);
@@ -359,7 +359,6 @@ export class ReturnsWriteService {
         const receiveLines = stockLines.map((line) => ({
           productId: line.productId,
           binId: dockBin.binId,
-          locationNo: dockBin.locationNo,
           quantity: parseFloat(line.quantity),
         }));
 

@@ -71,6 +71,7 @@
       "createPO": "+ Create PO",
       "copyOrder": "📋 Copy Order",
       "createReturn": "↩ Create Return",
+      "enterSupplierBill": "Enter Supplier Bill",
       "save": "💾 Save",
       "customLine": "Custom Line"
     },
@@ -137,6 +138,8 @@
       "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
       "createInvoice": "Create Invoice",
+      "printInvoice": "Print Invoice PDF",
+      "generateInvoice": "Generate Invoice",
       "copyOrder": "Copy Order",
       "createReturn": "Create Return",
       "archive": "Archive",
@@ -387,7 +390,8 @@
       "failedToCreatePO": "Failed to create purchase order",
       "pleaseSelectCustomer": "Please select a customer",
       "pleaseSelectSupplier": "Please select a supplier",
-      "pleaseAddLineItem": "Please add at least one line item"
+      "pleaseAddLineItem": "Please add at least one line item",
+      "failedToEnterSupplierBill": "Failed to generate supplier bill"
     },
     "gst": {
       "exempt": "Exempt",
@@ -444,14 +448,18 @@
     "accountCreated": "Account created successfully",
     "accountUpdated": "Account updated successfully",
     "productCreated": "Product created successfully",
-    "productUpdated": "Product updated successfully"
+    "productUpdated": "Product updated successfully",
+    "invoiceGenerated": "Invoice generated successfully!",
+    "supplierBillEntered": "Supplier bill generated successfully!"
   },
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
     "removeLine": "Remove this line item?",
     "removeReturnLine": "Remove this return line?",
     "removeShipmentLine": "Remove this shipment line?",
-    "removeReturnLineItem": "Remove this return line item?"
+    "removeReturnLineItem": "Remove this return line item?",
+    "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
+    "enterSupplierBill": "Enter supplier bill? This will publish AP ledger entries to ERPNext."
   },
   "picking": {
     "title": "Picking",
@@ -567,7 +575,8 @@
     "tabs": {
       "products": "Products",
       "binContents": "Bin Contents",
-      "movements": "Movements"
+      "movements": "Movements",
+      "locations": "Locations"
     },
     "placeholders": {
       "searchInventory": "Search by product name, number, or location…",
@@ -592,7 +601,8 @@
       "reference": "Ref / Document",
       "stockIn": "Stock In",
       "stockOut": "Stock Out",
-      "netChange": "Net Change"
+      "netChange": "Net Change",
+      "onHand": "On Hand"
     }
   },
   "products": {

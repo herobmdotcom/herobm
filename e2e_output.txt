@@ -1,0 +1,78 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+PASS test/app.e2e-spec.ts
+FAIL test/inventory-cycle.e2e-spec.ts
+  ΓùÅ Inventory Cycle (e2e) ΓÇ║ Step 3: Sales Dispatch should update QOH
+
+    expected 201 "Created", got 404 "Not Found"
+
+      132 |         lines: [{ productId, quantity: '4', pricePerUnit: '50.00' }],
+      133 |       })
+    > 134 |       .expect(201);
+          |        ^
+      135 |     const soId = soRes.body.salesOrderId;
+      136 |
+      137 |     // Transition state strictly
+
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:134:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Inventory Cycle (e2e) ΓÇ║ Step 4: Sales Return should update QOH
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      199 |       .set('Authorization', `Bearer ${adminToken}`)
+      200 |       .expect(200);
+    > 201 |     const soId = mySo.body.data[0].id;
+          |                                    ^
+      202 |
+      203 |     const mySoDetail = await request(app.getHttpServer())
+      204 |       .get(`/api/sales-orders/${soId}`)
+
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:201:36)
+
+PASS test/inventory.e2e-spec.ts
+PASS test/picking.e2e-spec.ts
+PASS test/archive.e2e-spec.ts
+PASS test/orders-write.e2e-spec.ts
+PASS test/returns.e2e-spec.ts
+PASS test/reports.e2e-spec.ts
+PASS test/sales-invoices.e2e-spec.ts
+PASS test/audit.e2e-spec.ts
+PASS test/purchase-invoices.e2e-spec.ts
+PASS test/receptions.e2e-spec.ts
+PASS test/suppliers.e2e-spec.ts
+  ΓùÅ Console
+
+    console.warn
+      Could not clean up all E2E suppliers (some have POs attached)
+
+      43 |       await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
+      44 |     } catch (e) {
+    > 45 |       console.warn(
+         |               ^
+      46 |         'Could not clean up all E2E suppliers (some have POs attached)',
+      47 |       );
+      48 |     }
+
+      at Object.<anonymous> (suppliers.e2e-spec.ts:45:15)
+
+PASS test/products.e2e-spec.ts
+PASS test/accounts.e2e-spec.ts
+PASS test/gl.e2e-spec.ts
+PASS test/system-logs.e2e-spec.ts
+
+Test Suites: 1 failed, 16 passed, 17 total
+Tests:       2 failed, 174 passed, 176 total
+Snapshots:   0 total
+Time:        11.705 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

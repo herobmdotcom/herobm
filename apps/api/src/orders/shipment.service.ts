@@ -288,7 +288,7 @@ export class ShipmentService {
         const strategy = getValuationStrategy(method);
 
         const [shippingBin] = await tx
-          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .select({ binId: bins.binId })
           .from(bins)
           .where(eq(bins.binNumber, 'SHIPPING'))
           .limit(1);
@@ -300,7 +300,6 @@ export class ShipmentService {
         const dispatchLines = stockLines.map((line) => ({
           productId: line.productId!,
           binId: shippingBin.binId,
-          locationNo: shippingBin.locationNo,
           quantity: -parseFloat(line.quantity),
         }));
 
@@ -414,7 +413,7 @@ export class ShipmentService {
         }
 
         const [shippingBin] = await tx
-          .select({ binId: bins.binId, locationNo: bins.locationNo })
+          .select({ binId: bins.binId })
           .from(bins)
           .where(eq(bins.binNumber, 'SHIPPING'))
           .limit(1);
@@ -426,7 +425,6 @@ export class ShipmentService {
         const returnLines = stockLines.map((line) => ({
           productId: line.productId!,
           binId: shippingBin.binId,
-          locationNo: shippingBin.locationNo,
           quantity: parseFloat(line.quantity),
         }));
 

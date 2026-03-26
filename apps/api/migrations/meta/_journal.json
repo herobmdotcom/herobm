@@ -15,6 +15,34 @@
       "when": 1774467879708,
       "tag": "0001_bitter_siren",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774514860974,
+      "tag": "0002_add_outbox_locking",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774519211836,
+      "tag": "0003_thankful_killraven",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774523119992,
+      "tag": "0004_ancient_firebrand",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774523174968,
+      "tag": "0005_lovely_wallow",
+      "breakpoints": true
     }
   ]
 }

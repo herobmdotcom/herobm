@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PickingSlipService } from './picking-slip.service';
-import { PickingSlipService } from './picking-slip.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 
 // ---------------------------------------------------------------------------

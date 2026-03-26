@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState, useEffect, use } from 'react';
@@ -476,20 +475,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={async () => {
-                        if (!confirm('Enter supplier bill? This will publish AP ledger entries to ERPNext.')) return;
+                        if (!confirm(tConfirm('enterSupplierBill'))) return;
                         setSaving(true);
                         try {
                           await apiMutate(`/api/purchase-orders/${id}/invoice`, 'POST');
                           await loadOrder(undefined, false);
                         } catch (err) {
-                          setError(err instanceof Error ? err.message : 'Failed to generate supplier bill');
+                          setError(err instanceof Error ? err.message : tCommon('errors.failedToEnterSupplierBill'));
                         } finally {
                           setSaving(false);
                         }
                       }}
                       disabled={saving || invoicing}
                     >
-                      Enter Supplier Bill
+                      {tPurchase('buttons.enterSupplierBill')}
                     </button>
                     <button
                       className="btn btn-secondary btn-sm"

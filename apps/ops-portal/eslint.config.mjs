@@ -2,6 +2,7 @@ import eslint from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import i18nextPlugin from 'eslint-plugin-i18next';
+import reactPlugin from 'eslint-plugin-react';
 
 export default tseslint.config(
   {
@@ -20,6 +21,7 @@ export default tseslint.config(
   {
     plugins: {
       i18next: i18nextPlugin,
+      react: reactPlugin,
     },
     rules: {
       'i18next/no-literal-string': ['warn', {
@@ -30,6 +32,7 @@ export default tseslint.config(
       }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      'react/jsx-key': 'error',
       
       // ADV-029: PLG Stack Reporting - Ban direct console.error
       'no-restricted-syntax': [

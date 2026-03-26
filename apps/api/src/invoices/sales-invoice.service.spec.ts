@@ -552,7 +552,7 @@ describe('SalesInvoiceService', () => {
       const result = await service.findByOrder('order-001');
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty('invoiceId', 'inv-001');
-      expect(result[0].lines).toHaveLength(1);
+      expect((result[0] as any).lines).toHaveLength(1);
     });
   });
 

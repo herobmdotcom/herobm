@@ -146,6 +146,7 @@ export default function PickingSection({
               letterSpacing: '0.05em', margin: 0
             }}
           >
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>fact_check</span>
             {tPicking('title')}
           </h3>
@@ -214,6 +215,7 @@ export default function PickingSection({
                 letterSpacing: '0.05em', margin: 0
               }}
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>local_shipping</span>
               {tPicking('shipments')}
               {hasShipments && <span style={{ fontSize: 11, fontWeight: 400 }}>({shipments.length})</span>}
@@ -246,6 +248,7 @@ export default function PickingSection({
               >
                 <div className="flex items-center justify-between mb-3">
                   <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[16px]">local_shipping</span>
                     {tPicking('newShipment')}
                   </strong>

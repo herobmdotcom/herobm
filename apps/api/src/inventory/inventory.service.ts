@@ -10,6 +10,8 @@ import {
   inventoryEntries,
   inventoryLedger,
   outbox,
+  zones,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -30,8 +32,8 @@ export class InventoryService {
         productId: inventoryLevels.productId,
         productNumber: products.productNumber,
         productName: products.name,
-        locationNo: inventoryLevels.locationNo,
-        locationName: sql<string>`${inventoryLevels.locationNo}`,
+        locationNo: locations.code,
+        locationName: locations.name,
         quantityOnHand: inventoryLevels.quantityOnHand,
         quantityCommitted: inventoryLevels.quantityCommitted,
         quantityOnOrder: inventoryLevels.quantityOnOrder,
@@ -39,6 +41,7 @@ export class InventoryService {
       })
       .from(inventoryLevels)
       .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+      .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
       .$dynamic();
 
     if (searchTerm) {
@@ -46,13 +49,13 @@ export class InventoryService {
         or(
           ilike(products.name, searchTerm),
           ilike(products.productNumber, searchTerm),
-          ilike(inventoryLevels.locationNo, searchTerm),
+          ilike(locations.code, searchTerm),
         ),
       );
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(inventoryLevels.locationNo, query.locationNo));
+      qb = qb.where(eq(locations.code, query.locationNo));
     }
 
     const rows = await qb.orderBy(products.name).limit(limit).offset(offset);
@@ -80,8 +83,8 @@ export class InventoryService {
         productId: inventoryLevels.productId,
         productNumber: products.productNumber,
         productName: products.name,
-        locationNo: inventoryLevels.locationNo,
-        locationName: sql<string>`${inventoryLevels.locationNo}`,
+        locationNo: locations.code,
+        locationName: locations.name,
         quantityOnHand: inventoryLevels.quantityOnHand,
         quantityCommitted: inventoryLevels.quantityCommitted,
         quantityOnOrder: inventoryLevels.quantityOnOrder,
@@ -89,8 +92,9 @@ export class InventoryService {
       })
       .from(inventoryLevels)
       .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+      .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
       .where(inArray(inventoryLevels.productId, productIds))
-      .orderBy(products.name, inventoryLevels.locationNo);
+      .orderBy(products.name, locations.code);
 
     // Provide default backward-compatible fields
     const mappedRows = rows.map((r) => ({
@@ -110,7 +114,7 @@ export class InventoryService {
         binContentId: binContents.binContentId,
         binId: binContents.binId,
         binNumber: bins.binNumber,
-        locationNo: bins.locationNo,
+        locationNo: locations.code,
         productId: binContents.productId,
         productNumber: products.productNumber,
         productName: products.name,
@@ -118,6 +122,8 @@ export class InventoryService {
       })
       .from(binContents)
       .innerJoin(bins, eq(binContents.binId, bins.binId))
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .innerJoin(locations, eq(zones.locationId, locations.locationId))
       .innerJoin(products, eq(binContents.productId, products.productId))
       .$dynamic();
 
@@ -132,7 +138,7 @@ export class InventoryService {
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(bins.locationNo, query.locationNo));
+      qb = qb.where(eq(locations.code, query.locationNo));
     }
 
     const rows = await qb
@@ -141,6 +147,75 @@ export class InventoryService {
       .offset(offset);
 
     return { data: rows, page, limit };
+  }
+
+  /**
+   * Return the full warehouse topography hierarchy:
+   * Location → Zone[] → Bin[]
+   * Used by the Ops-Portal Topography read-only view.
+   */
+  async findAllLocations() {
+    const locRows = await this.db
+      .select({
+        locationId: locations.locationId,
+        code: locations.code,
+        name: locations.name,
+        city: locations.city,
+        country: locations.country,
+        source: locations.source,
+      })
+      .from(locations)
+      .orderBy(locations.code);
+
+    const zoneRows = await this.db
+      .select({
+        zoneId: zones.zoneId,
+        locationId: zones.locationId,
+        code: zones.code,
+        name: zones.name,
+        source: zones.source,
+      })
+      .from(zones)
+      .orderBy(zones.code);
+
+    const binRows = await this.db
+      .select({
+        binId: bins.binId,
+        zoneId: bins.zoneId,
+        binNumber: bins.binNumber,
+        binType: bins.binType,
+        isConsignment: bins.isConsignment,
+        isBonded: bins.isBonded,
+        isUnavailable: bins.isUnavailable,
+        source: bins.source,
+      })
+      .from(bins)
+      .orderBy(bins.binNumber);
+
+    // Assemble the tree in-memory
+    const zonesByLocation = new Map<string, any[]>();
+    for (const z of zoneRows) {
+      const arr = zonesByLocation.get(z.locationId) ?? [];
+      arr.push({ ...z, bins: [] as any[] });
+      zonesByLocation.set(z.locationId, arr);
+    }
+
+    for (const b of binRows) {
+      for (const [, zArr] of zonesByLocation) {
+        const zone = zArr.find((z: any) => z.zoneId === b.zoneId);
+        if (zone) {
+          zone.bins.push(b);
+          break;
+        }
+      }
+    }
+
+    const data = locRows.map((loc) => ({
+      ...loc,
+      zones: zonesByLocation.get(loc.locationId) ?? [],
+    }));
+
+    return { data };
   }
 
   async getMovements(days: number) {
@@ -154,13 +229,14 @@ export class InventoryService {
         p.name AS "productName",
         SUM(CASE WHEN l.quantity::numeric > 0 THEN l.quantity::numeric ELSE 0 END) AS "stockIn",
         SUM(CASE WHEN l.quantity::numeric < 0 THEN ABS(l.quantity::numeric) ELSE 0 END) AS "stockOut",
-        SUM(l.quantity::numeric) AS "netChange"
+        SUM(l.quantity::numeric) AS "netChange",
+        MAX(p.quantity_on_hand::numeric) AS "onHand"
       FROM modbm_core.inventory_ledger l
       JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
       JOIN modbm_core.products p ON p.product_id = l.product_id
       WHERE e.entry_date >= ${cutoffIso}
         AND e.source_type != 'INITIAL_IMPORT'
-      GROUP BY p.product_number, p.name
+      GROUP BY p.product_id, p.product_number, p.name
       HAVING SUM(ABS(l.quantity::numeric)) > 0
       ORDER BY p.name ASC
     `;
@@ -188,7 +264,6 @@ export class InventoryService {
       lines: {
         productId: string;
         binId: string;
-        locationNo: string;
         quantity: number;
       }[];
     },
@@ -207,14 +282,35 @@ export class InventoryService {
       })
       .returning({ entryId: inventoryEntries.entryId });
 
+    // 1b. Resolve Zone and Location for all bins
+    const binIds = [...new Set(params.lines.map((l) => l.binId))];
+    const resolvedBins = await tx
+      .select({
+        binId: bins.binId,
+        zoneId: bins.zoneId,
+        locationId: zones.locationId,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(inArray(bins.binId, binIds));
+
+    const binMap = new Map<string, any>(
+      resolvedBins.map((b: any) => [b.binId, b]),
+    );
+
     // 2. Create Ledger Lines
-    const ledgerPayload = params.lines.map((l) => ({
-      entryId: entry.entryId,
-      productId: l.productId,
-      binId: l.binId,
-      locationNo: l.locationNo,
-      quantity: l.quantity.toString(),
-    }));
+    const ledgerPayload = params.lines.map((l) => {
+      const b = binMap.get(l.binId);
+      if (!b) throw new Error(`Bin ${l.binId} not found in database`);
+      return {
+        entryId: entry.entryId,
+        productId: l.productId,
+        binId: l.binId,
+        locationId: b.locationId,
+        zoneId: b.zoneId,
+        quantity: l.quantity.toString(),
+      };
+    });
     await tx.insert(inventoryLedger).values(ledgerPayload);
 
     // 3. Update Cache (bin_contents)

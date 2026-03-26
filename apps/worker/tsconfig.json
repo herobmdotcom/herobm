@@ -12,5 +12,5 @@
       "@modbm/erpnext-client": ["../../packages/erpnext-client/src/index.ts"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "test/**/*"]
 }

@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +28,9 @@ export default function InvoicesSection({
     pickingSummary, setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
     const tCommon = useTranslations('common');
+    const tSales = useTranslations('salesOrders');
+    const tConfirm = useTranslations('confirm');
+    const tToast = useTranslations('toast');
 
     // Local state — only this section needs it
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
@@ -55,7 +57,7 @@ export default function InvoicesSection({
     };
 
     const handleGenerate = async () => {
-        if (!confirm('Generate financial invoice for selected quantities? This will publish AR ledger entries.')) return;
+        if (!confirm(tConfirm('generateInvoice'))) return;
         setInvoicing(true);
         setError('');
         try {
@@ -66,12 +68,12 @@ export default function InvoicesSection({
                 notes: newInvoiceNotes || undefined,
                 lines: lines.length > 0 ? lines : undefined,
             });
-            toast.success('Invoice generated successfully!');
+            toast.success(tToast('invoiceGenerated'));
             handleCancel();
             await loadInvoices();
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to generate invoice');
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
         } finally {
             setInvoicing(false);
         }
@@ -93,7 +95,7 @@ export default function InvoicesSection({
                         })()}
                         onClick={handleCreateClick}
                     >
-                        Create Invoice
+                        {tSales('buttons.createInvoice')}
                     </button>
                 )}
             </div>
@@ -172,7 +174,7 @@ export default function InvoicesSection({
                     
                     <div className="flex items-center gap-2">
                         <button className="btn btn-primary btn-sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
-                            Generate Invoice
+                            {tSales('buttons.generateInvoice')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
                             {tCommon('cancel')}
@@ -216,7 +218,7 @@ export default function InvoicesSection({
                                 }}
                             >
                                 <span className="material-symbols-outlined text-[14px]">print</span>
-                                Print PDF
+                                {tSales('buttons.printInvoice')}
                             </button>
                         </div>
                         

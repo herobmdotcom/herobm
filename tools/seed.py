@@ -126,11 +126,31 @@ def seed_system_records(dry_run: bool = False) -> None:
         return
     sql = """
     INSERT INTO modbm_core.products (product_id, product_number, name) 
-      VALUES ('00000000-0000-0000-0000-000000000000', 'CUSTOM', 'Custom Line Product') 
+      VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM-CUSTOM-LINE', 'Custom Line Product') 
+      ON CONFLICT (product_id) DO UPDATE SET product_number = 'SYSTEM-CUSTOM-LINE';
+
+    INSERT INTO modbm_core.bins (bin_number, zone_id, source, bin_type, is_unavailable)
+      SELECT 'SHIPPING', zone_id, 'system', 'staging', true FROM modbm_core.zones WHERE code = 'MAIN'
+      ON CONFLICT (bin_number, zone_id) DO UPDATE SET source = 'system', bin_type = 'staging', is_unavailable = true;
+
+    INSERT INTO modbm_core.bins (bin_number, zone_id, source, bin_type, is_unavailable)
+      SELECT 'DOCK', zone_id, 'system', 'staging', true FROM modbm_core.zones WHERE code = 'MAIN'
+      ON CONFLICT (bin_number, zone_id) DO UPDATE SET source = 'system', bin_type = 'staging', is_unavailable = true;
+
+    INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code)
+      VALUES ('00000000-0000-0000-0000-000000000001', 'LEGACY-SALES', 'legacy')
       ON CONFLICT DO NOTHING;
 
-    INSERT INTO modbm_core.bins (bin_number, location_no, source) 
-      VALUES ('SHIPPING', 'MAIN', 'custom'), ('DOCK', 'MAIN', 'custom') 
+    INSERT INTO modbm_core.sales_order_lines (sales_order_line_id, sales_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage)
+      VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0)
+      ON CONFLICT DO NOTHING;
+
+    INSERT INTO modbm_core.purchase_orders (purchase_order_id, order_number, state_code)
+      VALUES ('00000000-0000-0000-0000-000000000002', 'LEGACY-PURCHASE', 'legacy')
+      ON CONFLICT DO NOTHING;
+
+    INSERT INTO modbm_core.purchase_order_lines (purchase_order_line_id, purchase_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage)
+      VALUES ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000002', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0)
       ON CONFLICT DO NOTHING;
     """
     psql_sql(sql)

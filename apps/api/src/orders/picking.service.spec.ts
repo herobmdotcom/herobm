@@ -27,7 +27,7 @@ function createMockQueryBuilder(resolvedValue: any = []) {
   return qb;
 }
 
-function createMockTx(selectResponses?: any[][]) {
+function createMockTx(selectResponses?: any[][]): any {
   let selectCall = 0;
   return {
     select: jest.fn().mockImplementation(() => {

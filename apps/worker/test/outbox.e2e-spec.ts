@@ -10,7 +10,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { pollOutbox, processEvent } from '../src/relay.service';
 
-import { outbox, modbmCore } from '../src/schema';
+import { outbox, modbmCore, accounts } from '../src/schema';
 
 describe('Worker E2E - Outbox Integration', () => {
   let pgClient: postgres.Sql;
@@ -20,7 +20,7 @@ describe('Worker E2E - Outbox Integration', () => {
   
   // Mock the ERP client
   const mockErpClient = {
-    createJournalEntry: vi.fn().mockResolvedValue(true)
+    createResource: vi.fn().mockResolvedValue({ name: 'ERP-CUST-123' })
   };
 
   beforeAll(async () => {
@@ -31,75 +31,73 @@ describe('Worker E2E - Outbox Integration', () => {
     const pgDb = process.env.POSTGRES_DB || 'custom_app';
 
     pgClient = postgres(`postgres://${pgUser}:${pgPass}@${pgHost}:${pgPort}/${pgDb}`);
-    db = drizzle(pgClient, { schema: { modbmCore, outbox } });
+    db = drizzle(pgClient, { schema: { modbmCore, outbox, accounts } });
 
     const redisHost = process.env.REDIS_HOST || 'localhost';
     const redisPassword = process.env.REDIS_PASSWORD;
     const connection = { host: redisHost, port: 6379, password: redisPassword };
 
-    queue = new Queue('erpnext-sync-test', { connection });
+    queue = new Queue('erpnext-sync-test-2', { connection });
     
-    // Pass the mockErpClient when processing the event inside the worker
-    worker = new Worker('erpnext-sync-test', async (job) => {
-      await processEvent(job, mockErpClient);
+    // Explicitly pass db to processEvent! (Solves ADV-062)
+    worker = new Worker('erpnext-sync-test-2', async (job) => {
+      await processEvent(job, mockErpClient, db);
     }, { connection });
     
-    // Await ready
     await worker.waitUntilReady();
   });
 
   afterAll(async () => {
-    // Cleanup BullMQ / Redis
     await worker.close();
     await queue.close();
-    
-    // Disconnect Postgres
     await pgClient.end();
   });
 
-  it('should pull a goods_received event from outbox, queue it, and process it', async () => {
+  it('should process sales_invoiced event and JIT sync customer', async () => {
     const testEventId = randomUUID();
+    const testCustomerId = randomUUID();
+
+    // Setup an account record to be JIT-synced
+    await db.insert(accounts).values({
+      accountId: testCustomerId,
+      accountNumber: 'E2E-1234',
+      name: 'E2E Corp',
+      erpnextId: null,
+    });
     
-    // 1. Seed the raw row into the Postgres database.
     await db.insert(outbox).values({
       outboxId: testEventId,
       aggregateType: 'sales_order',
       aggregateId: randomUUID(),
-      eventType: 'goods_received',
+      eventType: 'sales_invoiced',
       payload: {
-        receptionNumber: 'E2E-TESTING-001',
-        inventoryValueAdded: '500',
-        purchasePriceVariance: '0'
+        customerId: testCustomerId,
+        customerName: 'E2E Corp'
       }
     });
 
-    // Promise that resolves when the worker successfully completes OUR job
     const jobCompletionPromise = new Promise<{ jobId: string }>((resolve) => {
       worker.on('completed', (job) => {
-        if (job.id === testEventId) {
-          resolve({ jobId: job.id });
-        }
+        if (job.id === testEventId) resolve({ jobId: job.id });
       });
     });
 
-    // 2. Trigger the manual polling loop (simulating the setInterval)
     await pollOutbox(db, queue);
-
-    // 3. Await the worker actually finishing the job
     const { jobId } = await jobCompletionPromise;
 
-    // 4. Assertions
-    expect(jobId).toBe(testEventId); // Job ID matches the outbox ID for idempotency
+    expect(jobId).toBe(testEventId); 
 
-    // Verify the mock intercept caught the proper output exactly once
-    expect(mockErpClient.createJournalEntry).toHaveBeenCalledTimes(1);
-    const args = mockErpClient.createJournalEntry.mock.calls[0][0];
-    
-    expect(args.title).toBe('Goods Receipt E2E-TESTING-001');
-    expect(args.accounts[0].account).toBe('Inventory');
-    expect(args.accounts[0].debit_in_account_currency).toBe(500);
+    expect(mockErpClient.createResource).toHaveBeenCalledWith('Customer', {
+       customer_name: 'E2E Corp',
+       customer_type: 'Company',
+       customer_group: 'Commercial',
+       territory: 'All Territories'
+    });
 
-    // Verify the database row was marked as processed
+    // Check that DB was actually updated!
+    const accountCheck = await db.select().from(accounts).where(eq(accounts.accountId, testCustomerId));
+    expect(accountCheck[0].erpnextId).toBe('ERP-CUST-123');
+
     const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, testEventId));
     expect(dbCheck[0].processedAt).not.toBeNull();
   });

@@ -130,8 +130,13 @@ describe('Inventory Cycle (e2e)', () => {
         customerId: accountId,
         name: 'SO Cycle Test',
         lines: [{ productId, quantity: '4', pricePerUnit: '50.00' }],
-      })
-      .expect(201);
+      });
+    
+    if (soRes.status !== 201) {
+      console.log('Failed to create sales order, got status', soRes.status);
+      console.log('Response Error Body:', soRes.body);
+    }
+    expect(soRes.status).toBe(201);
     const soId = soRes.body.salesOrderId;
 
     // Transition state strictly

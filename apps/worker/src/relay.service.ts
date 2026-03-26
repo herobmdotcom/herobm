@@ -1,14 +1,11 @@
 import { Job, Queue } from 'bullmq';
 import { ERPNextClient, JournalEntry } from '@modbm/erpnext-client';
-import { outbox, accounts, suppliers, salesInvoices, purchaseInvoices } from './schema';
-import { eq, isNull, inArray, and, desc } from 'drizzle-orm';
+import { outbox, accounts, suppliers } from './schema';
+import { eq, isNull, inArray, and, or, lt } from 'drizzle-orm';
 import { relayLogger, processingLogger } from './logger';
 
 /** Event types that have active mappers in processEvent. */
 const HANDLED_EVENT_TYPES = [
-  'goods_received',
-  'goods_dispatched',
-  'goods_dispatch_reverted',
   'sales_invoiced',
   'purchase_invoiced',
 ] as const;
@@ -18,11 +15,18 @@ const HANDLED_EVENT_TYPES = [
  */
 export async function pollOutbox(db: any, syncQueue: Queue) {
   try {
+    const now = new Date();
     const pendingEvents = await db
       .select({ id: outbox.outboxId, payload: outbox.payload, type: outbox.eventType })
       .from(outbox)
-      .where(isNull(outbox.processedAt))
-      .where(inArray(outbox.eventType, [...HANDLED_EVENT_TYPES]))
+      .where(
+        and(
+          isNull(outbox.processedAt),
+          isNull(outbox.lastError),
+          or(isNull(outbox.lockedUntil), lt(outbox.lockedUntil, now)),
+          inArray(outbox.eventType, [...HANDLED_EVENT_TYPES])
+        )
+      )
       .limit(50);
 
     for (const event of pendingEvents) {
@@ -33,10 +37,10 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
         { jobId: event.id, removeOnComplete: true }
       );
       
-      // Mark as processed immediately (if BullMQ fails, the job remains in Redis queue)
+      const lockTime = new Date(now.getTime() + 5 * 60000); // +5 minutes
       await db
         .update(outbox)
-        .set({ processedAt: new Date() })
+        .set({ lockedUntil: lockTime })
         .where(eq(outbox.outboxId, event.id));
     }
   } catch (err) {
@@ -47,7 +51,7 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
 /**
  * Maps outbox events to ERPNext Journal Entries and posts them.
  */
-export async function processEvent(job: Job, erpClient: Pick<ERPNextClient, 'createJournalEntry'>, db: any) {
+export async function processEvent(job: Job, erpClient: any, db: any) {
   const { eventId, type, payload } = job.data;
   processingLogger.info({ eventId, eventType: type }, 'Processing event');
 
@@ -56,111 +60,9 @@ export async function processEvent(job: Job, erpClient: Pick<ERPNextClient, 'cre
     return;
   }
 
-  if (type === 'goods_received') {
-    const receivedValue = parseFloat(payload.inventoryValueAdded || '0');
-    const variance = parseFloat(payload.purchasePriceVariance || '0');
-    
-    if (receivedValue === 0 && variance === 0) return; // Nothing to post
-    
-    const accounts = [];
-    
-    if (receivedValue !== 0) {
-       // Debit Inventory (Asset)
-       accounts.push({
-         account: 'Inventory',
-         debit_in_account_currency: receivedValue,
-         credit_in_account_currency: 0
-       });
-       // Credit GRNI (Liability)
-       accounts.push({
-         account: 'Goods Received Not Invoiced',
-         debit_in_account_currency: 0,
-         credit_in_account_currency: receivedValue
-       });
-    }
-
-    if (variance !== 0) {
-       // If positive variance: Actual cost > Standard cost. Debit variance, Credit GRNI
-       const absVar = Math.abs(variance);
-       accounts.push({
-         account: 'Cost of Goods Sold', // Standard Cost variance hits COGS
-         debit_in_account_currency: variance > 0 ? absVar : 0,
-         credit_in_account_currency: variance > 0 ? 0 : absVar
-       });
-       accounts.push({
-         account: 'Goods Received Not Invoiced',
-         debit_in_account_currency: variance > 0 ? 0 : absVar,
-         credit_in_account_currency: variance > 0 ? absVar : 0
-       });
-    }
-
-    const je: JournalEntry = {
-      title: `Goods Receipt ${payload.receptionNumber}`,
-      company: 'ModBM',
-      posting_date: new Date().toISOString().slice(0, 10),
-      user_remark: `Auto-generated for Goods Receipt ${payload.receptionNumber}`,
-      accounts
-    };
-
-    await erpClient.createJournalEntry(je);
-    processingLogger.info({ eventId, eventType: type, receptionNumber: payload.receptionNumber }, 'Created Journal Entry for Goods Receipt');
-
-  } else if (type === 'goods_dispatched') {
-    let totalCogs = 0;
-    if (payload.cogsDetails) {
-        payload.cogsDetails.forEach((c: any) => { totalCogs += parseFloat(c.cogsAmount || '0'); });
-    }
-
-    if (totalCogs === 0) return;
-
-    const je: JournalEntry = {
-      title: `Goods Dispatched ${payload.shipmentNumber}`,
-      company: 'ModBM',
-      posting_date: new Date().toISOString().slice(0, 10),
-      user_remark: `Auto-generated for Shipment ${payload.shipmentNumber}`,
-      accounts: [
-         { account: 'Cost of Goods Sold', debit_in_account_currency: totalCogs, credit_in_account_currency: 0 },
-         { account: 'Inventory', debit_in_account_currency: 0, credit_in_account_currency: totalCogs }
-      ]
-    };
-
-    await erpClient.createJournalEntry(je);
-    processingLogger.info({ eventId, eventType: type, shipmentNumber: payload.shipmentNumber, totalCogs }, 'Created Journal Entry for Shipment');
-
-  } else if (type === 'goods_dispatch_reverted') {
-     const originalDispatch = await db.select({ payload: outbox.payload })
-         .from(outbox)
-         .where(and(eq(outbox.aggregateId, payload.shipmentId), eq(outbox.eventType, 'goods_dispatched')))
-         .orderBy(desc(outbox.createdOn))
-         .limit(1);
-     
-     if (originalDispatch.length > 0) {
-         let totalCogs = 0;
-         const origPayload = originalDispatch[0].payload as any;
-         if (origPayload.cogsDetails) {
-             origPayload.cogsDetails.forEach((c: any) => { totalCogs += parseFloat(c.cogsAmount || '0'); });
-         }
-
-         if (totalCogs > 0) {
-             const je: JournalEntry = {
-               title: `Shipment Reverted ${payload.shipmentNumber}`,
-               company: 'ModBM',
-               posting_date: new Date().toISOString().slice(0, 10),
-               user_remark: `Auto-generated reversal for Shipment ${payload.shipmentNumber}`,
-               accounts: [
-                  { account: 'Inventory', debit_in_account_currency: totalCogs, credit_in_account_currency: 0 },
-                  { account: 'Cost of Goods Sold', debit_in_account_currency: 0, credit_in_account_currency: totalCogs }
-               ]
-             };
-
-             await erpClient.createJournalEntry(je);
-             processingLogger.info({ eventId, eventType: type, shipmentNumber: payload.shipmentNumber, totalCogs }, 'Created Reversal Journal Entry for Shipment');
-         }
-     }
-
-  } else if (type === 'sales_invoiced') {
-    // 1. JIT Master Data Sync for Customer
-    let erpId = payload.erpnextId;
+  try {
+    if (type === 'sales_invoiced') {
+      let erpId = payload.erpnextId;
     if (!erpId && payload.customerId) {
         try {
             processingLogger.info({ eventId, customerName: payload.customerName }, 'JIT Syncing Customer to ERPNext');
@@ -179,33 +81,7 @@ export async function processEvent(job: Job, erpClient: Pick<ERPNextClient, 'cre
             throw err;
         }
     }
-
-    // 2. AR Journal Generation
-    const je: JournalEntry = {
-        title: `Sales Invoice ${payload.invoiceNumber}`,
-        company: 'ModBM',
-        posting_date: new Date().toISOString().slice(0, 10),
-        user_remark: `Auto-generated for Sales Invoice ${payload.invoiceNumber}`,
-        accounts: [
-            { account: 'Debtors', party_type: 'Customer', party: erpId, debit_in_account_currency: payload.totalAccountsReceivable, credit_in_account_currency: 0 },
-            { account: 'Sales', debit_in_account_currency: 0, credit_in_account_currency: payload.totalRevenue }
-        ]
-    };
-
-    if (payload.totalTax > 0) {
-        je.accounts.push({ account: 'Duties and Taxes', debit_in_account_currency: 0, credit_in_account_currency: payload.totalTax });
-    }
-
-    const journalRes = await erpClient.createJournalEntry(je);
-    processingLogger.info({ eventId, eventType: type, invoiceNumber: payload.invoiceNumber, journalName: journalRes.name }, 'Created AR Journal Entry');
-
-    // Update ModBM with traceability Link
-    await db.update(salesInvoices)
-      .set({ erpnextJournalId: journalRes.name })
-      .where(eq(salesInvoices.invoiceId, payload.invoiceId));
-
   } else if (type === 'purchase_invoiced') {
-    // 1. JIT Master Data Sync for Supplier
     let erpId = payload.erpnextId;
     if (!erpId && payload.supplierId) {
         try {
@@ -224,29 +100,19 @@ export async function processEvent(job: Job, erpClient: Pick<ERPNextClient, 'cre
              throw err;
         }
     }
+  }
 
-    // 2. AP Journal Generation
-    const je: JournalEntry = {
-        title: `Purchase Bill ${payload.internalBillNumber || payload.invoiceNumber}`,
-        company: 'ModBM',
-        posting_date: new Date().toISOString().slice(0, 10),
-        user_remark: `Auto-generated for internal AP Bill ${payload.invoiceNumber} (Supplier Ref: ${payload.supplierInvoiceNumber || 'N/A'})`,
-        accounts: [
-            { account: 'Cost of Goods Sold', debit_in_account_currency: payload.totalExpense, credit_in_account_currency: 0 },
-            { account: 'Creditors', party_type: 'Supplier', party: erpId, debit_in_account_currency: 0, credit_in_account_currency: payload.totalAccountsPayable }
-        ]
-    };
+    // Terminal Success
+    await db.update(outbox)
+      .set({ processedAt: new Date(), lockedUntil: null })
+      .where(eq(outbox.outboxId, eventId));
 
-    if (payload.totalTax > 0) {
-        je.accounts.push({ account: 'Duties and Taxes', debit_in_account_currency: payload.totalTax, credit_in_account_currency: 0 });
-    }
-
-    const journalRes = await erpClient.createJournalEntry(je);
-    processingLogger.info({ eventId, eventType: type, invoiceNumber: payload.invoiceNumber, journalName: journalRes.name }, 'Created AP Journal Entry');
-
-    // Update ModBM with AP traceability Link
-    await db.update(purchaseInvoices)
-      .set({ erpnextJournalId: journalRes.name })
-      .where(eq(purchaseInvoices.invoiceId, payload.invoiceId));
+  } catch (err: any) {
+    // Explicit Failure Record
+    await db.update(outbox)
+      .set({ lastError: err.message || 'Unknown processing error', lockedUntil: null })
+      .where(eq(outbox.outboxId, eventId));
+    
+    throw err;
   }
 }

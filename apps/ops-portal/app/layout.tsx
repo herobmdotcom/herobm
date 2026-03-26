@@ -7,7 +7,7 @@ import { getMessages } from 'next-intl/server';
 import Shell from '@/components/Shell';
 
 export const metadata: Metadata = {
-  title: 'modbm',
+  title: 'herobm',
   description: 'Business management portal',
 };
 

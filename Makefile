@@ -127,6 +127,10 @@ extract:
 extract-dry:
 	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --dry-run
 
+# Extract a single ABM table: make extract-table TABLE=SGROUPS
+extract-table:
+	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --table $(TABLE)
+
 transform:
 	"$(DBT)" run --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 

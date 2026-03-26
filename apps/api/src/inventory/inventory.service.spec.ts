@@ -167,6 +167,18 @@ describe('InventoryService', () => {
       insertedOutbox = [];
 
       mockTx = {
+        select: jest.fn().mockImplementation(() => {
+          return {
+            from: jest.fn().mockReturnValue({
+              innerJoin: jest.fn().mockReturnValue({
+                where: jest.fn().mockResolvedValue([
+                  { binId: 'BIN-A', zoneId: 'Z-1', locationId: 'LOC-MAIN' },
+                  { binId: 'BIN-SHIP', zoneId: 'Z-2', locationId: 'LOC-MAIN' },
+                ]),
+              }),
+            }),
+          };
+        }),
         insert: jest.fn().mockImplementation(() => {
           return {
             values: jest.fn().mockImplementation((payload: any) => {
@@ -201,15 +213,14 @@ describe('InventoryService', () => {
       memo: 'Test movement',
       userId: 'admin',
       lines: [
-        { productId: 'P1', binId: 'BIN-A', locationNo: 'MAIN', quantity: -5 },
-        { productId: 'P1', binId: 'BIN-SHIP', locationNo: 'MAIN', quantity: 5 },
+        { productId: 'P1', binId: 'BIN-A', quantity: -5 },
+        { productId: 'P1', binId: 'BIN-SHIP', quantity: 5 },
       ],
     };
 
     it('should insert an entry header, ledger lines, and outbox event', async () => {
       await service.recordInventoryMovement(mockTx, baseLedgerParams);
 
-      // 5 inserts: entries, ledger, 2x bin contents, outbox
       expect(mockTx.insert).toHaveBeenCalledTimes(5);
 
       // Header
@@ -277,7 +288,6 @@ describe('InventoryService', () => {
           {
             productId: 'P1',
             binId: 'BIN-A',
-            locationNo: 'MAIN',
             quantity: 3.5,
           },
         ],

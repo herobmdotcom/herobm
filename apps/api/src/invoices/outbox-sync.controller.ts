@@ -35,20 +35,26 @@ export class OutboxSyncController {
     const [pendingResult] = await this.db
       .select({ count: count() })
       .from(outbox)
-      .where(isNull(outbox.processedAt));
+      .where(and(isNull(outbox.processedAt), isNull(outbox.lastError)));
 
     const [processedResult] = await this.db
       .select({ count: count() })
       .from(outbox)
       .where(isNotNull(outbox.processedAt));
 
+    const [failedResult] = await this.db
+      .select({ count: count() })
+      .from(outbox)
+      .where(isNotNull(outbox.lastError));
+
     // Per-event-type breakdown
     const byType = await this.db
       .select({
         eventType: outbox.eventType,
         total: count(),
-        pending: sql<number>`COUNT(*) FILTER (WHERE ${outbox.processedAt} IS NULL)`,
+        pending: sql<number>`COUNT(*) FILTER (WHERE ${outbox.processedAt} IS NULL AND ${outbox.lastError} IS NULL)`,
         processed: sql<number>`COUNT(*) FILTER (WHERE ${outbox.processedAt} IS NOT NULL)`,
+        failed: sql<number>`COUNT(*) FILTER (WHERE ${outbox.lastError} IS NOT NULL)`,
       })
       .from(outbox)
       .groupBy(outbox.eventType)
@@ -64,6 +70,7 @@ export class OutboxSyncController {
         payload: outbox.payload,
         createdOn: outbox.createdOn,
         processedAt: outbox.processedAt,
+        lastError: outbox.lastError,
       })
       .from(outbox)
       .orderBy(desc(outbox.createdOn))
@@ -73,7 +80,8 @@ export class OutboxSyncController {
       summary: {
         pending: pendingResult.count,
         processed: processedResult.count,
-        total: pendingResult.count + processedResult.count,
+        failed: failedResult.count,
+        total: pendingResult.count + processedResult.count + failedResult.count,
       },
       byType,
       recentEvents,
@@ -95,9 +103,12 @@ export class OutboxSyncController {
     const conditions = [eq(outbox.eventType, eventType)];
     if (status === 'processed') {
       conditions.push(isNotNull(outbox.processedAt));
+    } else if (status === 'failed') {
+      conditions.push(isNotNull(outbox.lastError));
     } else {
       // default: pending only
       conditions.push(isNull(outbox.processedAt));
+      conditions.push(isNull(outbox.lastError));
     }
 
     const events = await this.db
@@ -109,6 +120,7 @@ export class OutboxSyncController {
         payload: outbox.payload,
         createdOn: outbox.createdOn,
         processedAt: outbox.processedAt,
+        lastError: outbox.lastError,
       })
       .from(outbox)
       .where(and(...conditions))
@@ -129,9 +141,12 @@ export class OutboxSyncController {
     @Query('status') status?: string,
   ) {
     const conditions = [eq(outbox.eventType, eventType)];
-    if (status !== 'all') {
+    if (status === 'failed') {
+      conditions.push(isNotNull(outbox.lastError));
+    } else if (status !== 'all') {
       // Default: only clear pending events
       conditions.push(isNull(outbox.processedAt));
+      conditions.push(isNull(outbox.lastError));
     }
 
     const result = await this.db
