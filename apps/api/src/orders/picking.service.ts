@@ -23,6 +23,7 @@ import {
   writeEvent,
 } from './shipment-helpers';
 import { ShipmentService } from './shipment.service';
+import { calculatePickAllocations } from './picking-math.utils';
 
 @Injectable()
 export class PickingService {
@@ -65,100 +66,55 @@ export class PickingService {
       return bin.binId;
     };
 
+    const availableBins = delta > 0 ? await tx
+      .select({
+        binId: binContents.binId,
+        actualQuantity: binContents.actualQuantity,
+        locationId: zones.locationId,
+      })
+      .from(binContents)
+      .innerJoin(bins, eq(binContents.binId, bins.binId))
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(binContents.productId, productId),
+          sql`${binContents.actualQuantity} > 0`,
+          sql`${bins.binType} IS DISTINCT FROM 'staging'`,
+        ),
+      )
+      .orderBy(desc(binContents.actualQuantity)) : [];
+
+    const [fallbackBin] = await tx
+      .select({ binId: bins.binId, locationId: zones.locationId })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
+      .limit(1);
+
+    const mappedAvailableBins = availableBins.map(b => ({
+      ...b,
+      actualQuantity: parseFloat(b.actualQuantity),
+    }));
+
+    const allocations = calculatePickAllocations(
+      delta,
+      mappedAvailableBins,
+      fallbackBin || null
+    );
+
     const ledgerLines = [];
-
-    if (delta > 0) {
-      const availableBins = await tx
-        .select({
-          binId: binContents.binId,
-          actualQuantity: binContents.actualQuantity,
-          locationId: zones.locationId,
-        })
-        .from(binContents)
-        .innerJoin(bins, eq(binContents.binId, bins.binId))
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(
-          and(
-            eq(binContents.productId, productId),
-            sql`${binContents.actualQuantity} > 0`,
-            sql`${bins.binType} IS DISTINCT FROM 'staging'`,
-          ),
-        )
-        .orderBy(desc(binContents.actualQuantity));
-
-      let remainingToPick = delta;
-
-      for (const b of availableBins) {
-        if (remainingToPick <= 0) break;
-        const available = parseFloat(b.actualQuantity);
-        const take = Math.min(available, remainingToPick);
-
-        const shippingBinId = await getShippingBin(b.locationId);
-
-        ledgerLines.push({
-          productId,
-          binId: b.binId,
-          quantity: -take,
-        });
-        ledgerLines.push({
-          productId,
-          binId: shippingBinId,
-          quantity: take,
-        });
-        remainingToPick -= take;
-      }
-
-      if (remainingToPick > 0) {
-        const [fallbackBin] = await tx
-          .select({ binId: bins.binId, locationId: zones.locationId })
-          .from(bins)
-          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
-          .limit(1);
-
-        if (!fallbackBin) {
-          throw new BadRequestException(
-            'No storage bins defined in the system.',
-          );
-        }
-
-        const shippingBinId = await getShippingBin(fallbackBin.locationId);
-
-        ledgerLines.push({
-          productId,
-          binId: fallbackBin.binId,
-          quantity: -remainingToPick,
-        });
-        ledgerLines.push({
-          productId,
-          binId: shippingBinId,
-          quantity: remainingToPick,
-        });
-      }
-    } else {
-      const returnQty = Math.abs(delta);
-      const [fallbackBin] = await tx
-        .select({ binId: bins.binId, locationId: zones.locationId })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
-        .limit(1);
-
-      if (!fallbackBin) {
-        throw new BadRequestException('No storage bins defined in the system.');
-      }
-
-      const shippingBinId = await getShippingBin(fallbackBin.locationId);
+    for (const alloc of allocations) {
+      const shippingBinId = await getShippingBin(alloc.locationId);
 
       ledgerLines.push({
         productId,
-        binId: shippingBinId,
-        quantity: -returnQty,
+        binId: alloc.sourceBinId,
+        quantity: -alloc.takeQuantity,
       });
       ledgerLines.push({
         productId,
-        binId: fallbackBin.binId,
-        quantity: returnQty,
+        binId: shippingBinId,
+        quantity: alloc.takeQuantity,
       });
     }
 

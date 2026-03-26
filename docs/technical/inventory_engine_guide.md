@@ -56,24 +56,24 @@ The `Old Qty` needs to be fetched instantaneously within the same database trans
 
 ## Fulfillment Lifecycle (Sales Orders)
 
-The fulfillment flow moves stock from storage bins, through staging bins, out to the customer.
+The fulfillment flow moves stock from storage bins, through location-specific staging bins, out to the customer.
 
 1.  **Allocate (Picking)**:
-    When a user picks a Sales Order line, `PickingService.allocatePickDelta` determines where to pull stock from. It prioritizes bins with available stock, falling back to a default bin if none are available.
-    *   **Ledger Lines**: `-Qty` from `Source Bin`, `+Qty` to `SHIPPING` bin.
+    When a user picks a Sales Order line, `PickingService.allocatePickDelta` determines where to pull stock from. It prioritizes bins with available stock in the order's location, falling back to a default bin if none are available.
+    *   **Ledger Lines**: `-Qty` from `Source Bin`, `+Qty` to `SHIPPING` bin (resolved dynamically for the specific location).
 2.  **Pack**:
-    The system currently merges picking and packing logic. Stock resides in `SHIPPING`.
+    The system currently merges picking and packing logic. Stock resides in the location's `SHIPPING` bin.
 3.  **Dispatch (Shipping)**:
     When a shipment state becomes `dispatched`, `ShipmentService` issues a final stock movement.
-    *   **Ledger Lines**: `-Qty` from `SHIPPING` bin. (No balancing positive line, as the stock has left the warehouse perimeter).
+    *   **Ledger Lines**: `-Qty` from the location's `SHIPPING` bin. (No balancing positive line, as the stock has left the warehouse perimeter).
 
 ### Bin Allocation Logic
 
 `PickingService.allocatePickDelta` implements a FIFO-like allocation to fulfill a request:
-1.  Find all bins containing the product (excluding the `SHIPPING` staging bin).
+1.  Find all bins containing the product within the source location (excluding the staging bins like `SHIPPING` or `RECEIVING`).
 2.  Iterate through bins, pulling stock until the requested delta is fulfilled.
 3.  If all valid bins run dry, pull the remainder from a system **fallback bin** (preventing blocking errors during edge-case inventory desyncs).
-4.  If the delta is negative (e.g., a picker "un-picks"), return stock from the `SHIPPING` bin to the fallback bin for manual put-away.
+4.  If the delta is negative (e.g., a picker "un-picks"), return stock from the location's `SHIPPING` bin to the fallback bin for manual put-away.
 
 ## Common Operations
 

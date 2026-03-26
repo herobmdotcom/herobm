@@ -27,6 +27,7 @@ describe('API E2E — Sales Order Returns', () => {
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
+  let mainLocationId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -86,6 +87,12 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validCustomerId = accounts.body.data[0].accountId;
+
+    const locations = await request(app.getHttpServer())
+      .get('/api/inventory/locations?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    mainLocationId = locations.body.data[0].locationId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=2')
@@ -290,7 +297,7 @@ describe('API E2E — Sales Order Returns', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'processed' })
+        .send({ stateCode: 'processed', locationId: mainLocationId })
         .expect(200);
 
       expect(res.body.stateCode).toBe('processed');

@@ -333,6 +333,7 @@
       "address": "Address",
       "address2": "Address 2",
       "city": "City",
+      "location": "Location",
       "state": "State",
       "postalCode": "Postal Code",
       "country": "Country",

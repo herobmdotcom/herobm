@@ -432,10 +432,10 @@ describe('API E2E — Data Pipeline Verification', () => {
   // =========================================================================
 
   describe('System Integrity — Required Seed Data', () => {
-    it('verifies that system bins (SHIPPING, DOCK) exist in modbm_core.bins', async () => {
+    it('verifies that system bins (SHIPPING, RECEIVING) exist in modbm_core.bins', async () => {
       const db = app.get<DrizzleDB>(DRIZZLE);
       const systemBins = await db.execute(
-        sql`SELECT * FROM modbm_core.bins WHERE bin_number IN ('SHIPPING', 'DOCK') AND source = 'system' AND bin_type = 'staging' AND is_unavailable = true`,
+        sql`SELECT * FROM modbm_core.bins WHERE bin_number IN ('SHIPPING', 'RECEIVING') AND source = 'system' AND bin_type = 'staging' AND is_unavailable = true`,
       );
 
       // Verify that the system-defined staging bins are present
@@ -443,7 +443,9 @@ describe('API E2E — Data Pipeline Verification', () => {
       expect(systemBins.some((b: any) => b.bin_number === 'SHIPPING')).toBe(
         true,
       );
-      expect(systemBins.some((b: any) => b.bin_number === 'DOCK')).toBe(true);
+      expect(systemBins.some((b: any) => b.bin_number === 'RECEIVING')).toBe(
+        true,
+      );
     });
 
     it('verifies that the system custom line magic product exists', async () => {

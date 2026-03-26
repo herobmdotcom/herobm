@@ -11,6 +11,7 @@ describe('Inventory Cycle (e2e)', () => {
   let productId: string;
   let accountId: string;
   let vendorId: string;
+  let locationId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -43,6 +44,12 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     vendorId = suppliers.body.data[0].vendorId;
+
+    const locations = await request(app.getHttpServer())
+      .get('/api/inventory/locations?limit=1')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locations.body.data[0].locationId;
 
     // Create a fresh product
     const productRes = await request(app.getHttpServer())
@@ -242,7 +249,7 @@ describe('Inventory Cycle (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${soId}/returns/${returnId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'processed' })
+      .send({ stateCode: 'processed', locationId })
       .expect(200);
 
     // Verify QOH: 6 + 2 = 8

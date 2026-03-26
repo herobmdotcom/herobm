@@ -400,7 +400,12 @@ describe('ReturnsWriteService', () => {
     ])('should allow transition %s → %s', async (from, to) => {
       setupWithState(from);
       await expect(
-        service.changeReturnState('ret-001', to, 'admin'),
+        service.changeReturnState(
+          'ret-001',
+          to,
+          'admin',
+          to === 'processed' ? 'loc-1' : undefined,
+        ),
       ).resolves.toBeDefined();
     });
 
@@ -413,7 +418,12 @@ describe('ReturnsWriteService', () => {
     ])('should reject transition %s → %s', async (from, to) => {
       setupWithState(from);
       await expect(
-        service.changeReturnState('ret-001', to, 'admin'),
+        service.changeReturnState(
+          'ret-001',
+          to,
+          'admin',
+          to === 'processed' ? 'loc-1' : undefined,
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -425,7 +435,7 @@ describe('ReturnsWriteService', () => {
 
     it('should emit return_processed event when transitioning to processed', async () => {
       setupWithState('confirmed');
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
       // Verify the transaction was called (event is written inside)
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
@@ -564,7 +574,7 @@ describe('ReturnsWriteService', () => {
     it('should post GL journal with correct lines (revenue + GST + fees)', async () => {
       setupGlTest({ gstRate: '10' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       // 5 qty × $50.00 = $250.00 (credit amount)
       // 10% GST on $250 = $25.00
@@ -619,7 +629,7 @@ describe('ReturnsWriteService', () => {
         gstRate: '10',
       });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 
@@ -649,7 +659,7 @@ describe('ReturnsWriteService', () => {
         gstRate: '0',
       });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 
@@ -673,7 +683,7 @@ describe('ReturnsWriteService', () => {
     it('should skip GL posting when settings are incomplete', async () => {
       setupGlTest({ settings: null });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
     });
@@ -683,7 +693,7 @@ describe('ReturnsWriteService', () => {
         settings: { ...GL_SETTINGS, defaultArAccountId: null },
       });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
     });
@@ -696,7 +706,7 @@ describe('ReturnsWriteService', () => {
 
       // Should not throw — GL failure is non-fatal
       await expect(
-        service.changeReturnState('ret-001', 'processed', 'admin'),
+        service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1'),
       ).resolves.toBeDefined();
 
       // State transition still succeeded
@@ -706,7 +716,7 @@ describe('ReturnsWriteService', () => {
     it('should write outbox event with correct payload', async () => {
       setupGlTest({ gstRate: '10' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       // Outbox insert should have been called
       expect(mockDb.insert).toHaveBeenCalled();
@@ -733,7 +743,7 @@ describe('ReturnsWriteService', () => {
     it('should use per-line GST from gstCategoryId', async () => {
       setupGlTest({ gstRate: '15' }); // 15% GST
 
-      await service.changeReturnState('ret-001', 'processed', 'admin');
+      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
       // Verify gstService.getById was called with the line's category
       expect(mockGstService.getById).toHaveBeenCalledWith('gst-cat-001');

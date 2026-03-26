@@ -1,0 +1,636 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+[Nest] 28416  - 03/26/2026, 2:48:41 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, default, $2, default, default, $3, $4, default, default, $5, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: PO-CYC-1774532921140,3a77e6f0-4830-44ea-ad32-7cd5c3723aa2,draft,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, default, $2, default, default, $3, $4, default, default, $5, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'PO-CYC-1774532921140',
+    '3a77e6f0-4830-44ea-ad32-7cd5c3723aa2',
+    'draft',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+FAIL test/inventory-cycle.e2e-spec.ts
+  ΓùÅ Inventory Cycle (e2e) ΓÇ║ Step 2: PO Reception should update QOH and WAC
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      89 |         ],
+      90 |       })
+    > 91 |       .expect(201);
+         |        ^
+      92 |     const poId = poRes.body.purchaseOrderId;
+      93 |
+      94 |     await request(app.getHttpServer())
+
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:91:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Inventory Cycle (e2e) ΓÇ║ Step 3: Sales Dispatch should update QOH
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 6
+    Received: -4
+
+      194 |       .expect(200);
+      195 |
+    > 196 |     expect(parseFloat(productRes.body.quantityOnHand)).toBe(6);
+          |                                                        ^
+      197 |   });
+      198 |
+      199 |   it('Step 4: Sales Return should update QOH', async () => {
+
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:196:56)
+
+  ΓùÅ Inventory Cycle (e2e) ΓÇ║ Step 4: Sales Return should update QOH
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 8
+    Received: -2
+
+      252 |       .expect(200);
+      253 |
+    > 254 |     expect(parseFloat(productRes.body.quantityOnHand)).toBe(8);
+          |                                                        ^
+      255 |   });
+      256 | });
+      257 |
+
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:254:56)
+
+[Nest] 28416  - 03/26/2026, 2:48:42 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: E2E-ARCH-PO-20260326-2UZA,E2E Archive Test PO,3a77e6f0-4830-44ea-ad32-7cd5c3723aa2,draft,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'E2E-ARCH-PO-20260326-2UZA',
+    'E2E Archive Test PO',
+    '3a77e6f0-4830-44ea-ad32-7cd5c3723aa2',
+    'draft',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+[Nest] 28416  - 03/26/2026, 2:48:42 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: E2E-ARCH-PO-FAIL-20260326-D8EF,E2E Draft Archive Fail,3a77e6f0-4830-44ea-ad32-7cd5c3723aa2,draft,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'E2E-ARCH-PO-FAIL-20260326-D8EF',
+    'E2E Draft Archive Fail',
+    '3a77e6f0-4830-44ea-ad32-7cd5c3723aa2',
+    'draft',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+[Nest] 28416  - 03/26/2026, 2:48:42 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: select "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on" from "modbm_core"."purchase_orders" where "modbm_core"."purchase_orders"."purchase_order_id" = $1 limit $2
+params: undefined,1
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at PurchaseOrdersService.findOne (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:230:19)
+    at PurchaseOrdersService.archive (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:315:22) {
+  query: 'select "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on" from "modbm_core"."purchase_orders" where "modbm_core"."purchase_orders"."purchase_order_id" = $1 limit $2',
+  params: [
+    'undefined',
+    1
+  ],
+  cause: PostgresError: column "delivery_location_id" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '66',
+    file: 'parse_relation.c',
+    line: '3722',
+    routine: 'errorMissingColumn'
+  }
+}
+[Nest] 28416  - 03/26/2026, 2:48:42 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: select "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on" from "modbm_core"."purchase_orders" where "modbm_core"."purchase_orders"."purchase_order_id" = $1 limit $2
+params: undefined,1
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at PurchaseOrdersService.findOne (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:230:19)
+    at PurchaseOrdersService.unarchive (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:352:22) {
+  query: 'select "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on" from "modbm_core"."purchase_orders" where "modbm_core"."purchase_orders"."purchase_order_id" = $1 limit $2',
+  params: [
+    'undefined',
+    1
+  ],
+  cause: PostgresError: column "delivery_location_id" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '66',
+    file: 'parse_relation.c',
+    line: '3722',
+    routine: 'errorMissingColumn'
+  }
+}
+FAIL test/archive.e2e-spec.ts
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ create and cancel a purchase order (terminal state)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      293 |           ],
+      294 |         })
+    > 295 |         .expect(201);
+          |          ^
+      296 |
+      297 |       poId = createRes.body.purchaseOrderId;
+      298 |
+
+      at Object.<anonymous> (archive.e2e-spec.ts:295:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ archiving a draft PO fails (not terminal)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      327 |           ],
+      328 |         })
+    > 329 |         .expect(201);
+          |          ^
+      330 |
+      331 |       await request(app.getHttpServer())
+      332 |         .post(`/api/purchase-orders/${draftRes.body.purchaseOrderId}/archive`)
+
+      at Object.<anonymous> (archive.e2e-spec.ts:329:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ admin can archive the cancelled PO
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      339 |         .post(`/api/purchase-orders/${poId}/archive`)
+      340 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 341 |         .expect(201);
+          |          ^
+      342 |
+      343 |       expect(res.body.stateCode).toBe('archived');
+      344 |     });
+
+      at Object.<anonymous> (archive.e2e-spec.ts:341:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ archived PO appears with ?includeArchived=true
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      361 |
+      362 |       const found = res.body.data.find((o: any) => o.id === poId);
+    > 363 |       expect(found).toBeDefined();
+          |                     ^
+      364 |       expect(found.stateCode).toBe('archived');
+      365 |     });
+      366 |
+
+      at Object.<anonymous> (archive.e2e-spec.ts:363:21)
+
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ unarchive defaults PO to cancelled (no event store)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      369 |         .post(`/api/purchase-orders/${poId}/unarchive`)
+      370 |         .set('Authorization', `Bearer ${adminToken}`)
+    > 371 |         .expect(201);
+          |          ^
+      372 |
+      373 |       // PO unarchive always defaults to 'cancelled' since there is no event log
+      374 |       expect(res.body.stateCode).toBe('cancelled');
+
+      at Object.<anonymous> (archive.e2e-spec.ts:371:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ Archive E2E ΓÇö Full Round-Trip ΓÇ║ Purchase Orders ΓÇö archive round-trip (unarchive defaults to cancelled) ΓÇ║ unarchived PO reappears in default list
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      382 |
+      383 |       const found = res.body.data.find((o: any) => o.id === poId);
+    > 384 |       expect(found).toBeDefined();
+          |                     ^
+      385 |     });
+      386 |   });
+      387 |
+
+      at Object.<anonymous> (archive.e2e-spec.ts:384:21)
+
+[Nest] 28416  - 03/26/2026, 2:48:42 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: E2E-INV-PO-20260326-S8W8,E2E Invoice Test,0d64638d-2dd1-4f9a-a0a4-7895e7d56220,draft,AUD,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'E2E-INV-PO-20260326-S8W8',
+    'E2E Invoice Test',
+    '0d64638d-2dd1-4f9a-a0a4-7895e7d56220',
+    'draft',
+    'AUD',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+FAIL test/purchase-invoices.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Purchase Invoices ΓÇ║ Purchase Invoice Lifecycle ΓÇ║ creates and invoices a fully received purchase order
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      87 |           ],
+      88 |         })
+    > 89 |         .expect(201);
+         |          ^
+      90 |
+      91 |       orderId = createRes.body.purchaseOrderId;
+      92 |
+
+      at Object.<anonymous> (purchase-invoices.e2e-spec.ts:89:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Purchase Invoices ΓÇ║ Purchase Invoice Lifecycle ΓÇ║ GL Integration ΓÇö posted a journal entry for the AP invoice
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      137 |         (j: any) => j.sourceId === createdInvoiceId,
+      138 |       );
+    > 139 |       expect(je).toBeDefined();
+          |                  ^
+      140 |
+      141 |       const detailRes = await request(app.getHttpServer())
+      142 |         .get(`/api/gl/journal-entries/${je.journalEntryId}`)
+
+      at Object.<anonymous> (purchase-invoices.e2e-spec.ts:139:18)
+
+[Nest] 28416  - 03/26/2026, 2:48:43 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: E2E-REC-PO-20260326-QHQO,E2E Reception Test PO,3a77e6f0-4830-44ea-ad32-7cd5c3723aa2,draft,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'E2E-REC-PO-20260326-QHQO',
+    'E2E Reception Test PO',
+    '3a77e6f0-4830-44ea-ad32-7cd5c3723aa2',
+    'draft',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+[Nest] 28416  - 03/26/2026, 2:48:43 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"
+params: E2E-REC-PO-20260326-5F5F,E2E Reception Test PO,3a77e6f0-4830-44ea-ad32-7cd5c3723aa2,draft,EUR,admin
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\src\postgres-js\session.ts:58:17
+    at C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:88:23
+    at scope (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:260:18)
+    at sql.begin (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\index.js:243:14)
+    at PurchaseOrdersService.create (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts:86:12) {
+  query: 'insert into "modbm_core"."purchase_orders" ("purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on") values (default, $1, $2, $3, default, default, $4, $5, default, default, $6, default, default) returning "purchase_order_id", "order_number", "name", "vendor_id", "delivery_location_id", "invoice_number", "state_code", "currency_code", "notes", "custom_fields", "created_by", "created_on", "modified_on"',
+  params: [
+    'E2E-REC-PO-20260326-5F5F',
+    'E2E Reception Test PO',
+    '3a77e6f0-4830-44ea-ad32-7cd5c3723aa2',
+    'draft',
+    'EUR',
+    'admin'
+  ],
+  cause: PostgresError: column "delivery_location_id" of relation "purchase_orders" does not exist
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\apps\api\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '42703',
+    position: '103',
+    file: 'parse_target.c',
+    line: '1066',
+    routine: 'checkInsertTargets'
+  }
+}
+FAIL test/receptions.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Purchase Order Receptions ΓÇ║ Goods receipt lifecycle ΓÇ║ POST /receptions ΓÇö creates a goods receipt
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      107 |         ],
+      108 |       })
+    > 109 |       .expect(201);
+          |        ^
+      110 |
+      111 |     const purchaseOrderId = createRes.body.purchaseOrderId;
+      112 |
+
+      at createOrderedPO (receptions.e2e-spec.ts:109:8)
+      at Object.<anonymous> (receptions.e2e-spec.ts:141:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Purchase Order Receptions ΓÇ║ Goods receipt lifecycle ΓÇ║ GET /receptions ΓÇö lists receipts for the PO
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      107 |         ],
+      108 |       })
+    > 109 |       .expect(201);
+          |        ^
+      110 |
+      111 |     const purchaseOrderId = createRes.body.purchaseOrderId;
+      112 |
+
+      at createOrderedPO (receptions.e2e-spec.ts:109:8)
+      at Object.<anonymous> (receptions.e2e-spec.ts:141:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Purchase Order Receptions ΓÇ║ Goods receipt lifecycle ΓÇ║ GET /receptions/:id ΓÇö retrieves receipt detail
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      107 |         ],
+      108 |       })
+    > 109 |       .expect(201);
+          |        ^
+      110 |
+      111 |     const purchaseOrderId = createRes.body.purchaseOrderId;
+      112 |
+
+      at createOrderedPO (receptions.e2e-spec.ts:109:8)
+      at Object.<anonymous> (receptions.e2e-spec.ts:141:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Purchase Order Receptions ΓÇ║ RBAC ΓÇö viewer cannot create receptions ΓÇ║ viewer cannot create a reception (403)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      107 |         ],
+      108 |       })
+    > 109 |       .expect(201);
+          |        ^
+      110 |
+      111 |     const purchaseOrderId = createRes.body.purchaseOrderId;
+      112 |
+
+      at createOrderedPO (receptions.e2e-spec.ts:109:8)
+      at Object.<anonymous> (receptions.e2e-spec.ts:198:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Purchase Order Receptions ΓÇ║ RBAC ΓÇö viewer cannot create receptions ΓÇ║ viewer CAN read receptions (200)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+      107 |         ],
+      108 |       })
+    > 109 |       .expect(201);
+          |        ^
+      110 |
+      111 |     const purchaseOrderId = createRes.body.purchaseOrderId;
+      112 |
+
+      at createOrderedPO (receptions.e2e-spec.ts:109:8)
+      at Object.<anonymous> (receptions.e2e-spec.ts:198:28)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+PASS test/picking.e2e-spec.ts
+PASS test/app.e2e-spec.ts
+PASS test/orders-write.e2e-spec.ts
+PASS test/sales-invoices.e2e-spec.ts
+PASS test/returns.e2e-spec.ts
+PASS test/reports.e2e-spec.ts
+PASS test/inventory.e2e-spec.ts
+PASS test/audit.e2e-spec.ts
+PASS test/products.e2e-spec.ts
+PASS test/suppliers.e2e-spec.ts
+  ΓùÅ Console
+
+    console.warn
+      Could not clean up all E2E suppliers (some have POs attached)
+
+      43 |       await db.delete(suppliers).where(like(suppliers.vendorNumber, 'E2E-%'));
+      44 |     } catch (e) {
+    > 45 |       console.warn(
+         |               ^
+      46 |         'Could not clean up all E2E suppliers (some have POs attached)',
+      47 |       );
+      48 |     }
+
+      at Object.<anonymous> (suppliers.e2e-spec.ts:45:15)
+
+PASS test/accounts.e2e-spec.ts
+PASS test/gl.e2e-spec.ts
+PASS test/system-logs.e2e-spec.ts
+
+Test Suites: 4 failed, 13 passed, 17 total
+Tests:       16 failed, 160 passed, 176 total
+Snapshots:   0 total
+Time:        10.547 s, estimated 11 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

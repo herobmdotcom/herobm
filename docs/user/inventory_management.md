@@ -220,3 +220,5 @@ This is a one-time import. After seeding, the application owns all inventory dat
 3. **Bin-level granularity.** Every ledger line records the specific bin where stock moved. The `bin_contents` cache provides fast bin-level lookups for warehouse operations.
 
 4. **Single mutation method.** All inventory changes flow through `recordInventoryMovement`, preventing ad-hoc stock mutations that could bypass the audit trail.
+
+5. **Location-Aware Topography.** There are no global system bins (e.g., no global `DOCK`). All system staging zones like `SHIPPING` and `RECEIVING` are inherently bound to specific physical locations. This prevents cross-location staging stock contamination and supports a true multi-warehouse architecture out of the box.

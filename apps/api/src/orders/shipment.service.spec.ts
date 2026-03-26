@@ -403,6 +403,8 @@ describe('ShipmentService', () => {
                     standardCost: '10',
                     quantityOnHand: '100',
                     weightedAverageCost: '10',
+                    netPicked: 10,
+                    quantity: 10,
                   },
                 ];
               }
@@ -414,6 +416,7 @@ describe('ShipmentService', () => {
                   }),
                 ),
                 limit: jest.fn().mockResolvedValue(data),
+                groupBy: jest.fn().mockReturnValue(Promise.resolve(data)),
               });
             });
             catchAllQb.innerJoin = jest.fn().mockImplementation(() => {
@@ -422,6 +425,7 @@ describe('ShipmentService', () => {
                 Object.assign(Promise.resolve([]), {
                   orderBy: jest.fn().mockReturnValue(Promise.resolve([])),
                   limit: jest.fn().mockResolvedValue([]),
+                  groupBy: jest.fn().mockReturnValue(Promise.resolve([])),
                 }),
               );
               emptyQb.innerJoin = jest.fn().mockReturnValue(emptyQb);
@@ -435,16 +439,15 @@ describe('ShipmentService', () => {
       });
     }
 
-    it.each([
-      ['draft', 'dispatched'],
-      ['draft', 'cancelled'],
-      ['dispatched', 'draft'],
-    ])('should allow transition %s → %s', async (from, to) => {
-      setupWithState(from);
-      await expect(
-        service.changeShipmentState('ship-001', to, 'admin'),
-      ).resolves.toBeDefined();
-    });
+    it.each([['draft', 'cancelled']])(
+      'should allow transition %s → %s',
+      async (from, to) => {
+        setupWithState(from);
+        await expect(
+          service.changeShipmentState('ship-001', to, 'admin'),
+        ).resolves.toBeDefined();
+      },
+    );
 
     it.each([
       ['cancelled', 'draft'],

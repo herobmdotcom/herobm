@@ -181,20 +181,13 @@ export class ReturnsWriteService {
       const alreadyReturned = await this.getAlreadyReturnedQty(
         line.salesOrderLineId,
       );
-      const originalQty = parseFloat(orderLine.quantity);
-      const requestedQty = parseFloat(line.quantityReturned);
-
-      if (requestedQty <= 0) {
-        throw new BadRequestException(`Return quantity must be greater than 0`);
-      }
-
-      if (requestedQty > originalQty - alreadyReturned) {
-        throw new BadRequestException(
-          `Cannot return ${requestedQty} of line ${orderLine.lineNumber}. ` +
-            `Original qty: ${originalQty}, already returned: ${alreadyReturned}, ` +
-            `remaining returnable: ${originalQty - alreadyReturned}`,
-        );
-      }
+      
+      validateReturnQuantity(
+        line.quantityReturned, 
+        orderLine.quantity, 
+        alreadyReturned, 
+        orderLine.lineNumber
+      );
 
       if (line.returnFee) {
         const fee = parseFloat(line.returnFee);
