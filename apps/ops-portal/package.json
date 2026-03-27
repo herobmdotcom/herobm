@@ -13,7 +13,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@modbm/shared": "file:../../packages/shared",
+    "@modbm/shared": "*",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",
     "next": "^15.3.3",

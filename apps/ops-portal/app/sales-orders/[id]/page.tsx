@@ -144,7 +144,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
     // After null guard, destructure everything for JSX use
     const {
-        order, error, setError, saving, copying,
+        order, error, setError, saving, copying, locations,
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
         gstCategories,
         activeTab, setActiveTab, inventoryData, inventoryLoading,
@@ -700,7 +700,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     <td style={{ padding: '4px' }}>
                                                         <select
                                                             value={line.fulfillmentLocationId || ''}
-                                                            onChange={(e) => updateLine(line.salesOrderLineId, { fulfillmentLocationId: e.target.value })}
+                                                            onChange={(e) => updateLine(line.salesOrderLineId, 'fulfillmentLocationId', e.target.value)}
                                                             className="form-control"
                                                             style={{ width: '100%', fontSize: 12, padding: '2px 6px' }}
                                                             disabled={!isOrderLinesEditable}
@@ -738,7 +738,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                             <td rowSpan={lineInventory.length} style={{ padding: '4px' }}>
                                                                 <select
                                                                     value={line.fulfillmentLocationId || ''}
-                                                                    onChange={(e) => updateLine(line.salesOrderLineId, { fulfillmentLocationId: e.target.value })}
+                                                                    onChange={(e) => updateLine(line.salesOrderLineId, 'fulfillmentLocationId', e.target.value)}
                                                                     className="form-control"
                                                                     style={{ width: '100%', fontSize: 12, padding: '2px 6px' }}
                                                                     disabled={!isOrderLinesEditable}
@@ -850,7 +850,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         orderLines={order.lines}
                         onOrderUpdated={(autoTransitions?: any[]) => loadOrder(autoTransitions, false)}
                         onVisibilityChange={onPickingVisibilityChange}
-                        fulfillmentLocationId={order.fulfillmentLocationId}
+                        fulfillmentLocationId={order.fulfillmentLocationId || undefined}
                     />
                     </div>
                 )}

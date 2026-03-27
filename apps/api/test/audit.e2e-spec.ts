@@ -38,6 +38,7 @@ describe('Audit Events (e2e)', () => {
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;

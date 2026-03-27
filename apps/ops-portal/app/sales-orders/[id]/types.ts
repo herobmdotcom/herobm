@@ -12,6 +12,7 @@ export interface OrderLine {
     tax: string;
     totalAmount: string;
     unitOfMeasure: string;
+    fulfillmentLocationId?: string | null;
 }
 
 export interface GstCategory {

@@ -19,27 +19,27 @@ RUN npm install -g npm@11
 FROM base AS deps
 WORKDIR /app
 
-# Install each workspace package's deps separately so Docker caches each layer.
-# When only portal code changes, the deps stage is fully cached.
-COPY packages/shared/package*.json ./packages/shared/
-RUN cd packages/shared && npm install
-
+# Copy workspace metadata for cacheable dependency installation
+COPY package.json package-lock.json ./
+COPY packages/ ./packages/
+# Only copy package.json for the portal app right now to cache deps
 COPY apps/ops-portal/package*.json ./apps/ops-portal/
-RUN cd apps/ops-portal && npm install
+
+RUN npm ci
 
 # --- Stage 2: Build ----------------------------------------------------------
 FROM base AS builder
 WORKDIR /app
 
-# Copy installed node_modules from deps stage
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+# Copy node_modules from deps stage (root and any local ones)
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/ops-portal/node_modules ./apps/ops-portal/node_modules
 
-# Copy source (shared → ops-portal, dependency order)
-COPY packages/shared ./packages/shared
-RUN cd packages/shared && npm run build
-
-COPY apps/ops-portal ./apps/ops-portal
+# Copy workspace source files needed for build
+COPY package.json package-lock.json ./
+COPY packages/ ./packages/
+COPY apps/ops-portal/ ./apps/ops-portal/
 
 # Typecheck (quality gate — catches type errors before build)
 RUN cd apps/ops-portal && npx tsc --noEmit

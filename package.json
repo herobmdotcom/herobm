@@ -1,0 +1,8 @@
+{
+  "name": "modbm-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

@@ -88,6 +88,7 @@ export class InventoryService {
         productId: inventoryLevels.productId,
         productNumber: products.productNumber,
         productName: products.name,
+        locationId: inventoryLevels.locationId,
         locationNo: locations.code,
         locationName: locations.name,
         quantityOnHand: inventoryLevels.quantityOnHand,

@@ -11,10 +11,14 @@ ifeq ($(OS),Windows_NT)
   COMPOSE_OVERRIDE = -f docker-compose.windows.yml
   DBT = $(CURDIR)/.venv/Scripts/dbt
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
+  INIT_ENV_CMD = powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
+  DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
 else
   COMPOSE_OVERRIDE = -f docker-compose.linux.yml
   DBT = $(CURDIR)/.venv/bin/dbt
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
+  INIT_ENV_CMD = bash scripts/init-env.sh
+  DEV_LOCAL_CMD = bash scripts/dev-local.sh
 endif
 COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 DBT_DIR = pipelines/abm_transform
@@ -117,7 +121,7 @@ setup-no-extract: init-env up init-no-extract
 
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
-	powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
+	$(INIT_ENV_CMD)
 
 # --- ELT Pipeline ---
 
@@ -177,7 +181,7 @@ extract-docker-dry:
 # Hot-reloads FE and API natively, spins up Postgres automatically
 dev-fe-api: check-logs-volume
 	$(COMPOSE_CMD) up -d postgres-custom
-	powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
+	$(DEV_LOCAL_CMD)
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
 
@@ -196,13 +200,13 @@ rebuild-portal:
 	$(COMPOSE_CMD) ps
 
 test-api:
-	cd apps/api && npm test
+	npm run test -w apps/api
 
 test-api-cov:
-	cd apps/api && npm run test:cov
+	npm run test:cov -w apps/api
 
 test-api-e2e:
-	cd apps/api && npm run test:e2e
+	npm run test:e2e -w apps/api
 
 # --- Portal (unified, containerised) ---
 
@@ -236,13 +240,13 @@ init-no-extract: migrate elt-no-extract seed
 # --- Typechecks & Builds ---
 
 typecheck-portal:
-	cd apps/ops-portal && npm run typecheck
+	npm run typecheck -w apps/ops-portal
 
 build-api:
-	cd apps/api && npm run build
+	npm run build -w apps/api
 
 build-portal:
-	cd apps/ops-portal && npm run build
+	npm run build -w apps/ops-portal
 
 # --- Quality Gates & Verification ---
 

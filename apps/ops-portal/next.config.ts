@@ -5,7 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  transpilePackages: ['@modbm/portal-ui'],
+  transpilePackages: ['@modbm/portal-ui', '@modbm/shared'],
   async rewrites() {
     return [
       {

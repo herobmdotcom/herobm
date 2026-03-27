@@ -87,6 +87,7 @@ describe('Backorders Workflow (e2e)', () => {
       .expect(201);
 
     const salesOrderId = soRes.body.salesOrderId;
+    const salesOrderNumber = soRes.body.orderNumber;
 
     // 4. Add a Line Item (qty: 50, which is higher than the 0 on hand)
     await request(server)
@@ -147,7 +148,10 @@ describe('Backorders Workflow (e2e)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      if (detailRes.body.notes && detailRes.body.notes.includes(salesOrderId)) {
+      if (
+        detailRes.body.notes &&
+        detailRes.body.notes.includes(salesOrderNumber)
+      ) {
         generatedPo = detailRes.body;
         break;
       }

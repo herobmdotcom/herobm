@@ -79,11 +79,10 @@ If `winget` installs fail (e.g. corporate policy restrictions), you can install 
 
 **Close and reopen PowerShell** so that newly installed tools are available on your PATH.
 
-Then install JavaScript dependencies:
+Then install the JavaScript dependencies. This project uses NPM Workspaces, so you only need to run this once at the root directory:
 
 ```powershell
-cd apps/api && npm install && cd ../..
-cd apps/ops-portal && npm install && cd ../..
+npm install
 ```
 
 ---

@@ -44,6 +44,7 @@ interface CreateOrderDto {
   customerId: string;
   customerOrderNumber?: string;
   notes?: string;
+  fulfillmentLocationId?: string;
   lines: Array<{
     productId: string;
     productDescription?: string;
@@ -52,6 +53,7 @@ interface CreateOrderDto {
     discountPercentage?: string;
     gstCategoryId?: string;
     unitOfMeasure?: string;
+    fulfillmentLocationId?: string;
   }>;
 }
 

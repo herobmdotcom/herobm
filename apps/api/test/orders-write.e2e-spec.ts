@@ -54,6 +54,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
@@ -280,7 +281,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         const res = await request(app.getHttpServer())
           .patch(`/api/sales-orders/${orderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: nextState })
+          .send({ stateCode: nextState, generateBackorders: true })
           .expect(200);
         expect(res.body.stateCode).toBe(nextState);
       }

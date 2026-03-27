@@ -1,0 +1,222 @@
+npm run build -w apps/api
+
+> api@0.0.1 prebuild
+> jest --bail
+
+PASS src/invoices/sales-invoice.service.spec.ts
+PASS src/gl/gl.service.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/inventory/inventory.service.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/receptions/receptions.service.spec.ts
+PASS src/orders/shipment.service.spec.ts
+PASS src/orders/backorders.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/orders/picking.service.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/gl/coa-loader.service.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/orders/orders-write.service.spec.ts
+PASS src/purchase-orders/purchase-orders.service.spec.ts
+[Nest] 8492  - 03/27/2026, 10:29:12 PM   ERROR [ReportsService] Typst execution failed for report r1: Compiler failed
+PASS src/suppliers/suppliers.service.spec.ts
+PASS src/reports/reports.service.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/reports/reports.controller.spec.ts
+PASS src/receptions/receptions.controller.spec.ts
+[Nest] 3056  - 03/27/2026, 10:29:12 PM   ERROR [ReturnsWriteService] GL credit note failed for return RET-20260315-0001: Error: GL service unavailable
+PASS src/orders/returns-write.service.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/accounts/accounts-write.service.spec.ts
+PASS src/orders/returns-math.utils.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/gst/gst-categories.service.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/products/products-write.service.spec.ts
+PASS src/orders/picking-math.utils.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+PASS src/orders/order-lifecycle-rules.spec.ts
+PASS src/suppliers/suppliers-write.service.spec.ts
+PASS src/invoices/purchase-invoice.service.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/gst/gst-categories.controller.spec.ts
+PASS src/reports/picking-slip.service.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+
+Test Suites: 49 passed, 49 total
+Tests:       516 passed, 516 total
+Snapshots:   0 total
+Time:        2.925 s, estimated 3 s
+Ran all test suites.
+
+> api@0.0.1 build
+> nest build
+
+npm run typecheck -w apps/ops-portal
+
+> ops-portal@0.1.0 typecheck
+> tsc --noEmit
+
+npm run test -w apps/api
+
+> api@0.0.1 test
+> npm run test:deps && npm run lint && jest
+
+
+> api@0.0.1 test:deps
+> npx -y depcheck
+
+No depcheck issue
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+PASS src/accounts/accounts.service.spec.ts
+PASS src/receptions/receptions.service.spec.ts
+PASS src/gl/gl.service.spec.ts
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/invoices/sales-invoice.service.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/inventory/inventory.service.spec.ts
+PASS src/orders/shipment.service.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/orders/picking.service.spec.ts
+PASS src/orders/backorders.service.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+[Nest] 22972  - 03/27/2026, 10:29:34 PM   ERROR [ReturnsWriteService] GL credit note failed for return RET-20260315-0001: Error: GL service unavailable
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/receptions/receptions.controller.spec.ts
+PASS src/suppliers/suppliers.service.spec.ts
+PASS src/orders/returns-write.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/purchase-orders/purchase-orders.service.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/reports/reports.controller.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/accounts/accounts-write.service.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/reports/picking-slip.service.spec.ts
+PASS src/gst/gst-categories.controller.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/gl/coa-loader.service.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/orders/order-lifecycle-rules.spec.ts
+PASS src/invoices/purchase-invoice.service.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+PASS src/orders/orders-write.service.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+PASS src/orders/returns-math.utils.spec.ts
+[Nest] 3368  - 03/27/2026, 10:29:34 PM   ERROR [ReportsService] Typst execution failed for report r1: Compiler failed
+PASS src/orders/picking-math.utils.spec.ts
+PASS src/gst/gst-categories.service.spec.ts
+PASS src/suppliers/suppliers-write.service.spec.ts
+PASS src/reports/reports.service.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/products/products-write.service.spec.ts
+
+Test Suites: 49 passed, 49 total
+Tests:       516 passed, 516 total
+Snapshots:   0 total
+Time:        3.456 s
+Ran all test suites.
+npm run test:e2e -w apps/api
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+PASS test/backorders.e2e-spec.ts (7.977 s)
+PASS test/picking.e2e-spec.ts
+PASS test/returns.e2e-spec.ts
+PASS test/orders-write.e2e-spec.ts
+PASS test/sales-invoices.e2e-spec.ts
+PASS test/archive.e2e-spec.ts
+PASS test/inventory-cycle.e2e-spec.ts
+PASS test/reports.e2e-spec.ts
+PASS test/app.e2e-spec.ts
+PASS test/audit.e2e-spec.ts
+PASS test/purchase-invoices.e2e-spec.ts
+PASS test/receptions.e2e-spec.ts
+PASS test/products.e2e-spec.ts
+PASS test/suppliers.e2e-spec.ts
+PASS test/accounts.e2e-spec.ts
+PASS test/gl.e2e-spec.ts
+PASS test/system-logs.e2e-spec.ts
+
+Test Suites: 17 passed, 17 total
+Tests:       5 skipped, 169 passed, 174 total
+Snapshots:   0 total
+Time:        23.23 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+Running test: test_drizzle_schema_sync
+Checking if Drizzle schema definition matches codebase migrations...
+  [OK] No ungenerated schema changes in codebase.
+Checking if the database is fully migrated...
+  [OK] Database is fully migrated.
+
+Test Passed: test_drizzle_schema_sync
+PASS: No Docker socket mount in base docker-compose.yml
+
+=== Structural Checks ===
+  PASS: promtail-config.yaml has container_logs scrape job
+  PASS: promtail-config-windows.yaml has container_logs scrape job
+  PASS: No socket mounts in docker-compose.yml
+  PASS: podman_logs volume exists
+
+=== Live Loki Ingest Test ===
+  SKIP: -SkipLive flag set (PLG stack not expected to be running)
+
+=== Results: 4/4 passed ===
+ADV-037: All container log shipping checks passed.
+PASS: All docker-compose port bindings are restricted to 127.0.0.1.
+=== Scanning .ts files for ?? fallbacks on secret variables ===
+=== Checking all Redis services use --requirepass ===
+PASS: No weak credential fallback defaults or disabled auth found.
+=== Checking for git-tracked .env files ===
+=== Scanning for weak password literals in .ts/.tsx files ===
+=== Scanning for env var credential fallbacks in .ts/.tsx files ===
+PASS: No hardcoded credentials detected in source files.
+PASS: No wildcard CORS calls found.
+PASS: No bare print() calls found in 4 pipeline file(s).
+PASS: All third-party imports are pinned in requirements.txt.
+PASS: All 1 pipeline(s) have observability configured.
+PASS: ADV-035 -- all write services have Logger instances
+PASS: All controller handlers have proper AuthZ decorator coverage.
+PASS: ADV-045 -- all services use typed DrizzleDB injection
+PASS: AllExceptionsFilter is imported, registered, and file exists.
+PASS: ADV-032 -- all @SkipCasbin() controllers have ThrottlerGuard
+FAIL: Found 2 duplicate context-critical package(s):
+
+  ops-portal: react has 12 copies (16.3.2, 19.2.4, 33.3.2)
+  ops-portal: react-dom has 5 copies (19.2.4)
+
+WHY THIS MATTERS:
+  Each copy creates a separate React Context. The provider from
+  one copy is invisible to hooks from the other, causing a crash
+  with a minified error that is nearly impossible to debug in production.
+
+FIX: Ensure all workspace packages use peerDependencies for
+  context-critical libraries, and verify deduplication with:
+  npm ls <package> --all
+make: *** [Makefile:301: test-structural-local] Error 1

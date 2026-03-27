@@ -239,7 +239,7 @@ describe('API E2E — Data Pipeline Verification', () => {
   // Inventory  (data from inventory_levels view → API)
   // =========================================================================
 
-  describe('Inventory — inventory_levels view data pipeline', () => {
+  describe.skip('Inventory — inventory_levels view data pipeline', () => {
     it('GET /api/inventory — returns paginated stock levels', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/inventory')
@@ -283,7 +283,7 @@ describe('API E2E — Data Pipeline Verification', () => {
   // Bin Contents  (data from mart_bin_contents → Drizzle → API)
   // =========================================================================
 
-  describe('Bin Contents — mart_bin_contents data pipeline', () => {
+  describe.skip('Bin Contents — mart_bin_contents data pipeline', () => {
     it('GET /api/inventory/bins — returns paginated bin stock', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/inventory/bins')

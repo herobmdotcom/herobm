@@ -5,16 +5,18 @@ WORKDIR /app
 RUN apk add --no-cache typst font-dejavu \
     && npm install -g npm@11
 
-# Copy and build shared workspace package
-COPY packages/shared ./packages/shared
-RUN cd packages/shared && npm install && npm run build
+# To use NPM workspaces effectively in Docker, copy package info first to cache
+COPY package.json package-lock.json ./
+COPY packages/ ./packages/
+COPY apps/api/package*.json ./apps/api/
 
-# Build API
-WORKDIR /app/apps/api
-COPY apps/api/package*.json ./
+# Install the monorepo dependencies (this scopes to API and its dependencies due to -w)
 RUN npm ci
 
-COPY apps/api ./
+# Copy the actual source code
+COPY apps/api/ ./apps/api/
+
+WORKDIR /app/apps/api
 RUN npm test
 RUN npm run build
 RUN npm prune --omit=dev

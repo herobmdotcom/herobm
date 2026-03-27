@@ -1,0 +1,62 @@
+
+> api@0.0.1 test
+> npm run test:deps && npm run lint && jest --listTests
+
+
+> api@0.0.1 test:deps
+> npx -y depcheck
+
+No depcheck issue
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\receptions\receptions.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-invoice.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-returns.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\sales-invoice.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\backorders.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-write.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-quote.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\invoices.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\receptions\receptions.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\telemetry\telemetry.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products-write.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gst\gst-categories.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\casbin.guard.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\coa-loader.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.controller.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\purchase-invoice.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gst\gst-categories.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\picking-slip.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts-write.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers-write.service.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-math.utils.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-lifecycle-rules.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\all-exceptions.filter.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking-math.utils.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment-math.utils.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\audit.spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\projection-completeness.spec.ts

@@ -1,0 +1,21 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit --listTests
+
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\backorders.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\picking.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\sales-invoices.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\returns.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\archive.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\orders-write.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\inventory-cycle.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\app.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\reports.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\audit.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\receptions.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\purchase-invoices.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\accounts.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\products.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\suppliers.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\gl.e2e-spec.ts
+C:\Users\Marcel\volz\modbm\modbm\apps\api\test\system-logs.e2e-spec.ts
