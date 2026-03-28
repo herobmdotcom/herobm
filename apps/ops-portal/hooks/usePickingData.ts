@@ -19,6 +19,8 @@ export interface PickingSummaryLine {
   quantityShipped: string;
   remaining: string;
   isFullyPicked: boolean;
+  onHand: string;
+  isPhysical?: boolean;
 }
 
 export interface PickingSummary {
@@ -107,6 +109,18 @@ export function usePickingData(
       await loadPickingData();
     } catch (err) {
       setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdatePick'));
+    }
+  };
+
+  const updateLineLocation = async (lineId: string, locationId: string) => {
+    setError('');
+    try {
+      await apiMutate(`/api/sales-orders/${orderId}/picking/lines/${lineId}/location`, 'PATCH', {
+        fulfillmentLocationId: locationId,
+      });
+      await loadPickingData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tPicking('errors.failedToUpdateLocation'));
     }
   };
 
@@ -214,6 +228,7 @@ export function usePickingData(
     error,
     loadPickingData,
     pickLine,
+    updateLineLocation,
     pickAllForLine,
     pickAllOrder,
     printPickingSlip,

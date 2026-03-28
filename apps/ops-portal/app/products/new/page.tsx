@@ -7,6 +7,7 @@ import { apiFetch, apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -23,6 +24,7 @@ export default function NewProductPage() {
   const [dto, setDto] = useState({
     productNumber: '',
     name: '',
+    productType: 'inventory',
     barcode: '',
     listPrice: '0.00',
     standardCost: '0.00',
@@ -32,6 +34,7 @@ export default function NewProductPage() {
     gstCategory: '',
     scNumber: '',
     stateCode: 'active',
+    productGroupId: null,
     notes: '',
   });
 
@@ -139,6 +142,21 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Type
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.productType}
+                    onChange={(e) => updateField('productType', e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="inventory">Inventory (Tracked)</option>
+                    <option value="non-stock">Non-Stock</option>
+                    <option value="service">Service</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     Status
                   </label>
                   <select
@@ -154,6 +172,17 @@ export default function NewProductPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Product Group
+                  </label>
+                  <GroupSelect
+                    type="product"
+                    value={dto.productGroupId}
+                    onChange={(val) => updateField('productGroupId', val || '')}
+                    disabled={submitting}
+                  />
+                </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     SC Number

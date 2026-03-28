@@ -236,50 +236,6 @@ describe('API E2E — Data Pipeline Verification', () => {
   });
 
   // =========================================================================
-  // Inventory  (data from inventory_levels view → API)
-  // =========================================================================
-
-  describe.skip('Inventory — inventory_levels view data pipeline', () => {
-    it('GET /api/inventory — returns paginated stock levels', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/api/inventory')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(res.body).toHaveProperty('data');
-      expect(res.body).toHaveProperty('page', 1);
-      expect(Array.isArray(res.body.data)).toBe(true);
-      expect(res.body.data.length).toBeGreaterThan(0);
-
-      const first = res.body.data[0];
-      expect(first).toHaveProperty('inventoryLevelId');
-      expect(first).toHaveProperty('productNumber');
-      expect(first).toHaveProperty('quantityOnHand');
-    });
-
-    it('GET /api/inventory — search by product name', async () => {
-      const allRes = await request(app.getHttpServer())
-        .get('/api/inventory?limit=1')
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      const searchTerm = allRes.body.data[0]?.productName?.substring(0, 3);
-      if (!searchTerm) return;
-
-      const searchRes = await request(app.getHttpServer())
-        .get(`/api/inventory?q=${searchTerm}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .expect(200);
-
-      expect(searchRes.body.data.length).toBeGreaterThan(0);
-    });
-
-    it('GET /api/inventory — no token returns 401', async () => {
-      await request(app.getHttpServer()).get('/api/inventory').expect(401);
-    });
-  });
-
-  // =========================================================================
   // Bin Contents  (data from mart_bin_contents → Drizzle → API)
   // =========================================================================
 

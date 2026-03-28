@@ -30,6 +30,9 @@ function createMockQueryBuilder(resolvedValue: any = []) {
 
 function createMockTx() {
   return {
+    select: jest
+      .fn()
+      .mockReturnValue(createMockQueryBuilder([{ id: 'loc-main-123' }])),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
     delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
@@ -170,7 +173,10 @@ describe('OrdersWriteService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('MAIN') },
+        },
         OrdersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: GstCategoriesService, useValue: mockGstService },

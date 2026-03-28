@@ -18,6 +18,7 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
 import PageNav from '@/components/shared/PageNav';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 interface Account {
   accountId: string;
@@ -36,6 +37,7 @@ interface Account {
   primaryContactEmail: string | null;
   primaryContactPhone: string | null;
   customerGroup: string | null;
+  accountGroupId: string | null;
   gstPosition: string | null;
   currencyCode: string;
   customerDiscount: string | null;
@@ -135,7 +137,6 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
     }, 1000);
 
     return () => clearTimeout(handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dto]);
 
   const updateField = (field: keyof Account, value: any) => {
@@ -278,6 +279,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 searchPlaceholder={tSales('placeholders.searchOrders')}
                 exportFileName={`orders-${account.accountNumber}`}
                 fetchAll
+                rowIdField="id"
                 onRowClicked={handleOrderRowClicked}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
@@ -319,6 +321,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 columns={invoiceColumns}
                 gridKey="account-invoices"
                 fetchAll
+                rowIdField="invoiceId"
                 onRowClicked={handleInvoiceRowClicked}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
@@ -383,7 +386,19 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.customerGroup')}
+                    {t('common.columns.group')}
+                  </label>
+                  <GroupSelect
+                    type="account"
+                    value={dto.accountGroupId || null}
+                    onChange={(val) => updateField('accountGroupId', val)}
+                    disabled={!isEditable || saving}
+                    placeholder="No Account Group"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Customer Group (Legacy)
                   </label>
                   <input
                     type="text"

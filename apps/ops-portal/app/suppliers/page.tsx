@@ -86,6 +86,7 @@ export default function SuppliersPage() {
               exportFileName="suppliers"
               fetchAll
               showArchivedToggle
+              rowIdField="vendorId"
               onRowClicked={(row) => router.push(`/suppliers/${encodeURIComponent(row.vendorId)}`)}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                 <div className="flex items-center justify-between px-6 py-4">

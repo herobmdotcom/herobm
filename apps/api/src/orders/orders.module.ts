@@ -12,6 +12,7 @@ import { eq, sql } from 'drizzle-orm';
 import {
   salesOrders,
   salesOrderLineItems,
+  salesInvoices,
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { ConfigModule } from '@nestjs/config';
@@ -110,9 +111,9 @@ export class OrdersModule implements OnModuleInit {
       resolveData: async (id: string, user: any) => {
         // Find corresponding orderId for the specified invoiceId
         const [inv] = await this.db
-          .select({ orderId: sql<string>`sales_order_id` })
-          .from(sql`sales_invoices`)
-          .where(sql`invoice_id = ${id}`);
+          .select({ orderId: salesInvoices.salesOrderId })
+          .from(salesInvoices)
+          .where(eq(salesInvoices.invoiceId, id));
         if (!inv || !inv.orderId)
           throw new NotFoundException(`Invoice ${id} not found`);
         return (await this.reportSalesInvoiceService.assembleData(
@@ -123,8 +124,8 @@ export class OrdersModule implements OnModuleInit {
       },
       getRandomId: async () => {
         const rows = await this.db
-          .select({ id: sql<string>`invoice_id` })
-          .from(sql`sales_invoices`)
+          .select({ id: salesInvoices.invoiceId })
+          .from(salesInvoices)
           .orderBy(sql`RANDOM()`)
           .limit(1);
         return rows.length > 0 ? rows[0].id : undefined;

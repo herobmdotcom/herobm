@@ -7,6 +7,7 @@ import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 export default function NewAccountPage() {
   const t = useTranslations();
@@ -27,6 +28,7 @@ export default function NewAccountPage() {
     address1PostalCode: '',
     address1Country: '',
     customerGroup: '',
+    accountGroupId: '',
     gstPosition: '',
     currencyCode: 'EUR',
     customerDiscount: '0',
@@ -123,7 +125,18 @@ export default function NewAccountPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.customerGroup')}
+                      Account Group
+                    </label>
+                    <GroupSelect
+                      type="account"
+                      value={dto.accountGroupId || null}
+                      onChange={(val) => updateField('accountGroupId', val || '')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      Customer Group (Legacy)
                     </label>
                     <input
                       type="text"

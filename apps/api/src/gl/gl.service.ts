@@ -344,6 +344,7 @@ export class GlService {
 
     const rows = await this.db.execute(sql`
       SELECT
+        je.journal_entry_id AS journal_entry_id,
         je.entry_number,
         je.entry_date,
         je.memo AS entry_memo,

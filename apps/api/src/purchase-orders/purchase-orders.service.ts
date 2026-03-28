@@ -142,7 +142,7 @@ export class PurchaseOrdersService {
   }
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived } =
+    const { page, limit, offset, searchTerm, includeArchived, days } =
       parsePagination(query);
     const stateFilter = query?.state ?? null;
 
@@ -181,6 +181,12 @@ export class PurchaseOrdersService {
 
     if (!includeArchived) {
       conditions.push(sql`${purchaseOrders.stateCode} != 'archived'`);
+    }
+
+    if (days && days > 0) {
+      conditions.push(
+        sql`${purchaseOrders.createdOn} >= NOW() - INTERVAL '1 day' * ${days}`,
+      );
     }
 
     if (conditions.length > 0) {

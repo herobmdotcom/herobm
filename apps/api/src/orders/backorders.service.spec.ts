@@ -9,6 +9,8 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     set: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue(resolvedValue),

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import TemplateForm from '../TemplateForm';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 
 export default function EditTemplatePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const params = use(paramsPromise);
@@ -14,7 +14,7 @@ export default function EditTemplatePage({ params: paramsPromise }: { params: Pr
     apiFetch<{ data: any }>(`/api/reports/${params.id}`)
       .then(res => setInitialData(res.data))
       .catch((e) => {
-        console.error(e);
+        reportError(e, 'EditTemplatePage');
         setError(true);
       })
       .finally(() => setLoading(false));

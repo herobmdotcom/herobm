@@ -98,6 +98,27 @@ def seed_inventory(dry_run: bool = False) -> None:
     print("  SKIP: Inventory levels are imported via 'make import-legacy' (dbt import models)")
 
 
+def sync_inventory_aggregates(dry_run: bool = False) -> None:
+    """Consolidation task to fix inventory drift from native dbt imports."""
+    if dry_run:
+        print("  [DRY RUN] Would sync products.quantity_on_hand from inventory_ledger")
+        return
+    sql = """
+    WITH ledger_totals AS (
+      SELECT product_id, COALESCE(SUM(quantity), 0) as total_qty
+      FROM modbm_core.inventory_ledger
+      GROUP BY product_id
+    )
+    UPDATE modbm_core.products p
+    SET quantity_on_hand = COALESCE(lt.total_qty, 0)
+    FROM ledger_totals lt
+    WHERE p.product_id = lt.product_id
+    AND p.quantity_on_hand != COALESCE(lt.total_qty, 0);
+    """
+    psql_sql(sql)
+    print("  Synced products.quantity_on_hand with inventory_ledger totals")
+
+
 def seed_products(dry_run: bool = False) -> None:
     """Products are now imported via dbt import models (make import-legacy)."""
     print("  SKIP: Products are imported via 'make import-legacy' (dbt import models)")
@@ -218,6 +239,8 @@ def main() -> None:
     if seed_all or inventory_only:
         print("Seeding inventory...")
         seed_inventory(dry_run)
+        print("Syncing inventory aggregates...")
+        sync_inventory_aggregates(dry_run)
 
     if seed_all or products_only:
         print("Seeding products...")

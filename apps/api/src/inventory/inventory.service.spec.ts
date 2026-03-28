@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { InventoryService } from './inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 
@@ -70,7 +71,11 @@ describe('InventoryService', () => {
     mockQb.then = jest.fn().mockImplementation((cb) => cb(mockRows));
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [InventoryService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [
+        InventoryService,
+        { provide: DRIZZLE, useValue: mockDb },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+      ],
     }).compile();
 
     service = module.get<InventoryService>(InventoryService);

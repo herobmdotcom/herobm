@@ -11,6 +11,7 @@
  */
 
 import { useTranslations } from 'next-intl';
+import { computeOrderTotals } from '@modbm/shared';
 
 /* ── Type definitions ────────────────────────────────────────────── */
 
@@ -84,13 +85,7 @@ export default function OrderDetailReadView({
   const tRV = useTranslations('common.orderReadView');
   const tCols = useTranslations('salesOrders.columns');
 
-  const subtotal = order.lines.reduce(
-    (sum, l) => sum + parseFloat(l.amount || '0'), 0,
-  );
-  const totalTax = order.lines.reduce(
-    (sum, l) => sum + parseFloat(l.tax || '0'), 0,
-  );
-  const grandTotal = subtotal + totalTax;
+  const { subtotal, totalTax, totalAmount: grandTotal } = computeOrderTotals(order.lines);
   const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
   const cc = order.currencyCode || 'EUR';
 

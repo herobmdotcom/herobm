@@ -277,11 +277,22 @@ export class ShipmentService {
           sl.salesOrderLineId,
           shipment.salesOrderId,
         );
+        const [product] = await tx
+          .select({ productType: coreProducts.productType })
+          .from(coreProducts)
+          .where(eq(coreProducts.productId, orderLine.productId!));
+
         stockLines.push({
           productId: orderLine.productId,
           quantity: sl.quantityShipped,
+          isPhysical:
+            !product ||
+            !product.productType ||
+            product.productType === 'inventory',
         });
       }
+
+      const physicalStockLines = stockLines.filter((l) => l.isPhysical);
 
       if (shipment.stateCode === 'draft' && newState === 'dispatched') {
         const method = this.configService.get<string>(
@@ -311,7 +322,7 @@ export class ShipmentService {
           .groupBy(inventoryLedger.binId, inventoryLedger.productId);
 
         const dispatchLines = [];
-        for (const line of stockLines) {
+        for (const line of physicalStockLines) {
           let remainingToShip = parseFloat(line.quantity);
           const availablePicks = pickHistory.filter(
             (p) => p.productId === line.productId && p.netPicked > 0,
@@ -353,7 +364,7 @@ export class ShipmentService {
 
         // Calculate COGS and record outbox event for GL mapping
         const cogsDetails = [];
-        for (const line of stockLines) {
+        for (const line of physicalStockLines) {
           if (!line.productId) continue;
 
           const isUuid =
@@ -465,7 +476,7 @@ export class ShipmentService {
           .groupBy(inventoryLedger.binId, inventoryLedger.productId);
 
         const returnLines = [];
-        for (const line of stockLines) {
+        for (const line of physicalStockLines) {
           let remainingToRevert = parseFloat(line.quantity);
           const availableDispatches = previousDispatch.filter(
             (p) => p.productId === line.productId && p.shippedQty > 0,

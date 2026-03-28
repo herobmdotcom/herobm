@@ -7,6 +7,7 @@ import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 export default function NewSupplierPage() {
   const t = useTranslations();
@@ -22,6 +23,7 @@ export default function NewSupplierPage() {
     address1Country: '',
     paymentTerms: 'NET30',
     currencyCode: 'EUR',
+    supplierGroupId: '',
     notes: '',
   });
 
@@ -117,6 +119,17 @@ export default function NewSupplierPage() {
                       <option value="USD">USD</option>
                       <option value="GBP">GBP</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      Supplier Group
+                    </label>
+                    <GroupSelect
+                      type="supplier"
+                      value={dto.supplierGroupId || null}
+                      onChange={(val) => updateField('supplierGroupId', val || '')}
+                      disabled={submitting}
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>

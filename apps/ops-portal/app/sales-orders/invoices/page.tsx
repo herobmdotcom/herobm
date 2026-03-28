@@ -16,7 +16,7 @@ export default function GlobalInvoicesPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const invoiceFilter = searchParams.get('invoice') || '';
-    const [days, setDays] = useState('0');
+    const [days, setDays] = useState('90');
 
     const handleRowClicked = useCallback((row: any) => {
         if (row.salesOrderId) {
@@ -64,6 +64,7 @@ export default function GlobalInvoicesPage() {
                         columns={gridColumns} 
                         gridKey="global-invoices"
                         fetchAll
+                        rowIdField="invoiceId"
                         onRowClicked={handleRowClicked}
                         renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                             <div className="flex items-center justify-between px-6 py-4">

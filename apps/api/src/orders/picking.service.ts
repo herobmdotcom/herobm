@@ -4,7 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -126,7 +126,7 @@ export class PickingService {
       entryNumber: `PCK-${orderId.substring(0, 8)}-${lineNumber}-${Date.now().toString().slice(-4)}`,
       sourceType: 'SO_PICK',
       sourceId: orderId,
-      memo: `Sales Order Pick \${delta > 0 ? 'Allocation' : 'Reversion'}`,
+      memo: `Sales Order Pick ${delta > 0 ? 'Allocation' : 'Reversion'}`,
       userId: actor,
       lines: ledgerLines,
     });
@@ -269,6 +269,59 @@ export class PickingService {
   }
 
   /**
+   * Update the fulfillment location for a single line during picking.
+   */
+  async updateLineLocation(
+    orderId: string,
+    lineId: string,
+    locationId: string,
+    actor: string,
+  ) {
+    const order = await findOrder(this.db, orderId);
+    if (!['picking', 'draft', 'quoted'].includes(order.stateCode)) {
+      throw new BadRequestException(
+        `Cannot change line location on order in state '${order.stateCode}'.`,
+      );
+    }
+
+    const line = await findOrderLine(this.db, lineId, orderId);
+    if (parseFloat(line.quantityPicked || '0') > 0) {
+      throw new BadRequestException(
+        `Cannot change fulfillment location. You must unpick the line (set picked quantity to 0) first.`,
+      );
+    }
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const [updated] = await tx
+        .update(salesOrderLineItems)
+        .set({ fulfillmentLocationId: locationId })
+        .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
+        .returning();
+
+      await tx
+        .update(salesOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, orderId));
+
+      await writeEvent(
+        tx,
+        orderId,
+        'line_updated',
+        {
+          lineId,
+          changes: { fulfillmentLocationId: locationId },
+          previousValues: { fulfillmentLocationId: line.fulfillmentLocationId },
+        },
+        actor,
+      );
+
+      return updated;
+    });
+
+    return result;
+  }
+
+  /**
    * Pick all for the entire order: set all quantity_picked = quantity
    * AND create a shipment with the UNSHIPPED quantities.
    */
@@ -376,7 +429,9 @@ export class PickingService {
         quantity: salesOrderLineItems.quantity,
         quantityPicked: salesOrderLineItems.quantityPicked,
         productNumber: coreProducts.productNumber,
+        productType: coreProducts.productType,
         locationName: locations.name,
+        fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -392,22 +447,55 @@ export class PickingService {
 
     const committedMap = await getCommittedPerLine(this.db, orderId);
 
+    const productIds = Array.from(
+      new Set(lines.map((l) => l.productId).filter(Boolean) as string[]),
+    );
+    const onHandData =
+      productIds.length > 0
+        ? await this.db
+            .select({
+              productId: binContents.productId,
+              locationId: zones.locationId,
+              onHand: sql<string>`CAST(SUM(${binContents.actualQuantity}) AS VARCHAR)`,
+            })
+            .from(binContents)
+            .innerJoin(bins, eq(binContents.binId, bins.binId))
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(inArray(binContents.productId, productIds))
+            .groupBy(binContents.productId, zones.locationId)
+        : [];
+
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
-      const picked = parseFloat(line.quantityPicked ?? '0');
-      const committed = committedMap.get(line.salesOrderLineId) ?? 0;
+      const isPhysical = !line.productType || line.productType === 'inventory';
+      const picked = isPhysical
+        ? parseFloat(line.quantityPicked ?? '0')
+        : ordered;
+      const committed = isPhysical
+        ? (committedMap.get(line.salesOrderLineId) ?? 0)
+        : ordered;
       return {
         salesOrderLineId: line.salesOrderLineId,
         lineNumber: line.lineNumber,
         productId: line.productId,
         productNumber: line.productNumber,
+        productType: line.productType,
         productDescription: line.productDescription,
         locationName: line.locationName || 'System Default',
         quantity: line.quantity,
-        quantityPicked: line.quantityPicked ?? '0',
+        quantityPicked: isPhysical
+          ? (line.quantityPicked ?? '0')
+          : String(ordered),
         quantityShipped: String(committed),
         remaining: String(ordered - picked),
         isFullyPicked: picked >= ordered,
+        isPhysical,
+        onHand:
+          onHandData.find(
+            (o) =>
+              o.productId === line.productId &&
+              o.locationId === line.fulfillmentLocationId,
+          )?.onHand || '0',
       };
     });
 
@@ -431,16 +519,9 @@ export class PickingService {
    * Throws BadRequestException if not.
    */
   async assertFullyPicked(orderId: string): Promise<void> {
-    const lines = await this.db
-      .select({
-        lineNumber: salesOrderLineItems.lineNumber,
-        quantity: salesOrderLineItems.quantity,
-        quantityPicked: salesOrderLineItems.quantityPicked,
-      })
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.salesOrderId, orderId));
+    const summary = await this.getPickingSummary(orderId);
 
-    const unpicked = lines.filter((l) => {
+    const unpicked = summary.lines.filter((l) => {
       const ordered = parseFloat(l.quantity);
       const picked = parseFloat(l.quantityPicked ?? '0');
       return picked < ordered;

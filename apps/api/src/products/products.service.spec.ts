@@ -31,17 +31,23 @@ describe('ProductsService', () => {
 
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
-    $dynamic: jest.fn(),
+    $dynamic: jest.fn().mockReturnThis(),
     then: jest.fn().mockImplementation((cb) => cb(mockProducts)),
     [Symbol.asyncIterator]: jest.fn(),
   };
 
   const mockDb = {
     select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(mockQueryBuilder),
+      from: jest.fn().mockReturnValue({
+        leftJoin: jest.fn().mockReturnValue(mockQueryBuilder),
+        where: jest.fn().mockReturnValue(mockQueryBuilder),
+        $dynamic: jest.fn().mockReturnValue(mockQueryBuilder),
+      }),
     }),
   };
 

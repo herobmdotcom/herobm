@@ -21,13 +21,13 @@ export default function Sidebar() {
       items: [
         { href: '/products', label: t('items.products'), icon: 'category' },
         { 
-          href: '/inventory', 
+          href: '/inventory/bins', 
           label: t('items.inventory'), 
           icon: 'inventory_2',
           subItems: [
-            { href: '/inventory', label: tInventory('tabs.products') },
             { href: '/inventory/bins', label: tInventory('tabs.binContents') },
             { href: '/inventory/movements', label: t('items.movements') },
+            { href: '/inventory/ledger', label: tInventory('tabs.ledger', { fallback: 'Ledger' }) },
             { href: '/inventory/locations', label: tInventory('tabs.locations', { defaultValue: 'Locations' }) }
           ]
         },
@@ -82,8 +82,25 @@ export default function Sidebar() {
       label: t('groups.admin'),
       items: [
         { href: '/admin/reporting', label: 'Reporting', icon: 'architecture' },
-        { href: '/admin/event-queue', label: t('items.eventQueue'), icon: 'sync' },
-        { href: '/admin/system-logs', label: t('items.systemLogs'), icon: 'terminal' },
+        { 
+          href: '/admin/account-groups', 
+          label: 'Groups', 
+          icon: 'folder_shared',
+          subItems: [
+            { href: '/admin/account-groups', label: 'Account Groups' },
+            { href: '/admin/supplier-groups', label: 'Supplier Groups' },
+            { href: '/admin/product-groups', label: 'Product Groups' },
+          ]
+        },
+        { 
+          href: '/admin/event-queue', 
+          label: 'System Health', 
+          icon: 'monitor_heart',
+          subItems: [
+            { href: '/admin/event-queue', label: t('items.eventQueue') },
+            { href: '/admin/system-logs', label: t('items.systemLogs') },
+          ]
+        },
       ],
     });
   }

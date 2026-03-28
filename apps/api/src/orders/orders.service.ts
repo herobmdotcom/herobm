@@ -28,8 +28,15 @@ export class OrdersService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived, accountId } =
-      parsePagination(query);
+    const {
+      page,
+      limit,
+      offset,
+      searchTerm,
+      includeArchived,
+      accountId,
+      days,
+    } = parsePagination(query);
 
     const conditions = [];
 
@@ -54,6 +61,12 @@ export class OrdersService {
           eq(salesOrders.customerId, accountId),
           eq(coreAccounts.sourceId, accountId),
         ),
+      );
+    }
+
+    if (days && days > 0) {
+      conditions.push(
+        sql`${salesOrders.createdOn} >= NOW() - INTERVAL '1 day' * ${days}`,
       );
     }
 

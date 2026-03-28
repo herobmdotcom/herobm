@@ -8,6 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
+import { ConfigService } from '@nestjs/config';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -19,6 +20,7 @@ import {
   products as coreProducts,
   backorders,
   purchaseOrders,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
@@ -94,6 +96,7 @@ export class OrdersWriteService {
     private readonly accountsService: AccountsService,
     private readonly productsService: ProductsService,
     private readonly backordersService: BackordersService,
+    private readonly configService: ConfigService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
@@ -320,6 +323,26 @@ export class OrdersWriteService {
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // Resolve fulfillmentLocationId: Fall back to system default if omitted
+      let fallbackLocId = dto.fulfillmentLocationId;
+      if (!fallbackLocId) {
+        const defCode = this.configService.get<string>(
+          'DEFAULT_FULFILLMENT_LOCATION_CODE',
+        );
+        if (defCode) {
+          const [loc] = await tx
+            .select({ id: locations.locationId })
+            .from(locations)
+            .where(eq(locations.code, defCode));
+          if (loc) fallbackLocId = loc.id;
+        }
+      }
+      if (!fallbackLocId) {
+        throw new BadRequestException(
+          'Fulfillment location must be provided or configured globally.',
+        );
+      }
+
       const orderNumber = await this.generateOrderNumber(tx);
       // Insert order header with snapshotted customer discount + GST category
       const [order] = await tx
@@ -329,7 +352,7 @@ export class OrdersWriteService {
           name: dto.name || orderNumber,
           customerId: dto.customerId,
           customerOrderNumber: dto.customerOrderNumber,
-          fulfillmentLocationId: dto.fulfillmentLocationId,
+          fulfillmentLocationId: fallbackLocId,
           stateCode: 'draft',
           currencyCode: customer.currencyCode,
           notes: dto.notes,
@@ -367,8 +390,7 @@ export class OrdersWriteService {
           tax: computed.tax,
           totalAmount: computed.totalAmount,
           unitOfMeasure: line.unitOfMeasure,
-          fulfillmentLocationId:
-            line.fulfillmentLocationId || dto.fulfillmentLocationId,
+          fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
         });
       }
 
@@ -690,6 +712,7 @@ export class OrdersWriteService {
           tax: computed.tax,
           totalAmount: computed.totalAmount,
           unitOfMeasure: dto.unitOfMeasure,
+          fulfillmentLocationId: order.fulfillmentLocationId,
         })
         .returning();
 
@@ -718,6 +741,120 @@ export class OrdersWriteService {
   }
 
   /**
+   * Add a line item post-confirmation explicitly natively without state locking.
+   */
+  async addPostConfirmationLine(
+    orderId: string,
+    dto: AddLineDto,
+    actor: string,
+  ) {
+    const order = await this.findOrder(orderId);
+
+    if (['invoiced', 'cancelled'].includes(order.stateCode)) {
+      throw new BadRequestException(
+        `Cannot add post-confirmation lines to order in state '${order.stateCode}'`,
+      );
+    }
+
+    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+    if (dto.productId) {
+      await this.validateProduct(dto.productId);
+
+      // Check if product already exists in this order (exempting Custom Lines)
+      if (dto.productId !== CUSTOM_LINE_ID) {
+        const existingLine = await this.db
+          .select({ id: salesOrderLineItems.salesOrderLineId })
+          .from(salesOrderLineItems)
+          .where(
+            sql`${salesOrderLineItems.salesOrderId} = ${orderId} AND ${salesOrderLineItems.productId} = ${dto.productId}`,
+          )
+          .limit(1);
+
+        if (existingLine.length > 0) {
+          throw new BadRequestException(
+            `Product '${dto.productId}' is already present in this order.`,
+          );
+        }
+      }
+    }
+
+    // Get next line number
+    const maxLine = await this.db
+      .select({
+        max: sql<number>`COALESCE(MAX(${salesOrderLineItems.lineNumber}), 0)`,
+      })
+      .from(salesOrderLineItems)
+      .where(eq(salesOrderLineItems.salesOrderId, orderId));
+
+    const lineNumber = (maxLine[0]?.max ?? 0) + 1;
+
+    // Resolve GST: product × customer intersection, with per-line override
+    const lineGst = await this.resolveGstForLine(
+      order.customerId ?? '',
+      dto.productId,
+      dto.gstCategoryId,
+    );
+    const gstCategoryId = lineGst.gstCategoryId;
+    const gstRate = lineGst.rate;
+
+    const customer = await this.resolveCustomer(order.customerId ?? '');
+    const lineDiscount =
+      dto.discountPercentage ?? customer.customerDiscount ?? '0';
+
+    const computed = this.computeLineAmount(
+      dto.quantity,
+      dto.pricePerUnit,
+      lineDiscount,
+      gstRate,
+    );
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const [line] = await tx
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: orderId,
+          lineNumber,
+          productId: dto.productId,
+          productDescription: dto.productDescription,
+          quantity: dto.quantity,
+          pricePerUnit: dto.pricePerUnit,
+          discountPercentage: lineDiscount,
+          gstCategoryId,
+          amount: computed.amount,
+          tax: computed.tax,
+          totalAmount: computed.totalAmount,
+          unitOfMeasure: dto.unitOfMeasure,
+          fulfillmentLocationId: order.fulfillmentLocationId,
+          isPostConfirmation: true,
+        })
+        .returning();
+
+      await tx
+        .update(salesOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, orderId));
+
+      await this.writeEvent(
+        tx,
+        orderId,
+        'post_confirmation_line_added',
+        {
+          lineId: line.salesOrderLineId,
+          productId: dto.productId,
+          quantity: dto.quantity,
+          gstCategoryId,
+          pricePerUnit: dto.pricePerUnit,
+        },
+        actor,
+      );
+
+      return line;
+    });
+
+    return result;
+  }
+
+  /**
    * Update a line item.
    */
   async updateLine(
@@ -727,14 +864,19 @@ export class OrdersWriteService {
     actor: string,
   ) {
     const order = await this.findOrder(orderId);
+    const existingLine = await this.findLine(lineId, orderId);
 
     if (['invoiced', 'shipped', 'cancelled'].includes(order.stateCode)) {
-      throw new BadRequestException(
-        `Cannot update lines on order in state '${order.stateCode}'`,
-      );
+      const isPostConfLine = existingLine.isPostConfirmation === true;
+      if (
+        !isPostConfLine ||
+        ['invoiced', 'cancelled'].includes(order.stateCode)
+      ) {
+        throw new BadRequestException(
+          `Cannot update normal lines on order in state '${order.stateCode}'`,
+        );
+      }
     }
-
-    const existingLine = await this.findLine(lineId, orderId);
 
     // Resolve GST: DTO override → existing line category → default product/customer resolution
     let gstCategoryId = existingLine.gstCategoryId;
@@ -815,14 +957,19 @@ export class OrdersWriteService {
    */
   async removeLine(orderId: string, lineId: string, actor: string) {
     const order = await this.findOrder(orderId);
+    const existingLine = await this.findLine(lineId, orderId);
 
     if (['invoiced', 'shipped', 'cancelled'].includes(order.stateCode)) {
-      throw new BadRequestException(
-        `Cannot remove lines from order in state '${order.stateCode}'`,
-      );
+      const isPostConfLine = existingLine.isPostConfirmation === true;
+      if (
+        !isPostConfLine ||
+        ['invoiced', 'cancelled'].includes(order.stateCode)
+      ) {
+        throw new BadRequestException(
+          `Cannot remove normal lines from order in state '${order.stateCode}'`,
+        );
+      }
     }
-
-    const existingLine = await this.findLine(lineId, orderId);
 
     await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
@@ -861,6 +1008,7 @@ export class OrdersWriteService {
         lineNumber: salesOrderLineItems.lineNumber,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
+        productType: coreProducts.productType,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         pricePerUnit: salesOrderLineItems.pricePerUnit,
@@ -872,6 +1020,7 @@ export class OrdersWriteService {
         quantityPicked: salesOrderLineItems.quantityPicked,
         gstCategoryId: salesOrderLineItems.gstCategoryId,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
+        isPostConfirmation: salesOrderLineItems.isPostConfirmation,
       })
       .from(salesOrderLineItems)
       .leftJoin(

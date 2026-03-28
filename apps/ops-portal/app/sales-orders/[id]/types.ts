@@ -3,6 +3,7 @@ export interface OrderLine {
     lineNumber: number;
     productId: string;
     productNumber?: string;
+    productType?: string;
     productDescription: string;
     quantity: string;
     pricePerUnit: string;
@@ -13,6 +14,7 @@ export interface OrderLine {
     totalAmount: string;
     unitOfMeasure: string;
     fulfillmentLocationId?: string | null;
+    isPostConfirmation?: boolean | null;
 }
 
 export interface GstCategory {

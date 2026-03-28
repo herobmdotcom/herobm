@@ -60,7 +60,11 @@ export default function TopographyView() {
   const toggleLocation = (id: string) => {
     setExpandedLocations((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -68,7 +72,11 @@ export default function TopographyView() {
   const toggleZone = (id: string) => {
     setExpandedZones((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };

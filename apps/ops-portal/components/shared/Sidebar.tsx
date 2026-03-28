@@ -67,11 +67,8 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
               const isActive =
                 item.href === '/'
                   ? pathname === '/'
-                  : pathname.startsWith(item.href);
-              
-              // Handle sub-item active states to ensure parent stays highlight correctly,
-              // but we only exactly match if it's the exact path when subItems exist.
-              const isParentExact = pathname === item.href;
+                  : pathname.startsWith(item.href) ||
+                    !!item.subItems?.some(sub => pathname.startsWith(sub.href));
 
               return (
                 <div key={item.href} className="mb-0.5">
@@ -123,7 +120,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
         ))}
       </nav>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{footer || 'modbm'}</p>
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{footer || 'herobm'}</p>
         <button
           onClick={() => logout()}
           className="text-xs font-medium px-2 py-1 rounded transition-colors"

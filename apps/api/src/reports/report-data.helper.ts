@@ -1,6 +1,6 @@
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -110,12 +110,7 @@ export function assembleOrderData(
     };
   });
 
-  const subtotal = lines.reduce((sum, l) => sum + parseFloat(l.amount), 0);
-  const totalTax = lines.reduce((sum, l) => sum + parseFloat(l.tax), 0);
-  const totalAmount = lines.reduce(
-    (sum, l) => sum + parseFloat(l.totalAmount),
-    0,
-  );
+  const totals = computeOrderTotals(lines);
 
   return {
     header: {
@@ -130,9 +125,9 @@ export function assembleOrderData(
     },
     lines,
     summary: {
-      subtotal,
-      totalTax,
-      totalAmount,
+      subtotal: totals.subtotal,
+      totalTax: totals.totalTax,
+      totalAmount: totals.totalAmount,
     },
     generatedAt:
       new Date().toLocaleDateString('en-IE') +

@@ -21,6 +21,9 @@ export {
 export {
   computeLinePrice,
   computeLinePriceForStorage,
+  computeOrderTotals,
 } from './pricing';
 
-export type { LinePricingInput, LinePricingResult } from './pricing';
+export type { LinePricingInput, LinePricingResult, OrderTotalsResult } from './pricing';
+
+export type ProductType = 'inventory' | 'non-stock' | 'service';

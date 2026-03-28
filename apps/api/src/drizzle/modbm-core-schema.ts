@@ -57,9 +57,9 @@ export const salesOrders = modbmCore.table('sales_orders', {
   name: text('name'),
   customerId: uuid('customer_id').references(() => accounts.accountId),
   customerOrderNumber: text('customer_order_number'),
-  fulfillmentLocationId: uuid('fulfillment_location_id').references(
-    () => locations.locationId,
-  ),
+  fulfillmentLocationId: uuid('fulfillment_location_id')
+    .notNull()
+    .references(() => locations.locationId),
   stateCode: text('state_code').notNull().default('draft'),
   currencyCode: text('currency_code').notNull().default('EUR'),
   notes: text('notes'),
@@ -93,9 +93,10 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
   totalAmount: numeric('total_amount'),
   unitOfMeasure: text('unit_of_measure'),
   quantityPicked: numeric('quantity_picked').default('0'),
-  fulfillmentLocationId: uuid('fulfillment_location_id').references(
-    () => locations.locationId,
-  ),
+  fulfillmentLocationId: uuid('fulfillment_location_id')
+    .notNull()
+    .references(() => locations.locationId),
+  isPostConfirmation: boolean('is_post_confirmation').default(false),
 });
 
 // ---------------------------------------------------------------------------
@@ -516,6 +517,11 @@ export const products = modbmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
+  productType: text('product_type', {
+    enum: ['inventory', 'non-stock', 'service'],
+  })
+    .notNull()
+    .default('inventory'),
   productGroupId: uuid('product_group_id').references(
     () => productGroups.productGroupId,
   ),

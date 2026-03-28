@@ -1,0 +1,16 @@
+
+> ops-portal@0.1.0 lint
+> eslint "app/**/*.{ts,tsx}" "lib/**/*.{ts,tsx}" "components/**/*.{ts,tsx}" --quiet
+
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\accounts\[id]\page.tsx
+  140:5  error  Definition for rule 'react-hooks/exhaustive-deps' was not found  react-hooks/exhaustive-deps
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\admin\reporting\TemplateForm.tsx
+  85:7  error  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack  no-restricted-syntax
+
+C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal\app\admin\reporting\[id]\page.tsx
+  17:9  error  ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack  no-restricted-syntax
+
+Γ£û 3 problems (3 errors, 0 warnings)
+

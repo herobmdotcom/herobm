@@ -259,9 +259,20 @@ describe('PickingService', () => {
   describe('assertFullyPicked', () => {
     it('should pass when all lines fully picked', async () => {
       mockSelectChain({
-        1: [
-          { lineNumber: 1, quantity: '10', quantityPicked: '10' },
-          { lineNumber: 2, quantity: '5', quantityPicked: '5' },
+        1: [PICKING_ORDER],
+        2: [
+          {
+            lineNumber: 1,
+            quantity: '10',
+            quantityPicked: '10',
+            productId: 'p1',
+          },
+          {
+            lineNumber: 2,
+            quantity: '5',
+            quantityPicked: '5',
+            productId: 'p2',
+          },
         ],
       });
       await expect(
@@ -271,9 +282,20 @@ describe('PickingService', () => {
 
     it('should throw when lines not fully picked', async () => {
       mockSelectChain({
-        1: [
-          { lineNumber: 1, quantity: '10', quantityPicked: '10' },
-          { lineNumber: 2, quantity: '5', quantityPicked: '3' },
+        1: [PICKING_ORDER],
+        2: [
+          {
+            lineNumber: 1,
+            quantity: '10',
+            quantityPicked: '10',
+            productId: 'p1',
+          },
+          {
+            lineNumber: 2,
+            quantity: '5',
+            quantityPicked: '3',
+            productId: 'p2',
+          },
         ],
       });
       await expect(service.assertFullyPicked('order-001')).rejects.toThrow(
@@ -283,7 +305,15 @@ describe('PickingService', () => {
 
     it('should include unpicked line details in error message', async () => {
       mockSelectChain({
-        1: [{ lineNumber: 1, quantity: '10', quantityPicked: '7' }],
+        1: [PICKING_ORDER],
+        2: [
+          {
+            lineNumber: 1,
+            quantity: '10',
+            quantityPicked: '7',
+            productId: 'p1',
+          },
+        ],
       });
       try {
         await service.assertFullyPicked('order-001');

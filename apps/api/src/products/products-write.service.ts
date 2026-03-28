@@ -19,6 +19,7 @@ import { calculateAuditTrail, AuditMode } from '../common/audit';
 export interface CreateProductDto {
   productNumber: string;
   name: string;
+  productType?: 'inventory' | 'non-stock' | 'service';
   barcode?: string;
   listPrice?: string;
   standardCost?: string;
@@ -27,12 +28,14 @@ export interface CreateProductDto {
   priceLevel4?: string;
   gstCategory?: string;
   scNumber?: string;
+  productGroupId?: string;
   notes?: string;
   stateCode?: string;
 }
 
 export interface UpdateProductDto {
   name?: string;
+  productType?: 'inventory' | 'non-stock' | 'service';
   barcode?: string;
   listPrice?: string;
   standardCost?: string;
@@ -41,6 +44,7 @@ export interface UpdateProductDto {
   priceLevel4?: string;
   gstCategory?: string;
   scNumber?: string;
+  productGroupId?: string;
   notes?: string;
   stateCode?: string;
 }

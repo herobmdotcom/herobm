@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."products" ADD COLUMN "product_type" text DEFAULT 'inventory' NOT NULL;

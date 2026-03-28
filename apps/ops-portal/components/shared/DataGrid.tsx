@@ -11,43 +11,69 @@ import {
   type GridReadyEvent,
   type FirstDataRenderedEvent,
   type RowClickedEvent,
-  type ColumnState,
-  type ColumnMovedEvent,
-  type ColumnResizedEvent,
-  type ColumnVisibleEvent,
-  type SortChangedEvent,
+  type StateUpdatedEvent,
+  type GridState,
+  type ScrollState,
 } from "ag-grid-community";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-/* ── localStorage column-state helpers ────────────────────────────── */
+/* ── localStorage grid-state helpers (columns, sort, filter — NOT scroll) ─ */
 
-export const STORAGE_PREFIX = "datagrid-cols-";
+export const STORAGE_PREFIX = "datagrid-state-";
 
-export function saveColumnState(gridKey: string, state: ColumnState[]): void {
+/** Save grid state (excluding scroll) to localStorage */
+export function saveGridState(gridKey: string, state: GridState): void {
   try {
-    localStorage.setItem(`${STORAGE_PREFIX}${gridKey}`, JSON.stringify(state));
+    // Strip scroll — it lives in sessionStorage separately
+    const { scroll: _scroll, ...rest } = state;
+    localStorage.setItem(`${STORAGE_PREFIX}${gridKey}`, JSON.stringify(rest));
   } catch {
-    /* quota exceeded – silently ignore */
+    /* quota exceeded — silently ignore */
   }
 }
 
-export function loadColumnState(gridKey: string): ColumnState[] | null {
+/** Load saved grid state from localStorage */
+export function loadGridState(gridKey: string): GridState | null {
   try {
     const raw = localStorage.getItem(`${STORAGE_PREFIX}${gridKey}`);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : null;
+    const parsed = JSON.parse(raw) as GridState;
+    return typeof parsed === 'object' && parsed !== null ? parsed : null;
   } catch {
     return null;
   }
 }
 
-export function clearColumnState(gridKey: string): void {
+/** Clear saved grid state */
+export function clearGridState(gridKey: string): void {
   try {
     localStorage.removeItem(`${STORAGE_PREFIX}${gridKey}`);
   } catch {
     /* ignore */
+  }
+}
+
+/* ── sessionStorage scroll-state helpers (session-only) ──────────── */
+
+export const SCROLL_STORAGE_PREFIX = "datagrid-scroll-";
+
+export function saveScrollState(gridKey: string, scroll: ScrollState): void {
+  try {
+    sessionStorage.setItem(`${SCROLL_STORAGE_PREFIX}${gridKey}`, JSON.stringify(scroll));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadScrollState(gridKey: string): ScrollState | null {
+  try {
+    const raw = sessionStorage.getItem(`${SCROLL_STORAGE_PREFIX}${gridKey}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ScrollState;
+    return typeof parsed.top === 'number' ? parsed : null;
+  } catch {
+    return null;
   }
 }
 
@@ -86,6 +112,8 @@ export interface DataGridProps<T> {
   gridTheme?: string;
   /** Optional initial search term to seed the quick filter */
   initialSearch?: string;
+  /** Property on T to use as a unique row identifier, prevents scrolling jump on data load */
+  rowIdField?: keyof T;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -115,9 +143,25 @@ export default function DataGrid<T>({
   renderHeader,
   gridTheme = "ag-theme-alpine-dark",
   initialSearch,
+  rowIdField,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
+
+  // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
+  // into a single initialState — read once on mount
+  const savedInitialState = useMemo<GridState | undefined>(() => {
+    if (!gridKey) return undefined;
+    const gridState = loadGridState(gridKey);
+    const scroll = loadScrollState(gridKey);
+    if (!gridState && !scroll) return undefined;
+    return {
+      ...(gridState ?? {}),
+      ...(scroll ? { scroll } : {}),
+      partialColumnState: true, // we may not have all column properties
+    };
+  }, [gridKey]);
+
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch ?? "");
@@ -160,23 +204,26 @@ export default function DataGrid<T>({
     if (!api) return;
     api.setColumnsVisible([colId], visible);
     setColRevision((r) => r + 1); // force re-render so checkbox reflects new state
-    // persistColumnState will fire via the onColumnVisible event
+    // state will be persisted via onStateUpdated
   }, []);
 
-  /* Debounce timer ref for column state persistence */
+  /* Debounce timer ref for grid state persistence */
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Persist current column state (debounced) */
-  const persistColumnState = useCallback(() => {
-    if (!gridKey) return;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      const api = gridRef.current?.api;
-      if (!api) return;
-      const state = api.getColumnState();
-      if (state) saveColumnState(gridKey, state);
-    }, 500);
-  }, [gridKey]);
+  /** Unified state persistence handler — debounced.
+   *  Fired by AG Grid whenever any state changes (columns, sort, scroll, etc.) */
+  const onStateUpdated = useCallback(
+    (event: StateUpdatedEvent) => {
+      if (!gridKey) return;
+      // Skip the initial state hydration event
+      if (event.sources.includes('gridInitializing')) return;
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        saveGridState(gridKey, event.state);
+      }, 500);
+    },
+    [gridKey],
+  );
 
   /* Cleanup debounce timer on unmount */
   useEffect(
@@ -262,16 +309,13 @@ export default function DataGrid<T>({
     [],
   );
 
-  /** Auto-size columns to fit content after data loads, then restore saved state */
+  /** Auto-size columns on grid ready (initialState handles restoration) */
   const onGridReady = useCallback(
     (event: GridReadyEvent) => {
-      event.api.autoSizeAllColumns();
-      // Restore saved column state if a gridKey is provided
-      if (gridKey) {
-        const saved = loadColumnState(gridKey);
-        if (saved) {
-          event.api.applyColumnState({ state: saved, applyOrder: true });
-        }
+      // Only auto-size if there's no saved state — otherwise initialState
+      // has already applied the saved column widths/order
+      if (!gridKey || !loadGridState(gridKey)) {
+        event.api.autoSizeAllColumns();
       }
     },
     [gridKey],
@@ -280,39 +324,10 @@ export default function DataGrid<T>({
   /** Also auto-size when new data arrives (only if no saved state) */
   const onFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent) => {
-      if (gridKey && loadColumnState(gridKey)) return; // saved state takes priority
+      if (gridKey && loadGridState(gridKey)) return; // saved state takes priority
       event.api.autoSizeAllColumns();
     },
     [gridKey],
-  );
-
-  /** Column event handlers — persist state on move / resize / visibility */
-  const onColumnMoved = useCallback(
-    (e: ColumnMovedEvent) => {
-      if (e.finished) persistColumnState();
-    },
-    [persistColumnState],
-  );
-
-  const onColumnResized = useCallback(
-    (e: ColumnResizedEvent) => {
-      if (e.finished) persistColumnState();
-    },
-    [persistColumnState],
-  );
-
-  const onColumnVisible = useCallback(
-    (_e: ColumnVisibleEvent) => {
-      persistColumnState();
-    },
-    [persistColumnState],
-  );
-
-  const onSortChanged = useCallback(
-    (_e: SortChangedEvent) => {
-      persistColumnState();
-    },
-    [persistColumnState],
   );
 
   /** CSV export handler */
@@ -324,19 +339,25 @@ export default function DataGrid<T>({
 
   /** Reset columns to default layout */
   const handleResetColumns = useCallback(() => {
-    if (gridKey) clearColumnState(gridKey);
+    if (gridKey) clearGridState(gridKey);
     gridRef.current?.api?.resetColumnState();
     gridRef.current?.api?.autoSizeAllColumns();
   }, [gridKey]);
 
-  /** Row click handler */
+  /** Row click handler — snapshot scroll state before navigating away */
   const handleRowClicked = useCallback(
     (event: RowClickedEvent<T>) => {
+      if (gridKey && event.api) {
+        const state = event.api.getState();
+        if (state.scroll) {
+          saveScrollState(gridKey, state.scroll);
+        }
+      }
       if (onRowClicked && event.data) {
         onRowClicked(event.data);
       }
     },
-    [onRowClicked],
+    [onRowClicked, gridKey],
   );
 
   const searchInputNode = (
@@ -648,12 +669,12 @@ export default function DataGrid<T>({
           defaultColDef={defaultColDef}
           animateRows
           rowSelection="single"
+          {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField]) } : {})}
+          suppressScrollOnNewData={true}
+          initialState={savedInitialState}
           onGridReady={onGridReady}
           onFirstDataRendered={onFirstDataRendered}
-          onColumnMoved={onColumnMoved}
-          onColumnResized={onColumnResized}
-          onColumnVisible={onColumnVisible}
-          onSortChanged={onSortChanged}
+          onStateUpdated={onStateUpdated}
           onRowClicked={onRowClicked ? handleRowClicked : undefined}
           tooltipShowDelay={300}
           {...(fetchAll ? { quickFilterText: search } : {})}

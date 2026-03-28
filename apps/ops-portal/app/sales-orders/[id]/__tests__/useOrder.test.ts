@@ -374,6 +374,7 @@ describe('useOrder — mutations', () => {
     });
 
     it('addLineFromProduct rejects duplicates with toast error', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { toast } = require('react-hot-toast');
 
         const { result } = renderHook(() => useOrder('so-001'));

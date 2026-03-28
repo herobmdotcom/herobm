@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."sales_order_lines" ADD COLUMN "is_post_confirmation" boolean DEFAULT false;

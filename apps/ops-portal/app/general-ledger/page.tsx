@@ -4,13 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
+import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
 
 interface GlRow {
+  journal_entry_id: string;
   entry_date: string;
   entry_number: string;
   account_code: string;
   account_name: string;
-  memo: string | null;
+  entry_memo: string | null;
+  line_memo: string | null;
   debit: string;
   credit: string;
 }
@@ -35,6 +38,7 @@ export default function GeneralLedgerPage() {
   const [accountCode, setAccountCode] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
 
   // Load accounts for the filter dropdown
   useEffect(() => {
@@ -155,8 +159,19 @@ export default function GeneralLedgerPage() {
                 rowsWithBalance.map((r, i) => (
                   <tr
                     key={`${r.entry_number}-${i}`}
-                    className="transition-colors"
+                    className="transition-colors cursor-pointer"
                     style={{ borderBottom: '1px solid var(--border)' }}
+                    onClick={() => {
+                      setSelectedEntry({
+                        journalEntryId: r.journal_entry_id,
+                        entryNumber: r.entry_number,
+                        entryDate: r.entry_date,
+                        memo: r.entry_memo,
+                        sourceType: (r as any).source_type || 'manual', // from the raw row if missing
+                        sourceId: (r as any).source_id || null,
+                        createdBy: (r as any).created_by || null,
+                      });
+                    }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
@@ -164,20 +179,17 @@ export default function GeneralLedgerPage() {
                       {new Date(r.entry_date).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs">
-                      <Link
-                        href={`/general-ledger/journal-entries?entry=${encodeURIComponent(r.entry_number)}`}
-                        className="hover:underline"
-                        style={{ color: 'var(--accent)' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <span className="font-semibold" style={{ color: 'var(--accent)' }}>
                         {r.entry_number}
-                      </Link>
+                      </span>
                     </td>
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>
                       <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{r.account_code}</span>
                       {' '}{r.account_name}
                     </td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>{r.memo || '—'}</td>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {r.line_memo ? r.line_memo : (r.entry_memo || '—')}
+                    </td>
                     <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.debit)}</td>
                     <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.credit)}</td>
                     <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: r.runningBalance < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
@@ -190,6 +202,11 @@ export default function GeneralLedgerPage() {
           </table>
         </div>
       </div>
+
+      <JournalEntrySlideOver
+        entry={selectedEntry}
+        onClose={() => setSelectedEntry(null)}
+      />
     </>
   );
 }

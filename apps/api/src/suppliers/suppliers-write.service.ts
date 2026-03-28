@@ -27,6 +27,7 @@ export interface CreateSupplierDto {
   fax?: string;
   emailAddress1?: string;
   paymentTerms?: string;
+  supplierGroupId?: string;
   currencyCode?: string;
   notes?: string;
 }
@@ -43,6 +44,7 @@ export interface UpdateSupplierDto {
   fax?: string;
   emailAddress1?: string;
   paymentTerms?: string;
+  supplierGroupId?: string;
   currencyCode?: string;
   notes?: string;
   stateCode?: string;

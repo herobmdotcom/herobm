@@ -45,6 +45,7 @@ export default function ReportingPage() {
               searchPlaceholder="Search Typst templates..."
               exportFileName="reports"
               fetchAll
+              rowIdField="id"
               onRowClicked={handleRowClicked}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                 <div className="flex items-center justify-between px-6 py-4">

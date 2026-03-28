@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -41,6 +41,25 @@ export class OrderPickingController {
       id,
       lineId,
       quantityPicked,
+      user.username,
+    );
+  }
+
+  @Patch(':id/picking/lines/:lineId/location')
+  @CasbinAction('write')
+  updateLineLocation(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @Body('fulfillmentLocationId') locationId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    if (!locationId) {
+      throw new Error('Fulfillment location must be provided');
+    }
+    return this.pickingService.updateLineLocation(
+      id,
+      lineId,
+      locationId,
       user.username,
     );
   }

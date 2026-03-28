@@ -57,6 +57,7 @@ export function useOrder(id: string) {
     const [editName, setEditName] = useState('');
     const [editPO, setEditPO] = useState('');
     const [editNotes, setEditNotes] = useState('');
+    const [editFulfillmentLocationId, setEditFulfillmentLocationId] = useState('');
     const [headerDirty, setHeaderDirty] = useState(false);
 
     /* ── GST categories ──────────────────────────────────────────── */
@@ -100,6 +101,7 @@ export function useOrder(id: string) {
             setEditName(data?.data?.name || data?.name || '');
             setEditPO(data?.data?.customerOrderNumber || data?.customerOrderNumber || '');
             setEditNotes(data?.data?.notes || data?.notes || '');
+            setEditFulfillmentLocationId(data?.data?.fulfillmentLocationId || data?.fulfillmentLocationId || '');
             setHeaderDirty(false);
 
             if (autoTransitions && autoTransitions.length > 0) {
@@ -172,9 +174,10 @@ export function useOrder(id: string) {
         const changed =
             editName !== (order.name || '') ||
             editPO !== (order.customerOrderNumber || '') ||
-            editNotes !== (order.notes || '');
+            editNotes !== (order.notes || '') ||
+            editFulfillmentLocationId !== (order.fulfillmentLocationId || '');
         setHeaderDirty(changed);
-    }, [editName, editPO, editNotes, order]);
+    }, [editName, editPO, editNotes, editFulfillmentLocationId, order]);
 
     /* ── Mutations ───────────────────────────────────────────────── */
 
@@ -186,6 +189,7 @@ export function useOrder(id: string) {
                 name: editName || null,
                 customerOrderNumber: editPO || null,
                 notes: editNotes || null,
+                fulfillmentLocationId: editFulfillmentLocationId || null,
             });
             await loadOrder(undefined, false);
         } catch (err) {
@@ -289,20 +293,26 @@ export function useOrder(id: string) {
         }
     };
 
-    const addLineFromProduct = async (p: Product) => {
-        if (order?.lines.some((l) => l.productId === p.productId)) {
-            toast.error(tToast('productAlreadyInOrder', { productNumber: p.productNumber }));
+    const addLineFromProduct = async (p: Record<string, any>) => {
+        if (!order) return;
+        const exists = order.lines.some((l) => l.productId === p.productId);
+        if (exists) {
+            toast(tToast('productAlreadyInOrder', { productNumber: p.productNumber }), { icon: '⚠️' });
             return;
         }
 
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/lines`, 'POST', {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            const url = isPostConf 
+                ? `/api/sales-orders/${id}/post-confirmation-lines`
+                : `/api/sales-orders/${id}/lines`;
+            
+            await apiMutate(url, 'POST', {
                 productId: p.productId,
                 productDescription: p.name,
                 quantity: '1',
                 pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
-                discountPercentage: '0',
                 unitOfMeasure: 'EA',
             });
             await loadOrder(undefined, false);
@@ -317,9 +327,33 @@ export function useOrder(id: string) {
         const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/lines`, 'POST', {
+            const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
+            const url = isPostConf 
+                ? `/api/sales-orders/${id}/post-confirmation-lines`
+                : `/api/sales-orders/${id}/lines`;
+
+            await apiMutate(url, 'POST', {
                 productId: CUSTOM_LINE_ID,
-                productDescription: '',
+                productDescription: isPostConf ? 'Additional Charge' : '',
+                quantity: '1',
+                pricePerUnit: '0.00',
+                unitOfMeasure: 'EA',
+            });
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const addPostConfirmationBlankLine = async () => {
+        const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${id}/post-confirmation-lines`, 'POST', {
+                productId: CUSTOM_LINE_ID,
+                productDescription: 'Additional Charge',
                 quantity: '1',
                 pricePerUnit: '0.00',
                 discountPercentage: '0',
@@ -380,7 +414,8 @@ export function useOrder(id: string) {
 
         // Mutations
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct, addBlankLine,
+        updateLine, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
+        editFulfillmentLocationId, setEditFulfillmentLocationId
     };
 }

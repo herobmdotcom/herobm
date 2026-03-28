@@ -260,4 +260,27 @@ describe('Inventory Cycle (e2e)', () => {
 
     expect(parseFloat(productRes.body.quantityOnHand)).toBe(8);
   });
+
+  it('Step 5: Verify product inventory endpoint', async () => {
+    // This endpoint powers the "Inventory" tab on the Product Details page.
+    // It should return the list of locations where the product has stock.
+    const invRes = await request(app.getHttpServer())
+      .get(`/api/inventory/by-products?productIds=${productId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(invRes.body.data).toBeDefined();
+    expect(Array.isArray(invRes.body.data)).toBe(true);
+
+    // After all the simulated operations, the single product location footprint
+    // should reflect the final quantity on hand. Because dispatch pulled from
+    // a different location than where it was received, we sum across all locations
+    // to match the system-wide total of 8.
+    const totalQoh = invRes.body.data.reduce(
+      (sum: number, row: any) => sum + parseFloat(row.quantityOnHand || '0'),
+      0,
+    );
+
+    expect(totalQoh).toBe(8);
+  });
 });

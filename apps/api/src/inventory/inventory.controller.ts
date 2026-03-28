@@ -1,4 +1,11 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Param,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { InventoryService } from './inventory.service';
 import {
@@ -58,5 +65,18 @@ export class InventoryController {
   getMovements(@Query('days') days?: string) {
     const daysInt = parseInt(days || '30', 10);
     return this.inventoryService.getMovements(isNaN(daysInt) ? 30 : daysInt);
+  }
+
+  @Get('ledger')
+  @CasbinAction('read')
+  getLedger(@Query('days') days?: string) {
+    const daysInt = parseInt(days || '30', 10);
+    return this.inventoryService.getLedger(isNaN(daysInt) ? 30 : daysInt);
+  }
+
+  @Get('entries/:id')
+  @CasbinAction('read')
+  getEntryDetails(@Param('id') id: string) {
+    return this.inventoryService.getEntryDetails(id);
   }
 }

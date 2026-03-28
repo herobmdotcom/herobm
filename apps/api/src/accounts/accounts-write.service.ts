@@ -34,6 +34,7 @@ export interface CreateAccountDto {
   primaryContactEmail?: string;
   primaryContactPhone?: string;
   customerGroup?: string;
+  accountGroupId?: string;
   gstPosition?: string;
   currencyCode?: string;
   customerDiscount?: string;
@@ -55,6 +56,7 @@ export interface UpdateAccountDto {
   primaryContactEmail?: string;
   primaryContactPhone?: string;
   customerGroup?: string;
+  accountGroupId?: string;
   stateCode?: string;
   gstPosition?: string;
   currencyCode?: string;

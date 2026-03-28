@@ -6,7 +6,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 import { apiFetch, apiMutate } from '@/lib/api';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -185,7 +185,13 @@ export default function NewPurchaseOrderPage() {
     }
   };
 
-  const subtotal = lines.reduce((sum, l) => sum + computeAmount(l), 0);
+  const mappedLines = lines.map(l => ({
+    amount: computeAmount(l),
+    tax: 0
+  }));
+  const totals = computeOrderTotals(mappedLines);
+  const subtotal = totals.subtotal;
+  const totalTax = totals.totalTax;
 
   return (
     <>

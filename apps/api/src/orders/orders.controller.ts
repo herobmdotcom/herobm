@@ -139,4 +139,18 @@ export class OrdersController {
   ) {
     return this.ordersWriteService.removeLine(id, lineId, user.username);
   }
+
+  @Post(':id/post-confirmation-lines')
+  @CasbinAction('write')
+  addPostConfirmationLine(
+    @Param('id') id: string,
+    @Body() body: CreateOrderLineDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.ordersWriteService.addPostConfirmationLine(
+      id,
+      body,
+      user.username,
+    );
+  }
 }

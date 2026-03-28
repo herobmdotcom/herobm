@@ -69,7 +69,14 @@ export default function AuthGate({ portalName, idPrefix, children }: AuthGatePro
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-80 p-8 rounded-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
-          <h2 className="text-xl font-bold mb-1">{portalName}</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center justify-center w-7 h-7 rounded border-2 border-[var(--accent)] text-[var(--accent)] font-extrabold text-lg" style={{ fontFamily: 'Manrope, sans-serif' }}>
+              H
+            </div>
+            <h2 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
+              {portalName}
+            </h2>
+          </div>
           <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>{t('signInToContinue')}</p>
           <input
             id={`${idPrefix}-login-username`}

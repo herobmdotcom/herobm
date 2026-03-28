@@ -148,9 +148,9 @@ describe('DataGrid', () => {
 
 /* ── localStorage helper tests ────────────────────────────────────── */
 import {
-  saveColumnState,
-  loadColumnState,
-  clearColumnState,
+  saveGridState,
+  loadGridState,
+  clearGridState,
   STORAGE_PREFIX,
 } from '../DataGrid';
 
@@ -159,40 +159,43 @@ describe('DataGrid — localStorage helpers', () => {
     localStorage.clear();
   });
 
-  it('saveColumnState + loadColumnState round-trip', () => {
-    const state = [{ colId: 'name', width: 200, sort: 'asc' as const }] as any;
-    saveColumnState('test-grid', state);
-    const loaded = loadColumnState('test-grid');
+  it('saveGridState + loadGridState round-trip', () => {
+    const state = { sort: { sortModel: [{ colId: 'name', sort: 'asc' as const }] } } as any;
+    saveGridState('test-grid', state);
+    const loaded = loadGridState('test-grid');
     expect(loaded).toEqual(state);
   });
 
-  it('loadColumnState returns null when key does not exist', () => {
-    expect(loadColumnState('nonexistent')).toBeNull();
+  it('loadGridState returns null when key does not exist', () => {
+    expect(loadGridState('nonexistent')).toBeNull();
   });
 
-  it('loadColumnState returns null for corrupted JSON', () => {
+  it('loadGridState returns null for corrupted JSON', () => {
     localStorage.setItem(`${STORAGE_PREFIX}broken`, '{not valid json');
-    expect(loadColumnState('broken')).toBeNull();
+    expect(loadGridState('broken')).toBeNull();
   });
 
-  it('loadColumnState returns null when stored value is not an array', () => {
-    localStorage.setItem(`${STORAGE_PREFIX}obj`, JSON.stringify({ foo: 'bar' }));
-    expect(loadColumnState('obj')).toBeNull();
+  it('saveGridState strips scroll state before saving', () => {
+    const state = { scroll: { top: 100, left: 0 }, sort: { sortModel: [] } } as any;
+    saveGridState('scroll-strip', state);
+    const loaded = loadGridState('scroll-strip');
+    expect(loaded).not.toHaveProperty('scroll');
+    expect(loaded).toHaveProperty('sort');
   });
 
-  it('clearColumnState removes the stored key', () => {
-    const state = [{ colId: 'a' }] as any;
-    saveColumnState('to-clear', state);
-    expect(loadColumnState('to-clear')).not.toBeNull();
-    clearColumnState('to-clear');
-    expect(loadColumnState('to-clear')).toBeNull();
+  it('clearGridState removes the stored key', () => {
+    const state = { sort: { sortModel: [] } } as any;
+    saveGridState('to-clear', state);
+    expect(loadGridState('to-clear')).not.toBeNull();
+    clearGridState('to-clear');
+    expect(loadGridState('to-clear')).toBeNull();
   });
 
-  it('saveColumnState handles quota exceeded gracefully', () => {
+  it('saveGridState handles quota exceeded gracefully', () => {
     // Override setItem to throw
     const origSetItem = localStorage.setItem;
     localStorage.setItem = () => { throw new DOMException('QuotaExceededError'); };
-    expect(() => saveColumnState('full', [{ colId: 'a' }] as any)).not.toThrow();
+    expect(() => saveGridState('full', { sort: { sortModel: [] } } as any)).not.toThrow();
     localStorage.setItem = origSetItem;
   });
 });

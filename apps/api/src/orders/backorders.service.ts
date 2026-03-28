@@ -47,13 +47,21 @@ export class BackordersService {
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
+        productType: coreProducts.productType,
       })
       .from(salesOrderLineItems)
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
       .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
 
     const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     const validLines = lines.filter(
-      (l) => l.productId != null && l.productId !== CUSTOM_LINE_ID,
+      (l) =>
+        l.productId != null &&
+        l.productId !== CUSTOM_LINE_ID &&
+        (!l.productType || l.productType === 'inventory'),
     );
     if (validLines.length === 0) return [];
 

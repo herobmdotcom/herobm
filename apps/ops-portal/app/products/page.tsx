@@ -18,6 +18,8 @@ export default function ProductsPage() {
     { field: 'productNumber', headerName: tProducts('columns.productNumber'), width: 130, pinned: 'left' },
     { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'scNumber', headerName: tProducts('columns.scNumber'), width: 140 },
+    { field: 'quantityOnHand', headerName: tProducts('columns.quantityOnHand'), width: 130, type: 'numericColumn',
+      valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0' },
     { field: 'productGroupName', headerName: tCommon('columns.group'), width: 160 },
     { field: 'defaultVendorName', headerName: tProducts('columns.vendor'), width: 160, hide: true },
     { field: 'standardCost', headerName: tProducts('columns.stdCost'), width: 100, type: 'numericColumn',
@@ -65,6 +67,7 @@ export default function ProductsPage() {
               exportFileName="products"
               fetchAll
               showArchivedToggle
+              rowIdField="productId"
               onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                 <div className="flex items-center justify-between px-6 py-4">

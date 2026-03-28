@@ -36,6 +36,8 @@ describe('AccountsService', () => {
   // Chainable mock for Drizzle query builder
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
@@ -101,6 +103,7 @@ describe('AccountsService', () => {
       //       second select().from().where().orderBy() returns events
       mockDb.select = jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnValue({
             limit: jest.fn().mockImplementation(() => ({
               then: jest.fn().mockImplementation((cb) => {
@@ -128,6 +131,7 @@ describe('AccountsService', () => {
 
       mockDb.select = jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnValue({
             limit: jest.fn().mockImplementation(() => ({
               then: jest.fn().mockImplementation((cb) => {
@@ -154,6 +158,7 @@ describe('AccountsService', () => {
     it('should throw NotFoundException for unknown ID', async () => {
       mockDb.select = jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
+          leftJoin: jest.fn().mockReturnThis(),
           where: jest.fn().mockReturnValue({
             limit: jest.fn().mockImplementation(() => ({
               then: jest.fn().mockImplementation((cb) => cb([])),

@@ -17,6 +17,7 @@ import {
   orderEvents,
   accounts,
   glAccounts,
+  products as coreProducts,
 } from '../drizzle/modbm-core-schema';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
@@ -118,8 +119,21 @@ export class SalesInvoiceService {
 
     // 2. Load the structural Sales Order Line dimensions to invoice explicitly
     const orderLines = await this.db
-      .select()
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        lineNumber: salesOrderLineItems.lineNumber,
+        productId: salesOrderLineItems.productId,
+        quantity: salesOrderLineItems.quantity,
+        pricePerUnit: salesOrderLineItems.pricePerUnit,
+        discountPercentage: salesOrderLineItems.discountPercentage,
+        gstCategoryId: salesOrderLineItems.gstCategoryId,
+        productType: coreProducts.productType,
+      })
       .from(salesOrderLineItems)
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
       .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
 
     if (orderLines.length === 0) {
@@ -170,7 +184,24 @@ export class SalesInvoiceService {
       const prevInvoicedQty = invoicedQtyByLine.get(line.salesOrderLineId) || 0;
       totalInvoicedSoFar += prevInvoicedQty;
 
-      const shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
+      const isPhysical = !line.productType || line.productType === 'inventory';
+      let shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
+
+      if (!isPhysical) {
+        const billingMode =
+          process.env.NON_STOCK_BILLING_MODE || 'per_shipment';
+        if (billingMode === 'final_invoice') {
+          // Bill only on the final closing invoice
+          if (order.stateCode === 'shipped') {
+            shippedQty = orderedQty;
+          } else {
+            shippedQty = 0;
+          }
+        } else {
+          // Bill fully on the very first shipment
+          shippedQty = orderedQty;
+        }
+      }
 
       // Determine how much to invoice dynamically
       let qtyToInvoice = 0;

@@ -27,6 +27,7 @@ export default function PickingSection({
   onOrderUpdated,
   enableShippedFloorCheck = true,
   onVisibilityChange,
+  locations,
 }: {
   orderId: string;
   orderState: string;
@@ -38,17 +39,19 @@ export default function PickingSection({
   onVisibilityChange?: (visibility: { picking: boolean; shipments: boolean }) => void;
   /** Active Location for Fulfillment */
   fulfillmentLocationId?: string;
+  locations?: Location[];
 }) {
   const tCommon = useTranslations('common');
   const tPicking = useTranslations('picking');
 
   const {
-    summary,
+    summary: rawSummary,
     shipments,
     initialLoading,
     error,
     loadPickingData,
     pickLine,
+    updateLineLocation,
     pickAllForLine,
     pickAllOrder,
     printPickingSlip,
@@ -56,6 +59,14 @@ export default function PickingSection({
     changeShipmentState,
     updateShipmentHeader,
   } = usePickingData(orderId, enableShippedFloorCheck, onOrderUpdated, tPicking);
+
+  const summary = rawSummary ? {
+    ...rawSummary,
+    lines: rawSummary.lines.filter((l) => l.isPhysical !== false),
+    totalLines: rawSummary.lines.filter((l) => l.isPhysical !== false).length,
+    fullyPickedLines: rawSummary.lines.filter((l) => l.isPhysical !== false && l.isFullyPicked).length,
+    isFullyPicked: rawSummary.lines.filter((l) => l.isPhysical !== false).every((l) => l.isFullyPicked),
+  } : null;
 
   // Load on mount
   useEffect(() => { loadPickingData(); }, [loadPickingData]);
@@ -115,13 +126,12 @@ export default function PickingSection({
     setNewShipmentNotes('');
     setNewShipmentTracking('');
     setNewShipmentLines(
-      orderLines.map((l) => {
-        const pickLine = summary?.lines.find((sl) => sl.salesOrderLineId === l.salesOrderLineId);
-        const picked = parseFloat(pickLine?.quantityPicked || '0');
-        const shipped = parseFloat(pickLine?.quantityShipped || '0');
+      (summary?.lines || []).map((pl) => {
+        const picked = parseFloat(pl.quantityPicked || '0');
+        const shipped = parseFloat(pl.quantityShipped || '0');
         const available = Math.max(0, picked - shipped);
         return {
-          salesOrderLineId: l.salesOrderLineId,
+          salesOrderLineId: pl.salesOrderLineId,
           quantityShipped: available > 0 ? String(available) : '',
         };
       }),
@@ -209,6 +219,8 @@ export default function PickingSection({
           enableShippedFloorCheck={enableShippedFloorCheck}
           onPickLine={pickLine}
           onPickAllForLine={pickAllForLine}
+          onUpdateLocation={updateLineLocation}
+          locations={locations || []}
         />
       </div>
 
@@ -309,10 +321,10 @@ export default function PickingSection({
                     </tr>
                   </thead>
                   <tbody>
-                    {orderLines.map((ol, idx) => {
-                      const pl = summary?.lines.find((sl) => sl.salesOrderLineId === ol.salesOrderLineId);
+                    {(summary?.lines || []).map((pl, idx) => {
+                      const ol = orderLines.find((x) => x.salesOrderLineId === pl.salesOrderLineId) || pl as any;
                       return (
-                        <tr key={ol.salesOrderLineId}>
+                        <tr key={pl.salesOrderLineId}>
                           <td style={{ color: 'var(--text-muted)' }}>{ol.lineNumber}</td>
                           <td style={{ fontWeight: 600, fontSize: 12 }}>
                             {ol.productNumber || ol.productId?.substring(0, 8) || '—'}

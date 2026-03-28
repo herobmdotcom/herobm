@@ -1,5 +1,6 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { ilike, or, eq, inArray, sql, and } from 'drizzle-orm';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { ilike, or, eq, inArray, sql, and, isNull, desc } from 'drizzle-orm';
+import { ConfigService } from '@nestjs/config';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -12,12 +13,21 @@ import {
   outbox,
   zones,
   locations,
+  salesOrders,
+  salesOrderShipments,
+  accounts,
+  purchaseOrders,
+  purchaseOrderReceptions,
+  suppliers,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
 export class InventoryService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private configService: ConfigService,
+  ) {}
 
   // =========================================================================
   // Read-only queries (from inventory_levels view / bin_contents cache)
@@ -221,7 +231,15 @@ export class InventoryService {
       zones: zonesByLocation.get(loc.locationId) ?? [],
     }));
 
-    return { data };
+    const defaultCode = this.configService.get<string>(
+      'DEFAULT_FULFILLMENT_LOCATION_CODE',
+    );
+    const defaultLocation = locRows.find((loc) => loc.code === defaultCode);
+
+    return {
+      data,
+      defaultFulfillmentLocationId: defaultLocation?.locationId ?? undefined,
+    };
   }
 
   async getMovements(days: number) {
@@ -250,6 +268,180 @@ export class InventoryService {
     const result = await this.db.execute(query);
     const rows = (result as any).rows ?? result;
     return { data: rows };
+  }
+
+  async getLedger(days: number) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffIso = cutoff.toISOString();
+
+    const query = sql`
+      SELECT
+        e.entry_id AS "entryId",
+        e.entry_date AS "date",
+        e.entry_number AS "document",
+        e.source_type AS "sourceType",
+        p.product_number AS "productNumber",
+        p.name AS "productName",
+        l.quantity::numeric AS "change",
+        p.quantity_on_hand::numeric AS "onHand",
+        e.created_by AS "actor"
+      FROM modbm_core.inventory_ledger l
+      JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
+      JOIN modbm_core.products p ON p.product_id = l.product_id
+      WHERE e.entry_date >= ${cutoffIso}
+        AND e.source_type != 'INITIAL_IMPORT'
+      ORDER BY e.entry_date DESC, l.ledger_id DESC
+    `;
+
+    const result = await this.db.execute(query);
+    const rows = (result as any).rows ?? result;
+    return { data: rows };
+  }
+
+  async getEntryDetails(entryId: string) {
+    // 1. Fetch header
+    const [entry] = await this.db
+      .select()
+      .from(inventoryEntries)
+      .where(eq(inventoryEntries.entryId, entryId))
+      .limit(1);
+
+    if (!entry) {
+      throw new NotFoundException(`Entry ${entryId} not found`);
+    }
+
+    let relatedDocument: { number: string; link?: string } | null = null;
+    let relatedParty: { name: string; number: string; link?: string } | null =
+      null;
+
+    if (entry.sourceId) {
+      if (entry.sourceType === 'SO_PICK') {
+        const [o] = await this.db
+          .select({
+            salesOrderId: salesOrders.salesOrderId,
+            orderNumber: salesOrders.orderNumber,
+            accountId: accounts.accountId,
+            customerName: accounts.name,
+            customerNumber: accounts.accountNumber,
+          })
+          .from(salesOrders)
+          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .where(eq(salesOrders.salesOrderId, entry.sourceId))
+          .limit(1);
+
+        if (o) {
+          relatedDocument = {
+            number: o.orderNumber,
+            link: `/sales-orders/${o.salesOrderId}`,
+          };
+          relatedParty = o.customerName
+            ? {
+                name: o.customerName,
+                number: o.customerNumber || '',
+                link: `/accounts/${o.accountId}`,
+              }
+            : null;
+        }
+      } else if (entry.sourceType === 'SO_SHIPMENT') {
+        const [s] = await this.db
+          .select({
+            shipmentNumber: salesOrderShipments.shipmentNumber,
+            salesOrderId: salesOrders.salesOrderId,
+            orderNumber: salesOrders.orderNumber,
+            accountId: accounts.accountId,
+            customerName: accounts.name,
+            customerNumber: accounts.accountNumber,
+          })
+          .from(salesOrderShipments)
+          .innerJoin(
+            salesOrders,
+            eq(salesOrders.salesOrderId, salesOrderShipments.salesOrderId),
+          )
+          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .where(eq(salesOrderShipments.shipmentId, entry.sourceId))
+          .limit(1);
+
+        if (s) {
+          relatedDocument = {
+            number: s.orderNumber,
+            link: `/sales-orders/${s.salesOrderId}`,
+          };
+          relatedParty = s.customerName
+            ? {
+                name: s.customerName,
+                number: s.customerNumber || '',
+                link: `/accounts/${s.accountId}`,
+              }
+            : null;
+        }
+      } else if (
+        entry.sourceType === 'PO_RECEIPT' ||
+        entry.sourceType === 'PO_RECEPTION'
+      ) {
+        const [r] = await this.db
+          .select({
+            receptionNumber: purchaseOrderReceptions.receptionNumber,
+            purchaseOrderId: purchaseOrders.purchaseOrderId,
+            orderNumber: purchaseOrders.orderNumber,
+            supplierId: suppliers.vendorId,
+            supplierName: suppliers.name,
+            supplierNumber: suppliers.vendorNumber,
+          })
+          .from(purchaseOrderReceptions)
+          .innerJoin(
+            purchaseOrders,
+            eq(
+              purchaseOrders.purchaseOrderId,
+              purchaseOrderReceptions.purchaseOrderId,
+            ),
+          )
+          .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
+          .where(eq(purchaseOrderReceptions.receptionId, entry.sourceId))
+          .limit(1);
+
+        if (r) {
+          relatedDocument = {
+            number: r.orderNumber,
+            link: `/purchase-orders/${r.purchaseOrderId}`,
+          };
+          relatedParty = r.supplierName
+            ? {
+                name: r.supplierName,
+                number: r.supplierNumber || '',
+                link: `/suppliers/${r.supplierId}`,
+              }
+            : null;
+        }
+      }
+    }
+
+    // 2. Fetch ledger lines
+    const linesQuery = sql`
+      SELECT
+        l.ledger_id AS "ledgerId",
+        l.product_id AS "productId",
+        p.product_number AS "productNumber",
+        p.name AS "productName",
+        l.quantity::numeric AS "change",
+        b.bin_number AS "binCode",
+        loc.name AS "locationName"
+      FROM modbm_core.inventory_ledger l
+      JOIN modbm_core.products p ON p.product_id = l.product_id
+      JOIN modbm_core.bins b ON b.bin_id = l.bin_id
+      JOIN modbm_core.locations loc ON loc.location_id = l.location_id
+      WHERE l.entry_id = ${entryId}
+      ORDER BY p.name ASC
+    `;
+    const linesResult = await this.db.execute(linesQuery);
+    const lines = (linesResult as any).rows ?? linesResult;
+
+    return {
+      ...entry,
+      relatedDocument,
+      relatedParty,
+      lines,
+    };
   }
 
   // ── Ledger Mutations (Modern Approach) ───────────────────────────────

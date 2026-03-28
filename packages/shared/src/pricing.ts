@@ -36,8 +36,11 @@ export function computeLinePrice(input: LinePricingInput): LinePricingResult {
   const disc = input.discountPercentage ?? 0;
   const taxRate = input.taxRate ?? 0;
 
-  const amount = qty * price * (1 - disc / 100);
-  const tax = amount * (taxRate / 100);
+  const rawAmount = qty * price * (1 - disc / 100);
+  const rawTax = rawAmount * (taxRate / 100);
+
+  const amount = Number(Math.round(Number(rawAmount + 'e2')) + 'e-2');
+  const tax = Number(Math.round(Number(rawTax + 'e2')) + 'e-2');
 
   return {
     amount,
@@ -58,5 +61,38 @@ export function computeLinePriceForStorage(
     amount: result.amount.toFixed(2),
     tax: result.tax.toFixed(2),
     totalAmount: result.totalAmount.toFixed(2),
+  };
+}
+
+export interface OrderTotalsResult {
+  /** Sum of net line amounts */
+  subtotal: number;
+  /** Sum of line taxes */
+  totalTax: number;
+  /** Gross total: subtotal + totalTax */
+  totalAmount: number;
+}
+
+/**
+ * Compute aggregate order totals from a list of calculated lines.
+ * This guarantees consistency between the frontend display and backend reports.
+ */
+export function computeOrderTotals(
+  lines: Array<{ amount: number | string; tax: number | string }>,
+): OrderTotalsResult {
+  const subtotalRaw = lines.reduce(
+    (sum, l) => sum + Number(l.amount || 0),
+    0,
+  );
+  const totalTaxRaw = lines.reduce(
+    (sum, l) => sum + Number(l.tax || 0),
+    0,
+  );
+  const totalAmountRaw = subtotalRaw + totalTaxRaw;
+
+  return {
+    subtotal: Number(Math.round(Number(subtotalRaw + 'e2')) + 'e-2'),
+    totalTax: Number(Math.round(Number(totalTaxRaw + 'e2')) + 'e-2'),
+    totalAmount: Number(Math.round(Number(totalAmountRaw + 'e2')) + 'e-2'),
   };
 }

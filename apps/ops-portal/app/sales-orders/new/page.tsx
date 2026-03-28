@@ -11,7 +11,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 
 interface Account {
   accountId: string;
@@ -52,11 +52,12 @@ interface LineItem {
   discountPercentage: string;
   gstCategoryId: string;
   unitOfMeasure: string;
+  fulfillmentLocationId: string;
 }
 
 let lineKey = 0;
 
-function emptyLine(defaultDiscount = '0', defaultGstCategoryId = ''): LineItem {
+function emptyLine(defaultDiscount = '0', defaultGstCategoryId = '', defaultLocationId = ''): LineItem {
   const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
   return {
     key: ++lineKey,
@@ -68,6 +69,7 @@ function emptyLine(defaultDiscount = '0', defaultGstCategoryId = ''): LineItem {
     discountPercentage: defaultDiscount,
     gstCategoryId: defaultGstCategoryId,
     unitOfMeasure: 'EA',
+    fulfillmentLocationId: defaultLocationId,
   };
 }
 
@@ -111,10 +113,12 @@ export default function NewOrderPage() {
 
   // Load locations on mount
   useEffect(() => {
-    apiFetch<{ data: Location[] }>('/api/inventory/locations')
+    apiFetch<{ data: Location[], defaultFulfillmentLocationId?: string }>('/api/inventory/locations')
       .then((res) => {
         setLocations(res.data);
-        if (res.data.length > 0) {
+        if (res.defaultFulfillmentLocationId) {
+          setFulfillmentLocationId(res.defaultFulfillmentLocationId);
+        } else if (res.data.length > 0) {
           setFulfillmentLocationId(res.data[0].locationId);
         }
       })
@@ -193,6 +197,7 @@ export default function NewOrderPage() {
         discountPercentage: customerDiscount,
         gstCategoryId: effectiveGstCategoryId,
         unitOfMeasure: 'EA',
+        fulfillmentLocationId,
       },
     ]);
   };
@@ -208,7 +213,7 @@ export default function NewOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveGstCategoryId)]);
+    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveGstCategoryId, fulfillmentLocationId)]);
   };
 
   const computeAmount = (line: LineItem) => {
@@ -260,6 +265,7 @@ export default function NewOrderPage() {
             discountPercentage: l.discountPercentage,
             gstCategoryId: l.gstCategoryId || undefined,
             unitOfMeasure: l.unitOfMeasure,
+            fulfillmentLocationId: l.fulfillmentLocationId || fulfillmentLocationId || undefined,
           })),
       });
       router.push(`/sales-orders/${order.salesOrderId}`);
@@ -270,8 +276,13 @@ export default function NewOrderPage() {
     }
   };
 
-  const subtotal = lines.reduce((sum, l) => sum + computeAmount(l), 0);
-  const totalTax = lines.reduce((sum, l) => sum + computeTax(l), 0);
+  const mappedLines = lines.map(l => ({
+    amount: computeAmount(l),
+    tax: computeTax(l)
+  }));
+  const totals = computeOrderTotals(mappedLines);
+  const subtotal = totals.subtotal;
+  const totalTax = totals.totalTax;
 
   return (
     <>
@@ -460,7 +471,7 @@ export default function NewOrderPage() {
                 value={fulfillmentLocationId}
                 onChange={(e) => setFulfillmentLocationId(e.target.value)}
               >
-                {locations.length === 0 && <option value="">Loading locations...</option>}
+                {locations.length === 0 && <option value="" disabled>Loading...</option>}
                 {locations.map((loc) => (
                   <option key={loc.locationId} value={loc.locationId}>
                     {loc.name}
@@ -528,17 +539,6 @@ export default function NewOrderPage() {
                     {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                       <div className="flex items-center gap-2">
                         <span>{line.productNumber}</span>
-                        <button
-                          className="text-xs cursor-pointer"
-                          style={{ color: 'var(--text-muted)' }}
-                          onClick={() => {
-                            updateLine(idx, 'productId', '00000000-0000-0000-0000-000000000000');
-                            updateLine(idx, 'productNumber', '');
-                            updateLine(idx, 'productDescription', '');
-                          }}
-                        >
-                          ✕
-                        </button>
                       </div>
                     ) : (
                       <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>—</span>
@@ -619,14 +619,12 @@ export default function NewOrderPage() {
                     {formatAmount(computeAmount(line), currencyCode)}
                   </td>
                   <td>
-                    {lines.length > 1 && (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => removeLine(idx)}
-                      >
-                        ✕
-                      </button>
-                    )}
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeLine(idx)}
+                    >
+                      ✕
+                    </button>
                   </td>
                 </tr>
               ))}

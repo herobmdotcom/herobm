@@ -13,6 +13,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -28,7 +29,7 @@ export default function ProductDetailPage() {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'suppliers'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'suppliers' | 'inventory'>('details');
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
   const [refreshGrid, setRefreshGrid] = useState(0);
   const [product, setProduct] = useState<any>(null);
@@ -45,6 +46,7 @@ export default function ProductDetailPage() {
     scNumber: '',
     notes: '',
     stateCode: 'active',
+    productGroupId: null,
   });
 
   const fetchProduct = useCallback(async (showLoading = true) => {
@@ -64,6 +66,7 @@ export default function ProductDetailPage() {
         scNumber: data.scNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
+        productGroupId: data.productGroupId || null,
       });
     } catch (err: any) {
       toast.error(err.message);
@@ -170,6 +173,15 @@ export default function ProductDetailPage() {
     }
   ], [tCommon, t]);
 
+  const inventoryColumns: any[] = useMemo(() => [
+    { field: 'locationNo', headerName: 'Location No.', width: 140 },
+    { field: 'locationName', headerName: 'Location', flex: 1, minWidth: 160 },
+    { field: 'quantityOnHand', headerName: 'On Hand', type: 'numericColumn', width: 120 },
+    { field: 'quantityCommitted', headerName: 'Committed', type: 'numericColumn', width: 120 },
+    { field: 'quantityAvailable', headerName: 'Available', type: 'numericColumn', width: 120 },
+    { field: 'quantityOnOrder', headerName: 'On Order', type: 'numericColumn', width: 120 },
+  ], []);
+
   if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
   if (!product) return <><div className="text-center py-20">{t('common.noMatchingResults')}</div></>;
 
@@ -195,6 +207,13 @@ export default function ProductDetailPage() {
       isSubPage: true,
       isActive: activeTab === 'suppliers',
       onClick: () => setActiveTab('suppliers'),
+    },
+    {
+      id: 'tab-inventory',
+      label: 'Inventory',
+      isSubPage: true,
+      isActive: activeTab === 'inventory',
+      onClick: () => setActiveTab('inventory'),
     }
   ];
 
@@ -241,6 +260,7 @@ export default function ProductDetailPage() {
                 columns={supplierColumns}
                 gridKey={`product-suppliers-grid`}
                 fetchAll
+                rowIdField="vendorId"
                 onRowClicked={(row: any) => router.push(`/suppliers/${row.vendorId}`)}
                 renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                   <div className="flex items-center justify-between px-6 py-4">
@@ -279,6 +299,44 @@ export default function ProductDetailPage() {
         </div>
       )}
 
+      {activeTab === 'inventory' && (
+        <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
+          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+              <DataGrid 
+                endpoint={`/api/inventory/by-products?productIds=${encodeURIComponent(id as string)}`}
+                columns={inventoryColumns}
+                gridKey={`product-inventory-grid`}
+                fetchAll
+                rowIdField="locationId"
+                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
+                  <div className="flex items-center justify-between px-6 py-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Inventory Levels
+                      </h2>
+                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          {tCommon('grid.rowCountLabel')}
+                        </span>
+                        <span className="text-[11px] font-bold text-[#006b5c]">
+                          {loading ? '...' : rowCount.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex-1 ml-4 max-w-md">
+                        {searchInput}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 ml-4">
+                      {optionsButton}
+                    </div>
+                  </div>
+                )}
+            />
+          </div>
+        </div>
+      )}
+
       {activeTab === 'details' && (
         <div className="flex flex-col gap-3">
 
@@ -304,6 +362,22 @@ export default function ProductDetailPage() {
                   placeholder="Product display name"
                 />
               </div>
+              <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Type
+                  </label>
+                  <select
+                    className="input"
+                    value={product.productType || 'inventory'}
+                    onChange={(e) => handleSelectChange('productType', e.target.value)}
+                    disabled={!isEditable}
+                  >
+                    <option value="inventory">Inventory (Tracked)</option>
+                    <option value="non-stock">Non-Stock</option>
+                    <option value="service">Service</option>
+                  </select>
+                </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -334,15 +408,19 @@ export default function ProductDetailPage() {
                   </select>
                 </div>
               </div>
-              {product.productGroupName && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.productGroup')}
+                    Product Group
                   </label>
-                  <input className="input" disabled value={product.productGroupName} />
+                  <GroupSelect
+                    type="product"
+                    value={dto.productGroupId}
+                    onChange={(val) => handleSelectChange('productGroupId', val)}
+                    disabled={!isEditable || saving}
+                    placeholder="No Product Group"
+                  />
                 </div>
-              )}
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     SC Number

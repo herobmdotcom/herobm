@@ -14,12 +14,16 @@ export default function PickingTable({
   enableShippedFloorCheck,
   onPickLine,
   onPickAllForLine,
+  onUpdateLocation,
+  locations,
 }: {
   summary: PickingSummary;
   isPickingState: boolean;
   enableShippedFloorCheck: boolean;
   onPickLine: (lineId: string, qty: string) => void;
   onPickAllForLine: (lineId: string) => void;
+  onUpdateLocation?: (lineId: string, locationId: string) => void;
+  locations?: { locationId: string; name: string }[];
 }) {
   const tPicking = useTranslations('picking');
 
@@ -35,6 +39,7 @@ export default function PickingTable({
           <th>{tPicking('columns.description')}</th>
           <th style={{ width: 140 }}>Location</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
+          <th style={{ width: 90, textAlign: 'right' }}>On Hand</th>
           <th style={{ width: 110, textAlign: 'right' }}>{tPicking('columns.picked')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.shipped')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.remaining')}</th>
@@ -49,8 +54,28 @@ export default function PickingTable({
               {line.productNumber || line.productId?.substring(0, 8) || '—'}
             </td>
             <td>{line.productDescription || '—'}</td>
-            <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>{line.locationName}</td>
+            <td style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              {isPickingState && parseFloat(line.quantityPicked) === 0 && onUpdateLocation && locations && locations.length > 0 ? (
+                <select
+                  className="input p-1 h-auto"
+                  style={{ fontSize: 13 }}
+                  value={locations.find(l => l.name === line.locationName)?.locationId || ''}
+                  onChange={(e) => onUpdateLocation(line.salesOrderLineId, e.target.value)}
+                >
+                  {locations.map((loc) => (
+                    <option key={loc.locationId} value={loc.locationId}>
+                      {loc.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span title={isPickingState && parseFloat(line.quantityPicked) > 0 ? tPicking('errors.unpickToChangeLocation' as any) : undefined}>
+                  {line.locationName}
+                </span>
+              )}
+            </td>
             <td style={{ textAlign: 'right' }}>{line.quantity}</td>
+            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{line.onHand ?? '0'}</td>
             <td style={{ textAlign: 'right' }}>
               {isPickingState && editingLineId === line.salesOrderLineId ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>

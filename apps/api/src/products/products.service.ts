@@ -1,10 +1,11 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql, and } from 'drizzle-orm';
+import { eq, ilike, or, sql, and, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   products as coreProducts,
   productEvents,
+  productGroups,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -16,7 +17,18 @@ export class ProductsService {
     const { page, limit, offset, searchTerm, includeArchived } =
       parsePagination(query);
 
-    let qb = this.db.select().from(coreProducts).$dynamic();
+    let qb = this.db
+      .select({
+        ...getTableColumns(coreProducts),
+        productGroupName: productGroups.name,
+        productGroupCode: productGroups.groupCode,
+      })
+      .from(coreProducts)
+      .leftJoin(
+        productGroups,
+        eq(coreProducts.productGroupId, productGroups.productGroupId),
+      )
+      .$dynamic();
 
     const conditions = [];
 
@@ -69,8 +81,16 @@ export class ProductsService {
     }
 
     const rows = await this.db
-      .select()
+      .select({
+        ...getTableColumns(coreProducts),
+        productGroupName: productGroups.name,
+        productGroupCode: productGroups.groupCode,
+      })
       .from(coreProducts)
+      .leftJoin(
+        productGroups,
+        eq(coreProducts.productGroupId, productGroups.productGroupId),
+      )
       .where(eq(coreProducts.productId, id))
       .limit(1);
 

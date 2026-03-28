@@ -4,8 +4,9 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   suppliers as coreSuppliers,
   supplierEvents,
+  supplierGroups,
 } from '../drizzle/modbm-core-schema';
-import { eq, ilike, or, sql, and } from 'drizzle-orm';
+import { eq, ilike, or, sql, and, getTableColumns } from 'drizzle-orm';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
@@ -16,7 +17,18 @@ export class SuppliersService {
     const { page, limit, offset, searchTerm, includeArchived } =
       parsePagination(params);
 
-    let qb = this.db.select().from(coreSuppliers).$dynamic();
+    let qb = this.db
+      .select({
+        ...getTableColumns(coreSuppliers),
+        supplierGroupName: supplierGroups.name,
+        supplierGroupCode: supplierGroups.groupCode,
+      })
+      .from(coreSuppliers)
+      .leftJoin(
+        supplierGroups,
+        eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
+      )
+      .$dynamic();
 
     const conditions = [];
 
@@ -59,8 +71,16 @@ export class SuppliersService {
 
   async findOne(id: string) {
     const rows = await this.db
-      .select()
+      .select({
+        ...getTableColumns(coreSuppliers),
+        supplierGroupName: supplierGroups.name,
+        supplierGroupCode: supplierGroups.groupCode,
+      })
       .from(coreSuppliers)
+      .leftJoin(
+        supplierGroups,
+        eq(coreSuppliers.supplierGroupId, supplierGroups.supplierGroupId),
+      )
       .where(eq(coreSuppliers.vendorId, id))
       .limit(1);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
@@ -27,6 +27,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
+  const [days, setDays] = useState('90');
 
   const columns = useMemo<ColDef<UnifiedOrder>[]>(() => [
     { field: 'orderNumber', headerName: tCommon('columns.orderNumber'), width: 150, pinned: 'left' },
@@ -79,13 +80,14 @@ export default function OrdersPage() {
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid<UnifiedOrder>
-              endpoint="/api/sales-orders"
+              endpoint={`/api/sales-orders?days=${days}`}
               columns={columns}
               gridKey="ops-orders"
               searchPlaceholder={tSales('placeholders.searchOrders')}
               exportFileName="orders"
               fetchAll
               showArchivedToggle
+              rowIdField="id"
               onRowClicked={handleRowClicked}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                 <div className="flex items-center justify-between px-6 py-4">
@@ -103,14 +105,25 @@ export default function OrdersPage() {
                       </span>
                     </div>
                     
-                    <div className="flex-1 ml-4 max-w-md">
+                    <div className="flex-1 ml-4 max-w-[280px]">
                       {searchInput}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <select
+                        value={days}
+                        onChange={(e) => setDays(e.target.value)}
+                        className="input text-sm"
+                        style={{ minWidth: 150 }}
+                    >
+                        <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
+                        <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
+                        <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
+                        <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+                    </select>
                     {optionsButton}
-                    <Link href="/sales-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
+                    <Link href="/sales-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
                       {tSales('buttons.createOrder')}
                     </Link>
                   </div>

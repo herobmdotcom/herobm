@@ -16,6 +16,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
+import GroupSelect from '@/components/shared/GroupSelect';
 
 interface Supplier {
   vendorId: string;
@@ -31,6 +32,7 @@ interface Supplier {
   address1Country: string | null;
   paymentTerms: string | null;
   currencyCode: string;
+  supplierGroupId: string | null;
   stateCode: string;
   notes: string | null;
 
@@ -60,6 +62,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editPaymentTerms, setEditPaymentTerms] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editCurrency, setEditCurrency] = useState('EUR');
+  const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
@@ -75,6 +78,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditPaymentTerms(data.paymentTerms || '');
       setEditNotes(data.notes || '');
       setEditCurrency(data.currencyCode || 'EUR');
+      setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
     } finally {
@@ -322,6 +326,21 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   className="input"
                   value={supplier.vendorNumber}
                   disabled
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Supplier Group
+                </label>
+                <GroupSelect
+                  type="supplier"
+                  value={editSupplierGroupId}
+                  onChange={(val) => {
+                    setEditSupplierGroupId(val);
+                    saveField('supplierGroupId', val || '', supplier.supplierGroupId);
+                  }}
+                  disabled={!isEditable || saving}
+                  placeholder="No Supplier Group"
                 />
               </div>
             </div>

@@ -43,6 +43,11 @@ export class PaginationQuery {
   @IsOptional()
   @IsString()
   accountId?: string;
+
+  /** Optional filter for restricting data to the last X days */
+  @IsOptional()
+  @Transform(({ value }) => (value ? Number(value) : undefined))
+  days?: number;
 }
 
 /**
@@ -68,7 +73,8 @@ export function parsePagination(query?: PaginationQuery) {
   const searchTerm = query?.q ? `%${query.q}%` : null;
   const includeArchived = query?.includeArchived ?? false;
   const accountId = query?.accountId;
-  return { page, limit, offset, searchTerm, includeArchived, accountId };
+  const days = query?.days;
+  return { page, limit, offset, searchTerm, includeArchived, accountId, days };
 }
 
 /**

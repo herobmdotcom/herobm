@@ -310,6 +310,7 @@ describe('InvoicesSection — PDF download', () => {
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         await user.click(screen.getByText('Print PDF'));
 
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { apiFetchBlob } = require('@/lib/api');
         await waitFor(() => {
             expect(apiFetchBlob).toHaveBeenCalledWith(

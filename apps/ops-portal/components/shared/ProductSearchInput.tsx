@@ -143,30 +143,46 @@ export default function ProductSearchInput({
               style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
               onMouseDown={() => handleSelect(p)}
             >
-              <div className="flex items-center justify-between">
-                <div style={{ minWidth: 0, flex: 1 }}>
+              <div className="flex flex-col gap-1.5 pt-1 pb-0.5">
+                <div style={{ minWidth: 0 }}>
                   <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
                     {p.productNumber}
                   </span>
-                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
+                  <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: 13 }}>
                     {p.name}
                   </span>
                 </div>
-                <div className="flex gap-2 ml-3" style={{ flexShrink: 0, fontSize: 11 }}>
-                  <span style={{
-                    color: onHand > 0 ? '#4ade80' : '#f59e0b',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                   }}>
+                <div className="flex gap-2" style={{ flexShrink: 0 }}>
+                  <div
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.01em',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: onHand > 0 ? 'rgba(74,222,128,0.15)' : 'rgba(245,158,11,0.15)',
+                      color: onHand > 0 ? '#16a34a' : '#d97706',
+                      border: `1px solid ${onHand > 0 ? 'rgba(74,222,128,0.3)' : 'rgba(245,158,11,0.3)'}`
+                    }}
+                  >
                     {t('onHandShort')}: {onHand}
-                  </span>
-                  <span style={{
-                    color: avail > 0 ? '#4ade80' : '#ef4444',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                   }}>
+                  </div>
+                  <div
+                    style={{
+                      padding: '2px 8px',
+                      borderRadius: 6,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: '0.01em',
+                      whiteSpace: 'nowrap',
+                      backgroundColor: avail > 0 ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
+                      color: avail > 0 ? '#16a34a' : '#dc2626',
+                      border: `1px solid ${avail > 0 ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`
+                    }}
+                  >
                     {t('availableShort')}: {avail}
-                  </span>
+                  </div>
                 </div>
               </div>
             </div>

@@ -1,8 +1,12 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql, and, asc } from 'drizzle-orm';
+import { eq, ilike, or, sql, and, asc, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { accounts, accountEvents } from '../drizzle/modbm-core-schema';
+import {
+  accounts,
+  accountEvents,
+  accountGroups,
+} from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
 @Injectable()
@@ -39,8 +43,16 @@ export class AccountsService {
 
     // Fetch paginated, sorted results
     let q = this.db
-      .select()
+      .select({
+        ...getTableColumns(accounts),
+        accountGroupName: accountGroups.name,
+        accountGroupCode: accountGroups.groupCode,
+      })
       .from(accounts)
+      .leftJoin(
+        accountGroups,
+        eq(accounts.accountGroupId, accountGroups.accountGroupId),
+      )
       .orderBy(asc(sql`lower(${accounts.name})`))
       .limit(limit)
       .offset(offset)
@@ -63,8 +75,16 @@ export class AccountsService {
 
     // Look up by UUID or by sourceId (legacy ABM slugs)
     const rows = await this.db
-      .select()
+      .select({
+        ...getTableColumns(accounts),
+        accountGroupName: accountGroups.name,
+        accountGroupCode: accountGroups.groupCode,
+      })
       .from(accounts)
+      .leftJoin(
+        accountGroups,
+        eq(accounts.accountGroupId, accountGroups.accountGroupId),
+      )
       .where(isUuid ? eq(accounts.accountId, id) : eq(accounts.sourceId, id))
       .limit(1);
 

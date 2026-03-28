@@ -98,6 +98,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const [pendingGaps, setPendingGaps] = useState<any[]>([]);
     const [pendingStateChange, setPendingStateChange] = useState('');
 
+    /* ── Post-Confirmation Line UI State ───────────────────────────── */
+    const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
+
     /* ── Picking/Shipments visibility (driven by PickingSection's internal state) ── */
     const [pickingVis, setPickingVis] = useState({ picking: false, shipments: false });
     const onPickingVisibilityChange = useCallback(
@@ -145,7 +148,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     // After null guard, destructure everything for JSX use
     const {
         order, error, setError, saving, copying, locations,
-        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
+        editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editFulfillmentLocationId, setEditFulfillmentLocationId, headerDirty,
         gstCategories,
         activeTab, setActiveTab, inventoryData, inventoryLoading,
         returns, returnsLoading, showCreateReturn, setShowCreateReturn,
@@ -153,7 +156,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct, addBlankLine,
+        updateLine, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
     } = o;
 
@@ -365,6 +368,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     placeholder={tSales('placeholders.customerPO')}
                                 />
                             </div>
+                            <div>
+                                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                                    Fulfillment Location
+                                </label>
+                                <select
+                                    className="input"
+                                    disabled={!isOrderDetailsEditable}
+                                    value={editFulfillmentLocationId}
+                                    onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
+                                    onBlur={saveHeader}
+                                >
+                                    {locations.map((loc: { locationId: string; name: string }) => (
+                                        <option key={loc.locationId} value={loc.locationId}>
+                                            {loc.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="col-span-2">
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                                     {tCommon('notesCardHeading')}
@@ -427,7 +448,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 Backorders
                             </button>
                         </div>
-                        {isOrderLinesEditable && activeTab === 'lines' && (
+                        {(isOrderLinesEditable || (isOrderDetailsEditable && activeTab === 'lines' && isPostConfirmationAddingEnabled)) && (
                             <>
                                 <ProductSearchInput
                                     onSelect={addLineFromProduct}
@@ -444,6 +465,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 </button>
                             </>
                         )}
+                        {!isOrderLinesEditable && isOrderDetailsEditable && activeTab === 'lines' && !isPostConfirmationAddingEnabled && (
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => {
+                                    if (window.confirm(tSales('postConfirmationLineWarningBody'))) {
+                                        setIsPostConfirmationAddingEnabled(true);
+                                    }
+                                }}
+                                disabled={saving}
+                                title={tSales('postConfirmationLineWarningTitle')}
+                            >
+                                + {tSales('buttons.addPostConfirmationLine')}
+                            </button>
+                        )}
                     </div>
 
                     {activeTab === 'lines' ? (
@@ -458,18 +493,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.gst')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.amount')}</th>
-                                    {isOrderLinesEditable && <th style={{ width: 50 }}></th>}
+                                    {(isOrderLinesEditable || order.lines.some(l => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled) && <th style={{ width: 50 }}></th>}
                                 </tr>
                             </thead>
                             <tbody>
-                                {order.lines.map((line) => (
+                                {order.lines.map((line) => {
+                                    const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
+                                    return (
                                     <tr key={line.salesOrderLineId}>
                                         <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
                                             {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                            {line.isPostConfirmation && (
+                                                <span className="ml-2 badge" style={{ fontSize: 10, padding: '2px 4px', background: 'var(--accent)', color: 'white', borderRadius: 4 }}>
+                                                    {tSales('columns.postConfirmation')}
+                                                </span>
+                                            )}
                                         </td>
                                         <td>
-                                            {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isOrderLinesEditable ? (
+                                            {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isEditable ? (
                                                 <input
                                                     className="input"
                                                     style={{ width: '100%', fontSize: 13 }}
@@ -486,7 +528,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 line.productDescription || '—'
                                             )}
                                         </td>
-                                        {isOrderLinesEditable ? (
+                                        {isEditable ? (
                                             <>
                                                 <td style={{ textAlign: 'right' }}>
                                                     <input
@@ -554,7 +596,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 </td>
                                             </>
                                         )}
-                                        {isOrderLinesEditable ? (
+                                        {isEditable ? (
                                             <td style={{ textAlign: 'right' }}>
                                                 <select
                                                     className="input"
@@ -597,19 +639,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         >
                                             {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
                                         </td>
-                                        {isOrderLinesEditable && (
+                                        {(isOrderLinesEditable || order.lines.some(l => l.isPostConfirmation && isOrderDetailsEditable)) && (
                                             <td>
-                                                <button
-                                                    className="btn btn-danger btn-sm"
-                                                    onClick={() => removeLine(line.salesOrderLineId)}
-                                                    title={tSales('buttons.removeLine')}
-                                                >
-                                                    ✕
-                                                </button>
+                                                {isEditable && (
+                                                    <button
+                                                        className="btn btn-danger btn-sm"
+                                                        onClick={() => removeLine(line.salesOrderLineId)}
+                                                        title={tSales('buttons.removeLine')}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                )}
                                             </td>
                                         )}
                                     </tr>
-                                ))}
+                                );
+                                })}
                                 {order.lines.length === 0 && (
                                     <tr>
                                         <td
@@ -678,15 +723,40 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {order.lines.filter(l => l.productId !== '00000000-0000-0000-0000-000000000000').map((line) => {
+                                    {order.lines.map((line) => {
                                         const lineInventory = inventoryData.filter(
-                                            (inv) => inv.productId === line.productId,
+                                            (inv) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                         );
                                         const totalAvail = lineInventory.reduce(
                                             (sum, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                         );
                                         const orderedQty = parseFloat(line.quantity || '0');
                                         const canFulfil = totalAvail >= orderedQty;
+
+                                        const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
+                                        if (line.productType === 'non-stock' || line.productType === 'service' || isCustom) {
+                                            return (
+                                                <tr key={line.salesOrderLineId} style={{ backgroundColor: 'var(--bg-subtle)' }}>
+                                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                                        {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                                    </td>
+                                                    <td>
+                                                        {line.productDescription || '—'}
+                                                        <span className="ml-2 badge badge-draft" style={{ fontSize: 10, padding: '1px 4px' }}>
+                                                            {line.productType || 'custom'}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
+                                                    <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>
+                                                        {tSales('virtualFulfillmentBypass')}
+                                                    </td>
+                                                    <td style={{ textAlign: 'center' }}>
+                                                        <span style={{ color: 'var(--color-success, #059669)', fontWeight: 700, fontSize: 11 }}>✓</span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
 
                                         if (lineInventory.length === 0) {
                                             return (

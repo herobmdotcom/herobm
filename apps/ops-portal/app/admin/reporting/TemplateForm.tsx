@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, apiFetchBlob, apiMutate } from '@/lib/api';
+import { apiFetch, apiFetchBlob, apiMutate, reportError } from '@/lib/api';
 
 export default function TemplateForm({ initialData }: { initialData?: any }) {
   const isNew = !initialData;
@@ -82,7 +82,7 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
         setPreviewVars(p => ({ ...p, entityId: res.data.id! }));
       }
     } catch (e) {
-      console.error(e);
+      reportError(e, 'TemplateForm');
     }
   };
 

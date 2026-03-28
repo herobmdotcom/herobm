@@ -149,7 +149,8 @@
       "removeLine": "Remove line",
       "saveReturn": "Create Return",
       "removeReturnLine": "Remove return line",
-      "customLine": "Custom Line"
+      "customLine": "Custom Line",
+      "addPostConfirmationLine": "Add Line"
     },
     "placeholders": {
       "searchOrders": "Search by order number, customer, or PO…",
@@ -194,7 +195,8 @@
       "orderNumber": "Order No.",
       "customer": "Customer",
       "date": "Date",
-      "state": "State"
+      "state": "State",
+      "postConfirmation": "Post-Confirmation"
     },
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -214,6 +216,7 @@
     "noInventoryData": "No inventory data",
     "loadingReturns": "Loading returns…",
     "noReturns": "No returns for this order.",
+    "virtualFulfillmentBypass": "N/A",
     "discountPercent": "{disc}% disc",
     "invoicesCardHeading": "Sales Invoices",
     "returns": {
@@ -223,7 +226,9 @@
     },
     "timeline": {
       "by": "by {actor}"
-    }
+    },
+    "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
+    "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances."
   },
   "common": {
     "save": "Save",
@@ -503,7 +508,9 @@
       "failedToCreateShipment": "Failed to create shipment",
       "failedToUpdateShipment": "Failed to update shipment",
       "atLeastOneLineRequired": "At least one line with a quantity is required",
-      "failedToGeneratePickingSlip": "Failed to generate picking slip"
+      "failedToGeneratePickingSlip": "Failed to generate picking slip",
+      "failedToUpdateLocation": "Failed to update location",
+      "unpickToChangeLocation": "Must unpick to change location"
     }
   },
   "dashboard": {
@@ -578,18 +585,25 @@
       "products": "Products",
       "binContents": "Bin Contents",
       "movements": "Movements",
+      "ledger": "Ledger",
       "locations": "Locations"
     },
     "placeholders": {
       "searchInventory": "Search by product name, number, or location…",
-      "searchMovements": "Search by product, reference, or type…"
+      "searchMovements": "Search by product, reference, or type…",
+      "searchLedger": "Search transactions…"
     },
     "filters": {
+      "last24Hours": "Last 24 Hours",
       "last7Days": "Last 7 Days",
       "last30Days": "Last 30 Days",
       "last90Days": "Last 90 Days"
     },
     "columns": {
+      "document": "Document",
+      "sourceType": "Type",
+      "qtyChange": "Qty Change",
+      "actor": "User",
       "productNumber": "Product #",
       "locationNo": "Location No",
       "scNumber": "SC Number",
@@ -623,7 +637,8 @@
       "priceLevel4": "Level 4",
       "barcode": "Barcode",
       "gstCategory": "GST Category",
-      "scNumber": "SC Number"
+      "scNumber": "SC Number",
+      "quantityOnHand": "On Hand"
     },
     "generalInfo": "General Information",
     "pricing": "Pricing & Costs",
