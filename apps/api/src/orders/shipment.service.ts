@@ -32,6 +32,12 @@ import {
 } from './shipment-helpers';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
+import {
+  CreateShipmentDto,
+  UpdateShipmentDto,
+  AddShipmentLineDto,
+  UpdateShipmentLineDto,
+} from './dto';
 
 import {
   SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
@@ -44,28 +50,7 @@ const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 // DTOs
 // ============================================================================
 
-interface CreateShipmentDto {
-  notes?: string;
-  trackingNumber?: string;
-  lines: Array<{
-    salesOrderLineId: string;
-    quantityShipped: string;
-  }>;
-}
-
-interface UpdateShipmentDto {
-  notes?: string;
-  trackingNumber?: string;
-}
-
-interface AddShipmentLineDto {
-  salesOrderLineId: string;
-  quantityShipped: string;
-}
-
-interface UpdateShipmentLineDto {
-  quantityShipped?: string;
-}
+// DTOs imported from ./dto
 
 // ============================================================================
 // Service

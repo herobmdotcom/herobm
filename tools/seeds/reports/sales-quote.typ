@@ -2,28 +2,32 @@
 // Data is loaded from a JSON file passed via sys.inputs.data
 
 #let data = json(sys.inputs.at("data"))
+#let fmt(val) = {
+  if val == none { return "—" }
+  let n = float(val)
+  let s = str(calc.round(n, digits: 2))
+  let parts = s.split(".")
+  if parts.len() == 1 {
+    s + ".00"
+  } else if parts.at(1).len() == 1 {
+    s + "0"
+  } else {
+    s
+  }
+}
 
 
-#set page(
-  paper: "a4",
-  margin: (top: 2cm, bottom: 2.5cm, left: 2cm, right: 2cm),
-  footer: context [
-    #set text(8pt, fill: luma(120))
-    #data.generatedAt
-    #h(1fr)
-    Page #counter(page).display("1 of 1", both: true)
-  ],
-)
+
+#import "theme-external.typ": conf
+#show: doc => conf(title: "SALES QUOTE", doc)
 
 #set text(size: 10pt)
 
-// ── Header ──────────────────────────────────────────────────────────────────
+// ── Document Identity ───────────────────────────────────────────────────────
 #grid(
   columns: (1fr, 1fr),
   gutter: 10pt,
   [
-    #text(22pt, weight: "bold", fill: rgb("#1e3a5f"))[SALES QUOTE] \
-    #v(0.2cm)
     #text(12pt, weight: "semibold")[#data.header.orderNumber] \
     #if data.header.name != "" [
       #v(-0.1cm)
@@ -31,16 +35,13 @@
     ]
   ],
   align(right)[
-    #text(12pt, weight: "bold")[Antigravity ModBM] \
     #text(9pt, fill: luma(100))[
-      123 Tech Park, Innovation Way \
-      Dublin, Ireland \
-      #link("mailto:sales@antigravity.io")[sales\@antigravity.io]
+      Generated on: #data.generatedAt
     ]
   ]
 )
 
-#v(1.2cm)
+#v(0.8cm)
 
 // ── Customer & Order Info ──────────────────────────────────────────────────
 #grid(
@@ -87,10 +88,10 @@
       text(9pt)[#line.productNumber],
       text(9pt)[#if line.description != "" [#line.description] else [—]],
       text(9pt)[#line.quantity],
-      text(9pt)[#line.pricePerUnit],
+      text(9pt)[#fmt(line.pricePerUnit)],
       text(9pt)[#line.discountPercentage],
       text(9pt)[#line.gstRate],
-      text(9pt, weight: "semibold")[#line.amount],
+      text(9pt, weight: "semibold")[#fmt(line.amount)],
     )
   }
 )
@@ -107,13 +108,13 @@
       row-gutter: 10pt,
       column-gutter: 20pt,
       align: (left, right),
-      [Subtotal:], [#data.header.currencyCode #data.summary.subtotal],
-      [Total Tax:], [#data.header.currencyCode #data.summary.totalTax],
+      [Subtotal:], [#data.header.currencyCode #fmt(data.summary.subtotal)],
+      [Total Tax:], [#data.header.currencyCode #fmt(data.summary.totalTax)],
       
       grid.cell(colspan: 2)[#line(length: 100%, stroke: 1pt + luma(230))],
       
       text(12pt, weight: "bold")[Total:], 
-      text(12pt, weight: "bold", fill: rgb("#1e3a5f"))[#data.header.currencyCode #data.summary.totalAmount],
+      text(12pt, weight: "bold", fill: rgb("#1e3a5f"))[#data.header.currencyCode #fmt(data.summary.totalAmount)],
     )
   ]
 )

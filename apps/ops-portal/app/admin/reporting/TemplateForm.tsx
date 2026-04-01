@@ -3,19 +3,20 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, apiFetchBlob, apiMutate, reportError } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
-export default function TemplateForm({ initialData }: { initialData?: any }) {
-  const isNew = !initialData;
+export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?: boolean }) {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     slug: initialData?.slug || '',
     description: initialData?.description || '',
     template: initialData?.template || '#set page(paper: "a4")\n\n= Standard Report\n',
     outputNamePattern: initialData?.outputNamePattern || 'Report-${id}.pdf',
+    contexts: (initialData?.contexts as string[]) || [],
   });
   
   const [previewVars, setPreviewVars] = useState({
-    hookSlug: 'sales-order-quote',
+    hookSlug: (initialData?.contexts as string[])?.[0] || '',
     entityId: '',
   });
   
@@ -23,7 +24,8 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [contextsOpen, setContextsOpen] = useState(false);
   
   const router = useRouter();
 
@@ -33,26 +35,39 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
 
   const handleSave = async () => {
     setSaving(true);
-    setErrorMsg('');
     try {
       if (isNew) {
         await apiMutate('/api/reports', 'POST', formData);
+        toast.success('Template created successfully!');
         router.push('/admin/reporting');
       } else {
         await apiMutate(`/api/reports/${initialData.id}`, 'PATCH', formData);
+        toast.success('Saved successfully!');
         router.refresh();
-        alert('Saved successfully!');
       }
     } catch (e: any) {
-      setErrorMsg(e.message || 'Failed to save template');
+      toast.error(e.message || 'Failed to save template');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this report template? This action cannot be undone.')) return;
+    
+    setDeleting(true);
+    try {
+      await apiMutate(`/api/reports/${initialData.id}`, 'DELETE');
+      toast.success('Template deleted');
+      router.push('/admin/reporting');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to delete template');
+      setDeleting(false);
+    }
+  };
+
   const handlePreview = async () => {
     setPreviewing(true);
-    setErrorMsg('');
     try {
       const blob = await apiFetchBlob('/api/reports/preview', {
         method: 'POST',
@@ -68,7 +83,7 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl(url);
     } catch (e: any) {
-      setErrorMsg(e.message || 'Preview generation failed. Check typo in template or missing ID data.');
+      toast.error(e.message || 'Preview generation failed. Check typo in template or missing ID data.');
     } finally {
       setPreviewing(false);
     }
@@ -115,7 +130,6 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
               {isNew ? 'Create New Template' : `Editing: ${formData.name}`}
             </h2>
           </div>
-          {errorMsg && <div className="text-red-600 bg-red-50 p-3 rounded-lg border border-red-200 text-sm font-semibold">{errorMsg}</div>}
           
           <div className="flex gap-4">
             <div className="flex-1">
@@ -138,6 +152,57 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
             </div>
           </div>
           
+          <div className="flex gap-4 mt-4">
+            <div className="flex-1">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Supported Contexts</label>
+              <div className="relative w-full">
+                <div 
+                  className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white shadow-sm"
+                  onClick={() => setContextsOpen(!contextsOpen)}
+                >
+                  <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
+                    {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">Select contexts...</span>}
+                  </span>
+                  <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
+                </div>
+                
+                {contextsOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setContextsOpen(false)}></div>
+                    <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[rgba(196,198,205,0.4)] rounded-lg shadow-xl z-50 py-1">
+                      {availableHooks.length === 0 ? (
+                        <div className="text-xs text-gray-400 italic p-3">Loading contexts...</div>
+                      ) : (
+                        availableHooks.map(h => (
+                          <label key={h.contextSlug} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f8f9fa] transition-colors border-b border-gray-100 last:border-0">
+                            <input 
+                              type="checkbox" 
+                              className="checkbox checkbox-sm checkbox-primary border-gray-300 rounded"
+                              checked={formData.contexts.includes(h.contextSlug)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                setFormData(d => ({
+                                  ...d,
+                                  contexts: checked 
+                                    ? [...d.contexts, h.contextSlug] 
+                                    : d.contexts.filter(c => c !== h.contextSlug)
+                                }));
+                              }}
+                            />
+                            <span className="text-[13px] font-semibold text-gray-700">{h.contextSlug}</span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2 italic">
+                Only templates assigned to a context will appear in the action menus for those records.
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-col flex-1 mt-4 min-h-[500px]">
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Typst Source Code</label>
             <textarea 
@@ -149,9 +214,20 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
             />
           </div>
 
-          <button className="btn btn-primary self-start mt-4 px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Template'}
-          </button>
+          <div className="flex items-center gap-3 mt-4">
+            <button className="btn btn-primary px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
+              {saving ? 'Saving...' : 'Save Template'}
+            </button>
+            {!isNew && (
+              <button 
+                className="btn btn-secondary px-8 py-3 text-sm font-bold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-all" 
+                onClick={handleDelete} 
+                disabled={saving || deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete Template'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -201,3 +277,5 @@ export default function TemplateForm({ initialData }: { initialData?: any }) {
     </div>
   );
 }
+
+export default TemplateForm;

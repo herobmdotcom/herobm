@@ -24,4 +24,18 @@ export class DashboardController {
   search(@Query('q') q: string) {
     return this.dashboardService.universalSearch(q);
   }
+
+  @Get('timeline')
+  @CasbinAction('read')
+  getTimeline(
+    @Query('types') typesQuery: string,
+    @Query('limit') limitStr: string,
+  ) {
+    const types =
+      typeof typesQuery === 'string' && typesQuery.length > 0
+        ? typesQuery.split(',')
+        : [];
+    const limit = limitStr ? parseInt(limitStr, 10) : 50;
+    return this.dashboardService.getTimeline(types, limit);
+  }
 }

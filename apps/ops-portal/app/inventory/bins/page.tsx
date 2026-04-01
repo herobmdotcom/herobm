@@ -1,13 +1,9 @@
 'use client';
 
-import BinContentsView from '../components/BinContentsView';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import InventoryBinsContent from './InventoryBinsContent';
 
 export default function BinsPage() {
-  return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <BinContentsView />
-      </div>
-    </>
-  );
+  useDocumentTitle('Inventory Bins');
+  return <InventoryBinsContent />;
 }

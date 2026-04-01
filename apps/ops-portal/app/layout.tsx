@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import ErrorReporter from '@/components/ErrorReporter';
 import { Toaster } from 'react-hot-toast';
@@ -6,9 +6,37 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import Shell from '@/components/Shell';
 
+export const viewport: Viewport = {
+  themeColor: '#006b5c',
+};
+
 export const metadata: Metadata = {
-  title: 'herobm',
+  title: {
+    default: 'herobm',
+    template: '%s | herobm',
+  },
   description: 'Business management portal',
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      {
+        rel: 'android-chrome-192x192',
+        url: '/android-chrome-192x192.png',
+      },
+      {
+        rel: 'android-chrome-512x512',
+        url: '/android-chrome-512x512.png',
+      },
+    ],
+  },
+  manifest: '/site.webmanifest',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

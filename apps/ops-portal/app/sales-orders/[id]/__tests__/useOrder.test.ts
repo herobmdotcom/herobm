@@ -392,7 +392,7 @@ describe('useOrder — mutations', () => {
         await act(async () => { await result.current.addLineFromProduct(duplicate as any); });
 
         expect(mockApiMutate).not.toHaveBeenCalled();
-        expect(toast.error).toHaveBeenCalled();
+        expect(toast).toHaveBeenCalled();
     });
 
     it('saveHeader sets error on failure', async () => {

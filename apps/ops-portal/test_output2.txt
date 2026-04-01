@@ -1,0 +1,358 @@
+PASS lib/__tests__/sales-order-utils.test.ts
+PASS app/sales-orders/[id]/__tests__/types.test.ts
+PASS components/shared/__tests__/numericFormatter.test.ts
+PASS components/shared/__tests__/DataGrid.test.tsx
+PASS components/shared/__tests__/ProductSearchInput.test.tsx
+FAIL app/sales-orders/[id]/__tests__/useOrder.test.ts
+  ΓùÅ useOrder ΓÇö mutations ΓÇ║ addLineFromProduct rejects duplicates with toast error
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      393 |
+      394 |         expect(mockApiMutate).not.toHaveBeenCalled();
+    > 395 |         expect(toast.error).toHaveBeenCalled();
+          |                             ^
+      396 |     });
+      397 |
+      398 |     it('saveHeader sets error on failure', async () => {
+
+      at Object.toHaveBeenCalled (app/sales-orders/[id]/__tests__/useOrder.test.ts:395:29)
+
+FAIL app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx
+  ΓùÅ InvoicesSection ΓÇö PDF download ΓÇ║ clicking Print PDF triggers blob fetch and opens window
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "invoiceId=inv-1"
+    Received: "/api/reports/hooks/sales-invoice/run?id=inv-1&context=sales-invoice", {"method": "POST"}
+
+    Number of calls: 1
+
+    Ignored nodes: comments, script, style
+    <html>
+      <head />
+      <body>
+        <div>
+          <div
+            class="card"
+            id="invoices-section"
+          >
+            <div
+              class="flex items-center justify-between mb-2"
+            >
+              <h3
+                class="section-heading"
+              >
+                <span
+                  class="material-symbols-outlined"
+                >
+                  request_quote
+                </span>
+                Invoices
+              </h3>
+              <button
+                class="btn btn-secondary btn-sm"
+                disabled=""
+              >
+                buttons.createInvoice
+              </button>
+            </div>
+            <div
+              class="space-y-3"
+            >
+              <div
+                style="margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card, #fff);"
+              >
+                <div
+                  class="flex items-center justify-between mb-2"
+                >
+                  <div
+                    class="flex items-center gap-2"
+                  >
+                    <strong
+                      style="font-size: 13px;"
+                    >
+                      INV-001
+                    </strong>
+                  </div>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    style="font-size: 11px; padding: 2px 8px;"
+                  >
+                    <span
+                      class="material-symbols-outlined text-[14px]"
+                    >
+                      print
+                    </span>
+                    buttons.printInvoice
+                  </button>
+                </div>
+                <div
+                  style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"
+                >
+                  Created 1/15/2024 by admin
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+
+      298 |         const { apiFetchBlob } = require('@/lib/api');
+      299 |         await waitFor(() => {
+    > 300 |             expect(apiFetchBlob).toHaveBeenCalledWith(
+          |                                  ^
+      301 |                 expect.stringContaining('invoiceId=inv-1'),
+      302 |             );
+      303 |             expect(mockOpen).toHaveBeenCalledWith('blob:mock-url', '_blank');
+
+      at toHaveBeenCalledWith (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:300:34)
+      at runWithExpensiveErrorDiagnosticsDisabled (../../node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (../../node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (../../node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (../../node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+
+  ΓùÅ InvoicesSection ΓÇö invoice line table ΓÇ║ renders subtotal and tax in the invoice detail table
+
+    TestingLibraryElementError: Found multiple elements with the text: AUD 250.00
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    <td
+      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+    >
+      AUD 250.00
+    </td>
+
+    Ignored nodes: comments, script, style
+    <td
+      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+    >
+      AUD 250.00
+    </td>
+
+    Ignored nodes: comments, script, style
+    <td
+      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px;"
+    >
+      AUD 250.00
+    </td>
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+              disabled=""
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              style="margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card, #fff);"
+            >
+              <div
+                class="flex items-center justify-between mb-2"
+              >
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <strong
+                    style="font-size: 13px;"
+                  >
+                    INV-001
+                  </strong>
+                </div>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  style="font-size: 11px; padding: 2px 8px;"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px]"
+                  >
+                    print
+                  </span>
+                  buttons.printInvoice
+                </button>
+              </div>
+              <table
+                class="table-lines"
+              >
+                <thead>
+                  <tr>
+                    <th>
+                      Product
+                    </th>
+                    <th>
+                      Description
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Qty
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Unit Price
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Disc %
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      GST
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      style="font-weight: 600; font-size: 12px;"
+                    >
+                      WDG-001
+                    </td>
+                    <td>
+                      Widget
+                    </td>
+                    <td
+                      style="text-align: right;"
+                    >
+                      5
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums;"
+                    >
+                      AUD 50.00
+                    </td>
+                    <td
+                      style="text-align: right; color: var(--text-muted);"
+                    >
+                      0.0
+                      %
+                    </td>
+                    <td
+                      style="text-align: right; color: var(--text-muted);"
+                    >
+                      0.0
+                      %
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr
+                    style="border-top: 1px solid var(--border);"
+                  >
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 600; font-size: 12px; color: var(--text-muted);"
+                    >
+                      Subtotal
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 600; font-size: 12px; color: var(--text-muted);"
+                    >
+                      Tax
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 0.00
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 700; font-size: 13px;"
+                    >
+                      Total
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div
+                style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"
+              >
+                Created 1/15/2024 by admin
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      334 |         expect(screen.getByText('Subtotal')).toBeInTheDocument();
+      335 |         // Check total row
+    > 336 |         expect(screen.getByText('AUD 250.00')).toBeInTheDocument();
+          |                       ^
+      337 |     });
+      338 | });
+      339 |
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (../../node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (../../node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:336:23)
+
+PASS app/sales-orders/[id]/__tests__/ReturnsSection.test.tsx
+
+Test Suites: 2 failed, 6 passed, 8 total
+Tests:       3 failed, 100 passed, 103 total
+Snapshots:   0 total
+Time:        3.415 s
+Ran all test suites.

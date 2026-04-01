@@ -1,17 +1,11 @@
-'use client';
+import { Metadata } from 'next';
+import DashboardContent from './DashboardContent';
 
-import UniversalSearch from '@/components/shared/UniversalSearch';
-import { useTranslations } from 'next-intl';
+export const metadata: Metadata = {
+  title: 'Dashboard',
+};
 
 export default function DashboardPage() {
-  const t = useTranslations('dashboard');
-
-  return (
-    <>
-      <div className="p-8 h-full overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-8">{t('title')}</h2>
-        <UniversalSearch />
-      </div>
-    </>
-  );
+  return <DashboardContent />;
 }
+

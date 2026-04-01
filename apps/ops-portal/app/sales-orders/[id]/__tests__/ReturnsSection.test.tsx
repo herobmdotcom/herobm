@@ -119,6 +119,7 @@ const defaultProps = {
     loadReturns: jest.fn().mockResolvedValue(undefined),
     loadOrder: jest.fn().mockResolvedValue(undefined),
     gstCategories: [],
+    locations: [],
 };
 
 // ── Tests — rendering ────────────────────────────────────────────────

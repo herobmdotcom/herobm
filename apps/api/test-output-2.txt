@@ -1,0 +1,82 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts
+
+[Nest] 12448  - 03/31/2026, 5:19:48 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."reports" ("id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at") values (default, $1, $2, $3, default, default, default) returning "id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at"
+params: assign-test,Assignment Test Report,= Hello
+    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\node_modules\src\pg-core\session.ts:73:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\src\postgres-js\session.ts:58:17
+    at ReportsService.createReport (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.service.ts:99:24)
+    at ReportsController.createReport (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.controller.ts:118:18) {
+  query: 'insert into "modbm_core"."reports" ("id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at") values (default, $1, $2, $3, default, default, default) returning "id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at"',
+  params: [
+    'assign-test',
+    'Assignment Test Report',
+    '= Hello'
+  ],
+  cause: PostgresError: duplicate key value violates unique constraint "reports_slug_unique"
+      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:815:30)
+      at handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:489:6)
+      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:324:9)
+      at Socket.emit (node:events:508:28)
+      at addChunk (node:internal/streams/readable:559:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
+      at Socket.Readable.push (node:internal/streams/readable:390:5)
+      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
+    severity_local: 'ERROR',
+    severity: 'ERROR',
+    code: '23505',
+    detail: 'Key (slug)=(assign-test) already exists.',
+    schema_name: 'modbm_core',
+    table_name: 'reports',
+    constraint_name: 'reports_slug_unique',
+    file: 'nbtinsert.c',
+    line: '666',
+    routine: '_bt_check_unique'
+  }
+}
+FAIL test/reports.e2e-spec.ts
+  Dynamic Reports Engine (e2e)
+    ΓêÜ POST /api/reports/hooks/:hookSlug/run ΓÇö handles sparse data (App Orders) without crashing Typst (234 ms)
+    ΓêÜ POST /api/reports/hooks/:hookSlug/run ΓÇö handles rich data seamlessly (193 ms)
+    Template Management API
+      ΓêÜ POST /api/reports ΓÇö creates a new template (7 ms)
+      ΓêÜ GET /api/reports ΓÇö lists templates (5 ms)
+      ΓêÜ GET /api/reports/:id ΓÇö retrieves a specific template (4 ms)
+      ΓêÜ PATCH /api/reports/:id ΓÇö updates a template (6 ms)
+      ΓêÜ AuthZ: viewer cannot CREATE templates (403 Forbidden) (9 ms)
+      ΓêÜ AuthZ: viewer cannot UPDATE templates (403 Forbidden) (3 ms)
+      ΓêÜ AuthZ: viewer CAN READ templates (200 OK) (4 ms)
+      ΓêÜ DELETE /api/reports/:id ΓÇö removes the template (11 ms)
+      ├ù Assignment Management: lists and updates assignments (11 ms)
+      ΓêÜ AuthZ: viewer cannot DELETE templates (403 Forbidden) (3 ms)
+      ΓêÜ GET /api/reports/hooks ΓÇö lists available hooks (2 ms)
+
+  ΓùÅ Dynamic Reports Engine (e2e) ΓÇ║ Template Management API ΓÇ║ Assignment Management: lists and updates assignments
+
+    TypeError: Cannot read properties of undefined (reading 'id')
+
+      265 |           template: '= Hello',
+      266 |         });
+    > 267 |       const rid = newReport.body.data.id;
+          |                                       ^
+      268 |
+      269 |       // Update assignment
+      270 |       await request(app.getHttpServer())
+
+      at Object.<anonymous> (reports.e2e-spec.ts:267:39)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 12 passed, 13 total
+Snapshots:   0 total
+Time:        1.657 s, estimated 2 s
+Ran all test suites matching test/reports.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts

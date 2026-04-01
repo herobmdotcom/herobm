@@ -1,18 +1,8 @@
-// Picking Slip — modbm report template
-// Data is loaded from a JSON file passed via sys.inputs.data
+#import "theme-internal.typ": conf
+#show: doc => conf(title: "Picking Slip", doc)
 
 #let data = json(sys.inputs.at("data"))
 
-#set page(
-  paper: "a4",
-  margin: (top: 2cm, bottom: 2.5cm, left: 2cm, right: 2cm),
-  footer: context [
-    #set text(8pt, fill: luma(120))
-    #data.generatedAt
-    #h(1fr)
-    Page #counter(page).display("1 of 1", both: true)
-  ],
-)
 
 #set text(size: 10pt)
 
@@ -53,24 +43,3 @@
   emph[No items to pick — all lines are already picked.]
 }
 
-#v(0.8cm)
-
-// ── Table 2: Items to Back-Order ────────────────────────────────────────────
-#text(12pt, weight: "bold")[Items to Back-Order]
-#v(0.3cm)
-
-#if data.backOrderLines.len() > 0 {
-  table(
-    columns: (1.5fr, 4fr, 1fr),
-    inset: 6pt,
-    stroke: 0.5pt + luma(180),
-    fill: (_, row) => if row == 0 { luma(230) },
-    align: (left, left, right),
-    [*Product Code*], [*Description*], [*Qty to Order*],
-    ..for line in data.backOrderLines {
-      ([#line.productCode], [#line.description], [#str(line.qtyToOrder)])
-    }
-  )
-} else {
-  emph[No items require back-ordering.]
-}

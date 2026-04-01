@@ -5,6 +5,9 @@ import { glAccounts, glSettings } from '../drizzle/modbm-core-schema';
 import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
+import { v5 as uuidv5 } from 'uuid';
+
+const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
 /**
  * ERPNext-compatible COA JSON format:
@@ -19,11 +22,6 @@ import * as path from 'path';
  *         ...
  *       }
  *     }
- *   },
- *   "default_accounts": {
- *     "receivable": "1100",
- *     "payable": "2100",
- *     ...
  *   }
  * }
  */
@@ -133,9 +131,11 @@ export class CoaLoaderService {
       const codeToId = new Map<string, string>();
 
       for (const row of insertRows) {
+        const deterministicId = uuidv5(row.accountCode, NAMESPACE_COA);
         const [inserted] = await tx
           .insert(glAccounts)
           .values({
+            glAccountId: deterministicId,
             accountCode: row.accountCode,
             name: row.name,
             accountType: row.accountType,
@@ -158,30 +158,46 @@ export class CoaLoaderService {
       }
 
       // Create GL settings with default account mappings
-      if (coa.default_accounts) {
-        const defaults = coa.default_accounts;
-        await tx.insert(glSettings).values({
-          fiscalYearStartMonth: 7, // AU: July
-          defaultArAccountId: defaults.receivable
-            ? codeToId.get(defaults.receivable)
-            : undefined,
-          defaultApAccountId: defaults.payable
-            ? codeToId.get(defaults.payable)
-            : undefined,
-          defaultRevenueAccountId: defaults.revenue
-            ? codeToId.get(defaults.revenue)
-            : undefined,
-          defaultCogsAccountId: defaults.cogs
-            ? codeToId.get(defaults.cogs)
-            : undefined,
-          defaultTaxAccountId: defaults.tax_collected
-            ? codeToId.get(defaults.tax_collected)
-            : undefined,
-          defaultExpenseAccountId: defaults.expense
-            ? codeToId.get(defaults.expense)
-            : undefined,
-          baseCurrency: 'AUD',
-        });
+      const settingsPath = path.join(
+        __dirname,
+        'charts',
+        'au_standard_settings.json',
+      );
+      if (fs.existsSync(settingsPath)) {
+        const settingsRaw = fs.readFileSync(settingsPath, 'utf-8');
+        const settings = JSON.parse(settingsRaw);
+        const defaults = settings.defaults || {};
+
+        // Static UUID for environment parity
+        const SETTINGS_ID = '4e185bce-d31a-4caa-8462-73c261864eff';
+
+        await tx
+          .insert(glSettings)
+          .values({
+            settingsId: SETTINGS_ID,
+            fiscalYearStartMonth: settings.fiscal_year_start_month || 7,
+            defaultArAccountId: defaults.ar_account_code
+              ? codeToId.get(defaults.ar_account_code)
+              : undefined,
+            defaultApAccountId: defaults.ap_account_code
+              ? codeToId.get(defaults.ap_account_code)
+              : undefined,
+            defaultRevenueAccountId: defaults.revenue_account_code
+              ? codeToId.get(defaults.revenue_account_code)
+              : undefined,
+            defaultCogsAccountId: defaults.cogs_account_code
+              ? codeToId.get(defaults.cogs_account_code)
+              : undefined,
+            defaultTaxAccountId: defaults.tax_account_code
+              ? codeToId.get(defaults.tax_account_code)
+              : undefined,
+            defaultExpenseAccountId: defaults.expense_account_code
+              ? codeToId.get(defaults.expense_account_code)
+              : undefined,
+            baseCurrency:
+              process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+          })
+          .onConflictDoNothing();
       }
     });
 

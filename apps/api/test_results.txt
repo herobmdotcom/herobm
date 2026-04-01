@@ -1,0 +1,9 @@
+PASS src/invoices/purchase-invoice.service.spec.ts
+PASS src/invoices/sales-invoice.service.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       33 passed, 33 total
+Snapshots:   0 total
+Time:        1.239 s, estimated 2 s
+Ran all test suites matching purchase-invoice.service.spec.ts|sales-invoice.service.spec.ts.

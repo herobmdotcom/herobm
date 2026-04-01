@@ -3,7 +3,16 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "builder": "tsc",
     "deleteOutDir": true,
+    "plugins": [
+      {
+        "name": "@nestjs/swagger",
+        "options": {
+          "dtoFileNameSuffix": ["dto.ts"]
+        }
+      }
+    ],
     "assets": [
       { "include": "auth/casbin/*.conf", "watchAssets": true },
       { "include": "auth/casbin/*.csv", "watchAssets": true },

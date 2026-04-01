@@ -9,17 +9,19 @@ Usage:
     python tools/seed.py              # seed all
     python tools/seed.py --users      # seed users only
     python tools/seed.py --inventory  # seed inventory only
+    python tools/seed.py --verify-only # only run validation checks
     python tools/seed.py --dry-run    # show what would be seeded
 """
 
 import subprocess
 import sys
 import os
+import json
 from dotenv import load_dotenv
 
 load_dotenv()
 
-CONTAINER = "postgres-custom"
+CONTAINER = os.environ.get("POSTGRES_CONTAINER", "postgres-custom")
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
 DB_NAME = os.environ.get("POSTGRES_DB", "custom_app")
 
@@ -59,6 +61,73 @@ def psql_sql(sql: str, env_vars: list[str] | None = None) -> None:
         sys.exit(1)
     if result.stdout.strip():
         print(f"  {result.stdout.strip()}")
+
+
+def psql_query(sql: str) -> list[dict]:
+    """Execute SQL and return rows as list of dicts."""
+    cmd = [
+        "podman", "exec", "-i", CONTAINER,
+        "psql", "-U", DB_USER, "-d", DB_NAME,
+        "-t", "-A", "-c", f"SELECT row_to_json(t) FROM ({sql}) t"
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
+    if result.returncode != 0:
+        return []
+    
+    rows = []
+    for line in result.stdout.strip().splitlines():
+        if not line: continue
+        try:
+            rows.append(json.loads(line))
+        except:
+            continue
+    return rows
+
+
+def align_pkey(table: str, id_col: str, lookup_col: str, lookup_val: str, new_id: str, referencing_tables: list[tuple[str, str]]) -> None:
+    """ safely migrates a primary key and its foreign keys to a new stable UUID using a Clone-Update-Delete pattern. """
+    current_id = psql(f"SELECT {id_col} FROM modbm_core.{table} WHERE {lookup_col} = '{lookup_val}';", capture=True)
+    if not current_id:
+        return # New record, INSERT will handle it
+    
+    if current_id.lower() == new_id.lower():
+        return # Already aligned
+    
+    print(f"  ALIGNING: Migrating {table}.{lookup_col}='{lookup_val}' from {current_id} to {new_id}...")
+    
+    # 0. Neutralize the old record's unique constraints to avoid collision during clone
+    psql(f"UPDATE modbm_core.{table} SET {lookup_col} = '{lookup_val}_migration_old' WHERE {id_col} = '{current_id}';")
+    
+    # Also neutralize 'is_default' if it exists (specific to gst_categories)
+    has_is_default = psql(f"SELECT 1 FROM information_schema.columns WHERE table_schema = 'modbm_core' AND table_name = '{table}' AND column_name = 'is_default';", capture=True)
+    if has_is_default:
+        psql(f"UPDATE modbm_core.{table} SET is_default = false WHERE {id_col} = '{current_id}';")
+
+    # 1. Check if the target ID already exists in the table
+    exists_new = psql(f"SELECT 1 FROM modbm_core.{table} WHERE {id_col} = '{new_id}';", capture=True)
+    
+    if not exists_new:
+        # Create a clone of the old record with the new ID (using the ORIGINAL lookup_val)
+        cols_query = f"SELECT column_name FROM information_schema.columns WHERE table_schema = 'modbm_core' AND table_name = '{table}' AND column_name != '{id_col}' AND column_name != '{lookup_col}'"
+        columns = [r['column_name'] for r in psql_query(cols_query)]
+        
+        cols_str = ""
+        vals_str = ""
+        if columns:
+            cols_str = ", " + ", ".join(columns)
+            vals_str = ", " + ", ".join(columns)
+            
+        psql(f"INSERT INTO modbm_core.{table} ({id_col}, {lookup_col}{cols_str}) SELECT '{new_id}', '{lookup_val}'{vals_str} FROM modbm_core.{table} WHERE {id_col} = '{current_id}';")
+        print(f"    - Cloned record to {new_id}")
+    
+    # 2. Update all referencing foreign keys
+    for ref_table, ref_col in referencing_tables:
+        psql(f"UPDATE modbm_core.{ref_table} SET {ref_col} = '{new_id}' WHERE {ref_col} = '{current_id}';")
+        print(f"    - Updated FK in {ref_table}.{ref_col}")
+    
+    # 3. Delete the old primary key record
+    psql(f"DELETE FROM modbm_core.{table} WHERE {id_col} = '{current_id}';")
+    print(f"    OK: {table} PKEY migration complete.")
 
 
 def seed_users(dry_run: bool = False) -> None:
@@ -129,100 +198,270 @@ def seed_suppliers(dry_run: bool = False) -> None:
     print("  SKIP: Suppliers are imported via 'make import-legacy' (dbt import models)")
 
 
-
-
 def seed_gst_categories(dry_run: bool = False) -> None:
     if dry_run:
         print("  [DRY RUN] Would seed GST categories")
         return
+    
+    # 0. Neutralize all is_default flags to prevent unique constraint (gst_categories_single_default_idx) during migration
+    psql("UPDATE modbm_core.gst_categories SET is_default = false WHERE is_default = true;")
+
+    # Pre-seed alignment to resolve FK violations in dirty dev databases
+    ref_tables = [('products', 'gst_category_id'), ('accounts', 'gst_category_id'), ('sales_order_lines', 'gst_category_id')]
+    align_pkey('gst_categories', 'gst_category_id', 'code', 'GST', 'c0000000-0000-0000-0000-000000000001', ref_tables)
+    align_pkey('gst_categories', 'gst_category_id', 'code', 'ZR',  'c0000000-0000-0000-0000-000000000002', ref_tables)
+    align_pkey('gst_categories', 'gst_category_id', 'code', 'EXE', 'c0000000-0000-0000-0000-000000000003', ref_tables)
+
     sql = """
-    INSERT INTO modbm_core.gst_categories (code, title, type, rate, is_default) VALUES
-        ('GST', 'GST 9%', 'gst_applies', '9', true),
-        ('ZR', 'Zero Rated', 'zero_rated', '0', false),
-        ('EXE', 'Exempt', 'exempt', '0', false)
-    ON CONFLICT (code) DO UPDATE SET rate = EXCLUDED.rate, title = EXCLUDED.title, type = EXCLUDED.type, is_default = EXCLUDED.is_default;
+    INSERT INTO modbm_core.gst_categories (gst_category_id, code, title, type, rate, is_default) VALUES
+        ('c0000000-0000-0000-0000-000000000001', 'GST', 'GST 9%', 'gst_applies', '9', true),
+        ('c0000000-0000-0000-0000-000000000002', 'ZR', 'Zero Rated', 'zero_rated', '0', false),
+        ('c0000000-0000-0000-0000-000000000003', 'EXE', 'Exempt', 'exempt', '0', false)
+    ON CONFLICT (code) DO UPDATE SET
+        gst_category_id = EXCLUDED.gst_category_id,
+        rate = EXCLUDED.rate,
+        title = EXCLUDED.title,
+        type = EXCLUDED.type,
+        is_default = EXCLUDED.is_default;
     """
     psql_sql(sql)
 
-def seed_system_records(dry_run: bool = False) -> None:
-    if dry_run:
-        print("  [DRY RUN] Would seed system records")
+
+def seed_organization(dry_run: bool = False) -> None:
+    """Imports the organization singleton record from raw_abm.company."""
+    # Check if raw_abm.company exists before attempting to seed
+    exists = psql("SELECT 1 FROM information_schema.tables WHERE table_schema = 'raw_abm' AND table_name = 'company' LIMIT 1;", capture=True)
+    if not exists:
+        print("  SKIP: raw_abm.company not found. (Expected in sterile shadow environments)")
         return
+
+    if dry_run:
+        print("  [DRY RUN] Would seed organization from raw_abm")
+        return
+
     sql = """
+    WITH src AS (
+        SELECT 
+            TRIM(company_name) as name,
+            TRIM(COALESCE(company_url, '')) as website,
+            TRIM(COALESCE(phone_number, '')) as phone,
+            TRIM(COALESCE(tax_number, '')) as tax_number,
+            TRIM(COALESCE(company_id, '')) as company_number,
+            regexp_split_to_array(company_address, E'\\r?\\n') as addr_arr
+        FROM raw_abm.company
+        LIMIT 1
+    )
+    INSERT INTO modbm_core.organization (
+        organization_id, name, website, phone, tax_number, company_number,
+        address_line_1, address_line_2, city
+    )
+    SELECT 
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        name, website, phone, tax_number, company_number,
+        TRIM(COALESCE(addr_arr[1], '')),
+        TRIM(COALESCE(addr_arr[2], '')),
+        TRIM(COALESCE(addr_arr[3], ''))
+    FROM src
+    ON CONFLICT (organization_id) DO UPDATE SET 
+        name = EXCLUDED.name,
+        website = EXCLUDED.website,
+        phone = EXCLUDED.phone,
+        tax_number = EXCLUDED.tax_number,
+        company_number = EXCLUDED.company_number,
+        address_line_1 = EXCLUDED.address_line_1,
+        address_line_2 = EXCLUDED.address_line_2,
+        city = EXCLUDED.city;
+    """
+    psql_sql(sql)
+    print("  Seeded organization details from raw_abm.company")
+
+
+def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_code: str = 'HQ') -> None:
+    if dry_run:
+        print(f"  [DRY RUN] Would seed system records with base currency {base_currency}")
+        return
+    sql = f"""
+    INSERT INTO modbm_core.uom_dictionary (uom_code, description)
+      VALUES ('EA', 'Each')
+      ON CONFLICT (uom_code) DO NOTHING;
+
     INSERT INTO modbm_core.products (product_id, product_number, name) 
       VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM-CUSTOM-LINE', 'Custom Line Product') 
-      ON CONFLICT (product_id) DO UPDATE SET product_number = 'SYSTEM-CUSTOM-LINE';
+      ON CONFLICT (product_id) DO UPDATE SET 
+        product_id = EXCLUDED.product_id,
+        product_number = EXCLUDED.product_number;
 
+    INSERT INTO modbm_core.locations (location_id, code, name)
+      VALUES ('00000000-0000-0000-0000-000000000100', '{loc_code}', 'Main Headquarters')
+      ON CONFLICT (code) DO UPDATE SET 
+        location_id = EXCLUDED.location_id,
+        name = EXCLUDED.name;
 
-    INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code)
-      VALUES ('00000000-0000-0000-0000-000000000001', 'LEGACY-SALES', 'legacy')
-      ON CONFLICT DO NOTHING;
+    INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code, currency_code, fulfillment_location_id)
+      VALUES (
+        '00000000-0000-0000-0000-000000000001', 
+        'LEGACY-SALES', 
+        'legacy', 
+        '{base_currency}',
+        '00000000-0000-0000-0000-000000000100'
+      )
+      ON CONFLICT (sales_order_id) DO UPDATE SET 
+        order_number = EXCLUDED.order_number,
+        state_code = EXCLUDED.state_code;
 
-    INSERT INTO modbm_core.sales_order_lines (sales_order_line_id, sales_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage)
-      VALUES ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0)
-      ON CONFLICT DO NOTHING;
+    INSERT INTO modbm_core.sales_order_lines (sales_order_line_id, sales_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage, fulfillment_location_id)
+      VALUES (
+        '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0,
+        '00000000-0000-0000-0000-000000000100'
+      )
+      ON CONFLICT (sales_order_line_id) DO NOTHING;
 
-    INSERT INTO modbm_core.purchase_orders (purchase_order_id, order_number, state_code)
-      VALUES ('00000000-0000-0000-0000-000000000002', 'LEGACY-PURCHASE', 'legacy')
-      ON CONFLICT DO NOTHING;
+    INSERT INTO modbm_core.purchase_orders (purchase_order_id, order_number, state_code, currency_code)
+      VALUES ('00000000-0000-0000-0000-000000000002', 'LEGACY-PURCHASE', 'legacy', '{base_currency}')
+      ON CONFLICT (purchase_order_id) DO UPDATE SET 
+        order_number = EXCLUDED.order_number;
 
     INSERT INTO modbm_core.purchase_order_lines (purchase_order_line_id, purchase_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage)
-      VALUES ('00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000002', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0)
-      ON CONFLICT DO NOTHING;
+      VALUES (
+        '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000002', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0
+      )
+      ON CONFLICT (purchase_order_line_id) DO NOTHING;
+
+    -- Anchor exchange rate for the base currency
+    INSERT INTO modbm_core.exchange_rates (currency_code, currency_name, buy_rate, sell_rate)
+      VALUES ('{base_currency}', '{base_currency}', 1.0, 1.0)
+      ON CONFLICT (currency_code) DO UPDATE SET buy_rate = 1.0, sell_rate = 1.0;
     """
     psql_sql(sql)
+
+
+def load_report_config():
+    path = os.path.join('packages', 'shared', 'reports-config.json')
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)['reports']
+    except Exception as e:
+        print(f"ERROR: Failed to load report config from {path}: {e}")
+        sys.exit(1)
 
 
 def seed_reports(dry_run: bool = False) -> None:
+    reports = load_report_config()
+    
     if dry_run:
-        print("  [DRY RUN] Would seed report templates")
+        print(f"  [DRY RUN] Would seed {len(reports)} report templates and hooks")
         return
 
     def read_escape(filename):
         path = os.path.join('tools', 'seeds', 'reports', filename)
         try:
             with open(path, 'r', encoding='utf-8') as f:
-                return f.read().replace("'", "'")
+                return f.read().replace("'", "''")
         except FileNotFoundError:
-            return ""
+            print(f"  [WARN] Template file not found: {path}")
+            return None
 
-    q = read_escape('sales-quote.typ')
-    p = read_escape('picking-slip.typ')
-    i = read_escape('sales-invoice.typ')
+    reports_sql = []
+    hooks_sql = []
+    contexts_sql = []
 
-    if not q or not p or not i:
-        print("  [WARN] Missing robust report templates in tools/seeds/reports/, skipping...")
+    for r in reports:
+        # Pre-seed alignment for reports based on slug
+        ref_tables = [('report_contexts', 'report_id'), ('report_hook_assignments', 'report_id')]
+        align_pkey('reports', 'id', 'slug', r['slug'], r['id'], ref_tables)
+
+        template_content = read_escape(r['filename'])
+        if template_content is None:
+            continue
+            
+        reports_sql.append(f"('{r['id']}', '{r['slug']}', '{r['name']}', '{template_content}', '{r['output_name_pattern']}')")
+        
+        if 'hook' in r and r['hook']:
+            # Handle standard context resolution
+            ctx = r.get('context', 'default')
+            hooks_sql.append(f"('{r['hook']}', '{r['id']}', '{ctx}')")
+            
+        if 'context' in r and r['context']:
+            contexts_sql.append(f"('{r['id']}', '{r['context']}')")
+
+    if not reports_sql:
+        print("  SKIP: No valid report templates found to seed.")
         return
 
-    # Use single quotes properly escaped in python f-string inside SQL string
     sql = f"""
-    INSERT INTO modbm_core.reports (id, slug, name, template, output_name_pattern) VALUES
-        ('a0000000-0000-0000-0000-000000000001', 'sales-order-quote', 'Sales Order Quote', '{q}', 'Quote-${{orderNumber}}.pdf'),
-        ('a0000000-0000-0000-0000-000000000002', 'picking-slip-template', 'Picking Slip', '{p}', 'PickingSlip-${{orderNumber}}.pdf'),
-        ('a0000000-0000-0000-0000-000000000003', 'sales-invoice-template', 'Sales Invoice', '{i}', 'Invoice-${{orderNumber}}.pdf')
+    INSERT INTO modbm_core.reports (id, slug, name, template, output_name_pattern)
+    VALUES {', '.join(reports_sql)}
     ON CONFLICT (id) DO UPDATE SET
         template = EXCLUDED.template,
         name = EXCLUDED.name,
         slug = EXCLUDED.slug,
         output_name_pattern = EXCLUDED.output_name_pattern;
-
-    INSERT INTO modbm_core.report_hook_assignments (hook_slug, report_id) VALUES
-        ('sales-order-quote', 'a0000000-0000-0000-0000-000000000001'),
-        ('picking-slip',      'a0000000-0000-0000-0000-000000000002'),
-        ('sales-invoice',     'a0000000-0000-0000-0000-000000000003')
-    ON CONFLICT (hook_slug) DO UPDATE SET
-        report_id = EXCLUDED.report_id;
-
-    INSERT INTO modbm_core.report_contexts (report_id, context) VALUES
-        ('a0000000-0000-0000-0000-000000000001', 'sales-order'),
-        ('a0000000-0000-0000-0000-000000000002', 'picking-slip'),
-        ('a0000000-0000-0000-0000-000000000003', 'sales-invoice')
-    ON CONFLICT (report_id, context) DO NOTHING;
     """
+    
+    if hooks_sql:
+        sql += f"""
+        INSERT INTO modbm_core.report_hook_assignments (hook_slug, report_id, context_slug)
+        VALUES {', '.join(hooks_sql)}
+        ON CONFLICT (hook_slug) DO UPDATE SET
+            report_id = EXCLUDED.report_id,
+            context_slug = EXCLUDED.context_slug;
+        """
+        
+    if contexts_sql:
+        sql += f"""
+        INSERT INTO modbm_core.report_contexts (report_id, context)
+        VALUES {', '.join(contexts_sql)}
+        ON CONFLICT (report_id, context) DO NOTHING;
+        """
+        
     psql_sql(sql)
+    print(f"  Seeded {len(reports_sql)} reports and {len(hooks_sql)} hook assignments.")
+
+
+def validate_report_setup() -> bool:
+    """Verifies that the database matches the shared report config."""
+    print("Verifying report setup integrity...")
+    reports = load_report_config()
+    all_passed = True
+
+    for r in reports:
+        # 1. Check report exists
+        exists = psql(f"SELECT 1 FROM modbm_core.reports WHERE id = '{r['id']}' AND slug = '{r['slug']}';", capture=True)
+        if not exists:
+            print(f"  [FAIL] Report {r['slug']} (ID: {r['id']}) missing from DB.")
+            all_passed = False
+            continue
+
+        # 2. Check hook assignment if applicable
+        if 'hook' in r and r['hook']:
+            hook_assignment = psql(f"SELECT report_id FROM modbm_core.report_hook_assignments WHERE hook_slug = '{r['hook']}';", capture=True)
+            if not hook_assignment or hook_assignment != r['id']:
+                print(f"  [FAIL] Hook '{r['hook']}' not correctly assigned to report '{r['slug']}' (Expected: {r['id']}, Found: {hook_assignment})")
+                all_passed = False
+
+        # 3. Check context registration
+        if 'context' in r and r['context']:
+            context_exists = psql(f"SELECT 1 FROM modbm_core.report_contexts WHERE report_id = '{r['id']}' AND context = '{r['context']}';", capture=True)
+            if not context_exists:
+                print(f"  [FAIL] Context '{r['context']}' not registered for report '{r['slug']}'")
+                all_passed = False
+
+    if all_passed:
+        print("  [PASS] All reports, hooks, and contexts are correctly configured.")
+    else:
+        print("  [FAIL] Report setup integrity check failed.")
+        
+    return all_passed
+
 
 def main() -> None:
     dry_run = "--dry-run" in sys.argv
+    verify_only = "--verify-only" in sys.argv
+    
+    if verify_only:
+        success = validate_report_setup()
+        sys.exit(0 if success else 1)
+
     users_only = "--users" in sys.argv
     inventory_only = "--inventory" in sys.argv
     products_only = "--products" in sys.argv
@@ -250,11 +489,21 @@ def main() -> None:
         print("Seeding suppliers...")
         seed_suppliers(dry_run)
 
-
     if seed_all:
-        seed_system_records(dry_run)
+        base_currency = os.environ.get("HOME_CURRENCY", "EUR")
+        if not dry_run and not os.environ.get("HOME_CURRENCY"):
+            print("\n--- System Configuration ---")
+            val = input(f"Select Base Currency (ISO code) [default: {base_currency}]: ").strip().upper()
+            if val:
+                base_currency = val
+
+        seed_system_records(dry_run, base_currency)
+        seed_organization(dry_run)
         seed_gst_categories(dry_run)
         seed_reports(dry_run)
+        
+        if not dry_run:
+            validate_report_setup()
 
     if not dry_run:
         print("\nDone.")
@@ -262,4 +511,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

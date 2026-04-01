@@ -10,10 +10,6 @@ import {
 } from '@nestjs/common';
 import { SuppliersService } from './suppliers.service';
 import { SuppliersWriteService } from './suppliers-write.service';
-import type {
-  CreateSupplierDto,
-  UpdateSupplierDto,
-} from './suppliers-write.service';
 import { PaginationQuery } from '../common/pagination';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -23,6 +19,7 @@ import {
 } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
+import { CreateSupplierDto, UpdateSupplierDto } from './dto';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('suppliers')

@@ -96,6 +96,7 @@
       "product": "Product",
       "description": "Description",
       "qty": "Qty",
+      "uom": "UOM",
       "unitPrice": "Unit Price",
       "amount": "Amount",
       "ordered": "Ordered",
@@ -139,10 +140,11 @@
       "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
       "createInvoice": "Create Invoice",
-      "printInvoice": "Print Invoice PDF",
+      "printInvoice": "Invoice PDF",
       "generateInvoice": "Generate Invoice",
       "copyOrder": "Copy Order",
       "createReturn": "Create Return",
+      "salesCredit": "Credit Note PDF",
       "archive": "Archive",
       "unarchive": "Unarchive",
       "save": "Save",
@@ -150,7 +152,8 @@
       "saveReturn": "Create Return",
       "removeReturnLine": "Remove return line",
       "customLine": "Custom Line",
-      "addPostConfirmationLine": "Add Line"
+      "addPostConfirmationLine": "Add Line",
+      "proFormaInvoice": "Pro Forma Invoice"
     },
     "placeholders": {
       "searchOrders": "Search by order number, customer, or PO…",
@@ -175,6 +178,7 @@
       "product": "Product",
       "description": "Description",
       "qty": "Qty",
+      "uom": "UOM",
       "unitPrice": "Unit Price",
       "discountPct": "Disc %",
       "gst": "GST",
@@ -213,6 +217,7 @@
     "noLineItemsShort": "No products ordered yet.",
     "noReturnLines": "No return lines",
     "newReturn": "New Return",
+    "selectLocation": "Select Location",
     "noInventoryData": "No inventory data",
     "loadingReturns": "Loading returns…",
     "noReturns": "No returns for this order.",
@@ -228,13 +233,27 @@
       "by": "by {actor}"
     },
     "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
-    "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances."
+    "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances.",
+    "noInventoryFound": "No inventory records found for this product.",
+    "availabilityStatus": {
+      "local": "In Stock (Local)",
+      "others": "In Stock (Other)",
+      "shortage": "Stock Shortage"
+    }
   },
   "common": {
     "save": "Save",
     "saving": "Saving…",
     "copying": "Copying…",
     "by": "by",
+    "add": "Add",
+    "edit": "Edit",
+    "create": "Create",
+    "updated": "Updated",
+    "created": "Created",
+    "deleted": "Deleted",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "location": "Location",
     "subtotal": "Subtotal",
     "tax": "Tax",
     "total": "Total",
@@ -244,6 +263,7 @@
     "loading": "Loading…",
     "noMatchingResults": "No matching results",
     "activityTimeline": "Activity Timeline",
+    "activityCardHeading": "Activity Timeline",
     "noEvents": "No events recorded",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
     "timeline": {
@@ -326,6 +346,7 @@
       "orderNumber": "Order #",
       "customer": "Customer",
       "vendor": "Vendor",
+      "code": "Code",
       "name": "Name",
       "status": "Status",
       "source": "Source",
@@ -398,7 +419,8 @@
       "pleaseSelectCustomer": "Please select a customer",
       "pleaseSelectSupplier": "Please select a supplier",
       "pleaseAddLineItem": "Please add at least one line item",
-      "failedToEnterSupplierBill": "Failed to generate supplier bill"
+      "failedToEnterSupplierBill": "Failed to generate supplier bill",
+      "failedToGenerateReport": "Failed to generate report"
     },
     "gst": {
       "exempt": "Exempt",
@@ -515,6 +537,30 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "timeline": {
+      "title": "Recent Events",
+      "settings": "Timeline Settings",
+      "configureInfo": "Select which business events you want to see in your recent events feed.",
+      "types": {
+        "so_created": "Sales Order created",
+        "so_confirmed": "Sales Order confirmed",
+        "so_shipped": "Sales Order shipped",
+        "so_invoiced": "Sales Order invoiced",
+        "po_created": "Purchase Order created",
+        "po_ordered": "Purchase Order ordered",
+        "po_received": "Purchase Order received",
+        "account_created": "Customer Account created",
+        "supplier_created": "Supplier created"
+      },
+      "empty": "No recent events to display."
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "createSalesOrder": "Create Sales Order",
+      "createPurchaseOrder": "Create Purchase Order",
+      "createSalesDesc": "New customer quote or order",
+      "createPurchaseDesc": "Restock inventory from supplier"
+    },
     "stats": {
       "accounts": "Accounts",
       "products": "Products",

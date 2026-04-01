@@ -26,8 +26,11 @@ describe('Accounts (e2e)', () => {
         username: 'admin',
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       });
+
     if (adminRes.status !== 201) {
-      console.error('Admin login failed:', adminRes.status, adminRes.body);
+      throw new Error(
+        `${'adminRes'} login failed: ${adminRes.status} ${JSON.stringify(adminRes.body)}`,
+      );
     }
     adminToken = adminRes.body.access_token;
 
@@ -38,8 +41,11 @@ describe('Accounts (e2e)', () => {
         username: 'viewer',
         password: process.env.DEV_VIEWER_PASSWORD || 'password',
       });
+
     if (viewerRes.status !== 201) {
-      console.error('Viewer login failed:', viewerRes.status, viewerRes.body);
+      throw new Error(
+        `${'viewerRes'} login failed: ${viewerRes.status} ${JSON.stringify(viewerRes.body)}`,
+      );
     }
     viewerToken = viewerRes.body.access_token;
   });

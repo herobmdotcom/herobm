@@ -19,6 +19,8 @@ import { ReportsModule } from './reports/reports.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { GlModule } from './gl/gl.module';
 import { SystemModule } from './system/system.module';
+import { SettingsModule } from './settings/settings.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { SystemModule } from './system/system.module';
     ReportsModule,
     GlModule,
     SystemModule,
+    SettingsModule,
+    LocationsModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })

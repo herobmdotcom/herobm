@@ -13,42 +13,7 @@ import {
   supplierEvents,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-
-export interface CreateSupplierDto {
-  vendorNumber: string;
-  name: string;
-  address1Line1?: string;
-  address1Line2?: string;
-  address1City?: string;
-  address1StateOrProvince?: string;
-  address1PostalCode?: string;
-  address1Country?: string;
-  telephone1?: string;
-  fax?: string;
-  emailAddress1?: string;
-  paymentTerms?: string;
-  supplierGroupId?: string;
-  currencyCode?: string;
-  notes?: string;
-}
-
-export interface UpdateSupplierDto {
-  name?: string;
-  address1Line1?: string;
-  address1Line2?: string;
-  address1City?: string;
-  address1StateOrProvince?: string;
-  address1PostalCode?: string;
-  address1Country?: string;
-  telephone1?: string;
-  fax?: string;
-  emailAddress1?: string;
-  paymentTerms?: string;
-  supplierGroupId?: string;
-  currencyCode?: string;
-  notes?: string;
-  stateCode?: string;
-}
+import { CreateSupplierDto, UpdateSupplierDto } from './dto';
 
 @Injectable()
 export class SuppliersWriteService {

@@ -64,8 +64,8 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
         </div>
       ) : details ? (
         <div className="space-y-6">
-          <div className="bg-[#f8f9fa] rounded-lg p-4 border border-gray-200">
-            <div className={`grid gap-4 text-sm ${details.relatedParty ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2'}`}>
+          <div className="card space-y-5">
+            <div className="flex flex-col gap-5 text-sm">
               <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Type</span>
                 <span className="text-[#041627]">{details.sourceType}</span>
@@ -74,7 +74,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
                 <div>
                   <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Document</span>
                   {details.relatedDocument.link ? (
-                    <Link href={details.relatedDocument.link} className="text-[#0ea5e9] hover:underline font-semibold" onClick={onClose}>
+                    <Link href={details.relatedDocument.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
                       {details.relatedDocument.number}
                     </Link>
                   ) : (
@@ -83,23 +83,20 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
                 </div>
               )}
               {details.relatedParty && (
-                <div className="md:col-span-2">
+                <div>
                   <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Related Party</span>
                   <div className="text-[#041627]">
                     {details.relatedParty.link ? (
-                      <Link href={details.relatedParty.link} className="text-[#0ea5e9] hover:underline font-semibold" onClick={onClose}>
+                      <Link href={details.relatedParty.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
                         {details.relatedParty.name}
                       </Link>
                     ) : (
                       <span className="font-semibold">{details.relatedParty.name}</span>
                     )}
-                    <span className={`ml-2 text-xs font-mono px-1.5 py-0.5 rounded border ${details.relatedParty.link ? 'text-[#0ea5e9] bg-[#e0f2fe] border-[#bae6fd]' : 'text-gray-500 bg-gray-100'}`}>
-                      {details.relatedParty.number}
-                    </span>
                   </div>
                 </div>
               )}
-              <div className={details.relatedParty ? 'col-span-2 md:col-span-4 mt-2' : 'col-span-2'}>
+              <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Operation Memo</span>
                 <span className="text-[#041627]">{details.memo || '—'}</span>
               </div>

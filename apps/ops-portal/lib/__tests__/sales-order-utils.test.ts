@@ -34,7 +34,6 @@ function makeInvoice(
         totalTax: '0',
         createdOn: '2024-01-01',
         createdBy: 'test',
-        erpnextJournalId: null,
         lines: lines.map((l) => ({
             lineId: `line-${l.salesOrderLineId}`,
             salesOrderLineId: l.salesOrderLineId,

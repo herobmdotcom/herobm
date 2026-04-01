@@ -1,25 +1,39 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 export default function ProductGroupsAdmin() {
+  useDocumentTitle('Product Groups');
   const [groups, setGroups] = useState<any[]>([]);
+  const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isCreating, setIsCreating] = useState(false);
 
+  const renderGlAccountLabel = (id: string | null | undefined) => {
+    if (!id) return <span className="text-muted text-xs italic">Not configured</span>;
+    const acct = glAccounts.find((a: any) => a.glAccountId === id);
+    return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<any[]>('/api/product-groups');
+      const [data, accounts] = await Promise.all([
+        apiFetch<any[]>('/api/product-groups'),
+        apiFetch<any[]>('/api/gl/accounts')
+      ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
+      setGlAccounts(accounts || []);
     } catch(err: any) {
       toast.error('Failed to load groups: ' + err.message);
     } finally {
@@ -42,6 +56,8 @@ export default function ProductGroupsAdmin() {
       groupCode: '',
       name: '',
       defaultDiscountPercentage: '0',
+      defaultExpenseAccountId: '',
+      defaultRevenueAccountId: '',
     });
   };
 
@@ -108,6 +124,8 @@ export default function ProductGroupsAdmin() {
               <th style={{ width: 120 }}>Code</th>
               <th>Name</th>
               <th style={{ width: 150 }}>Def. Discount %</th>
+              <th style={{ width: 180 }}>Def. Expense Account</th>
+              <th style={{ width: 180 }}>Def. Revenue Account</th>
               <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
@@ -123,6 +141,22 @@ export default function ProductGroupsAdmin() {
                 <td>
                   <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
                 </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
+                    <option value="">-- None --</option>
+                    {glAccounts.map((a: any) => (
+                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
+                    <option value="">-- None --</option>
+                    {glAccounts.map((a: any) => (
+                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                    ))}
+                  </select>
+                </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
                     <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
@@ -134,7 +168,7 @@ export default function ProductGroupsAdmin() {
             
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
-                <td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
                   No product groups defined.
                 </td>
               </tr>
@@ -152,6 +186,22 @@ export default function ProductGroupsAdmin() {
                   <td>
                     <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
                   </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
+                      <option value="">-- None --</option>
+                      {glAccounts.map((a: any) => (
+                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
+                      <option value="">-- None --</option>
+                      {glAccounts.map((a: any) => (
+                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
@@ -164,6 +214,8 @@ export default function ProductGroupsAdmin() {
                   <td className="font-mono text-xs">{g.groupCode}</td>
                   <td className="font-medium">{g.name}</td>
                   <td>{g.defaultDiscountPercentage}%</td>
+                  <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
+                  <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>Edit</button>

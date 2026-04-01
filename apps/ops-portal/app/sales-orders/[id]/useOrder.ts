@@ -41,7 +41,11 @@ export function useOrder(id: string) {
     /* ── Core state ──────────────────────────────────────────────── */
     const [order, setOrder] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [error, _setError] = useState('');
+    const setError = (msg: string) => {
+        _setError(msg);
+        if (msg) toast.error(msg);
+    };
     const [saving, setSaving] = useState(false);
     const [copying, setCopying] = useState(false);
 
@@ -279,6 +283,18 @@ export function useOrder(id: string) {
         }
     };
 
+    const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
+        setSaving(true);
+        try {
+            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', payload);
+            await loadOrder(undefined, false);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const removeLine = async (lineId: string) => {
         if (!confirm(tConfirm('removeLine'))) return;
         setSaving(true);
@@ -414,7 +430,7 @@ export function useOrder(id: string) {
 
         // Mutations
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
+        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
         editFulfillmentLocationId, setEditFulfillmentLocationId
     };

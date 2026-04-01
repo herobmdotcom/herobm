@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GlService, JournalLineDto, JournalMeta } from './gl.service';
+import { GlService, JournalMeta } from './gl.service';
+import { JournalLineDto } from './dto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
@@ -1170,10 +1171,11 @@ describe('GlService', () => {
   // =========================================================================
 
   describe('getSettings', () => {
-    it('should return null when no settings exist', async () => {
+    it('should return default precedence when no settings exist', async () => {
       mock.onSelect([]);
       const result = await service.getSettings();
-      expect(result).toBeNull();
+      expect(result.revenueRoutingPrecedence).toBeDefined();
+      expect(result.expenseRoutingPrecedence).toBeDefined();
     });
 
     it('should return settings when they exist', async () => {
@@ -1268,36 +1270,42 @@ describe('GlService', () => {
 
   describe('getJournalEntries', () => {
     it('should return entries list', async () => {
-      mock.onSelect(
-        [
-          {
-            journalEntryId: 'je-1',
-            entryNumber: 'JE-001',
-            sourceType: 'manual',
-          },
-        ],
-        [{ count: 1 }],
-      );
+      // Return entries for first execute, and count for second execute
+      mock.db.execute
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              journal_entry_id: 'je-1',
+              entry_number: 'JE-001',
+              source_type: 'manual',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [{ count: 1 }],
+        });
+
       const result = await service.getJournalEntries({});
       expect(result.data).toHaveLength(1);
+      expect(mock.db.execute).toHaveBeenCalledTimes(2);
     });
 
     it('should pass filter parameters', async () => {
-      mock.onSelect([]);
+      mock.db.execute.mockResolvedValue({ rows: [] });
       await service.getJournalEntries({
         fromDate: '2026-01-01',
         toDate: '2026-12-31',
         sourceType: 'sales_invoice',
         limit: 10,
       });
-      expect(mock.db.select).toHaveBeenCalled();
+      expect(mock.db.execute).toHaveBeenCalledTimes(2);
     });
 
     it('should cap limit at 200', async () => {
-      mock.onSelect([]);
+      mock.db.execute.mockResolvedValue({ rows: [] });
       await service.getJournalEntries({ limit: 999 });
       // Code uses Math.min(limit, 200) — we verify it doesn't crash
-      expect(mock.db.select).toHaveBeenCalled();
+      expect(mock.db.execute).toHaveBeenCalledTimes(2);
     });
   });
 });

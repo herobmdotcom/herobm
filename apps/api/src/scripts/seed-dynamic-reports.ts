@@ -4,7 +4,11 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { v4 as uuidv4 } from 'uuid';
 import { eq, inArray } from 'drizzle-orm';
-import { reports, reportHookAssignments } from '../drizzle/modbm-core-schema';
+import {
+  reports,
+  reportHookAssignments,
+  reportContexts,
+} from '../drizzle/modbm-core-schema';
 
 process.loadEnvFile(resolve(__dirname, '../../../../.env'));
 
@@ -24,18 +28,64 @@ const SEEDS = [
   {
     slug: 'sales-invoice',
     name: 'Standard Sales Invoice',
+    contexts: ['sales-invoice'],
     description:
       'System default template for generating Sales Invoices and rendering AR Ledger entries.',
-    templatePath: '../reports/templates/orders/sales-invoice.typ',
+    templatePath: '../../../../tools/seeds/reports/sales-invoice.typ',
     outputPattern: 'Invoice-{{orderNumber}}.pdf',
+  },
+  {
+    slug: 'sales-order-quote',
+    name: 'Standard Sales Quote',
+    contexts: ['sales-order'],
+    description: 'System default template for generating Sales Quotes.',
+    templatePath: '../../../../tools/seeds/reports/sales-quote.typ',
+    outputPattern: 'Quote-{{orderNumber}}.pdf',
+  },
+  {
+    slug: 'pro-forma-invoice',
+    name: 'Standard Pro Forma Invoice',
+    contexts: ['sales-order'],
+    description:
+      'System default template for generating Pro Forma Invoices for confirmed orders.',
+    templatePath: '../../../../tools/seeds/reports/pro-forma-invoice.typ',
+    outputPattern: 'ProForma-{{orderNumber}}.pdf',
+  },
+  {
+    slug: 'sales-return-credit',
+    name: 'Standard Sales Credit',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Sales Credit Notes against returns.',
+    templatePath: '../../../../tools/seeds/reports/sales-credit.typ',
+    outputPattern: 'Credit-{{returnMeta.returnNumber}}.pdf',
   },
   {
     slug: 'picking-slip',
     name: 'Standard Picking Slip',
+    contexts: ['picking-slip'],
     description:
       'System default template for generating warehouse Picking Slips and Back-order reports.',
-    templatePath: '../reports/templates/orders/picking-slip.typ',
+    templatePath: '../../../../tools/seeds/reports/picking-slip.typ',
     outputPattern: 'Picking-Slip-{{orderNumber}}.pdf',
+  },
+  {
+    slug: 'theme-external',
+    name: 'External Reports Theme',
+    contexts: ['theme'],
+    description:
+      'Standard global wrapper for external documents with Organization info in headers/footers.',
+    templatePath: '../../../../tools/seeds/reports/theme-external.typ',
+    outputPattern: 'Theme-External.pdf',
+  },
+  {
+    slug: 'theme-internal',
+    name: 'Internal Reports Theme',
+    contexts: ['theme'],
+    description:
+      'Standard wrapper for internal business documents requiring a confidential or internal-only header.',
+    templatePath: '../../../../tools/seeds/reports/theme-internal.typ',
+    outputPattern: 'Theme-Internal.pdf',
   },
 ];
 
@@ -45,8 +95,18 @@ async function seed() {
   try {
     for (const seedData of SEEDS) {
       // 1. Read the Typst file
-      const absolutePath = join(__dirname, seedData.templatePath);
-      const typstContent = readFileSync(absolutePath, 'utf8');
+      let typstContent = '';
+      if ('templateString' in seedData && (seedData as any).templateString) {
+        typstContent = (seedData as any).templateString;
+      } else if ('templatePath' in seedData && (seedData as any).templatePath) {
+        const absolutePath = join(__dirname, (seedData as any).templatePath);
+        try {
+          typstContent = readFileSync(absolutePath, 'utf8');
+        } catch (e) {
+          console.warn('Missing template', absolutePath);
+          typstContent = '';
+        }
+      }
 
       // 2. Remove any existing reports with the same slug
       const existing = await db
@@ -81,13 +141,43 @@ async function seed() {
         .values({
           reportId: newReportId,
           hookSlug: seedData.slug,
+          contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
+          updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: reportHookAssignments.hookSlug,
-          set: { reportId: newReportId, updatedAt: new Date() },
+          set: {
+            reportId: newReportId,
+            contextSlug: (seedData as any).contexts?.[0] || 'sales-order',
+            updatedAt: new Date(),
+          },
         });
-      console.log(`✅ Assigned Hook: ${seedData.slug} -> ${seedData.name}`);
+      console.log(
+        `✅ Assigned Hook: ${seedData.slug} -> ${seedData.name} (${(seedData as any).contexts?.[0]})`,
+      );
+
+      // 5. Seed report contexts
+      if (
+        (seedData as any).contexts &&
+        Array.isArray((seedData as any).contexts)
+      ) {
+        for (const ctx of (seedData as any).contexts) {
+          await db
+            .insert(reportContexts)
+            .values({
+              reportId: newReportId,
+              context: ctx,
+            })
+            .onConflictDoNothing();
+        }
+      }
     }
+
+    // cleanup legacy hooks
+    console.log('Cleaning up legacy hooks...');
+    await db
+      .delete(reportHookAssignments)
+      .where(inArray(reportHookAssignments.hookSlug, ['sales-quote']));
 
     console.log('Seeding completed successfully!');
   } catch (error) {

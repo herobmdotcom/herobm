@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -7,6 +9,7 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 
 export default function ReportingPage() {
+  useDocumentTitle('Report Templates');
   const router = useRouter();
 
   const columns = useMemo<ColDef[]>(() => [

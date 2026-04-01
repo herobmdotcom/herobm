@@ -15,10 +15,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { ProductGroupsService } from './product-groups.service';
-import type {
-  CreateProductGroupDto,
-  UpdateProductGroupDto,
-} from './product-groups.service';
+import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
 
 @Controller('product-groups')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)

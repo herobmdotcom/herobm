@@ -17,24 +17,7 @@ const MAX_URL_LEN = 500;
 const MAX_COMPONENT_LEN = 100;
 
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-
-export class ClientErrorDto {
-  @IsString()
-  @IsNotEmpty()
-  message!: string;
-
-  @IsString()
-  @IsOptional()
-  stack?: string;
-
-  @IsString()
-  @IsOptional()
-  component?: string;
-
-  @IsString()
-  @IsOptional()
-  url?: string;
-}
+import { ClientErrorDto } from './dto';
 
 /**
  * Telemetry ingestion endpoint for client-side errors.

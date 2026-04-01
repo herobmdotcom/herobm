@@ -13,6 +13,8 @@ export interface OrderLine {
     tax: string;
     totalAmount: string;
     unitOfMeasure: string;
+    baseUom?: string;
+    productUoms?: import('@modbm/shared').ProductUom[];
     fulfillmentLocationId?: string | null;
     isPostConfirmation?: boolean | null;
 }
@@ -56,13 +58,17 @@ export interface OrderDetail {
     modifiedOn: string;
     lines: OrderLine[];
     events: OrderEvent[];
+    parentId?: string | null;
     backorders?: {
-        productId: string;
+        productId?: string;
         productNumber?: string;
-        quantity: string;
+        quantity?: string;
         stateCode: string;
         purchaseOrderId?: string;
         purchaseOrderNumber?: string;
+        salesOrderId?: string;
+        orderNumber?: string;
+        name?: string;
         createdOn: string;
     }[];
 }
@@ -117,6 +123,5 @@ export interface SalesInvoice {
     totalTax: string;
     createdOn: string;
     createdBy: string;
-    erpnextJournalId: string | null;
     lines?: InvoiceLine[];
 }

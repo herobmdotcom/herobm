@@ -1,18 +1,14 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { accountGroups } from '../drizzle/modbm-core-schema';
-
-export interface CreateAccountGroupDto {
-  groupCode: string;
-  name: string;
-  defaultDiscountPercentage?: string;
-  defaultArAccountId?: string;
-  defaultRevenueAccountId?: string;
-}
-
-export type UpdateAccountGroupDto = Partial<CreateAccountGroupDto>;
+import { accountGroups, accounts } from '../drizzle/modbm-core-schema';
+import { CreateAccountGroupDto, UpdateAccountGroupDto } from './dto';
 
 @Injectable()
 export class AccountGroupsService {
@@ -83,6 +79,19 @@ export class AccountGroupsService {
 
   async delete(id: string) {
     await this.findOne(id);
+
+    // Check for referencing accounts
+    const deps = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(accounts)
+      .where(eq(accounts.accountGroupId, id));
+
+    if (Number(deps[0].count) > 0) {
+      throw new ConflictException(
+        `Cannot delete account group '${id}' because it is currently assigned to one or more accounts.`,
+      );
+    }
+
     await this.db
       .delete(accountGroups)
       .where(eq(accountGroups.accountGroupId, id));

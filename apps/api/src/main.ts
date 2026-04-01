@@ -4,6 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { FileLoggerService } from './common/file-logger.service';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   // Prometheus default metrics (CPU, memory, event loop)
@@ -23,6 +24,15 @@ async function bootstrap() {
     }),
   );
 
+  const config = new DocumentBuilder()
+    .setTitle('ModBM API')
+    .setDescription('Core Forgeron API System endpoints')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+
   // CORS: restrict to explicit origins (ADV-027 fix)
   const corsOrigins = (process.env.CORS_ORIGINS ?? 'http://localhost:4300')
     .split(',')
@@ -41,7 +51,7 @@ async function bootstrap() {
     res.end(await register.metrics());
   });
 
-  const port = process.env.PORT ?? 3001;
+  const port = process.env.API_PORT ?? 3001;
   await app.listen(port);
   Logger.log(`API running on http://localhost:${port}`, 'Bootstrap');
 }

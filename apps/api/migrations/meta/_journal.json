@@ -5,99 +5,43 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1774449166564,
-      "tag": "0000_initial_schema",
+      "when": 1774888404394,
+      "tag": "0000_sticky_kulan_gath",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1774467879708,
-      "tag": "0001_bitter_siren",
+      "when": 1774968931247,
+      "tag": "0001_medical_wild_pack",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1774514860974,
-      "tag": "0002_add_outbox_locking",
+      "when": 1774971220314,
+      "tag": "0002_cynical_quicksilver",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1774519211836,
-      "tag": "0003_thankful_killraven",
+      "when": 1774984925511,
+      "tag": "0003_melodic_carnage",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "7",
-      "when": 1774523119992,
-      "tag": "0004_ancient_firebrand",
+      "when": 1775056404025,
+      "tag": "0004_black_nextwave",
       "breakpoints": true
     },
     {
       "idx": 5,
       "version": "7",
-      "when": 1774523174968,
-      "tag": "0005_lovely_wallow",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1774532886444,
-      "tag": "0007_handling_zones_and_bins",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1774550108258,
-      "tag": "0007_dark_shadowcat",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1774559011480,
-      "tag": "0008_fix_inventory_levels",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1774560551287,
-      "tag": "0009_sales_order_locations",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1774561820255,
-      "tag": "0010_nervous_susan_delgado",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1774648527501,
-      "tag": "0011_flimsy_brother_voodoo",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1774690151668,
-      "tag": "0012_add_not_null_fulfillment_location",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1774713773739,
-      "tag": "0013_polite_mantis",
+      "when": 1775060290561,
+      "tag": "0005_wonderful_misty_knight",
       "breakpoints": true
     }
   ]

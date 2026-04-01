@@ -18,19 +18,14 @@ import {
   accounts,
   glAccounts,
   products as coreProducts,
+  accountGroups,
+  productGroups,
 } from '../drizzle/modbm-core-schema';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
-import { computeLinePrice } from '@modbm/shared';
-
-export interface CreateSalesInvoiceDto {
-  notes?: string;
-  lines?: {
-    salesOrderLineId: string;
-    quantityToInvoice: number;
-  }[];
-}
+import { computeLinePrice, REVENUE_ROUTING_PRECEDENCE } from '@modbm/shared';
+import { CreateSalesInvoiceDto } from './dto';
 
 @Injectable()
 export class SalesInvoiceService {
@@ -94,6 +89,9 @@ export class SalesInvoiceService {
     // Identify if the Customer has an ERPNext ID mapped natively already dynamically
     let erpnextId: string | null = null;
     let customerName = 'Unknown Customer';
+    let customerArAccountId: string | null = null;
+    let customerRevenueAccountId: string | null = null;
+
     if (order.customerId) {
       // Find Party details to bind
       const isUuid =
@@ -102,8 +100,17 @@ export class SalesInvoiceService {
         );
 
       const custRows = await this.db
-        .select({ erpnextId: accounts.erpnextId, name: accounts.name })
+        .select({
+          erpnextId: accounts.erpnextId,
+          name: accounts.name,
+          defaultArAccountId: accountGroups.defaultArAccountId,
+          defaultRevenueAccountId: accountGroups.defaultRevenueAccountId,
+        })
         .from(accounts)
+        .leftJoin(
+          accountGroups,
+          eq(accounts.accountGroupId, accountGroups.accountGroupId),
+        )
         .where(
           isUuid
             ? eq(accounts.accountId, order.customerId)
@@ -114,6 +121,8 @@ export class SalesInvoiceService {
       if (custRows.length > 0) {
         erpnextId = custRows[0].erpnextId;
         customerName = custRows[0].name;
+        customerArAccountId = custRows[0].defaultArAccountId;
+        customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
       }
     }
 
@@ -128,11 +137,16 @@ export class SalesInvoiceService {
         discountPercentage: salesOrderLineItems.discountPercentage,
         gstCategoryId: salesOrderLineItems.gstCategoryId,
         productType: coreProducts.productType,
+        productRevenueAccountId: productGroups.defaultRevenueAccountId,
       })
       .from(salesOrderLineItems)
       .leftJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        productGroups,
+        eq(coreProducts.productGroupId, productGroups.productGroupId),
       )
       .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
 
@@ -172,6 +186,10 @@ export class SalesInvoiceService {
     let rawTax = 0;
     const invoiceLineValues: any[] = [];
     const outboxLineDetails: any[] = [];
+
+    // Revenue GL Routing tallies
+    const revenueByAccountId = new Map<string, number>();
+    let defaultRevenue = 0;
 
     let totalOrderedQty = 0;
     let totalInvoicedSoFar = 0;
@@ -253,6 +271,20 @@ export class SalesInvoiceService {
 
       rawTotal += pricing.amount;
       rawTax += pricing.tax;
+
+      // Group revenue by highest precedence GL account
+      const lineRevAcctId =
+        REVENUE_ROUTING_PRECEDENCE === 'customer_first'
+          ? customerRevenueAccountId || line.productRevenueAccountId || null
+          : line.productRevenueAccountId || customerRevenueAccountId || null;
+      if (lineRevAcctId) {
+        revenueByAccountId.set(
+          lineRevAcctId,
+          (revenueByAccountId.get(lineRevAcctId) || 0) + pricing.amount,
+        );
+      } else {
+        defaultRevenue += pricing.amount;
+      }
 
       invoiceLineValues.push({
         salesOrderLineId: line.salesOrderLineId,
@@ -356,75 +388,112 @@ export class SalesInvoiceService {
     // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
     try {
       const settings = await this.glService.getSettings();
-      if (settings?.defaultArAccountId) {
-        // Resolve account codes from settings
-        const settingsIds = [
-          settings.defaultArAccountId,
-          settings.defaultRevenueAccountId,
-          settings.defaultTaxAccountId,
-        ].filter(Boolean);
+      const effectiveArAccountId =
+        customerArAccountId || settings?.defaultArAccountId;
 
-        const glAcct = glAccounts;
-        const acctRows = await this.db
-          .select({
-            glAccountId: glAcct.glAccountId,
-            accountCode: glAcct.accountCode,
-          })
-          .from(glAcct)
-          .where(
-            sql`${glAcct.glAccountId} IN (${sql.join(
-              settingsIds.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
+      if (effectiveArAccountId) {
+        // Collect all distinct Account IDs logically needed
+        const distinctAccountIds = new Set<string>();
+        distinctAccountIds.add(effectiveArAccountId);
+        if (settings?.defaultTaxAccountId)
+          distinctAccountIds.add(settings.defaultTaxAccountId);
+        if (settings?.defaultRevenueAccountId)
+          distinctAccountIds.add(settings.defaultRevenueAccountId);
+        for (const acctId of revenueByAccountId.keys()) {
+          distinctAccountIds.add(acctId);
+        }
+
+        const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
+
+        if (settingsIds.length > 0) {
+          const glAcct = glAccounts;
+          const acctRows = await this.db
+            .select({
+              glAccountId: glAcct.glAccountId,
+              accountCode: glAcct.accountCode,
+            })
+            .from(glAcct)
+            .where(
+              sql`${glAcct.glAccountId} IN (${sql.join(
+                settingsIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            );
+
+          const idToCode = new Map(
+            acctRows.map((a) => [a.glAccountId, a.accountCode]),
           );
 
-        const idToCode = new Map(
-          acctRows.map((a) => [a.glAccountId, a.accountCode]),
-        );
-        const arCode = idToCode.get(settings.defaultArAccountId);
-        const revCode = settings.defaultRevenueAccountId
-          ? idToCode.get(settings.defaultRevenueAccountId)
-          : null;
-        const taxCode = settings.defaultTaxAccountId
-          ? idToCode.get(settings.defaultTaxAccountId)
-          : null;
+          const arCode = idToCode.get(effectiveArAccountId);
+          const taxCode = settings?.defaultTaxAccountId
+            ? idToCode.get(settings.defaultTaxAccountId)
+            : null;
 
-        if (arCode && revCode) {
-          const glLines: any[] = [
-            {
-              accountCode: arCode,
-              debit: combinedTotal,
-              credit: 0,
-              memo: `AR: ${invoiceNumber}`,
-              partyType: 'customer',
-              partyId: order.customerId,
-            },
-            {
-              accountCode: revCode,
-              debit: 0,
-              credit: totalAmount,
-              memo: `Revenue: ${invoiceNumber}`,
-            },
-          ];
-          if (taxCode && taxAmount > 0) {
-            glLines.push({
-              accountCode: taxCode,
-              debit: 0,
-              credit: taxAmount,
-              memo: `GST: ${invoiceNumber}`,
+          if (arCode) {
+            const glLines: any[] = [
+              {
+                accountCode: arCode,
+                debit: combinedTotal,
+                credit: 0,
+                memo: `AR: ${invoiceNumber}`,
+                partyType: 'customer',
+                partyId: order.customerId,
+              },
+            ];
+
+            // 1. Map explicitly dynamic revenue lines
+            for (const [acctId, revAmt] of revenueByAccountId.entries()) {
+              const code = idToCode.get(acctId);
+              if (code && revAmt > 0) {
+                glLines.push({
+                  accountCode: code,
+                  debit: 0,
+                  credit: revAmt,
+                  memo: `Revenue: ${invoiceNumber}`,
+                });
+              }
+            }
+
+            // 2. Map default global revenue fallback sum
+            if (defaultRevenue > 0) {
+              const defCode = settings?.defaultRevenueAccountId
+                ? idToCode.get(settings.defaultRevenueAccountId)
+                : null;
+
+              if (defCode) {
+                glLines.push({
+                  accountCode: defCode,
+                  debit: 0,
+                  credit: defaultRevenue,
+                  memo: `Revenue: ${invoiceNumber} (Default)`,
+                });
+              } else {
+                this.logger.warn(
+                  `Missing global default revenue account to cover ${defaultRevenue} on invoice ${invoiceNumber}`,
+                );
+              }
+            }
+
+            if (taxCode && taxAmount > 0) {
+              glLines.push({
+                accountCode: taxCode,
+                debit: 0,
+                credit: taxAmount,
+                memo: `GST: ${invoiceNumber}`,
+              });
+            }
+
+            await this.glService.postJournalEntry(glLines, {
+              sourceType: 'sales_invoice',
+              sourceId: result.invoiceId,
+              memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
+              actor,
             });
+
+            this.logger.log(
+              `GL journal posted for sales invoice ${invoiceNumber}`,
+            );
           }
-
-          await this.glService.postJournalEntry(glLines, {
-            sourceType: 'sales_invoice',
-            sourceId: result.invoiceId,
-            memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
-            actor,
-          });
-
-          this.logger.log(
-            `GL journal posted for sales invoice ${invoiceNumber}`,
-          );
         }
       }
     } catch (glErr) {

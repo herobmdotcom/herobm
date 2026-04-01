@@ -36,6 +36,7 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     set: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue(resolvedValue),
     then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
   };
@@ -50,6 +51,7 @@ function createMockDb() {
       },
       reports: {
         findFirst: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
     },
     select: jest.fn().mockReturnValue({

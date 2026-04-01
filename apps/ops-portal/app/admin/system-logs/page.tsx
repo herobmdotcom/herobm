@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
 
@@ -8,6 +10,7 @@ interface LogsResponse {
 }
 
 export default function SystemLogsPage() {
+  useDocumentTitle('System Logs');
   const [lines, setLines] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

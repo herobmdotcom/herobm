@@ -1,13 +1,9 @@
 'use client';
 
-import TopographyView from '../components/TopographyView';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import InventoryLocationsContent from './InventoryLocationsContent';
 
 export default function LocationsPage() {
-  return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <TopographyView />
-      </div>
-    </>
-  );
+  useDocumentTitle('Inventory Locations');
+  return <InventoryLocationsContent />;
 }

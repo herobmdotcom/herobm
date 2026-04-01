@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   apiFetch,
   apiMutate,
@@ -12,7 +13,7 @@ import {
 } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import DataGrid from '@/components/DataGrid';
@@ -36,9 +37,8 @@ interface Account {
   primaryContactName: string | null;
   primaryContactEmail: string | null;
   primaryContactPhone: string | null;
-  customerGroup: string | null;
   accountGroupId: string | null;
-  gstPosition: string | null;
+  gstCategoryId: string | null;
   currencyCode: string;
   customerDiscount: string | null;
   stateCode: ValidState;
@@ -59,8 +59,11 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useDocumentTitle(account ? (account.accountNumber ? `${account.accountNumber} - ${account.name}` : account.name) : null);
   const [isDirty, setIsDirty] = useState(false);
   const [dto, setDto] = useState<Partial<Account>>({});
+  const [gstCategories, setGstCategories] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
 
   const handleOrderRowClicked = useCallback((order: any) => {
@@ -89,7 +92,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       width: 120,
       type: 'numericColumn',
       valueGetter: (p: any) => p.data?.totalPrice ? parseFloat(p.data.totalPrice) : null,
-      valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || 'EUR'),
+      valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || HOME_CURRENCY.code),
     },
     {
       field: 'createdOn',
@@ -126,6 +129,8 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       })
       .catch((err) => reportError(err, 'AccountDetailPage'))
       .finally(() => setLoading(false));
+      
+    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
   }, [params.id]);
 
   // Auto-save effect
@@ -398,27 +403,21 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Customer Group (Legacy)
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.customerGroup || ''}
-                    onChange={(e) => updateField('customerGroup', e.target.value)}
-                    disabled={!isEditable || saving}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {t('common.columns.gstPosition')}
                   </label>
-                  <input
-                    type="text"
+                  <select
                     className="input"
-                    value={dto.gstPosition || ''}
-                    onChange={(e) => updateField('gstPosition', e.target.value)}
                     disabled={!isEditable || saving}
-                  />
+                    value={dto.gstCategoryId || ''}
+                    onChange={(e) => updateField('gstCategoryId', e.target.value)}
+                  >
+                    <option value="">(None)</option>
+                    {gstCategories.map((cat) => (
+                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>

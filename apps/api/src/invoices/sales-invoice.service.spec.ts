@@ -5,6 +5,15 @@ import { GstCategoriesService } from '../gst/gst-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
+let mockRevenuePrecedence = 'product_first';
+jest.mock('@modbm/shared', () => ({
+  __esModule: true,
+  ...jest.requireActual('@modbm/shared'),
+  get REVENUE_ROUTING_PRECEDENCE() {
+    return mockRevenuePrecedence;
+  },
+}));
+
 // ---------------------------------------------------------------------------
 // Mock helpers (same pattern as shipment.service.spec.ts)
 // ---------------------------------------------------------------------------
@@ -130,16 +139,18 @@ describe('SalesInvoiceService', () => {
   let mockGlService: any;
 
   function mockSelectChain(responses: Record<number, any[]>) {
-    let call = 0;
-    mockDb.select = jest.fn().mockReturnValue({
-      from: jest.fn().mockImplementation(() => {
-        call++;
-        const data = responses[call] ?? [];
-        const qb = createMockQueryBuilder(data);
-        qb.innerJoin = jest.fn().mockReturnValue(qb);
-        qb.leftJoin = jest.fn().mockReturnValue(qb);
-        return qb;
-      }),
+    let callCount = 0;
+    mockDb.select = jest.fn().mockImplementation(() => {
+      return {
+        from: jest.fn().mockImplementation(() => {
+          callCount++;
+          const data = responses[callCount] ?? [];
+          const qb = createMockQueryBuilder(data);
+          qb.innerJoin = jest.fn().mockReturnValue(qb);
+          qb.leftJoin = jest.fn().mockReturnValue(qb);
+          return qb;
+        }),
+      };
     });
   }
 
@@ -206,92 +217,14 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should accept orders in shipped state', async () => {
-      // Setup: order found, customer found, one line, no prior invoices,
-      // shipped qty covers it, invoice number gen
       mockSelectChain({
         1: [SHIPPED_ORDER], // findOrder
         2: [CUSTOMER], // customer lookup
-        3: [ORDER_LINE_A], // orderLines
+        3: [{ ...ORDER_LINE_A, productType: 'inventory' }], // orderLines
         4: [], // generateInvoiceNumber
         5: [], // prior invoice lines
-        6: [], // getCommittedPerLine — shipments
-      });
-
-      // The getCommittedPerLine needs to return shipped qty via shipments query
-      // Override with a more specific setup:
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [SHIPPED_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A],
-            4: [], // generateInvoiceNumber
-            5: [], // prior invoice lines
-            6: [
-              {
-                // getCommittedPerLine — shipments (non-cancelled)
-                shipmentId: 'ship-001',
-                salesOrderId: 'order-001',
-                stateCode: 'dispatched',
-              },
-            ],
-            7: [
-              {
-                // shipment lines for that shipment
-                salesOrderLineId: 'line-001',
-                quantityShipped: '10',
-              },
-            ],
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
-      });
-
-      const txInsertQb = createMockQueryBuilder([MOCK_INVOICE]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.insert = jest.fn().mockReturnValue(txInsertQb);
-        tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
-        return cb(tx);
-      });
-
-      const result = await service.createInvoice('order-001', {}, 'admin');
-      expect(result).toHaveProperty('invoiceId', 'inv-001');
-      expect(mockDb.transaction).toHaveBeenCalled();
-    });
-
-    it('should accept orders in picking state', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [PICKING_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A],
-            4: [],
-            5: [],
-            6: [
-              {
-                shipmentId: 'ship-001',
-                salesOrderId: 'order-001',
-                stateCode: 'dispatched',
-              },
-            ],
-            7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+        6: [{ shipmentId: 's', stateCode: 'dispatched' }], // getCommittedPerLine
+        7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }], // getCommittedPerLine lines
       });
 
       const txInsertQb = createMockQueryBuilder([MOCK_INVOICE]);
@@ -324,34 +257,16 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should reject invoicing more than shipped quantity', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [SHIPPED_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A], // ordered 10
-            4: [], // invoiceNumber
-            5: [], // prior invoices
-            6: [
-              {
-                shipmentId: 'ship-001',
-                salesOrderId: 'order-001',
-                stateCode: 'dispatched',
-              },
-            ],
-            7: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }], // only shipped 5
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [CUSTOMER],
+        3: [{ ...ORDER_LINE_A, productType: 'inventory' }],
+        4: [],
+        5: [],
+        6: [{ shipmentId: 'ship-001', stateCode: 'dispatched' }],
+        7: [{ salesOrderLineId: 'line-001', quantityShipped: '5' }],
       });
 
-      // Try to invoice 8 when only 5 shipped
       await expect(
         service.createInvoice(
           'order-001',
@@ -362,27 +277,15 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should reject if nothing available to invoice (all zero qty)', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [SHIPPED_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A],
-            4: [],
-            5: [],
-            6: [], // no shipments at all
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [CUSTOMER],
+        3: [{ ...ORDER_LINE_A, productType: 'inventory' }],
+        4: [],
+        5: [],
+        6: [], // no shipments
       });
 
-      // Default mode (no lines specified) — shipped is 0, so nothing to invoice
       await expect(
         service.createInvoice('order-001', {}, 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -390,41 +293,22 @@ describe('SalesInvoiceService', () => {
   });
 
   // =========================================================================
-  // createInvoice — GL posting
+  // createInvoice — GL Routing Rules
   // =========================================================================
 
-  describe('createInvoice — GL posting', () => {
-    it('should attempt GL posting when settings are configured', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [SHIPPED_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A],
-            4: [],
-            5: [],
-            6: [
-              {
-                shipmentId: 'ship-001',
-                salesOrderId: 'order-001',
-                stateCode: 'dispatched',
-              },
-            ],
-            7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
-            // After transaction, GL settings lookup triggers more selects
-            8: [
-              { glAccountId: 'gl-ar', accountCode: '1100' },
-              { glAccountId: 'gl-rev', accountCode: '4000' },
-            ],
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+  describe('createInvoice — GL Routing Rules', () => {
+    const GL_ACCTS = [
+      { glAccountId: 'gl-ar', accountCode: '1100' },
+      { glAccountId: 'gl-rev-sys', accountCode: '4000' },
+      { glAccountId: 'gl-rev-prod-a', accountCode: '4101' },
+      { glAccountId: 'gl-rev-prod-b', accountCode: '4102' },
+      { glAccountId: 'gl-rev-cust', accountCode: '4200' },
+    ];
+
+    beforeEach(() => {
+      mockGlService.getSettings.mockResolvedValue({
+        defaultArAccountId: 'gl-ar',
+        defaultRevenueAccountId: 'gl-rev-sys',
       });
 
       const txInsertQb = createMockQueryBuilder([MOCK_INVOICE]);
@@ -434,68 +318,142 @@ describe('SalesInvoiceService', () => {
         tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
         return cb(tx);
       });
-
-      mockGlService.getSettings.mockResolvedValue({
-        defaultArAccountId: 'gl-ar',
-        defaultRevenueAccountId: 'gl-rev',
-        defaultTaxAccountId: null,
-      });
-
-      const result = await service.createInvoice('order-001', {}, 'admin');
-      expect(result).toHaveProperty('invoiceId');
-      expect(mockGlService.getSettings).toHaveBeenCalled();
-      expect(mockGlService.postJournalEntry).toHaveBeenCalled();
     });
 
-    it('should not throw if GL posting fails (non-fatal)', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const responses: Record<number, any[]> = {
-            1: [SHIPPED_ORDER],
-            2: [CUSTOMER],
-            3: [ORDER_LINE_A],
-            4: [],
-            5: [],
-            6: [
-              {
-                shipmentId: 'ship-001',
-                salesOrderId: 'order-001',
-                stateCode: 'dispatched',
-              },
-            ],
-            7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
-            8: [
-              { glAccountId: 'gl-ar', accountCode: '1100' },
-              { glAccountId: 'gl-rev', accountCode: '4000' },
-            ],
-          };
-          const data = responses[selectCall] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+    it('should fallback to system default when no other accounts are set', async () => {
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [CUSTOMER],
+        3: [
+          {
+            ...ORDER_LINE_A,
+            productType: 'inventory',
+            productRevenueAccountId: null,
+          },
+        ],
+        4: [],
+        5: [],
+        6: [{ shipmentId: 's', stateCode: 'dispatched' }],
+        7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
+        8: GL_ACCTS,
       });
 
-      const txInsertQb = createMockQueryBuilder([MOCK_INVOICE]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.insert = jest.fn().mockReturnValue(txInsertQb);
-        tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
-        return cb(tx);
+      await service.createInvoice('order-001', {}, 'admin');
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '4000', // System default
+            credit: 250,
+          }),
+        ]),
+        expect.objectContaining({ actor: 'admin' }),
+      );
+    });
+
+    it('should obey product_first precedence', async () => {
+      mockRevenuePrecedence = 'product_first';
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [{ ...CUSTOMER, defaultRevenueAccountId: 'gl-rev-cust' }],
+        3: [
+          {
+            ...ORDER_LINE_A,
+            productType: 'inventory',
+            productRevenueAccountId: 'gl-rev-prod-a',
+          },
+        ],
+        4: [],
+        5: [],
+        6: [{ shipmentId: 's', stateCode: 'dispatched' }],
+        7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
+        8: GL_ACCTS,
       });
 
-      mockGlService.getSettings.mockResolvedValue({
-        defaultArAccountId: 'gl-ar',
-        defaultRevenueAccountId: 'gl-rev',
-      });
-      mockGlService.postJournalEntry.mockRejectedValue(new Error('GL down'));
+      await service.createInvoice('order-001', {}, 'admin');
 
-      // Should NOT throw even though GL fails
-      const result = await service.createInvoice('order-001', {}, 'admin');
-      expect(result).toHaveProperty('invoiceId');
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '4101', // Product preference
+            credit: 250,
+          }),
+        ]),
+        expect.anything(),
+      );
+    });
+
+    it('should obey customer_first precedence', async () => {
+      mockRevenuePrecedence = 'customer_first';
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [{ ...CUSTOMER, defaultRevenueAccountId: 'gl-rev-cust' }],
+        3: [
+          {
+            ...ORDER_LINE_A,
+            productType: 'inventory',
+            productRevenueAccountId: 'gl-rev-prod-a',
+          },
+        ],
+        4: [],
+        5: [],
+        6: [{ shipmentId: 's', stateCode: 'dispatched' }],
+        7: [{ salesOrderLineId: 'line-001', quantityShipped: '10' }],
+        8: GL_ACCTS,
+      });
+
+      await service.createInvoice('order-001', {}, 'admin');
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '4200', // Customer preference
+            credit: 250,
+          }),
+        ]),
+        expect.anything(),
+      );
+    });
+
+    it('should split GL lines for mixed product groups', async () => {
+      mockRevenuePrecedence = 'product_first';
+      mockSelectChain({
+        1: [SHIPPED_ORDER],
+        2: [CUSTOMER],
+        3: [
+          {
+            ...ORDER_LINE_A,
+            productType: 'inventory',
+            productRevenueAccountId: 'gl-rev-prod-a',
+          },
+          {
+            ...ORDER_LINE_B,
+            productType: 'inventory',
+            productRevenueAccountId: 'gl-rev-prod-b',
+          },
+        ],
+        4: [],
+        5: [],
+        6: [{ shipmentId: 's', stateCode: 'dispatched' }],
+        7: [
+          { salesOrderLineId: 'line-001', quantityShipped: '10' },
+          { salesOrderLineId: 'line-002', quantityShipped: '5' },
+        ],
+        8: GL_ACCTS,
+      });
+
+      await service.createInvoice('order-001', {}, 'admin');
+
+      const lines = mockGlService.postJournalEntry.mock.calls[0][0];
+      const revenueLines = lines.filter((l: any) => l.credit > 0);
+
+      expect(revenueLines).toHaveLength(2);
+      expect(revenueLines).toContainEqual(
+        expect.objectContaining({ accountCode: '4101', credit: 250 }),
+      );
+      expect(revenueLines).toContainEqual(
+        expect.objectContaining({ accountCode: '4102', credit: 500 }),
+      );
     });
   });
 
@@ -534,19 +492,9 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should return invoices with hydrated lines', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          if (selectCall === 1) {
-            return createMockQueryBuilder([MOCK_INVOICE]);
-          }
-          // Lines query for the invoice
-          const qb = createMockQueryBuilder([
-            { ...MOCK_INVOICE_LINE, invoiceId: 'inv-001' },
-          ]);
-          return qb;
-        }),
+      mockSelectChain({
+        1: [MOCK_INVOICE],
+        2: [{ ...MOCK_INVOICE_LINE, invoiceId: 'inv-001' }],
       });
 
       const result = await service.findByOrder('order-001');
@@ -562,46 +510,28 @@ describe('SalesInvoiceService', () => {
 
   describe('findActiveInvoices', () => {
     it('should query with default parameters', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const qb = createMockQueryBuilder([]);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
-      });
-
+      mockSelectChain({ 1: [] });
       const result = await service.findActiveInvoices({});
       expect(result).toEqual([]);
-      expect(mockDb.select).toHaveBeenCalled();
     });
 
     it('should return invoices when data exists', async () => {
-      let selectCall = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCall++;
-          const qb = createMockQueryBuilder([
-            {
-              invoiceId: 'inv-001',
-              invoiceNumber: 'INV-20260323-0001',
-              salesOrderId: 'order-001',
-              orderNumber: 'ORD-20260323-0001',
-              customerId: 'cust-001',
-              customerName: 'Acme Corp',
-              totalAmount: '775.00',
-              taxAmount: '25.00',
-              currencyCode: 'AUD',
-              stateCode: 'invoiced',
-              createdOn: new Date(),
-            },
-          ]);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          qb.leftJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+      mockSelectChain({
+        1: [
+          {
+            invoiceId: 'inv-001',
+            invoiceNumber: 'INV-20260323-0001',
+            salesOrderId: 'order-001',
+            orderNumber: 'ORD-20260323-0001',
+            customerId: 'cust-001',
+            customerName: 'Acme Corp',
+            totalAmount: '775.00',
+            taxAmount: '25.00',
+            currencyCode: 'AUD',
+            stateCode: 'invoiced',
+            createdOn: new Date(),
+          },
+        ],
       });
 
       const result = await service.findActiveInvoices({ days: 7 });

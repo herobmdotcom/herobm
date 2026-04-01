@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { apiFetch, apiMutate } from '@/lib/api';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge from '@/components/StateBadge';
@@ -34,6 +35,10 @@ export default function ProductDetailPage() {
   const [refreshGrid, setRefreshGrid] = useState(0);
   const [product, setProduct] = useState<any>(null);
   const [gstCategories, setGstCategories] = useState<any[]>([]);
+  const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
+  const [addingUom, setAddingUom] = useState(false);
+  const [newUomCode, setNewUomCode] = useState('');
+  const [newUomRatio, setNewUomRatio] = useState('1');
   const [dto, setDto] = useState<any>({
     name: '',
     barcode: '',
@@ -42,12 +47,14 @@ export default function ProductDetailPage() {
     tradePrice: '0',
     priceLevel3: '0',
     priceLevel4: '0',
-    gstCategory: '',
+    gstCategoryId: '',
     scNumber: '',
     notes: '',
     stateCode: 'active',
     productGroupId: null,
   });
+
+  useDocumentTitle(product ? (product.name ? `${product.productNumber} - ${product.name}` : product.productNumber) : null);
 
   const fetchProduct = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -62,7 +69,7 @@ export default function ProductDetailPage() {
         tradePrice: formatMoney(data.tradePrice),
         priceLevel3: formatMoney(data.priceLevel3),
         priceLevel4: formatMoney(data.priceLevel4),
-        gstCategory: data.gstCategory || '',
+        gstCategoryId: data.gstCategoryId || '',
         scNumber: data.scNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
@@ -78,6 +85,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchProduct();
     apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+    apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch(console.error);
   }, [fetchProduct]);
 
   const saveProduct = async (updatedValues: any) => {
@@ -197,6 +205,7 @@ export default function ProductDetailPage() {
       subtargets: [
         { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'pricing-section', label: 'Pricing', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'uom-section', label: 'Units', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('uom-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'notes-section', label: 'Notes', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ],
@@ -441,18 +450,18 @@ export default function ProductDetailPage() {
                   <select
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.gstCategory}
-                    onChange={(e) => handleSelectChange('gstCategory', e.target.value)}
+                    value={dto.gstCategoryId || ''}
+                    onChange={(e) => handleSelectChange('gstCategoryId', e.target.value)}
                   >
                     <option value="">(None)</option>
                     {gstCategories.map((cat) => (
-                      <option key={cat.gstCategoryId} value={cat.code}>
+                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                         {cat.title} ({cat.code})
                       </option>
                     ))}
                     {/* Fallback for legacy values not in current categories */}
-                    {dto.gstCategory && !gstCategories.find(c => c.code === dto.gstCategory) && (
-                      <option value={dto.gstCategory}>{dto.gstCategory}</option>
+                    {dto.gstCategoryId && !gstCategories.find(c => c.gstCategoryId === dto.gstCategoryId) && (
+                      <option value={dto.gstCategoryId}>Unknown Category ({dto.gstCategoryId})</option>
                     )}
                   </select>
                 </div>
@@ -563,6 +572,202 @@ export default function ProductDetailPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Units & Dimensions Card */}
+        <div id="uom-section" className="card">
+          <h3 className="section-heading">
+            <span className="material-symbols-outlined">straighten</span>
+            Units of Measure
+          </h3>
+
+          {/* Default UoM selectors */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Base UoM
+              </label>
+              <select
+                className="input"
+                disabled={!isEditable || saving}
+                value={product.baseUom || 'EA'}
+                onChange={(e) => handleSelectChange('baseUom', e.target.value)}
+              >
+                {uomDictionary.map((u) => (
+                  <option key={u.uomCode} value={u.uomCode}>
+                    {u.uomCode}{u.description ? ` — ${u.description}` : ''}
+                  </option>
+                ))}
+                {/* Fallback if current value isn't in dictionary yet */}
+                {product.baseUom && !uomDictionary.find(u => u.uomCode === product.baseUom) && (
+                  <option value={product.baseUom}>{product.baseUom}</option>
+                )}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Default Sales UoM
+              </label>
+              <select
+                className="input"
+                disabled={!isEditable || saving}
+                value={product.defaultSalesUomId || ''}
+                onChange={(e) => handleSelectChange('defaultSalesUomId', e.target.value || null)}
+              >
+                <option value="">(Base: {product.baseUom || 'EA'})</option>
+                {(product.productUoms || []).map((u: any) => (
+                  <option key={u.productUomId} value={u.productUomId}>
+                    {u.uomCode} (×{u.ratio})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Default Purchase UoM
+              </label>
+              <select
+                className="input"
+                disabled={!isEditable || saving}
+                value={product.defaultPurchaseUomId || ''}
+                onChange={(e) => handleSelectChange('defaultPurchaseUomId', e.target.value || null)}
+              >
+                <option value="">(Base: {product.baseUom || 'EA'})</option>
+                {(product.productUoms || []).map((u: any) => (
+                  <option key={u.productUomId} value={u.productUomId}>
+                    {u.uomCode} (×{u.ratio})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Conversions table */}
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Packaging Conversions</span>
+              {isEditable && (
+                <button
+                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                  style={{ fontSize: 12 }}
+                  onClick={() => setAddingUom(true)}
+                  disabled={saving}
+                >
+                  <span className="material-symbols-outlined text-[14px]">add</span>
+                  Add Conversion
+                </button>
+              )}
+            </div>
+
+            {/* Add row */}
+            {addingUom && (
+              <div className="flex items-end gap-3 mb-3 p-3 rounded-lg" style={{ background: 'rgba(0,107,92,0.04)', border: '1px solid rgba(0,107,92,0.15)' }}>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>UoM Code</label>
+                  <select
+                    className="input"
+                    value={newUomCode}
+                    onChange={(e) => setNewUomCode(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {uomDictionary
+                      .filter(u => u.uomCode !== (product.baseUom || 'EA'))
+                      .filter(u => !(product.productUoms || []).some((pu: any) => pu.uomCode === u.uomCode))
+                      .map((u) => (
+                        <option key={u.uomCode} value={u.uomCode}>
+                          {u.uomCode}{u.description ? ` — ${u.description}` : ''}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div style={{ width: 120 }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Ratio</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0.000001"
+                    step="any"
+                    value={newUomRatio}
+                    onChange={(e) => setNewUomRatio(e.target.value)}
+                    style={{ textAlign: 'right' }}
+                  />
+                </div>
+                <button
+                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white"
+                  disabled={!newUomCode || !newUomRatio || saving}
+                  onClick={async () => {
+                    try {
+                      await apiMutate(`/api/products/${id}/uoms`, 'POST', {
+                        uomCode: newUomCode,
+                        ratio: newUomRatio,
+                      });
+                      toast.success('Conversion added');
+                      setAddingUom(false);
+                      setNewUomCode('');
+                      setNewUomRatio('1');
+                      await fetchProduct(false);
+                    } catch (err: any) {
+                      toast.error(err.message);
+                    }
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  className="btn btn-sm btn-ghost"
+                  onClick={() => { setAddingUom(false); setNewUomCode(''); setNewUomRatio('1'); }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {(product.productUoms || []).length === 0 && !addingUom ? (
+              <div className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>
+                No alternate packaging conversions configured.
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>UoM Code</th>
+                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ratio (× Base)</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Barcode</th>
+                    <th style={{ width: 50 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(product.productUoms || []).map((u: any) => (
+                    <tr key={u.productUomId} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{u.uomCode}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{u.ratio}</td>
+                      <td style={{ padding: '10px 12px', color: u.barcode ? 'inherit' : 'var(--text-muted)' }}>{u.barcode || '—'}</td>
+                      <td style={{ padding: '10px 4px', textAlign: 'center' }}>
+                        {isEditable && (
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Remove ${u.uomCode} conversion?`)) return;
+                              try {
+                                await apiMutate(`/api/products/${id}/uoms/${u.productUomId}`, 'DELETE');
+                                toast.success('Conversion removed');
+                                await fetchProduct(false);
+                              } catch (err: any) {
+                                toast.error(err.message);
+                              }
+                            }}
+                            className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
+                            title="Remove conversion"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 

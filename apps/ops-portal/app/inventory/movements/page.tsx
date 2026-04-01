@@ -1,13 +1,9 @@
 'use client';
 
-import MovementsView from '../components/MovementsView';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import InventoryMovementsContent from './InventoryMovementsContent';
 
 export default function MovementsPage() {
-  return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <MovementsView />
-      </div>
-    </>
-  );
+  useDocumentTitle('Inventory Movements');
+  return <InventoryMovementsContent />;
 }

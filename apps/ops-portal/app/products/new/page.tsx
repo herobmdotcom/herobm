@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { apiFetch, apiMutate } from '@/lib/api';
@@ -17,6 +19,7 @@ const formatMoney = (val: string | number | undefined | null) => {
 };
 
 export default function NewProductPage() {
+  useDocumentTitle('New Product');
   const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -31,16 +34,16 @@ export default function NewProductPage() {
     tradePrice: '0.00',
     priceLevel3: '0.00',
     priceLevel4: '0.00',
-    gstCategory: '',
+    gstCategoryId: '',
     scNumber: '',
     stateCode: 'active',
     productGroupId: null,
     notes: '',
   });
 
-  useState(() => {
+  useEffect(() => {
     apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
-  });
+  }, []);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
@@ -202,13 +205,13 @@ export default function NewProductPage() {
                   </label>
                   <select
                     className="input"
-                    value={dto.gstCategory}
-                    onChange={(e) => updateField('gstCategory', e.target.value)}
+                    value={dto.gstCategoryId || ''}
+                    onChange={(e) => updateField('gstCategoryId', e.target.value)}
                     disabled={submitting}
                   >
                     <option value="">(None)</option>
                     {gstCategories.map((cat) => (
-                      <option key={cat.gstCategoryId} value={cat.code}>
+                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                         {cat.title} ({cat.code})
                       </option>
                     ))}

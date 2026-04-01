@@ -8,8 +8,10 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, calculateUomPriceAdjustment } from '@modbm/shared';
+import type { ProductUom } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
@@ -28,6 +30,8 @@ interface OrderLine {
   tax: string;
   totalAmount: string;
   unitOfMeasure: string;
+  baseUom?: string;
+  productUoms?: ProductUom[];
 }
 
 interface GstCategory {
@@ -118,7 +122,6 @@ interface PurchaseInvoice {
   totalTax: string;
   createdOn: string;
   createdBy: string;
-  erpnextJournalId: string | null;
 }
 
 import {
@@ -157,6 +160,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useDocumentTitle(order ? (order.name ? `${order.orderNumber} - ${order.name}` : order.orderNumber) : null);
   const [saving, setSaving] = useState(false);
   const [copying, setCopying] = useState(false);
   const [latestAutoTransition, setLatestAutoTransition] = useState<{
@@ -347,6 +352,18 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     setSaving(true);
     try {
       await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
+      await loadOrder(undefined, false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
+    setSaving(true);
+    try {
+      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', payload);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -695,6 +712,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <th>{tPurchase('columns.product')}</th>
                   <th>{tPurchase('columns.description')}</th>
                   <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
+                  <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.uom')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
                   <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.tax')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
@@ -742,6 +760,42 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           }
                         }}
                       />
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      {(() => {
+                        const uoms: ProductUom[] = line.productUoms || [];
+                        const defaultUom = line.baseUom || 'EA';
+                        const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+                        return (
+                          <select
+                            className="input"
+                            style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                            value={line.unitOfMeasure || defaultUom}
+                            disabled={!isLinesEditable}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              const oldVal = line.unitOfMeasure || defaultUom;
+                              if (newVal !== oldVal) {
+                                const oldO = selectOptions.find(o => o.uomCode === oldVal);
+                                const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+
+                                const newO = selectOptions.find(o => o.uomCode === newVal);
+                                const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+
+                                const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                                updateLineFields(line.salesOrderLineId, {
+                                  unitOfMeasure: newVal,
+                                  pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
+                                });
+                              }
+                            }}
+                          >
+                            {selectOptions.map(o => (
+                              <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <input
@@ -797,7 +851,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {order.lines.length === 0 && (
                   <tr>
                     <td
-                      colSpan={isLinesEditable ? 8 : 7}
+                      colSpan={isLinesEditable ? 9 : 8}
                       style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                     >
                       {tPurchase('noLineItems')}
@@ -809,7 +863,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   return (
                     <>
                       <tr style={{ borderTop: '2px solid var(--border)' }}>
-                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('subtotal')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -818,7 +872,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -827,7 +881,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                           {tCommon('total')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
@@ -974,11 +1028,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     <div style={{ fontWeight: 700, fontSize: 14 }}>{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}</div>
                                     <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Tax: {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}</div>
                                 </div>
-                                {inv.erpnextJournalId && (
-                                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd' }} title="ERPNext General Ledger Entry">
-                                        GL: {inv.erpnextJournalId}
-                                    </span>
-                                )}
                             </div>
                         </div>
                     ))}

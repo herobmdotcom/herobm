@@ -13,25 +13,23 @@ import {
   glJournalEntries,
   glJournalLines,
   glSettings,
+  accounts,
+  suppliers,
   outbox,
 } from '../drizzle/modbm-core-schema';
+import {
+  HOME_CURRENCY,
+  REVENUE_ROUTING_PRECEDENCE,
+  EXPENSE_ROUTING_PRECEDENCE,
+} from '@modbm/shared';
+import { JournalLineDto } from './dto';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export interface JournalLineDto {
-  /** Account code (e.g. "1100") — resolved to gl_account_id internally */
-  accountCode: string;
-  partyType?: 'customer' | 'supplier' | null;
-  partyId?: string | null;
-  debit: number;
-  credit: number;
-  memo?: string;
-}
-
-export interface JournalMeta {
-  sourceType:
+export class JournalMeta {
+  sourceType!:
     | 'sales_invoice'
     | 'purchase_invoice'
     | 'sales_credit_note'
@@ -248,7 +246,7 @@ export class GlService {
         accountType: data.accountType,
         parentAccountId: data.parentAccountId,
         isGroup: data.isGroup ?? false,
-        currencyCode: data.currencyCode ?? 'AUD',
+        currencyCode: data.currencyCode ?? HOME_CURRENCY.code,
       })
       .returning();
 
@@ -290,8 +288,8 @@ export class GlService {
   // -------------------------------------------------------------------------
 
   async getTrialBalance(asOfDate?: string) {
-    const dateFilter = asOfDate
-      ? sql`AND je.${glJournalEntries.entryDate} <= ${asOfDate}`
+    const dateFilterSub = asOfDate
+      ? sql`WHERE je.entry_date <= ${asOfDate}`
       : sql``;
 
     const rows = await this.db.execute(sql`
@@ -300,15 +298,16 @@ export class GlService {
         a.name,
         a.account_type,
         a.is_group,
-        COALESCE(SUM(jl.debit), 0)::numeric  AS total_debit,
-        COALESCE(SUM(jl.credit), 0)::numeric AS total_credit,
-        COALESCE(SUM(jl.debit), 0) - COALESCE(SUM(jl.credit), 0) AS balance
+        COALESCE(SUM(activity.debit), 0)::numeric  AS total_debit,
+        COALESCE(SUM(activity.credit), 0)::numeric AS total_credit,
+        COALESCE(SUM(activity.debit), 0) - COALESCE(SUM(activity.credit), 0) AS balance
       FROM modbm_core.gl_accounts a
-      LEFT JOIN modbm_core.gl_journal_lines jl
-        ON jl.gl_account_id = a.gl_account_id
-      LEFT JOIN modbm_core.gl_journal_entries je
-        ON je.journal_entry_id = jl.journal_entry_id
-        ${dateFilter}
+      LEFT JOIN (
+        SELECT jl.gl_account_id, jl.debit, jl.credit
+        FROM modbm_core.gl_journal_lines jl
+        JOIN modbm_core.gl_journal_entries je ON je.journal_entry_id = jl.journal_entry_id
+        ${dateFilterSub}
+      ) activity ON activity.gl_account_id = a.gl_account_id
       WHERE a.is_group = false
       GROUP BY a.gl_account_id, a.account_code, a.name, a.account_type, a.is_group
       ORDER BY a.account_code
@@ -383,21 +382,17 @@ export class GlService {
     const conditions: any[] = [];
 
     if (filters.fromDate) {
-      conditions.push(
-        sql`${glJournalEntries.entryDate} >= ${filters.fromDate}`,
-      );
+      conditions.push(sql`je.entry_date >= ${filters.fromDate}`);
     }
     if (filters.toDate) {
-      conditions.push(sql`${glJournalEntries.entryDate} <= ${filters.toDate}`);
+      conditions.push(sql`je.entry_date <= ${filters.toDate}`);
     }
     if (filters.sourceType) {
-      conditions.push(
-        sql`${glJournalEntries.sourceType} = ${filters.sourceType}`,
-      );
+      conditions.push(sql`je.source_type = ${filters.sourceType}`);
     }
     if (filters.entryNumber) {
       conditions.push(
-        sql`${glJournalEntries.entryNumber} ILIKE ${'%' + filters.entryNumber + '%'}`,
+        sql`je.entry_number ILIKE ${'%' + filters.entryNumber + '%'}`,
       );
     }
 
@@ -408,25 +403,75 @@ export class GlService {
     const limit = Math.min(filters.limit || 50, 200);
     const offset = (page - 1) * limit;
 
-    const [entries, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(glJournalEntries)
-        .where(whereClause || undefined)
-        .orderBy(sql`${glJournalEntries.entryDate} DESC`)
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(glJournalEntries)
-        .where(whereClause || undefined),
+    const entriesQuery = sql`
+      WITH first_line_parties AS (
+        SELECT DISTINCT ON (journal_entry_id)
+          journal_entry_id,
+          party_id,
+          party_type
+        FROM modbm_core.gl_journal_lines
+        WHERE party_id IS NOT NULL
+        ORDER BY journal_entry_id, journal_line_id
+      )
+      SELECT 
+        je.*,
+        COALESCE(acc.name, supp.name) as "partyName",
+        flp.party_id as "partyIdRef",
+        flp.party_type as "partyTypeRef",
+        COALESCE(si.invoice_number, pi.invoice_number, sor.return_number) as "sourceNumber"
+      FROM modbm_core.gl_journal_entries je
+      LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
+      LEFT JOIN modbm_core.accounts acc ON acc.account_id = flp.party_id::uuid AND flp.party_type = 'customer'
+      LEFT JOIN modbm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
+      LEFT JOIN modbm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
+      LEFT JOIN modbm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
+      LEFT JOIN modbm_core.sales_order_returns sor ON sor.return_id = je.source_id AND je.source_type = 'sales_credit_note'
+      ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+      ORDER BY je.entry_date DESC, je.entry_number DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    const [entriesResult, countResult] = await Promise.all([
+      this.db.execute(entriesQuery),
+      this.db.execute(sql`
+        SELECT count(*)::int as count 
+        FROM modbm_core.gl_journal_entries je 
+        ${whereClause ? sql`WHERE ${whereClause}` : sql``}
+      `),
     ]);
+
+    // Handle different driver result formats (pg vs postgres.js)
+    const rawRows = (
+      Array.isArray(entriesResult)
+        ? entriesResult
+        : (entriesResult as any).rows || []
+    ) as any[];
+
+    // Map raw DB rows to camelCase for the frontend DataGrid
+    const entries = rawRows.map((row) => ({
+      journalEntryId: row.journal_entry_id,
+      entryNumber: row.entry_number,
+      entryDate: row.entry_date,
+      memo: row.memo,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
+      partyName: row.partyName,
+      partyId: row.partyIdRef,
+      partyType: row.partyTypeRef,
+      sourceNumber: row.sourceNumber,
+      createdBy: row.created_by,
+      createdOn: row.created_on,
+    }));
+
+    const countRows = (
+      Array.isArray(countResult) ? countResult : (countResult as any).rows || []
+    ) as any[];
 
     return {
       data: entries,
       page,
       limit,
-      total: countResult[0]?.count ?? 0,
+      total: countRows[0]?.count ?? 0,
     };
   }
 
@@ -443,7 +488,7 @@ export class GlService {
       );
     }
 
-    const lines = await this.db
+    const rows = await this.db
       .select({
         journalLineId: glJournalLines.journalLineId,
         debit: glJournalLines.debit,
@@ -451,6 +496,8 @@ export class GlService {
         memo: glJournalLines.memo,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
+        customerName: accounts.name,
+        supplierName: suppliers.name,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
       })
@@ -459,9 +506,29 @@ export class GlService {
         glAccounts,
         eq(glJournalLines.glAccountId, glAccounts.glAccountId),
       )
+      .leftJoin(
+        accounts,
+        and(
+          sql`${glJournalLines.partyId}::uuid = ${accounts.accountId}`,
+          eq(glJournalLines.partyType, 'customer'),
+        ),
+      )
+      .leftJoin(
+        suppliers,
+        and(
+          sql`${glJournalLines.partyId}::uuid = ${suppliers.vendorId}`,
+          eq(glJournalLines.partyType, 'supplier'),
+        ),
+      )
       .where(eq(glJournalLines.journalEntryId, journalEntryId));
 
-    return { ...entry, lines };
+    // Map to final lines, coalescing names in TypeScript for better SQL mapping safety
+    const mappedLines = rows.map((r) => ({
+      ...r,
+      partyName: r.customerName || r.supplierName || null,
+    }));
+
+    return { ...entry, lines: mappedLines };
   }
 
   // -------------------------------------------------------------------------
@@ -470,7 +537,11 @@ export class GlService {
 
   async getSettings() {
     const [settings] = await this.db.select().from(glSettings).limit(1);
-    return settings || null;
+    return {
+      ...(settings || {}),
+      revenueRoutingPrecedence: REVENUE_ROUTING_PRECEDENCE,
+      expenseRoutingPrecedence: EXPENSE_ROUTING_PRECEDENCE,
+    };
   }
 
   // -------------------------------------------------------------------------

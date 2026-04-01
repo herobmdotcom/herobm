@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -13,43 +13,10 @@ import {
   productEvents,
   productSuppliers,
   productSupplierEvents,
+  productUoms,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-
-export interface CreateProductDto {
-  productNumber: string;
-  name: string;
-  productType?: 'inventory' | 'non-stock' | 'service';
-  barcode?: string;
-  listPrice?: string;
-  standardCost?: string;
-  tradePrice?: string;
-  priceLevel3?: string;
-  priceLevel4?: string;
-  gstCategory?: string;
-  scNumber?: string;
-  productGroupId?: string;
-  notes?: string;
-  stateCode?: string;
-}
-
-export interface UpdateProductDto {
-  name?: string;
-  productType?: 'inventory' | 'non-stock' | 'service';
-  barcode?: string;
-  listPrice?: string;
-  standardCost?: string;
-  tradePrice?: string;
-  priceLevel3?: string;
-  priceLevel4?: string;
-  gstCategory?: string;
-  scNumber?: string;
-  productGroupId?: string;
-  notes?: string;
-  stateCode?: string;
-}
-
-import { AddSupplierDto } from './dto';
+import { CreateProductDto, UpdateProductDto, AddSupplierDto } from './dto';
 
 @Injectable()
 export class ProductsWriteService {
@@ -318,5 +285,87 @@ export class ProductsWriteService {
 
       return mapping;
     });
+  }
+
+  /**
+   * Add a UoM conversion to a product.
+   */
+  async addUom(
+    productId: string,
+    dto: { uomCode: string; ratio: string; barcode?: string },
+    actor: string,
+  ) {
+    const existing = await this.db
+      .select({ id: coreProducts.productId })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!existing.length) {
+      throw new NotFoundException(`Product not found`);
+    }
+
+    return await this.db.transaction(async (tx) => {
+      const [uom] = await tx
+        .insert(productUoms)
+        .values({
+          productId,
+          uomCode: dto.uomCode,
+          ratio: dto.ratio,
+          barcode: dto.barcode || null,
+        })
+        .onConflictDoUpdate({
+          target: [productUoms.productId, productUoms.uomCode],
+          set: {
+            ratio: dto.ratio,
+            barcode: dto.barcode || null,
+          },
+        })
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: 'uom_added',
+        payload: { uomCode: dto.uomCode, ratio: dto.ratio },
+        actor,
+      });
+
+      return uom;
+    });
+  }
+
+  /**
+   * Remove a UoM conversion from a product.
+   */
+  async removeUom(productId: string, productUomId: string, actor: string) {
+    const existing = await this.db
+      .select()
+      .from(productUoms)
+      .where(
+        and(
+          eq(productUoms.productUomId, productUomId),
+          eq(productUoms.productId, productId),
+        ),
+      )
+      .limit(1);
+
+    if (!existing.length) {
+      throw new NotFoundException('UoM conversion not found');
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(productUoms)
+        .where(eq(productUoms.productUomId, productUomId));
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: 'uom_removed',
+        payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },
+        actor,
+      });
+    });
+
+    return { deleted: true };
   }
 }

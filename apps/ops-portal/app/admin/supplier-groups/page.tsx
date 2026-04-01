@@ -1,25 +1,40 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
 
 export default function SupplierGroupsAdmin() {
+  useDocumentTitle('Supplier Groups');
   const [groups, setGroups] = useState<any[]>([]);
+  const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isCreating, setIsCreating] = useState(false);
 
+  const renderGlAccountLabel = (id: string | null | undefined) => {
+    if (!id) return <span className="text-muted text-xs italic">Not configured</span>;
+    const acct = glAccounts.find((a: any) => a.glAccountId === id);
+    return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<any[]>('/api/supplier-groups');
+      const [data, accounts] = await Promise.all([
+        apiFetch<any[]>('/api/supplier-groups'),
+        apiFetch<any[]>('/api/gl/accounts')
+      ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
+      setGlAccounts(accounts || []);
     } catch(err: any) {
       toast.error('Failed to load groups: ' + err.message);
     } finally {
@@ -41,8 +56,8 @@ export default function SupplierGroupsAdmin() {
     setEditForm({
       groupCode: '',
       name: '',
-      defaultPaymentTerms: 'NET30',
-      defaultCurrency: 'EUR'
+      defaultApAccountId: '',
+      defaultExpenseAccountId: '',
     });
   };
 
@@ -108,8 +123,8 @@ export default function SupplierGroupsAdmin() {
             <tr>
               <th style={{ width: 120 }}>Code</th>
               <th>Name</th>
-              <th style={{ width: 140 }}>Def. Terms</th>
-              <th style={{ width: 120 }}>Def. Currency</th>
+              <th style={{ width: 180 }}>Def. AP Account</th>
+              <th style={{ width: 180 }}>Def. Expense Account</th>
               <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
@@ -123,13 +138,19 @@ export default function SupplierGroupsAdmin() {
                   <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="Name" />
                 </td>
                 <td>
-                  <input className="input" value={editForm.defaultPaymentTerms} onChange={e => setEditForm({...editForm, defaultPaymentTerms: e.target.value})} placeholder="e.g. NET30" />
+                  <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
+                    <option value="">-- None --</option>
+                    {glAccounts.map((a: any) => (
+                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                    ))}
+                  </select>
                 </td>
                 <td>
-                  <select className="input" value={editForm.defaultCurrency} onChange={e => setEditForm({...editForm, defaultCurrency: e.target.value})}>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
+                  <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
+                    <option value="">-- None --</option>
+                    {glAccounts.map((a: any) => (
+                      <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                    ))}
                   </select>
                 </td>
                 <td style={{ textAlign: 'right' }}>
@@ -159,13 +180,19 @@ export default function SupplierGroupsAdmin() {
                     <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </td>
                   <td>
-                    <input className="input" value={editForm.defaultPaymentTerms} onChange={e => setEditForm({...editForm, defaultPaymentTerms: e.target.value})} />
+                    <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
+                      <option value="">-- None --</option>
+                      {glAccounts.map((a: any) => (
+                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                      ))}
+                    </select>
                   </td>
                   <td>
-                    <select className="input" value={editForm.defaultCurrency} onChange={e => setEditForm({...editForm, defaultCurrency: e.target.value})}>
-                      <option value="EUR">EUR</option>
-                      <option value="USD">USD</option>
-                      <option value="GBP">GBP</option>
+                    <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
+                      <option value="">-- None --</option>
+                      {glAccounts.map((a: any) => (
+                        <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
+                      ))}
                     </select>
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -179,8 +206,8 @@ export default function SupplierGroupsAdmin() {
                 <tr key={g.supplierGroupId}>
                   <td className="font-mono text-xs">{g.groupCode}</td>
                   <td className="font-medium">{g.name}</td>
-                  <td>{g.defaultPaymentTerms}</td>
-                  <td>{g.defaultCurrency}</td>
+                  <td>{renderGlAccountLabel(g.defaultApAccountId)}</td>
+                  <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>Edit</button>

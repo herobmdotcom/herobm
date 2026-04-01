@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -45,6 +47,7 @@ function typeBadge(type: string) {
 }
 
 export default function TrialBalancePage() {
+  useDocumentTitle('Trial Balance');
   const t = useTranslations('gl.trialBalance');
   const tGeneral = useTranslations('gl');
   const [rows, setRows] = useState<TrialBalanceRow[]>([]);
@@ -83,8 +86,12 @@ export default function TrialBalancePage() {
             <input
               type="date"
               value={asOfDate}
-              onChange={(e) => setAsOfDate(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-lg border"
+              onChange={(e) => {
+                if (e.target.validity.valid && e.target.value) {
+                  setAsOfDate(e.target.value);
+                }
+              }}
+              className="text-sm px-3 py-1.5 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none transition-all invalid:border-red-500 invalid:text-red-600"
               style={{
                 background: 'var(--bg-card)',
                 borderColor: 'var(--border)',

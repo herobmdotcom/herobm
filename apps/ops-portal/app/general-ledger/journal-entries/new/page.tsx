@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, reportError } from '@/lib/api';
@@ -32,6 +34,7 @@ interface JournalLineForm {
 const uid = () => Math.random().toString(36).substring(2, 9);
 
 export default function NewJournalEntryPage() {
+  useDocumentTitle('New Journal Entry');
   const t = useTranslations('gl.journalEntries');
   const tGeneral = useTranslations('gl');
   const router = useRouter();

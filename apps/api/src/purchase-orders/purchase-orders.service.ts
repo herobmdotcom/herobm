@@ -14,6 +14,7 @@ import {
   outbox,
   suppliers as coreSuppliers,
   products,
+  productUoms,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
@@ -274,6 +275,33 @@ export class PurchaseOrdersService {
       return {
         ...lineEntity,
         productNumber: r.products?.productNumber || lineEntity.productId,
+        baseUom: r.products?.baseUom,
+      };
+    });
+
+    const productIds: string[] = Array.from(
+      new Set(
+        lines
+          .map((l: any) => l.productId as string | null)
+          .filter(
+            (id: any): id is string =>
+              id !== null && id !== '00000000-0000-0000-0000-000000000000',
+          ),
+      ),
+    );
+
+    let allUoms: any[] = [];
+    if (productIds.length > 0) {
+      allUoms = await tx
+        .select()
+        .from(productUoms)
+        .where(inArray(productUoms.productId, productIds));
+    }
+
+    const linesWithUoms = lines.map((line: any) => {
+      return {
+        ...line,
+        productUoms: allUoms.filter((u) => u.productId === line.productId),
       };
     });
 
@@ -290,7 +318,7 @@ export class PurchaseOrdersService {
       ...order,
       salesOrderId: order.purchaseOrderId,
       source: 'app' as const,
-      lines: lines.map((l: any) => ({
+      lines: linesWithUoms.map((l: any) => ({
         ...l,
         salesOrderLineId: l.purchaseOrderLineId,
       })),

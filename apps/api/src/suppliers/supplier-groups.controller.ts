@@ -15,10 +15,7 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { SupplierGroupsService } from './supplier-groups.service';
-import type {
-  CreateSupplierGroupDto,
-  UpdateSupplierGroupDto,
-} from './supplier-groups.service';
+import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 
 @Controller('supplier-groups')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)

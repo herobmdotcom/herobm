@@ -1,0 +1,18 @@
+
+> ops-portal@0.1.0 typecheck
+> tsc --noEmit
+
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(882,57): error TS2339: Property 'salesOrderId' does not exist on type '{ productId: string; productNumber?: string | undefined; quantity: string; stateCode: string; purchaseOrderId?: string | undefined; purchaseOrderNumber?: string | undefined; createdOn: string; }'.
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(882,153): error TS2339: Property 'salesOrderId' does not exist on type '{ productId: string; productNumber?: string | undefined; quantity: string; stateCode: string; purchaseOrderId?: string | undefined; purchaseOrderNumber?: string | undefined; createdOn: string; }'.
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(882,201): error TS2339: Property 'salesOrderId' does not exist on type '{ productId: string; productNumber?: string | undefined; quantity: string; stateCode: string; purchaseOrderId?: string | undefined; purchaseOrderNumber?: string | undefined; createdOn: string; }'.
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(883,57): error TS2339: Property 'salesOrderId' does not exist on type '{ productId: string; productNumber?: string | undefined; quantity: string; stateCode: string; purchaseOrderId?: string | undefined; purchaseOrderNumber?: string | undefined; createdOn: string; }'.
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(884,79): error TS2339: Property 'orderNumber' does not exist on type '{ productId: string; productNumber?: string | undefined; quantity: string; stateCode: string; purchaseOrderId?: string | undefined; purchaseOrderNumber?: string | undefined; createdOn: string; }'.
+app/sales-orders/[id]/SalesOrderDetailContent.tsx(905,21): error TS2322: Type '{ orderId: string; orderState: string; orderLines: OrderLine[]; onOrderUpdated: (autoTransitions?: any[] | undefined, showSpinner?: boolean) => Promise<void>; summary: any; onRefresh: (autoTransitions?: any[] | undefined, showSpinner?: boolean) => Promise<...>; onVisibilityChange: (v: { ...; }) => void; }' is not assignable to type 'IntrinsicAttributes & { orderId: string; orderState: string; orderLines: OrderLine[]; onOrderUpdated: (autoTransitions?: unknown[] | undefined) => void; enableShippedFloorCheck?: boolean | undefined; onVisibilityChange?: ((visibility: { ...; }) => void) | undefined; fulfillmentLocationId?: string | undefined; locati...'.
+  Property 'summary' does not exist on type 'IntrinsicAttributes & { orderId: string; orderState: string; orderLines: OrderLine[]; onOrderUpdated: (autoTransitions?: unknown[] | undefined) => void; enableShippedFloorCheck?: boolean | undefined; onVisibilityChange?: ((visibility: { ...; }) => void) | undefined; fulfillmentLocationId?: string | undefined; locati...'.
+npm error Lifecycle script `typecheck` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal
+npm error workspace ops-portal@0.1.0
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\ops-portal
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c tsc --noEmit

@@ -78,11 +78,14 @@ We are standardizing on a JavaScript/TypeScript and PostgreSQL ecosystem for the
 
 | Component | Technology Choice | Rationale & ABM Comparison |
 | :--- | :--- | :--- |
-| **Database** | **PostgreSQL 16+** | ABM relied entirely on application-layer logic for referential integrity. Postgres enforces strict Foreign Keys natively. Furthermore, Postgres’s JSONB support allows us to handle custom user-defined fields seamlessly, eliminating the need for ABM's clunky supplementary tables. |
+| **Database** | **PostgreSQL 16+** | ABM relied entirely on application-layer logic for referential integrity. Postgres enforces strict Foreign Keys natively. Furthermore, Postgres’s JSONB support allows us to handle custom user-defined fields seamlessly, eliminating the need for ABM's clunky supplementary tables. See [Database & Migrations Guide](./database_migrations_guide.md). |
 | **Backend API** | **Node.js + NestJS (TypeScript)** | NestJS provides a heavily structured, enterprise-ready architecture (Modules, Dependency Injection) for Node.js. It forces a clean Model-Controller-Service pattern, preventing "spaghetti code." |
 | **ORM / Data Access** | **Drizzle ORM** | Provides strictly typed database queries. This is a massive upgrade over ABM's historical reliance on opaque stored procedures and implicit linking. |
 | **Frontend UI** | **Next.js (React) + Tailwind** | Next.js handles fast back-office portals and highly optimized Web Apps (PWAs) for warehouse scanners from the same codebase. Component libraries (like ag-Grid) will allow us to build the dense, complex data grids required for rapid order entry. |
 | **Integration** | **Redis + BullMQ** | We must avoid tightly coupling the Custom App to ERPNext. If ERPNext goes down for maintenance, the warehouse must keep scanning. Queues ensure guaranteed, asynchronous delivery of financial data. |
+
+> [!NOTE]
+> For specific UI implementation constraints, component usage (e.g., AG Grid wrappers, layouts), and frontend state management patterns (Next.js, Tailwind, Next-Intl), refer to the [Frontend Patterns](./frontend_patterns.md) guide.
 
 ## 4. Modernizing the Data Model
 When migrating from ABM, we must explicitly abandon its legacy anti-patterns and model the database on modern RDBMS principles.

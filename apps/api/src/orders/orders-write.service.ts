@@ -7,7 +7,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, inArray } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -21,7 +21,14 @@ import {
   backorders,
   purchaseOrders,
   locations,
+  productUoms,
 } from '../drizzle/modbm-core-schema';
+import {
+  CreateOrderDto,
+  UpdateOrderDto,
+  CreateOrderLineDto as AddLineDto, // Renamed to match usage
+  UpdateOrderLineDto as UpdateLineDto,
+} from './dto';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   writeEvent as sharedWriteEvent,
@@ -37,54 +44,12 @@ import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
   computeLinePriceForStorage,
+  resolveEffectiveDiscount,
 } from '@modbm/shared';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
-interface CreateOrderDto {
-  name?: string;
-  customerId: string;
-  customerOrderNumber?: string;
-  notes?: string;
-  fulfillmentLocationId?: string;
-  lines: Array<{
-    productId: string;
-    productDescription?: string;
-    quantity: string;
-    pricePerUnit: string;
-    discountPercentage?: string;
-    gstCategoryId?: string;
-    unitOfMeasure?: string;
-    fulfillmentLocationId?: string;
-  }>;
-}
-
-interface UpdateOrderDto {
-  name?: string;
-  customerOrderNumber?: string;
-  notes?: string;
-}
-
-interface AddLineDto {
-  productId: string;
-  productDescription?: string;
-  quantity: string;
-  pricePerUnit: string;
-  discountPercentage?: string;
-  gstCategoryId?: string;
-  unitOfMeasure?: string;
-  fulfillmentLocationId?: string;
-}
-
-interface UpdateLineDto {
-  quantity?: string;
-  pricePerUnit?: string;
-  discountPercentage?: string;
-  gstCategoryId?: string;
-  productDescription?: string;
-  unitOfMeasure?: string;
-  fulfillmentLocationId?: string;
-}
+// DTOs imported from ./dto
 
 @Injectable()
 export class OrdersWriteService {
@@ -147,20 +112,14 @@ export class OrdersWriteService {
       taxRate: gstRate,
     });
   }
-  // ABM gst_category text → our GST category code mapping
-  private static readonly GST_CATEGORY_MAP: Record<string, string> = {
-    '9% gst': 'GST',
-    'zero rated products': 'ZR',
-    'exempt customer': 'EXE',
-  };
-
+  // ABM gst_category text mapping has been migrated directly into modbm_core.products schema
   /**
    * Resolve the GST category for a single order line.
    *
    * Priority:
    *   1. Explicit per-line override (gstCategoryIdOverride) — manual escape hatch
    *   2. Customer exempt → EXE (0%) regardless of product
-   *   3. Product's ABM gst_category mapped to our code (GST, ZR, EXE)
+   *   3. Product's physical gstCategoryId foreign key
    *   4. System default GST (fallback)
    */
   private async resolveGstForLine(
@@ -180,41 +139,31 @@ export class OrdersWriteService {
     // 2. Customer exempt → always 0%
     const account = await this.accountsService.findOne(customerId);
 
-    if (account.gstPosition?.toLowerCase() === 'exempt') {
-      const exempt = await this.gstService.getByCode('EXE');
-      return {
-        gstCategoryId: exempt.gstCategoryId,
-        rate: parseFloat(exempt.rate ?? '0'),
-      };
+    if (account.gstCategoryId) {
+      const acctCat = await this.gstService.getById(account.gstCategoryId);
+      if (acctCat.code === 'EXE') {
+        return {
+          gstCategoryId: acctCat.gstCategoryId,
+          rate: parseFloat(acctCat.rate ?? '0'),
+        };
+      }
     }
 
     // 3. Product's GST category
     if (productId) {
       const product = await this.lookupProduct(productId);
-      if (product.gstCategory) {
-        // Try mapping from legacy ABM string first
-        const code =
-          OrdersWriteService.GST_CATEGORY_MAP[
-            product.gstCategory.toLowerCase()
-          ];
-
-        if (code) {
-          const cat = await this.gstService.getByCode(code);
-          return {
-            gstCategoryId: cat.gstCategoryId,
-            rate: parseFloat(cat.rate ?? '0'),
-          };
-        }
-
-        // If not mapped, maybe it's already a code (e.g. 'GST', 'ZR', 'EXE')
+      if (product.gstCategoryId) {
         try {
-          const cat = await this.gstService.getByCode(product.gstCategory);
+          const cat = await this.gstService.getById(product.gstCategoryId);
           return {
             gstCategoryId: cat.gstCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
           };
         } catch (err) {
-          // Not a recognized code, ignore and let it fall back
+          // Bad link, fallback to default
+          this.logger.warn(
+            `Product ${productId} had invalid tax category ID: ${product.gstCategoryId}`,
+          );
         }
       }
     }
@@ -238,8 +187,13 @@ export class OrdersWriteService {
   }> {
     try {
       const account = await this.accountsService.findOne(customerId);
+      const effectiveDiscount = resolveEffectiveDiscount(
+        account.customerDiscount,
+        (account as any).accountGroupDiscount,
+      );
+
       return {
-        customerDiscount: account.customerDiscount ?? '0',
+        customerDiscount: effectiveDiscount,
         currencyCode: account.currencyCode ?? 'EUR',
       };
     } catch (err) {
@@ -253,17 +207,17 @@ export class OrdersWriteService {
   /**
    * Look up a product from modbm_core.products.
    * Throws BadRequestException if not found.
-   * Returns productId and gstCategory.
+   * Returns productId and gstCategoryId.
    */
   private async lookupProduct(productId: string): Promise<{
     productId: string;
-    gstCategory: string | null;
+    gstCategoryId: string | null;
   }> {
     try {
       const product = await this.productsService.findOne(productId);
       return {
         productId: product.productId,
-        gstCategory: (product as any).gstCategory ?? null,
+        gstCategoryId: product.gstCategoryId ?? null,
       };
     } catch (err) {
       if (err instanceof NotFoundException) {
@@ -1021,6 +975,7 @@ export class OrdersWriteService {
         gstCategoryId: salesOrderLineItems.gstCategoryId,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
         isPostConfirmation: salesOrderLineItems.isPostConfirmation,
+        baseUom: coreProducts.baseUom,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -1029,6 +984,32 @@ export class OrdersWriteService {
       )
       .where(eq(salesOrderLineItems.salesOrderId, id))
       .orderBy(salesOrderLineItems.lineNumber);
+
+    const productIds = Array.from(
+      new Set(
+        lines
+          .map((l) => l.productId)
+          .filter(
+            (id): id is string =>
+              id !== null && id !== '00000000-0000-0000-0000-000000000000',
+          ),
+      ),
+    );
+
+    let allUoms: any[] = [];
+    if (productIds.length > 0) {
+      allUoms = await this.db
+        .select()
+        .from(productUoms)
+        .where(inArray(productUoms.productId, productIds));
+    }
+
+    const linesWithUoms = lines.map((line) => {
+      return {
+        ...line,
+        productUoms: allUoms.filter((u) => u.productId === line.productId),
+      };
+    });
 
     const events = await this.db
       .select()
@@ -1055,7 +1036,12 @@ export class OrdersWriteService {
       .where(eq(backorders.salesOrderId, order.salesOrderId))
       .orderBy(backorders.createdOn);
 
-    return { ...order, lines, events, backorders: backorderList };
+    return {
+      ...order,
+      lines: linesWithUoms,
+      events,
+      backorders: backorderList,
+    };
   }
 
   // -------------------------------------------------------------------------

@@ -44,6 +44,11 @@ describe('API E2E — Data Pipeline Verification', () => {
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
 
+    if (loginRes.status !== 201) {
+      throw new Error(
+        `${'loginRes'} login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`,
+      );
+    }
     authToken = loginRes.body.access_token;
     expect(authToken).toBeDefined();
   });

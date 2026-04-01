@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, NotFoundException } from '@nestjs/common';
 import { join } from 'path';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
@@ -89,9 +89,37 @@ export class SalesInvoiceService {
         };
       });
 
-    return assembleOrderData(
+    // Build the invoice-specific report data
+    const invoiceData = assembleOrderData(
       { ...orderDetail, lines: filteredLines },
       gstRateMap,
     );
+
+    // Compute the full (unfiltered) order total for comparison
+    const fullOrderData = assembleOrderData(orderDetail, gstRateMap);
+
+    // Determine this invoice's ordinal position among all invoices for the order
+    const allOrderInvoices = await this.db
+      .select({
+        invoiceId: salesInvoices.invoiceId,
+        invoiceNumber: salesInvoices.invoiceNumber,
+      })
+      .from(salesInvoices)
+      .where(eq(salesInvoices.salesOrderId, orderId))
+      .orderBy(asc(salesInvoices.createdOn));
+
+    const totalInvoices = allOrderInvoices.length;
+    const sequenceNumber =
+      allOrderInvoices.findIndex((i) => i.invoiceId === invoiceId) + 1;
+
+    return {
+      ...invoiceData,
+      invoiceMeta: {
+        invoiceNumber: invoice.invoiceNumber,
+        sequenceNumber,
+        totalInvoices,
+        orderTotal: fullOrderData.summary.totalAmount,
+      },
+    } as SalesQuoteData;
   }
 }

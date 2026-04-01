@@ -10,8 +10,23 @@ import {
   jsonb,
   primaryKey,
   unique,
+  uniqueIndex,
   pgView,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { CURRENCIES, HOME_CURRENCY } from '@modbm/shared';
+
+const validCurrencyCheck = (
+  tableName: string,
+  columnName: string = 'currency_code',
+) =>
+  check(
+    `${tableName}_currency_check`,
+    sql.raw(
+      `${columnName} IN (${CURRENCIES.map((c) => `'${c.code}'`).join(', ')})`,
+    ),
+  );
 
 /**
  * Drizzle schema for modbm_core — application-owned operational data.
@@ -26,50 +41,72 @@ export const modbmCore = pgSchema('modbm_core');
 // ---------------------------------------------------------------------------
 // gst_categories  (Tax classification for order lines)
 // ---------------------------------------------------------------------------
-export const gstCategories = modbmCore.table('gst_categories', {
-  gstCategoryId: uuid('gst_category_id').primaryKey().defaultRandom(),
-  code: text('code').unique().notNull(),
-  title: text('title').notNull(),
-  type: text('type').notNull(), // not_relevant | exempt | zero_rated | gst_applies
-  rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
-  isDefault: boolean('is_default').default(false),
-});
+export const gstCategories = modbmCore.table(
+  'gst_categories',
+  {
+    gstCategoryId: uuid('gst_category_id').primaryKey().defaultRandom(),
+    code: text('code').unique().notNull(),
+    title: text('title').notNull(),
+    type: text('type').notNull(), // not_relevant | exempt | zero_rated | gst_applies
+    rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
+    isDefault: boolean('is_default').default(false),
+  },
+  (table) => {
+    return {
+      singleDefaultIndex: uniqueIndex('gst_categories_single_default_idx')
+        .on(table.isDefault)
+        .where(sql`${table.isDefault} = true`),
+    };
+  },
+);
 
 // ---------------------------------------------------------------------------
 // exchange_rates  (Static currency exchange rates)
 // ---------------------------------------------------------------------------
-export const exchangeRates = modbmCore.table('exchange_rates', {
-  exchangeRateId: uuid('exchange_rate_id').primaryKey().defaultRandom(),
-  currencyCode: text('currency_code').notNull().unique(), // ISO 4217
-  currencyName: text('currency_name').notNull(),
-  buyRate: numeric('buy_rate').notNull(), // units of this currency per 1 EUR
-  sellRate: numeric('sell_rate').notNull(), // units of this currency per 1 EUR
-  effectiveDate: timestamp('effective_date').defaultNow(),
-  updatedOn: timestamp('updated_on').defaultNow(),
-});
+export const exchangeRates = modbmCore.table(
+  'exchange_rates',
+  {
+    exchangeRateId: uuid('exchange_rate_id').primaryKey().defaultRandom(),
+    currencyCode: text('currency_code').notNull().unique(), // ISO 4217
+    currencyName: text('currency_name').notNull(),
+    buyRate: numeric('buy_rate').notNull(), // units of this currency per 1 EUR
+    sellRate: numeric('sell_rate').notNull(), // units of this currency per 1 EUR
+    effectiveDate: timestamp('effective_date').defaultNow(),
+    updatedOn: timestamp('updated_on').defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('exchange_rates'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // sales_orders  (CDM: SalesOrder)
 // ---------------------------------------------------------------------------
-export const salesOrders = modbmCore.table('sales_orders', {
-  salesOrderId: uuid('sales_order_id').primaryKey().defaultRandom(),
-  orderNumber: text('order_number').unique().notNull(),
-  name: text('name'),
-  customerId: uuid('customer_id').references(() => accounts.accountId),
-  customerOrderNumber: text('customer_order_number'),
-  fulfillmentLocationId: uuid('fulfillment_location_id')
-    .notNull()
-    .references(() => locations.locationId),
-  stateCode: text('state_code').notNull().default('draft'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  notes: text('notes'),
-  customFields: jsonb('custom_fields'),
-  sourceId: text('source_id').unique(),
-  source: text('source').notNull().default('app'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const salesOrders = modbmCore.table(
+  'sales_orders',
+  {
+    salesOrderId: uuid('sales_order_id').primaryKey().defaultRandom(),
+    orderNumber: text('order_number').unique().notNull(),
+    name: text('name'),
+    customerId: uuid('customer_id').references(() => accounts.accountId),
+    customerOrderNumber: text('customer_order_number'),
+    fulfillmentLocationId: uuid('fulfillment_location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    stateCode: text('state_code').notNull().default('draft'),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    notes: text('notes'),
+    customFields: jsonb('custom_fields'),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('sales_orders'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // sales_order_lines  (CDM: SalesOrderProduct)
@@ -185,23 +222,29 @@ export const salesOrderShipmentLines = modbmCore.table(
 // ---------------------------------------------------------------------------
 // purchase_orders  (CDM: PurchaseOrder)
 // ---------------------------------------------------------------------------
-export const purchaseOrders = modbmCore.table('purchase_orders', {
-  purchaseOrderId: uuid('purchase_order_id').primaryKey().defaultRandom(),
-  orderNumber: text('order_number').unique().notNull(),
-  name: text('name'),
-  vendorId: uuid('vendor_id').references(() => suppliers.vendorId),
-  deliveryLocationId: uuid('delivery_location_id').references(
-    () => locations.locationId,
-  ),
-  invoiceNumber: text('invoice_number'),
-  stateCode: text('state_code').notNull().default('draft'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  notes: text('notes'),
-  customFields: jsonb('custom_fields'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const purchaseOrders = modbmCore.table(
+  'purchase_orders',
+  {
+    purchaseOrderId: uuid('purchase_order_id').primaryKey().defaultRandom(),
+    orderNumber: text('order_number').unique().notNull(),
+    name: text('name'),
+    vendorId: uuid('vendor_id').references(() => suppliers.vendorId),
+    deliveryLocationId: uuid('delivery_location_id').references(
+      () => locations.locationId,
+    ),
+    invoiceNumber: text('invoice_number'),
+    stateCode: text('state_code').notNull().default('draft'),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    notes: text('notes'),
+    customFields: jsonb('custom_fields'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('purchase_orders'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // purchase_order_lines  (CDM: PurchaseOrderProduct)
@@ -487,10 +530,10 @@ export const supplierGroups = modbmCore.table('supplier_groups', {
   supplierGroupId: uuid('supplier_group_id').primaryKey().defaultRandom(),
   groupCode: text('group_code').unique().notNull(),
   name: text('name').notNull(),
-  defaultDiscountPercentage: numeric('default_discount_percentage').default(
-    '0',
-  ),
   defaultApAccountId: uuid('default_ap_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
   ),
 });
@@ -539,7 +582,15 @@ export const products = modbmCore.table('products', {
   ),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
   quantityOnHand: numeric('quantity_on_hand').default('0'),
-  gstCategory: text('gst_category'),
+  baseUom: text('base_uom')
+    .notNull()
+    .default('EA')
+    .references(() => uomDictionary.uomCode),
+  defaultSalesUomId: uuid('default_sales_uom_id'),
+  defaultPurchaseUomId: uuid('default_purchase_uom_id'),
+  gstCategoryId: uuid('gst_category_id').references(
+    () => gstCategories.gstCategoryId,
+  ),
   scNumber: text('sc_number'),
   stateCode: text('state_code').notNull().default('active'),
   notes: text('notes'),
@@ -549,6 +600,38 @@ export const products = modbmCore.table('products', {
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
+
+// ---------------------------------------------------------------------------
+// uom_dictionary  (Global unit of measure definitions)
+// ---------------------------------------------------------------------------
+export const uomDictionary = modbmCore.table('uom_dictionary', {
+  uomCode: text('uom_code').primaryKey(),
+  description: text('description').notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// product_uoms  (Product-specific unit of measure definitions)
+// ---------------------------------------------------------------------------
+export const productUoms = modbmCore.table(
+  'product_uoms',
+  {
+    productUomId: uuid('product_uom_id').primaryKey().defaultRandom(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    uomCode: text('uom_code')
+      .notNull()
+      .references(() => uomDictionary.uomCode),
+    ratio: numeric('ratio', { precision: 14, scale: 6 }).notNull(),
+    barcode: text('barcode'),
+    isSalesDefault: boolean('is_sales_default').default(false),
+    isPurchaseDefault: boolean('is_purchase_default').default(false),
+  },
+  (t) => ({
+    unq: unique('product_uoms_product_code_unq').on(t.productId, t.uomCode),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // product_events  (Audit log + event sourcing)
@@ -567,38 +650,46 @@ export const productEvents = modbmCore.table('product_events', {
 // ---------------------------------------------------------------------------
 // accounts  (CDM: Account)
 // ---------------------------------------------------------------------------
-export const accounts = modbmCore.table('accounts', {
-  accountId: uuid('account_id').primaryKey().defaultRandom(),
-  accountNumber: text('account_number').unique().notNull(),
-  name: text('name').notNull(),
-  address1Line1: text('address1_line1'),
-  address1Line2: text('address1_line2'),
-  address1City: text('address1_city'),
-  address1StateOrProvince: text('address1_state_or_province'),
-  address1PostalCode: text('address1_postal_code'),
-  address1Country: text('address1_country'),
-  telephone1: text('telephone1'),
-  fax: text('fax'),
-  emailAddress1: text('email_address1'),
-  primaryContactName: text('primary_contact_name'),
-  primaryContactEmail: text('primary_contact_email'),
-  primaryContactPhone: text('primary_contact_phone'),
-  accountGroupId: uuid('account_group_id').references(
-    () => accountGroups.accountGroupId,
-  ),
-  stateCode: text('state_code').notNull().default('active'),
-  gstPosition: text('gst_position'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  customerDiscount: numeric('customer_discount').default('0'),
-  erpnextId: text('erpnext_id'),
-  sourceId: text('source_id').unique(),
-  source: text('source').notNull().default('app'),
-  priceTier: text('price_tier'),
-  notes: text('notes'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const accounts = modbmCore.table(
+  'accounts',
+  {
+    accountId: uuid('account_id').primaryKey().defaultRandom(),
+    accountNumber: text('account_number').unique().notNull(),
+    name: text('name').notNull(),
+    address1Line1: text('address1_line1'),
+    address1Line2: text('address1_line2'),
+    address1City: text('address1_city'),
+    address1StateOrProvince: text('address1_state_or_province'),
+    address1PostalCode: text('address1_postal_code'),
+    address1Country: text('address1_country'),
+    telephone1: text('telephone1'),
+    fax: text('fax'),
+    emailAddress1: text('email_address1'),
+    primaryContactName: text('primary_contact_name'),
+    primaryContactEmail: text('primary_contact_email'),
+    primaryContactPhone: text('primary_contact_phone'),
+    accountGroupId: uuid('account_group_id').references(
+      () => accountGroups.accountGroupId,
+    ),
+    stateCode: text('state_code').notNull().default('active'),
+    gstCategoryId: uuid('gst_category_id').references(
+      () => gstCategories.gstCategoryId,
+    ),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    customerDiscount: numeric('customer_discount').default('0'),
+    erpnextId: text('erpnext_id'),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    priceTier: text('price_tier'),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('accounts'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // account_events  (Audit log + event sourcing)
@@ -617,33 +708,39 @@ export const accountEvents = modbmCore.table('account_events', {
 // ---------------------------------------------------------------------------
 // suppliers  (CDM: Vendor)
 // ---------------------------------------------------------------------------
-export const suppliers = modbmCore.table('suppliers', {
-  vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
-  vendorNumber: text('vendor_number').unique().notNull(),
-  name: text('name').notNull(),
-  supplierGroupId: uuid('supplier_group_id').references(
-    () => supplierGroups.supplierGroupId,
-  ),
-  address1Line1: text('address1_line1'),
-  address1Line2: text('address1_line2'),
-  address1City: text('address1_city'),
-  address1StateOrProvince: text('address1_state_or_province'),
-  address1PostalCode: text('address1_postal_code'),
-  address1Country: text('address1_country'),
-  telephone1: text('telephone1'),
-  fax: text('fax'),
-  emailAddress1: text('email_address1'),
-  paymentTerms: text('payment_terms'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  stateCode: text('state_code').notNull().default('active'),
-  erpnextId: text('erpnext_id'),
-  notes: text('notes'),
-  sourceId: text('source_id').unique(),
-  source: text('source').notNull().default('app'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const suppliers = modbmCore.table(
+  'suppliers',
+  {
+    vendorId: uuid('vendor_id').primaryKey().defaultRandom(),
+    vendorNumber: text('vendor_number').unique().notNull(),
+    name: text('name').notNull(),
+    supplierGroupId: uuid('supplier_group_id').references(
+      () => supplierGroups.supplierGroupId,
+    ),
+    address1Line1: text('address1_line1'),
+    address1Line2: text('address1_line2'),
+    address1City: text('address1_city'),
+    address1StateOrProvince: text('address1_state_or_province'),
+    address1PostalCode: text('address1_postal_code'),
+    address1Country: text('address1_country'),
+    telephone1: text('telephone1'),
+    fax: text('fax'),
+    emailAddress1: text('email_address1'),
+    paymentTerms: text('payment_terms'),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    stateCode: text('state_code').notNull().default('active'),
+    erpnextId: text('erpnext_id'),
+    notes: text('notes'),
+    sourceId: text('source_id').unique(),
+    source: text('source').notNull().default('app'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('suppliers'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // supplier_events  (Audit log + event sourcing)
@@ -730,22 +827,27 @@ export const users = modbmCore.table('users', {
 // ---------------------------------------------------------------------------
 // sales_invoices  (AR header)
 // ---------------------------------------------------------------------------
-export const salesInvoices = modbmCore.table('sales_invoices', {
-  invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
-  invoiceNumber: text('invoice_number').unique().notNull(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  erpnextJournalId: text('erpnext_journal_id'),
-  totalAmount: numeric('total_amount').notNull(),
-  taxAmount: numeric('tax_amount').default('0'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  stateCode: text('state_code').notNull().default('draft'),
-  notes: text('notes'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const salesInvoices = modbmCore.table(
+  'sales_invoices',
+  {
+    invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
+    invoiceNumber: text('invoice_number').unique().notNull(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    totalAmount: numeric('total_amount').notNull(),
+    taxAmount: numeric('tax_amount').default('0'),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    stateCode: text('state_code').notNull().default('draft'),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('sales_invoices'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // sales_invoice_lines  (AR details)
@@ -766,23 +868,28 @@ export const salesInvoiceLines = modbmCore.table('sales_invoice_lines', {
 // ---------------------------------------------------------------------------
 // purchase_invoices  (AP header)
 // ---------------------------------------------------------------------------
-export const purchaseInvoices = modbmCore.table('purchase_invoices', {
-  invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
-  invoiceNumber: text('invoice_number').unique().notNull(),
-  purchaseOrderId: uuid('purchase_order_id')
-    .notNull()
-    .references(() => purchaseOrders.purchaseOrderId),
-  supplierInvoiceNumber: text('supplier_invoice_number'),
-  erpnextJournalId: text('erpnext_journal_id'),
-  totalAmount: numeric('total_amount').notNull(),
-  taxAmount: numeric('tax_amount').default('0'),
-  currencyCode: text('currency_code').notNull().default('EUR'),
-  stateCode: text('state_code').notNull().default('draft'),
-  notes: text('notes'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const purchaseInvoices = modbmCore.table(
+  'purchase_invoices',
+  {
+    invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
+    invoiceNumber: text('invoice_number').unique().notNull(),
+    purchaseOrderId: uuid('purchase_order_id')
+      .notNull()
+      .references(() => purchaseOrders.purchaseOrderId),
+    supplierInvoiceNumber: text('supplier_invoice_number'),
+    totalAmount: numeric('total_amount').notNull(),
+    taxAmount: numeric('tax_amount').default('0'),
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    stateCode: text('state_code').notNull().default('draft'),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('purchase_invoices'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // purchase_invoice_lines  (AP details)
@@ -807,18 +914,24 @@ export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
 // ---------------------------------------------------------------------------
 // gl_accounts  (Chart of Accounts — hierarchical, customisable)
 // ---------------------------------------------------------------------------
-export const glAccounts = modbmCore.table('gl_accounts', {
-  glAccountId: uuid('gl_account_id').primaryKey().defaultRandom(),
-  accountCode: text('account_code').unique().notNull(),
-  name: text('name').notNull(),
-  accountType: text('account_type').notNull(), // asset | liability | equity | revenue | expense
-  parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
-  isGroup: boolean('is_group').notNull().default(false),
-  isSystem: boolean('is_system').notNull().default(false), // prevents deletion
-  currencyCode: text('currency_code').notNull().default('AUD'),
-  isActive: boolean('is_active').notNull().default(true),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-});
+export const glAccounts = modbmCore.table(
+  'gl_accounts',
+  {
+    glAccountId: uuid('gl_account_id').primaryKey().defaultRandom(),
+    accountCode: text('account_code').unique().notNull(),
+    name: text('name').notNull(),
+    accountType: text('account_type').notNull(), // asset | liability | equity | revenue | expense
+    parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
+    isGroup: boolean('is_group').notNull().default(false),
+    isSystem: boolean('is_system').notNull().default(false), // prevents deletion
+    currencyCode: text('currency_code').notNull().default('AUD'), // GL accounts can have different currencies
+    isActive: boolean('is_active').notNull().default(true),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('gl_accounts'),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // gl_journal_entries  (Journal Entry header — one per financial event)
@@ -855,11 +968,36 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
 });
 
 // ---------------------------------------------------------------------------
+// organization  (Singleton config for company identity)
+// ---------------------------------------------------------------------------
+export const organization = modbmCore.table('organization', {
+  organizationId: uuid('organization_id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  addressLine1: text('address_line_1'),
+  addressLine2: text('address_line_2'),
+  city: text('city'),
+  state: text('state'),
+  country: text('country'),
+  postCode: text('post_code'),
+  email: text('email'),
+  phone: text('phone'),
+  website: text('website'),
+  companyNumber: text('company_number'),
+  taxNumber: text('tax_number'),
+  logoUrl: text('logo_url'),
+  bankName: text('bank_name'),
+  bankAccountName: text('bank_account_name'),
+  bankAccountNumber: text('bank_account_number'),
+  bankSwiftBic: text('bank_swift_bic'),
+  bankIban: text('bank_iban'),
+});
+
+// ---------------------------------------------------------------------------
 // gl_settings  (Singleton config — fiscal year + default account mappings)
 // ---------------------------------------------------------------------------
 export const glSettings = modbmCore.table('gl_settings', {
   settingsId: uuid('settings_id').primaryKey().defaultRandom(),
-  fiscalYearStartMonth: integer('fiscal_year_start_month').notNull().default(7), // AU: July
+  fiscalYearStartMonth: integer('fiscal_year_start_month').notNull(), // Sourced from settings JSON
   defaultArAccountId: uuid('default_ar_account_id').references(
     () => glAccounts.glAccountId,
   ),
@@ -878,7 +1016,7 @@ export const glSettings = modbmCore.table('gl_settings', {
   defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
   ),
-  baseCurrency: text('base_currency').notNull().default('AUD'),
+  baseCurrency: text('base_currency').notNull(),
 });
 
 // ===========================================================================
@@ -917,6 +1055,7 @@ export const reportHookAssignments = modbmCore.table(
     reportId: uuid('report_id')
       .references(() => reports.id, { onDelete: 'cascade' })
       .notNull(),
+    contextSlug: text('context_slug').notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

@@ -6,18 +6,34 @@
 # local-only secrets. Only prompts for values that cannot be generated
 # (ABM SQL Server connection).
 #
-# Usage: bash scripts/init-env.sh
+# Usage: bash scripts/init-env.sh [-Profile <name>]
 # ==============================================================================
 
 set -e
 
 # Change to repo root
 cd "$(dirname "$0")/.."
+
+PROFILE=""
+if [ "$1" == "-Profile" ] && [ -n "$2" ]; then
+    PROFILE="$2"
+fi
+
+ACTIVE_PROFILE="$PROFILE"
+if [ -z "$ACTIVE_PROFILE" ] && [ -f ".active_profile" ]; then
+    ACTIVE_PROFILE=$(head -n 1 ".active_profile" | tr -d '[:space:]')
+fi
+
 ENV_FILE=".env"
+if [ -n "$ACTIVE_PROFILE" ]; then
+    ENV_FILE=".env.$ACTIVE_PROFILE"
+    echo -e "\e[35mTargeting Environment Profile: $ACTIVE_PROFILE\e[0m"
+fi
+
 EXAMPLE_FILE=".env.example"
 
 if [ -f "$ENV_FILE" ]; then
-    echo -e "\e[33m.env already exists at $ENV_FILE\e[0m"
+    echo -e "\e[33m$ENV_FILE already exists at $ENV_FILE\e[0m"
     read -p "Overwrite? (y/N): " overwrite
     if [[ ! "$overwrite" =~ ^[Yy]$ ]]; then
         echo -e "\e[31mAborted.\e[0m"
@@ -33,7 +49,7 @@ fi
 # --- Helper: generate a random alphanumeric string ---
 generate_pwd() {
     local len="${1:-20}"
-    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$len"
+    LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$len" || true
 }
 
 # --- Read and copy the template ---
@@ -62,10 +78,17 @@ done
 sed -i "s/^JWT_SECRET=.*$/JWT_SECRET=$(generate_pwd 32)/g" "$ENV_FILE"
 echo "  Generated: JWT_SECRET"
 
+# --- If profiling, pre-fill POSTGRES_DB to match profile ---
+if [ -n "$ACTIVE_PROFILE" ]; then
+    postgresDb="modbm_$ACTIVE_PROFILE"
+    sed -i "s/^POSTGRES_DB=custom_app/POSTGRES_DB=$postgresDb/g" "$ENV_FILE"
+    echo -e "\n\e[32m=== Auto-Configured ===\n  POSTGRES_DB=$postgresDb\e[0m"
+fi
+
 # --- Prompt for ABM SQL Server connection ---
 echo -e "\n\e[36m=== ABM SQL Server Connection ===\e[0m"
 echo -e "These connect to the legacy ABM database for data extraction."
-echo -e "Press Enter to skip any field (you can fill it in .env later).\n"
+echo -e "Press Enter to skip any field (you can fill it in $ENV_FILE later).\n"
 
 read -p "ABM_MSSQL_HOST: " abmHost
 if [ -n "$abmHost" ]; then sed -i "s/^ABM_MSSQL_HOST=<REDACTED>/ABM_MSSQL_HOST=$abmHost/g" "$ENV_FILE"; fi
@@ -89,5 +112,5 @@ if command -v typst >/dev/null 2>&1; then
     echo -e "\n\e[32mDetected Typst at: $TYPST_PATH\e[0m"
 fi
 
-echo -e "\n\e[32m=== .env created at $ENV_FILE ===\e[0m"
+echo -e "\n\e[32m=== $ENV_FILE created at $ENV_FILE ===\e[0m"
 echo -e "Review it and fill in any remaining <REDACTED> values.\n"

@@ -25,8 +25,11 @@ describe('Dynamic Reports Engine (e2e)', () => {
         username: 'admin',
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       });
+
     if (adminRes.status !== 201) {
-      console.error('Admin login failed:', adminRes.status, adminRes.body);
+      throw new Error(
+        `${'adminRes'} login failed: ${adminRes.status} ${JSON.stringify(adminRes.body)}`,
+      );
     }
     adminToken = adminRes.body.access_token;
   });
@@ -156,6 +159,11 @@ describe('Dynamic Reports Engine (e2e)', () => {
           username: 'viewer',
           password: process.env.DEV_VIEWER_PASSWORD || 'password',
         });
+      if (viewerRes.status !== 201) {
+        throw new Error(
+          `${'viewerRes'} login failed: ${viewerRes.status} ${JSON.stringify(viewerRes.body)}`,
+        );
+      }
       viewerToken = viewerRes.body.access_token;
     });
 
@@ -169,10 +177,12 @@ describe('Dynamic Reports Engine (e2e)', () => {
           description: 'A test template',
           template: '#set page(paper: "a4")\n= E2E Test\n',
           outputNamePattern: 'E2E-Report.pdf',
+          contexts: ['sales-order'],
         });
 
       expect(res.status).toBe(201);
       expect(res.body.data.id).toBeDefined();
+      expect(res.body.data.contexts).toContain('sales-order');
       testReportId = res.body.data.id;
     });
 
@@ -202,11 +212,13 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .send({
           name: 'E2E Test Template Updated',
           template: '#set page(paper: "a4")\n= Updated E2E Test\n',
+          contexts: ['sales-order', 'purchase-order'],
         });
 
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('E2E Test Template Updated');
       expect(res.body.data.template).toContain('Updated E2E Test');
+      expect(res.body.data.contexts).toContain('purchase-order');
     });
 
     it('AuthZ: viewer cannot CREATE templates (403 Forbidden)', async () => {
@@ -237,6 +249,79 @@ describe('Dynamic Reports Engine (e2e)', () => {
         .get('/api/reports')
         .set('Authorization', `Bearer ${viewerToken}`)
         .expect(200);
+    });
+
+    it('DELETE /api/reports/:id — removes the template', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/api/reports/${testReportId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.success).toBe(true);
+
+      // Verify it's gone
+      const check = await request(app.getHttpServer())
+        .get(`/api/reports/${testReportId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(check.status).toBe(404);
+    });
+
+    it('Assignment Management: lists and updates assignments', async () => {
+      const testSlug = `assign-test-${Date.now()}`;
+      const newReport = await request(app.getHttpServer())
+        .post('/api/reports')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Assignment Test Report',
+          slug: testSlug,
+          template: '= Hello',
+        });
+      const rid = newReport.body.data.id;
+
+      // Update assignment
+      await request(app.getHttpServer())
+        .patch('/api/reports/hook-assignments/sales-invoice')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ reportId: rid, contextSlug: 'sales-invoice' })
+        .expect(200);
+
+      // Check listing
+      const res = await request(app.getHttpServer())
+        .get('/api/reports/hook-assignments')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const invoiceAssign = res.body.data.find(
+        (a: any) => a.hookSlug === 'sales-invoice',
+      );
+      expect(invoiceAssign.reportId).toBe(rid);
+
+      // Deletion Guard: Should fail to delete since it's assigned
+      const delFail = await request(app.getHttpServer())
+        .delete(`/api/reports/${rid}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(delFail.status).toBe(400);
+      expect(delFail.body.message).toContain(
+        'currently assigned to the system hook',
+      );
+
+      // Cleanup: Unassign and then restore the standard assignment
+      await request(app.getHttpServer())
+        .patch('/api/reports/hook-assignments/sales-invoice')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          reportId: 'a0000000-0000-0000-0000-000000000003',
+          contextSlug: 'sales-invoice',
+        })
+        .expect(200);
+    });
+
+    it('AuthZ: viewer cannot DELETE templates (403 Forbidden)', async () => {
+      await request(app.getHttpServer())
+        .delete(`/api/reports/${testReportId}`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .expect(403);
     });
 
     it('GET /api/reports/hooks — lists available hooks', async () => {

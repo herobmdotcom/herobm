@@ -18,6 +18,8 @@ interface Product {
   listPrice: string;
   tradePrice: string;
   standardCost?: string | null;
+  baseUom?: string | null;
+  productUoms?: any[];
 }
 
 interface InventoryLevel {
@@ -100,12 +102,19 @@ export default function ProductSearchInput({
     (term: unknown) => searchProducts(term as string), 300,
   );
 
-  const handleSelect = (p: Product) => {
+  const handleSelect = async (p: Product) => {
     setShowDropdown(false);
     setSearch('');
     setResults([]);
     setStockMap({});
-    onSelect(p);
+    try {
+      // Fetch full details (including productUoms) from findOne before yielding
+      const details = await apiFetch<Product>(`/api/products/${p.productId}`);
+      onSelect(details);
+    } catch {
+      // Fallback to the shallow object if the detail fetch fails
+      onSelect(p);
+    }
   };
 
   return (

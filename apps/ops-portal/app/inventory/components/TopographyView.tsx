@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/components/AuthGate';
+import SlideOver from '@/components/shared/SlideOver';
+import toast from 'react-hot-toast';
 
 interface Bin {
   binId: string;
@@ -37,10 +40,32 @@ interface Location {
 export default function TopographyView() {
   const tInventory = useTranslations('inventory');
   const tCommon = useTranslations('common');
+  const { role } = useAuth();
+  const canEdit = role === 'admin';
+
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [expandedLocations, setExpandedLocations] = useState<Set<string>>(new Set());
   const [expandedZones, setExpandedZones] = useState<Set<string>>(new Set());
+
+  // Modal states
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
+  const [isBinModalOpen, setIsBinModalOpen] = useState(false);
+
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [editingZone, setEditingZone] = useState<{ zone?: Zone; locationId: string } | null>(null);
+  const [editingBin, setEditingBin] = useState<{ bin?: Bin; zoneId: string } | null>(null);
+
+  const fetchLocations = () => {
+    setLoading(true);
+    apiFetch<{ data: Location[] }>('/api/inventory/locations')
+      .then((res) => {
+        setLocations(res.data);
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     apiFetch<{ data: Location[] }>('/api/inventory/locations')
@@ -137,6 +162,18 @@ export default function TopographyView() {
             </div>
           </div>
         </div>
+          
+        {canEdit && (
+          <button
+            onClick={() => {
+              setEditingLocation(null);
+              setIsLocationModalOpen(true);
+            }}
+            className="btn btn-primary"
+          >
+            {tCommon('add')} {tCommon('location')}
+          </button>
+        )}
       </div>
 
       {/* Body */}
@@ -169,9 +206,12 @@ export default function TopographyView() {
                   }}
                 >
                   {/* Location Row */}
-                  <button
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={() => toggleLocation(loc.locationId)}
-                    className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#f8f9fa] transition-colors"
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLocation(loc.locationId); } }}
+                    className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
                   >
                     <span
                       className="material-symbols-outlined text-[18px] transition-transform"
@@ -204,6 +244,38 @@ export default function TopographyView() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
+                      {canEdit && (
+                        <div className="flex items-center gap-1.5 mr-2 pr-2 border-r border-[rgba(196,198,205,0.3)]">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingLocation(loc);
+                              setIsLocationModalOpen(true);
+                            }}
+                            className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                            title={tCommon('edit')}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(tCommon('confirmDelete'))) {
+                                apiFetch(`/api/inventory/locations/${loc.locationId}`, { method: 'DELETE' })
+                                  .then(() => {
+                                    toast.success(tCommon('deleted'));
+                                    fetchLocations();
+                                  })
+                                  .catch((err) => toast.error(err.message));
+                              }
+                            }}
+                            className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
+                            title={tCommon('delete')}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                      )}
                       <span
                         className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
                         style={{
@@ -234,7 +306,7 @@ export default function TopographyView() {
                         {loc.source}
                       </span>
                     </div>
-                  </button>
+                  </div>
 
                   {/* Zones */}
                   {isLocExpanded && (
@@ -245,9 +317,12 @@ export default function TopographyView() {
                         return (
                           <div key={zone.zoneId}>
                             {/* Zone Row */}
-                            <button
+                            <div
+                              role="button"
+                              tabIndex={0}
                               onClick={() => toggleZone(zone.zoneId)}
-                              className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors"
+                              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleZone(zone.zoneId); } }}
+                              className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer"
                               style={{ paddingLeft: 48 }}
                             >
                               <span
@@ -273,17 +348,49 @@ export default function TopographyView() {
                                   {zone.name}
                                 </span>
                               </div>
-                              <span
-                                className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
-                                style={{
-                                  background: 'rgba(4,22,39,0.06)',
-                                  color: '#041627',
-                                  fontFamily: 'Manrope, sans-serif',
-                                }}
-                              >
-                                {zone.bins.length.toLocaleString()} {zone.bins.length === 1 ? 'bin' : 'bins'}
-                              </span>
-                            </button>
+                              <div className="flex items-center gap-3 shrink-0">
+                                {canEdit && (
+                                  <div className="flex items-center gap-1 pr-2 mr-2 border-r border-[rgba(196,198,205,0.3)]">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingZone({ zone, locationId: loc.locationId });
+                                        setIsZoneModalOpen(true);
+                                      }}
+                                      className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm(tCommon('confirmDelete'))) {
+                                          apiFetch(`/api/inventory/zones/${zone.zoneId}`, { method: 'DELETE' })
+                                            .then(() => {
+                                              toast.success(tCommon('deleted'));
+                                              fetchLocations();
+                                            })
+                                            .catch((err) => toast.error(err.message));
+                                        }
+                                      }}
+                                      className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                                    </button>
+                                  </div>
+                                )}
+                                <span
+                                  className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0"
+                                  style={{
+                                    background: 'rgba(4,22,39,0.06)',
+                                    color: '#041627',
+                                    fontFamily: 'Manrope, sans-serif',
+                                  }}
+                                >
+                                  {zone.bins.length.toLocaleString()} {zone.bins.length === 1 ? 'bin' : 'bins'}
+                                </span>
+                              </div>
+                            </div>
 
                             {/* Bins Table */}
                             {isZoneExpanded && zone.bins.length > 0 && (
@@ -319,8 +426,9 @@ export default function TopographyView() {
                                         >
                                           Source
                                         </th>
-                                      </tr>
-                                    </thead>
+                                        {canEdit && <th className="w-10 px-4 py-2"></th>}
+                                        </tr>
+                                      </thead>
                                     <tbody>
                                       {zone.bins.map((bin, idx) => (
                                         <tr
@@ -377,24 +485,94 @@ export default function TopographyView() {
                                               {bin.source}
                                             </span>
                                           </td>
+                                          {canEdit && (
+                                            <td className="px-2 py-2">
+                                              <div className="flex items-center gap-1">
+                                                <button
+                                                  onClick={() => {
+                                                    setEditingBin({ bin, zoneId: zone.zoneId });
+                                                    setIsBinModalOpen(true);
+                                                  }}
+                                                  className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                                >
+                                                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                </button>
+                                                <button
+                                                  onClick={() => {
+                                                    if (confirm(tCommon('confirmDelete'))) {
+                                                      apiFetch(`/api/inventory/bins/${bin.binId}`, { method: 'DELETE' })
+                                                        .then(() => {
+                                                          toast.success(tCommon('deleted'));
+                                                          fetchLocations();
+                                                        })
+                                                        .catch((err) => toast.error(err.message));
+                                                    }
+                                                  }}
+                                                  className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                                >
+                                                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                </button>
+                                              </div>
+                                            </td>
+                                          )}
                                         </tr>
                                       ))}
                                     </tbody>
                                   </table>
+                                  {canEdit && (
+                                    <div className="px-4 py-2 bg-slate-50 border-t border-[rgba(196,198,205,0.2)]">
+                                      <button
+                                        onClick={() => {
+                                          setEditingBin({ zoneId: zone.zoneId });
+                                          setIsBinModalOpen(true);
+                                        }}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                                        <span>Add Bin to {zone.code}</span>
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             )}
 
                             {isZoneExpanded && zone.bins.length === 0 && (
                               <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
-                                <p className="text-sm italic" style={{ color: 'var(--text-muted)' }}>
+                                <p className="text-sm italic mb-2" style={{ color: 'var(--text-muted)' }}>
                                   No bins in this zone.
                                 </p>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingBin({ zoneId: zone.zoneId });
+                                      setIsBinModalOpen(true);
+                                    }}
+                                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                                    <span>Add Bin to {zone.code}</span>
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
                         );
                       })}
+                      {canEdit && (
+                        <div className="py-3 px-12 border-t border-[rgba(196,198,205,0.2)] bg-[#fdfdfd]">
+                          <button
+                            onClick={() => {
+                              setEditingZone({ locationId: loc.locationId });
+                              setIsZoneModalOpen(true);
+                            }}
+                            className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-2 transition-colors uppercase tracking-wide"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                            <span>Add Zone to {loc.code}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -403,6 +581,283 @@ export default function TopographyView() {
           </div>
         )}
       </div>
+      
+      {/* Modals */}
+      <LocationModal 
+        isOpen={isLocationModalOpen} 
+        onClose={() => setIsLocationModalOpen(false)} 
+        onSuccess={fetchLocations}
+        editingLocation={editingLocation}
+      />
+      <ZoneModal
+        isOpen={isZoneModalOpen}
+        onClose={() => setIsZoneModalOpen(false)}
+        onSuccess={fetchLocations}
+        initialData={editingZone}
+      />
+      <BinModal
+        isOpen={isBinModalOpen}
+        onClose={() => setIsBinModalOpen(false)}
+        onSuccess={fetchLocations}
+        initialData={editingBin}
+      />
     </div>
+  );
+}
+
+function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; editingLocation: Location | null }) {
+  const t = useTranslations('common');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ code: '', name: '', city: '', country: '' });
+
+  useEffect(() => {
+    if (editingLocation) {
+      setFormData({ 
+        code: editingLocation.code, 
+        name: editingLocation.name, 
+        city: editingLocation.city || '', 
+        country: editingLocation.country || '' 
+      });
+    } else {
+      setFormData({ code: '', name: '', city: '', country: '' });
+    }
+  }, [editingLocation, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const method = editingLocation ? 'PATCH' : 'POST';
+    const url = editingLocation ? `/api/inventory/locations/${editingLocation.locationId}` : '/api/inventory/locations';
+    
+    try {
+      await apiFetch(url, { method, body: JSON.stringify(formData) });
+      toast.success(editingLocation ? t('updated') : t('created'));
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SlideOver
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingLocation ? `${t('edit')} ${t('location')}` : `${t('add')} ${t('location')}`}
+    >
+      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{t('columns.code')}</label>
+          <input 
+            className="input" 
+            required 
+            value={formData.code} 
+            onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})}
+            placeholder="e.g. SYD01"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{t('columns.name')}</label>
+          <input 
+            className="input" 
+            required 
+            value={formData.name} 
+            onChange={e => setFormData({...formData, name: e.target.value})}
+            placeholder="e.g. Sydney Warehouse"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">City</label>
+          <input 
+            className="input" 
+            value={formData.city} 
+            onChange={e => setFormData({...formData, city: e.target.value})}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Country</label>
+          <input 
+            className="input" 
+            value={formData.country} 
+            onChange={e => setFormData({...formData, country: e.target.value})}
+          />
+        </div>
+        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
+          {loading ? '...' : editingLocation ? t('save') : t('create')}
+        </button>
+      </form>
+    </SlideOver>
+  );
+}
+
+function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; initialData: { zone?: Zone; locationId: string } | null }) {
+  const t = useTranslations('common');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ code: '', name: '' });
+
+  useEffect(() => {
+    if (initialData?.zone) {
+      setFormData({ code: initialData.zone.code, name: initialData.zone.name });
+    } else {
+      setFormData({ code: '', name: '' });
+    }
+  }, [initialData, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialData) return;
+    setLoading(true);
+    const method = initialData.zone ? 'PATCH' : 'POST';
+    const url = initialData.zone ? `/api/inventory/zones/${initialData.zone.zoneId}` : '/api/inventory/zones';
+    const body = initialData.zone ? formData : { ...formData, locationId: initialData.locationId };
+    
+    try {
+      await apiFetch(url, { method, body: JSON.stringify(body) });
+      toast.success(initialData.zone ? t('updated') : t('created'));
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SlideOver
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData?.zone ? `Edit Zone` : `Add Zone`}
+    >
+      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Zone Code</label>
+          <input 
+            className="input" 
+            required 
+            value={formData.code} 
+            onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})}
+            placeholder="e.g. BULK"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Zone Name</label>
+          <input 
+            className="input" 
+            required 
+            value={formData.name} 
+            onChange={e => setFormData({...formData, name: e.target.value})}
+            placeholder="e.g. Bulk Storage"
+          />
+        </div>
+        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
+          {loading ? '...' : initialData?.zone ? t('save') : t('create')}
+        </button>
+      </form>
+    </SlideOver>
+  );
+}
+
+function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; initialData: { bin?: Bin; zoneId: string } | null }) {
+  const t = useTranslations('common');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ binNumber: '', binType: '', isConsignment: false, isBonded: false, isUnavailable: false });
+
+  useEffect(() => {
+    if (initialData?.bin) {
+      setFormData({ 
+        binNumber: initialData.bin.binNumber, 
+        binType: initialData.bin.binType || '',
+        isConsignment: initialData.bin.isConsignment,
+        isBonded: initialData.bin.isBonded,
+        isUnavailable: initialData.bin.isUnavailable
+      });
+    } else {
+      setFormData({ binNumber: '', binType: '', isConsignment: false, isBonded: false, isUnavailable: false });
+    }
+  }, [initialData, isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!initialData) return;
+    setLoading(true);
+    const method = initialData.bin ? 'PATCH' : 'POST';
+    const url = initialData.bin ? `/api/inventory/bins/${initialData.bin.binId}` : '/api/inventory/bins';
+    const body = initialData.bin ? formData : { ...formData, zoneId: initialData.zoneId };
+    
+    try {
+      await apiFetch(url, { method, body: JSON.stringify(body) });
+      toast.success(initialData.bin ? t('updated') : t('created'));
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <SlideOver
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData?.bin ? `Edit Bin` : `Add Bin`}
+    >
+      <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Bin Number</label>
+          <input 
+            className="input" 
+            required 
+            value={formData.binNumber} 
+            onChange={e => setFormData({...formData, binNumber: e.target.value.toUpperCase()})}
+            placeholder="e.g. A-01-01"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Bin Type</label>
+          <input 
+            className="input" 
+            value={formData.binType} 
+            onChange={e => setFormData({...formData, binType: e.target.value})}
+            placeholder="e.g. Picking, Staging"
+          />
+        </div>
+        <div className="flex flex-col gap-3 pt-2">
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              checked={formData.isConsignment} 
+              onChange={e => setFormData({...formData, isConsignment: e.target.checked})}
+              className="checkbox-blue"
+            />
+            <span className="text-sm font-medium text-[#041627]">Consignment Stock</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              checked={formData.isBonded} 
+              onChange={e => setFormData({...formData, isBonded: e.target.checked})}
+              className="checkbox-blue"
+            />
+            <span className="text-sm font-medium text-[#041627]">Bonded Bin</span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input 
+              type="checkbox" 
+              checked={formData.isUnavailable} 
+              onChange={e => setFormData({...formData, isUnavailable: e.target.checked})}
+              className="checkbox-blue"
+            />
+            <span className="text-sm font-medium text-[#041627]">Unavailable (Locked)</span>
+          </label>
+        </div>
+        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
+          {loading ? '...' : initialData?.bin ? t('save') : t('create')}
+        </button>
+      </form>
+    </SlideOver>
   );
 }

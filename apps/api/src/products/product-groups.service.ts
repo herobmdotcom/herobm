@@ -1,17 +1,14 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { productGroups } from '../drizzle/modbm-core-schema';
-
-export interface CreateProductGroupDto {
-  groupCode: string;
-  name: string;
-  defaultRevenueAccountId?: string;
-  defaultExpenseAccountId?: string;
-}
-
-export type UpdateProductGroupDto = Partial<CreateProductGroupDto>;
+import { productGroups, products } from '../drizzle/modbm-core-schema';
+import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
 
 @Injectable()
 export class ProductGroupsService {
@@ -78,6 +75,19 @@ export class ProductGroupsService {
 
   async delete(id: string) {
     await this.findOne(id);
+
+    // Check for referencing products
+    const deps = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.productGroupId, id));
+
+    if (Number(deps[0].count) > 0) {
+      throw new ConflictException(
+        `Cannot delete product group '${id}' because it is currently assigned to one or more products.`,
+      );
+    }
+
     await this.db
       .delete(productGroups)
       .where(eq(productGroups.productGroupId, id));

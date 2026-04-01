@@ -257,11 +257,7 @@ export default function PickingSection({
           </div>
 
           <div style={{ marginTop: 16 }}>
-            {error && (
-              <div style={{ padding: '8px 12px', marginBottom: 12, borderRadius: 6, background: 'rgba(220, 38, 38, 0.1)', color: '#ef4444', fontSize: 13 }}>
-                {error}
-              </div>
-            )}
+
             {/* ------------------------------------------------------------------ */}
             {/* Create Shipment Form                                               */}
             {/* ------------------------------------------------------------------ */}

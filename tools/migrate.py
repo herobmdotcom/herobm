@@ -16,7 +16,8 @@ import os
 import glob
 
 MIGRATIONS_DIR = os.path.join("apps", "api", "migrations")
-CONTAINER = "postgres-custom"
+EXTENSIONS_FILE = os.path.join("apps", "api", "src", "drizzle", "extensions.sql")
+CONTAINER = os.environ.get("POSTGRES_CONTAINER", "postgres-custom")
 DB_USER = os.environ.get("POSTGRES_USER", "postgres")
 DB_NAME = os.environ.get("POSTGRES_DB", "custom_app")
 
@@ -74,6 +75,18 @@ def ensure_tracking_table() -> None:
     """)
 
 
+def apply_extensions(dry_run: bool) -> None:
+    """Always apply idempotent custom views, functions, and triggers."""
+    if not os.path.exists(EXTENSIONS_FILE):
+        return
+    if dry_run:
+        print(f"\n  [DRY RUN] Would apply extensions: {os.path.basename(EXTENSIONS_FILE)}")
+    else:
+        print(f"\n  Applying extensions: {os.path.basename(EXTENSIONS_FILE)} ...", end=" ", flush=True)
+        psql_file(EXTENSIONS_FILE)
+        print("OK")
+
+
 def get_applied() -> set[str]:
     """Return set of already-applied migration filenames."""
     raw = psql("SELECT filename FROM modbm_core.schema_migrations ORDER BY filename;", capture=True)
@@ -116,6 +129,7 @@ def main() -> None:
 
     if not pending:
         print("All migrations are up to date.")
+        apply_extensions(dry_run)
         return
 
     print(f"{len(pending)} pending migration(s):\n")
@@ -131,8 +145,10 @@ def main() -> None:
 
     if dry_run:
         print("\nDry run complete — no changes made.")
+        apply_extensions(dry_run)
     else:
         print(f"\nDone. {len(pending)} migration(s) applied.")
+        apply_extensions(dry_run)
 
 
 if __name__ == "__main__":

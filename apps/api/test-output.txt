@@ -1,0 +1,95 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts
+
+[Nest] 28620  - 03/31/2026, 4:52:58 PM   ERROR [ReportsService] Failed to compile report a58cabb2-08d6-4333-803e-e71f1ab88e56: Error: Command failed: "C:\Users\Marcel\AppData\Local\Microsoft\WinGet\Packages\Typst.Typst_Microsoft.WinGet.Source_8wekyb3d8bbwe\typst-x86_64-pc-windows-msvc\typst.exe" compile "C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\96446990-98cb-49f7-868f-b55a57163c5a.typ" "C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\96446990-98cb-49f7-868f-b55a57163c5a.pdf" --input data="96446990-98cb-49f7-868f-b55a57163c5a.json"
+error: file not found (searched at \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\data.json)
+  ΓöîΓöÇ \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\theme-external.typ:2:21
+  Γöé
+2 Γöé   let orgData = json("data.json")
+  Γöé                      ^^^^^^^^^^^
+
+help: error occurred in this call of function `conf`
+  ΓöîΓöÇ \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\96446990-98cb-49f7-868f-b55a57163c5a.typ:8:14
+  Γöé
+8 Γöé #show: doc => conf(title: "SALES QUOTE", doc)
+  Γöé               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+[Nest] 28620  - 03/31/2026, 4:52:58 PM   ERROR [ReportsService] Failed to compile report a58cabb2-08d6-4333-803e-e71f1ab88e56: Error: Command failed: "C:\Users\Marcel\AppData\Local\Microsoft\WinGet\Packages\Typst.Typst_Microsoft.WinGet.Source_8wekyb3d8bbwe\typst-x86_64-pc-windows-msvc\typst.exe" compile "C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\ae42d040-6a8c-4219-a62b-779e22fb41f3.typ" "C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\ae42d040-6a8c-4219-a62b-779e22fb41f3.pdf" --input data="ae42d040-6a8c-4219-a62b-779e22fb41f3.json"
+error: file not found (searched at \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\data.json)
+  ΓöîΓöÇ \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\theme-external.typ:2:21
+  Γöé
+2 Γöé   let orgData = json("data.json")
+  Γöé                      ^^^^^^^^^^^
+
+help: error occurred in this call of function `conf`
+  ΓöîΓöÇ \\?\C:\Users\Marcel\volz\modbm\modbm\apps\api\tmp\reports\ae42d040-6a8c-4219-a62b-779e22fb41f3.typ:8:14
+  Γöé
+8 Γöé #show: doc => conf(title: "SALES QUOTE", doc)
+  Γöé               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+FAIL test/reports.e2e-spec.ts
+  Dynamic Reports Engine (e2e)
+    ├ù POST /api/reports/hooks/:hookSlug/run ΓÇö handles sparse data (App Orders) without crashing Typst (241 ms)
+    ├ù POST /api/reports/hooks/:hookSlug/run ΓÇö handles rich data seamlessly (190 ms)
+    Template Management API
+      ΓêÜ POST /api/reports ΓÇö creates a new template (12 ms)
+      ΓêÜ GET /api/reports ΓÇö lists templates (6 ms)
+      ΓêÜ GET /api/reports/:id ΓÇö retrieves a specific template (8 ms)
+      ΓêÜ PATCH /api/reports/:id ΓÇö updates a template (10 ms)
+      ΓêÜ AuthZ: viewer cannot CREATE templates (403 Forbidden) (5 ms)
+      ΓêÜ AuthZ: viewer cannot UPDATE templates (403 Forbidden) (3 ms)
+      ΓêÜ AuthZ: viewer CAN READ templates (200 OK) (4 ms)
+      ΓêÜ DELETE /api/reports/:id ΓÇö removes the template (12 ms)
+      ΓêÜ AuthZ: viewer cannot DELETE templates (403 Forbidden) (3 ms)
+      ΓêÜ GET /api/reports/hooks ΓÇö lists available hooks (2 ms)
+
+  ΓùÅ Dynamic Reports Engine (e2e) ΓÇ║ POST /api/reports/hooks/:hookSlug/run ΓÇö handles sparse data (App Orders) without crashing Typst
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 500
+
+      78 |
+      79 |     // NestJS @Post routes default to 201 Created
+    > 80 |     expect(pdfRes.status).toBe(201);
+         |                           ^
+      81 |     expect(pdfRes.headers['content-type']).toBe('application/pdf');
+      82 |
+      83 |     const buf = pdfRes.body;
+
+      at Object.<anonymous> (reports.e2e-spec.ts:80:27)
+
+  ΓùÅ Dynamic Reports Engine (e2e) ΓÇ║ POST /api/reports/hooks/:hookSlug/run ΓÇö handles rich data seamlessly
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 201
+    Received: 500
+
+      138 |       .responseType('blob');
+      139 |
+    > 140 |     expect(pdfRes.status).toBe(201);
+          |                           ^
+      141 |     expect(pdfRes.headers['content-type']).toBe('application/pdf');
+      142 |
+      143 |     const buf = pdfRes.body;
+
+      at Object.<anonymous> (reports.e2e-spec.ts:140:27)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 10 passed, 12 total
+Snapshots:   0 total
+Time:        1.85 s, estimated 2 s
+Ran all test suites matching test/reports.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts

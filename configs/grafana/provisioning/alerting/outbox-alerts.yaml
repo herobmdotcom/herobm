@@ -1,0 +1,60 @@
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: default
+
+contactPoints:
+  - orgId: 1
+    name: default
+    receivers: []
+
+groups:
+  - orgId: 1
+    name: "Outbox Processing Alerts"
+    folder: "Backend Systems"
+    interval: 1m
+    rules:
+      - uid: "adv_064_outbox_stuck"
+        title: "Outbox Events Stuck pending > 15m (ADV-064)"
+        condition: A
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: Postgres
+            model:
+              refId: A
+              format: table
+              rawSql: >
+                SELECT NOW() AS "time",
+                       COUNT(*) AS "metric"
+                FROM modbm_core.outbox
+                WHERE "processedAt" IS NULL
+                  AND "createdAt" < NOW() - INTERVAL '15 minutes'
+                HAVING COUNT(*) > 0
+          - refId: B
+            queryType: ""
+            datasourceUid: __expr__
+            model:
+              refId: B
+              type: reduce
+              reducer: last
+              expression: A
+          - refId: C
+            queryType: ""
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: math
+              expression: $B > 0
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        annotations:
+          summary: "Stuck Outbox Events"
+          description: "There are events in the outbox that have not been marked as 'processedAt' for over 15 minutes. This requires manual inspection of BullMQ and the worker logs."
+        labels:
+          severity: critical

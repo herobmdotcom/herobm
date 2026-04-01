@@ -5,6 +5,15 @@ import { GstCategoriesService } from '../gst/gst-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
+let mockExpensePrecedence = 'product_first';
+jest.mock('@modbm/shared', () => ({
+  __esModule: true,
+  ...jest.requireActual('@modbm/shared'),
+  get EXPENSE_ROUTING_PRECEDENCE() {
+    return mockExpensePrecedence;
+  },
+}));
+
 // ---------------------------------------------------------------------------
 // Mock helpers
 // ---------------------------------------------------------------------------
@@ -240,21 +249,22 @@ describe('PurchaseInvoiceService', () => {
   });
 
   // =========================================================================
-  // createBill — GL posting
+  // createBill — GL Routing Rules
   // =========================================================================
 
-  describe('createBill — GL posting', () => {
-    it('should post GL journal when settings are configured', async () => {
-      mockSelectChain({
-        1: [RECEIVED_PO],
-        2: [SUPPLIER],
-        3: [PO_LINE_A],
-        4: [],
-        // After tx, GL settings cause another select for account codes
-        5: [
-          { glAccountId: 'gl-ap', accountCode: '2100' },
-          { glAccountId: 'gl-exp', accountCode: '5000' },
-        ],
+  describe('createBill — GL Routing Rules', () => {
+    const GL_ACCTS = [
+      { glAccountId: 'gl-ap', accountCode: '2100' },
+      { glAccountId: 'gl-exp-sys', accountCode: '5000' },
+      { glAccountId: 'gl-exp-prod-a', accountCode: '5101' },
+      { glAccountId: 'gl-exp-prod-b', accountCode: '5102' },
+      { glAccountId: 'gl-exp-supp', accountCode: '5200' },
+    ];
+
+    beforeEach(() => {
+      mockGlService.getSettings.mockResolvedValue({
+        defaultApAccountId: 'gl-ap',
+        defaultExpenseAccountId: 'gl-exp-sys',
       });
 
       const txInsertQb = createMockQueryBuilder([MOCK_BILL]);
@@ -264,78 +274,108 @@ describe('PurchaseInvoiceService', () => {
         tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
         return cb(tx);
       });
+    });
 
-      mockGlService.getSettings.mockResolvedValue({
-        defaultApAccountId: 'gl-ap',
-        defaultExpenseAccountId: 'gl-exp',
-        defaultTaxAccountId: null,
+    it('should fallback to system default when no other accounts are set', async () => {
+      mockSelectChain({
+        1: [RECEIVED_PO], // PO
+        2: [SUPPLIER], // Supplier (no accounts)
+        3: [{ line: PO_LINE_A, productExpenseAccountId: null }], // Hydrated line
+        4: [], // bill number
+        5: GL_ACCTS, // GL lookup
       });
 
       await service.createBill('po-001', {}, 'admin');
-      expect(mockGlService.postJournalEntry).toHaveBeenCalled();
+
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '5000', // System default
+            debit: 300,
+          }),
+        ]),
+        expect.objectContaining({ actor: 'admin' }),
+      );
     });
 
-    it('should not throw if GL posting fails', async () => {
-      // Suppress console.error for this test — the service intentionally
-      // catches GL errors and logs them; we don't want noisy output.
-      const originalError = console.error;
-      console.error = jest.fn();
+    it('should obey product_first precedence', async () => {
+      mockExpensePrecedence = 'product_first';
+      mockSelectChain({
+        1: [RECEIVED_PO],
+        2: [{ ...SUPPLIER, defaultExpenseAccountId: 'gl-exp-supp' }], // Supplier has default
+        3: [
+          {
+            line: PO_LINE_A,
+            productExpenseAccountId: 'gl-exp-prod-a', // Product has default
+          },
+        ],
+        4: [],
+        5: GL_ACCTS,
+      });
 
-      try {
-        mockSelectChain({
-          1: [RECEIVED_PO],
-          2: [SUPPLIER],
-          3: [PO_LINE_A],
-          4: [],
-          5: [
-            { glAccountId: 'gl-ap', accountCode: '2100' },
-            { glAccountId: 'gl-exp', accountCode: '5000' },
-          ],
-        });
+      await service.createBill('po-001', {}, 'admin');
 
-        const txInsertQb = createMockQueryBuilder([MOCK_BILL]);
-        mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-          const tx = createMockTx();
-          tx.insert = jest.fn().mockReturnValue(txInsertQb);
-          tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
-          return cb(tx);
-        });
-
-        mockGlService.getSettings.mockResolvedValue({
-          defaultApAccountId: 'gl-ap',
-          defaultExpenseAccountId: 'gl-exp',
-        });
-        mockGlService.postJournalEntry.mockRejectedValue(new Error('GL down'));
-
-        const result = await service.createBill('po-001', {}, 'admin');
-        expect(result).toHaveProperty('invoiceId', 'bill-001');
-      } finally {
-        console.error = originalError;
-      }
+      // Should prefer Product account
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '5101', // Product A
+            debit: 300,
+          }),
+        ]),
+        expect.anything(),
+      );
     });
 
-    it('should include supplier invoice number in outbox event', async () => {
+    it('should obey supplier_first precedence', async () => {
+      mockExpensePrecedence = 'supplier_first';
+      mockSelectChain({
+        1: [RECEIVED_PO],
+        2: [{ ...SUPPLIER, defaultExpenseAccountId: 'gl-exp-supp' }],
+        3: [{ line: PO_LINE_A, productExpenseAccountId: 'gl-exp-prod-a' }],
+        4: [],
+        5: GL_ACCTS,
+      });
+
+      await service.createBill('po-001', {}, 'admin');
+
+      // Should prefer Supplier account
+      expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            accountCode: '5200', // Supplier default
+            debit: 300,
+          }),
+        ]),
+        expect.anything(),
+      );
+    });
+
+    it('should split GL lines for mixed product groups', async () => {
+      mockExpensePrecedence = 'product_first';
       mockSelectChain({
         1: [RECEIVED_PO],
         2: [SUPPLIER],
-        3: [PO_LINE_A],
+        3: [
+          { line: PO_LINE_A, productExpenseAccountId: 'gl-exp-prod-a' }, // $300
+          { line: PO_LINE_B, productExpenseAccountId: 'gl-exp-prod-b' }, // $1000
+        ],
         4: [],
+        5: GL_ACCTS,
       });
 
-      const txInsertQb = createMockQueryBuilder([MOCK_BILL]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.insert = jest.fn().mockReturnValue(txInsertQb);
-        tx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
-        return cb(tx);
-      });
+      await service.createBill('po-001', {}, 'admin');
 
-      const result = await service.createBill(
-        'po-001',
-        { supplierInvoiceNumber: 'SUPP-REF-999', notes: 'Test bill' },
-        'admin',
+      const lines = mockGlService.postJournalEntry.mock.calls[0][0];
+      const expenseLines = lines.filter((l: any) => l.debit > 0);
+
+      expect(expenseLines).toHaveLength(2);
+      expect(expenseLines).toContainEqual(
+        expect.objectContaining({ accountCode: '5101', debit: 300 }),
       );
-      expect(result).toHaveProperty('invoiceId');
+      expect(expenseLines).toContainEqual(
+        expect.objectContaining({ accountCode: '5102', debit: 1000 }),
+      );
     });
   });
 

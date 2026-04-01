@@ -30,6 +30,11 @@ describe('Inventory Cycle (e2e)', () => {
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       })
       .expect(201);
+    if (loginRes.status !== 201) {
+      throw new Error(
+        `${'loginRes'} login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`,
+      );
+    }
     adminToken = loginRes.body.access_token;
 
     // Fetch dependencies
@@ -190,9 +195,6 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ notes: 'Full Invoice for E2E' });
 
-    if (invRes.status !== 201) {
-      console.error('Invoicing failed:', invRes.body);
-    }
     expect(invRes.status).toBe(201);
 
     const productRes = await request(app.getHttpServer())
@@ -233,9 +235,6 @@ describe('Inventory Cycle (e2e)', () => {
         ],
       });
 
-    if (retRes.status !== 201) {
-      console.error('Create return failed:', retRes.body);
-    }
     expect(retRes.status).toBe(201);
     const returnId = retRes.body.returnId;
 

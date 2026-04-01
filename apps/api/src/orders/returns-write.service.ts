@@ -38,35 +38,16 @@ import {
 } from '@modbm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
 import { validateReturnQuantity } from './returns-math.utils';
+import {
+  CreateReturnDto,
+  UpdateReturnDto,
+  AddReturnLineDto,
+  UpdateReturnLineDto,
+} from './dto';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
 
-interface CreateReturnDto {
-  notes?: string;
-  lines: Array<{
-    salesOrderLineId: string;
-    quantityReturned: string;
-    reason?: string;
-    returnFee?: string;
-  }>;
-}
-
-interface UpdateReturnDto {
-  notes?: string;
-}
-
-interface AddReturnLineDto {
-  salesOrderLineId: string;
-  quantityReturned: string;
-  reason?: string;
-  returnFee?: string;
-}
-
-interface UpdateReturnLineDto {
-  quantityReturned?: string;
-  reason?: string;
-  returnFee?: string;
-}
+// DTOs imported from ./dto
 
 @Injectable()
 export class ReturnsWriteService {

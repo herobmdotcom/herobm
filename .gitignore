@@ -65,3 +65,8 @@ tsc.log
 e2e-*-output.txt
 tmp_*.txt
 query_erpnext.js
+
+# Environment Profiles
+.active_profile
+.env.*
+

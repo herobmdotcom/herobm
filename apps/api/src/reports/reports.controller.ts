@@ -8,6 +8,7 @@ import {
   Res,
   Req,
   Body,
+  Delete,
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -54,17 +55,31 @@ export class ReportsController {
     res.send(pdfBuffer);
   }
 
-  @Get()
-  @CasbinAction('read')
-  async getAllReports() {
-    const data = await this.reportsService.getReports();
-    return { data };
-  }
-
   @Get('hooks')
   @CasbinAction('read')
   async getHooks() {
     const data = await this.reportsService.getHooksList();
+    return { data };
+  }
+
+  @Get('hook-assignments')
+  @CasbinAction('read')
+  async getAssignments() {
+    const data = await this.reportsService.getAssignments();
+    return { data };
+  }
+
+  @Patch('hook-assignments/:hook')
+  @CasbinAction('write')
+  async updateAssignment(
+    @Param('hook') hook: string,
+    @Body() body: { reportId: string; contextSlug: string },
+  ) {
+    const data = await this.reportsService.updateAssignment(
+      hook,
+      body.reportId,
+      body.contextSlug,
+    );
     return { data };
   }
 
@@ -73,6 +88,13 @@ export class ReportsController {
   async getRandomId(@Param('slug') slug: string) {
     const id = await this.reportsService.getRandomIdForContext(slug);
     return { data: { id } };
+  }
+
+  @Get()
+  @CasbinAction('read')
+  async getAllReports() {
+    const data = await this.reportsService.getReports();
+    return { data };
   }
 
   @Get(':id')
@@ -92,6 +114,7 @@ export class ReportsController {
       description?: string;
       template: string;
       outputNamePattern?: string;
+      contexts?: string[];
     },
   ) {
     const data = await this.reportsService.createReport(body);
@@ -109,9 +132,17 @@ export class ReportsController {
       description?: string;
       template?: string;
       outputNamePattern?: string;
+      contexts?: string[];
     },
   ) {
     const data = await this.reportsService.updateReport(id, body);
+    return { data };
+  }
+
+  @Delete(':id')
+  @CasbinAction('write')
+  async deleteReport(@Param('id') id: string) {
+    const data = await this.reportsService.deleteReport(id);
     return { data };
   }
 

@@ -12,7 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
-import { AddSupplierDto } from './dto';
+import { AddSupplierDto, CreateProductDto, UpdateProductDto } from './dto';
 import {
   CasbinGuard,
   CasbinResource,
@@ -45,13 +45,17 @@ export class ProductsController {
 
   @Post()
   @CasbinAction('write')
-  create(@Body() dto: any, @AuthUser() user: JwtUser) {
+  create(@Body() dto: CreateProductDto, @AuthUser() user: JwtUser) {
     return this.productsWriteService.create(dto, user.username);
   }
 
   @Patch(':id')
   @CasbinAction('write')
-  update(@Param('id') id: string, @Body() dto: any, @AuthUser() user: JwtUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.productsWriteService.update(id, dto, user.username);
   }
 
@@ -89,5 +93,25 @@ export class ProductsController {
       vendorId,
       user.username,
     );
+  }
+
+  @Post(':id/uoms')
+  @CasbinAction('write')
+  addUom(
+    @Param('id') productId: string,
+    @Body() dto: { uomCode: string; ratio: string; barcode?: string },
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.addUom(productId, dto, user.username);
+  }
+
+  @Delete(':id/uoms/:uomId')
+  @CasbinAction('write')
+  removeUom(
+    @Param('id') productId: string,
+    @Param('uomId') uomId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.removeUom(productId, uomId, user.username);
   }
 }

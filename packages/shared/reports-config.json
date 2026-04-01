@@ -1,0 +1,72 @@
+{
+  "reports": [
+    {
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "slug": "sales-order-quote",
+      "name": "Sales Quote",
+      "filename": "sales-quote.typ",
+      "output_name_pattern": "Quote-${quoteNumber}.pdf",
+      "hook": "sales-order-quote",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000002",
+      "slug": "picking-slip-template",
+      "name": "Picking Slip",
+      "filename": "picking-slip.typ",
+      "output_name_pattern": "PickingSlip-${orderNumber}.pdf",
+      "hook": "picking-slip",
+      "context": "picking-slip",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000003",
+      "slug": "sales-invoice-template",
+      "name": "Sales Invoice",
+      "filename": "sales-invoice.typ",
+      "output_name_pattern": "Invoice-${orderNumber}.pdf",
+      "hook": "sales-invoice",
+      "context": "sales-invoice",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000004",
+      "slug": "sales-return-credit",
+      "name": "Sales Credit Note",
+      "filename": "sales-credit.typ",
+      "output_name_pattern": "Credit-${returnMeta.returnNumber}.pdf",
+      "hook": "sales-return-credit",
+      "context": "sales-return",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000005",
+      "slug": "pro-forma-invoice-template",
+      "name": "Pro-forma Invoice",
+      "filename": "pro-forma-invoice.typ",
+      "output_name_pattern": "ProForma-${orderNumber}.pdf",
+      "hook": "pro-forma-invoice",
+      "context": "sales-order",
+      "type": "hook"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000010",
+      "slug": "theme-external",
+      "name": "External Reports Theme",
+      "filename": "theme-external.typ",
+      "output_name_pattern": "Theme-External.pdf",
+      "context": "theme",
+      "type": "internal"
+    },
+    {
+      "id": "a0000000-0000-0000-0000-000000000011",
+      "slug": "theme-internal",
+      "name": "Internal Reports Theme",
+      "filename": "theme-internal.typ",
+      "output_name_pattern": "Theme-Internal.pdf",
+      "context": "theme",
+      "type": "internal"
+    }
+  ]
+}

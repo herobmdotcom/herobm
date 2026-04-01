@@ -26,6 +26,11 @@ describe('Products (e2e)', () => {
         username: 'admin',
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       });
+    if (adminRes.status !== 201) {
+      throw new Error(
+        `${'adminRes'} login failed: ${adminRes.status} ${JSON.stringify(adminRes.body)}`,
+      );
+    }
     adminToken = adminRes.body.access_token;
 
     // Login as viewer
@@ -35,6 +40,11 @@ describe('Products (e2e)', () => {
         username: 'viewer',
         password: process.env.DEV_VIEWER_PASSWORD || 'password',
       });
+    if (viewerRes.status !== 201) {
+      throw new Error(
+        `${'viewerRes'} login failed: ${viewerRes.status} ${JSON.stringify(viewerRes.body)}`,
+      );
+    }
     viewerToken = viewerRes.body.access_token;
   });
 

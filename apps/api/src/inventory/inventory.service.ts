@@ -15,18 +15,22 @@ import {
   locations,
   salesOrders,
   salesOrderShipments,
+  salesOrderReturns,
   accounts,
   purchaseOrders,
   purchaseOrderReceptions,
   suppliers,
+  productUoms,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { UomService } from './uom.service';
 
 @Injectable()
 export class InventoryService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private configService: ConfigService,
+    private uomService: UomService,
   ) {}
 
   // =========================================================================
@@ -135,6 +139,7 @@ export class InventoryService {
         productNumber: products.productNumber,
         productName: products.name,
         actualQuantity: binContents.actualQuantity,
+        baseUom: products.baseUom,
       })
       .from(binContents)
       .innerJoin(bins, eq(binContents.binId, bins.binId))
@@ -162,7 +167,22 @@ export class InventoryService {
       .limit(limit)
       .offset(offset);
 
-    return { data: rows, page, limit };
+    const productIds = Array.from(new Set(rows.map((r) => r.productId)));
+
+    let allUoms: any[] = [];
+    if (productIds.length > 0) {
+      allUoms = await this.db
+        .select()
+        .from(productUoms)
+        .where(inArray(productUoms.productId, productIds));
+    }
+
+    const rowsWithUoms = rows.map((row) => ({
+      ...row,
+      productUoms: allUoms.filter((u) => u.productId === row.productId),
+    }));
+
+    return { data: rowsWithUoms, page, limit };
   }
 
   /**
@@ -333,7 +353,7 @@ export class InventoryService {
         if (o) {
           relatedDocument = {
             number: o.orderNumber,
-            link: `/sales-orders/${o.salesOrderId}`,
+            link: `/sales-orders/${o.salesOrderId}#picking-section`,
           };
           relatedParty = o.customerName
             ? {
@@ -365,7 +385,7 @@ export class InventoryService {
         if (s) {
           relatedDocument = {
             number: s.orderNumber,
-            link: `/sales-orders/${s.salesOrderId}`,
+            link: `/sales-orders/${s.salesOrderId}#shipments-section`,
           };
           relatedParty = s.customerName
             ? {
@@ -410,6 +430,38 @@ export class InventoryService {
                 name: r.supplierName,
                 number: r.supplierNumber || '',
                 link: `/suppliers/${r.supplierId}`,
+              }
+            : null;
+        }
+      } else if (entry.sourceType === 'SO_RETURN') {
+        const [ret] = await this.db
+          .select({
+            returnNumber: salesOrderReturns.returnNumber,
+            salesOrderId: salesOrders.salesOrderId,
+            orderNumber: salesOrders.orderNumber,
+            accountId: accounts.accountId,
+            customerName: accounts.name,
+            customerNumber: accounts.accountNumber,
+          })
+          .from(salesOrderReturns)
+          .innerJoin(
+            salesOrders,
+            eq(salesOrders.salesOrderId, salesOrderReturns.salesOrderId),
+          )
+          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .where(eq(salesOrderReturns.returnId, entry.sourceId))
+          .limit(1);
+
+        if (ret) {
+          relatedDocument = {
+            number: ret.orderNumber,
+            link: `/sales-orders/${ret.salesOrderId}#returns-section`,
+          };
+          relatedParty = ret.customerName
+            ? {
+                name: ret.customerName,
+                number: ret.customerNumber || '',
+                link: `/accounts/${ret.accountId}`,
               }
             : null;
         }
@@ -463,12 +515,24 @@ export class InventoryService {
         productId: string;
         binId: string;
         quantity: number;
+        uomCode?: string;
       }[];
     },
   ) {
     if (params.lines.length === 0) return;
 
-    // 1. Create Header
+    // 1. Prepare absolute base quantities for all input lines
+    const processedLines = [];
+    for (const line of params.lines) {
+      const absoluteQty = await this.uomService.calculateAbsoluteBaseQuantity(
+        line.productId,
+        [{ quantity: line.quantity, uomCode: line.uomCode }],
+        tx,
+      );
+      processedLines.push({ ...line, absoluteQuantity: absoluteQty });
+    }
+
+    // 2. Create Header
     const [entry] = await tx
       .insert(inventoryEntries)
       .values({
@@ -497,7 +561,7 @@ export class InventoryService {
     );
 
     // 2. Create Ledger Lines
-    const ledgerPayload = params.lines.map((l) => {
+    const ledgerPayload = processedLines.map((l) => {
       const b = binMap.get(l.binId);
       if (!b) throw new Error(`Bin ${l.binId} not found in database`);
       return {
@@ -506,25 +570,25 @@ export class InventoryService {
         binId: l.binId,
         locationId: b.locationId,
         zoneId: b.zoneId,
-        quantity: l.quantity.toString(),
+        quantity: l.absoluteQuantity.toString(),
       };
     });
     await tx.insert(inventoryLedger).values(ledgerPayload);
 
-    // 3. Update Cache (bin_contents)
-    for (const line of params.lines) {
+    // 4. Update Cache (bin_contents)
+    for (const line of processedLines) {
       await tx
         .insert(binContents)
         .values({
           binId: line.binId,
           productId: line.productId,
-          actualQuantity: line.quantity.toString(),
+          actualQuantity: line.absoluteQuantity.toString(),
           modifiedOn: new Date(),
         })
         .onConflictDoUpdate({
           target: [binContents.binId, binContents.productId],
           set: {
-            actualQuantity: sql`${binContents.actualQuantity} + ${line.quantity.toString()}`,
+            actualQuantity: sql`${binContents.actualQuantity} + ${line.absoluteQuantity.toString()}`,
             modifiedOn: new Date(),
           },
         });

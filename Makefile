@@ -1,25 +1,31 @@
 .PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local verify-local
 
-# Load .env into Make variables and export to subprocesses (dbt, etc.)
--include .env
-export
-export PYTHONUTF8=1
-
-# --- Platform-specific Compose override ---
-# Promtail needs a platform-specific config for container log collection.
+# Environment Profile Resolution
+# 1. Command Line explicit (PROFILE=staging)
+# 2. Directory context file (.active_profile)
+# 3. Fallback default (.env)
 ifeq ($(OS),Windows_NT)
+  ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
   COMPOSE_OVERRIDE = -f docker-compose.windows.yml
   DBT = $(CURDIR)/.venv/Scripts/dbt
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
   INIT_ENV_CMD = powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
 else
+  ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE = -f docker-compose.linux.yml
   DBT = $(CURDIR)/.venv/bin/dbt
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
   INIT_ENV_CMD = bash scripts/init-env.sh
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
 endif
+
+ENV_FILE := $(if $(PROFILE),.env.$(PROFILE),$(if $(ACTIVE_PROFILE),.env.$(ACTIVE_PROFILE),.env))
+-include $(ENV_FILE)
+export
+export PYTHONUTF8=1
+export ENV_FILE
+
 COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 DBT_DIR = pipelines/abm_transform
 
@@ -112,12 +118,21 @@ nuke:
 # import ABM data via ELT, then seed application data (users, inventory).
 # Prerequisites: 'make up' running, .env populated with all passwords.
 
-init: build-api migrate elt seed
+# (init target defined further down alongside init-no-extract)
 
 # Setup from scratch: configure .env, start containers, then full init.
 setup: init-env up init
 
 setup-no-extract: init-env up init-no-extract
+
+# Create the active profile database and base schemas on a running container
+init-db:
+	@echo "Initializing database: $(POSTGRES_DB)"
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);" || true
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -f /docker-entrypoint-initdb.d/init-schemas.sql
+
+# Fully populate a new profile: creates DB, migrates structure, runs ELT, and seeds.
+setup-profile: init-db init
 
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
@@ -272,6 +287,9 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_hooks_frontend.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
@@ -299,5 +317,6 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
-
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
 verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform

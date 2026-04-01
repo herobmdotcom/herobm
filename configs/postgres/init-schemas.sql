@@ -8,8 +8,7 @@
 -- The 'public' schema exists by default (Drizzle ORM target).
 -- ============================================
 
--- Phase 1 ELT landing schema (dlt raw loads from ABM)
-CREATE SCHEMA IF NOT EXISTS raw_evaluationau;
+-- Phase 1 ELT landing schema (created dynamically by dlt into raw_abm)
 
 -- Application schema (orders, users, events — managed by tools/migrate.py)
 CREATE SCHEMA IF NOT EXISTS modbm_core;

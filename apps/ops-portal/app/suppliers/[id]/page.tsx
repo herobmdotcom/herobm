@@ -4,6 +4,7 @@ import { useState, useEffect, use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   apiFetch,
   apiMutate,
@@ -14,6 +15,7 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
+import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
@@ -52,6 +54,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
+  useDocumentTitle(supplier ? (supplier.name ? `${supplier.vendorNumber} - ${supplier.name}` : supplier.vendorNumber) : null);
+
   // Editable field state
   const [editName, setEditName] = useState('');
   const [editEmail, setEditEmail] = useState('');
@@ -61,7 +65,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editCountry, setEditCountry] = useState('');
   const [editPaymentTerms, setEditPaymentTerms] = useState('');
   const [editNotes, setEditNotes] = useState('');
-  const [editCurrency, setEditCurrency] = useState('EUR');
+  const [editCurrency, setEditCurrency] = useState(HOME_CURRENCY.code);
   const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
 
   const loadSupplier = async (showSpinner = true) => {
@@ -77,7 +81,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditCountry(data.address1Country || '');
       setEditPaymentTerms(data.paymentTerms || '');
       setEditNotes(data.notes || '');
-      setEditCurrency(data.currencyCode || 'EUR');
+      setEditCurrency(data.currencyCode || HOME_CURRENCY.code);
       setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
@@ -367,9 +371,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     }}
                     disabled={!isEditable || saving}
                   >
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
+                    {CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

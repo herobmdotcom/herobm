@@ -303,7 +303,7 @@ describe('CoaLoaderService', () => {
       // The settings insert is the last one
       const settingsInsert = mock.insertCalls[mock.insertCalls.length - 1];
       expect(settingsInsert.values.fiscalYearStartMonth).toBe(7);
-      expect(settingsInsert.values.baseCurrency).toBe('AUD');
+      expect(settingsInsert.values.baseCurrency).toBe('EUR');
     });
   });
 

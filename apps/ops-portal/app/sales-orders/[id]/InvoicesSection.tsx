@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
 import type { OrderDetail, GstCategory, SalesInvoice } from './types';
@@ -188,22 +188,9 @@ export default function InvoicesSection({
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                {inv.erpnextJournalId && (
-                                    <span
-                                        style={{
-                                            display: 'inline-block', padding: '2px 8px', borderRadius: 4,
-                                            fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
-                                            background: '#e0f2fe', color: '#0369a1', border: '1px solid #bae6fd'
-                                        }}
-                                        title="ERPNext General Ledger Entry"
-                                    >
-                                        GL: {inv.erpnextJournalId}
-                                    </span>
-                                )}
                             </div>
                             <button
                                 className="btn btn-secondary btn-sm"
-                                style={{ fontSize: 11, padding: '2px 8px' }}
                                 onClick={async () => {
                                     try {
                                         const { apiFetchBlob } = await import('@/lib/api');
@@ -217,13 +204,12 @@ export default function InvoicesSection({
                                     }
                                 }}
                             >
-                                <span className="material-symbols-outlined text-[14px]">print</span>
                                 {tSales('buttons.printInvoice')}
                             </button>
                         </div>
                         
                         {inv.lines && inv.lines.length > 0 && (() => {
-                            const cc = order.currencyCode || 'EUR';
+                            const cc = order.currencyCode || HOME_CURRENCY.code;
                             const sortedLines = [...inv.lines].sort((a, b) => {
                                 const aIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === a.salesOrderLineId);
                                 const bIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === b.salesOrderLineId);

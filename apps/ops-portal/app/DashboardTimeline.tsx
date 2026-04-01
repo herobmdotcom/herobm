@@ -1,0 +1,160 @@
+'use client';
+
+import React from 'react';
+import { useTranslations } from 'next-intl';
+import { apiFetch } from '@/lib/api';
+import { EventType } from './TimelineSettingsSlideOver';
+import Link from 'next/link';
+
+interface TimelineEvent {
+  eventId: string;
+  eventType: string;
+  entityId: string;
+  entityDisplay: string;
+  actor: string | null;
+  timestamp: string;
+}
+
+interface Props {
+  enabledEvents: EventType[];
+}
+
+const EVENT_ICONS: Record<string, { icon: string, color: string, bg: string, path: string }> = {
+  so_created: { icon: 'add_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  so_confirmed: { icon: 'check_circle', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  so_shipped: { icon: 'local_shipping', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  so_invoiced: { icon: 'receipt_long', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', path: '/sales-orders' },
+  
+  po_created: { icon: 'add_shopping_cart', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  po_ordered: { icon: 'send', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  po_received: { icon: 'inventory_2', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
+  
+  account_created: { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/accounts' },
+  supplier_created: { icon: 'domain_add', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/suppliers' },
+};
+
+function getEventStyle(eventType: string) {
+  return EVENT_ICONS[eventType] || { icon: 'event', color: 'var(--text-primary)', bg: 'var(--bg-hover)', path: '#' };
+}
+
+function formatRelativeTime(dateString: string) {
+  const d = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  
+  if (diffSecs < 60) return 'just now';
+  const diffMins = Math.floor(diffSecs / 60);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  return `${diffDays}d ago`;
+}
+
+export default function DashboardTimeline({ enabledEvents }: Props) {
+  const t = useTranslations('dashboard.timeline');
+  const tCommon = useTranslations('common');
+
+  const [data, setData] = React.useState<{ events: TimelineEvent[] } | null>(null);
+  const [error, setError] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function fetchTimeline() {
+      try {
+        const queryParams = new URLSearchParams({ types: enabledEvents.join(',') }).toString();
+        const result = await apiFetch<{ events: TimelineEvent[] }>(`/api/dashboard/timeline?${queryParams}`);
+        if (mounted) {
+          setData(result);
+          setError(false);
+        }
+      } catch (err) {
+        if (mounted) setError(true);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    }
+
+    // Initial fetch
+    fetchTimeline();
+
+    // Polling interval
+    const interval = setInterval(fetchTimeline, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [enabledEvents]);
+
+  if (isLoading && !data) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin w-6 h-6 border-2 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-4 text-red-500 rounded-lg" style={{ background: 'var(--bg-card)' }}>Failed to load timeline.</div>;
+  }
+
+  const events = data?.events || [];
+
+  if (events.length === 0) {
+    return (
+      <div className="p-8 text-center text-[14px] opacity-60 rounded-2xl border flex flex-col items-center justify-center gap-2" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+        <span className="material-symbols-outlined text-[32px] opacity-50">history</span>
+        {t('empty')}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {events.map((evt: TimelineEvent) => {
+        const style = getEventStyle(evt.eventType);
+        const relativeTime = formatRelativeTime(evt.timestamp);
+        
+        return (
+          <Link 
+            key={evt.eventId} 
+            href={`${style.path}/${evt.entityId}`}
+            className="group flex gap-4 p-4 rounded-xl transition-all hover:scale-[1.01] hover:shadow-md border"
+            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
+          >
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: style.bg, color: style.color }}
+            >
+              <span className="material-symbols-outlined text-[18px]">{style.icon}</span>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-4">
+                <div className="font-bold text-[14px] truncate group-hover:text-accent transition-colors" style={{ color: 'var(--text-primary)' }}>
+                  {evt.entityDisplay}
+                </div>
+                <div className="text-[12px] opacity-50 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                  {relativeTime}
+                </div>
+              </div>
+              
+              <div className="text-[13px] opacity-80 mt-1" style={{ color: 'var(--text-muted)' }}>
+                {t(`types.${evt.eventType}` as any)}
+                {evt.actor && (
+                  <span className="opacity-70 ml-1">
+                    {tCommon('by')} {evt.actor}
+                  </span>
+                )}
+              </div>
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}

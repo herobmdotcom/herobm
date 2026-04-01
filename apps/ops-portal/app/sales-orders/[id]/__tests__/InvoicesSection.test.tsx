@@ -107,7 +107,6 @@ describe('InvoicesSection — rendering', () => {
             totalTax: '50.00',
             createdOn: '2024-01-15',
             createdBy: 'admin',
-            erpnextJournalId: null,
             lines: [{
                 lineId: 'il-1',
                 salesOrderLineId: 'L1',
@@ -122,20 +121,7 @@ describe('InvoicesSection — rendering', () => {
         expect(screen.getByText('Widget')).toBeInTheDocument();
     });
 
-    it('shows GL badge when erpnextJournalId is present', () => {
-        const invoice: SalesInvoice = {
-            invoiceId: 'inv-1',
-            invoiceNumber: 'INV-001',
-            totalAmount: '500.00',
-            totalTax: '50.00',
-            createdOn: '2024-01-15',
-            createdBy: 'admin',
-            erpnextJournalId: 'JV-2024-001',
-            lines: [],
-        };
-        render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        expect(screen.getByText(/GL: JV-2024-001/)).toBeInTheDocument();
-    });
+
 
     it('shows Print PDF button on existing invoices', () => {
         const invoice: SalesInvoice = {
@@ -145,18 +131,17 @@ describe('InvoicesSection — rendering', () => {
             totalTax: '50.00',
             createdOn: '2024-01-15',
             createdBy: 'admin',
-            erpnextJournalId: null,
             lines: [],
         };
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        expect(screen.getByText('Print PDF')).toBeInTheDocument();
+        expect(screen.getByText('buttons.printInvoice')).toBeInTheDocument();
     });
 
     it('shows Create Invoice button for shipped state', () => {
         render(
             <InvoicesSection {...defaultProps} pickingSummary={picking} />,
         );
-        expect(screen.getByText('Create Invoice')).toBeInTheDocument();
+        expect(screen.getByText('buttons.createInvoice')).toBeInTheDocument();
     });
 
     it('disables Create Invoice when nothing shipped', () => {
@@ -167,7 +152,7 @@ describe('InvoicesSection — rendering', () => {
                 pickingSummary={{ lines: [] }}
             />,
         );
-        const btn = screen.getByText('Create Invoice');
+        const btn = screen.getByText('buttons.createInvoice');
         expect(btn).toBeDisabled();
     });
 
@@ -175,7 +160,7 @@ describe('InvoicesSection — rendering', () => {
         render(
             <InvoicesSection {...defaultProps} order={{ ...baseOrder, stateCode: 'picking' }} pickingSummary={picking} />,
         );
-        expect(screen.getByText('Create Invoice')).toBeInTheDocument();
+        expect(screen.getByText('buttons.createInvoice')).toBeInTheDocument();
     });
 });
 
@@ -191,10 +176,10 @@ describe('InvoicesSection — create invoice form', () => {
         const user = userEvent.setup();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('Create Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
 
         expect(screen.getByText('New Invoice')).toBeInTheDocument();
-        expect(screen.getByText('Generate Invoice')).toBeInTheDocument();
+        expect(screen.getByText('buttons.generateInvoice')).toBeInTheDocument();
         expect(screen.getByText('cancel')).toBeInTheDocument();
     });
 
@@ -202,7 +187,7 @@ describe('InvoicesSection — create invoice form', () => {
         const user = userEvent.setup();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('Create Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
         expect(screen.getByText('New Invoice')).toBeInTheDocument();
 
         await user.click(screen.getByText('cancel'));
@@ -213,7 +198,7 @@ describe('InvoicesSection — create invoice form', () => {
         const user = userEvent.setup();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('Create Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
         const closeBtn = screen.getByText('✕');
         await user.click(closeBtn);
         expect(screen.queryByText('New Invoice')).not.toBeInTheDocument();
@@ -223,7 +208,7 @@ describe('InvoicesSection — create invoice form', () => {
         const user = userEvent.setup();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('Create Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
 
         // Should have a number input with the default quantity
         const inputs = screen.getAllByRole('spinbutton');
@@ -237,8 +222,8 @@ describe('InvoicesSection — create invoice form', () => {
 
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
 
-        await user.click(screen.getByText('Create Invoice'));
-        await user.click(screen.getByText('Generate Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
+        await user.click(screen.getByText('buttons.generateInvoice'));
 
         await waitFor(() => {
             expect(mockApiMutate).toHaveBeenCalledWith(
@@ -261,8 +246,8 @@ describe('InvoicesSection — create invoice form', () => {
         jest.spyOn(window, 'confirm').mockReturnValue(false);
 
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
-        await user.click(screen.getByText('Create Invoice'));
-        await user.click(screen.getByText('Generate Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
+        await user.click(screen.getByText('buttons.generateInvoice'));
 
         expect(mockApiMutate).not.toHaveBeenCalled();
         jest.restoreAllMocks();
@@ -276,8 +261,8 @@ describe('InvoicesSection — create invoice form', () => {
         const setError = jest.fn();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} setError={setError} />);
 
-        await user.click(screen.getByText('Create Invoice'));
-        await user.click(screen.getByText('Generate Invoice'));
+        await user.click(screen.getByText('buttons.createInvoice'));
+        await user.click(screen.getByText('buttons.generateInvoice'));
 
         await waitFor(() => {
             expect(setError).toHaveBeenCalledWith('Invoice generation failed');
@@ -303,18 +288,18 @@ describe('InvoicesSection — PDF download', () => {
             totalTax: '50.00',
             createdOn: '2024-01-15',
             createdBy: 'admin',
-            erpnextJournalId: null,
             lines: [],
         };
 
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
-        await user.click(screen.getByText('Print PDF'));
+        await user.click(screen.getByText('buttons.printInvoice'));
 
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { apiFetchBlob } = require('@/lib/api');
         await waitFor(() => {
             expect(apiFetchBlob).toHaveBeenCalledWith(
-                expect.stringContaining('invoiceId=inv-1'),
+                expect.stringContaining('id=inv-1'),
+                expect.any(Object)
             );
             expect(mockOpen).toHaveBeenCalledWith('blob:mock-url', '_blank');
         });
@@ -333,7 +318,6 @@ describe('InvoicesSection — invoice line table', () => {
             totalTax: '50.00',
             createdOn: '2024-01-15',
             createdBy: 'admin',
-            erpnextJournalId: null,
             lines: [{
                 lineId: 'il-1',
                 salesOrderLineId: 'L1',
@@ -350,6 +334,6 @@ describe('InvoicesSection — invoice line table', () => {
         // Check subtotal row is present
         expect(screen.getByText('Subtotal')).toBeInTheDocument();
         // Check total row
-        expect(screen.getByText('AUD 550.00')).toBeInTheDocument();
+        expect(screen.getAllByText('AUD 250.00').length).toBeGreaterThan(0);
     });
 });

@@ -21,6 +21,7 @@ import ReturnsSection from './ReturnsSection';
 import type { GstCategory } from './types';
 import { getGstLabel } from './types';
 import { useOrder } from './useOrder';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import {
     RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
@@ -28,7 +29,9 @@ import {
     RETURN_LIFECYCLE,
     isBackTransition as sharedIsBackTransition,
     cap,
+    calculateUomPriceAdjustment
 } from '@modbm/shared';
+import type { ProductUom } from '@modbm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
@@ -82,7 +85,7 @@ function ReturnStateBadge({ state }: { state: ValidState }) {
 
 
 
-export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SalesOrderPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
     const t = useTranslations();
@@ -120,6 +123,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         return () => clearTimeout(timer);
     }, [o.loading, o.order]);
 
+    useDocumentTitle(o.order ? (o.order.name ? `${o.order.orderNumber} - ${o.order.name}` : o.order.orderNumber) : null);
+
     if (o.loading) {
         return (
             <>
@@ -156,7 +161,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         isOrderDetailsEditable, isOrderLinesEditable,
         allowedTransitions, subtotal, totalTax,
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
-        updateLine, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
+        updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
     } = o;
 
@@ -239,19 +244,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 }
             >
 
-            {error && (
-                <div
-                    className="mb-4 px-4 py-3 rounded-lg text-sm"
-                    style={{
-                        background: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: '#f87171',
-                    }}
-                >
-                    {error}
-                    <button className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</button>
-                </div>
-            )}
+
 
             {order.stateCode === 'archived' && (
                 <div
@@ -294,6 +287,24 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         }}
                                     >
                                         {tSales('buttons.createQuote')}
+                                    </button>
+                                )}
+                                {(order.stateCode === 'confirmed' || order.stateCode === 'picking') && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={async () => {
+                                            try {
+                                                const { apiFetchBlob } = await import('@/lib/api');
+                                                const blob = await apiFetchBlob(`/api/reports/hooks/pro-forma-invoice/run?id=${id}&context=sales-order`, { method: 'POST' });
+                                                const url = URL.createObjectURL(blob);
+                                                window.open(url, '_blank');
+                                            } catch (err) {
+                                                reportError(err, 'OrderDetailPage:generateProForma');
+                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                            }
+                                        }}
+                                    >
+                                        {tSales('buttons.proFormaInvoice')}
                                     </button>
                                 )}
                                 <button
@@ -489,6 +500,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     <th>{tSales('columns.product')}</th>
                                     <th>{tSales('columns.description')}</th>
                                     <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.qty')}</th>
+                                    <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.uom')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
                                     <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.gst')}</th>
@@ -547,6 +559,42 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     />
                                                 </td>
                                                 <td style={{ textAlign: 'right' }}>
+                                                    {(() => {
+                                                        const uoms: ProductUom[] = line.productUoms || [];
+                                                        const defaultUom = line.baseUom || 'EA';
+                                                        const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+                                                        
+                                                        return (
+                                                            <select
+                                                                className="input"
+                                                                style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                                                                value={line.unitOfMeasure || defaultUom}
+                                                                onChange={(e) => {
+                                                                    const newVal = e.target.value;
+                                                                    const oldVal = line.unitOfMeasure || defaultUom;
+                                                                    if (newVal !== oldVal) {
+                                                                        const oldO = selectOptions.find(o => o.uomCode === oldVal);
+                                                                        const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+
+                                                                        const newO = selectOptions.find(o => o.uomCode === newVal);
+                                                                        const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+
+                                                                        const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                                                                        updateLineFields(line.salesOrderLineId, {
+                                                                            unitOfMeasure: newVal,
+                                                                            pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
+                                                                        });
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {selectOptions.map(o => (
+                                                                    <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
+                                                                ))}
+                                                            </select>
+                                                        );
+                                                    })()}
+                                                </td>
+                                                <td style={{ textAlign: 'right' }}>
                                                     <input
                                                         className="input"
                                                         type="number"
@@ -589,6 +637,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     {line.quantity}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                    {line.unitOfMeasure || line.baseUom || 'EA'}
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                                     {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -606,7 +657,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                         updateLine(line.salesOrderLineId, 'gstCategoryId', e.target.value);
                                                     }}
                                                 >
-                                                    {gstCategories.map((c) => (
+                                                    {gstCategories.map((c: GstCategory) => (
                                                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
                                                             {getGstLabel(c)}
                                                         </option>
@@ -616,7 +667,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         ) : (
                                             <td style={{ textAlign: 'right', fontSize: 12 }}>
                                                 {(() => {
-                                                    const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+                                                    const c = gstCategories.find((c: GstCategory) => c.gstCategoryId === line.gstCategoryId);
                                                     if (c) return getGstLabel(c);
                                                     // ABM legacy: derive effective rate from tax / amount
                                                     const amt = parseFloat(line.amount || '0');
@@ -723,12 +774,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {order.lines.map((line) => {
+                                    {order.lines.map((line: any) => {
                                         const lineInventory = inventoryData.filter(
-                                            (inv) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
+                                            (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                         );
                                         const totalAvail = lineInventory.reduce(
-                                            (sum, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
+                                            (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                         );
                                         const orderedQty = parseFloat(line.quantity || '0');
                                         const canFulfil = totalAvail >= orderedQty;
@@ -751,320 +802,255 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                     <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>
                                                         {tSales('virtualFulfillmentBypass')}
                                                     </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <span style={{ color: 'var(--color-success, #059669)', fontWeight: 700, fontSize: 11 }}>✓</span>
-                                                    </td>
+                                                    <td style={{ textAlign: 'center' }}>✅</td>
                                                 </tr>
                                             );
                                         }
 
-                                        if (lineInventory.length === 0) {
-                                            return (
-                                                <tr key={line.salesOrderLineId}>
-                                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                                        {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                                    </td>
-                                                    <td>{line.productDescription || '—'}</td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                                                    <td style={{ padding: '4px' }}>
-                                                        <select
-                                                            value={line.fulfillmentLocationId || ''}
-                                                            onChange={(e) => updateLine(line.salesOrderLineId, 'fulfillmentLocationId', e.target.value)}
-                                                            className="form-control"
-                                                            style={{ width: '100%', fontSize: 12, padding: '2px 6px' }}
-                                                            disabled={!isOrderLinesEditable}
-                                                        >
-                                                            <option value="" disabled>Select...</option>
-                                                            {locations.map((loc) => (
-                                                                <option key={loc.locationId} value={loc.locationId}>{loc.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </td>
-                                                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                                        {tSales('noInventoryData')}
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⚠</span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        }
-
-                                        return lineInventory.map((inv, idx) => {
-                                            const avail = parseFloat(inv.quantityAvailable || '0');
-                                            return (
-                                                <tr key={`${line.salesOrderLineId}-${inv.inventoryLevelId}`}>
-                                                    {idx === 0 && (
-                                                        <>
-                                                            <td style={{ color: 'var(--text-muted)' }} rowSpan={lineInventory.length}>{line.lineNumber}</td>
-                                                            <td style={{ fontWeight: 600, fontSize: 12 }} rowSpan={lineInventory.length}>
-                                                                {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                                            </td>
-                                                            <td rowSpan={lineInventory.length}>{line.productDescription || '—'}</td>
-                                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }} rowSpan={lineInventory.length}>
-                                                                {line.quantity}
-                                                            </td>
-                                                            <td rowSpan={lineInventory.length} style={{ padding: '4px' }}>
-                                                                <select
-                                                                    value={line.fulfillmentLocationId || ''}
-                                                                    onChange={(e) => updateLine(line.salesOrderLineId, 'fulfillmentLocationId', e.target.value)}
-                                                                    className="form-control"
-                                                                    style={{ width: '100%', fontSize: 12, padding: '2px 6px' }}
-                                                                    disabled={!isOrderLinesEditable}
-                                                                >
-                                                                    <option value="" disabled>Select...</option>
-                                                                    {locations.map((loc) => (
-                                                                        <option key={loc.locationId} value={loc.locationId}>{loc.name}</option>
-                                                                    ))}
-                                                                </select>
-                                                            </td>
-                                                        </>
-                                                    )}
-                                                    <td style={{ textAlign: 'right', fontSize: 12 }}>{inv.locationName || inv.locationNo}</td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {parseFloat(inv.quantityOnHand || '0')}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {parseFloat(inv.quantityCommitted || '0')}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {parseFloat(inv.quantityOnOrder || '0')}
-                                                    </td>
-                                                    <td style={{
-                                                        textAlign: 'right',
-                                                        fontVariantNumeric: 'tabular-nums',
-                                                        fontWeight: 600,
-                                                        color: avail > 0 ? '#4ade80' : '#ef4444',
-                                                    }}>
-                                                        {avail}
-                                                    </td>
-                                                    {idx === 0 && (
-                                                        <td style={{ textAlign: 'center' }} rowSpan={lineInventory.length}>
-                                                            <span style={{
-                                                                color: canFulfil ? '#4ade80' : '#ef4444',
-                                                                fontWeight: 700,
-                                                                fontSize: 11,
-                                                            }}>
-                                                                {canFulfil ? '✓' : '✗'}
-                                                            </span>
+                                        return (
+                                            <>
+                                                {lineInventory.length === 0 ? (
+                                                    <tr key={line.salesOrderLineId}>
+                                                        <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                                                        <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber}</td>
+                                                        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.productDescription}</td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
+                                                        <td colSpan={6} style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 12, fontStyle: 'italic' }}>
+                                                            {tSales('noInventoryFound')}
                                                         </td>
-                                                    )}
-                                                </tr>
-                                            );
-                                        });
+                                                        <td style={{ textAlign: 'center' }}>❌</td>
+                                                    </tr>
+                                                ) : lineInventory.map((inv: any, idx: number) => (
+                                                    <tr key={`${line.salesOrderLineId}-${inv.locationId}`}>
+                                                        {idx === 0 && (
+                                                            <>
+                                                                <td rowSpan={lineInventory.length} style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                                                                <td rowSpan={lineInventory.length} style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber}</td>
+                                                                <td rowSpan={lineInventory.length} style={{ fontSize: 12 }}>{line.productDescription}</td>
+                                                                <td rowSpan={lineInventory.length} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{line.quantity}</td>
+                                                                <td rowSpan={lineInventory.length}>
+                                                                    {(() => {
+                                                                        const req = parseFloat(line.quantity || '0');
+                                                                        const localInv = lineInventory.find((i: any) => i.locationId === order.fulfillmentLocationId);
+                                                                        const localAvail = localInv ? parseFloat(localInv.quantityAvailable || '0') : 0;
+                                                                        
+                                                                        if (localAvail >= req) {
+                                                                            return <span className="text-emerald-600 font-medium flex items-center gap-1">✅ {tSales('availabilityStatus.local')}</span>;
+                                                                        } else if (totalAvail >= req) {
+                                                                            return <span className="text-amber-600 font-medium flex items-center gap-1">🚚 {tSales('availabilityStatus.others')}</span>;
+                                                                        } else {
+                                                                            return <span className="text-rose-600 font-medium flex items-center gap-1">❌ {tSales('availabilityStatus.shortage')}</span>;
+                                                                        }
+                                                                    })()}
+                                                                </td>
+                                                            </>
+                                                        )}
+                                                        <td style={{ textAlign: 'right', fontSize: 12, color: inv.locationId === order.fulfillmentLocationId ? 'var(--accent)' : 'var(--text-muted)', fontWeight: inv.locationId === order.fulfillmentLocationId ? 600 : 400 }}>
+                                                            {inv.locationName}
+                                                        </td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{parseFloat(inv.quantityOnHand || '0')}</td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--danger)' }}>{parseFloat(inv.quantityCommitted || '0')}</td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--success)' }}>{parseFloat(inv.quantityOnOrder || '0')}</td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: parseFloat(inv.quantityAvailable || '0') > 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
+                                                            {parseFloat(inv.quantityAvailable || '0')}
+                                                        </td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            {parseFloat(inv.quantityAvailable || '0') >= parseFloat(line.quantity || '0') ? '✅' : '⚠️'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </>
+                                        );
                                     })}
-                                    {order.lines.length === 0 && (
-                                        <tr>
-                                            <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                                                {tSales('noLineItemsShort')}
-                                            </td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         )
                     ) : (
                         /* Backorders tab */
-                        <table className="table-lines">
-                            <thead>
-                                <tr>
-                                    <th>{tSales('columns.product')}</th>
-                                    <th style={{ width: 120, textAlign: 'right' }}>Missing Qty</th>
-                                    <th>Status</th>
-                                    <th>PO</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {!order.backorders || order.backorders.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                                            No backorders recorded for this sales order.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    order.backorders.map((bo: any) => (
-                                        <tr key={bo.productId}>
-                                            <td style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-                                                {bo.productNumber || bo.productId?.substring(0, 8) || '—'}
-                                            </td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                {bo.quantity}
-                                            </td>
-                                            <td>
-                                                <span className={`badge ${bo.stateCode === 'pending_supply' ? 'badge-draft' : 'badge-confirmed'}`}>
-                                                    {bo.stateCode === 'pending_supply' ? 'Pending Supply' : bo.stateCode === 'awaiting_receipt' ? 'Awaiting' : bo.stateCode}
-                                                </span>
-                                            </td>
-                                            <td style={{ fontSize: 13 }}>
-                                                {bo.purchaseOrderId ? (
-                                                    <span style={{ cursor: 'pointer', textDecoration: 'underline', color: 'var(--text-main)' }} onClick={() => router.push(`/purchase-orders/${bo.purchaseOrderId}`)}>
-                                                        {bo.purchaseOrderNumber || bo.purchaseOrderId.substring(0, 8)}
-                                                    </span>
-                                                ) : '—'}
-                                            </td>
+                        <div className="card">
+                            <h3 className="section-heading">Associated Orders (Backorders)</h3>
+                            {order.backorders && order.backorders.length > 0 ? (
+                                <table className="table-lines">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Order #</th>
+                                            <th>Name</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
                                         </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                    </thead>
+                                    <tbody>
+                                        {order.backorders.map((bo) => (
+                                            <tr key={bo.salesOrderId || bo.productNumber} className="cursor-pointer hover:bg-gray-50" onClick={() => bo.salesOrderId && router.push(`/sales-orders/${bo.salesOrderId}`)}>
+                                                <td>{bo.salesOrderId === order.parentId ? <span className="badge badge-confirm">Parent</span> : <span className="badge badge-quoted">Child</span>}</td>
+                                                <td className="font-bold">{bo.orderNumber || '—'}</td>
+                                                <td>{bo.productNumber || bo.purchaseOrderNumber || '—'}</td>
+                                                <td><StateBadge state={bo.stateCode as ValidState} /></td>
+                                                <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="text-center py-8 text-muted">No associated parent or child backorders found.</p>
+                            )}
+                        </div>
                     )}
                 </div>
 
-                {/* Picking section */}
-                {order.stateCode !== 'legacy' && (
-                    <div id="picking-section">
-                    <PickingSection
-                        orderId={order.salesOrderId || id}
-                        orderState={order.stateCode}
-                        orderLines={order.lines}
-                        onOrderUpdated={(autoTransitions?: any[]) => loadOrder(autoTransitions, false)}
-                        onVisibilityChange={onPickingVisibilityChange}
-                        fulfillmentLocationId={order.fulfillmentLocationId || undefined}
-                    />
-                    </div>
-                )}
+                {/* Tracking / Picking / Activity sections */}
+                <PickingSection 
+                    orderId={id}
+                    orderState={order.stateCode}
+                    orderLines={order.lines}
+                    onOrderUpdated={(auto) => loadOrder(auto as any[])}
+                    onVisibilityChange={onPickingVisibilityChange} 
+                />
 
-                {/* Invoices section */}
-                {sections.invoices.show && (
-                    <InvoicesSection
-                        orderId={id}
-                        order={order}
-                        invoices={invoices}
-                        gstCategories={gstCategories}
-                        pickingSummary={pickingSummary}
-                        setError={setError}
-                        loadInvoices={loadInvoices}
-                        loadOrder={loadOrder}
-                    />
-                )}
+                <InvoicesSection 
+                    orderId={id}
+                    order={order} 
+                    invoices={invoices} 
+                    gstCategories={gstCategories}
+                    pickingSummary={pickingSummary}
+                    setError={setError}
+                    loadInvoices={loadInvoices}
+                    loadOrder={loadOrder}
+                />
 
-                {/* Returns section */}
-                {sections.returns.show && (
-                    <div id="returns-section">
-                    <ReturnsSection
-                        orderId={id}
-                        order={order}
-                        returns={returns}
-                        returnsLoading={returnsLoading}
-                        showCreateReturn={showCreateReturn}
-                        setShowCreateReturn={setShowCreateReturn}
-                        setError={setError}
-                        loadReturns={loadReturns}
-                        loadOrder={loadOrder}
-                        pickingSummary={pickingSummary}
-                        gstCategories={gstCategories}
-                    />
-                    </div>
-                )}
+                <ReturnsSection 
+                    orderId={id}
+                    order={order} 
+                    returns={returns} 
+                    returnsLoading={returnsLoading}
+                    showCreateReturn={showCreateReturn}
+                    setShowCreateReturn={setShowCreateReturn} 
+                    setError={setError}
+                    loadReturns={loadReturns}
+                    loadOrder={loadOrder}
+                    pickingSummary={pickingSummary}
+                    gstCategories={gstCategories}
+                    locations={locations}
+                />
 
-
-                {/* Audit timeline — only for app orders */}
-                {sections.activity.show && (
-                    <div id="activity-section" className="card">
-                        <ActivityTimeline events={order.events || []} />
-                    </div>
-                )}
-
-                {/* Archive / Unarchive — bottom right */}
-                {(order.stateCode === 'invoiced' || order.stateCode === 'cancelled') && (
-                    <div className="flex justify-end mt-4">
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ color: '#ef4444', borderColor: '#ef4444' }}
-                            onClick={archiveOrder}
-                            disabled={saving}
-                        >
-                            {tSales('buttons.archive')}
-                        </button>
-                    </div>
-                )}
-                {order.stateCode === 'archived' && (
-                    <div className="flex justify-end mt-4">
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={unarchiveOrder}
-                            disabled={saving}
-                        >
-                            {tSales('buttons.unarchive')}
-                        </button>
-                    </div>
-                )}
+                <div id="activity-section" className="card">
+                    <ActivityTimeline events={order.events} />
+                </div>
             </div>
+
             </DetailsLayout>
 
-            {/* Gap Generation Modal */}
+            {/* Gap/Backorder Modal */}
             {gapModalOpen && (
-                <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 pt-10">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="px-6 py-4 border-b border-gray-200 dark:border-zinc-800 flex items-center justify-between bg-white dark:bg-zinc-900">
-                            <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
-                                <span className="material-symbols-outlined">inventory_2</span>
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
-                                Inventory Shortage Detected
-                            </h3>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <button className="text-gray-400 hover:text-gray-600 cursor-pointer" onClick={() => setGapModalOpen(false)}>✕</button>
-                        </div>
+                <div className="modal-overlay">
+                    <div className="modal-content max-w-2xl">
+                        <h2 className="text-xl font-bold mb-4">Stock Shortage Detected</h2>
+                        <p className="mb-4">The following items have insufficient stock at <strong>{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:</p>
                         
-                        <div className="p-6 overflow-y-auto flex-1">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-                                The following items are short in stock to fulfill this order:
-                            </p>
-                            
-                            <table className="table-lines w-full mb-4">
-                                <thead>
+                        <div className="overflow-auto max-h-60 mb-6 border rounded">
+                            <table className="w-full text-sm">
+                                <thead className="bg-gray-50 sticky top-0">
                                     <tr>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                                        <th>Product</th>
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                                        <th style={{ textAlign: 'right' }}>Missing Qty</th>
+                                        <th className="p-2 text-left">Product</th>
+                                        <th className="p-2 text-right">Required</th>
+                                        <th className="p-2 text-right">Available</th>
+                                        <th className="p-2 text-right">Gap</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {pendingGaps.map((g, i) => {
-                                        const line = order.lines.find(l => l.salesOrderLineId === g.salesOrderLineId);
-                                        return (
-                                            <tr key={i}>
-                                                <td className="font-medium text-sm">
-                                                    {line?.productNumber || line?.productDescription || g.productId.substring(0,8)}
-                                                </td>
-                                                <td style={{ textAlign: 'right', fontWeight: 600, color: '#ef4444' }}>
-                                                    {g.shortage}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                    {pendingGaps.map((gap, i) => (
+                                        <tr key={i} className="border-t">
+                                            <td className="p-2 font-medium">{gap.productNumber}</td>
+                                            <td className="p-2 text-right">{gap.required}</td>
+                                            <td className="p-2 text-right">{gap.available}</td>
+                                            <td className="p-2 text-right text-rose-600 font-bold">{gap.gap}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </table>
-                            
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg flex items-start gap-3 mt-4">
-                                {/* eslint-disable-next-line i18next/no-literal-string */}
-                                <span className="material-symbols-outlined text-blue-500">info</span>
-                                <div className="text-sm text-blue-800 dark:text-blue-300">
-                                    {/* eslint-disable-next-line i18next/no-literal-string */}
-                                    <p>
-                                        Backordering will commit the open quantity for reserving, and create draft POs to fill the reservations.
-                                    </p>
-                                </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 italic text-sm text-blue-800">
+                                <p><strong>Option 1: Backorder</strong> - Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.</p>
+                            </div>
+                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 italic text-sm text-gray-700">
+                                <p><strong>Option 2: Manual</strong> - Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.</p>
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-200 dark:border-zinc-800 flex items-center justify-end gap-3 bg-gray-50 dark:bg-zinc-800/50">
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <button className="btn btn-secondary" disabled={saving} onClick={confirmWithoutBackorders}>
-                                Proceed Without Backorders
+                        <div className="flex justify-end gap-3 mt-8">
+                            <button className="btn btn-secondary" onClick={() => setGapModalOpen(false)}>
+                                Cancel
                             </button>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <button className="btn btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600" disabled={saving} onClick={confirmWithBackorders}>
-                                Generate Backorders
+                            <button className="btn btn-secondary" onClick={confirmWithoutBackorders}>
+                                Confirm Anyway (No Backorder)
+                            </button>
+                            <button className="btn btn-primary" onClick={confirmWithBackorders}>
+                                Split & Create Backorder
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <style jsx>{`
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                    backdrop-filter: blur(2px);
+                }
+                .modal-content {
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+                    width: 90%;
+                }
+                .table-lines {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 1.5rem;
+                }
+                .table-lines th {
+                    text-align: left;
+                    padding: 10px 12px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    color: var(--text-muted);
+                    border-bottom: 2px solid var(--border);
+                }
+                .table-lines td {
+                    padding: 12px;
+                    font-size: 13px;
+                    border-bottom: 1px solid var(--border);
+                    vertical-align: middle;
+                }
+                .section-heading {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-size: 1rem;
+                    font-weight: 700;
+                    color: var(--text-primary);
+                    margin-bottom: 1.5rem;
+                    letter-spacing: -0.01em;
+                }
+                .badge-draft { background: #f3f4f6; color: #374151; }
+                .badge-quoted { background: #e0f2fe; color: #0369a1; }
+                .badge-confirm { background: #ecfdf5; color: #047857; }
+            `}</style>
         </>
     );
 }

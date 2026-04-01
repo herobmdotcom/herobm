@@ -1,0 +1,906 @@
+'use client';
+
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
+import { useState, useEffect, useMemo } from 'react';
+import { apiFetch, apiMutate } from '@/lib/api';
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
+import PageNav from '@/components/shared/PageNav';
+import { HOME_CURRENCY, getCurrency } from '@/lib/currency';
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+interface GstCategory {
+  gstCategoryId: string;
+  code: string;
+  title: string;
+  type: string;
+  rate: string;
+  isDefault: boolean;
+}
+
+interface UomEntry {
+  uomCode: string;
+  description: string;
+}
+
+interface ExchangeRate {
+  exchangeRateId: string;
+  currencyCode: string;
+  currencyName: string;
+  buyRate: string;
+  sellRate: string;
+  effectiveDate: string;
+  updatedOn: string;
+}
+
+const GST_TYPES = [
+  { value: 'gst_applies', label: 'GST Applies' },
+  { value: 'zero_rated', label: 'Zero Rated' },
+  { value: 'exempt', label: 'Exempt' },
+  { value: 'not_relevant', label: 'Not Relevant' },
+];
+
+// ── Main Component ───────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  useDocumentTitle('General Settings');
+  const router = useRouter();
+
+  // ── GST state ──────────────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<GstCategory[]>([]);
+  const [gstLoading, setGstLoading] = useState(true);
+  const [gstEditingId, setGstEditingId] = useState<string | null>(null);
+  const [gstForm, setGstForm] = useState<any>({});
+  const [gstCreating, setGstCreating] = useState(false);
+
+  // ── UOM state ──────────────────────────────────────────────────────────────
+  const [uoms, setUoms] = useState<UomEntry[]>([]);
+  const [uomLoading, setUomLoading] = useState(true);
+  const [uomEditingCode, setUomEditingCode] = useState<string | null>(null);
+  const [uomForm, setUomForm] = useState<any>({});
+  const [uomCreating, setUomCreating] = useState(false);
+
+  // ── Exchange Rates state ───────────────────────────────────────────────────
+  const [rates, setRates] = useState<ExchangeRate[]>([]);
+  const [rateLoading, setRateLoading] = useState(true);
+  const [rateEditingId, setRateEditingId] = useState<string | null>(null);
+  const [rateForm, setRateForm] = useState<any>({});
+  const [rateCreating, setRateCreating] = useState(false);
+
+  // ── Organization state ─────────────────────────────────────────────────────
+  const [orgForm, setOrgForm] = useState<any>({});
+  const [orgLoading, setOrgLoading] = useState(true);
+  const [orgSaving, setOrgSaving] = useState(false);
+  const [isOrgDirty, setIsOrgDirty] = useState(false);
+
+  // ── GL Settings state ────────────────────────────────────────────────────────
+  const [glSettings, setGlSettings] = useState<any>(null);
+  const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [glLoading, setGlLoading] = useState(true);
+
+  // ── Organization data ──────────────────────────────────────────────────────
+
+  const loadOrg = async () => {
+    try {
+      setOrgLoading(true);
+      const data = await apiFetch<any>('/api/settings/organization');
+      setOrgForm(data);
+      setIsOrgDirty(false);
+    } catch (err: any) {
+      toast.error('Failed to load company information: ' + err.message);
+    } finally {
+      setOrgLoading(false);
+    }
+  };
+
+  // Auto-save effect for organization
+  useEffect(() => {
+    if (!isOrgDirty || orgSaving || !orgForm.name) return;
+
+    const handler = setTimeout(() => {
+      orgSave();
+    }, 2000); // 2s debounce for platform settings
+
+    return () => clearTimeout(handler);
+  }, [orgForm, isOrgDirty, orgSaving]);
+
+  const updateOrgField = (field: string, value: any) => {
+    setOrgForm((prev: any) => {
+      if (prev[field] === value) return prev;
+      setIsOrgDirty(true);
+      return { ...prev, [field]: value };
+    });
+  };
+
+  const orgSave = async () => {
+    if (!orgForm.name || !isOrgDirty) return;
+    
+    // Clear dirty flag immediately to prevent retry loops on validation failure
+    setIsOrgDirty(false);
+    
+    try {
+      setOrgSaving(true);
+      
+      // Clean up payload: normalize empty strings to null for optional fields (email, website, etc)
+      const payload = { ...orgForm };
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === '') payload[key] = null;
+      });
+
+      await apiMutate('/api/settings/organization', 'PATCH', payload);
+    } catch (err: any) {
+      toast.error(err.message, { id: 'org-save-error' }); // Use fixed ID to prevent "stream" of toasts
+    } finally {
+      setOrgSaving(false);
+    }
+  };
+
+  // ── GL Settings data ───────────────────────────────────────────────────────
+  
+  const loadGl = async () => {
+    try {
+      setGlLoading(true);
+      const [settingsRes, accountsRes] = await Promise.all([
+        apiFetch<any>('/api/gl/settings'),
+        apiFetch<any[]>('/api/gl/accounts')
+      ]);
+      setGlSettings(settingsRes || {});
+      setGlAccounts(accountsRes || []);
+    } catch (err: any) {
+      toast.error('Failed to load GL Settings: ' + err.message);
+    } finally {
+      setGlLoading(false);
+    }
+  };
+
+  // ── GST data ───────────────────────────────────────────────────────────────
+
+  const loadGst = async () => {
+    try {
+      setGstLoading(true);
+      const data = await apiFetch<GstCategory[]>('/api/gst-categories');
+      setCategories(data.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+    } catch (err: any) {
+      toast.error('Failed to load GST categories: ' + err.message);
+    } finally {
+      setGstLoading(false);
+    }
+  };
+
+  const gstEdit = (cat: GstCategory) => { setGstEditingId(cat.gstCategoryId); setGstForm({ ...cat }); setGstCreating(false); };
+  const gstCreate = () => { setGstCreating(true); setGstEditingId(null); setGstForm({ code: '', title: '', type: 'gst_applies', rate: '0', isDefault: false }); };
+  const gstCancel = () => { setGstEditingId(null); setGstCreating(false); };
+
+  const gstSave = async () => {
+    if (!gstForm.code || !gstForm.title) { toast.error('Code and Title are required'); return; }
+    try {
+      const payload = { code: gstForm.code, title: gstForm.title, type: gstForm.type, rate: gstForm.rate, isDefault: gstForm.isDefault === true || gstForm.isDefault === 'true' };
+      if (gstEditingId) {
+        await apiMutate(`/api/gst-categories/${gstEditingId}`, 'PATCH', payload);
+        toast.success('GST category updated');
+      } else {
+        await apiMutate('/api/gst-categories', 'POST', payload);
+        toast.success('GST category created');
+      }
+      gstCancel(); loadGst();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const gstDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this GST category?')) return;
+    try { await apiMutate(`/api/gst-categories/${id}`, 'DELETE'); toast.success('GST category deleted'); loadGst(); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
+  // ── UOM data ───────────────────────────────────────────────────────────────
+
+  const loadUom = async () => {
+    try {
+      setUomLoading(true);
+      const data = await apiFetch<UomEntry[]>('/api/settings/uom-dictionary');
+      setUoms(data);
+    } catch (err: any) {
+      toast.error('Failed to load UOM dictionary: ' + err.message);
+    } finally {
+      setUomLoading(false);
+    }
+  };
+
+  const uomEdit = (u: UomEntry) => { setUomEditingCode(u.uomCode); setUomForm({ ...u }); setUomCreating(false); };
+  const uomCreate = () => { setUomCreating(true); setUomEditingCode(null); setUomForm({ uomCode: '', description: '' }); };
+  const uomCancel = () => { setUomEditingCode(null); setUomCreating(false); };
+
+  const uomSave = async () => {
+    if (!uomForm.uomCode || !uomForm.description) { toast.error('Code and Description are required'); return; }
+    try {
+      if (uomEditingCode) {
+        await apiMutate(`/api/settings/uom-dictionary/${uomEditingCode}`, 'PATCH', { description: uomForm.description });
+        toast.success('UOM updated');
+      } else {
+        await apiMutate('/api/settings/uom-dictionary', 'POST', { uomCode: uomForm.uomCode, description: uomForm.description });
+        toast.success('UOM created');
+      }
+      uomCancel(); loadUom();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const uomDelete = async (code: string) => {
+    if (!confirm(`Delete UOM "${code}"?`)) return;
+    try { await apiMutate(`/api/settings/uom-dictionary/${code}`, 'DELETE'); toast.success('UOM deleted'); loadUom(); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
+  // ── Exchange Rates data ────────────────────────────────────────────────────
+
+  const loadRates = async () => {
+    try {
+      setRateLoading(true);
+      const data = await apiFetch<ExchangeRate[]>('/api/settings/exchange-rates');
+      setRates(data);
+    } catch (err: any) {
+      toast.error('Failed to load exchange rates: ' + err.message);
+    } finally {
+      setRateLoading(false);
+    }
+  };
+
+  const rateEdit = (r: ExchangeRate) => { setRateEditingId(r.exchangeRateId); setRateForm({ ...r }); setRateCreating(false); };
+  const rateCreate = () => { setRateCreating(true); setRateEditingId(null); setRateForm({ currencyCode: '', currencyName: '', buyRate: '1.0', sellRate: '1.0', effectiveDate: new Date().toISOString().split('T')[0] }); };
+  const rateCancel = () => { setRateEditingId(null); setRateCreating(false); };
+
+  const rateSave = async () => {
+    if (!rateForm.currencyCode || !rateForm.currencyName || !rateForm.buyRate || !rateForm.sellRate) {
+      toast.error('All fields are required'); return;
+    }
+    try {
+      const payload = {
+        currencyCode: rateForm.currencyCode.toUpperCase(),
+        currencyName: rateForm.currencyName,
+        buyRate: rateForm.buyRate,
+        sellRate: rateForm.sellRate,
+        effectiveDate: rateForm.effectiveDate
+      };
+      if (rateEditingId) {
+        await apiMutate(`/api/settings/exchange-rates/${rateEditingId}`, 'PATCH', payload);
+        toast.success('Exchange rate updated');
+      } else {
+        await apiMutate('/api/settings/exchange-rates', 'POST', payload);
+        toast.success('Exchange rate created');
+      }
+      rateCancel(); loadRates();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const rateDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this exchange rate?')) return;
+    try { await apiMutate(`/api/settings/exchange-rates/${id}`, 'DELETE'); toast.success('Exchange rate deleted'); loadRates(); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    loadOrg();
+    loadGst();
+    loadUom();
+    loadRates();
+    loadGl();
+  }, []);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const typeLabel = (type: string) => GST_TYPES.find(t => t.value === type)?.label ?? type;
+
+  const renderGlAccountLabel = (glAccountId?: string) => {
+    if (!glAccountId) return <span className="text-muted italic">Not configured</span>;
+    const acct = glAccounts.find(a => a.glAccountId === glAccountId);
+    if (!acct) return <span className="text-muted italic text-xs font-mono">{glAccountId}</span>;
+    return (
+      <span className="font-medium text-sm flex items-center gap-2">
+        <span className="badge badge-secondary font-mono !py-0 !px-1.5">{acct.accountCode}</span>
+        {acct.name}
+      </span>
+    );
+  };
+
+  // ── Row Renderers ─────────────────────────────────────────────────────────
+
+  const renderGstRow = (isEdit: boolean, data: any, key: string) => (
+    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+      <td>
+        {isEdit
+          ? <input className="input" value={gstForm.code} onChange={e => setGstForm({ ...gstForm, code: e.target.value })} placeholder="Code" />
+          : <span className="font-mono text-xs">{data.code}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" value={gstForm.title} onChange={e => setGstForm({ ...gstForm, title: e.target.value })} placeholder="Title" />
+          : <span className="font-medium">{data.title}</span>}
+      </td>
+      <td>
+        {isEdit ? (
+          <select className="input" value={gstForm.type} onChange={e => setGstForm({ ...gstForm, type: e.target.value })}>
+            {GST_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        ) : typeLabel(data.type)}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" value={gstForm.rate} onChange={e => setGstForm({ ...gstForm, rate: e.target.value })} type="number" step="0.01" style={{ width: 80 }} />
+          : <>{data.rate}%</>}
+      </td>
+      <td style={{ textAlign: 'center' }}>
+        {isEdit ? (
+          <input type="checkbox" checked={gstForm.isDefault === true || gstForm.isDefault === 'true'} onChange={e => setGstForm({ ...gstForm, isDefault: e.target.checked })} />
+        ) : data.isDefault ? (
+          <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
+        ) : null}
+      </td>
+      <td style={{ textAlign: 'right' }}>
+        {isEdit ? (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={gstCancel}>Cancel</button>
+            <button className="btn btn-primary btn-xs" onClick={gstSave}>Save</button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={() => gstEdit(data)}>Edit</button>
+            {!data.isDefault && (
+              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => gstDelete(data.gstCategoryId)}>Delete</button>
+            )}
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+
+  const renderUomRow = (isEdit: boolean, data: any, key: string) => (
+    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+      <td>
+        {isEdit && uomCreating
+          ? <input className="input" value={uomForm.uomCode} onChange={e => setUomForm({ ...uomForm, uomCode: e.target.value.toUpperCase() })} placeholder="EA" style={{ width: 100 }} />
+          : <span className="font-mono text-xs">{data.uomCode}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" value={uomForm.description} onChange={e => setUomForm({ ...uomForm, description: e.target.value })} placeholder="Description" />
+          : <span className="font-medium">{data.description}</span>}
+      </td>
+      <td style={{ textAlign: 'right' }}>
+        {isEdit ? (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={uomCancel}>Cancel</button>
+            <button className="btn btn-primary btn-xs" onClick={uomSave}>Save</button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={() => uomEdit(data)}>Edit</button>
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => uomDelete(data.uomCode)}>Delete</button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+
+  const renderRateRow = (isEdit: boolean, data: any, key: string) => (
+    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+      <td>
+        {isEdit && rateCreating
+          ? <input className="input" value={rateForm.currencyCode} onChange={e => setRateForm({ ...rateForm, currencyCode: e.target.value.toUpperCase() })} placeholder="USD" style={{ width: 80 }} />
+          : <span className="font-mono text-xs">{data.currencyCode}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" value={rateForm.currencyName} onChange={e => setRateForm({ ...rateForm, currencyName: e.target.value })} placeholder="US Dollar" />
+          : <span className="font-medium">{data.currencyName}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" type="number" step="0.0001" value={rateForm.buyRate} onChange={e => setRateForm({ ...rateForm, buyRate: e.target.value })} style={{ width: 100 }} />
+          : <span>{data.buyRate}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" type="number" step="0.0001" value={rateForm.sellRate} onChange={e => setRateForm({ ...rateForm, sellRate: e.target.value })} style={{ width: 100 }} />
+          : <span>{data.sellRate}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <input className="input" type="date" value={rateForm.effectiveDate?.split('T')[0]} onChange={e => setRateForm({ ...rateForm, effectiveDate: e.target.value })} />
+          : <span className="text-xs">{new Date(data.effectiveDate).toLocaleDateString()}</span>}
+      </td>
+      <td style={{ textAlign: 'right' }}>
+        {isEdit ? (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={rateCancel}>Cancel</button>
+            <button className="btn btn-primary btn-xs" onClick={rateSave}>Save</button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={() => rateEdit(data)}>Edit</button>
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>Delete</button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+
+  // ── Nav Configuration ─────────────────────────────────────────────────────
+
+  const navSections = useMemo(() => [
+    { id: 'org-section', label: 'Company Info', show: true },
+    { id: 'bank-section', label: 'Bank Details', show: true },
+    { id: 'gl-section', label: 'General Ledger', show: true },
+    { id: 'gst-section', label: 'GST / Tax', show: true },
+    { id: 'rates-section', label: 'Exchange Rates', show: true },
+    { id: 'uom-section', label: 'Units of Measure', show: true },
+  ], []);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <DetailsLayout
+      header={
+        <EntityHeader
+          title="Settings"
+          subtitle="Global platform configuration"
+          onBack={() => router.push('/')}
+          actions={
+            <div className="flex items-center gap-2">
+              <PageNav sections={navSections} />
+            </div>
+          }
+        />
+      }
+    >
+      <div className="flex flex-col gap-6">
+        {/* ── Company Information ────────────────────────────────────────── */}
+        <div id="org-section" className="card">
+            <h3 className="section-heading mb-4">
+              <span className="material-symbols-outlined">business</span>
+              Company Information
+            </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Company Name
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.name || ''}
+                  onChange={(e) => updateOrgField('name', e.target.value)}
+                  placeholder="e.g. Acme Corp"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Email Address
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.email || ''}
+                    onChange={(e) => updateOrgField('email', e.target.value)}
+                    placeholder="info@acme.com"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Phone Number
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.phone || ''}
+                    onChange={(e) => updateOrgField('phone', e.target.value)}
+                    placeholder="+1 234 567 890"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Website
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.website || ''}
+                  onChange={(e) => updateOrgField('website', e.target.value)}
+                  placeholder="https://acme.com"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Company Number
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.companyNumber || ''}
+                    onChange={(e) => updateOrgField('companyNumber', e.target.value)}
+                    placeholder="e.g. ABN / BRN"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Tax Number
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.taxNumber || ''}
+                    onChange={(e) => updateOrgField('taxNumber', e.target.value)}
+                    placeholder="e.g. VAT / GST"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Logo URL
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.logoUrl || ''}
+                  onChange={(e) => updateOrgField('logoUrl', e.target.value)}
+                  placeholder="https://acme.com/logo.png"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Address Line 1
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.addressLine1 || ''}
+                  onChange={(e) => updateOrgField('addressLine1', e.target.value)}
+                  placeholder="123 Business Way"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Address Line 2
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.addressLine2 || ''}
+                  onChange={(e) => updateOrgField('addressLine2', e.target.value)}
+                  placeholder="Suite 101"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    City
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.city || ''}
+                    onChange={(e) => updateOrgField('city', e.target.value)}
+                    placeholder="Melbourne"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    State / Province
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.state || ''}
+                    onChange={(e) => updateOrgField('state', e.target.value)}
+                    placeholder="VIC"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Post Code
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.postCode || ''}
+                    onChange={(e) => updateOrgField('postCode', e.target.value)}
+                    placeholder="3000"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Country
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.country || ''}
+                    onChange={(e) => updateOrgField('country', e.target.value)}
+                    placeholder="Australia"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Bank Details ────────────────────────────────────────── */}
+        <div id="bank-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">account_balance</span>
+              Bank Details & Accounting
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Bank Name
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.bankName || ''}
+                  onChange={(e) => updateOrgField('bankName', e.target.value)}
+                  placeholder="e.g. Commonwealth Bank"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Account Name
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.bankAccountName || ''}
+                  onChange={(e) => updateOrgField('bankAccountName', e.target.value)}
+                  placeholder="Acme Corp Pty Ltd"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Account Number
+                </label>
+                <input
+                  className="input"
+                  value={orgForm.bankAccountNumber || ''}
+                  onChange={(e) => updateOrgField('bankAccountNumber', e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    IBAN
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.bankIban || ''}
+                    onChange={(e) => updateOrgField('bankIban', e.target.value)}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    SWIFT / BIC
+                  </label>
+                  <input
+                    className="input"
+                    value={orgForm.bankSwiftBic || ''}
+                    onChange={(e) => updateOrgField('bankSwiftBic', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* ── General Ledger ────────────────────────────────────────── */}
+        <div id="gl-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              General Ledger
+            </h3>
+            <span className="badge badge-secondary">Read-Only</span>
+          </div>
+
+          {glLoading ? (
+            <div className="text-sm text-muted animate-pulse">Loading settings...</div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Accounts Receivable (AR)
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultArAccountId)}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Revenue / Sales
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultRevenueAccountId)}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Accounts Payable (AP)
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultApAccountId)}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Tax Collected
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultTaxAccountId)}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Cost of Goods Sold (COGS)
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultCogsAccountId)}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Expense
+                  </label>
+                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
+                    {renderGlAccountLabel(glSettings?.defaultExpenseAccountId)}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Revenue Routing Strategy
+                  </label>
+                  <p className="text-sm font-medium mt-1">
+                    {glSettings?.revenueRoutingPrecedence === 'customer_first'
+                      ? 'Customer Group Overrides take precedence over Product Group Overrides'
+                      : 'Product Group Overrides take precedence over Customer Group Overrides'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Expense Routing Strategy
+                  </label>
+                  <p className="text-sm font-medium mt-1">
+                    {glSettings?.expenseRoutingPrecedence === 'supplier_first'
+                      ? 'Supplier Group Overrides take precedence over Product Group Overrides'
+                      : 'Product Group Overrides take precedence over Supplier Group Overrides'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* ── GST Categories ─────────────────────────────────────────────── */}
+        <div id="gst-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">payments</span>
+              GST / Tax Categories
+            </h3>
+            <button className="btn btn-primary btn-sm" onClick={gstCreate}>+ New Category</button>
+          </div>
+          <table className="table-lines w-full">
+            <thead>
+              <tr>
+                <th style={{ width: 100 }}>Code</th>
+                <th>Title</th>
+                <th style={{ width: 140 }}>Type</th>
+                <th style={{ width: 80 }}>Rate</th>
+                <th style={{ width: 80, textAlign: 'center' }}>Default</th>
+                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {gstCreating && renderGstRow(true, gstForm, 'new-gst')}
+              {!gstLoading && categories.length === 0 && !gstCreating && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No GST categories defined.</td></tr>
+              )}
+              {categories.map(cat =>
+                gstEditingId === cat.gstCategoryId
+                  ? renderGstRow(true, cat, cat.gstCategoryId)
+                  : renderGstRow(false, cat, cat.gstCategoryId)
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Exchange Rates ─────────────────────────────────────────────── */}
+        <div id="rates-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">currency_exchange</span>
+              Currency Exchange Rates
+            </h3>
+            <button className="btn btn-primary btn-sm" onClick={rateCreate}>+ New Rate</button>
+          </div>
+          <table className="table-lines w-full">
+            <thead>
+              <tr>
+                <th style={{ width: 100 }}>Currency</th>
+                <th>Name</th>
+                <th style={{ width: 110 }}>Buy Rate</th>
+                <th style={{ width: 110 }}>Sell Rate</th>
+                <th style={{ width: 130 }}>Effective Date</th>
+                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* --- Anchor Row: Base System Currency --- */}
+              <tr style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.03)', fontWeight: 500 }}>
+                <td>
+                  <div className="flex items-center gap-2">
+                    {HOME_CURRENCY.code}
+                  </div>
+                </td>
+                <td>{HOME_CURRENCY.name}</td>
+                <td>1.0000</td>
+                <td>1.0000</td>
+                <td><span className="text-xs italic text-muted">System Base</span></td>
+                <td style={{ textAlign: 'right' }}>
+                  <span className="text-xs text-muted italic">Fixed</span>
+                </td>
+              </tr>
+
+              {rateCreating && renderRateRow(true, rateForm, 'new-rate')}
+              {!rateLoading && rates.length === 0 && !rateCreating && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No additional exchange rates defined.</td></tr>
+              )}
+              {rates.map(r =>
+                rateEditingId === r.exchangeRateId
+                  ? renderRateRow(true, r, r.exchangeRateId)
+                  : renderRateRow(false, r, r.exchangeRateId)
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── UOM Dictionary ─────────────────────────────────────────────── */}
+        <div id="uom-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">
+              <span className="material-symbols-outlined">straighten</span>
+              Units of Measure
+            </h3>
+            <button className="btn btn-primary btn-sm" onClick={uomCreate}>+ New UOM</button>
+          </div>
+          <table className="table-lines w-full">
+            <thead>
+              <tr>
+                <th style={{ width: 120 }}>Code</th>
+                <th>Description</th>
+                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {uomCreating && renderUomRow(true, uomForm, 'new-uom')}
+              {!uomLoading && uoms.length === 0 && !uomCreating && (
+                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No units of measure defined.</td></tr>
+              )}
+              {uoms.map(u =>
+                uomEditingCode === u.uomCode
+                  ? renderUomRow(true, u, u.uomCode)
+                  : renderUomRow(false, u, u.uomCode)
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </DetailsLayout>
+  );
+}

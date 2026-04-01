@@ -198,14 +198,5 @@
         }
       }
     }
-  },
-  "default_accounts": {
-    "receivable": "1100",
-    "payable": "2100",
-    "revenue": "4100",
-    "cogs": "5100",
-    "tax_collected": "2200",
-    "tax_paid": "1200",
-    "expense": "6900"
   }
 }

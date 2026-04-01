@@ -1,6 +1,10 @@
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
-import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
+import {
+  computeLinePrice,
+  computeOrderTotals,
+  HOME_CURRENCY,
+} from '@modbm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -120,7 +124,7 @@ export function assembleOrderData(
       orderDate: orderDetail.createdOn
         ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
         : '',
-      currencyCode: orderDetail.currencyCode || 'EUR',
+      currencyCode: orderDetail.currencyCode || HOME_CURRENCY.code,
       name: orderDetail.name || '',
     },
     lines,

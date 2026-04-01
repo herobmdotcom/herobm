@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { apiMutate } from '@/lib/api';
+import { apiMutate, apiFetch } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 
 export default function NewAccountPage() {
+  useDocumentTitle('New Account');
   const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -27,13 +31,17 @@ export default function NewAccountPage() {
     address1StateOrProvince: '',
     address1PostalCode: '',
     address1Country: '',
-    customerGroup: '',
     accountGroupId: '',
-    gstPosition: '',
+    gstCategoryId: '',
     currencyCode: 'EUR',
     customerDiscount: '0',
     notes: '',
   });
+  const [gstCategories, setGstCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+  }, []);
 
   const handleSubmit = async () => {
     if (!isValid || submitting) return;
@@ -136,29 +144,21 @@ export default function NewAccountPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Customer Group (Legacy)
-                    </label>
-                    <input
-                      type="text"
-                      className="input"
-                      value={dto.customerGroup}
-                      onChange={(e) => updateField('customerGroup', e.target.value)}
-                      placeholder="e.g. Wholesale"
-                      disabled={submitting}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                       {t('common.columns.gstPosition')}
                     </label>
-                    <input
-                      type="text"
+                    <select
                       className="input"
-                      value={dto.gstPosition}
-                      onChange={(e) => updateField('gstPosition', e.target.value)}
-                      placeholder="e.g. Standard"
+                      value={dto.gstCategoryId || ''}
+                      onChange={(e) => updateField('gstCategoryId', e.target.value)}
                       disabled={submitting}
-                    />
+                    >
+                      <option value="">(None)</option>
+                      {gstCategories.map((cat) => (
+                        <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                          {cat.title} ({cat.code})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div>
@@ -194,9 +194,11 @@ export default function NewAccountPage() {
                     onChange={(e) => updateField('currencyCode', e.target.value)}
                     disabled={submitting}
                   >
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                    <option value="GBP">GBP</option>
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} - {c.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>

@@ -3,9 +3,10 @@
 import React, { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import StateBadge from '@/components/StateBadge';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { ValidState } from '@/types/states';
 
 
@@ -13,6 +14,7 @@ import { ValidState } from '@/types/states';
 export default function GlobalInvoicesPage() {
     const t = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
+    useDocumentTitle(t('invoicesCardHeading', { defaultValue: 'Sales Invoices' }));
     const searchParams = useSearchParams();
     const router = useRouter();
     const invoiceFilter = searchParams.get('invoice') || '';
@@ -41,7 +43,7 @@ export default function GlobalInvoicesPage() {
             },
             valueFormatter: (params: any) => {
                 if (!params.value || params.value === 0) return '—';
-                return formatAmount(params.value, params.data?.currencyCode || 'EUR');
+                return formatAmount(params.value, params.data?.currencyCode || HOME_CURRENCY.code);
             },
         },
         { 

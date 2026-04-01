@@ -115,7 +115,7 @@ export default function UniversalSearch() {
   let flatIndex = -1;
 
   return (
-    <div ref={containerRef} className="relative w-full max-w-2xl mx-auto mb-8">
+    <div ref={containerRef} className="relative w-full max-w-2xl mb-8">
       <div className="relative">
         <span
           className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px]"

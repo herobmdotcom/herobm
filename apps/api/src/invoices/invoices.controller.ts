@@ -9,15 +9,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { SalesInvoiceService } from './sales-invoice.service';
-import type { CreateSalesInvoiceDto } from './sales-invoice.service';
 import { PurchaseInvoiceService } from './purchase-invoice.service';
-import type { CreatePurchaseBillDto } from './purchase-invoice.service';
 import { AuthGuard } from '@nestjs/passport';
 import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { CreateSalesInvoiceDto, CreatePurchaseBillDto } from './dto';
 
 /**
  * Sales-order–scoped invoice endpoints (AR).

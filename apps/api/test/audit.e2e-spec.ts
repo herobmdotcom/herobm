@@ -54,6 +54,11 @@ describe('Audit Events (e2e)', () => {
         username: 'admin',
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       });
+    if (adminRes.status !== 201) {
+      throw new Error(
+        `${'adminRes'} login failed: ${adminRes.status} ${JSON.stringify(adminRes.body)}`,
+      );
+    }
     adminToken = adminRes.body.access_token;
   }, 30_000);
 

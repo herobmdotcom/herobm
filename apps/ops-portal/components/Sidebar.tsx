@@ -81,7 +81,15 @@ export default function Sidebar() {
     sections.push({
       label: t('groups.admin'),
       items: [
-        { href: '/admin/reporting', label: 'Reporting', icon: 'architecture' },
+        { 
+          href: '/admin/reporting', 
+          label: 'Reporting', 
+          icon: 'architecture',
+          subItems: [
+            { href: '/admin/reporting', label: 'Templates' },
+            { href: '/admin/reporting/hooks', label: 'Hooks' },
+          ]
+        },
         { 
           href: '/admin/account-groups', 
           label: 'Groups', 
@@ -101,6 +109,7 @@ export default function Sidebar() {
             { href: '/admin/system-logs', label: t('items.systemLogs') },
           ]
         },
+        { href: '/admin/settings', label: 'Settings', icon: 'settings' },
       ],
     });
   }

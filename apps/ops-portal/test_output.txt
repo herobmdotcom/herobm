@@ -1,0 +1,991 @@
+PASS app/sales-orders/[id]/__tests__/types.test.ts
+PASS lib/__tests__/sales-order-utils.test.ts
+PASS components/shared/__tests__/numericFormatter.test.ts
+FAIL app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx
+  ΓùÅ InvoicesSection ΓÇö rendering ΓÇ║ shows Print PDF button on existing invoices
+
+    TestingLibraryElementError: Unable to find an element with the text: Print PDF. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+              disabled=""
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              style="margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card, #fff);"
+            >
+              <div
+                class="flex items-center justify-between mb-2"
+              >
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <strong
+                    style="font-size: 13px;"
+                  >
+                    INV-001
+                  </strong>
+                </div>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  style="font-size: 11px; padding: 2px 8px;"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px]"
+                  >
+                    print
+                  </span>
+                  buttons.printInvoice
+                </button>
+              </div>
+              <div
+                style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"
+              >
+                Created 1/15/2024 by admin
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      135 |         };
+      136 |         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
+    > 137 |         expect(screen.getByText('Print PDF')).toBeInTheDocument();
+          |                       ^
+      138 |     });
+      139 |
+      140 |     it('shows Create Invoice button for shipped state', () => {
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:137:23)
+
+  ΓùÅ InvoicesSection ΓÇö rendering ΓÇ║ shows Create Invoice button for shipped state
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      142 |             <InvoicesSection {...defaultProps} pickingSummary={picking} />,
+      143 |         );
+    > 144 |         expect(screen.getByText('Create Invoice')).toBeInTheDocument();
+          |                       ^
+      145 |     });
+      146 |
+      147 |     it('disables Create Invoice when nothing shipped', () => {
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:144:23)
+
+  ΓùÅ InvoicesSection ΓÇö rendering ΓÇ║ disables Create Invoice when nothing shipped
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+              disabled=""
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No products have shipped yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      153 |             />,
+      154 |         );
+    > 155 |         const btn = screen.getByText('Create Invoice');
+          |                            ^
+      156 |         expect(btn).toBeDisabled();
+      157 |     });
+      158 |
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:155:28)
+
+  ΓùÅ InvoicesSection ΓÇö rendering ΓÇ║ shows Create Invoice button for picking state too
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      161 |             <InvoicesSection {...defaultProps} order={{ ...baseOrder, stateCode: 'picking' }} pickingSummary={picking} />,
+      162 |         );
+    > 163 |         expect(screen.getByText('Create Invoice')).toBeInTheDocument();
+          |                       ^
+      164 |     });
+      165 | });
+      166 |
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:163:23)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ opens create form and shows invoice line table when Create Invoice is clicked
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      177 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+      178 |
+    > 179 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      180 |
+      181 |         expect(screen.getByText('New Invoice')).toBeInTheDocument();
+      182 |         expect(screen.getByText('Generate Invoice')).toBeInTheDocument();
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:179:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ closes create form when cancel is clicked
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      188 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+      189 |
+    > 190 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      191 |         expect(screen.getByText('New Invoice')).toBeInTheDocument();
+      192 |
+      193 |         await user.click(screen.getByText('cancel'));
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:190:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ closes create form when Γ£ò is clicked
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      199 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+      200 |
+    > 201 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      202 |         const closeBtn = screen.getByText('Γ£ò');
+      203 |         await user.click(closeBtn);
+      204 |         expect(screen.queryByText('New Invoice')).not.toBeInTheDocument();
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:201:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ renders quantity-to-invoice inputs in the form
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      209 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+      210 |
+    > 211 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      212 |
+      213 |         // Should have a number input with the default quantity
+      214 |         const inputs = screen.getAllByRole('spinbutton');
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:211:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ calls apiMutate with correct payload when Generate Invoice is clicked
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      223 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+      224 |
+    > 225 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      226 |         await user.click(screen.getByText('Generate Invoice'));
+      227 |
+      228 |         await waitFor(() => {
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:225:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ does not generate if confirm is cancelled
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      247 |
+      248 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
+    > 249 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      250 |         await user.click(screen.getByText('Generate Invoice'));
+      251 |
+      252 |         expect(mockApiMutate).not.toHaveBeenCalled();
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:249:33)
+
+  ΓùÅ InvoicesSection ΓÇö create invoice form ΓÇ║ shows error when generation fails
+
+    TestingLibraryElementError: Unable to find an element with the text: Create Invoice. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              class="text-center py-6 text-sm"
+              style="color: var(--text-muted);"
+            >
+              No invoices generated yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      262 |         render(<InvoicesSection {...defaultProps} pickingSummary={picking} setError={setError} />);
+      263 |
+    > 264 |         await user.click(screen.getByText('Create Invoice'));
+          |                                 ^
+      265 |         await user.click(screen.getByText('Generate Invoice'));
+      266 |
+      267 |         await waitFor(() => {
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:264:33)
+
+  ΓùÅ InvoicesSection ΓÇö PDF download ΓÇ║ clicking Print PDF triggers blob fetch and opens window
+
+    TestingLibraryElementError: Unable to find an element with the text: Print PDF. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+              disabled=""
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              style="margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card, #fff);"
+            >
+              <div
+                class="flex items-center justify-between mb-2"
+              >
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <strong
+                    style="font-size: 13px;"
+                  >
+                    INV-001
+                  </strong>
+                </div>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  style="font-size: 11px; padding: 2px 8px;"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px]"
+                  >
+                    print
+                  </span>
+                  buttons.printInvoice
+                </button>
+              </div>
+              <div
+                style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"
+              >
+                Created 1/15/2024 by admin
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      293 |
+      294 |         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
+    > 295 |         await user.click(screen.getByText('Print PDF'));
+          |                                 ^
+      296 |
+      297 |         // eslint-disable-next-line @typescript-eslint/no-require-imports
+      298 |         const { apiFetchBlob } = require('@/lib/api');
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:295:33)
+
+  ΓùÅ InvoicesSection ΓÇö invoice line table ΓÇ║ renders subtotal and tax in the invoice detail table
+
+    TestingLibraryElementError: Unable to find an element with the text: AUD 550.00. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="card"
+          id="invoices-section"
+        >
+          <div
+            class="flex items-center justify-between mb-2"
+          >
+            <h3
+              class="section-heading"
+            >
+              <span
+                class="material-symbols-outlined"
+              >
+                request_quote
+              </span>
+              Invoices
+            </h3>
+            <button
+              class="btn btn-secondary btn-sm"
+              disabled=""
+            >
+              buttons.createInvoice
+            </button>
+          </div>
+          <div
+            class="space-y-3"
+          >
+            <div
+              style="margin-bottom: 12px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card, #fff);"
+            >
+              <div
+                class="flex items-center justify-between mb-2"
+              >
+                <div
+                  class="flex items-center gap-2"
+                >
+                  <strong
+                    style="font-size: 13px;"
+                  >
+                    INV-001
+                  </strong>
+                </div>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  style="font-size: 11px; padding: 2px 8px;"
+                >
+                  <span
+                    class="material-symbols-outlined text-[14px]"
+                  >
+                    print
+                  </span>
+                  buttons.printInvoice
+                </button>
+              </div>
+              <table
+                class="table-lines"
+              >
+                <thead>
+                  <tr>
+                    <th>
+                      Product
+                    </th>
+                    <th>
+                      Description
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Qty
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Unit Price
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Disc %
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      GST
+                    </th>
+                    <th
+                      style="text-align: right;"
+                    >
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td
+                      style="font-weight: 600; font-size: 12px;"
+                    >
+                      WDG-001
+                    </td>
+                    <td>
+                      Widget
+                    </td>
+                    <td
+                      style="text-align: right;"
+                    >
+                      5
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums;"
+                    >
+                      AUD 50.00
+                    </td>
+                    <td
+                      style="text-align: right; color: var(--text-muted);"
+                    >
+                      0.0
+                      %
+                    </td>
+                    <td
+                      style="text-align: right; color: var(--text-muted);"
+                    >
+                      0.0
+                      %
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr
+                    style="border-top: 1px solid var(--border);"
+                  >
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 600; font-size: 12px; color: var(--text-muted);"
+                    >
+                      Subtotal
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 600; font-size: 12px; color: var(--text-muted);"
+                    >
+                      Tax
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;"
+                    >
+                      AUD 0.00
+                    </td>
+                  </tr>
+                  <tr>
+                    <td
+                      colspan="6"
+                      style="text-align: right; font-weight: 700; font-size: 13px;"
+                    >
+                      Total
+                    </td>
+                    <td
+                      style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px;"
+                    >
+                      AUD 250.00
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div
+                style="font-size: 11px; color: var(--text-muted); margin-top: 6px;"
+              >
+                Created 1/15/2024 by admin
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      334 |         expect(screen.getByText('Subtotal')).toBeInTheDocument();
+      335 |         // Check total row
+    > 336 |         expect(screen.getByText('AUD 550.00')).toBeInTheDocument();
+          |                       ^
+      337 |     });
+      338 | });
+      339 |
+
+      at Object.getElementError (../../node_modules/@testing-library/dom/dist/config.js:37:19)
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at ../../node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (app/sales-orders/[id]/__tests__/InvoicesSection.test.tsx:336:23)
+
+PASS components/shared/__tests__/DataGrid.test.tsx
+PASS components/shared/__tests__/ProductSearchInput.test.tsx
+FAIL app/sales-orders/[id]/__tests__/useOrder.test.ts
+  ΓùÅ useOrder ΓÇö mutations ΓÇ║ addLineFromProduct rejects duplicates with toast error
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+      393 |
+      394 |         expect(mockApiMutate).not.toHaveBeenCalled();
+    > 395 |         expect(toast.error).toHaveBeenCalled();
+          |                             ^
+      396 |     });
+      397 |
+      398 |     it('saveHeader sets error on failure', async () => {
+
+      at Object.toHaveBeenCalled (app/sales-orders/[id]/__tests__/useOrder.test.ts:395:29)
+
+PASS app/sales-orders/[id]/__tests__/ReturnsSection.test.tsx
+
+Test Suites: 2 failed, 6 passed, 8 total
+Tests:       14 failed, 89 passed, 103 total
+Snapshots:   0 total
+Time:        3.036 s
+Ran all test suites.

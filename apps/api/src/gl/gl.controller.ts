@@ -14,8 +14,9 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { GlService, JournalLineDto, JournalMeta } from './gl.service';
+import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
+import { JournalLineDto } from './dto';
 
 @Controller('gl')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -122,7 +123,7 @@ export class GlController {
 
   @Get('trial-balance')
   @CasbinAction('read')
-  async getTrialBalance(@Query('asOf') asOfDate?: string) {
+  async getTrialBalance(@Query('asOfDate') asOfDate?: string) {
     return this.glService.getTrialBalance(asOfDate);
   }
 

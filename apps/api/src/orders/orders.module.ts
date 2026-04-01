@@ -34,6 +34,7 @@ import { GlModule } from '../gl/gl.module';
 import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
 import { SalesQuoteService } from '../reports/sales-quote.service';
+import { SalesReturnCreditService } from '../reports/sales-return-credit.service';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { SalesQuoteService } from '../reports/sales-quote.service';
     PickingSlipService,
     ReportSalesInvoiceService,
     SalesQuoteService,
+    SalesReturnCreditService,
   ],
   exports: [OrdersService, OrdersWriteService, BackordersService],
 })
@@ -70,6 +72,7 @@ export class OrdersModule implements OnModuleInit {
     private readonly pickingSlipService: PickingSlipService,
     private readonly reportSalesInvoiceService: ReportSalesInvoiceService,
     private readonly salesQuoteService: SalesQuoteService,
+    private readonly reportSalesReturnCreditService: SalesReturnCreditService,
     @Inject(DRIZZLE) private db: DrizzleDB,
   ) {}
 
@@ -129,6 +132,18 @@ export class OrdersModule implements OnModuleInit {
           .orderBy(sql`RANDOM()`)
           .limit(1);
         return rows.length > 0 ? rows[0].id : undefined;
+      },
+    });
+
+    this.reportsRegistry.register('sales-return', {
+      resolveData: async (id: string, user: any) => {
+        return (await this.reportSalesReturnCreditService.assembleData(
+          id,
+          'app',
+        )) as unknown as Record<string, any>;
+      },
+      getRandomId: async () => {
+        return undefined; // Usually we don't need random resolving for returns
       },
     });
   }

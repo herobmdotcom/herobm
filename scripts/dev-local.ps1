@@ -1,16 +1,45 @@
+param (
+    [string]$Profile = ""
+)
+
 Push-Location $PSScriptRoot\..
+
+$activeProfile = $Profile
+if (-not $activeProfile -and (Test-Path ".active_profile")) {
+    $activeProfile = (Get-Content ".active_profile" | Select-Object -First 1).Trim()
+}
+
+$envFile = ".env"
+if ($activeProfile) {
+    $envFile = ".env.$activeProfile"
+    Write-Host "Targeting Environment Profile: $activeProfile" -ForegroundColor Magenta
+} else {
+    Write-Host "Targeting Default Environment" -ForegroundColor Magenta
+}
+
+$envInjection = "`$env:ENV_FILE='$envFile'; "
+if (Test-Path $envFile) {
+    Write-Host "Loading configuration from: $envFile" -ForegroundColor DarkGray
+    Get-Content $envFile | Where-Object { $_ -match '^[a-zA-Z_][a-zA-Z0-9_]*=' } | ForEach-Object {
+        $name, $value = $_.Split('=', 2)
+        $name = $name.Trim()
+        $value = $value.Trim().Replace("'", "''")
+        $envInjection += "`$env:$name='$value'; "
+    }
+} else {
+    Write-Host "Warning: $envFile not found!" -ForegroundColor Yellow
+}
 
 Write-Host "Starting local Dev Environment..." -ForegroundColor Green
 Write-Host "API will start on port 3002" -ForegroundColor Cyan
 Write-Host "Portal will start on port 4301" -ForegroundColor Cyan
 
-# Use the explicitly declared Node to run local dev securely and reliably.
-
 # Start API in a new window
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`$env:PORT=3002; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev -w apps/api"
+$apiCmd = $envInjection + "`$env:PORT=3002; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:dev -w apps/api"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
 
 # Start FE in a new window
-# We prefix `next dev` with passing `API_URL`
-Start-Process pwsh -ArgumentList "-NoExit", "-Command", "`$env:API_URL='http://localhost:3002'; npm run dev:local -w apps/ops-portal"
+$feCmd = $envInjection + "`$env:API_URL='http://localhost:3002'; npm run dev:local -w apps/ops-portal"
+Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
 Pop-Location

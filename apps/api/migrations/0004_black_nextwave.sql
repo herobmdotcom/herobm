@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."report_hook_assignments" ALTER COLUMN "context_slug" SET NOT NULL;

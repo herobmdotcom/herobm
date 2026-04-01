@@ -41,7 +41,10 @@ export async function login(username: string, password: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   });
-  if (!res.ok) throw new Error('Login failed');
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new ApiError(errData?.message ?? 'Login failed', res.status, errData);
+  }
   const data = await res.json();
   token = data.access_token;
   role = data.role;
@@ -107,7 +110,10 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
     },
   });
   if (res.status === 401) clearSessionAndReload();
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    const errData = await res.json().catch(() => null);
+    throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);
+  }
   return res.json();
 }
 
@@ -122,7 +128,12 @@ export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Bl
     },
   });
   if (res.status === 401) clearSessionAndReload();
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    let errData;
+    try { errData = errText ? JSON.parse(errText) : null; } catch { errData = { message: errText }; }
+    throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);
+  }
   return res.blob();
 }
 

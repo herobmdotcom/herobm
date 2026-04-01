@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { computeLinePrice } from '@modbm/shared';
 
 import type { OrderDetail, OrderReturn, GstCategory } from './types';
@@ -41,12 +41,13 @@ interface ReturnsSectionProps {
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
     pickingSummary?: any;
     gstCategories: GstCategory[];
+    locations: { locationId: string; name: string }[];
 }
 
 export default function ReturnsSection({
     orderId, order, returns, returnsLoading,
     showCreateReturn, setShowCreateReturn,
-    setError, loadReturns, loadOrder, pickingSummary, gstCategories,
+    setError, loadReturns, loadOrder, pickingSummary, gstCategories, locations,
 }: ReturnsSectionProps) {
     const t = useTranslations();
     const tCommon = useTranslations('common');
@@ -55,6 +56,7 @@ export default function ReturnsSection({
 
     // Local state
     const [saving, setSaving] = useState(false);
+    const [returnLocations, setReturnLocations] = useState<Record<string, string>>({});
     const [newReturnNotes, setNewReturnNotes] = useState('');
     const [newReturnLines, setNewReturnLines] = useState<NewReturnLine[]>(() =>
         order.lines.map((l) => ({
@@ -357,14 +359,31 @@ export default function ReturnsSection({
                                             {ret.createdBy && ` ${tCommon('by')} ${ret.createdBy}`}
                                         </span>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex items-center gap-2">
+                                        {(ret.stateCode === 'draft' || ret.stateCode === 'received') && (
+                                            <select
+                                                className="input"
+                                                style={{ width: 140, fontSize: 12, padding: '2px 8px', height: 28 }}
+                                                value={returnLocations[ret.returnId] !== undefined ? returnLocations[ret.returnId] : (order.fulfillmentLocationId || '')}
+                                                onChange={(e) => setReturnLocations({ ...returnLocations, [ret.returnId]: e.target.value })}
+                                            >
+                                                <option value="">{t('salesOrders.selectLocation')}</option>
+                                                {locations.map(loc => (
+                                                    <option key={loc.locationId} value={loc.locationId}>{loc.name}</option>
+                                                ))}
+                                            </select>
+                                        )}
+                                        <div className="flex gap-2">
                                         {allowedRetTransitions.map((s) => (
                                             <button
                                                 key={s}
                                                 className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
                                                 onClick={async () => {
                                                     try {
-                                                        await apiMutate(`/api/sales-orders/${orderId}/returns/${ret.returnId}/state`, 'PATCH', { stateCode: s });
+                                                        await apiMutate(`/api/sales-orders/${orderId}/returns/${ret.returnId}/state`, 'PATCH', {
+                                                            stateCode: s,
+                                                            locationId: returnLocations[ret.returnId] !== undefined ? returnLocations[ret.returnId] : (order.fulfillmentLocationId || undefined)
+                                                        });
                                                         await loadReturns();
                                                         await loadOrder(undefined, false);
                                                     } catch (err) {
@@ -372,9 +391,28 @@ export default function ReturnsSection({
                                                     }
                                                 }}
                                             >
-                                                    → <StateName state={s as ValidState} />
+                                                → <StateName state={s as ValidState} />
                                             </button>
                                         ))}
+                                        {ret.stateCode === 'processed' && (
+                                            <button
+                                                className="btn btn-secondary btn-sm"
+                                                onClick={async () => {
+                                                    try {
+                                                        const { apiFetchBlob } = await import('@/lib/api');
+                                                        const blob = await apiFetchBlob(`/api/reports/hooks/sales-return-credit/run?id=${ret.returnId}&context=sales-return`, { method: 'POST' });
+                                                        const url = URL.createObjectURL(blob);
+                                                        window.open(url, '_blank');
+                                                    } catch (err) {
+                                                        // Fallback to existing error setter
+                                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                                    }
+                                                }}
+                                            >
+                                                {tSales('buttons.salesCredit')}
+                                            </button>
+                                        )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -404,7 +442,7 @@ export default function ReturnsSection({
                                             const disc = parseFloat(origLine?.discountPercentage || '0');
                                             const gstCat = gstCategories.find(c => c.gstCategoryId === origLine?.gstCategoryId);
                                             const gstRate = parseFloat(gstCat?.rate || '0');
-                                            const cc = order.currencyCode || 'EUR';
+                                            const cc = order.currencyCode || HOME_CURRENCY.code;
                                             const pricing = computeLinePrice({
                                                 quantity: parseFloat(rl.quantityReturned || '0'),
                                                 pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
@@ -514,11 +552,11 @@ export default function ReturnsSection({
                                                                 }}
                                                             />
                                                         ) : (
-                                                            formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || 'EUR')
+                                                            formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || HOME_CURRENCY.code)
                                                         )}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {formatAmount(pricing.amount, order.currencyCode || 'EUR')}
+                                                        {formatAmount(pricing.amount, order.currencyCode || HOME_CURRENCY.code)}
                                                     </td>
                                                     {isRetEditable && (
                                                         <td>
@@ -567,7 +605,7 @@ export default function ReturnsSection({
                                             }, 0);
                                             const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
                                             const totalCredit = totalAmount - totalFees;
-                                            const cc = order.currencyCode || 'EUR';
+                                            const cc = order.currencyCode || HOME_CURRENCY.code;
                                             return (
                                                 <>
                                                     <tr style={{ borderTop: '2px solid var(--border)' }}>

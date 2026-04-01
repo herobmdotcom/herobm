@@ -11,16 +11,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { SkipCasbin } from './casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-
-export class LoginDto {
-  @IsString()
-  @IsNotEmpty()
-  username!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  password!: string;
-}
+import { LoginDto } from './dto';
 
 @Controller('auth')
 @SkipCasbin()

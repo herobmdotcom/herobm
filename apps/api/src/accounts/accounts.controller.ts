@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Param,
@@ -11,14 +11,15 @@
 import { AuthGuard } from '@nestjs/passport';
 import { AccountsService } from './accounts.service';
 import { AccountsWriteService } from './accounts-write.service';
+import { AuthUser } from '../auth/auth-user.decorator';
+import type { JwtUser } from '../auth/auth-user.decorator';
 import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
 import { PaginationQuery } from '../common/pagination';
-import { AuthUser } from '../auth/auth-user.decorator';
-import type { JwtUser } from '../auth/auth-user.decorator';
+import { CreateAccountDto, UpdateAccountDto } from './dto';
 
 @Controller('accounts')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -43,13 +44,17 @@ export class AccountsController {
 
   @Post()
   @CasbinAction('write')
-  create(@Body() dto: any, @AuthUser() user: JwtUser) {
+  create(@Body() dto: CreateAccountDto, @AuthUser() user: JwtUser) {
     return this.accountsWriteService.create(dto, user.username);
   }
 
   @Patch(':id')
   @CasbinAction('write')
-  update(@Param('id') id: string, @Body() dto: any, @AuthUser() user: JwtUser) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateAccountDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.accountsWriteService.update(id, dto, user.username);
   }
 

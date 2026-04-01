@@ -16,16 +16,15 @@ import {
   outbox,
   purchaseOrderEvents,
   suppliers,
+  supplierGroups,
+  products as coreProducts,
+  productGroups,
   glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
-import { computeLinePrice } from '@modbm/shared';
-
-export interface CreatePurchaseBillDto {
-  supplierInvoiceNumber?: string;
-  notes?: string;
-}
+import { computeLinePrice, EXPENSE_ROUTING_PRECEDENCE } from '@modbm/shared';
+import { CreatePurchaseBillDto } from './dto';
 
 @Injectable()
 export class PurchaseInvoiceService {
@@ -91,25 +90,54 @@ export class PurchaseInvoiceService {
     // Identify if the Supplier has an ERPNext ID mapped natively already dynamically
     let erpnextId: string | null = null;
     let supplierName = 'Unknown Supplier';
+    let supplierApAccountId: string | null = null;
+    let supplierExpenseAccountId: string | null = null;
     if (order.vendorId) {
       // Find Party details to bind natively
       const suppRows = await this.db
-        .select({ erpnextId: suppliers.erpnextId, name: suppliers.name })
+        .select({
+          erpnextId: suppliers.erpnextId,
+          name: suppliers.name,
+          defaultApAccountId: supplierGroups.defaultApAccountId,
+          defaultExpenseAccountId: supplierGroups.defaultExpenseAccountId,
+        })
         .from(suppliers)
+        .leftJoin(
+          supplierGroups,
+          eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+        )
         .where(eq(suppliers.vendorId, order.vendorId))
         .limit(1);
 
       if (suppRows.length > 0) {
         erpnextId = suppRows[0].erpnextId;
         supplierName = suppRows[0].name;
+        supplierApAccountId = suppRows[0].defaultApAccountId;
+        supplierExpenseAccountId = suppRows[0].defaultExpenseAccountId;
       }
     }
 
     // 2. Load the structural PO Line dimensions to bill explicitly
-    const orderLines = await this.db
-      .select()
+    const orderLinesQuery = await this.db
+      .select({
+        line: purchaseOrderLineItems,
+        productExpenseAccountId: productGroups.defaultExpenseAccountId,
+      })
       .from(purchaseOrderLineItems)
+      .leftJoin(
+        coreProducts,
+        eq(purchaseOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        productGroups,
+        eq(coreProducts.productGroupId, productGroups.productGroupId),
+      )
       .where(eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrderId));
+
+    const orderLines = orderLinesQuery.map((row) => ({
+      ...row.line,
+      productExpenseAccountId: row.productExpenseAccountId,
+    }));
 
     if (orderLines.length === 0) {
       throw new BadRequestException(
@@ -124,6 +152,10 @@ export class PurchaseInvoiceService {
     let rawTax = 0;
     const invoiceLineValues: any[] = [];
     const outboxLineDetails: any[] = [];
+
+    // Expense GL Routing tallies
+    const expenseByAccountId = new Map<string, number>();
+    let defaultExpense = 0;
 
     for (const line of orderLines) {
       // ModBM natively bills the expected received quantity (committed lines)
@@ -153,6 +185,22 @@ export class PurchaseInvoiceService {
 
       rawTotal += pricing.amount;
       rawTax += pricing.tax;
+
+      const lineExpAcctId =
+        EXPENSE_ROUTING_PRECEDENCE === 'supplier_first'
+          ? supplierExpenseAccountId ||
+            (line as any).productExpenseAccountId ||
+            null
+          : (line as any).productExpenseAccountId ||
+            supplierExpenseAccountId ||
+            null;
+
+      if (lineExpAcctId) {
+        const current = expenseByAccountId.get(lineExpAcctId) || 0;
+        expenseByAccountId.set(lineExpAcctId, current + pricing.amount);
+      } else {
+        defaultExpense += pricing.amount;
+      }
 
       invoiceLineValues.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
@@ -250,73 +298,102 @@ export class PurchaseInvoiceService {
     // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
     try {
       const settings = await this.glService.getSettings();
-      if (settings?.defaultApAccountId && settings?.defaultExpenseAccountId) {
-        const settingsIds = [
-          settings.defaultApAccountId,
-          settings.defaultExpenseAccountId,
-          settings.defaultTaxAccountId,
-        ].filter(Boolean);
+      const effectiveApAccountId =
+        supplierApAccountId || settings?.defaultApAccountId;
 
-        const glAcct = glAccounts;
-        const acctRows = await this.db
-          .select({
-            glAccountId: glAcct.glAccountId,
-            accountCode: glAcct.accountCode,
-          })
-          .from(glAcct)
-          .where(
-            sql`${glAcct.glAccountId} IN (${sql.join(
-              settingsIds.map((id) => sql`${id}`),
-              sql`, `,
-            )})`,
+      if (effectiveApAccountId) {
+        const distinctAccountIds = new Set<string>();
+        distinctAccountIds.add(effectiveApAccountId);
+        if (settings?.defaultTaxAccountId)
+          distinctAccountIds.add(settings.defaultTaxAccountId);
+        if (settings?.defaultExpenseAccountId)
+          distinctAccountIds.add(settings.defaultExpenseAccountId);
+        for (const acctId of expenseByAccountId.keys()) {
+          distinctAccountIds.add(acctId);
+        }
+
+        const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
+
+        if (settingsIds.length > 0) {
+          const glAcct = glAccounts;
+          const acctRows = await this.db
+            .select({
+              glAccountId: glAcct.glAccountId,
+              accountCode: glAcct.accountCode,
+            })
+            .from(glAcct)
+            .where(
+              sql`${glAcct.glAccountId} IN (${sql.join(
+                settingsIds.map((id) => sql`${id}`),
+                sql`, `,
+              )})`,
+            );
+
+          const idToCode = new Map(
+            acctRows.map((a) => [a.glAccountId, a.accountCode]),
           );
 
-        const idToCode = new Map(
-          acctRows.map((a) => [a.glAccountId, a.accountCode]),
-        );
-        const apCode = idToCode.get(settings.defaultApAccountId);
-        const expCode = idToCode.get(settings.defaultExpenseAccountId);
-        const taxCode = settings.defaultTaxAccountId
-          ? idToCode.get(settings.defaultTaxAccountId)
-          : null;
+          const apCode = idToCode.get(effectiveApAccountId);
+          const defaultExpCode = settings.defaultExpenseAccountId
+            ? idToCode.get(settings.defaultExpenseAccountId)
+            : undefined;
+          const taxCode = settings.defaultTaxAccountId
+            ? idToCode.get(settings.defaultTaxAccountId)
+            : null;
 
-        if (apCode && expCode) {
-          const glLines: any[] = [
-            {
-              accountCode: expCode,
-              debit: totalAmount,
-              credit: 0,
-              memo: `Expense: ${internalBillNumber}`,
-            },
-          ];
-          if (taxCode && taxAmount > 0) {
-            // GST Paid is an asset (input tax credit)
+          if (apCode) {
+            const glLines: any[] = [];
+
+            if (defaultExpense > 0 && defaultExpCode) {
+              glLines.push({
+                accountCode: defaultExpCode,
+                debit: defaultExpense,
+                credit: 0,
+                memo: `Expense (Default): ${internalBillNumber}`,
+              });
+            }
+
+            for (const [acctId, amount] of expenseByAccountId.entries()) {
+              const code = idToCode.get(acctId);
+              if (code && amount > 0) {
+                glLines.push({
+                  accountCode: code,
+                  debit: amount,
+                  credit: 0,
+                  memo: `Expense: ${internalBillNumber}`,
+                });
+              }
+            }
+
+            if (taxCode && taxAmount > 0) {
+              // GST Paid is an asset (input tax credit)
+              glLines.push({
+                accountCode: taxCode,
+                debit: taxAmount,
+                credit: 0,
+                memo: `GST Paid: ${internalBillNumber}`,
+              });
+            }
             glLines.push({
-              accountCode: taxCode,
-              debit: taxAmount,
-              credit: 0,
-              memo: `GST Paid: ${internalBillNumber}`,
+              accountCode: apCode,
+              debit: 0,
+              credit: combinedTotal,
+              memo: `AP: ${internalBillNumber}`,
+              partyType: 'supplier',
+              partyId: order.vendorId,
             });
+
+            await this.glService.postJournalEntry(glLines, {
+              sourceType: 'purchase_invoice',
+              sourceId: result.invoiceId,
+              memo: `Purchase bill ${internalBillNumber} for PO ${order.orderNumber}`,
+              actor,
+            });
+
+            this.logger.log(
+              `GL journal posted for purchase bill ${internalBillNumber}`,
+            );
           }
-          glLines.push({
-            accountCode: apCode,
-            debit: 0,
-            credit: combinedTotal,
-            memo: `AP: ${internalBillNumber}`,
-            partyType: 'supplier',
-            partyId: order.vendorId,
-          });
-
-          await this.glService.postJournalEntry(glLines, {
-            sourceType: 'purchase_invoice',
-            sourceId: result.invoiceId,
-            memo: `Purchase bill ${internalBillNumber} for PO ${order.orderNumber}`,
-            actor,
-          });
-
-          this.logger.log(
-            `GL journal posted for purchase bill ${internalBillNumber}`,
-          );
         }
       }
     } catch (glErr) {

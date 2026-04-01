@@ -1,10 +1,13 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { use, useEffect, useState } from 'react';
 import TemplateForm from '../TemplateForm';
 import { apiFetch, reportError } from '@/lib/api';
 
 export default function EditTemplatePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  useDocumentTitle('Edit Report Template');
   const params = use(paramsPromise);
   const [initialData, setInitialData] = useState<any>(null);
   const [loading, setLoading] = useState(true);

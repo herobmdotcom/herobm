@@ -60,7 +60,7 @@ describe('Worker E2E - Outbox Integration', () => {
     // Setup an account record to be JIT-synced
     await db.insert(accounts).values({
       accountId: testCustomerId,
-      accountNumber: 'E2E-1234',
+      accountNumber: `E2E-${randomUUID().substring(0,8)}`,
       name: 'E2E Corp',
       erpnextId: null,
     });
@@ -100,5 +100,35 @@ describe('Worker E2E - Outbox Integration', () => {
 
     const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, testEventId));
     expect(dbCheck[0].processedAt).not.toBeNull();
+  });
+
+  it('should leave processedAt null if BullMQ crashes or sync fails (ADV-064)', async () => {
+    const pEventId = randomUUID();
+
+    await db.insert(outbox).values({
+      outboxId: pEventId,
+      aggregateType: 'sales_order',
+      aggregateId: randomUUID(),
+      eventType: 'sales_invoiced',
+      payload: {
+        customerId: randomUUID(),
+        customerName: 'Fail Corp'
+      }
+    });
+
+    // Mock BullMQ add to completely fail (simulate Redis drop)
+    const spy = vi.spyOn(queue, 'add').mockRejectedValueOnce(new Error('Redis Connection Error'));
+
+    await pollOutbox(db, queue);
+
+    const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, pEventId));
+    
+    // ProcessedAt must strictly be null, as it was never successfully enqueued/processed
+    expect(dbCheck[0].processedAt).toBeNull();
+    // It shouldn't even be locked, or if it locked before failing, the failure caught it.
+    // However, our code currently queues THEN locks. If queue throws, it doesn't lock.
+    expect(dbCheck[0].lockedUntil).toBeNull();
+
+    spy.mockRestore();
   });
 });

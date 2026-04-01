@@ -72,7 +72,13 @@ export function usePickingData(
   const [summary, setSummary] = useState<PickingSummary | null>(null);
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, _setError] = useState('');
+  const setError = useCallback((msg: string) => {
+    _setError(msg);
+    if (msg) {
+      import('react-hot-toast').then(({ toast }) => toast.error(msg));
+    }
+  }, []);
 
   // Data loading
   const loadPickingData = useCallback(async () => {

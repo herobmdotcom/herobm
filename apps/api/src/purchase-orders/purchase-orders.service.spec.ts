@@ -218,7 +218,8 @@ describe('PurchaseOrdersService', () => {
       mockSelectChain({
         1: [{ purchaseOrderId: 'po-1', orderNumber: 'PO-001' }],
         2: [{ purchaseOrderLineId: 'line-1', productId: 'p1' }], // lines
-        3: [{ eventType: 'created' }], // events
+        3: [{ productId: 'p1', uomCode: 'EA', divisor: 1 }], // product UOMs lookup
+        4: [{ eventType: 'created' }], // events
       });
 
       const result = await service.findOne('po-1');

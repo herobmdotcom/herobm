@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export interface JournalEntry {
   journalEntryId: string;
@@ -21,6 +22,7 @@ export interface JournalLine {
   accountName?: string;
   partyType?: string | null;
   partyId?: string | null;
+  partyName?: string | null;
   debit: string;
   credit: string;
   memo: string | null;
@@ -75,15 +77,25 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
     >
       {entry && (
         <div className="space-y-6">
-          <div className="bg-[#f8f9fa] rounded-lg p-4 border border-gray-200">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="card space-y-5">
+            <div className="flex flex-col gap-5 text-sm">
               <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Memo</span>
                 <span className="text-[#041627]">{entry.memo || '—'}</span>
               </div>
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source</span>
-                <span className="text-[#041627]">{sourceLabel(entry.sourceType)}</span>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Document</span>
+                {entry.sourceId && (entry.sourceType === 'sales_invoice' || entry.sourceType === 'sales_credit_note') ? (
+                  <Link 
+                    href={`/sales-orders/${entry.sourceId}${entry.sourceType === 'sales_invoice' ? '#invoices-section' : ''}`} 
+                    className="text-[var(--accent)] hover:underline"
+                    onClick={onClose}
+                  >
+                    {sourceLabel(entry.sourceType)}
+                  </Link>
+                ) : (
+                  <span className="text-[#041627]">{sourceLabel(entry.sourceType)}</span>
+                )}
               </div>
             </div>
           </div>
@@ -112,9 +124,17 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                         <div className="font-mono text-xs text-gray-500">{l.accountCode}</div>
                         <div className="font-semibold text-[#041627] mt-0.5">{l.accountName}</div>
                       </td>
-                      <td className="px-5 py-3 capitalize text-xs text-gray-600">
-                        {l.partyType ? (
-                          <span className="px-1.5 py-0.5 rounded bg-gray-100 border font-mono">
+                      <td className="px-5 py-3 text-xs">
+                        {l.partyType && l.partyId ? (
+                          <Link 
+                            href={`/${l.partyType === 'customer' ? 'accounts' : 'suppliers'}/${l.partyId}`}
+                            className="text-[var(--accent)] hover:underline"
+                            onClick={onClose}
+                          >
+                            {l.partyName || (l.partyId ? `${l.partyType}: ${l.partyId.substring(0, 8)}...` : l.partyType)}
+                          </Link>
+                        ) : l.partyType ? (
+                          <span className="text-gray-600">
                             {l.partyType}: {l.partyId?.substring(0, 8)}...
                           </span>
                         ) : '—'}

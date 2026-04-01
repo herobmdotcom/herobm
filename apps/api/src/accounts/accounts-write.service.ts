@@ -14,55 +14,10 @@ import {
 } from '../drizzle/modbm-core-schema';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { CreateAccountDto, UpdateAccountDto } from './dto';
 
 const isUuid = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
-export interface CreateAccountDto {
-  accountNumber: string;
-  name: string;
-  address1Line1?: string;
-  address1Line2?: string;
-  address1City?: string;
-  address1StateOrProvince?: string;
-  address1PostalCode?: string;
-  address1Country?: string;
-  telephone1?: string;
-  fax?: string;
-  emailAddress1?: string;
-  primaryContactName?: string;
-  primaryContactEmail?: string;
-  primaryContactPhone?: string;
-  customerGroup?: string;
-  accountGroupId?: string;
-  gstPosition?: string;
-  currencyCode?: string;
-  customerDiscount?: string;
-  notes?: string;
-}
-
-export interface UpdateAccountDto {
-  name?: string;
-  address1Line1?: string;
-  address1Line2?: string;
-  address1City?: string;
-  address1StateOrProvince?: string;
-  address1PostalCode?: string;
-  address1Country?: string;
-  telephone1?: string;
-  fax?: string;
-  emailAddress1?: string;
-  primaryContactName?: string;
-  primaryContactEmail?: string;
-  primaryContactPhone?: string;
-  customerGroup?: string;
-  accountGroupId?: string;
-  stateCode?: string;
-  gstPosition?: string;
-  currencyCode?: string;
-  customerDiscount?: string;
-  notes?: string;
-}
 
 @Injectable()
 export class AccountsWriteService {
@@ -87,11 +42,40 @@ export class AccountsWriteService {
 
     // Legacy ABM accounts are now in core — the check above covers both.
 
+    const allowedKeys: (keyof CreateAccountDto)[] = [
+      'accountNumber',
+      'name',
+      'address1Line1',
+      'address1Line2',
+      'address1City',
+      'address1StateOrProvince',
+      'address1PostalCode',
+      'address1Country',
+      'telephone1',
+      'fax',
+      'emailAddress1',
+      'primaryContactName',
+      'primaryContactEmail',
+      'primaryContactPhone',
+      'accountGroupId',
+      'gstCategoryId',
+      'currencyCode',
+      'customerDiscount',
+      'notes',
+    ];
+
+    const sanitizedDto: any = {};
+    for (const key of allowedKeys) {
+      if (key in dto && dto[key] !== undefined) {
+        sanitizedDto[key] = dto[key];
+      }
+    }
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [account] = await tx
         .insert(coreAccounts)
         .values({
-          ...dto,
+          ...sanitizedDto,
           createdBy: actor,
         })
         .returning();
@@ -127,8 +111,41 @@ export class AccountsWriteService {
       throw new NotFoundException(`Account '${id}' not found`);
     }
 
+    const allowedKeys: (keyof UpdateAccountDto)[] = [
+      'name',
+      'address1Line1',
+      'address1Line2',
+      'address1City',
+      'address1StateOrProvince',
+      'address1PostalCode',
+      'address1Country',
+      'telephone1',
+      'fax',
+      'emailAddress1',
+      'primaryContactName',
+      'primaryContactEmail',
+      'primaryContactPhone',
+      'accountGroupId',
+      'stateCode',
+      'gstCategoryId',
+      'currencyCode',
+      'customerDiscount',
+      'notes',
+    ];
+
+    const sanitizedDto: any = {};
+    for (const key of allowedKeys) {
+      if (key in dto && dto[key] !== undefined) {
+        sanitizedDto[key] = dto[key];
+      }
+    }
+
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const audit = calculateAuditTrail(dto, existing[0], AuditMode.DIFF);
+      const audit = calculateAuditTrail(
+        sanitizedDto,
+        existing[0],
+        AuditMode.DIFF,
+      );
 
       // Perform the update
       const [updated] = await tx

@@ -1,13 +1,9 @@
 'use client';
 
-import LedgerView from '../components/LedgerView';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import InventoryLedgerContent from './InventoryLedgerContent';
 
 export default function LedgerPage() {
-  return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <LedgerView />
-      </div>
-    </>
-  );
+  useDocumentTitle('Inventory Ledger');
+  return <InventoryLedgerContent />;
 }

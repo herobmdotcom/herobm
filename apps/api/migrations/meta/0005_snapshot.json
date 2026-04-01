@@ -1,6 +1,6 @@
 {
-  "id": "4b8eb65f-23e1-43f0-810d-99ee2eb83618",
-  "prevId": "695e7df6-dd20-4999-ad4c-f3fb512475e1",
+  "id": "15f2a597-6dba-4863-823b-444d5864a3bf",
+  "prevId": "586f4b2e-75ad-43e4-9ff8-f53e7487aff1",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -266,9 +266,9 @@
           "notNull": true,
           "default": "'active'"
         },
-        "gst_position": {
-          "name": "gst_position",
-          "type": "text",
+        "gst_category_id": {
+          "name": "gst_category_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -353,6 +353,20 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "accounts_gst_category_id_gst_categories_gst_category_id_fk": {
+          "name": "accounts_gst_category_id_gst_categories_gst_category_id_fk",
+          "tableFrom": "accounts",
+          "tableTo": "gst_categories",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "gst_category_id"
+          ],
+          "columnsTo": [
+            "gst_category_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -372,6 +386,152 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {
+        "accounts_currency_check": {
+          "name": "accounts_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "modbm_core.backorders": {
+      "name": "backorders",
+      "schema": "modbm_core",
+      "columns": {
+        "backorder_id": {
+          "name": "backorder_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "sales_order_id": {
+          "name": "sales_order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sales_order_line_id": {
+          "name": "sales_order_line_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "purchase_order_id": {
+          "name": "purchase_order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "purchase_order_line_id": {
+          "name": "purchase_order_line_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state_code": {
+          "name": "state_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending_supply'"
+        },
+        "created_on": {
+          "name": "created_on",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "backorders_sales_order_id_sales_orders_sales_order_id_fk": {
+          "name": "backorders_sales_order_id_sales_orders_sales_order_id_fk",
+          "tableFrom": "backorders",
+          "tableTo": "sales_orders",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "sales_order_id"
+          ],
+          "columnsTo": [
+            "sales_order_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "backorders_sales_order_line_id_sales_order_lines_sales_order_line_id_fk": {
+          "name": "backorders_sales_order_line_id_sales_order_lines_sales_order_line_id_fk",
+          "tableFrom": "backorders",
+          "tableTo": "sales_order_lines",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "sales_order_line_id"
+          ],
+          "columnsTo": [
+            "sales_order_line_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "backorders_product_id_products_product_id_fk": {
+          "name": "backorders_product_id_products_product_id_fk",
+          "tableFrom": "backorders",
+          "tableTo": "products",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "product_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "backorders_purchase_order_id_purchase_orders_purchase_order_id_fk": {
+          "name": "backorders_purchase_order_id_purchase_orders_purchase_order_id_fk",
+          "tableFrom": "backorders",
+          "tableTo": "purchase_orders",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "purchase_order_id"
+          ],
+          "columnsTo": [
+            "purchase_order_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "backorders_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk": {
+          "name": "backorders_purchase_order_line_id_purchase_order_lines_purchase_order_line_id_fk",
+          "tableFrom": "backorders",
+          "tableTo": "purchase_order_lines",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "purchase_order_line_id"
+          ],
+          "columnsTo": [
+            "purchase_order_line_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -646,7 +806,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "exchange_rates_currency_check": {
+          "name": "exchange_rates_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.gl_accounts": {
@@ -733,7 +898,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "gl_accounts_currency_check": {
+          "name": "gl_accounts_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.gl_journal_entries": {
@@ -928,8 +1098,7 @@
           "name": "fiscal_year_start_month",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 7
+          "notNull": true
         },
         "default_ar_account_id": {
           "name": "default_ar_account_id",
@@ -971,8 +1140,7 @@
           "name": "base_currency",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'AUD'"
+          "notNull": true
         }
       },
       "indexes": {},
@@ -1112,7 +1280,24 @@
           "default": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "gst_categories_single_default_idx": {
+          "name": "gst_categories_single_default_idx",
+          "columns": [
+            {
+              "expression": "is_default",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"modbm_core\".\"gst_categories\".\"is_default\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -1510,6 +1695,134 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "modbm_core.organization": {
+      "name": "organization",
+      "schema": "modbm_core",
+      "columns": {
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address_line_1": {
+          "name": "address_line_1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address_line_2": {
+          "name": "address_line_2",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "country": {
+          "name": "country",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "post_code": {
+          "name": "post_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "website": {
+          "name": "website",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_number": {
+          "name": "company_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tax_number": {
+          "name": "tax_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_name": {
+          "name": "bank_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_account_name": {
+          "name": "bank_account_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_account_number": {
+          "name": "bank_account_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_swift_bic": {
+          "name": "bank_swift_bic",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bank_iban": {
+          "name": "bank_iban",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -1972,6 +2285,102 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "modbm_core.product_uoms": {
+      "name": "product_uoms",
+      "schema": "modbm_core",
+      "columns": {
+        "product_uom_id": {
+          "name": "product_uom_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uom_code": {
+          "name": "uom_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ratio": {
+          "name": "ratio",
+          "type": "numeric(14, 6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "barcode": {
+          "name": "barcode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_sales_default": {
+          "name": "is_sales_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "is_purchase_default": {
+          "name": "is_purchase_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "product_uoms_product_id_products_product_id_fk": {
+          "name": "product_uoms_product_id_products_product_id_fk",
+          "tableFrom": "product_uoms",
+          "tableTo": "products",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "product_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "product_uoms_uom_code_uom_dictionary_uom_code_fk": {
+          "name": "product_uoms_uom_code_uom_dictionary_uom_code_fk",
+          "tableFrom": "product_uoms",
+          "tableTo": "uom_dictionary",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "uom_code"
+          ],
+          "columnsTo": [
+            "uom_code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "product_uoms_product_code_unq": {
+          "name": "product_uoms_product_code_unq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "product_id",
+            "uom_code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "modbm_core.products": {
       "name": "products",
       "schema": "modbm_core",
@@ -1994,6 +2403,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "product_type": {
+          "name": "product_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'inventory'"
         },
         "product_group_id": {
           "name": "product_group_id",
@@ -2056,9 +2472,28 @@
           "notNull": false,
           "default": "'0'"
         },
-        "gst_category": {
-          "name": "gst_category",
+        "base_uom": {
+          "name": "base_uom",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'EA'"
+        },
+        "default_sales_uom_id": {
+          "name": "default_sales_uom_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_purchase_uom_id": {
+          "name": "default_purchase_uom_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gst_category_id": {
+          "name": "gst_category_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -2127,6 +2562,34 @@
           ],
           "columnsTo": [
             "product_group_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "products_base_uom_uom_dictionary_uom_code_fk": {
+          "name": "products_base_uom_uom_dictionary_uom_code_fk",
+          "tableFrom": "products",
+          "tableTo": "uom_dictionary",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "base_uom"
+          ],
+          "columnsTo": [
+            "uom_code"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "products_gst_category_id_gst_categories_gst_category_id_fk": {
+          "name": "products_gst_category_id_gst_categories_gst_category_id_fk",
+          "tableFrom": "products",
+          "tableTo": "gst_categories",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "gst_category_id"
+          ],
+          "columnsTo": [
+            "gst_category_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -2261,12 +2724,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "erpnext_journal_id": {
-          "name": "erpnext_journal_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "total_amount": {
           "name": "total_amount",
           "type": "numeric",
@@ -2349,7 +2806,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "purchase_invoices_currency_check": {
+          "name": "purchase_invoices_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.purchase_order_events": {
@@ -2732,6 +3194,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "delivery_location_id": {
+          "name": "delivery_location_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "invoice_number": {
           "name": "invoice_number",
           "type": "text",
@@ -2800,6 +3268,20 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "purchase_orders_delivery_location_id_locations_location_id_fk": {
+          "name": "purchase_orders_delivery_location_id_locations_location_id_fk",
+          "tableFrom": "purchase_orders",
+          "tableTo": "locations",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "delivery_location_id"
+          ],
+          "columnsTo": [
+            "location_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2813,7 +3295,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "purchase_orders_currency_check": {
+          "name": "purchase_orders_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.report_contexts": {
@@ -2877,6 +3364,12 @@
         "report_id": {
           "name": "report_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "context_slug": {
+          "name": "context_slug",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -3079,12 +3572,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "erpnext_journal_id": {
-          "name": "erpnext_journal_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "total_amount": {
           "name": "total_amount",
           "type": "numeric",
@@ -3167,7 +3654,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sales_invoices_currency_check": {
+          "name": "sales_invoices_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.sales_order_lines": {
@@ -3261,6 +3753,19 @@
           "primaryKey": false,
           "notNull": false,
           "default": "'0'"
+        },
+        "fulfillment_location_id": {
+          "name": "fulfillment_location_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_post_confirmation": {
+          "name": "is_post_confirmation",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
         }
       },
       "indexes": {},
@@ -3303,6 +3808,20 @@
           ],
           "columnsTo": [
             "gst_category_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sales_order_lines_fulfillment_location_id_locations_location_id_fk": {
+          "name": "sales_order_lines_fulfillment_location_id_locations_location_id_fk",
+          "tableFrom": "sales_order_lines",
+          "tableTo": "locations",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "fulfillment_location_id"
+          ],
+          "columnsTo": [
+            "location_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -3678,6 +4197,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "fulfillment_location_id": {
+          "name": "fulfillment_location_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "state_code": {
           "name": "state_code",
           "type": "text",
@@ -3753,6 +4278,20 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "sales_orders_fulfillment_location_id_locations_location_id_fk": {
+          "name": "sales_orders_fulfillment_location_id_locations_location_id_fk",
+          "tableFrom": "sales_orders",
+          "tableTo": "locations",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "fulfillment_location_id"
+          ],
+          "columnsTo": [
+            "location_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3773,7 +4312,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sales_orders_currency_check": {
+          "name": "sales_orders_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
       "isRLSEnabled": false
     },
     "modbm_core.supplier_events": {
@@ -3865,15 +4409,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "default_discount_percentage": {
-          "name": "default_discount_percentage",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'0'"
-        },
         "default_ap_account_id": {
           "name": "default_ap_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "default_expense_account_id": {
+          "name": "default_expense_account_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -3888,6 +4431,20 @@
           "schemaTo": "modbm_core",
           "columnsFrom": [
             "default_ap_account_id"
+          ],
+          "columnsTo": [
+            "gl_account_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "supplier_groups_default_expense_account_id_gl_accounts_gl_account_id_fk": {
+          "name": "supplier_groups_default_expense_account_id_gl_accounts_gl_account_id_fk",
+          "tableFrom": "supplier_groups",
+          "tableTo": "gl_accounts",
+          "schemaTo": "modbm_core",
+          "columnsFrom": [
+            "default_expense_account_id"
           ],
           "columnsTo": [
             "gl_account_id"
@@ -4093,6 +4650,43 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {
+        "suppliers_currency_check": {
+          "name": "suppliers_currency_check",
+          "value": "currency_code IN ('EUR', 'USD', 'CAD', 'GBP', 'DKK', 'SEK', 'MYR', 'AUD', 'IDR', 'NZD', 'SGD', 'JPY', 'KRW', 'LKR', 'ZAR', 'SAR')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "modbm_core.uom_dictionary": {
+      "name": "uom_dictionary",
+      "schema": "modbm_core",
+      "columns": {
+        "uom_code": {
+          "name": "uom_code",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_on": {
+          "name": "created_on",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

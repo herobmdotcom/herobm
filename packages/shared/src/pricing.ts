@@ -96,3 +96,23 @@ export function computeOrderTotals(
     totalAmount: Number(Math.round(Number(totalAmountRaw + 'e2')) + 'e-2'),
   };
 }
+
+/**
+ * Resolves the maximum effective discount percentage between an account and its group.
+ * Safely handles null, undefined, empty strings, and non-numeric garbage.
+ */
+export function resolveEffectiveDiscount(
+  accountDiscount: string | number | null | undefined,
+  groupDiscount: string | number | null | undefined,
+): string {
+  const parse = (val: any): number => {
+    if (val == null || val === '') return 0;
+    const parsed = Number(val);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const ad = parse(accountDiscount);
+  const gd = parse(groupDiscount);
+  
+  return Math.max(ad, gd).toString();
+}

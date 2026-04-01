@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
+import { formatCompositeQuantity } from '@modbm/shared';
 
 export default function BinContentsView() {
   const tCommon = useTranslations('common');
@@ -16,6 +17,19 @@ export default function BinContentsView() {
     { field: 'productNumber', headerName: tBins('columns.productNumber'), width: 130 },
     { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'actualQuantity', headerName: tCommon('columns.qty'), width: 90, type: 'numericColumn' },
+    { 
+      headerName: 'Box Qty', 
+      width: 130, 
+      type: 'rightAligned',
+      valueGetter: (params) => {
+        if (!params.data || !params.data.actualQuantity) return '0';
+        return formatCompositeQuantity(
+          parseFloat(params.data.actualQuantity),
+          params.data.productUoms || [],
+          params.data.baseUom || 'EA'
+        );
+      }
+    },
     { field: 'baseQuantity', headerName: tBins('columns.baseQty'), width: 100, type: 'numericColumn' },
     { field: 'isConsignment', headerName: tBins('columns.consignment'), width: 110 },
     { field: 'isBonded', headerName: tBins('columns.bonded'), width: 90 },

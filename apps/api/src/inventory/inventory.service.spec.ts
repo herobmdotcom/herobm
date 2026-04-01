@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { InventoryService } from './inventory.service';
+import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 
 describe('InventoryService', () => {
@@ -75,6 +76,19 @@ describe('InventoryService', () => {
         InventoryService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: UomService,
+          useValue: {
+            calculateAbsoluteBaseQuantity: jest
+              .fn()
+              .mockImplementation(async (pid, lines) => {
+                return lines.reduce(
+                  (acc: number, l: any) => acc + l.quantity,
+                  0,
+                );
+              }),
+          },
+        },
       ],
     }).compile();
 
@@ -137,7 +151,10 @@ describe('InventoryService', () => {
     it('should apply both search and locationNo for bins', async () => {
       mockQb.then = jest.fn().mockImplementation((cb) => cb(mockBinRows));
       await service.findBins({ q: 'A-01', locationNo: 'LOC02' });
-      expect(mockQb.where).toHaveBeenCalledTimes(2);
+      // 1. searchTerm
+      // 2. locationNo
+      // 3. UOMs query
+      expect(mockQb.where).toHaveBeenCalledTimes(3);
     });
   });
 

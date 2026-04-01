@@ -139,7 +139,12 @@ describe('OrdersWriteService', () => {
         if (code === 'GST') return GST_DEFAULT;
         throw new Error('GST category not found by code');
       }),
-      getById: jest.fn().mockResolvedValue(GST_DEFAULT),
+      getById: jest.fn().mockImplementation(async (id: string) => {
+        if (id === 'unknown-id') throw new Error('Not found by ID');
+        if (id === 'gst-zero') return GST_ZERO;
+        if (id === 'gst-exempt') return GST_EXEMPT;
+        return GST_DEFAULT;
+      }),
     };
 
     mockBackordersService = {
@@ -160,14 +165,14 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
-        gstPosition: 'taxable',
+        gstCategoryId: 'gst-default',
       }),
     };
     mockProductsService = {
       findOne: jest.fn().mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategory: '9% GST',
+        gstCategoryId: 'gst-default',
       }),
     };
 
@@ -260,27 +265,27 @@ describe('OrdersWriteService', () => {
     };
 
     function setupCreate(opts?: {
-      gstPosition?: string;
+      gstCategoryId?: string;
       disc?: string;
-      productGst?: string;
+      productGstId?: string;
       currency?: string;
     }) {
-      const gstPos = opts?.gstPosition ?? 'taxable';
+      const gstId = opts?.gstCategoryId ?? 'gst-default';
       const disc = opts?.disc ?? '0';
-      const prodGst = opts?.productGst ?? '9% GST';
+      const prodGstId = opts?.productGstId ?? 'gst-default';
       const currency = opts?.currency ?? 'EUR';
 
       mockAccountsService.findOne.mockResolvedValue({
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: disc,
         currencyCode: currency,
-        gstPosition: gstPos,
+        gstCategoryId: gstId,
       });
 
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategory: prodGst,
+        gstCategoryId: prodGstId,
       });
 
       // DB calls: generateOrderNumber is now inside the tx (handled by mockTransaction)
@@ -318,19 +323,16 @@ describe('OrdersWriteService', () => {
       expect(result.currencyCode).toBe('SGD');
     });
 
-    it('should use product GST category for taxable customer', async () => {
-      setupCreate({ gstPosition: 'taxable', productGst: '9% GST' });
+    it('should use product GST category directly without fallback if possible', async () => {
+      setupCreate();
       await service.create(validDto, 'admin');
-      expect(mockGstService.getByCode).toHaveBeenCalledWith('GST');
+      expect(mockGstService.getById).toHaveBeenCalledWith('gst-default');
     });
 
     it('should use zero-rated GST for zero-rated product', async () => {
-      setupCreate({
-        gstPosition: 'taxable',
-        productGst: 'Zero Rated Products',
-      });
+      setupCreate({ productGstId: 'gst-zero' });
       await service.create(validDto, 'admin');
-      expect(mockGstService.getByCode).toHaveBeenCalledWith('ZR');
+      expect(mockGstService.getById).toHaveBeenCalledWith('gst-zero');
     });
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
@@ -338,7 +340,7 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
-        gstPosition: 'exempt',
+        gstCategoryId: 'gst-exempt',
       });
       mockSelectChain({});
       mockTransaction({
@@ -350,7 +352,7 @@ describe('OrdersWriteService', () => {
       });
 
       await service.create(validDto, 'admin');
-      expect(mockGstService.getByCode).toHaveBeenCalledWith('EXE');
+      expect(mockGstService.getById).toHaveBeenCalledTimes(1);
     });
 
     it('should reject unknown customer', async () => {
@@ -393,8 +395,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should fall back to system default when product has unknown GST category', async () => {
-      setupCreate({ productGst: 'Some Unknown Category' });
+      setupCreate({ productGstId: 'unknown-id' });
       await service.create(validDto, 'admin');
+      // The default should be fetched from fallback!
       expect(mockGstService.getDefault).toHaveBeenCalled();
     });
   });
@@ -687,7 +690,7 @@ describe('OrdersWriteService', () => {
   //   1. findOrder → order row (with customerId)
   //   2. validateProduct → lookupProduct
   //   3. max line number query
-  //   4. resolveGstForLine → accounts.gstPosition
+  //   4. resolveGstForLine → accounts.gstCategoryId
   //   5. resolveGstForLine → lookupProduct (for product gstCategory)
   // =========================================================================
 
@@ -703,13 +706,13 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '10',
         currencyCode: 'EUR',
-        gstPosition: 'taxable',
+        gstCategoryId: 'gst-default',
       });
 
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategory: '9% GST',
+        gstCategoryId: 'gst-default',
       });
 
       mockSelectChain({
@@ -759,8 +762,7 @@ describe('OrdersWriteService', () => {
         lineDto,
         'admin',
       );
-      // resolveGstForLine should call getByCode with the mapped product GST code
-      expect(mockGstService.getByCode).toHaveBeenCalledWith('GST');
+      expect(mockGstService.getById).toHaveBeenCalledWith('gst-default');
     });
 
     it('should use per-line GST override when provided', async () => {
@@ -845,12 +847,17 @@ describe('OrdersWriteService', () => {
         return cb(tx);
       });
 
+      mockProductsService.findOne.mockResolvedValue({
+        productId: 'PROD-ZR',
+        name: 'Zero Rated Product',
+        gstCategoryId: 'gst-zero',
+      });
       await service.addLine(
         '00000000-0000-4000-a000-000000000001',
         { ...lineDto, productId: 'PROD-ZR' },
         'admin',
       );
-      expect(mockGstService.getByCode).toHaveBeenCalledWith('ZR');
+      expect(mockGstService.getById).toHaveBeenCalledWith('gst-zero');
     });
   });
 
@@ -1058,8 +1065,15 @@ describe('OrdersWriteService', () => {
             customerName: 'Test Customer',
           },
         ],
-        2: [{ salesOrderLineId: 'line-001', lineNumber: 1 }],
-        3: [{ eventId: 'evt-001', eventType: 'created' }],
+        2: [
+          {
+            salesOrderLineId: 'line-001',
+            lineNumber: 1,
+            productId: 'prod-001',
+          },
+        ],
+        3: [{ productId: 'prod-001', uomCode: 'EA', divisor: 1 }],
+        4: [{ eventId: 'evt-001', eventType: 'created' }],
       });
 
       const result = await service.findOne(

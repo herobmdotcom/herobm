@@ -1,10 +1,12 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount } from '@/lib/currency';
+import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 import { apiFetch, apiMutate } from '@/lib/api';
@@ -56,6 +58,7 @@ function generateOrderNumber(): string {
 }
 
 export default function NewPurchaseOrderPage() {
+  useDocumentTitle('New Purchase Order');
   const t = useTranslations();
   const router = useRouter();
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
@@ -63,7 +66,7 @@ export default function NewPurchaseOrderPage() {
   const [vendorId, setVendorId] = useState('');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
-  const [currencyCode, setCurrencyCode] = useState('EUR');
+  const [currencyCode, setCurrencyCode] = useState(HOME_CURRENCY.code);
   const [name, setName] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [notes, setNotes] = useState('');
@@ -346,7 +349,7 @@ export default function NewPurchaseOrderPage() {
               <input
                 id="order-currency"
                 className="input"
-                placeholder="EUR"
+                placeholder={HOME_CURRENCY.code}
                 value={currencyCode}
                 onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
               />

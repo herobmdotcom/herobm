@@ -1,0 +1,12 @@
+{
+  "fiscal_year_start_month": 7,
+  "base_currency": "AUD",
+  "defaults": {
+    "ar_account_code": "1100",
+    "ap_account_code": "2100",
+    "revenue_account_code": "4100",
+    "cogs_account_code": "5100",
+    "tax_account_code": "2200",
+    "expense_account_code": "6900"
+  }
+}

@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
@@ -7,9 +9,11 @@ import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
+import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 
 export default function NewSupplierPage() {
+  useDocumentTitle('New Supplier');
   const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +26,7 @@ export default function NewSupplierPage() {
     address1City: '',
     address1Country: '',
     paymentTerms: 'NET30',
-    currencyCode: 'EUR',
+    currencyCode: HOME_CURRENCY.code,
     supplierGroupId: '',
     notes: '',
   });
@@ -115,9 +119,11 @@ export default function NewSupplierPage() {
                       onChange={(e) => updateField('currencyCode', e.target.value)}
                       disabled={submitting}
                     >
-                      <option value="EUR">EUR</option>
-                      <option value="USD">USD</option>
-                      <option value="GBP">GBP</option>
+                      {CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} - {c.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>

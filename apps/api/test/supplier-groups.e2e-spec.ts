@@ -25,6 +25,11 @@ describe('Supplier Groups (e2e)', () => {
         username: 'admin',
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       });
+    if (adminRes.status !== 201) {
+      throw new Error(
+        `${'adminRes'} login failed: ${adminRes.status} ${JSON.stringify(adminRes.body)}`,
+      );
+    }
     adminToken = adminRes.body.access_token;
   });
 
@@ -42,7 +47,6 @@ describe('Supplier Groups (e2e)', () => {
       .send({
         groupCode,
         name: 'E2E Test Supplier Group',
-        defaultDiscountPercentage: '10.5',
       });
     expect(createRes.status).toBe(201);
     expect(createRes.body.supplierGroupId).toBeDefined();
@@ -95,11 +99,9 @@ describe('Supplier Groups (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Updated Supplier Group',
-        defaultDiscountPercentage: '15.0',
       });
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.name).toBe('Updated Supplier Group');
-    expect(updateRes.body.defaultDiscountPercentage).toBe('15.0');
 
     // 7. Delete the group (first cleanly un-assign the account to avoid FK errors)
     await request(app.getHttpServer())

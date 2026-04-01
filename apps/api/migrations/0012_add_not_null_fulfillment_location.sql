@@ -1,4 +1,0 @@
-UPDATE "modbm_core"."sales_orders" SET "fulfillment_location_id" = coalesce((SELECT "location_id" FROM "modbm_core"."locations" WHERE "code" = 'SIN' LIMIT 1), (SELECT "location_id" FROM "modbm_core"."locations" LIMIT 1)) WHERE "fulfillment_location_id" IS NULL;--> statement-breakpoint
-UPDATE "modbm_core"."sales_order_lines" SET "fulfillment_location_id" = coalesce((SELECT "location_id" FROM "modbm_core"."locations" WHERE "code" = 'SIN' LIMIT 1), (SELECT "location_id" FROM "modbm_core"."locations" LIMIT 1)) WHERE "fulfillment_location_id" IS NULL;--> statement-breakpoint
-ALTER TABLE "modbm_core"."sales_order_lines" ALTER COLUMN "fulfillment_location_id" SET NOT NULL;--> statement-breakpoint
-ALTER TABLE "modbm_core"."sales_orders" ALTER COLUMN "fulfillment_location_id" SET NOT NULL;

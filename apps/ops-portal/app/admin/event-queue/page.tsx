@@ -1,5 +1,7 @@
 'use client';
 
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
 import { useState, useEffect, Fragment } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 
@@ -36,6 +38,7 @@ interface SyncData {
 }
 
 export default function EventQueueDashboard() {
+  useDocumentTitle('Event Queue');
   const [data, setData] = useState<SyncData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

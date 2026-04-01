@@ -1,0 +1,33 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+PASS test/sales-invoices.e2e-spec.ts
+PASS test/purchase-invoices.e2e-spec.ts
+PASS test/backorders.e2e-spec.ts (10.569 s)
+PASS test/picking.e2e-spec.ts (5.852 s)
+PASS test/returns.e2e-spec.ts
+PASS test/orders-write.e2e-spec.ts
+PASS test/archive.e2e-spec.ts
+PASS test/inventory-cycle.e2e-spec.ts
+PASS test/reports.e2e-spec.ts
+PASS test/freight-lifecycle.e2e-spec.ts
+PASS test/audit.e2e-spec.ts
+PASS test/app.e2e-spec.ts
+PASS test/receptions.e2e-spec.ts
+PASS test/suppliers.e2e-spec.ts
+PASS test/locations.e2e-spec.ts
+PASS test/gl.e2e-spec.ts
+PASS test/products.e2e-spec.ts
+PASS test/account-groups.e2e-spec.ts
+PASS test/product-groups.e2e-spec.ts
+PASS test/accounts.e2e-spec.ts
+PASS test/supplier-groups.e2e-spec.ts
+PASS test/system-logs.e2e-spec.ts
+
+Test Suites: 22 passed, 22 total
+Tests:       2 skipped, 181 passed, 183 total
+Snapshots:   0 total
+Time:        34.25 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

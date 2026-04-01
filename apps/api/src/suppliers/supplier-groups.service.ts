@@ -1,17 +1,14 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { supplierGroups } from '../drizzle/modbm-core-schema';
-
-export interface CreateSupplierGroupDto {
-  groupCode: string;
-  name: string;
-  defaultDiscountPercentage?: string;
-  defaultApAccountId?: string;
-}
-
-export type UpdateSupplierGroupDto = Partial<CreateSupplierGroupDto>;
+import { supplierGroups, suppliers } from '../drizzle/modbm-core-schema';
+import { CreateSupplierGroupDto, UpdateSupplierGroupDto } from './dto';
 
 @Injectable()
 export class SupplierGroupsService {
@@ -48,8 +45,8 @@ export class SupplierGroupsService {
       .values({
         groupCode: dto.groupCode,
         name: dto.name,
-        defaultDiscountPercentage: dto.defaultDiscountPercentage || '0',
         defaultApAccountId: dto.defaultApAccountId || null,
+        defaultExpenseAccountId: dto.defaultExpenseAccountId || null,
       })
       .returning();
     return rows[0];
@@ -63,11 +60,11 @@ export class SupplierGroupsService {
       .set({
         ...(dto.groupCode !== undefined && { groupCode: dto.groupCode }),
         ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.defaultDiscountPercentage !== undefined && {
-          defaultDiscountPercentage: dto.defaultDiscountPercentage,
-        }),
         ...(dto.defaultApAccountId !== undefined && {
           defaultApAccountId: dto.defaultApAccountId,
+        }),
+        ...(dto.defaultExpenseAccountId !== undefined && {
+          defaultExpenseAccountId: dto.defaultExpenseAccountId,
         }),
       })
       .where(eq(supplierGroups.supplierGroupId, id))
@@ -78,6 +75,19 @@ export class SupplierGroupsService {
 
   async delete(id: string) {
     await this.findOne(id);
+
+    // Check for referencing suppliers
+    const deps = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(suppliers)
+      .where(eq(suppliers.supplierGroupId, id));
+
+    if (Number(deps[0].count) > 0) {
+      throw new ConflictException(
+        `Cannot delete supplier group '${id}' because it is currently assigned to one or more suppliers.`,
+      );
+    }
+
     await this.db
       .delete(supplierGroups)
       .where(eq(supplierGroups.supplierGroupId, id));

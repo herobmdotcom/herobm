@@ -6,6 +6,7 @@ import {
   accounts,
   accountEvents,
   accountGroups,
+  gstCategories,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -47,11 +48,17 @@ export class AccountsService {
         ...getTableColumns(accounts),
         accountGroupName: accountGroups.name,
         accountGroupCode: accountGroups.groupCode,
+        accountGroupDiscount: accountGroups.defaultDiscountPercentage,
+        gstCategoryName: gstCategories.code,
       })
       .from(accounts)
       .leftJoin(
         accountGroups,
         eq(accounts.accountGroupId, accountGroups.accountGroupId),
+      )
+      .leftJoin(
+        gstCategories,
+        eq(accounts.gstCategoryId, gstCategories.gstCategoryId),
       )
       .orderBy(asc(sql`lower(${accounts.name})`))
       .limit(limit)
@@ -79,11 +86,17 @@ export class AccountsService {
         ...getTableColumns(accounts),
         accountGroupName: accountGroups.name,
         accountGroupCode: accountGroups.groupCode,
+        accountGroupDiscount: accountGroups.defaultDiscountPercentage,
+        gstCategoryName: gstCategories.code,
       })
       .from(accounts)
       .leftJoin(
         accountGroups,
         eq(accounts.accountGroupId, accountGroups.accountGroupId),
+      )
+      .leftJoin(
+        gstCategories,
+        eq(accounts.gstCategoryId, gstCategories.gstCategoryId),
       )
       .where(isUuid ? eq(accounts.accountId, id) : eq(accounts.sourceId, id))
       .limit(1);

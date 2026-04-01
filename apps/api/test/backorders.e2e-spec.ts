@@ -29,6 +29,11 @@ describe('Backorders Workflow (e2e)', () => {
         password: process.env.DEV_ADMIN_PASSWORD || 'password',
       })
       .expect(201);
+    if (loginRes.status !== 201) {
+      throw new Error(
+        `${'loginRes'} login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`,
+      );
+    }
     adminToken = loginRes.body.access_token;
 
     // Fetch dependencies

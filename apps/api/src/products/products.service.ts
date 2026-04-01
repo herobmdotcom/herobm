@@ -6,6 +6,7 @@ import {
   products as coreProducts,
   productEvents,
   productGroups,
+  productUoms,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -101,7 +102,12 @@ export class ProductsService {
         .where(eq(productEvents.productId, id))
         .orderBy(productEvents.createdOn);
 
-      return { ...rows[0], events };
+      const uoms = await this.db
+        .select()
+        .from(productUoms)
+        .where(eq(productUoms.productId, id));
+
+      return { ...rows[0], events, productUoms: uoms };
     }
 
     throw new NotFoundException(`Product '${id}' not found`);

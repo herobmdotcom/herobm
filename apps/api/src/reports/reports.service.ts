@@ -7,13 +7,19 @@ import {
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { reports, reportHookAssignments } from '../drizzle/modbm-core-schema';
-import { eq } from 'drizzle-orm';
+import {
+  reports,
+  reportHookAssignments,
+  reportContexts,
+  organization,
+} from '../drizzle/modbm-core-schema';
+import { eq, like, or } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { randomUUID } from 'crypto';
+import { BadRequestException } from '@nestjs/common';
 import { ReportsRegistry } from './reports.registry';
 
 const execAsync = promisify(exec);
@@ -73,7 +79,22 @@ export class ReportsService {
   }
 
   async getReports() {
-    return this.db.select().from(reports).orderBy(reports.name);
+    const data = await this.db.select().from(reports).orderBy(reports.name);
+
+    // Enrich with contexts
+    const enriched = await Promise.all(
+      data.map(async (r) => {
+        const contexts = await this.db
+          .select({ context: reportContexts.context })
+          .from(reportContexts)
+          .where(eq(reportContexts.reportId, r.id));
+        return {
+          ...r,
+          contexts: contexts.map((c) => c.context),
+        };
+      }),
+    );
+    return enriched;
   }
 
   async getReportById(id: string) {
@@ -81,7 +102,17 @@ export class ReportsService {
       where: eq(reports.id, id),
     });
     if (!r) throw new NotFoundException('Report not found');
-    return r;
+
+    // Fetch contexts
+    const contexts = await this.db
+      .select({ context: reportContexts.context })
+      .from(reportContexts)
+      .where(eq(reportContexts.reportId, id));
+
+    return {
+      ...r,
+      contexts: contexts.map((c) => c.context),
+    };
   }
 
   async createReport(data: {
@@ -90,9 +121,23 @@ export class ReportsService {
     description?: string;
     template: string;
     outputNamePattern?: string;
+    contexts?: string[];
   }) {
-    const [inserted] = await this.db.insert(reports).values(data).returning();
-    return inserted;
+    const { contexts, ...rest } = data;
+    const [inserted] = await this.db.insert(reports).values(rest).returning();
+
+    if (contexts && contexts.length > 0) {
+      await Promise.all(
+        contexts.map((ctx) =>
+          this.db.insert(reportContexts).values({
+            reportId: inserted.id,
+            context: ctx,
+          }),
+        ),
+      );
+    }
+
+    return { ...inserted, contexts: contexts || [] };
   }
 
   async updateReport(
@@ -103,15 +148,100 @@ export class ReportsService {
       description: string;
       template: string;
       outputNamePattern: string;
+      contexts: string[];
     }>,
   ) {
+    const { contexts, ...rest } = data;
+
     const [updated] = await this.db
       .update(reports)
-      // modbm uses manual updated timestamps occasionally, but Drizzle default handles it. Let's rely on standard updates.
-      .set(data)
+      .set(rest)
       .where(eq(reports.id, id))
       .returning();
+
     if (!updated) throw new NotFoundException('Report not found');
+
+    // Sync contexts if provided
+    if (contexts !== undefined) {
+      // 1. Clear old contexts
+      await this.db
+        .delete(reportContexts)
+        .where(eq(reportContexts.reportId, id));
+
+      // 2. Insert new contexts
+      if (contexts.length > 0) {
+        await Promise.all(
+          contexts.map((ctx) =>
+            this.db.insert(reportContexts).values({
+              reportId: id,
+              context: ctx,
+            }),
+          ),
+        );
+      }
+    }
+
+    // Refresh context list for return
+    const currentContexts = await this.db
+      .select({ context: reportContexts.context })
+      .from(reportContexts)
+      .where(eq(reportContexts.reportId, id));
+
+    return { ...updated, contexts: currentContexts.map((c) => c.context) };
+  }
+
+  async deleteReport(id: string) {
+    // Check if report is assigned to any hook
+    const assignment = await this.db.query.reportHookAssignments.findFirst({
+      where: eq(reportHookAssignments.reportId, id),
+    });
+
+    if (assignment) {
+      throw new BadRequestException(
+        `Cannot delete template: It is currently assigned to the system hook "${assignment.hookSlug}". Please reassign the hook first.`,
+      );
+    }
+
+    const [deleted] = await this.db
+      .delete(reports)
+      .where(eq(reports.id, id))
+      .returning();
+    if (!deleted) throw new NotFoundException('Report not found');
+    return { success: true };
+  }
+
+  async getAssignments() {
+    return this.db
+      .select({
+        hookSlug: reportHookAssignments.hookSlug,
+        reportId: reportHookAssignments.reportId,
+        contextSlug: reportHookAssignments.contextSlug,
+        reportName: reports.name,
+        updatedAt: reportHookAssignments.updatedAt,
+      })
+      .from(reportHookAssignments)
+      .leftJoin(reports, eq(reportHookAssignments.reportId, reports.id))
+      .orderBy(reportHookAssignments.hookSlug);
+  }
+
+  async updateAssignment(
+    hookSlug: string,
+    reportId: string,
+    contextSlug: string,
+  ) {
+    const [updated] = await this.db
+      .insert(reportHookAssignments)
+      .values({
+        hookSlug,
+        reportId,
+        contextSlug,
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: reportHookAssignments.hookSlug,
+        set: { reportId, contextSlug, updatedAt: new Date() },
+      })
+      .returning();
     return updated;
   }
 
@@ -167,9 +297,33 @@ export class ReportsService {
     const dataFile = path.join(workDir, `${jobId}.json`);
     const pdfFile = path.join(workDir, `${jobId}.pdf`);
 
+    // Fetch and inject organization
+    const orgQuery = await this.db.select().from(organization).limit(1);
+    const orgData = orgQuery.length > 0 ? orgQuery[0] : {};
+    const finalData = { ...data, _org: orgData };
+
+    // Fetch shared fragments (e.g. fragments/themes)
+    const fragments = await this.db.query.reports.findMany({
+      where: or(
+        like(reports.slug, 'theme-%'),
+        like(reports.slug, 'fragment-%'),
+      ),
+    });
+
+    const fragmentFiles: string[] = [];
+
     try {
-      fs.writeFileSync(dataFile, JSON.stringify(data));
+      fs.writeFileSync(dataFile, JSON.stringify(finalData));
       fs.writeFileSync(typstFile, template);
+
+      // Write fragments to workDir
+      for (const f of fragments) {
+        if (f.id !== reportId) {
+          const fPath = path.join(workDir, `${f.slug}.typ`);
+          fs.writeFileSync(fPath, f.template);
+          fragmentFiles.push(fPath);
+        }
+      }
 
       const typstBinary = process.env.TYPST_BINARY_PATH || 'typst';
       await execAsync(
@@ -199,6 +353,9 @@ export class ReportsService {
       if (fs.existsSync(typstFile)) fs.unlinkSync(typstFile);
       if (fs.existsSync(dataFile)) fs.unlinkSync(dataFile);
       if (fs.existsSync(pdfFile)) fs.unlinkSync(pdfFile);
+      for (const fPath of fragmentFiles) {
+        if (fs.existsSync(fPath)) fs.unlinkSync(fPath);
+      }
     }
   }
 
