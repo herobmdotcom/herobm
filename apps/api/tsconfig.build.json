@@ -7,6 +7,8 @@
     "**/*spec.ts",
     "drizzle.config.ts",
     "scripts",
-    "tools"
+    "tools",
+    "run-migrations.ts",
+    "**/*.js"
   ]
 }

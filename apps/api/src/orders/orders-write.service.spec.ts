@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersWriteService } from './orders-write.service';
 import { BackordersService } from './backorders.service';
@@ -8,6 +8,7 @@ import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AccountsService } from '../accounts/accounts.service';
+import { CreditAssessmentService } from '../accounts/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,7 @@ describe('OrdersWriteService', () => {
   let mockProductsService: any;
   let mockGstService: any;
   let mockBackordersService: any;
+  let mockCreditAssessmentService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -175,12 +177,22 @@ describe('OrdersWriteService', () => {
         gstCategoryId: 'gst-default',
       }),
     };
+    mockCreditAssessmentService = {
+      assessCredit: jest.fn().mockResolvedValue({
+        totalArBalance: 0,
+        overdueBalance: 0,
+        isOverdue: false,
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
-          provide: ConfigService,
-          useValue: { get: jest.fn().mockReturnValue('MAIN') },
+          provide: AppConfigService,
+          useValue: {
+            defaultFulfillmentLocationId: jest.fn().mockReturnValue('MAIN_ID'),
+            creditLimitBehavior: jest.fn().mockReturnValue('soft'),
+          },
         },
         OrdersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
@@ -188,6 +200,10 @@ describe('OrdersWriteService', () => {
         { provide: PickingService, useValue: mockPickingService },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: AccountsService, useValue: mockAccountsService },
+        {
+          provide: CreditAssessmentService,
+          useValue: mockCreditAssessmentService,
+        },
         { provide: ProductsService, useValue: mockProductsService },
         { provide: BackordersService, useValue: mockBackordersService },
       ],
@@ -499,6 +515,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: currentState,
+              customerId: 'c0000000-0000-0000-0000-000000000001',
             },
             customerName: 'Test Customer',
           },
@@ -578,6 +595,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'quoted',
+              customerId: 'c0000000-0000-0000-0000-000000000001',
             },
             customerName: 'Test Customer',
           },
@@ -611,6 +629,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'confirmed',
+              customerId: 'c0000000-0000-0000-0000-000000000001',
             },
             customerName: 'Test Customer',
           },

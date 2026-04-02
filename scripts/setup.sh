@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Antigravity Platform — Prerequisite Installer (Linux Bash)
+# HeroBM Platform — Prerequisite Installer (Linux Bash)
 # ==============================================================================
 # Checks for and installs required development tools via Linux package managers.
 # Sets up local systemd autostart services.
@@ -14,7 +14,7 @@ set -e
 cd "$(dirname "$0")/.."
 PROJECT_DIR="$(pwd)"
 
-echo -e "\n\e[36m=== Antigravity Platform Setup (Linux) ===\e[0m"
+echo -e "\n\e[36m=== HEROBM SETUP ===\e[0m"
 echo "Checking prerequisites..."
 
 PREREQS=("podman" "node" "python3" "typst" "make")
@@ -105,7 +105,7 @@ SERVICE_FILE="$SYSTEMD_USER_DIR/modbm.service"
 
 cat <<EOF > "$SERVICE_FILE"
 [Unit]
-Description=Antigravity Platform (ModBM) Application Autostart
+Description=HeroBM Platform Application Autostart
 After=network.target
 
 [Service]
@@ -124,6 +124,5 @@ echo -e "  \e[32m[OK]\e[0m Created systemd user config: modbm.service"
 echo -e "       (Will run '$MAKE_CMD_STRING' on boot for this user)"
 
 echo -e "\n\e[36m=== Summary ===\e[0m"
-echo -e "\n  All prerequisites verified! Building environment...\n"
-
-make init-env ${makeTargets[*]} init
+echo -e "\n  All prerequisites verified! To boot your environment and start the setup wizard, run:\n"
+echo -e "  \e[36m> make init-env ${makeTargets[*]} setup-wizard\e[0m"

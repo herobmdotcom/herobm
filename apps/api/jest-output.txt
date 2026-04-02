@@ -1,0 +1,24 @@
+PASS src/gl/coa-loader.service.spec.ts
+  CoaLoaderService
+    loadFromFile ΓÇö skip logic
+      ΓêÜ should skip loading when accounts already exist (7 ms)
+      ΓêÜ should skip even with count=1 (1 ms)
+    loadFromFile ΓÇö file errors
+      ΓêÜ should throw when COA file does not exist (7 ms)
+    loadFromFile ΓÇö ERPNext JSON parsing
+      ΓêÜ should parse a minimal ERPNext COA with root_type mapping (4 ms)
+      ΓêÜ should auto-number accounts without account_number (2 ms)
+      ΓêÜ should detect is_group from children presence (2 ms)
+      ΓêÜ should inherit accountType from parent when node lacks root_type (2 ms)
+      ΓêÜ should create GL settings with default account mappings (2 ms)
+    loadFromFile ΓÇö au_standard.json (real file)
+      ΓêÜ should successfully parse the real AU COA file (3 ms)
+      ΓêÜ should create accounts for all 5 root types (3 ms)
+      ΓêÜ should include expected core accounts (2 ms)
+      ΓêÜ should mark all seed accounts as system accounts (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        0.672 s, estimated 2 s
+Ran all test suites matching coa-loader.service.spec.ts.

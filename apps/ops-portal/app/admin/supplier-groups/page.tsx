@@ -58,6 +58,8 @@ export default function SupplierGroupsAdmin() {
       name: '',
       defaultApAccountId: '',
       defaultExpenseAccountId: '',
+      isPurchasingBlocked: false,
+      isPaymentBlocked: false,
     });
   };
 
@@ -125,6 +127,8 @@ export default function SupplierGroupsAdmin() {
               <th>Name</th>
               <th style={{ width: 180 }}>Def. AP Account</th>
               <th style={{ width: 180 }}>Def. Expense Account</th>
+              <th style={{ width: 120, textAlign: 'center' }}>Purchasing</th>
+              <th style={{ width: 120, textAlign: 'center' }}>Payment</th>
               <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
@@ -153,6 +157,18 @@ export default function SupplierGroupsAdmin() {
                     ))}
                   </select>
                 </td>
+                <td style={{ textAlign: 'center' }}>
+                  <label className="switch" title={editForm.isPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
+                    <span className="switch-slider"></span>
+                  </label>
+                </td>
+                <td style={{ textAlign: 'center' }}>
+                  <label className="switch" title={editForm.isPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
+                    <span className="switch-slider"></span>
+                  </label>
+                </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
                     <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
@@ -164,7 +180,7 @@ export default function SupplierGroupsAdmin() {
             
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                <td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
                   No supplier groups defined.
                 </td>
               </tr>
@@ -195,6 +211,18 @@ export default function SupplierGroupsAdmin() {
                       ))}
                     </select>
                   </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <label className="switch" title={editForm.isPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                      <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
+                      <span className="switch-slider"></span>
+                    </label>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <label className="switch" title={editForm.isPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                      <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
+                      <span className="switch-slider"></span>
+                    </label>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
@@ -208,6 +236,16 @@ export default function SupplierGroupsAdmin() {
                   <td className="font-medium">{g.name}</td>
                   <td>{renderGlAccountLabel(g.defaultApAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span style={{ color: g.isPurchasingBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+                      {g.isPurchasingBlocked ? 'BLOCKED' : 'ACTIVE'}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span style={{ color: g.isPaymentBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+                      {g.isPaymentBlocked ? 'BLOCKED' : 'ACTIVE'}
+                    </span>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>Edit</button>

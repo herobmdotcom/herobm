@@ -1,5 +1,5 @@
 -- ============================================
--- Antigravity Platform — Postgres Init Script
+-- HeroBM Platform — Postgres Init Script
 -- ============================================
 -- Runs automatically on first container boot via
 -- /docker-entrypoint-initdb.d/

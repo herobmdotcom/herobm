@@ -101,15 +101,30 @@ export async function validateSession(): Promise<boolean> {
 }
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-  if (!token) throw new Error('Not authenticated');
+  const isSetup = path.startsWith('/api/setup');
+  let setupToken = '';
+  if (isSetup && typeof window !== 'undefined') {
+    setupToken = new URLSearchParams(window.location.search).get('token') || '';
+  }
+
+  if (!token && !isSetup) throw new Error('Not authenticated');
+  
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string> ?? {}),
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (setupToken) {
+    headers['x-setup-token'] = setupToken;
+  }
+
   const res = await fetch(path, {
     ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(init?.headers ?? {}),
-    },
+    headers,
   });
-  if (res.status === 401) clearSessionAndReload();
+  if (res.status === 401 && !isSetup) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);
@@ -143,17 +158,32 @@ export async function apiMutate<T = unknown>(
   method: 'POST' | 'PATCH' | 'DELETE',
   body?: unknown,
 ): Promise<T> {
-  if (!token) throw new Error('Not authenticated');
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-  };
-  if (body) headers['Content-Type'] = 'application/json';
+  const isSetup = path.startsWith('/api/setup');
+  let setupToken = '';
+  if (isSetup && typeof window !== 'undefined') {
+    setupToken = new URLSearchParams(window.location.search).get('token') || '';
+  }
+
+  if (!token && !isSetup) throw new Error('Not authenticated');
+
+  const headers: Record<string, string> = {};
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (setupToken) {
+    headers['x-setup-token'] = setupToken;
+  }
+  if (body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const res = await fetch(path, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401) clearSessionAndReload();
+  if (res.status === 401 && !isSetup) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);

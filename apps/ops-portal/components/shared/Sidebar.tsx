@@ -82,9 +82,11 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
                       fontWeight: isActive ? 600 : 400,
                     }}
                   >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined text-[18px]" style={{ color: isActive ? 'var(--accent)' : 'var(--text-muted)' }}>{item.icon}</span>
                     <span className="flex-1">{item.label}</span>
                     {item.subItems && (
+                      // eslint-disable-next-line i18next/no-literal-string
                       <span className="material-symbols-outlined text-[16px] opacity-70">
                         {isActive ? 'expand_less' : 'expand_more'}
                       </span>

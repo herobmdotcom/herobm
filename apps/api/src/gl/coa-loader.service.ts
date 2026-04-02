@@ -1,11 +1,42 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { glAccounts, glSettings } from '../drizzle/modbm-core-schema';
+import {
+  glAccounts,
+  glSettings,
+  gstCategories,
+  tradingTerms,
+} from '../drizzle/modbm-core-schema';
 import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
+
+export function resolveChartsDir(dirnameFallback: string): string {
+  // 1. Standard flat structure / ts-node
+  const dirPath = path.join(dirnameFallback, 'charts');
+  if (fs.existsSync(dirPath)) return dirPath;
+
+  // 2. TSC preserves src/ (e.g. dist/src/gl) but nest-cli copies assets to dist/gl
+  const distGlPath = path.join(dirnameFallback, '..', '..', 'gl', 'charts');
+  if (fs.existsSync(distGlPath)) return distGlPath;
+
+  // 3. cwd fallbacks
+  const srcPath = path.join(
+    process.cwd(),
+    'apps',
+    'api',
+    'src',
+    'gl',
+    'charts',
+  );
+  if (fs.existsSync(srcPath)) return srcPath;
+
+  const rootSrcPath = path.join(process.cwd(), 'src', 'gl', 'charts');
+  if (fs.existsSync(rootSrcPath)) return rootSrcPath;
+
+  return dirPath;
+}
 
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
@@ -69,13 +100,17 @@ export class CoaLoaderService {
       .select({ count: count() })
       .from(glAccounts);
 
+    // We proceed even if accounts exist to ensure GST Categories, Trading Terms,
+    // and GL Settings are always upserted or verified on reload.
     if (existing.count > 0) {
-      this.logger.log('Chart of accounts already exists, skipping load.');
-      return { created: 0, skipped: true };
+      this.logger.log(
+        'Chart of accounts already exists, verifying trailing settings...',
+      );
     }
 
-    // Resolve file path
-    const filePath = path.join(__dirname, 'charts', filename);
+    // Resolve file path resiliently
+    const chartsDir = resolveChartsDir(__dirname);
+    const filePath = path.join(chartsDir, filename);
     if (!fs.existsSync(filePath)) {
       throw new Error(`COA file not found: ${filePath}`);
     }
@@ -142,6 +177,14 @@ export class CoaLoaderService {
             isGroup: row.isGroup,
             isSystem: row.isSystem,
           })
+          .onConflictDoUpdate({
+            target: [glAccounts.glAccountId],
+            set: {
+              name: row.name,
+              accountType: row.accountType,
+              isGroup: row.isGroup,
+            },
+          })
           .returning();
 
         codeToId.set(row.accountCode, inserted.glAccountId);
@@ -159,8 +202,7 @@ export class CoaLoaderService {
 
       // Create GL settings with default account mappings
       const settingsPath = path.join(
-        __dirname,
-        'charts',
+        resolveChartsDir(__dirname),
         'au_standard_settings.json',
       );
       if (fs.existsSync(settingsPath)) {
@@ -194,10 +236,65 @@ export class CoaLoaderService {
             defaultExpenseAccountId: defaults.expense_account_code
               ? codeToId.get(defaults.expense_account_code)
               : undefined,
-            baseCurrency:
-              process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+            baseCurrency: settings.base_currency || 'AUD',
           })
           .onConflictDoNothing();
+
+        // Seed GST Categories
+        if (settings.gst_categories && Array.isArray(settings.gst_categories)) {
+          // Neutralize defaults first to avoid unique constraint if we are updating
+          await tx.update(gstCategories).set({ isDefault: false });
+
+          for (const category of settings.gst_categories) {
+            const deterministicId = uuidv5(
+              'GST_CAT_' + category.code,
+              NAMESPACE_COA,
+            );
+            await tx
+              .insert(gstCategories)
+              .values({
+                gstCategoryId: deterministicId,
+                code: category.code,
+                title: category.title,
+                type: category.type,
+                rate: category.rate.toString(),
+                isDefault: category.is_default || false,
+              })
+              .onConflictDoUpdate({
+                target: [gstCategories.code],
+                set: {
+                  title: category.title,
+                  type: category.type,
+                  rate: category.rate.toString(),
+                  isDefault: category.is_default || false,
+                },
+              });
+          }
+        }
+
+        // Seed Trading Terms
+        if (settings.trading_terms && Array.isArray(settings.trading_terms)) {
+          for (const term of settings.trading_terms) {
+            const deterministicId = uuidv5('TERM_' + term.code, NAMESPACE_COA);
+            await tx
+              .insert(tradingTerms)
+              .values({
+                tradingTermsId: deterministicId,
+                code: term.code,
+                description: term.description,
+                days: term.days,
+                type: term.type,
+              })
+              .onConflictDoUpdate({
+                target: [tradingTerms.code],
+                set: {
+                  description: term.description,
+                  days: term.days,
+                  type: term.type,
+                },
+              });
+          }
+        }
       }
     });
 

@@ -5,14 +5,16 @@ import { GstCategoriesService } from '../gst/gst-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
+import { AppConfigService } from '../settings/app-config.service';
+
 let mockRevenuePrecedence = 'product_first';
-jest.mock('@modbm/shared', () => ({
-  __esModule: true,
-  ...jest.requireActual('@modbm/shared'),
-  get REVENUE_ROUTING_PRECEDENCE() {
-    return mockRevenuePrecedence;
-  },
-}));
+const mockAppConfigService = {
+  revenueRoutingPrecedence: jest
+    .fn()
+    .mockImplementation(() => mockRevenuePrecedence),
+  expenseRoutingPrecedence: jest.fn().mockReturnValue('product_first'),
+  nonStockBillingMode: jest.fn().mockReturnValue('per_shipment'),
+};
 
 // ---------------------------------------------------------------------------
 // Mock helpers (same pattern as shipment.service.spec.ts)
@@ -169,6 +171,7 @@ describe('SalesInvoiceService', () => {
       providers: [
         SalesInvoiceService,
         { provide: DRIZZLE, useValue: mockDb },
+        { provide: AppConfigService, useValue: mockAppConfigService },
         { provide: GlService, useValue: mockGlService },
         {
           provide: GstCategoriesService,

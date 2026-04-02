@@ -76,6 +76,7 @@ export default function NewSupplierPage() {
             {/* General Info Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">info</span>
                 {t('suppliers.generalInfo')}
               </h3>
@@ -157,6 +158,7 @@ export default function NewSupplierPage() {
             {/* Notes Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">notes</span>
                 {t('common.notesCardHeading')}
               </h3>
@@ -176,6 +178,7 @@ export default function NewSupplierPage() {
             {/* Contact Details Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
                 {t('common.columns.address')}
               </h3>

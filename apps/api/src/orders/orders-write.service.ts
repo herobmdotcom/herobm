@@ -8,7 +8,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { eq, sql, inArray } from 'drizzle-orm';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -39,6 +39,7 @@ import { GstCategoriesService } from '../gst/gst-categories.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AccountsService } from '../accounts/accounts.service';
+import { CreditAssessmentService } from '../accounts/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
@@ -46,6 +47,10 @@ import {
   computeLinePriceForStorage,
   resolveEffectiveDiscount,
 } from '@modbm/shared';
+import {
+  resolveEffectiveCreditHold,
+  resolveEffectiveCreditLimit,
+} from '../accounts/credit-control.utils';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
@@ -59,9 +64,10 @@ export class OrdersWriteService {
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
     private readonly accountsService: AccountsService,
+    private readonly creditAssessmentService: CreditAssessmentService,
     private readonly productsService: ProductsService,
     private readonly backordersService: BackordersService,
-    private readonly configService: ConfigService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(OrdersWriteService.name);
@@ -205,6 +211,80 @@ export class OrdersWriteService {
   }
 
   /**
+   * Asserts that an account is valid for ordering.
+   * Checks state, credit hold, and credit limit.
+   */
+  private async assertAccountStanding(
+    customerId: string,
+    additionalExposure: number,
+    operation: 'create' | 'update' | 'confirm',
+  ): Promise<void> {
+    const account = await this.accountsService.findOne(customerId);
+
+    // 1. Strict State Block
+    if (account.stateCode === 'inactive' || account.stateCode === 'archived') {
+      throw new BadRequestException(
+        `Cannot ${operation} order: Account '${account.name}' is ${account.stateCode}.`,
+      );
+    }
+
+    // 2. Credit Hold Status
+    const isHold = resolveEffectiveCreditHold({
+      creditLimit: account.creditLimit,
+      isOnCreditHold: account.isOnCreditHold,
+      tradingTermsId: account.tradingTermsId,
+      accountGroup: {
+        creditLimit: (account as any).accountGroupCreditLimit,
+        isOnCreditHold: (account as any).accountGroupIsOnCreditHold,
+        tradingTermsId: (account as any).accountGroupTradingTermsId,
+      },
+    });
+
+    if (isHold && (operation === 'confirm' || operation === 'update')) {
+      throw new BadRequestException(
+        `Cannot ${operation} order: Account '${account.name}' is on strict Credit Hold.`,
+      );
+    }
+
+    // 3. Credit Assessment (Limits and Overdue)
+    const assessment =
+      await this.creditAssessmentService.assessCredit(customerId);
+
+    if (assessment.isOverdue && operation === 'confirm') {
+      throw new BadRequestException(
+        `Cannot confirm order: Account has $${assessment.overdueBalance.toFixed(2)} in overdue balances.`,
+      );
+    }
+
+    const limitStr = resolveEffectiveCreditLimit({
+      creditLimit: account.creditLimit,
+      isOnCreditHold: account.isOnCreditHold,
+      tradingTermsId: account.tradingTermsId,
+      accountGroup: {
+        creditLimit: (account as any).accountGroupCreditLimit,
+        isOnCreditHold: (account as any).accountGroupIsOnCreditHold,
+        tradingTermsId: (account as any).accountGroupTradingTermsId,
+      },
+    });
+
+    const creditLimit = parseFloat(limitStr);
+
+    // If limits apply, check exposure
+    if (creditLimit >= 0) {
+      if (assessment.totalArBalance + additionalExposure > creditLimit) {
+        const behavior = this.appConfig.creditLimitBehavior();
+        if (behavior === 'hard') {
+          throw new BadRequestException(
+            `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+          );
+        } else {
+          this.logger.warn(`Soft Limit Warning for ${account.name}`);
+        }
+      }
+    }
+  }
+
+  /**
    * Look up a product from modbm_core.products.
    * Throws BadRequestException if not found.
    * Returns productId and gstCategoryId.
@@ -280,16 +360,8 @@ export class OrdersWriteService {
       // Resolve fulfillmentLocationId: Fall back to system default if omitted
       let fallbackLocId = dto.fulfillmentLocationId;
       if (!fallbackLocId) {
-        const defCode = this.configService.get<string>(
-          'DEFAULT_FULFILLMENT_LOCATION_CODE',
-        );
-        if (defCode) {
-          const [loc] = await tx
-            .select({ id: locations.locationId })
-            .from(locations)
-            .where(eq(locations.code, defCode));
-          if (loc) fallbackLocId = loc.id;
-        }
+        fallbackLocId =
+          this.appConfig.defaultFulfillmentLocationId() ?? undefined;
       }
       if (!fallbackLocId) {
         throw new BadRequestException(
@@ -347,6 +419,11 @@ export class OrdersWriteService {
           fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
         });
       }
+
+      // Assert Credit / State Safety before saving
+      let orderTotal = 0;
+      lineValues.forEach((lv) => (orderTotal += parseFloat(lv.totalAmount)));
+      await this.assertAccountStanding(dto.customerId, orderTotal, 'create');
 
       if (lineValues.length > 0) {
         await tx.insert(salesOrderLineItems).values(lineValues);
@@ -452,6 +529,29 @@ export class OrdersWriteService {
       .select()
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, id));
+
+    // Assert Credit / State Safety for forward progressions
+    if (
+      newState === 'confirmed' ||
+      newState === 'allocated' ||
+      newState === 'picking'
+    ) {
+      if (!existing.customerId) {
+        throw new BadRequestException(
+          'Order must have a customer to be confirmed',
+        );
+      }
+      let orderTotal = 0;
+      orderLines.forEach((lv) => {
+        if (lv.totalAmount) orderTotal += parseFloat(lv.totalAmount);
+      });
+      // A status change to confirmed or allocated constitutes a review process, so operation='confirm' will trigger the checks
+      await this.assertAccountStanding(
+        existing.customerId,
+        orderTotal,
+        'confirm',
+      );
+    }
 
     // INVENTORY GAP CHECK - Ensure we evaluate backorders upon Sales confirmation
     let gaps: InventoryGap[] = [];

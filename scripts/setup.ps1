@@ -1,5 +1,5 @@
 # ==============================================================================
-# Antigravity Platform — Prerequisite Installer
+# HeroBM Platform — Prerequisite Installer
 # ==============================================================================
 # Checks for and installs required development tools via winget.
 # Run once per machine. Requires admin privileges for some installs.
@@ -12,17 +12,17 @@ $ErrorActionPreference = "Stop"
 # --- Prerequisite definitions ---
 # Each entry: [winget ID, command name, display name]
 $prereqs = @(
-    @{ Id = "RedHat.Podman";          Cmd = "podman";  Name = "Podman" },
-    @{ Id = "OpenJS.NodeJS.LTS";      Cmd = "node";    Name = "Node.js LTS" },
-    @{ Id = "Python.Python.3.12";     Cmd = "python";  Name = "Python 3.12" },
-    @{ Id = "Typst.Typst";            Cmd = "typst";   Name = "Typst" }
+    @{ Id = "RedHat.Podman"; Cmd = "podman"; Name = "Podman" },
+    @{ Id = "OpenJS.NodeJS.LTS"; Cmd = "node"; Name = "Node.js LTS" },
+    @{ Id = "Python.Python.3.12"; Cmd = "python"; Name = "Python 3.12" },
+    @{ Id = "Typst.Typst"; Cmd = "typst"; Name = "Typst" }
 )
 
 $installed = @()
 $skipped = @()
 $failed = @()
 
-Write-Host "`n=== Antigravity Platform Setup ===" -ForegroundColor Cyan
+Write-Host "`n=== HEROBM SETUP ===" -ForegroundColor Cyan
 Write-Host "Checking prerequisites...`n"
 
 # --- Check winget ---
@@ -38,18 +38,21 @@ foreach ($prereq in $prereqs) {
     if ($cmd) {
         Write-Host "  [OK] $($prereq.Name) -- $($cmd.Source)" -ForegroundColor Green
         $skipped += $prereq.Name
-    } else {
+    }
+    else {
         Write-Host "  [MISSING] $($prereq.Name) -- installing via winget..." -ForegroundColor Yellow
         try {
             winget install --id $prereq.Id --accept-source-agreements --accept-package-agreements --silent
             if ($LASTEXITCODE -eq 0) {
                 $installed += $prereq.Name
                 Write-Host "  [INSTALLED] $($prereq.Name)" -ForegroundColor Green
-            } else {
+            }
+            else {
                 $failed += $prereq.Name
                 Write-Host "  [FAILED] $($prereq.Name) -- winget exit code $LASTEXITCODE" -ForegroundColor Red
             }
-        } catch {
+        }
+        catch {
             $failed += $prereq.Name
             Write-Host "  [FAILED] $($prereq.Name) -- $($_.Exception.Message)" -ForegroundColor Red
         }
@@ -61,7 +64,8 @@ $makeCmd = Get-Command make -ErrorAction SilentlyContinue
 if ($makeCmd) {
     Write-Host "  [OK] Make -- $($makeCmd.Source)" -ForegroundColor Green
     $skipped += "Make"
-} else {
+}
+else {
     Write-Host "  [MISSING] Make -- install manually:" -ForegroundColor Yellow
     Write-Host "           choco install make" -ForegroundColor Yellow
     Write-Host "        or scoop install make" -ForegroundColor Yellow
@@ -73,13 +77,15 @@ Write-Host "`n--- Python packages ---" -ForegroundColor Cyan
 $pcCmd = Get-Command podman-compose -ErrorAction SilentlyContinue
 if ($pcCmd) {
     Write-Host "  [OK] podman-compose -- $($pcCmd.Source)" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  [MISSING] podman-compose -- installing via pip..." -ForegroundColor Yellow
     pip install podman-compose 2>$null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "  [INSTALLED] podman-compose" -ForegroundColor Green
         $installed += "podman-compose"
-    } else {
+    }
+    else {
         Write-Host "  [FAILED] podman-compose -- run 'pip install podman-compose' manually" -ForegroundColor Red
         $failed += "podman-compose"
     }
@@ -95,15 +101,18 @@ if ($podmanCmd) {
         podman machine init --now
         if ($LASTEXITCODE -eq 0) {
             Write-Host "  [OK] Podman machine initialised and started" -ForegroundColor Green
-        } else {
+        }
+        else {
             Write-Host "  [FAILED] Podman machine init failed" -ForegroundColor Red
         }
-    } else {
+    }
+    else {
         Write-Host "  [OK] Podman machine exists: $machineList" -ForegroundColor Green
         Write-Host "  Ensuring Podman machine is running..." -ForegroundColor Yellow
         try {
             podman machine start 2>&1 | Out-Null
-        } catch {
+        }
+        catch {
             # Ignore "already running" errors
         }
     }
@@ -112,7 +121,8 @@ if ($podmanCmd) {
     Write-Host "  Configuring Podman log driver (k8s-file)..." -ForegroundColor Yellow
     try {
         podman machine ssh 'mkdir -p ~/.config/containers && printf "[containers]\nlog_driver = \"k8s-file\"\n" > ~/.config/containers/containers.conf' 2>&1 | Out-Null
-    } catch {
+    }
+    catch {
         # Ignore errors if already configured or SSH fails sporadically
     }
     
@@ -120,7 +130,8 @@ if ($podmanCmd) {
     Write-Host "  Creating podman_logs shared volume..." -ForegroundColor Yellow
     try {
         podman volume create --opt type=none --opt o=bind --opt device=/home/user/.local/share/containers/storage/overlay-containers podman_logs 2>&1 | Out-Null
-    } catch {
+    }
+    catch {
         # Ignore if volume already exists
     }
 }
@@ -139,7 +150,8 @@ $makeTargets = @()
 if ($pathChoice -eq "1") {
     $makeTargets += "up-db"
     Write-Host "  -> Selected Local Dev path (DBs containerized, FE/API local)" -ForegroundColor Gray
-} else {
+}
+else {
     $makeTargets += "up-fe-api"
     Write-Host "  -> Selected Full Containerization path" -ForegroundColor Gray
 }
@@ -158,7 +170,7 @@ $makeCmdString = "make " + ($makeTargets -join " ")
 Write-Host "`n--- Startup Automation ---" -ForegroundColor Cyan
 try {
     $startupFolder = [Environment]::GetFolderPath('Startup')
-    $shortcutPath = Join-Path $startupFolder "Antigravity Podman Autostart.lnk"
+    $shortcutPath = Join-Path $startupFolder "HeroBM Podman Autostart.lnk"
     $wshShell = New-Object -ComObject WScript.Shell
     $shortcut = $wshShell.CreateShortcut($shortcutPath)
     
@@ -171,7 +183,8 @@ try {
     $shortcut.Description = "Starts Podman machine and ModBM containers ($makeCmdString) on boot"
     $shortcut.Save()
     Write-Host "  [OK] Created Windows Startup shortcut: $makeCmdString" -ForegroundColor Green
-} catch {
+}
+catch {
     Write-Host "  [WARNING] Could not create startup shortcut: $($_.Exception.Message)" -ForegroundColor Yellow
 }
 
@@ -186,9 +199,11 @@ if ($skipped.Count -gt 0) {
 if ($failed.Count -gt 0) {
     Write-Host "  Failed/Manual: $($failed -join ', ')" -ForegroundColor Red
     Write-Host "`n  Please install failed items manually, then re-run this script." -ForegroundColor Yellow
-} else {
-    Write-Host "`n  All prerequisites installed! Auto-starting your chosen environment...`n" -ForegroundColor Green
-    $initCmd = "make init-env " + ($makeTargets -join " ") + " init"
+}
+else {
+    Write-Host "`n  All prerequisites installed! Starting your chosen environment..." -ForegroundColor Green
+    $initCmd = "make init-env " + ($makeTargets -join " ") + " setup-wizard"
     Write-Host "  Running: $initCmd" -ForegroundColor Cyan
+    Invoke-Expression $ilitCmdor Cyan
     Invoke-Expression $initCmd
 }

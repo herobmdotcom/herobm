@@ -241,6 +241,7 @@ export default function NewPurchaseOrderPage() {
           {/* Order header */}
           <div className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">receipt_long</span>
             {t('purchaseOrders.orderDetails')}
           </h3>
@@ -376,6 +377,7 @@ export default function NewPurchaseOrderPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">list</span>
               {t('purchaseOrders.lineItems')}
             </h3>

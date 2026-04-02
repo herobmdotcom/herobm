@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
@@ -163,7 +163,12 @@ describe('ReturnsWriteService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: AppConfigService,
+          useValue: {
+            valuationMethod: jest.fn().mockReturnValue('weighted_average'),
+          },
+        },
         ReturnsWriteService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },

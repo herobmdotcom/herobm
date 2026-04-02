@@ -267,6 +267,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     <div id="details-section" className="card col-span-2">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="section-heading !mb-0">
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined">receipt_long</span>
                                 {tSales('orderDetails')}
                             </h3>

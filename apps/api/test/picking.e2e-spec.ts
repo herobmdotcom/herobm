@@ -128,6 +128,11 @@ describe('API E2E — Picking & Shipments', () => {
           },
         ],
       })
+      .expect((res: any) => {
+        if (res.status !== 201) {
+          console.error('Order creation failed:', res.body);
+        }
+      })
       .expect(201);
 
     const orderId = res.body.salesOrderId;
@@ -182,11 +187,12 @@ describe('API E2E — Picking & Shipments', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '7' })
-        .expect((res: any) => {
-          if (res.status !== 200) console.error('E2E ERROR BODY:', res.body);
-        })
-        .expect(200);
+        .send({ quantityPicked: '7' });
+
+      if (res.status === 400) {
+        console.error('DIAGNOSTIC ERROR LOG:', res.body);
+      }
+      expect(res.status).toBe(200);
 
       expect(res.body.quantityPicked).toBe('7');
 

@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReceptionsService } from './receptions.service';
 import { InventoryService } from '../inventory/inventory.service';
@@ -10,7 +10,12 @@ describe('ReceptionsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: AppConfigService,
+          useValue: {
+            valuationMethod: jest.fn().mockReturnValue('weighted_average'),
+          },
+        },
         ReceptionsService,
         { provide: DRIZZLE, useValue: {} },
         {

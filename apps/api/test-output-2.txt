@@ -1,82 +1,186 @@
 
-> api@0.0.1 test:e2e
-> jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts
+> api@0.0.1 test
+> npm run test:deps && npm run lint && jest gl/coa-loader.service.spec.ts
 
-[Nest] 12448  - 03/31/2026, 5:19:48 PM   ERROR [ExceptionsHandler] DrizzleQueryError: Failed query: insert into "modbm_core"."reports" ("id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at") values (default, $1, $2, $3, default, default, default) returning "id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at"
-params: assign-test,Assignment Test Report,= Hello
-    at PostgresJsPreparedQuery.queryWithCache (C:\Users\Marcel\volz\modbm\modbm\node_modules\src\pg-core\session.ts:73:11)
-    at processTicksAndRejections (node:internal/process/task_queues:103:5)
-    at C:\Users\Marcel\volz\modbm\modbm\node_modules\src\postgres-js\session.ts:58:17
-    at ReportsService.createReport (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.service.ts:99:24)
-    at ReportsController.createReport (C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.controller.ts:118:18) {
-  query: 'insert into "modbm_core"."reports" ("id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at") values (default, $1, $2, $3, default, default, default) returning "id", "slug", "name", "template", "mock_data", "output_name_pattern", "created_at"',
-  params: [
-    'assign-test',
-    'Assignment Test Report',
-    '= Hello'
-  ],
-  cause: PostgresError: duplicate key value violates unique constraint "reports_slug_unique"
-      at ErrorResponse (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:815:30)
-      at handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:489:6)
-      at Socket.data (C:\Users\Marcel\volz\modbm\modbm\node_modules\postgres\cjs\src\connection.js:324:9)
-      at Socket.emit (node:events:508:28)
-      at addChunk (node:internal/streams/readable:559:12)
-      at readableAddChunkPushByteMode (node:internal/streams/readable:510:3)
-      at Socket.Readable.push (node:internal/streams/readable:390:5)
-      at TCP.onStreamRead (node:internal/stream_base_commons:189:23) {
-    severity_local: 'ERROR',
-    severity: 'ERROR',
-    code: '23505',
-    detail: 'Key (slug)=(assign-test) already exists.',
-    schema_name: 'modbm_core',
-    table_name: 'reports',
-    constraint_name: 'reports_slug_unique',
-    file: 'nbtinsert.c',
-    line: '666',
-    routine: '_bt_check_unique'
-  }
-}
-FAIL test/reports.e2e-spec.ts
-  Dynamic Reports Engine (e2e)
-    ΓêÜ POST /api/reports/hooks/:hookSlug/run ΓÇö handles sparse data (App Orders) without crashing Typst (234 ms)
-    ΓêÜ POST /api/reports/hooks/:hookSlug/run ΓÇö handles rich data seamlessly (193 ms)
-    Template Management API
-      ΓêÜ POST /api/reports ΓÇö creates a new template (7 ms)
-      ΓêÜ GET /api/reports ΓÇö lists templates (5 ms)
-      ΓêÜ GET /api/reports/:id ΓÇö retrieves a specific template (4 ms)
-      ΓêÜ PATCH /api/reports/:id ΓÇö updates a template (6 ms)
-      ΓêÜ AuthZ: viewer cannot CREATE templates (403 Forbidden) (9 ms)
-      ΓêÜ AuthZ: viewer cannot UPDATE templates (403 Forbidden) (3 ms)
-      ΓêÜ AuthZ: viewer CAN READ templates (200 OK) (4 ms)
-      ΓêÜ DELETE /api/reports/:id ΓÇö removes the template (11 ms)
-      ├ù Assignment Management: lists and updates assignments (11 ms)
-      ΓêÜ AuthZ: viewer cannot DELETE templates (403 Forbidden) (3 ms)
-      ΓêÜ GET /api/reports/hooks ΓÇö lists available hooks (2 ms)
 
-  ΓùÅ Dynamic Reports Engine (e2e) ΓÇ║ Template Management API ΓÇ║ Assignment Management: lists and updates assignments
+> api@0.0.1 test:deps
+> npx -y depcheck
 
-    TypeError: Cannot read properties of undefined (reading 'id')
+No depcheck issue
 
-      265 |           template: '= Hello',
-      266 |         });
-    > 267 |       const rid = newReport.body.data.id;
-          |                                       ^
-      268 |
-      269 |       // Update assignment
-      270 |       await request(app.getHttpServer())
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
 
-      at Object.<anonymous> (reports.e2e-spec.ts:267:39)
+FAIL src/gl/coa-loader.service.spec.ts
+  CoaLoaderService
+    loadFromFile ΓÇö skip logic
+      ΓêÜ should skip loading when accounts already exist (7 ms)
+      ΓêÜ should skip even with count=1 (1 ms)
+    loadFromFile ΓÇö file errors
+      ΓêÜ should throw when COA file does not exist (6 ms)
+    loadFromFile ΓÇö ERPNext JSON parsing
+      ├ù should parse a minimal ERPNext COA with root_type mapping (4 ms)
+      ├ù should auto-number accounts without account_number (3 ms)
+      ├ù should detect is_group from children presence (2 ms)
+      ├ù should inherit accountType from parent when node lacks root_type (2 ms)
+      ├ù should create GL settings with default account mappings (2 ms)
+    loadFromFile ΓÇö au_standard.json (real file)
+      ├ù should successfully parse the real AU COA file (3 ms)
+      ├ù should create accounts for all 5 root types (3 ms)
+      ├ù should include expected core accounts (3 ms)
+      ├ù should mark all seed accounts as system accounts (2 ms)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should parse a minimal ERPNext COA with root_type mapping
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:168:22)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should auto-number accounts without account_number
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should detect is_group from children presence
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:240:7)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should inherit accountType from parent when node lacks root_type
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:270:7)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should create GL settings with default account mappings
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:300:7)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö au_standard.json (real file) ΓÇ║ should successfully parse the real AU COA file
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:317:22)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö au_standard.json (real file) ΓÇ║ should create accounts for all 5 root types
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:326:7)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö au_standard.json (real file) ΓÇ║ should include expected core accounts
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:338:7)
+
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö au_standard.json (real file) ΓÇ║ should mark all seed accounts as system accounts
+
+    TypeError: tx.insert(...).values(...).onConflictDoNothing is not a function
+
+      198 |               process.env.HOME_CURRENCY || settings.base_currency || 'EUR',
+      199 |           })
+    > 200 |           .onConflictDoNothing();
+          |            ^
+      201 |       }
+      202 |     });
+      203 |
+
+      at gl/coa-loader.service.ts:200:12
+      at CoaLoaderService.loadFromFile (gl/coa-loader.service.ts:129:5)
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:350:7)
 
 Test Suites: 1 failed, 1 total
-Tests:       1 failed, 12 passed, 13 total
+Tests:       9 failed, 3 passed, 12 total
 Snapshots:   0 total
-Time:        1.657 s, estimated 2 s
-Ran all test suites matching test/reports.e2e-spec.ts.
-Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
-npm error Lifecycle script `test:e2e` failed with error:
+Time:        0.629 s, estimated 1 s
+Ran all test suites matching gl/coa-loader.service.spec.ts.
+npm error Lifecycle script `test` failed with error:
 npm error code 1
 npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
 npm error workspace api@0.0.1
 npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
 npm error command failed
-npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit test/reports.e2e-spec.ts
+npm error command C:\windows\system32\cmd.exe /d /s /c npm run test:deps && npm run lint && jest gl/coa-loader.service.spec.ts

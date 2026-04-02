@@ -5,7 +5,18 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-const envPath = path.resolve(__dirname, '..', '..', '..', '.env');
+const rootDir = path.resolve(__dirname, '..', '..', '..');
+
+let envFileName = '.env';
+const profilePath = path.join(rootDir, '.active_profile');
+if (fs.existsSync(profilePath)) {
+  const profileName = fs.readFileSync(profilePath, 'utf-8').trim();
+  if (profileName) {
+    envFileName = `.env.${profileName}`;
+  }
+}
+
+const envPath = path.join(rootDir, envFileName);
 if (fs.existsSync(envPath)) {
   const content = fs.readFileSync(envPath, 'utf-8');
   for (const line of content.split(/\r?\n/)) {

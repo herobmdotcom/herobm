@@ -1,26 +1,42 @@
 .PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local verify-local
 
 # Environment Profile Resolution
-# 1. Command Line explicit (PROFILE=staging)
+# 1. Command Line explicit (make ... PROFILE=staging)
 # 2. Directory context file (.active_profile)
 # 3. Fallback default (.env)
+# NOTE: PROFILE is only honoured from the command line, never from the
+#       shell environment. This prevents stray $env:PROFILE from silently
+#       poisoning Make targets.
 ifeq ($(OS),Windows_NT)
   ACTIVE_PROFILE := $(strip $(shell type .active_profile 2>nul))
   COMPOSE_OVERRIDE = -f docker-compose.windows.yml
   DBT = $(CURDIR)/.venv/Scripts/dbt
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
-  INIT_ENV_CMD = powershell -ExecutionPolicy Bypass -File scripts/init-env.ps1
+  INIT_ENV_CMD = python scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE = -f docker-compose.linux.yml
   DBT = $(CURDIR)/.venv/bin/dbt
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
-  INIT_ENV_CMD = bash scripts/init-env.sh
+  INIT_ENV_CMD = python3 scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
 endif
 
-ENV_FILE := $(if $(PROFILE),.env.$(PROFILE),$(if $(ACTIVE_PROFILE),.env.$(ACTIVE_PROFILE),.env))
+# Only use PROFILE if it was passed on the command line (origin=command line),
+# ignore it if it leaked in from the shell environment (origin=environment).
+ifeq ($(origin PROFILE),command line)
+  EFFECTIVE_PROFILE := $(PROFILE)
+else
+  EFFECTIVE_PROFILE := $(ACTIVE_PROFILE)
+endif
+ifeq ($(OS),Windows_NT)
+  DEV_LOCAL_PROFILE_ARG = $(if $(EFFECTIVE_PROFILE),-TargetProfile $(EFFECTIVE_PROFILE))
+else
+  DEV_LOCAL_PROFILE_ARG = $(if $(EFFECTIVE_PROFILE),-Profile $(EFFECTIVE_PROFILE))
+endif
+
+ENV_FILE := $(if $(EFFECTIVE_PROFILE),.env.$(EFFECTIVE_PROFILE),.env)
 -include $(ENV_FILE)
 export
 export PYTHONUTF8=1
@@ -113,30 +129,24 @@ clean:
 nuke:
 	$(COMPOSE_CMD) down -v --remove-orphans --rmi local
 
-# --- Application Initialization ---
-# Full init from empty database: build API, apply schema migrations (DDL only),
+# Setup from scratch (Headless/CI): build API, apply schema migrations (DDL only),
 # import ABM data via ELT, then seed application data (users, inventory).
 # Prerequisites: 'make up' running, .env populated with all passwords.
-
 # (init target defined further down alongside init-no-extract)
 
-# Setup from scratch: configure .env, start containers, then full init.
-setup: init-env up init
-
-setup-no-extract: init-env up init-no-extract
+# Generate setup token and provide URL for frontend setup flow
+setup-wizard: init-db migrate
+	@"$(VENV_PYTHON)" -c "import os,secrets; from dotenv import load_dotenv; load_dotenv(); t=secrets.token_urlsafe(32); open('.setup-token','w').write(t); p=os.environ.get('FE_PORT', '4300'); print('\n=================================\nHEROBM PLATFORM SETUP\n\nPlease complete the setup wizard to proceed:\n\nhttp://localhost:' + p + '/setup?token=' + t + '\n\n=================================\n')"
 
 # Create the active profile database and base schemas on a running container
 init-db:
 	@echo "Initializing database: $(POSTGRES_DB)"
-	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);" || true
+	-@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d postgres -c "CREATE DATABASE $(POSTGRES_DB);"
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -f /docker-entrypoint-initdb.d/init-schemas.sql
-
-# Fully populate a new profile: creates DB, migrates structure, runs ELT, and seeds.
-setup-profile: init-db init
 
 # Generate .env from .env.example with auto-generated local secrets.
 init-env:
-	$(INIT_ENV_CMD)
+	$(INIT_ENV_CMD) $(if $(EFFECTIVE_PROFILE),--profile $(EFFECTIVE_PROFILE))
 
 # --- ELT Pipeline ---
 
@@ -193,10 +203,10 @@ extract-docker-dry:
 	$(COMPOSE_CMD) --profile pipeline run --rm abm-extract --dry-run
 
 # --- Local Development ---
-# Hot-reloads FE and API natively, spins up Postgres automatically
-dev-fe-api: check-logs-volume
-	$(COMPOSE_CMD) up -d postgres-custom
-	$(DEV_LOCAL_CMD)
+# Hot-reloads FE and API natively, assuming database containers are running.
+dev-local:
+	$(DEV_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG)
+
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
 
@@ -221,6 +231,7 @@ test-api-cov:
 	npm run test:cov -w apps/api
 
 test-api-e2e:
+	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) DEFAULT_FULFILLMENT_LOCATION_CODE=$(DEFAULT_FULFILLMENT_LOCATION_CODE)"
 	npm run test:e2e -w apps/api
 
 # --- Portal (unified, containerised) ---
@@ -248,9 +259,9 @@ migrate-dry:
 seed:
 	"$(VENV_PYTHON)" tools/seed.py
 
-init: migrate elt seed
+init: init-db migrate elt seed
 
-init-no-extract: migrate elt-no-extract seed
+init-no-extract: init-db migrate elt-no-extract seed
 
 # --- Typechecks & Builds ---
 
@@ -262,6 +273,9 @@ build-api:
 
 build-portal:
 	npm run build -w apps/ops-portal
+
+build-shared:
+	npm run build -w packages/shared
 
 # --- Quality Gates & Verification ---
 
@@ -296,7 +310,18 @@ test-data:
 
 test-all: test-api test-deps test-structural typecheck-portal test-data
 
-build-all: build-api build-portal
+build-all:
+	npm run build --workspaces --if-present
+
+clean-dev:
+	@powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+	npm install
+	$(MAKE) build-shared
+
+clean-build:
+	@powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+	npm install
+	$(MAKE) build-all
 
 verify-all: build-api verify-fe-api test-structural test-deps test-transform test-data
 

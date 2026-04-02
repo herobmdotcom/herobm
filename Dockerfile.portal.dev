@@ -1,5 +1,5 @@
 # ==============================================================================
-# Antigravity Ops-Portal — DEVELOPMENT Container Build
+# HeroBM Ops-Portal — DEVELOPMENT Container Build
 # ==============================================================================
 # Runs the portal in dev mode (next dev) inside a container for debugging.
 # Unminified errors, React dev-mode warnings, and full stack traces.

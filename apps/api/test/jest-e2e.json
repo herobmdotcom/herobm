@@ -24,6 +24,9 @@
       }
     ]
   },
+  "transformIgnorePatterns": [
+    "node_modules/(?!(uuid)/)"
+  ],
   "setupFiles": ["./setup-env.ts"],
   "testTimeout": 30000
 }

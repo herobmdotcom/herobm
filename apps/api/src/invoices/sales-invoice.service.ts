@@ -24,7 +24,8 @@ import {
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
-import { computeLinePrice, REVENUE_ROUTING_PRECEDENCE } from '@modbm/shared';
+import { computeLinePrice } from '@modbm/shared';
+import { AppConfigService } from '../settings/app-config.service';
 import { CreateSalesInvoiceDto } from './dto';
 
 @Injectable()
@@ -35,6 +36,7 @@ export class SalesInvoiceService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
     private readonly gstService: GstCategoriesService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   /**
@@ -206,8 +208,7 @@ export class SalesInvoiceService {
       let shippedQty = shippedQtyMap.get(line.salesOrderLineId) || 0;
 
       if (!isPhysical) {
-        const billingMode =
-          process.env.NON_STOCK_BILLING_MODE || 'per_shipment';
+        const billingMode = this.appConfig.nonStockBillingMode();
         if (billingMode === 'final_invoice') {
           // Bill only on the final closing invoice
           if (order.stateCode === 'shipped') {
@@ -274,7 +275,7 @@ export class SalesInvoiceService {
 
       // Group revenue by highest precedence GL account
       const lineRevAcctId =
-        REVENUE_ROUTING_PRECEDENCE === 'customer_first'
+        this.appConfig.revenueRoutingPrecedence() === 'customer_first'
           ? customerRevenueAccountId || line.productRevenueAccountId || null
           : line.productRevenueAccountId || customerRevenueAccountId || null;
       if (lineRevAcctId) {

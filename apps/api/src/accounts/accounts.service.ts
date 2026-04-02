@@ -49,6 +49,9 @@ export class AccountsService {
         accountGroupName: accountGroups.name,
         accountGroupCode: accountGroups.groupCode,
         accountGroupDiscount: accountGroups.defaultDiscountPercentage,
+        accountGroupTradingTermsId: accountGroups.tradingTermsId,
+        accountGroupCreditLimit: accountGroups.creditLimit,
+        accountGroupIsOnCreditHold: accountGroups.isOnCreditHold,
         gstCategoryName: gstCategories.code,
       })
       .from(accounts)
@@ -87,6 +90,9 @@ export class AccountsService {
         accountGroupName: accountGroups.name,
         accountGroupCode: accountGroups.groupCode,
         accountGroupDiscount: accountGroups.defaultDiscountPercentage,
+        accountGroupTradingTermsId: accountGroups.tradingTermsId,
+        accountGroupCreditLimit: accountGroups.creditLimit,
+        accountGroupIsOnCreditHold: accountGroups.isOnCreditHold,
         gstCategoryName: gstCategories.code,
       })
       .from(accounts)

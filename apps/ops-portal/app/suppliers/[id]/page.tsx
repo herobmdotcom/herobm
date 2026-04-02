@@ -19,6 +19,9 @@ import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
+import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
+import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
+import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 
 interface Supplier {
   vendorId: string;
@@ -32,11 +35,28 @@ interface Supplier {
   address1StateOrProvince: string | null;
   address1PostalCode: string | null;
   address1Country: string | null;
-  paymentTerms: string | null;
+  // Overrides
+  tradingTermsId?: string | null;
+  earlyPaymentDiscount?: string | null;
+  creditLimit?: string | null;
+  isPurchasingBlocked?: boolean;
+  purchasingBlockReason?: string | null;
+  isPaymentBlocked?: boolean;
+  paymentBlockReason?: string | null;
+  
+  // Group properties (resolved in backend from join)
+  supplierGroupName?: string | null;
+  supplierGroupCode?: string | null;
+  groupIsPurchasingBlocked?: boolean;
+  groupPurchasingBlockReason?: string | null;
+  groupIsPaymentBlocked?: boolean;
+  groupPaymentBlockReason?: string | null;
+
   currencyCode: string;
   supplierGroupId: string | null;
   stateCode: string;
   notes: string | null;
+  blockNotes?: string | null;
 
   createdBy?: string | null;
   createdOn?: string | null;
@@ -48,7 +68,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const t = useTranslations();
   const params = use(paramsPromise);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'details' | 'products'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance'>('details');
   const [supplier, setSupplier] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,24 +83,53 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editStreet, setEditStreet] = useState('');
   const [editCity, setEditCity] = useState('');
   const [editCountry, setEditCountry] = useState('');
-  const [editPaymentTerms, setEditPaymentTerms] = useState('');
+  const [editTradingTermsId, setEditTradingTermsId] = useState<string | null>(null);
+  const [editEarlyPaymentDiscount, setEditEarlyPaymentDiscount] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
   const [editCurrency, setEditCurrency] = useState(HOME_CURRENCY.code);
   const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
+  
+  const [editIsPurchasingBlocked, setEditIsPurchasingBlocked] = useState(false);
+  const [editPurchasingBlockReason, setEditPurchasingBlockReason] = useState('');
+  const [editIsPaymentBlocked, setEditIsPaymentBlocked] = useState(false);
+  const [editPaymentBlockReason, setEditPaymentBlockReason] = useState('');
+  const [editBlockNotes, setEditBlockNotes] = useState('');
+
+  const [availableTradingTerms, setAvailableTradingTerms] = useState<any[]>([]);
 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      const data = await apiFetch<Supplier>(`/api/suppliers/${params.id}`);
+      const [data, termsData] = await Promise.all([
+        apiFetch<Supplier>(`/api/suppliers/${params.id}`),
+        apiFetch<any[]>('/api/settings/trading-terms').catch(() => []),
+      ]);
       setSupplier(data);
+      setAvailableTradingTerms(termsData);
+      
       setEditName(data.name || '');
       setEditEmail(data.emailAddress1 || '');
       setEditPhone(data.telephone1 || '');
       setEditStreet(data.address1Line1 || '');
       setEditCity(data.address1City || '');
       setEditCountry(data.address1Country || '');
-      setEditPaymentTerms(data.paymentTerms || '');
+      // @ts-ignore - mapping new backend fields which may not exist on old interface
+      setEditTradingTermsId(data.tradingTermsId || null);
+      // @ts-ignore
+      setEditEarlyPaymentDiscount(data.earlyPaymentDiscount || '');
       setEditNotes(data.notes || '');
+      
+      // @ts-ignore
+      setEditIsPurchasingBlocked(data.isPurchasingBlocked || false);
+      // @ts-ignore
+      setEditPurchasingBlockReason(data.purchasingBlockReason || '');
+      // @ts-ignore
+      setEditIsPaymentBlocked(data.isPaymentBlocked || false);
+      // @ts-ignore
+      setEditPaymentBlockReason(data.paymentBlockReason || '');
+      // @ts-ignore
+      setEditBlockNotes(data.blockNotes || '');
+      
       setEditCurrency(data.currencyCode || HOME_CURRENCY.code);
       setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
@@ -95,12 +144,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   }, [params.id]);
 
   /** Save a single field on blur if it changed */
-  const saveField = async (field: string, value: string, original: string | null) => {
-    if (value === (original || '')) return;
+  const saveField = async (field: string, value: any, original: any) => {
+    if (value === original) return;
+    if (value === '' && original === null) return;
     setSaving(true);
     setError('');
     try {
-      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: value || null });
+      const payloadValue = value === '' ? null : value;
+      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: payloadValue });
       await loadSupplier(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateOrder'));
@@ -211,6 +262,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       isSubPage: true,
       isActive: activeTab === 'products',
       onClick: () => setActiveTab('products')
+    },
+    {
+      id: 'tab-compliance',
+      label: 'Compliance',
+      isSubPage: true,
+      isActive: activeTab === 'compliance',
+      onClick: () => setActiveTab('compliance')
     }
   ];
 
@@ -223,7 +281,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             subtitle={supplier.vendorNumber}
             onBack={() => router.push('/suppliers')}
             isSaving={saving}
-            badges={<StateBadge state={supplier.stateCode as ValidState} />}
+            badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier as any)} stateCode={supplier.stateCode} />}
             actions={
               <>
                 <PageNav sections={visibleSections} />
@@ -304,6 +362,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           {/* General Info Card */}
           <div id="info-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">info</span>
               {t('suppliers.generalInfo')}
             </h3>
@@ -353,6 +412,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           {/* Financials Card */}
           <div id="financials-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
               {t('suppliers.financials')}
             </h3>
@@ -378,56 +438,84 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('suppliers.paymentTerms')}
+                    Payment Terms
                   </label>
-                  <input
-                    type="text"
+                  <select
                     className="input"
-                    value={editPaymentTerms}
-                    onChange={(e) => setEditPaymentTerms(e.target.value)}
-                    onBlur={() => saveField('paymentTerms', editPaymentTerms, supplier.paymentTerms)}
+                    value={editTradingTermsId || ''}
+                    onChange={(e) => {
+                      setEditTradingTermsId(e.target.value);
+                      saveField('tradingTermsId', e.target.value, supplier.tradingTermsId || null);
+                    }}
                     disabled={!isEditable || saving}
-                  />
+                  >
+                    <option value="">Select...</option>
+                    {availableTradingTerms.map(t => (
+                      <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.status')}
-                </label>
-                <div
-                  className="flex items-center gap-3"
-                  style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
-                  onClick={toggleState}
-                >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.status')}
+                  </label>
                   <div
-                    style={{
-                      width: 40,
-                      height: 22,
-                      borderRadius: 11,
-                      background: supplier.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
-                      position: 'relative',
-                      transition: 'background 0.2s ease',
-                      opacity: !isEditable || saving ? 0.5 : 1,
-                    }}
+                    className="flex items-center gap-3"
+                    style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
+                    onClick={toggleState}
                   >
                     <div
                       style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        position: 'absolute',
-                        top: 3,
-                        left: supplier.stateCode === 'active' ? 21 : 3,
-                        transition: 'left 0.2s ease',
+                        width: 40,
+                        height: 22,
+                        borderRadius: 11,
+                        background: supplier.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
+                        position: 'relative',
+                        transition: 'background 0.2s ease',
+                        opacity: !isEditable || saving ? 0.5 : 1,
                       }}
-                    />
+                    >
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          background: '#fff',
+                          position: 'absolute',
+                          top: 3,
+                          left: supplier.stateCode === 'active' ? 21 : 3,
+                          transition: 'left 0.2s ease',
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <StateName state={supplier.stateCode as ValidState} />
+                    </span>
                   </div>
-                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    <StateName state={supplier.stateCode as ValidState} />
-                  </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Early Payment Discount %
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      className="input w-full pr-8"
+                      value={editEarlyPaymentDiscount || ''}
+                      onChange={(e) => setEditEarlyPaymentDiscount(e.target.value)}
+                      onBlur={() => saveField('earlyPaymentDiscount', editEarlyPaymentDiscount || '', supplier.earlyPaymentDiscount || null)}
+                      disabled={!isEditable || saving}
+                      step="0.01"
+                      min="0"
+                      max="100"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 pointer-events-none">%</span>
+                  </div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -435,6 +523,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Notes Card — full width */}
         <div id="notes-section" className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>
@@ -452,6 +541,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         {/* Contact & Location Card — full width */}
         <div id="contact-section" className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">location_on</span>
             {t('suppliers.contactLocation')}
           </h3>
@@ -548,6 +638,129 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           )}
         </div>
       </div>
+      )}
+
+      {activeTab === 'compliance' && (
+        <div className="flex flex-col gap-3">
+          <div className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">gavel</span>
+              Compliance Status
+            </h3>
+            <div className="flex gap-2 pt-2 pb-4">
+              <SupplierStatusBadges 
+                profile={resolveSupplierRiskProfile(supplier as any)} 
+                stateCode={supplier.stateCode}
+                mode="header"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5 items-start">
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>Purchasing Block</label>
+                  <label className="switch" title={editIsPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <input 
+                      type="checkbox" 
+                      checked={!editIsPurchasingBlocked} 
+                      disabled={!isEditable || saving}
+                      onChange={e => {
+                        const newBlocked = !e.target.checked;
+                        setEditIsPurchasingBlocked(newBlocked);
+                        saveField('isPurchasingBlocked', newBlocked, supplier.isPurchasingBlocked || false);
+                      }} 
+                    />
+                    <span className="switch-slider"></span>
+                  </label>
+                </div>
+                {editIsPurchasingBlocked && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Reason</label>
+                    <select
+                      className="input w-full"
+                      value={editPurchasingBlockReason}
+                      onChange={e => setEditPurchasingBlockReason(e.target.value)}
+                      onBlur={() => saveField('purchasingBlockReason', editPurchasingBlockReason, supplier.purchasingBlockReason || '')}
+                      disabled={!isEditable || saving}
+                    >
+                      <option value="">Select Reason...</option>
+                      <option value="compliance_breach">Compliance Breach</option>
+                      <option value="quality_issues">Quality Issues</option>
+                      <option value="dispute">Dispute</option>
+                      <option value="financial_risk">Financial Risk</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                )}
+                {supplier.groupIsPurchasingBlocked && (
+                  <div className="text-xs font-semibold text-danger">
+                    Group Inherited ({(supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ')})
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5 items-start">
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>Payment Block</label>
+                  <label className="switch" title={editIsPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <input 
+                      type="checkbox" 
+                      checked={!editIsPaymentBlocked} 
+                      disabled={!isEditable || saving}
+                      onChange={e => {
+                        const newBlocked = !e.target.checked;
+                        setEditIsPaymentBlocked(newBlocked);
+                        saveField('isPaymentBlocked', newBlocked, supplier.isPaymentBlocked || false);
+                      }} 
+                    />
+                    <span className="switch-slider"></span>
+                  </label>
+                </div>
+                {editIsPaymentBlocked && (
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Reason</label>
+                    <select
+                      className="input w-full"
+                      value={editPaymentBlockReason}
+                      onChange={e => setEditPaymentBlockReason(e.target.value)}
+                      onBlur={() => saveField('paymentBlockReason', editPaymentBlockReason, supplier.paymentBlockReason || '')}
+                      disabled={!isEditable || saving}
+                    >
+                      <option value="">Select Reason...</option>
+                      <option value="invoice_dispute">Invoice Dispute</option>
+                      <option value="missing_goods">Missing Goods</option>
+                      <option value="contractual_breach">Contractual Breach</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                )}
+                {supplier.groupIsPaymentBlocked && (
+                  <div className="text-xs font-semibold text-amber-600">
+                    Group Inherited ({(supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ')})
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Block Notes
+              </label>
+              <input
+                type="text"
+                className="input w-full"
+                placeholder="Internal notes regarding blocking..."
+                value={editBlockNotes}
+                onChange={e => setEditBlockNotes(e.target.value)}
+                onBlur={() => saveField('blockNotes', editBlockNotes, supplier.blockNotes || null)}
+                disabled={!isEditable || saving}
+              />
+            </div>
+          </div>
+          
+          <SupplierExpiries vendorId={supplier.vendorId} isEditable={isEditable} />
+        </div>
       )}
       </DetailsLayout>
     </>

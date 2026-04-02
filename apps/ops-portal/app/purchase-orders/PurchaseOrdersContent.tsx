@@ -128,7 +128,7 @@ export default function PurchaseOrdersContent() {
                     </select>
                     {optionsButton}
                     <Link href="/purchase-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                      + {tPurchase('buttons.createPO')}
+                      {tPurchase('buttons.createPO')}
                     </Link>
                   </div>
                 </div>

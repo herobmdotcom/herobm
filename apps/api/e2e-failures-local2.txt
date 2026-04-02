@@ -1,0 +1,112 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+FAIL test/system-logs.e2e-spec.ts
+  ΓùÅ System Logs E2E Verification ΓÇ║ GET /api/admin/system-logs ΓÇö should return lines array
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      60 |
+      61 |     // The backend startup sequence should mean the list is populated
+    > 62 |     expect(res.body.lines.length).toBeGreaterThan(0);
+         |                                   ^
+      63 |
+      64 |     // We expect the native startup logs to have been written to the file
+      65 |     const logStr = res.body.lines.join('\n');
+
+      at Object.<anonymous> (system-logs.e2e-spec.ts:62:35)
+
+FAIL test/app.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Data Pipeline Verification ΓÇ║ System Integrity ΓÇö Required Seed Data ΓÇ║ verifies that the system custom line magic product exists
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      416 |       );
+      417 |
+    > 418 |       expect(magicProducts.length).toBe(1);
+          |                                    ^
+      419 |       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');
+      420 |     });
+      421 |   });
+
+      at Object.<anonymous> (app.e2e-spec.ts:418:36)
+
+PASS test/picking.e2e-spec.ts
+PASS test/orders-write.e2e-spec.ts
+PASS test/reports.e2e-spec.ts
+PASS test/returns.e2e-spec.ts
+PASS test/inventory-cycle.e2e-spec.ts
+PASS test/freight-lifecycle.e2e-spec.ts
+PASS test/sales-invoices.e2e-spec.ts
+PASS test/archive.e2e-spec.ts
+PASS test/audit.e2e-spec.ts
+PASS test/backorders.e2e-spec.ts
+PASS test/purchase-invoices.e2e-spec.ts
+PASS test/receptions.e2e-spec.ts
+PASS test/locations.e2e-spec.ts
+PASS test/accounts.e2e-spec.ts
+PASS test/suppliers.e2e-spec.ts
+PASS test/products.e2e-spec.ts
+PASS test/account-groups.e2e-spec.ts
+PASS test/supplier-groups.e2e-spec.ts
+PASS test/product-groups.e2e-spec.ts
+PASS test/gl.e2e-spec.ts
+
+Summary of all failing tests
+FAIL ./system-logs.e2e-spec.ts
+  ΓùÅ System Logs E2E Verification ΓÇ║ GET /api/admin/system-logs ΓÇö should return lines array
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 0
+    Received:   0
+
+      60 |
+      61 |     // The backend startup sequence should mean the list is populated
+    > 62 |     expect(res.body.lines.length).toBeGreaterThan(0);
+         |                                   ^
+      63 |
+      64 |     // We expect the native startup logs to have been written to the file
+      65 |     const logStr = res.body.lines.join('\n');
+
+      at Object.<anonymous> (system-logs.e2e-spec.ts:62:35)
+
+FAIL ./app.e2e-spec.ts
+  ΓùÅ API E2E ΓÇö Data Pipeline Verification ΓÇ║ System Integrity ΓÇö Required Seed Data ΓÇ║ verifies that the system custom line magic product exists
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      416 |       );
+      417 |
+    > 418 |       expect(magicProducts.length).toBe(1);
+          |                                    ^
+      419 |       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');
+      420 |     });
+      421 |   });
+
+      at Object.<anonymous> (app.e2e-spec.ts:418:36)
+
+
+Test Suites: 2 failed, 20 passed, 22 total
+Tests:       2 failed, 2 skipped, 179 passed, 183 total
+Snapshots:   0 total
+Time:        13.398 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit

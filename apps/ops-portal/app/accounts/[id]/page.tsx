@@ -362,6 +362,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             {/* Basic Info Card */}
             <div id="info-section" className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">info</span>
                 {t('accounts.generalInfo')}
               </h3>
@@ -438,6 +439,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
           {/* Pricing & Currency Card */}
           <div id="pricing-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
               {t('accounts.pricingCurrency')}
             </h3>
@@ -519,6 +521,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             {/* Address & Contact Card */}
             <div id="address-section" className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
                 {t('accounts.company', { defaultValue: 'Company' })}
               </h3>
@@ -614,6 +617,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             {/* Contact Card */}
             <div id="contact-section" className="card h-fit">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">person</span>
                 {t('common.columns.contact')}
               </h3>

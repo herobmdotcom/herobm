@@ -69,7 +69,8 @@ BEGIN
     INSERT INTO modbm_core.bins (bin_number, zone_id, bin_type, source, is_unavailable, created_by)
     VALUES 
         ('SHIPPING', handling_zone_id, 'staging', 'system', true, 'system'),
-        ('RECEIVING', handling_zone_id, 'staging', 'system', true, 'system');
+        ('RECEIVING', handling_zone_id, 'staging', 'system', true, 'system'),
+        ('DEFAULT', handling_zone_id, 'storage', 'system', false, 'system');
 
     RETURN NEW;
 END;

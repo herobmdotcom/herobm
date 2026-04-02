@@ -1,4 +1,4 @@
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ReceptionsController } from './receptions.controller';
 import { ReceptionsService } from './receptions.service';
@@ -10,7 +10,7 @@ describe('ReceptionsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ReceptionsController],
       providers: [
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        { provide: AppConfigService, useValue: {} },
         {
           provide: ReceptionsService,
           useValue: {

@@ -213,6 +213,7 @@ export default function TopographyView() {
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLocation(loc.locationId); } }}
                     className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
                   >
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span
                       className="material-symbols-outlined text-[18px] transition-transform"
                       style={{
@@ -222,6 +223,7 @@ export default function TopographyView() {
                     >
                       chevron_right
                     </span>
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span
                       className="material-symbols-outlined text-[22px]"
                       style={{ color: 'var(--accent)' }}
@@ -255,6 +257,7 @@ export default function TopographyView() {
                             className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                             title={tCommon('edit')}
                           >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -272,6 +275,7 @@ export default function TopographyView() {
                             className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
                             title={tCommon('delete')}
                           >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -325,6 +329,7 @@ export default function TopographyView() {
                               className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer"
                               style={{ paddingLeft: 48 }}
                             >
+                              {/* eslint-disable-next-line i18next/no-literal-string */}
                               <span
                                 className="material-symbols-outlined text-[16px] transition-transform"
                                 style={{
@@ -334,6 +339,7 @@ export default function TopographyView() {
                               >
                                 chevron_right
                               </span>
+                              {/* eslint-disable-next-line i18next/no-literal-string */}
                               <span
                                 className="material-symbols-outlined text-[20px]"
                                 style={{ color: '#6366f1' }}
@@ -359,6 +365,7 @@ export default function TopographyView() {
                                       }}
                                       className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                     >
+                                      {/* eslint-disable-next-line i18next/no-literal-string */}
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
                                     <button
@@ -375,6 +382,7 @@ export default function TopographyView() {
                                       }}
                                       className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
                                     >
+                                      {/* eslint-disable-next-line i18next/no-literal-string */}
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
                                     </button>
                                   </div>
@@ -495,6 +503,7 @@ export default function TopographyView() {
                                                   }}
                                                   className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                                 >
+                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
                                                   <span className="material-symbols-outlined text-[16px]">edit</span>
                                                 </button>
                                                 <button
@@ -510,6 +519,7 @@ export default function TopographyView() {
                                                   }}
                                                   className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
                                                 >
+                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
                                                   <span className="material-symbols-outlined text-[16px]">delete</span>
                                                 </button>
                                               </div>
@@ -528,6 +538,7 @@ export default function TopographyView() {
                                         }}
                                         className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
                                       >
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[16px]">add_circle</span>
                                         <span>Add Bin to {zone.code}</span>
                                       </button>
@@ -550,6 +561,7 @@ export default function TopographyView() {
                                     }}
                                     className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
                                   >
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <span className="material-symbols-outlined text-[16px]">add_circle</span>
                                     <span>Add Bin to {zone.code}</span>
                                   </button>
@@ -568,6 +580,7 @@ export default function TopographyView() {
                             }}
                             className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-2 transition-colors uppercase tracking-wide"
                           >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-[18px]">add_circle</span>
                             <span>Add Zone to {loc.code}</span>
                           </button>

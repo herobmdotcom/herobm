@@ -98,6 +98,7 @@ export default function NewAccountPage() {
             {/* General Info Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">info</span>
                 {t('accounts.generalInfo')}
               </h3>
@@ -180,6 +181,7 @@ export default function NewAccountPage() {
             {/* Pricing & Currency Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">payments</span>
                 {t('accounts.pricingCurrency')}
               </h3>
@@ -222,6 +224,7 @@ export default function NewAccountPage() {
             {/* Address Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
                 {t('accounts.company', { defaultValue: 'Company' })}
               </h3>
@@ -323,6 +326,7 @@ export default function NewAccountPage() {
             {/* Primary Contact Card */}
             <div className="card">
               <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">person</span>
                 {t('common.columns.contact')}
               </h3>

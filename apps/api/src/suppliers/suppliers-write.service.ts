@@ -11,9 +11,15 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   suppliers as coreSuppliers,
   supplierEvents,
+  supplierExpiries,
 } from '../drizzle/modbm-core-schema';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { CreateSupplierDto, UpdateSupplierDto } from './dto';
+import {
+  CreateSupplierDto,
+  UpdateSupplierDto,
+  CreateSupplierExpiryDto,
+  UpdateSupplierExpiryDto,
+} from './dto';
 
 @Injectable()
 export class SuppliersWriteService {
@@ -200,5 +206,100 @@ export class SuppliersWriteService {
 
       return updated;
     });
+  }
+
+  // --- Expiries Methods ---
+
+  async createExpiry(
+    vendorId: string,
+    dto: CreateSupplierExpiryDto,
+    actor: string,
+  ) {
+    const existing = await this.db
+      .select({ id: coreSuppliers.vendorId })
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, vendorId));
+    if (existing.length === 0)
+      throw new NotFoundException('Supplier not found');
+
+    const result = await this.db
+      .insert(supplierExpiries)
+      .values({
+        vendorId,
+        expiryType: dto.expiryType,
+        expiryDate: dto.expiryDate,
+        notes: dto.notes,
+        createdBy: actor,
+      })
+      .returning();
+
+    await this.db.insert(supplierEvents).values({
+      vendorId,
+      eventType: `added_expiry`,
+      payload: { expiryType: dto.expiryType },
+      actor,
+    });
+    return result[0];
+  }
+
+  async updateExpiry(
+    vendorId: string,
+    expiryId: string,
+    dto: UpdateSupplierExpiryDto,
+    actor: string,
+  ) {
+    const existing = await this.db
+      .select()
+      .from(supplierExpiries)
+      .where(
+        sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
+      );
+
+    if (existing.length === 0)
+      throw new NotFoundException('Expiry not found on this vendor');
+
+    const updateData: any = { modifiedOn: sql`NOW()` };
+    if (dto.expiryType !== undefined) updateData.expiryType = dto.expiryType;
+    if (dto.expiryDate !== undefined) updateData.expiryDate = dto.expiryDate;
+    if (dto.notes !== undefined) updateData.notes = dto.notes;
+
+    const result = await this.db
+      .update(supplierExpiries)
+      .set(updateData)
+      .where(eq(supplierExpiries.expiryId, expiryId))
+      .returning();
+
+    await this.db.insert(supplierEvents).values({
+      vendorId,
+      eventType: `updated_expiry`,
+      payload: { expiryId },
+      actor,
+    });
+    return result[0];
+  }
+
+  async deleteExpiry(vendorId: string, expiryId: string, actor: string) {
+    const existing = await this.db
+      .select()
+      .from(supplierExpiries)
+      .where(
+        sql`${supplierExpiries.expiryId} = ${expiryId} AND ${supplierExpiries.vendorId} = ${vendorId}`,
+      );
+
+    if (existing.length === 0) throw new NotFoundException('Expiry not found');
+
+    const type = existing[0].expiryType;
+
+    await this.db
+      .delete(supplierExpiries)
+      .where(eq(supplierExpiries.expiryId, expiryId));
+
+    await this.db.insert(supplierEvents).values({
+      vendorId,
+      eventType: `deleted_expiry`,
+      payload: { type },
+      actor,
+    });
+    return { status: 'deleted' };
   }
 }

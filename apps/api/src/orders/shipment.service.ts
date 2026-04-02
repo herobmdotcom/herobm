@@ -18,7 +18,7 @@ import {
   inventoryEntries,
   inventoryLedger,
 } from '../drizzle/modbm-core-schema';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import {
   findOrder,
@@ -61,7 +61,7 @@ export class ShipmentService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
-    private configService: ConfigService,
+    private appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(ShipmentService.name);
@@ -280,9 +280,7 @@ export class ShipmentService {
       const physicalStockLines = stockLines.filter((l) => l.isPhysical);
 
       if (shipment.stateCode === 'draft' && newState === 'dispatched') {
-        const method = this.configService.get<string>(
-          'INVENTORY_VALUATION_METHOD',
-        );
+        const method = this.appConfig.valuationMethod();
         const strategy = getValuationStrategy(method);
 
         const pickHistory = await tx

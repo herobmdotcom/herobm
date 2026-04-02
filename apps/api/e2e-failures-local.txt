@@ -1,0 +1,2087 @@
+
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit
+
+FAIL test/system-logs.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (system-logs.e2e-spec.ts:3:1)
+
+FAIL test/receptions.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (receptions.e2e-spec.ts:14:1)
+
+FAIL test/suppliers.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (suppliers.e2e-spec.ts:3:1)
+
+FAIL test/supplier-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (supplier-groups.e2e-spec.ts:3:1)
+
+FAIL test/sales-invoices.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (sales-invoices.e2e-spec.ts:4:1)
+
+FAIL test/returns.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (returns.e2e-spec.ts:15:1)
+
+FAIL test/reports.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (reports.e2e-spec.ts:3:1)
+
+FAIL test/purchase-invoices.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (purchase-invoices.e2e-spec.ts:7:1)
+
+FAIL test/products.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (products.e2e-spec.ts:3:1)
+
+FAIL test/product-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (product-groups.e2e-spec.ts:3:1)
+
+FAIL test/picking.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (picking.e2e-spec.ts:14:1)
+
+FAIL test/orders-write.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (orders-write.e2e-spec.ts:14:1)
+
+FAIL test/locations.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (locations.e2e-spec.ts:3:1)
+
+FAIL test/inventory-cycle.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:3:1)
+
+FAIL test/gl.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (gl.e2e-spec.ts:7:1)
+
+FAIL test/freight-lifecycle.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (freight-lifecycle.e2e-spec.ts:3:1)
+
+FAIL test/backorders.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (backorders.e2e-spec.ts:3:1)
+
+FAIL test/audit.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (audit.e2e-spec.ts:4:1)
+
+FAIL test/archive.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (archive.e2e-spec.ts:16:1)
+
+FAIL test/app.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (app.e2e-spec.ts:13:1)
+
+FAIL test/accounts.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (accounts.e2e-spec.ts:3:1)
+
+FAIL test/account-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (account-groups.e2e-spec.ts:3:1)
+
+Summary of all failing tests
+FAIL ./system-logs.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (system-logs.e2e-spec.ts:3:1)
+
+FAIL ./receptions.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (receptions.e2e-spec.ts:14:1)
+
+FAIL ./suppliers.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (suppliers.e2e-spec.ts:3:1)
+
+FAIL ./supplier-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (supplier-groups.e2e-spec.ts:3:1)
+
+FAIL ./sales-invoices.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (sales-invoices.e2e-spec.ts:4:1)
+
+FAIL ./returns.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (returns.e2e-spec.ts:15:1)
+
+FAIL ./reports.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (reports.e2e-spec.ts:3:1)
+
+FAIL ./purchase-invoices.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (purchase-invoices.e2e-spec.ts:7:1)
+
+FAIL ./products.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (products.e2e-spec.ts:3:1)
+
+FAIL ./product-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (product-groups.e2e-spec.ts:3:1)
+
+FAIL ./picking.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (picking.e2e-spec.ts:14:1)
+
+FAIL ./orders-write.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (orders-write.e2e-spec.ts:14:1)
+
+FAIL ./locations.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (locations.e2e-spec.ts:3:1)
+
+FAIL ./inventory-cycle.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (inventory-cycle.e2e-spec.ts:3:1)
+
+FAIL ./gl.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (gl.e2e-spec.ts:7:1)
+
+FAIL ./freight-lifecycle.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (freight-lifecycle.e2e-spec.ts:3:1)
+
+FAIL ./backorders.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (backorders.e2e-spec.ts:3:1)
+
+FAIL ./audit.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (audit.e2e-spec.ts:4:1)
+
+FAIL ./archive.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (archive.e2e-spec.ts:16:1)
+
+FAIL ./app.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (app.e2e-spec.ts:13:1)
+
+FAIL ./accounts.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (accounts.e2e-spec.ts:3:1)
+
+FAIL ./account-groups.e2e-spec.ts
+  ΓùÅ Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    Jest failed to parse a file. This happens e.g. when your code or its dependencies use non-standard JavaScript syntax, or when Jest is not configured to support such syntax.
+
+    Out of the box Jest supports Babel, which will be used to transform your files into valid JS based on your Babel configuration.
+
+    By default "node_modules" folder is ignored by transformers.
+
+    Here's what you can do:
+     ΓÇó If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/ecmascript-modules for how to enable it.
+     ΓÇó If you are trying to use TypeScript, see https://jestjs.io/docs/getting-started#using-typescript
+     ΓÇó To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     ΓÇó If you need a custom transformation, specify a "transform" option in your config.
+     ΓÇó If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/configuration
+    For information about custom transformations, see:
+    https://jestjs.io/docs/code-transformation
+
+    Details:
+
+    C:\Users\Marcel\volz\modbm\modbm\node_modules\uuid\dist-node\index.js:1
+    export { default as MAX } from './max.js';
+    ^^^^^^
+
+    SyntaxError: Unexpected token 'export'
+
+       6 | import * as fs from 'fs';
+       7 | import * as path from 'path';
+    >  8 | import { v5 as uuidv5 } from 'uuid';
+         | ^
+       9 |
+      10 | const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+      11 |
+
+      at Runtime.createScriptFromCode (../../../node_modules/jest-runtime/build/index.js:1314:40)
+      at Object.<anonymous> (../src/gl/coa-loader.service.ts:8:1)
+      at Object.<anonymous> (../src/gl/gl.controller.ts:18:1)
+      at Object.<anonymous> (../src/gl/gl.module.ts:3:1)
+      at Object.<anonymous> (../src/orders/orders.module.ts:33:1)
+      at Object.<anonymous> (../src/app.module.ts:10:1)
+      at Object.<anonymous> (account-groups.e2e-spec.ts:3:1)
+
+
+Test Suites: 22 failed, 22 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        4.711 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit

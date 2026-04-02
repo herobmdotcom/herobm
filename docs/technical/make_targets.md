@@ -6,11 +6,11 @@ Below is an overview of the primary commands available.
 
 ## Core Setup & Fast Initialization
 
-- **`make setup`**
-  The primary entry point. Generates `.env` variables and automatically provisions the databases, runs migrations, extracts ABM data, compiles dbt models, and seeds required demo users.
+- **`make setup-wizard`**
+  The primary entry point. Triggers backend database schema initialization and generates your secure, one-time setup token, outputting a direct link to the Ops Portal web application. The frontend interactive wizard controls application settings, database extractions (`dlt`), schema compilation, and config payloads cleanly.
   
-- **`make setup-no-extract`** / **`make init-no-extract`**
-  Fast-path variants of the setup/init process that safely skip the lengthy ABM `dlt` extraction phase. Useful for resuming a failed setup when staging data has already been successfully downloaded.
+- **`make init`** / **`make init-no-extract`**
+  Primarily utilized for headless/CI workflows or advanced developer rebuilds. Safely executes the old sequential initializations (`migrate elt seed`), bypassing the GUI. The `no-extract` variant safely skips the lengthy ABM `dlt` extraction phase for quick Drizzle DDL migration resets.
 
 ## Containerized Stacks (`up-*` and `down-*`)
 

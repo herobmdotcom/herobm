@@ -337,6 +337,7 @@ export default function SettingsPage() {
         {isEdit ? (
           <input type="checkbox" checked={gstForm.isDefault === true || gstForm.isDefault === 'true'} onChange={e => setGstForm({ ...gstForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
+          // eslint-disable-next-line i18next/no-literal-string
           <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
         ) : null}
       </td>
@@ -461,6 +462,7 @@ export default function SettingsPage() {
         {/* ── Company Information ────────────────────────────────────────── */}
         <div id="org-section" className="card">
             <h3 className="section-heading mb-4">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">business</span>
               Company Information
             </h3>
@@ -629,6 +631,7 @@ export default function SettingsPage() {
         <div id="bank-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">account_balance</span>
               Bank Details & Accounting
             </h3>
@@ -790,6 +793,7 @@ export default function SettingsPage() {
         <div id="gst-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
               GST / Tax Categories
             </h3>
@@ -824,6 +828,7 @@ export default function SettingsPage() {
         <div id="rates-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">currency_exchange</span>
               Currency Exchange Rates
             </h3>
@@ -874,6 +879,7 @@ export default function SettingsPage() {
         <div id="uom-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">straighten</span>
               Units of Measure
             </h3>

@@ -41,11 +41,14 @@ export interface UnifiedPurchaseOrderRow {
   currencyCode: string | null;
 }
 
+import { SuppliersService } from '../suppliers/suppliers.service';
+
 @Injectable()
 export class PurchaseOrdersService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
+    private readonly suppliersService: SuppliersService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
@@ -346,6 +349,15 @@ export class PurchaseOrdersService {
         `Cannot transition from '${existing.stateCode}' to '${stateCode}'. ` +
           `Allowed transitions: ${allowed.join(', ') || 'none'}`,
       );
+    }
+
+    if (existing.stateCode === 'draft' && stateCode === 'ordered') {
+      const vendor = await this.suppliersService.findOne(existing.vendorId);
+      if (vendor.isPurchasingBlocked || vendor.groupIsPurchasingBlocked) {
+        throw new BadRequestException(
+          'Cannot order: Supplier or Supplier Group is blocked for purchasing.',
+        );
+      }
     }
 
     return await this.db.transaction(async (tx: DrizzleDB) => {

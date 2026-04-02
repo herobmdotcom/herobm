@@ -48,6 +48,9 @@ describe('Supplier Groups (e2e)', () => {
         groupCode,
         name: 'E2E Test Supplier Group',
       });
+    if (createRes.status !== 201) {
+      console.log('Create Failed! Response Body:', createRes.body);
+    }
     expect(createRes.status).toBe(201);
     expect(createRes.body.supplierGroupId).toBeDefined();
     expect(createRes.body.groupCode).toBe(groupCode);

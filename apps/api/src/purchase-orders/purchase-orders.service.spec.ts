@@ -3,6 +3,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { SuppliersService } from '../suppliers/suppliers.service';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -111,11 +112,19 @@ describe('PurchaseOrdersService', () => {
     });
   }
 
+  let mockSuppliersService: any;
+
   beforeEach(async () => {
     jest.clearAllMocks();
     mockDb = createMockDb();
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
+    };
+    mockSuppliersService = {
+      findOne: jest.fn().mockResolvedValue({
+        isPurchasingBlocked: false,
+        groupIsPurchasingBlocked: false,
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -123,6 +132,7 @@ describe('PurchaseOrdersService', () => {
         PurchaseOrdersService,
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },
+        { provide: SuppliersService, useValue: mockSuppliersService },
       ],
     }).compile();
 

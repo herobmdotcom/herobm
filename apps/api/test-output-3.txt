@@ -1,0 +1,46 @@
+
+> api@0.0.1 test
+> npm run test:deps && npm run lint && jest gl
+
+
+> api@0.0.1 test:deps
+> npx -y depcheck
+
+No depcheck issue
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+FAIL src/gl/coa-loader.service.spec.ts
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should create GL settings with default account mappings
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "EUR"
+    Received: "AUD"
+
+      306 |       const settingsInsert = mock.insertCalls[mock.insertCalls.length - 1];
+      307 |       expect(settingsInsert.values.fiscalYearStartMonth).toBe(7);
+    > 308 |       expect(settingsInsert.values.baseCurrency).toBe('EUR');
+          |                                                  ^
+      309 |     });
+      310 |   });
+      311 |
+
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:308:50)
+
+PASS src/gl/gl.service.spec.ts
+PASS src/gl/gl.controller.spec.ts
+
+Test Suites: 1 failed, 2 passed, 3 total
+Tests:       1 failed, 87 passed, 88 total
+Snapshots:   0 total
+Time:        1.021 s, estimated 2 s
+Ran all test suites matching gl.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c npm run test:deps && npm run lint && jest gl

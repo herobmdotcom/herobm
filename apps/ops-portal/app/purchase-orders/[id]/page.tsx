@@ -576,6 +576,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           {/* Order info card */}
           <div id="details-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">receipt_long</span>
               {tPurchase('orderDetails')}
             </h3>

@@ -175,6 +175,7 @@ export default function ProductDetailPage() {
           className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
           title="Unlink Supplier"
         >
+          {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-[16px]">link_off</span>
         </button>
       )
@@ -297,6 +298,7 @@ export default function ProductDetailPage() {
                         onClick={() => setIsAddSupplierOpen(true)}
                         disabled={!isEditable}
                       >
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[16px]">add_link</span>
                         Link Supplier
                       </button>
@@ -353,6 +355,7 @@ export default function ProductDetailPage() {
           {/* Product Information Card */}
           <div id="info-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">info</span>
               {t('products.generalInfo')}
             </h3>
@@ -472,6 +475,7 @@ export default function ProductDetailPage() {
           {/* Pricing & Financials Card */}
           <div id="pricing-section" className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -578,6 +582,7 @@ export default function ProductDetailPage() {
         {/* Units & Dimensions Card */}
         <div id="uom-section" className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">straighten</span>
             Units of Measure
           </h3>
@@ -654,6 +659,7 @@ export default function ProductDetailPage() {
                   onClick={() => setAddingUom(true)}
                   disabled={saving}
                 >
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[14px]">add</span>
                   Add Conversion
                 </button>
@@ -759,6 +765,7 @@ export default function ProductDetailPage() {
                             className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
                             title="Remove conversion"
                           >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-[16px]">delete</span>
                           </button>
                         )}
@@ -774,6 +781,7 @@ export default function ProductDetailPage() {
         {/* Notes Card - full width */}
         <div id="notes-section" className="card">
           <h3 className="section-heading">
+             {/* eslint-disable-next-line i18next/no-literal-string */}
              <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>

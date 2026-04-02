@@ -69,4 +69,5 @@ query_erpnext.js
 # Environment Profiles
 .active_profile
 .env.*
+.setup-token
 

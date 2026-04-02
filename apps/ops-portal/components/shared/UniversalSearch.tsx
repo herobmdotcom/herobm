@@ -117,6 +117,7 @@ export default function UniversalSearch() {
   return (
     <div ref={containerRef} className="relative w-full max-w-2xl mb-8">
       <div className="relative">
+        {/* eslint-disable-next-line i18next/no-literal-string */}
         <span
           className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px]"
           style={{ color: 'var(--text-muted)' }}
@@ -172,6 +173,7 @@ export default function UniversalSearch() {
                   className="flex items-center gap-2 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider"
                   style={{ color: 'var(--text-muted)', background: 'var(--bg-secondary)' }}
                 >
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span
                     className="material-symbols-outlined text-[14px]"
                     style={{ color: 'var(--accent)' }}
@@ -210,6 +212,7 @@ export default function UniversalSearch() {
                           </span>
                         )}
                       </div>
+                      {/* eslint-disable-next-line i18next/no-literal-string */}
                       <span
                         className="material-symbols-outlined text-[16px]"
                         style={{ color: 'var(--text-muted)', opacity: isActive ? 1 : 0 }}

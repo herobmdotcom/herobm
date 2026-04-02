@@ -142,6 +142,7 @@ export default function NewJournalEntryPage() {
               onClick={() => router.back()}
               className="w-8 h-8 flex items-center justify-center rounded-full bg-white border shadow-sm hover:bg-gray-50 transition-colors"
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
@@ -281,6 +282,7 @@ export default function NewJournalEntryPage() {
                           disabled={lines.length <= 2}
                           className="p-1.5 text-red-500 hover:bg-red-50 rounded disabled:opacity-30 disabled:hover:bg-transparent"
                         >
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
                           <span className="material-symbols-outlined text-[16px]">delete</span>
                         </button>
                       </td>
@@ -293,6 +295,7 @@ export default function NewJournalEntryPage() {
                   onClick={addLine}
                   className="px-3 py-1 text-xs font-semibold rounded border bg-white hover:bg-gray-100 transition-colors flex items-center gap-1"
                 >
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[16px]">add</span> Add Line
                 </button>
 

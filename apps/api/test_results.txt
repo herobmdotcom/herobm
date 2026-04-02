@@ -1,9 +1,219 @@
-PASS src/invoices/purchase-invoice.service.spec.ts
-PASS src/invoices/sales-invoice.service.spec.ts
-PASS src/reports/sales-invoice.service.spec.ts
+FAIL src/orders/orders-write.service.spec.ts
+  OrdersWriteService
+    line amount computation
+      ΓêÜ should compute amount without discount or tax (7 ms)
+      ΓêÜ should apply percentage discount (2 ms)
+      ΓêÜ should auto-calculate tax from GST rate (1 ms)
+      ΓêÜ should handle discount and GST rate together (1 ms)
+      ΓêÜ should handle fractional quantities (2 ms)
+    create
+      ├ù should create an order in draft state (2 ms)
+      ├ù should snapshot customer discount onto the order (2 ms)
+      ├ù should snapshot non-EUR currency onto the order (ADV-034) (2 ms)
+      ├ù should use product GST category directly without fallback if possible (1 ms)
+      ├ù should use zero-rated GST for zero-rated product (1 ms)
+      ├ù should use exempt GST for exempt customer (regardless of product) (1 ms)
+      ΓêÜ should reject unknown customer (2 ms)
+      ΓêÜ should reject unknown product
+      ├ù should call transaction (1 ms)
+      ΓêÜ should create order with no lines (1 ms)
+      ├ù should fall back to system default when product has unknown GST category (1 ms)
+    update
+      ΓêÜ should update header fields on a draft order (2 ms)
+      ΓêÜ should update header fields on a quoted order (1 ms)
+      ΓêÜ should reject update on invoiced order (1 ms)
+      ΓêÜ should reject update on cancelled order (1 ms)
+      ΓêÜ should throw NotFoundException for unknown order (2 ms)
+    changeState
+      ΓêÜ should allow transition draft ΓåÆ quoted (2 ms)
+      ΓêÜ should allow transition draft ΓåÆ cancelled (1 ms)
+      ΓêÜ should allow transition quoted ΓåÆ confirmed (1 ms)
+      ΓêÜ should allow transition quoted ΓåÆ draft (1 ms)
+      ΓêÜ should allow transition quoted ΓåÆ cancelled (2 ms)
+      ΓêÜ should allow transition confirmed ΓåÆ picking (1 ms)
+      ΓêÜ should allow transition confirmed ΓåÆ cancelled (1 ms)
+      ΓêÜ should allow transition picking ΓåÆ shipped (1 ms)
+      ΓêÜ should allow transition picking ΓåÆ confirmed (1 ms)
+      ΓêÜ should allow transition shipped ΓåÆ invoiced (2 ms)
+      ΓêÜ should allow transition cancelled ΓåÆ draft (5 ms)
+      ΓêÜ should reject transition draft ΓåÆ shipped (1 ms)
+      ΓêÜ should reject transition draft ΓåÆ invoiced (1 ms)
+      ΓêÜ should reject transition draft ΓåÆ picking (1 ms)
+      ΓêÜ should reject transition draft ΓåÆ confirmed (1 ms)
+      ΓêÜ should reject transition confirmed ΓåÆ quoted (1 ms)
+      ΓêÜ should reject transition shipped ΓåÆ draft (1 ms)
+      ΓêÜ should reject transition invoiced ΓåÆ draft (1 ms)
+      ΓêÜ should reject transition invoiced ΓåÆ cancelled (1 ms)
+      ΓêÜ should reject unknown state name (8 ms)
+      ΓêÜ should transition quoted ΓåÆ confirmed (2 ms)
+      ΓêÜ should transition confirmed ΓåÆ cancelled (1 ms)
+      ΓêÜ should transition draft ΓåÆ quoted without inventory side-effects (1 ms)
+      ΓêÜ should transition draft ΓåÆ cancelled without inventory side-effects (1 ms)
+    addLine
+      ΓêÜ should add a line to a draft order (2 ms)
+      ΓêÜ should resolve GST via product category (1 ms)
+      ΓêÜ should use per-line GST override when provided (2 ms)
+      ΓêÜ should reject adding to an invoiced order
+      ΓêÜ should reject adding to a shipped order (1 ms)
+      ΓêÜ should reject adding to a cancelled order (1 ms)
+      ΓêÜ should use zero-rate for zero-rated product (1 ms)
+    updateLine
+      ΓêÜ should update line quantity on a draft order (1 ms)
+      ΓêÜ should resolve GST category for recomputation (1 ms)
+      ΓêÜ should reject update on invoiced order (1 ms)
+      ΓêÜ should reject update on shipped order (1 ms)
+      ΓêÜ should reject update on cancelled order (1 ms)
+    removeLine
+      ΓêÜ should remove a line from a draft order (1 ms)
+      ΓêÜ should call transaction for removal (1 ms)
+      ΓêÜ should reject removal from invoiced order (1 ms)
+      ΓêÜ should reject removal from shipped order (1 ms)
+      ΓêÜ should reject removal from cancelled order (1 ms)
+    findOne
+      ΓêÜ should return order with lines and events (1 ms)
+      ΓêÜ should throw NotFoundException for unknown order (1 ms)
+    findLine (via updateLine)
+      ΓêÜ should throw NotFoundException when line does not exist (2 ms)
+      ΓêÜ should throw BadRequestException if line belongs to different order (1 ms)
 
-Test Suites: 3 passed, 3 total
-Tests:       33 passed, 33 total
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should create an order in draft state
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:318:22)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should snapshot customer discount onto the order
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:328:22)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should snapshot non-EUR currency onto the order (ADV-034)
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:334:22)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should use product GST category directly without fallback if possible
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:340:7)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should use zero-rated GST for zero-rated product
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:346:7)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should use exempt GST for exempt customer (regardless of product)
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:366:7)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should call transaction
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:386:7)
+
+  ΓùÅ OrdersWriteService ΓÇ║ create ΓÇ║ should fall back to system default when product has unknown GST category
+
+    TypeError: this.appConfig.creditLimitBehavior is not a function
+
+      273 |     if (creditLimit >= 0) {
+      274 |       if (assessment.totalArBalance + additionalExposure > creditLimit) {
+    > 275 |         const behavior = this.appConfig.creditLimitBehavior();
+          |                                         ^
+      276 |         if (behavior === 'hard') {
+      277 |           throw new BadRequestException(
+      278 |             `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+
+      at OrdersWriteService.assertAccountStanding (orders/orders-write.service.ts:275:41)
+      at orders/orders-write.service.ts:426:7
+      at OrdersWriteService.create (orders/orders-write.service.ts:359:20)
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:411:7)
+
+Test Suites: 1 failed, 1 total
+Tests:       8 failed, 58 passed, 66 total
 Snapshots:   0 total
-Time:        1.239 s, estimated 2 s
-Ran all test suites matching purchase-invoice.service.spec.ts|sales-invoice.service.spec.ts.
+Time:        0.809 s, estimated 1 s
+Ran all test suites matching orders-write.

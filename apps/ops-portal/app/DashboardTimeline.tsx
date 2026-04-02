@@ -107,6 +107,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
   if (events.length === 0) {
     return (
       <div className="p-8 text-center text-[14px] opacity-60 rounded-2xl border flex flex-col items-center justify-center gap-2" style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+        {/* eslint-disable-next-line i18next/no-literal-string */}
         <span className="material-symbols-outlined text-[32px] opacity-50">history</span>
         {t('empty')}
       </div>
@@ -130,6 +131,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
               className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
               style={{ background: style.bg, color: style.color }}
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]">{style.icon}</span>
             </div>
             

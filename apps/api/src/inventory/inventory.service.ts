@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { ilike, or, eq, inArray, sql, and, isNull, desc } from 'drizzle-orm';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -29,7 +29,7 @@ import { UomService } from './uom.service';
 export class InventoryService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private configService: ConfigService,
+    private appConfig: AppConfigService,
     private uomService: UomService,
   ) {}
 
@@ -251,14 +251,11 @@ export class InventoryService {
       zones: zonesByLocation.get(loc.locationId) ?? [],
     }));
 
-    const defaultCode = this.configService.get<string>(
-      'DEFAULT_FULFILLMENT_LOCATION_CODE',
-    );
-    const defaultLocation = locRows.find((loc) => loc.code === defaultCode);
+    const defaultLocationId = this.appConfig.defaultFulfillmentLocationId();
 
     return {
       data,
-      defaultFulfillmentLocationId: defaultLocation?.locationId ?? undefined,
+      defaultFulfillmentLocationId: defaultLocationId ?? undefined,
     };
   }
 

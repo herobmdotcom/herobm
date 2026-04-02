@@ -8,5 +8,18 @@
     "cogs_account_code": "5100",
     "tax_account_code": "2200",
     "expense_account_code": "6900"
-  }
+  },
+  "gst_categories": [
+    { "code": "GST", "title": "GST 10%", "type": "gst_applies", "rate": 10, "is_default": true },
+    { "code": "FRE", "title": "GST Free", "type": "zero_rated", "rate": 0, "is_default": false },
+    { "code": "N-T", "title": "Not Reportable", "type": "exempt", "rate": 0, "is_default": false }
+  ],
+  "trading_terms": [
+    { "code": "COD", "description": "Cash on Delivery", "days": 0, "type": "cash_on_delivery" },
+    { "code": "CIA", "description": "Cash in Advance", "days": 0, "type": "cash_on_delivery" },
+    { "code": "NET7", "description": "Net 7 Days", "days": 7, "type": "net" },
+    { "code": "NET14", "description": "Net 14 Days", "days": 14, "type": "net" },
+    { "code": "NET30", "description": "Net 30 Days", "days": 30, "type": "net" },
+    { "code": "EOM", "description": "End of Month", "days": 30, "type": "end_of_month" }
+  ]
 }

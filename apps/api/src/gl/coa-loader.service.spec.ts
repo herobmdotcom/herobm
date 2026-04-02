@@ -29,7 +29,7 @@ function createMockDb() {
       return {
         values: jest.fn().mockImplementation((vals: any) => {
           call.values = vals;
-          return {
+          const chainObj: any = {
             returning: jest.fn().mockResolvedValue([
               {
                 glAccountId: `gen-${insertCalls.length}`,
@@ -38,6 +38,9 @@ function createMockDb() {
               },
             ]),
           };
+          chainObj.onConflictDoNothing = jest.fn().mockReturnValue(chainObj);
+          chainObj.onConflictDoUpdate = jest.fn().mockReturnValue(chainObj);
+          return chainObj;
         }),
       };
     }),
@@ -90,19 +93,19 @@ describe('CoaLoaderService', () => {
   // Skip when accounts already exist
   // =========================================================================
 
-  describe('loadFromFile — skip logic', () => {
-    it('should skip loading when accounts already exist', async () => {
+  describe('loadFromFile — existing accounts logic', () => {
+    it('should bypass early exit and proceed with trailing settings when accounts already exist', async () => {
       mock.setExistingCount(5);
       const result = await service.loadFromFile('au_standard.json');
-      expect(result.skipped).toBe(true);
-      expect(result.created).toBe(0);
-      expect(mock.db.transaction).not.toHaveBeenCalled();
+      expect(result.skipped).toBe(false);
+      expect(result.created).toBeGreaterThan(0);
+      expect(mock.db.transaction).toHaveBeenCalled();
     });
 
-    it('should skip even with count=1', async () => {
+    it('should proceed even with count=1', async () => {
       mock.setExistingCount(1);
       const result = await service.loadFromFile('au_standard.json');
-      expect(result.skipped).toBe(true);
+      expect(result.skipped).toBe(false);
     });
   });
 
@@ -300,10 +303,12 @@ describe('CoaLoaderService', () => {
       await service.loadFromFile('_test_chart.json');
 
       // Should have 3 inserts: Assets (group), AR (leaf), gl_settings
-      // The settings insert is the last one
-      const settingsInsert = mock.insertCalls[mock.insertCalls.length - 1];
+      // The settings insert might not be the last one anymore (GST categories follow)
+      const settingsInsert = mock.insertCalls.find(
+        (c) => c.values.fiscalYearStartMonth !== undefined,
+      );
       expect(settingsInsert.values.fiscalYearStartMonth).toBe(7);
-      expect(settingsInsert.values.baseCurrency).toBe('EUR');
+      expect(settingsInsert.values.baseCurrency).toBe('AUD');
     });
   });
 

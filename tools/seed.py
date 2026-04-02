@@ -199,32 +199,8 @@ def seed_suppliers(dry_run: bool = False) -> None:
 
 
 def seed_gst_categories(dry_run: bool = False) -> None:
-    if dry_run:
-        print("  [DRY RUN] Would seed GST categories")
-        return
-    
-    # 0. Neutralize all is_default flags to prevent unique constraint (gst_categories_single_default_idx) during migration
-    psql("UPDATE modbm_core.gst_categories SET is_default = false WHERE is_default = true;")
-
-    # Pre-seed alignment to resolve FK violations in dirty dev databases
-    ref_tables = [('products', 'gst_category_id'), ('accounts', 'gst_category_id'), ('sales_order_lines', 'gst_category_id')]
-    align_pkey('gst_categories', 'gst_category_id', 'code', 'GST', 'c0000000-0000-0000-0000-000000000001', ref_tables)
-    align_pkey('gst_categories', 'gst_category_id', 'code', 'ZR',  'c0000000-0000-0000-0000-000000000002', ref_tables)
-    align_pkey('gst_categories', 'gst_category_id', 'code', 'EXE', 'c0000000-0000-0000-0000-000000000003', ref_tables)
-
-    sql = """
-    INSERT INTO modbm_core.gst_categories (gst_category_id, code, title, type, rate, is_default) VALUES
-        ('c0000000-0000-0000-0000-000000000001', 'GST', 'GST 9%', 'gst_applies', '9', true),
-        ('c0000000-0000-0000-0000-000000000002', 'ZR', 'Zero Rated', 'zero_rated', '0', false),
-        ('c0000000-0000-0000-0000-000000000003', 'EXE', 'Exempt', 'exempt', '0', false)
-    ON CONFLICT (code) DO UPDATE SET
-        gst_category_id = EXCLUDED.gst_category_id,
-        rate = EXCLUDED.rate,
-        title = EXCLUDED.title,
-        type = EXCLUDED.type,
-        is_default = EXCLUDED.is_default;
-    """
-    psql_sql(sql)
+    """GST categories are now seeded from the Chart of Accounts settings JSON via coa-loader.service.ts during Setup."""
+    print("  SKIP: GST categories are seeded via Setup Wizard / COA Loader")
 
 
 def seed_organization(dry_run: bool = False) -> None:
@@ -280,6 +256,22 @@ def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_c
     if dry_run:
         print(f"  [DRY RUN] Would seed system records with base currency {base_currency}")
         return
+    # Resolve the location ID gracefully
+    loc_id_res = psql(f"SELECT location_id FROM modbm_core.locations WHERE code = '{loc_code}';", capture=True)
+    
+    if loc_id_res:
+        resolved_loc_id = loc_id_res
+        print(f"  Using existing location {loc_code} ({resolved_loc_id})")
+    else:
+        resolved_loc_id = '00000000-0000-0000-0000-000000000100'
+        psql_sql(f"""
+        INSERT INTO modbm_core.locations (location_id, code, name)
+          VALUES ('{resolved_loc_id}', '{loc_code}', 'Main Headquarters')
+          ON CONFLICT (location_id) DO UPDATE SET 
+            code = EXCLUDED.code,
+            name = EXCLUDED.name;
+        """)
+
     sql = f"""
     INSERT INTO modbm_core.uom_dictionary (uom_code, description)
       VALUES ('EA', 'Each')
@@ -291,19 +283,13 @@ def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_c
         product_id = EXCLUDED.product_id,
         product_number = EXCLUDED.product_number;
 
-    INSERT INTO modbm_core.locations (location_id, code, name)
-      VALUES ('00000000-0000-0000-0000-000000000100', '{loc_code}', 'Main Headquarters')
-      ON CONFLICT (code) DO UPDATE SET 
-        location_id = EXCLUDED.location_id,
-        name = EXCLUDED.name;
-
     INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code, currency_code, fulfillment_location_id)
       VALUES (
         '00000000-0000-0000-0000-000000000001', 
         'LEGACY-SALES', 
         'legacy', 
         '{base_currency}',
-        '00000000-0000-0000-0000-000000000100'
+        '{resolved_loc_id}'
       )
       ON CONFLICT (sales_order_id) DO UPDATE SET 
         order_number = EXCLUDED.order_number,
@@ -312,7 +298,7 @@ def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_c
     INSERT INTO modbm_core.sales_order_lines (sales_order_line_id, sales_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage, fulfillment_location_id)
       VALUES (
         '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0,
-        '00000000-0000-0000-0000-000000000100'
+        '{resolved_loc_id}'
       )
       ON CONFLICT (sales_order_line_id) DO NOTHING;
 
@@ -490,14 +476,9 @@ def main() -> None:
         seed_suppliers(dry_run)
 
     if seed_all:
-        base_currency = os.environ.get("HOME_CURRENCY", "EUR")
-        if not dry_run and not os.environ.get("HOME_CURRENCY"):
-            print("\n--- System Configuration ---")
-            val = input(f"Select Base Currency (ISO code) [default: {base_currency}]: ").strip().upper()
-            if val:
-                base_currency = val
+        base_currency = os.environ.get("HOME_CURRENCY", "AUD")
 
-        seed_system_records(dry_run, base_currency)
+        seed_system_records(dry_run, base_currency, os.environ.get("DEFAULT_FULFILLMENT_LOCATION_CODE", "HQ"))
         seed_organization(dry_run)
         seed_gst_categories(dry_run)
         seed_reports(dry_run)

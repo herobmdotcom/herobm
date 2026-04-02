@@ -8,6 +8,8 @@ import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
+import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 
 interface UnifiedSupplierRow {
   vendorId: string;
@@ -52,10 +54,27 @@ export default function SuppliersContent() {
     {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
-      width: 110,
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      width: 250,
+      cellRenderer: (params: { data: any, value: string }) => {
+        if (!params.value || !params.data) return null;
+        
+        // Construct the expected profile shape for the status badge
+        const supplierProfile = {
+          isPurchasingBlocked: params.data.isPurchasingBlocked,
+          purchasingBlockReason: params.data.purchasingBlockReason,
+          isPaymentBlocked: params.data.isPaymentBlocked,
+          paymentBlockReason: params.data.paymentBlockReason,
+        };
+        const groupProfile = {
+          isPurchasingBlocked: params.data.groupIsPurchasingBlocked,
+          purchasingBlockReason: params.data.groupPurchasingBlockReason,
+          isPaymentBlocked: params.data.groupIsPaymentBlocked,
+          paymentBlockReason: params.data.groupPaymentBlockReason,
+        };
+
+        const resolvedProfile = resolveSupplierRiskProfile(supplierProfile, groupProfile, []);
+
+        return <SupplierStatusBadges profile={resolvedProfile} stateCode={params.value} mode="grid" />;
       },
     },
     {
@@ -114,7 +133,7 @@ export default function SuppliersContent() {
                   <div className="flex items-center gap-3 shrink-0 ml-4">
                     {optionsButton}
                     <Link href="/suppliers/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
-                      + {tSuppliers('buttons.createSupplier')}
+                      {tSuppliers('buttons.createSupplier')}
                     </Link>
                   </div>
                 </div>

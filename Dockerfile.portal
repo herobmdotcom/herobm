@@ -1,5 +1,5 @@
 # ==============================================================================
-# Antigravity Ops-Portal — Multi-stage Container Build
+# HeroBM Ops-Portal — Multi-stage Container Build
 # ==============================================================================
 # Builds the Next.js ops-portal in standalone mode for containerised deployment.
 # The directory structure mirrors the monorepo layout so that workspace package

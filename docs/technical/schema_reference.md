@@ -1,6 +1,6 @@
 # Schema Reference — `modbm_core`
 
-> Auto-generated from live Postgres introspection. Last generated: 2026-04-01 12:14 UTC
+> Auto-generated from live Postgres introspection. Last generated: 2026-04-02 18:01 UTC
 > Regenerate with: `make schema-ref`
 
 **Postgres schema:** `modbm_core`
@@ -11,56 +11,58 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 
 | Table | Rows | PK | Description |
 |-------|------|----|-------------|
-| [`account_events`](#account_events) | 17 | `event_id` | |
+| [`account_events`](#account_events) | 227 | `event_id` | |
 | [`account_groups`](#account_groups) | 6 | `account_group_id` | |
-| [`accounts`](#accounts) | 17 | `account_id` | |
-| [`backorders`](#backorders) | 0 | `backorder_id` | |
-| [`bin_contents`](#bin_contents) | 5,052 | `bin_content_id` | |
+| [`accounts`](#accounts) | 101 | `account_id` | |
+| [`app_settings`](#app_settings) | 1 | `settings_id` | |
+| [`backorders`](#backorders) | 3 | `backorder_id` | |
+| [`bin_contents`](#bin_contents) | 153 | `bin_content_id` | |
 | [`bins`](#bins) | 4,732 | `bin_id` | |
 | [`exchange_rates`](#exchange_rates) | 0 | `exchange_rate_id` | |
-| [`gl_accounts`](#gl_accounts) | 0 | `gl_account_id` | |
-| [`gl_journal_entries`](#gl_journal_entries) | 0 | `journal_entry_id` | |
-| [`gl_journal_lines`](#gl_journal_lines) | 0 | `journal_line_id` | |
+| [`gl_accounts`](#gl_accounts) | 47 | `gl_account_id` | |
+| [`gl_journal_entries`](#gl_journal_entries) | 37 | `journal_entry_id` | |
+| [`gl_journal_lines`](#gl_journal_lines) | 251 | `journal_line_id` | |
 | [`gl_settings`](#gl_settings) | 0 | `settings_id` | |
-| [`gst_categories`](#gst_categories) | 0 | `gst_category_id` | |
+| [`gst_categories`](#gst_categories) | 2 | `gst_category_id` | |
 | [`import_sales_quotes`](#import_sales_quotes) | 251 | — | |
-| [`inventory_entries`](#inventory_entries) | 4,945 | `entry_id` | |
-| [`inventory_ledger`](#inventory_ledger) | 4,945 | `ledger_id` | |
-| [`locations`](#locations) | 2 | `location_id` | |
-| [`order_events`](#order_events) | 1,421 | `event_id` | |
+| [`inventory_entries`](#inventory_entries) | 5,638 | `entry_id` | |
+| [`inventory_ledger`](#inventory_ledger) | 686 | `ledger_id` | |
+| [`locations`](#locations) | 0 | `location_id` | |
+| [`order_events`](#order_events) | 1,879 | `event_id` | |
 | [`organization`](#organization) | 0 | `organization_id` | |
-| [`outbox`](#outbox) | 0 | `outbox_id` | |
-| [`product_events`](#product_events) | 14,896 | `event_id` | |
+| [`outbox`](#outbox) | 1,180 | `outbox_id` | |
+| [`product_events`](#product_events) | 15,183 | `event_id` | |
 | [`product_groups`](#product_groups) | 29 | `product_group_id` | |
-| [`product_supplier_events`](#product_supplier_events) | 0 | `event_id` | |
-| [`product_suppliers`](#product_suppliers) | 9,294 | `product_supplier_id` | |
-| [`product_uoms`](#product_uoms) | 15,511 | `product_uom_id` | |
-| [`products`](#products) | 14,897 | `product_id` | |
-| [`purchase_invoice_lines`](#purchase_invoice_lines) | 77,283 | `invoice_line_id` | |
-| [`purchase_invoices`](#purchase_invoices) | 592 | `invoice_id` | |
-| [`purchase_order_events`](#purchase_order_events) | 0 | `event_id` | |
-| [`purchase_order_lines`](#purchase_order_lines) | 6,415 | `purchase_order_line_id` | |
-| [`purchase_order_reception_lines`](#purchase_order_reception_lines) | 0 | `reception_line_id` | |
-| [`purchase_order_receptions`](#purchase_order_receptions) | 0 | `reception_id` | |
-| [`purchase_orders`](#purchase_orders) | 656 | `purchase_order_id` | |
-| [`report_contexts`](#report_contexts) | 0 | `context`, `report_id` | |
+| [`product_supplier_events`](#product_supplier_events) | 9 | `event_id` | |
+| [`product_suppliers`](#product_suppliers) | 9 | `product_supplier_id` | |
+| [`product_uoms`](#product_uoms) | 0 | `product_uom_id` | |
+| [`products`](#products) | 15,079 | `product_id` | |
+| [`purchase_invoice_lines`](#purchase_invoice_lines) | 77,300 | `invoice_line_id` | |
+| [`purchase_invoices`](#purchase_invoices) | 609 | `invoice_id` | |
+| [`purchase_order_events`](#purchase_order_events) | 273 | `event_id` | |
+| [`purchase_order_lines`](#purchase_order_lines) | 126 | `purchase_order_line_id` | |
+| [`purchase_order_reception_lines`](#purchase_order_reception_lines) | 36 | `reception_line_id` | |
+| [`purchase_order_receptions`](#purchase_order_receptions) | 36 | `reception_id` | |
+| [`purchase_orders`](#purchase_orders) | 782 | `purchase_order_id` | |
+| [`report_contexts`](#report_contexts) | 7 | `context`, `report_id` | |
 | [`report_hook_assignments`](#report_hook_assignments) | 0 | `hook_slug` | |
-| [`reports`](#reports) | 0 | `id` | |
-| [`sales_invoice_lines`](#sales_invoice_lines) | 21,366 | `invoice_line_id` | |
-| [`sales_invoices`](#sales_invoices) | 2,428 | `invoice_id` | |
-| [`sales_order_lines`](#sales_order_lines) | 23,575 | `sales_order_line_id` | |
-| [`sales_order_return_lines`](#sales_order_return_lines) | 0 | `return_line_id` | |
-| [`sales_order_returns`](#sales_order_returns) | 0 | `return_id` | |
-| [`sales_order_shipment_lines`](#sales_order_shipment_lines) | 0 | `shipment_line_id` | |
-| [`sales_order_shipments`](#sales_order_shipments) | 0 | `shipment_id` | |
-| [`sales_orders`](#sales_orders) | 1,673 | `sales_order_id` | |
-| [`schema_migrations`](#schema_migrations) | 4 | `filename` | |
-| [`supplier_events`](#supplier_events) | 54 | `event_id` | |
+| [`reports`](#reports) | 9 | `id` | |
+| [`sales_invoice_lines`](#sales_invoice_lines) | 21,396 | `invoice_line_id` | |
+| [`sales_invoices`](#sales_invoices) | 2,448 | `invoice_id` | |
+| [`sales_order_lines`](#sales_order_lines) | 22,046 | `sales_order_line_id` | |
+| [`sales_order_return_lines`](#sales_order_return_lines) | 4 | `return_line_id` | |
+| [`sales_order_returns`](#sales_order_returns) | 27 | `return_id` | |
+| [`sales_order_shipment_lines`](#sales_order_shipment_lines) | 40 | `shipment_line_id` | |
+| [`sales_order_shipments`](#sales_order_shipments) | 30 | `shipment_id` | |
+| [`sales_orders`](#sales_orders) | 1,524 | `sales_order_id` | |
+| [`schema_migrations`](#schema_migrations) | 2 | `filename` | |
+| [`supplier_events`](#supplier_events) | 158 | `event_id` | |
 | [`supplier_groups`](#supplier_groups) | 2 | `supplier_group_id` | |
-| [`suppliers`](#suppliers) | 54 | `vendor_id` | |
-| [`uom_dictionary`](#uom_dictionary) | 22 | `uom_code` | |
+| [`suppliers`](#suppliers) | 155 | `vendor_id` | |
+| [`trading_terms`](#trading_terms) | 6 | `trading_terms_id` | |
+| [`uom_dictionary`](#uom_dictionary) | 0 | `uom_code` | |
 | [`users`](#users) | 0 | `user_id` | |
-| [`zones`](#zones) | 4 | `zone_id` | |
+| [`zones`](#zones) | 1 | `zone_id` | |
 
 ---
 
@@ -71,8 +73,11 @@ All tables are managed by Drizzle ORM with UUID primary keys and enforced FK con
 | `account_events` | `account_id` | `accounts` | `account_id` |
 | `account_groups` | `default_ar_account_id` | `gl_accounts` | `gl_account_id` |
 | `account_groups` | `default_revenue_account_id` | `gl_accounts` | `gl_account_id` |
+| `account_groups` | `trading_terms_id` | `trading_terms` | `trading_terms_id` |
 | `accounts` | `account_group_id` | `account_groups` | `account_group_id` |
 | `accounts` | `gst_category_id` | `gst_categories` | `gst_category_id` |
+| `accounts` | `trading_terms_id` | `trading_terms` | `trading_terms_id` |
+| `app_settings` | `default_fulfillment_location_id` | `locations` | `location_id` |
 | `backorders` | `product_id` | `products` | `product_id` |
 | `backorders` | `purchase_order_id` | `purchase_orders` | `purchase_order_id` |
 | `backorders` | `purchase_order_line_id` | `purchase_order_lines` | `purchase_order_line_id` |
@@ -149,6 +154,7 @@ graph LR
     account_events["account_events"]
     account_groups["account_groups"]
     accounts["accounts"]
+    app_settings["app_settings"]
     backorders["backorders"]
     bin_contents["bin_contents"]
     bins["bins"]
@@ -193,13 +199,17 @@ graph LR
     supplier_events["supplier_events"]
     supplier_groups["supplier_groups"]
     suppliers["suppliers"]
+    trading_terms["trading_terms"]
     uom_dictionary["uom_dictionary"]
     users["users"]
     zones["zones"]
     accounts --> account_events
     gl_accounts --> account_groups
+    trading_terms --> account_groups
     account_groups --> accounts
     gst_categories --> accounts
+    trading_terms --> accounts
+    locations --> app_settings
     products --> backorders
     purchase_orders --> backorders
     purchase_order_lines --> backorders
@@ -263,7 +273,7 @@ graph LR
 
 ---
 
-### `modbm_core.account_events` (17 rows)
+### `modbm_core.account_events` (227 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -284,8 +294,11 @@ graph LR
 | 4 | `default_discount_percentage` | `numeric` | ✓ | '0'::numeric |  |
 | 5 | `default_ar_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 6 | `default_revenue_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
+| 7 | `trading_terms_id` | `uuid` | ✓ |  | FK → trading_terms.trading_terms_id |
+| 8 | `credit_limit` | `numeric` | ✓ | '0'::numeric |  |
+| 9 | `is_on_credit_hold` | `bool` |  | false |  |
 
-### `modbm_core.accounts` (17 rows)
+### `modbm_core.accounts` (101 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -317,8 +330,22 @@ graph LR
 | 26 | `created_by` | `text` | ✓ |  |  |
 | 27 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 28 | `modified_on` | `timestamptz` | ✓ | now() |  |
+| 29 | `trading_terms_id` | `uuid` | ✓ |  | FK → trading_terms.trading_terms_id |
+| 30 | `credit_limit` | `numeric` | ✓ |  |  |
+| 31 | `is_on_credit_hold` | `bool` |  | false |  |
 
-### `modbm_core.backorders` (0 rows)
+### `modbm_core.app_settings` (1 rows)
+
+| # | Column | Type | Nullable | Default | Constraints |
+|---|--------|------|----------|---------|------------|
+| 1 | `settings_id` | `uuid` |  | gen_random_uuid() | 🔑 PK |
+| 2 | `default_fulfillment_location_id` | `uuid` | ✓ |  | FK → locations.location_id |
+| 3 | `inventory_valuation_method` | `text` |  | 'weighted_average'::text |  |
+| 4 | `non_stock_billing_mode` | `text` |  | 'per_shipment'::text |  |
+| 5 | `setup_completed_at` | `timestamptz` | ✓ |  |  |
+| 6 | `credit_limit_behavior` | `text` |  | 'soft'::text |  |
+
+### `modbm_core.backorders` (3 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -332,7 +359,7 @@ graph LR
 | 8 | `state_code` | `text` |  | 'pending_supply'::text |  |
 | 9 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.bin_contents` (5,052 rows)
+### `modbm_core.bin_contents` (153 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -371,7 +398,7 @@ graph LR
 | 6 | `effective_date` | `timestamp` | ✓ | now() |  |
 | 7 | `updated_on` | `timestamp` | ✓ | now() |  |
 
-### `modbm_core.gl_accounts` (0 rows)
+### `modbm_core.gl_accounts` (47 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -386,7 +413,7 @@ graph LR
 | 9 | `is_active` | `bool` |  | true |  |
 | 10 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.gl_journal_entries` (0 rows)
+### `modbm_core.gl_journal_entries` (37 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -401,7 +428,7 @@ graph LR
 | 9 | `created_by` | `text` | ✓ |  |  |
 | 10 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.gl_journal_lines` (0 rows)
+### `modbm_core.gl_journal_lines` (251 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -419,16 +446,18 @@ graph LR
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
 | 1 | `settings_id` | `uuid` |  | gen_random_uuid() | 🔑 PK |
-| 2 | `fiscal_year_start_month` | `int4` |  | 7 |  |
+| 2 | `fiscal_year_start_month` | `int4` |  |  |  |
 | 3 | `default_ar_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 4 | `default_ap_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 5 | `default_revenue_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 6 | `default_cogs_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 7 | `default_tax_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 8 | `default_expense_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
-| 9 | `base_currency` | `text` |  | 'AUD'::text |  |
+| 9 | `base_currency` | `text` |  |  |  |
+| 10 | `revenue_routing_precedence` | `text` |  | 'product_first'::text |  |
+| 11 | `expense_routing_precedence` | `text` |  | 'product_first'::text |  |
 
-### `modbm_core.gst_categories` (0 rows)
+### `modbm_core.gst_categories` (2 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -455,7 +484,7 @@ graph LR
 | 10 | `source_id` | `text` | ✓ |  |  |
 | 11 | `created_by` | `text` | ✓ |  |  |
 
-### `modbm_core.inventory_entries` (4,945 rows)
+### `modbm_core.inventory_entries` (5,638 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -470,7 +499,7 @@ graph LR
 | 9 | `created_by` | `text` | ✓ |  |  |
 | 10 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.inventory_ledger` (4,945 rows)
+### `modbm_core.inventory_ledger` (686 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -482,7 +511,7 @@ graph LR
 | 6 | `zone_id` | `uuid` |  |  | FK → zones.zone_id |
 | 7 | `quantity` | `numeric` |  |  |  |
 
-### `modbm_core.locations` (2 rows)
+### `modbm_core.locations` (0 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -500,7 +529,7 @@ graph LR
 | 12 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 13 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.order_events` (1,421 rows)
+### `modbm_core.order_events` (1,879 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -535,7 +564,7 @@ graph LR
 | 18 | `bank_swift_bic` | `text` | ✓ |  |  |
 | 19 | `bank_iban` | `text` | ✓ |  |  |
 
-### `modbm_core.outbox` (0 rows)
+### `modbm_core.outbox` (1,180 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -549,7 +578,7 @@ graph LR
 | 8 | `locked_until` | `timestamptz` | ✓ |  |  |
 | 9 | `last_error` | `text` | ✓ |  |  |
 
-### `modbm_core.product_events` (14,896 rows)
+### `modbm_core.product_events` (15,183 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -570,7 +599,7 @@ graph LR
 | 4 | `default_revenue_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 5 | `default_expense_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 
-### `modbm_core.product_supplier_events` (0 rows)
+### `modbm_core.product_supplier_events` (9 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -581,7 +610,7 @@ graph LR
 | 5 | `actor` | `text` | ✓ |  |  |
 | 6 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.product_suppliers` (9,294 rows)
+### `modbm_core.product_suppliers` (9 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -604,7 +633,7 @@ graph LR
 | 17 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 18 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.product_uoms` (15,511 rows)
+### `modbm_core.product_uoms` (0 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -616,7 +645,7 @@ graph LR
 | 6 | `is_sales_default` | `bool` | ✓ | false |  |
 | 7 | `is_purchase_default` | `bool` | ✓ | false |  |
 
-### `modbm_core.products` (14,897 rows)
+### `modbm_core.products` (15,079 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -646,7 +675,7 @@ graph LR
 | 24 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 25 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.purchase_invoice_lines` (77,283 rows)
+### `modbm_core.purchase_invoice_lines` (77,300 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -657,7 +686,7 @@ graph LR
 | 5 | `price_per_unit` | `numeric` |  |  |  |
 | 6 | `amount` | `numeric` |  |  |  |
 
-### `modbm_core.purchase_invoices` (592 rows)
+### `modbm_core.purchase_invoices` (609 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -674,7 +703,7 @@ graph LR
 | 11 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 12 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.purchase_order_events` (0 rows)
+### `modbm_core.purchase_order_events` (273 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -685,7 +714,7 @@ graph LR
 | 5 | `actor` | `text` | ✓ |  |  |
 | 6 | `created_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.purchase_order_lines` (6,415 rows)
+### `modbm_core.purchase_order_lines` (126 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -703,7 +732,7 @@ graph LR
 | 12 | `unit_of_measure` | `text` | ✓ |  |  |
 | 13 | `quantity_received` | `numeric` | ✓ | '0'::numeric |  |
 
-### `modbm_core.purchase_order_reception_lines` (0 rows)
+### `modbm_core.purchase_order_reception_lines` (36 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -712,7 +741,7 @@ graph LR
 | 3 | `purchase_order_line_id` | `uuid` |  |  | FK → purchase_order_lines.purchase_order_line_id |
 | 4 | `quantity_received` | `numeric` |  |  |  |
 
-### `modbm_core.purchase_order_receptions` (0 rows)
+### `modbm_core.purchase_order_receptions` (36 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -726,7 +755,7 @@ graph LR
 | 8 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 9 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.purchase_orders` (656 rows)
+### `modbm_core.purchase_orders` (782 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -744,7 +773,7 @@ graph LR
 | 12 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 13 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.report_contexts` (0 rows)
+### `modbm_core.report_contexts` (7 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -758,9 +787,9 @@ graph LR
 | 1 | `hook_slug` | `text` |  |  | 🔑 PK |
 | 2 | `report_id` | `uuid` |  |  | FK → reports.id |
 | 3 | `updated_at` | `timestamptz` |  | now() |  |
-| 4 | `context_slug` | `text` | ✓ |  |  |
+| 4 | `context_slug` | `text` |  |  |  |
 
-### `modbm_core.reports` (0 rows)
+### `modbm_core.reports` (9 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -772,7 +801,7 @@ graph LR
 | 6 | `output_name_pattern` | `text` | ✓ | 'Report.pdf'::text |  |
 | 7 | `created_at` | `timestamptz` |  | now() |  |
 
-### `modbm_core.sales_invoice_lines` (21,366 rows)
+### `modbm_core.sales_invoice_lines` (21,396 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -783,7 +812,7 @@ graph LR
 | 5 | `price_per_unit` | `numeric` |  |  |  |
 | 6 | `amount` | `numeric` |  |  |  |
 
-### `modbm_core.sales_invoices` (2,428 rows)
+### `modbm_core.sales_invoices` (2,448 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -799,7 +828,7 @@ graph LR
 | 10 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 11 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.sales_order_lines` (23,575 rows)
+### `modbm_core.sales_order_lines` (22,046 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -820,7 +849,7 @@ graph LR
 | 15 | `fulfillment_location_id` | `uuid` |  |  | FK → locations.location_id |
 | 16 | `is_post_confirmation` | `bool` | ✓ | false |  |
 
-### `modbm_core.sales_order_return_lines` (0 rows)
+### `modbm_core.sales_order_return_lines` (4 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -831,7 +860,7 @@ graph LR
 | 5 | `reason` | `text` | ✓ |  |  |
 | 6 | `return_fee` | `numeric` | ✓ | '0'::numeric |  |
 
-### `modbm_core.sales_order_returns` (0 rows)
+### `modbm_core.sales_order_returns` (27 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -844,7 +873,7 @@ graph LR
 | 7 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 8 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.sales_order_shipment_lines` (0 rows)
+### `modbm_core.sales_order_shipment_lines` (40 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -853,7 +882,7 @@ graph LR
 | 3 | `sales_order_line_id` | `uuid` |  |  | FK → sales_order_lines.sales_order_line_id |
 | 4 | `quantity_shipped` | `numeric` |  |  |  |
 
-### `modbm_core.sales_order_shipments` (0 rows)
+### `modbm_core.sales_order_shipments` (30 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -867,7 +896,7 @@ graph LR
 | 8 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 9 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.sales_orders` (1,673 rows)
+### `modbm_core.sales_orders` (1,524 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -887,14 +916,14 @@ graph LR
 | 14 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 15 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.schema_migrations` (4 rows)
+### `modbm_core.schema_migrations` (2 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
 | 1 | `filename` | `text` |  |  | 🔑 PK |
 | 2 | `applied_at` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.supplier_events` (54 rows)
+### `modbm_core.supplier_events` (158 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -915,7 +944,7 @@ graph LR
 | 4 | `default_ap_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 | 5 | `default_expense_account_id` | `uuid` | ✓ |  | FK → gl_accounts.gl_account_id |
 
-### `modbm_core.suppliers` (54 rows)
+### `modbm_core.suppliers` (155 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -943,7 +972,18 @@ graph LR
 | 22 | `created_on` | `timestamptz` | ✓ | now() |  |
 | 23 | `modified_on` | `timestamptz` | ✓ | now() |  |
 
-### `modbm_core.uom_dictionary` (22 rows)
+### `modbm_core.trading_terms` (6 rows)
+
+| # | Column | Type | Nullable | Default | Constraints |
+|---|--------|------|----------|---------|------------|
+| 1 | `trading_terms_id` | `uuid` |  | gen_random_uuid() | 🔑 PK |
+| 2 | `code` | `text` |  |  | UNIQUE |
+| 3 | `description` | `text` |  |  |  |
+| 4 | `days` | `int4` |  |  |  |
+| 5 | `type` | `text` |  |  |  |
+| 6 | `created_on` | `timestamptz` | ✓ | now() |  |
+
+### `modbm_core.uom_dictionary` (0 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|
@@ -962,7 +1002,7 @@ graph LR
 | 5 | `is_active` | `bool` |  | true |  |
 | 6 | `created_at` | `timestamptz` |  | now() |  |
 
-### `modbm_core.zones` (4 rows)
+### `modbm_core.zones` (1 rows)
 
 | # | Column | Type | Nullable | Default | Constraints |
 |---|--------|------|----------|---------|------------|

@@ -336,6 +336,7 @@ export default function NewOrderPage() {
         {/* Order header */}
         <div className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">receipt_long</span>
             {tSales('salesOrders.orderDetails')}
           </h3>
@@ -508,6 +509,7 @@ export default function NewOrderPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">list</span>
               {tSales('salesOrders.lineItems')}
             </h3>

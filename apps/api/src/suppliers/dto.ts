@@ -5,8 +5,10 @@ import {
   IsEmail,
   IsUUID,
   IsNumberString,
+  IsBoolean,
+  IsDateString,
+  IsIn,
 } from 'class-validator';
-
 export class CreateSupplierDto {
   @IsString()
   @IsNotEmpty()
@@ -53,8 +55,51 @@ export class CreateSupplierDto {
   emailAddress1?: string;
 
   @IsOptional()
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPurchasingBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn([
+    'compliance_breach',
+    'quality_issues',
+    'dispute',
+    'financial_risk',
+    'other',
+  ])
+  purchasingBlockReason?:
+    | 'compliance_breach'
+    | 'quality_issues'
+    | 'dispute'
+    | 'financial_risk'
+    | 'other';
+
+  @IsOptional()
+  @IsBoolean()
+  isPaymentBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
+  paymentBlockReason?:
+    | 'invoice_dispute'
+    | 'missing_goods'
+    | 'contractual_breach'
+    | 'other';
+
+  @IsOptional()
   @IsString()
-  paymentTerms?: string;
+  blockNotes?: string;
 
   @IsOptional()
   @IsUUID()
@@ -111,8 +156,51 @@ export class UpdateSupplierDto {
   emailAddress1?: string;
 
   @IsOptional()
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPurchasingBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn([
+    'compliance_breach',
+    'quality_issues',
+    'dispute',
+    'financial_risk',
+    'other',
+  ])
+  purchasingBlockReason?:
+    | 'compliance_breach'
+    | 'quality_issues'
+    | 'dispute'
+    | 'financial_risk'
+    | 'other';
+
+  @IsOptional()
+  @IsBoolean()
+  isPaymentBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
+  paymentBlockReason?:
+    | 'invoice_dispute'
+    | 'missing_goods'
+    | 'contractual_breach'
+    | 'other';
+
+  @IsOptional()
   @IsString()
-  paymentTerms?: string;
+  blockNotes?: string;
 
   @IsOptional()
   @IsUUID()
@@ -147,6 +235,53 @@ export class CreateSupplierGroupDto {
   @IsOptional()
   @IsUUID()
   defaultExpenseAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPurchasingBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn([
+    'compliance_breach',
+    'quality_issues',
+    'dispute',
+    'financial_risk',
+    'other',
+  ])
+  purchasingBlockReason?:
+    | 'compliance_breach'
+    | 'quality_issues'
+    | 'dispute'
+    | 'financial_risk'
+    | 'other';
+
+  @IsOptional()
+  @IsBoolean()
+  isPaymentBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
+  paymentBlockReason?:
+    | 'invoice_dispute'
+    | 'missing_goods'
+    | 'contractual_breach'
+    | 'other';
+
+  @IsOptional()
+  @IsString()
+  blockNotes?: string;
 }
 
 export class UpdateSupplierGroupDto {
@@ -165,4 +300,79 @@ export class UpdateSupplierGroupDto {
   @IsOptional()
   @IsUUID()
   defaultExpenseAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  tradingTermsId?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  earlyPaymentDiscount?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  creditLimit?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isPurchasingBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn([
+    'compliance_breach',
+    'quality_issues',
+    'dispute',
+    'financial_risk',
+    'other',
+  ])
+  purchasingBlockReason?:
+    | 'compliance_breach'
+    | 'quality_issues'
+    | 'dispute'
+    | 'financial_risk'
+    | 'other';
+
+  @IsOptional()
+  @IsBoolean()
+  isPaymentBlocked?: boolean;
+
+  @IsOptional()
+  @IsIn(['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'])
+  paymentBlockReason?:
+    | 'invoice_dispute'
+    | 'missing_goods'
+    | 'contractual_breach'
+    | 'other';
+
+  @IsOptional()
+  @IsString()
+  blockNotes?: string;
+}
+
+export class CreateSupplierExpiryDto {
+  @IsIn(['insurance', 'tax_certificate', 'trial_period', 'other'])
+  @IsNotEmpty()
+  expiryType!: 'insurance' | 'tax_certificate' | 'trial_period' | 'other';
+
+  @IsDateString()
+  @IsNotEmpty()
+  expiryDate!: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class UpdateSupplierExpiryDto {
+  @IsOptional()
+  @IsIn(['insurance', 'tax_certificate', 'trial_period', 'other'])
+  expiryType?: 'insurance' | 'tax_certificate' | 'trial_period' | 'other';
+
+  @IsOptional()
+  @IsDateString()
+  expiryDate?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

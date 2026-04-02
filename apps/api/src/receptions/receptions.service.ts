@@ -14,7 +14,7 @@ import {
 import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { InventoryService } from '../inventory/inventory.service';
 
@@ -22,15 +22,13 @@ import { InventoryService } from '../inventory/inventory.service';
 export class ReceptionsService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private configService: ConfigService,
+    private appConfig: AppConfigService,
     private readonly inventoryService: InventoryService,
   ) {}
 
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
-      const method = this.configService.get<string>(
-        'INVENTORY_VALUATION_METHOD',
-      );
+      const method = this.appConfig.valuationMethod();
       const strategy = getValuationStrategy(method);
 
       // Create Reception

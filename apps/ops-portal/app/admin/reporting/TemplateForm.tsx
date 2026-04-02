@@ -124,6 +124,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
               className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
               title="Return to Reporting List"
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
@@ -163,6 +164,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                   <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
                     {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">Select contexts...</span>}
                   </span>
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
                 </div>
                 

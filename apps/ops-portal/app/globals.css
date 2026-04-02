@@ -124,6 +124,45 @@
   font-size: 12px;
 }
 
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--danger, #ef4444);
+  transition: .2s;
+  border-radius: 20px;
+}
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .2s;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.switch input:checked + .switch-slider {
+  background-color: var(--success, #22c55e);
+}
+.switch input:checked + .switch-slider:before {
+  transform: translateX(16px);
+}
+
 /* Cards */
 .card {
   background: #fff;
@@ -387,6 +426,14 @@ h2 {
   background: rgba(4, 22, 39, 0.1);
 }
 
+/* Fix missing background on pinned columns causing text bleed-through when scrolling */
+.ag-pinned-left-header,
+.ag-pinned-left-cols-container .ag-cell,
+.ag-cell-pinned-left,
+.ag-header-cell.ag-header-cell-pinned-left {
+  background-color: var(--ag-background-color, #ffffff) !important;
+}
+
 /* Override state badges to match Mock */
 .badge-active {
   background: #68fadd !important;
@@ -396,3 +443,4 @@ h2 {
   background: #e6e8ea !important;
   color: #44474c !important;
 }
+

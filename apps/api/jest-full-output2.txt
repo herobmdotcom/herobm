@@ -1,0 +1,112 @@
+FAIL src/gl/coa-loader.service.spec.ts
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should create GL settings with default account mappings
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "EUR"
+    Received: "AUD"
+
+      306 |       const settingsInsert = mock.insertCalls[mock.insertCalls.length - 1];
+      307 |       expect(settingsInsert.values.fiscalYearStartMonth).toBe(7);
+    > 308 |       expect(settingsInsert.values.baseCurrency).toBe(
+          |                                                  ^
+      309 |         process.env.HOME_CURRENCY || 'EUR',
+      310 |       );
+      311 |     });
+
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:308:50)
+
+PASS src/invoices/sales-invoice.service.spec.ts
+PASS src/orders/backorders.service.spec.ts
+PASS src/receptions/receptions.service.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/orders/shipment.service.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/receptions/receptions.controller.spec.ts
+[Nest] 12776  - 04/02/2026, 10:17:50 AM   ERROR [ReturnsWriteService] GL credit note failed for return RET-20260315-0001: Error: GL service unavailable
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/orders/picking.service.spec.ts
+PASS src/orders/returns-write.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/purchase-orders/purchase-orders.service.spec.ts
+PASS src/orders/orders-write.service.spec.ts
+PASS src/gst/gst-categories.controller.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/inventory/inventory.service.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+[Nest] 1964  - 04/02/2026, 10:17:50 AM   ERROR [ReportsService] Typst execution failed for report r1: Compiler failed
+PASS src/gl/gl.service.spec.ts
+PASS src/reports/reports.service.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/invoices/purchase-invoice.service.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/suppliers/suppliers.service.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/products/products-write.service.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/gst/gst-categories.service.spec.ts
+PASS src/accounts/accounts-write.service.spec.ts
+PASS src/suppliers/suppliers-write.service.spec.ts
+PASS src/inventory/uom.service.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+  ΓùÅ Console
+
+    console.warn
+      Projection has fields not in schema: productType, baseUom. These should be either computed / joined columns or projection errors.
+
+      153 |       // but flag them for review.
+      154 |       if (unknownFields.length > 0) {
+    > 155 |         console.warn(
+          |                 ^
+      156 |           `Projection has fields not in schema: ${unknownFields.join(', ')}. ` +
+      157 |             `These should be either computed / joined columns or projection errors.`,
+      158 |         );
+
+      at Object.<anonymous> (orders/projection-completeness.spec.ts:155:17)
+
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/orders/order-lifecycle-rules.spec.ts
+PASS src/reports/picking-slip.service.spec.ts
+PASS src/settings/app-config.service.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+PASS src/orders/picking-math.utils.spec.ts
+PASS src/common/pricing.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+PASS src/orders/returns-math.utils.spec.ts
+PASS src/reports/reports.controller.spec.ts
+
+Summary of all failing tests
+FAIL gl/coa-loader.service.spec.ts
+  ΓùÅ CoaLoaderService ΓÇ║ loadFromFile ΓÇö ERPNext JSON parsing ΓÇ║ should create GL settings with default account mappings
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "EUR"
+    Received: "AUD"
+
+      306 |       const settingsInsert = mock.insertCalls[mock.insertCalls.length - 1];
+      307 |       expect(settingsInsert.values.fiscalYearStartMonth).toBe(7);
+    > 308 |       expect(settingsInsert.values.baseCurrency).toBe(
+          |                                                  ^
+      309 |         process.env.HOME_CURRENCY || 'EUR',
+      310 |       );
+      311 |     });
+
+      at Object.<anonymous> (gl/coa-loader.service.spec.ts:308:50)
+
+
+Test Suites: 1 failed, 51 passed, 52 total
+Tests:       1 failed, 531 passed, 532 total
+Snapshots:   0 total
+Time:        3.18 s
+Ran all test suites.

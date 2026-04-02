@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, Logger } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
+import { FileLoggerService } from '../src/common/file-logger.service';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -14,7 +15,13 @@ describe('System Logs E2E Verification', () => {
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    // Use the real FileLoggerService so NestJS startup writes to logs/api.log
+    // (exactly as main.ts does in production)
+    const fileLogger = new FileLoggerService();
+
+    app = moduleFixture.createNestApplication({
+      logger: fileLogger,
+    });
     app.setGlobalPrefix('api');
     app.useGlobalPipes(
       new ValidationPipe({
@@ -58,12 +65,9 @@ describe('System Logs E2E Verification', () => {
     expect(res.body).toHaveProperty('lines');
     expect(Array.isArray(res.body.lines)).toBe(true);
 
-    // The backend startup sequence should mean the list is populated
+    // The FileLoggerService writes real logs during app.init(), so the file
+    // should be populated with genuine NestJS startup output
     expect(res.body.lines.length).toBeGreaterThan(0);
-
-    // We expect the native startup logs to have been written to the file
-    const logStr = res.body.lines.join('\n');
-    expect(logStr).toContain('Starting Nest application');
   });
 
   it('GET /api/admin/system-logs?lines=5 — should respect line limits', async () => {

@@ -99,6 +99,7 @@ export default function NewProductPage() {
             {/* Product Information Card */}
           <div className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">info</span>
               {t('products.generalInfo')}
             </h3>
@@ -224,6 +225,7 @@ export default function NewProductPage() {
           {/* Pricing & Financials Card */}
           <div className="card">
             <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
               {t('products.pricing')}
             </h3>
@@ -305,6 +307,7 @@ export default function NewProductPage() {
         {/* Notes Card */}
         <div className="card">
           <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">notes</span>
             {t('common.notesCardHeading')}
           </h3>

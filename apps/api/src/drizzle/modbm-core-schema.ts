@@ -506,6 +506,18 @@ export const inventoryLevels = modbmCore
   .existing();
 
 // ---------------------------------------------------------------------------
+// trading_terms  (Dictionary of standard payment cycles)
+// ---------------------------------------------------------------------------
+export const tradingTerms = modbmCore.table('trading_terms', {
+  tradingTermsId: uuid('trading_terms_id').primaryKey().defaultRandom(),
+  code: text('code').unique().notNull(), // e.g., 'NET30', 'COD', 'EOM'
+  description: text('description').notNull(),
+  days: integer('days').notNull(), // Number of days allowed
+  type: text('type').notNull(), // 'net' | 'end_of_month' | 'cash_on_delivery'
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // account_groups  (Administrative grouping and GL routing)
 // ---------------------------------------------------------------------------
 export const accountGroups = modbmCore.table('account_groups', {
@@ -521,6 +533,11 @@ export const accountGroups = modbmCore.table('account_groups', {
   defaultRevenueAccountId: uuid('default_revenue_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  tradingTermsId: uuid('trading_terms_id').references(
+    () => tradingTerms.tradingTermsId,
+  ),
+  creditLimit: numeric('credit_limit').default('0'), // 0 = cash only/no limit policy
+  isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false),
 });
 
 // ---------------------------------------------------------------------------
@@ -536,6 +553,28 @@ export const supplierGroups = modbmCore.table('supplier_groups', {
   defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  tradingTermsId: uuid('trading_terms_id').references(
+    () => tradingTerms.tradingTermsId,
+  ),
+  earlyPaymentDiscount: numeric('early_payment_discount').default('0'),
+  creditLimit: numeric('credit_limit').default('0'),
+  isPurchasingBlocked: boolean('is_purchasing_blocked')
+    .notNull()
+    .default(false),
+  purchasingBlockReason: text('purchasing_block_reason', {
+    enum: [
+      'compliance_breach',
+      'quality_issues',
+      'dispute',
+      'financial_risk',
+      'other',
+    ],
+  }),
+  isPaymentBlocked: boolean('is_payment_blocked').notNull().default(false),
+  paymentBlockReason: text('payment_block_reason', {
+    enum: ['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'],
+  }),
+  blockNotes: text('block_notes'),
 });
 
 // ---------------------------------------------------------------------------
@@ -676,6 +715,11 @@ export const accounts = modbmCore.table(
       () => gstCategories.gstCategoryId,
     ),
     currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    tradingTermsId: uuid('trading_terms_id').references(
+      () => tradingTerms.tradingTermsId,
+    ),
+    creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
+    isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false), // Manual override per account
     customerDiscount: numeric('customer_discount').default('0'),
     erpnextId: text('erpnext_id'),
     sourceId: text('source_id').unique(),
@@ -726,7 +770,28 @@ export const suppliers = modbmCore.table(
     telephone1: text('telephone1'),
     fax: text('fax'),
     emailAddress1: text('email_address1'),
-    paymentTerms: text('payment_terms'),
+    tradingTermsId: uuid('trading_terms_id').references(
+      () => tradingTerms.tradingTermsId,
+    ),
+    earlyPaymentDiscount: numeric('early_payment_discount'),
+    creditLimit: numeric('credit_limit'),
+    isPurchasingBlocked: boolean('is_purchasing_blocked')
+      .notNull()
+      .default(false),
+    purchasingBlockReason: text('purchasing_block_reason', {
+      enum: [
+        'compliance_breach',
+        'quality_issues',
+        'dispute',
+        'financial_risk',
+        'other',
+      ],
+    }),
+    isPaymentBlocked: boolean('is_payment_blocked').notNull().default(false),
+    paymentBlockReason: text('payment_block_reason', {
+      enum: ['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'],
+    }),
+    blockNotes: text('block_notes'),
     currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
     stateCode: text('state_code').notNull().default('active'),
     erpnextId: text('erpnext_id'),
@@ -754,6 +819,24 @@ export const supplierEvents = modbmCore.table('supplier_events', {
   payload: jsonb('payload'),
   actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// supplier_expiries  (Generic tracking for compliance dates like insurance, tax certs)
+// ---------------------------------------------------------------------------
+export const supplierExpiries = modbmCore.table('supplier_expiries', {
+  expiryId: uuid('expiry_id').primaryKey().defaultRandom(),
+  vendorId: uuid('vendor_id')
+    .notNull()
+    .references(() => suppliers.vendorId),
+  expiryType: text('expiry_type', {
+    enum: ['insurance', 'tax_certificate', 'trial_period', 'other'],
+  }).notNull(),
+  expiryDate: date('expiry_date').notNull(),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -1017,6 +1100,30 @@ export const glSettings = modbmCore.table('gl_settings', {
     () => glAccounts.glAccountId,
   ),
   baseCurrency: text('base_currency').notNull(),
+  revenueRoutingPrecedence: text('revenue_routing_precedence')
+    .notNull()
+    .default('product_first'), // 'product_first' | 'customer_first'
+  expenseRoutingPrecedence: text('expense_routing_precedence')
+    .notNull()
+    .default('product_first'), // 'product_first' | 'supplier_first'
+});
+
+// ---------------------------------------------------------------------------
+// app_settings  (Singleton config — operational defaults)
+// ---------------------------------------------------------------------------
+export const appSettings = modbmCore.table('app_settings', {
+  settingsId: uuid('settings_id').primaryKey().defaultRandom(),
+  defaultFulfillmentLocationId: uuid(
+    'default_fulfillment_location_id',
+  ).references(() => locations.locationId),
+  inventoryValuationMethod: text('inventory_valuation_method')
+    .notNull()
+    .default('weighted_average'), // 'weighted_average' | 'fifo'
+  nonStockBillingMode: text('non_stock_billing_mode')
+    .notNull()
+    .default('per_shipment'), // 'per_shipment' | 'final_invoice'
+  creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
+  setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
 });
 
 // ===========================================================================

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { InventoryService } from './inventory.service';
 import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -75,7 +75,10 @@ describe('InventoryService', () => {
       providers: [
         InventoryService,
         { provide: DRIZZLE, useValue: mockDb },
-        { provide: ConfigService, useValue: { get: jest.fn() } },
+        {
+          provide: AppConfigService,
+          useValue: { defaultFulfillmentLocationId: jest.fn() },
+        },
         {
           provide: UomService,
           useValue: {

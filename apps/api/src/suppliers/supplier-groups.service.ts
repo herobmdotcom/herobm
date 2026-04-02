@@ -45,8 +45,16 @@ export class SupplierGroupsService {
       .values({
         groupCode: dto.groupCode,
         name: dto.name,
-        defaultApAccountId: dto.defaultApAccountId || null,
-        defaultExpenseAccountId: dto.defaultExpenseAccountId || null,
+        ...(dto.defaultApAccountId && { defaultApAccountId: dto.defaultApAccountId }),
+        ...(dto.defaultExpenseAccountId && { defaultExpenseAccountId: dto.defaultExpenseAccountId }),
+        ...(dto.tradingTermsId && { tradingTermsId: dto.tradingTermsId }),
+        ...(dto.earlyPaymentDiscount && { earlyPaymentDiscount: dto.earlyPaymentDiscount }),
+        ...(dto.creditLimit && { creditLimit: dto.creditLimit }),
+        isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
+        ...(dto.purchasingBlockReason && { purchasingBlockReason: dto.purchasingBlockReason }),
+        isPaymentBlocked: dto.isPaymentBlocked ?? false,
+        ...(dto.paymentBlockReason && { paymentBlockReason: dto.paymentBlockReason }),
+        ...(dto.blockNotes && { blockNotes: dto.blockNotes }),
       })
       .returning();
     return rows[0];
@@ -66,6 +74,23 @@ export class SupplierGroupsService {
         ...(dto.defaultExpenseAccountId !== undefined && {
           defaultExpenseAccountId: dto.defaultExpenseAccountId,
         }),
+        ...(dto.earlyPaymentDiscount !== undefined && {
+          earlyPaymentDiscount: dto.earlyPaymentDiscount,
+        }),
+        ...(dto.creditLimit !== undefined && { creditLimit: dto.creditLimit }),
+        ...(dto.isPurchasingBlocked !== undefined && {
+          isPurchasingBlocked: dto.isPurchasingBlocked,
+        }),
+        ...(dto.purchasingBlockReason !== undefined && {
+          purchasingBlockReason: dto.purchasingBlockReason,
+        }),
+        ...(dto.isPaymentBlocked !== undefined && {
+          isPaymentBlocked: dto.isPaymentBlocked,
+        }),
+        ...(dto.paymentBlockReason !== undefined && {
+          paymentBlockReason: dto.paymentBlockReason,
+        }),
+        ...(dto.blockNotes !== undefined && { blockNotes: dto.blockNotes }),
       })
       .where(eq(supplierGroups.supplierGroupId, id))
       .returning();

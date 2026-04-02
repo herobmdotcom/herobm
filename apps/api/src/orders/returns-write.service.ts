@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../settings/app-config.service';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -56,7 +56,7 @@ export class ReturnsWriteService {
     private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
     private readonly gstService: GstCategoriesService,
-    private readonly configService: ConfigService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -373,9 +373,7 @@ export class ReturnsWriteService {
         }
 
         // Update product global QOH
-        const method = this.configService.get<string>(
-          'INVENTORY_VALUATION_METHOD',
-        );
+        const method = this.appConfig.valuationMethod();
         const strategy = getValuationStrategy(method);
 
         for (const line of stockLines) {

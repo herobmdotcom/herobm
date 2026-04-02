@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -19,7 +20,12 @@ import {
 } from '../auth/casbin.guard';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
-import { CreateSupplierDto, UpdateSupplierDto } from './dto';
+import {
+  CreateSupplierDto,
+  UpdateSupplierDto,
+  CreateSupplierExpiryDto,
+  UpdateSupplierExpiryDto,
+} from './dto';
 
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('suppliers')
@@ -86,5 +92,60 @@ export class SuppliersController {
   @CasbinAction('archive')
   async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.suppliersWriteService.unarchive(id, user.username);
+  }
+
+  // --- Expiries ---
+
+  @Get(':id/expiries')
+  @CasbinAction('read')
+  async findSupplierExpiries(
+    @Param('id') vendorId: string,
+    @Query() query: PaginationQuery,
+  ) {
+    return this.suppliersService.findSupplierExpiries(vendorId, query);
+  }
+
+  @Post(':id/expiries')
+  @CasbinAction('write')
+  async createExpiry(
+    @Param('id') vendorId: string,
+    @Body() dto: CreateSupplierExpiryDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.suppliersWriteService.createExpiry(
+      vendorId,
+      dto,
+      user.username,
+    );
+  }
+
+  @Patch(':id/expiries/:expiryId')
+  @CasbinAction('write')
+  async updateExpiry(
+    @Param('id') vendorId: string,
+    @Param('expiryId') expiryId: string,
+    @Body() dto: UpdateSupplierExpiryDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.suppliersWriteService.updateExpiry(
+      vendorId,
+      expiryId,
+      dto,
+      user.username,
+    );
+  }
+
+  @Delete(':id/expiries/:expiryId')
+  @CasbinAction('write')
+  async deleteExpiry(
+    @Param('id') vendorId: string,
+    @Param('expiryId') expiryId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.suppliersWriteService.deleteExpiry(
+      vendorId,
+      expiryId,
+      user.username,
+    );
   }
 }

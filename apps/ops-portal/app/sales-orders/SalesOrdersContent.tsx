@@ -124,7 +124,7 @@ export default function SalesOrdersContent() {
                     </select>
                     {optionsButton}
                     <Link href="/sales-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                      + {tSales('buttons.createOrder')}
+                      {tSales('buttons.createOrder')}
                     </Link>
                   </div>
                 </div>

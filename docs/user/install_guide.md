@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide walks you through setting up the Antigravity Platform on a fresh Windows machine. You will need administrator access and a working internet connection.
+This guide walks you through setting up the HeroBM Platform on a fresh Windows or Linux machine. You will need administrator access and a working internet connection.
 
 ## What You're Installing
 
@@ -23,25 +23,29 @@ All services run inside **Podman** containers — lightweight virtual environmen
 
 ### What you need already
 
-The setup script assumes these are already on your machine (they ship with modern Windows):
+The setup script assumes these are already on your machine:
 
-- **Git** — you probably used it to clone this repo (`git --version` to check)
-- **winget** — the Windows package manager (built into Windows 10 1809+ and Windows 11)
-
-If `winget` is not available, install [App Installer from the Microsoft Store](https://apps.microsoft.com/detail/9nblggh4nns1).
+- **Windows**: **Git** and **winget** (built into Windows 10 1809+ and Windows 11). If `winget` is missing, install the App Installer from the Microsoft Store.
+- **Linux**: **Git** and a standard package manager like `apt-get` or `dnf`.
 
 ### Running the setup script
 
-Open **PowerShell** (right-click the Start menu → "Terminal" or "PowerShell") and navigate to the project folder:
+Open your terminal (**PowerShell** on Windows or **Bash** on Linux) and navigate to the project folder:
 
-```powershell
-cd C:\path\to\modbm
+```shell
+cd path/to/modbm
 ```
 
-Run the setup script:
+Run the setup script for your operating system:
 
+**Windows**:
 ```powershell
 .\scripts\setup.ps1
+```
+
+**Linux**:
+```bash
+bash scripts/setup.sh
 ```
 
 This checks for and installs:
@@ -50,17 +54,18 @@ This checks for and installs:
 - **Python** — required for data pipelines and dbt
 - **Typst** — report generation engine
 - **podman-compose** — orchestrates the containers (installed via `pip`)
-- **Make** — task runner (may need manual install, the script will tell you)
+- **Make** — task runner (may need manual install on Windows, the script will tell you)
 
-During installation, the script will interactive prompt you to choose your **Installation Profile**:
+During installation, the script will interactively prompt you to choose your **Installation Profile**:
 1. **Local Native (FE + API)**: Runs the databases in containers, but assumes you will run the UI and API locally via Node.js. (Best for developers).
 2. **Full Containerization**: Runs everything, including the UI and API, inside containers. (Best for ops/evaluation).
 
-It will also ask if you want to explicitly enable the **PLG Stack** (Observability) or the **ERPNext Integration** (Financial core). Based on your choices, it generates a custom Windows Startup shortcut to automatically start your chosen configuration whenever you log into Windows!
+It will also ask if you want to explicitly enable the **PLG Stack** (Observability) or the **ERPNext Integration** (Financial core). Based on your choices, it generates a custom **Windows Startup shortcut** or **Linux systemd user service** to automatically start your chosen configuration whenever you boot!
 
 ### Permissions
 
-Most `winget` installs work without administrator privileges. If any install fails with a permissions error, try running PowerShell **as Administrator** (right-click → "Run as administrator") and re-run the script. The script is safe to re-run — it skips anything already installed.
+On Linux, the script will ask for `sudo` to use `apt-get` or `dnf`.
+On Windows, most `winget` installs work without administrator privileges. If any install fails with a permissions error, try running PowerShell **as Administrator** (right-click → "Run as administrator") and re-run the script. The script is safe to re-run — it skips anything already installed.
 
 ### If the script fails
 
@@ -77,11 +82,11 @@ If `winget` installs fail (e.g. corporate policy restrictions), you can install 
 
 ### After installing
 
-**Close and reopen PowerShell** so that newly installed tools are available on your PATH.
+**Close and reopen your terminal window** so that newly installed tools are available on your PATH.
 
 Then install the JavaScript dependencies. This project uses NPM Workspaces, so you only need to run this once at the root directory:
 
-```powershell
+```shell
 npm install
 ```
 
@@ -89,22 +94,17 @@ npm install
 
 ## Step 2: Configure Environment Variables
 
-The platform needs a `.env` file with passwords and connection settings. Run:
+The platform needs a `.env` file with passwords and connection settings. Run our automated OS-agnostic initializer:
 
-```powershell
-.\scripts\init-env.ps1
+```shell
+make init-env
 ```
 
-This will:
+This will run the Python setup tool and:
 1. Create a `.env` file from the template
 2. **Automatically generate** random passwords for all local services (PostgreSQL, Redis, Grafana, API, portal users)
-3. **Prompt you** for the ABM SQL Server connection — you'll need:
-   - **Host** — the ABM server IP address or hostname
-   - **Database** — the ABM database name
-   - **Username** — your ABM read-only account
-   - **Password** — your ABM account password
 
-If you don't have the ABM details yet, press Enter to skip — you can fill them in later by editing the `.env` file in a text editor.
+You can manually edit the `.env` file in a text editor later if you wish to override these secrets.
 
 ---
 
@@ -113,13 +113,13 @@ If you don't have the ABM details yet, press Enter to skip — you can fill them
 Depending on what you chose during the `setup.ps1` script, your platform configurations might already be starting in the background if you reboot. To start them manually (or if you don't want to reboot):
 
 **Path 1: Full Containerization (Options: none)**
-```powershell
+```shell
 make up-fe-api
 ```
 *(Starts the DB, Redis, App API, and Ops Portal containers).*
 
 **Path 2: Local Native FE + API (Options: none)**
-```powershell
+```shell
 make up-db
 ```
 *(Starts only the DB and Redis containers. You must run `make dev-local` to start the frontend and API from source).*
@@ -129,18 +129,18 @@ make up-db
 If you want to run the optional modules (like PLG or ERPNext) independently, or add them on top of your base layer, you can stack commands!
 
 For example, to run the Local DB layer + PLG observability + ERPNext integration:
-```powershell
+```shell
 make up-db up-plg up-erpnext
 ```
 
 To run Full Containerization + ERPNext:
-```powershell
+```shell
 make up-fe-api up-erpnext
 ```
 
 Check that everything is running:
 
-```powershell
+```shell
 make ps
 ```
 
@@ -148,35 +148,46 @@ You should see your chosen services listed as `Up` with `(healthy)` next to most
 
 ---
 
-## Step 4: Initialise the Database
+## Step 4: Run the Interactive Setup Wizard
 
-```powershell
-make init
+Instead of running command-line scripts to provision your database, HeroBM Platform features an interactive user interface to bootstrap your environment.
+
+Run the following command to generate your secure, one-time setup token:
+
+```shell
+make setup-wizard
 ```
 
+This will automatically create your base database tables and output a URL to your terminal. It will look like this:
+
+```text
+=================================
+HEROBM SETUP
+
+Please complete the setup wizard to proceed:
+
+http://localhost:4300/setup?token=YOUR_SECURE_TOKEN_STRING
+
+=================================
+```
+
+Click the URL to open your browser to the Interactive Setup Wizard. 
+This 5-step wizard will guide you through:
+1. **Source System Connection**: Connecting your Advanced Business Manager (ABM) MSSQL database.
+2. **Data Preview**: Verifying extraction pipelines.
+3. **Application Settings**: Selecting your region's Chart of Accounts preset (e.g., `au_standard.json`), Base Currency, Valuation Strategy, and Accounting Routing Precedence.
+4. **Execution**: Compiling your platform and visualizing real-time database seeding progress.
+
 > [!TIP]
-> **Resuming a Failed Setup**
-> If your setup fails *after* the initial 15-minute ABM extraction completes (e.g., during DB transformation or seeding), do not run `make init` again as it will re-download the ABM snapshot from scratch. 
-> Instead, safely resume by running:
-> ```powershell
-> make init-no-extract
-> ```
-
-This runs four steps automatically:
-
-1. **Build** — compiles the API application
-2. **Migrate** — creates all database tables (using a unified Drizzle schema)
-3. **ELT** — imports data from the ABM system (requires ABM connection in `.env`). This step concludes by printing a **Pipeline Summary Report** to verify data alignment between systems.
-4. **Seed** — creates portal user accounts and populates inventory
-
-This takes 2–3 minutes. If the ELT step fails (e.g. ABM not reachable), the tables and users are still created — you can re-run `make elt` and `make seed` later when the connection is available.
+> **Sterile Database mode:**
+> If you do not have an ABM connection, you can click "Skip extraction (Empty Base)" during Step 1 of the wizard. This will initialize a strictly sterile database ready for new data.
 
 ---
 
 ## Step 5: Verify
 
-```powershell
-make test-all
+```shell
+make verify-all
 ```
 
 You should see tests passing across the API endpoints, structural architecture policies, and data synchronization checks. If any tests fail, check `make ps` to ensure all containers are healthy.
@@ -218,10 +229,10 @@ Other portal accounts: `sales`, `warehouse`, `procurement` — each with their o
 ## Troubleshooting
 
 ### "podman: command not found"
-Close and reopen PowerShell after running `setup.ps1`. Podman needs to be on your PATH.
+Close and reopen your terminal after running the setup script. Podman needs to be on your PATH.
 
 ### "podman-compose: executable file not found"
-Install it with: `pip install podman-compose`, then restart PowerShell.
+Install it with: `pip install podman-compose` or `pip3 install podman-compose --user`, then restart your terminal.
 
 ### Containers won't start
 Check that the Podman machine is running: `podman machine list`. If it shows "Stopped", start it with `podman machine start`.
@@ -233,10 +244,9 @@ Verify the ABM connection settings in your `.env` file. The ABM server must be r
 Make isn't bundled with Windows. Install via `choco install make` (if you have Chocolatey) or `scoop install make` (if you have Scoop).
 
 ### Need to start over completely
-```powershell
+```shell
 make nuke    # removes all containers, volumes, and local images
 make up      # recreate containers with empty database
-make init    # rebuild everything from scratch
 ```
 
 ---

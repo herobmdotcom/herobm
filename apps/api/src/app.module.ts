@@ -21,6 +21,7 @@ import { GlModule } from './gl/gl.module';
 import { SystemModule } from './system/system.module';
 import { SettingsModule } from './settings/settings.module';
 import { LocationsModule } from './locations/locations.module';
+import { SetupModule } from './setup/setup.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { LocationsModule } from './locations/locations.module';
     SystemModule,
     SettingsModule,
     LocationsModule,
+    SetupModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })
