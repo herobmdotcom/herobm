@@ -220,7 +220,7 @@ export default function InvoicesSection({
 
                             // Centralised pricing — compute per-line then sum
                             let subtotal = 0;
-                            let taxTotal = 0;
+                            let calculatedTaxTotal = 0;
                             const linePricing = sortedLines.map((il) => {
                                 const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
                                 const disc = parseFloat(orderLine?.discountPercentage || '0');
@@ -233,10 +233,15 @@ export default function InvoicesSection({
                                     taxRate: gstRate,
                                 });
                                 subtotal += pricing.amount;
-                                taxTotal += pricing.tax;
+                                calculatedTaxTotal += pricing.tax;
                                 return { il, orderLine, disc, gstRate, pricing };
                             });
-                            const grandTotal = subtotal + taxTotal;
+                            
+                            // Prefer the explicit DB taxAmount to handle imported legacy shipments safely
+                            const dbTaxAmount = inv.taxAmount != null ? parseFloat(inv.taxAmount as string) : 0;
+                            const effectiveTaxTotal = dbTaxAmount !== 0 ? dbTaxAmount : calculatedTaxTotal;
+                            const grandTotal = subtotal + effectiveTaxTotal;
+
                             return (
                                 <table className="table-lines">
                                     <thead>
@@ -280,7 +285,7 @@ export default function InvoicesSection({
                                         </tr>
                                         <tr>
                                             <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>Tax</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(taxTotal, cc)}</td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
                                         </tr>
                                         <tr>
                                             <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>Total</td>

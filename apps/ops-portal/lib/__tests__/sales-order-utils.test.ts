@@ -31,7 +31,7 @@ function makeInvoice(
         invoiceId: 'inv-1',
         invoiceNumber: 'INV-001',
         totalAmount: '0',
-        totalTax: '0',
+        taxAmount: '0',
         createdOn: '2024-01-01',
         createdBy: 'test',
         lines: lines.map((l) => ({

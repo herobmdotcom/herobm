@@ -187,6 +187,15 @@ export class SetupService {
   }
 
   async executeSetup(dto: ExecuteSetupDto) {
+    // Prevent overlapping concurrent setup spawns (e.g. from frontend double clicks)
+    const runningJobId = Object.keys(this.activeJobs).find(
+      (id) => this.activeJobs[id].status === 'running',
+    );
+    if (runningJobId) {
+      this.logger.warn(`Setup is already running on job ${runningJobId}. Refusing to spawn concurrent ELT process.`);
+      return { jobId: runningJobId };
+    }
+
     const jobId = Math.random().toString(36).substring(7);
     this.activeJobs[jobId] = {
       status: 'running',
@@ -295,7 +304,16 @@ export class SetupService {
         );
         this.logToJob(
           jobId,
-          '--- Initializing ABM Extract-Load-Transform pipeline ---',
+          `--- Initializing ABM Extract-Load-Transform pipeline ---\n` +
+          `[ CONFIGURATION ]\n` +
+          `Company Name: ${dto.companyName}\n` +
+          `Primary Location: ${dto.defaultLocationCode || 'System Default'}\n` +
+          `Valuation Logic: ${dto.inventoryValuationMethod || 'weighted_average'}\n` +
+          `Billing Mode: ${dto.nonStockBillingMode || 'per_shipment'}\n` +
+          `Base Currency: ${dto.baseCurrency}\n` +
+          `Fiscal Start: ${dto.fiscalYearStartMonth}\n` +
+          `COA Template: ${dto.coaPreset}\n` +
+          `--------------------------------------------------------`
         );
 
         const envOverride: Record<string, string> = {};
@@ -314,6 +332,44 @@ export class SetupService {
 
         if (dto.resumeExtraction) {
           envOverride['ABM_RESUME'] = 'true';
+        }
+
+        // Pipe wizard configuration directly into ELT environment
+        if (dto.defaultLocationCode) envOverride['DEFAULT_FULFILLMENT_LOCATION_CODE'] = dto.defaultLocationCode;
+        if (dto.nonStockBillingMode) envOverride['NON_STOCK_BILLING_MODE'] = dto.nonStockBillingMode;
+        if (dto.inventoryValuationMethod) envOverride['INVENTORY_VALUATION_METHOD'] = dto.inventoryValuationMethod;
+        if (dto.baseCurrency) envOverride['HOME_CURRENCY'] = dto.baseCurrency;
+
+        // Automatically persist to the active `.env` file to prevent future CLI/Cron job crashes
+        try {
+          const envPath = path.join(this.getWorkspaceRoot(), '.env');
+          if (fs.existsSync(envPath)) {
+            let envContent = fs.readFileSync(envPath, 'utf8');
+            let updated = false;
+            const updates = [
+              { key: 'DEFAULT_FULFILLMENT_LOCATION_CODE', val: dto.defaultLocationCode },
+              { key: 'NON_STOCK_BILLING_MODE', val: dto.nonStockBillingMode },
+              { key: 'INVENTORY_VALUATION_METHOD', val: dto.inventoryValuationMethod },
+              { key: 'HOME_CURRENCY', val: dto.baseCurrency }
+            ];
+            
+            for (const { key, val } of updates) {
+              if (val && !envContent.includes(`${key}=`)) {
+                envContent += `\n${key}=${val}`;
+                updated = true;
+              } else if (val) {
+                const regex = new RegExp(`^${key}=.*$`, 'm');
+                envContent = envContent.replace(regex, `${key}=${val}`);
+                updated = true;
+              }
+            }
+            if (updated) {
+              fs.writeFileSync(envPath, envContent);
+              this.logger.log(`Appended wizard configurations to .env file for CLI continuity.`);
+            }
+          }
+        } catch (err) {
+          this.logger.warn(`Failed to auto-update .env file. Next CLI dbt run may lack required vars: ${err.message}`);
         }
 
         await this.runCommandStream(jobId, 'make', ['elt'], envOverride);
@@ -355,6 +411,11 @@ export class SetupService {
       this.updateJobProgress(jobId, 5, 'running');
       await this.appConfig.reload(); // Reload the boot-time cache
       this.updateJobProgress(jobId, 5, 'done');
+
+      this.logToJob(jobId, '\n========================================================');
+      this.logToJob(jobId, 'SETUP COMPLETED SUCCESSFULLY');
+      this.logToJob(jobId, 'HeroBM Platform is now fully compiled and ready for use.');
+      this.logToJob(jobId, '========================================================\n');
 
       job.status = 'done';
     } catch (error) {

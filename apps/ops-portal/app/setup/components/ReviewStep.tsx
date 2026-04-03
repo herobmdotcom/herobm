@@ -19,7 +19,11 @@ export default function ReviewStep({ config, onNext }: Props) {
     `COA Preset: ${config.coaPreset}`,
     `Currency: ${config.baseCurrency.split(' ')[0]}`,
     `Fiscal Start Month: ${config.fiscalStartMonth}`,
-    `Valuation Strategy: weighted_average`, // Placeholder as not in screen
+    `Valuation Strategy: ${config.inventoryValuation || 'weighted_average'}`,
+    `Billing Mode: ${config.nonStockBilling || 'per_shipment'}`,
+    `Primary Location: ${config.primaryLocation !== 'none' ? config.primaryLocation : 'System Default'}`,
+    `Revenue Routing: ${config.revenueRouting.includes('Product') ? 'product_first' : 'customer_first'}`,
+    `Expense Routing: ${config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'}`
   ].join('\n');
 
   return (

@@ -2,7 +2,21 @@ import sys
 import os
 import json
 import subprocess
+import argparse
 from datetime import datetime
+
+def load_env(profile=None):
+    env_file = f".env.{profile}" if profile else ".env"
+    env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', env_file))
+    if os.path.exists(env_path):
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ[k.strip()] = v.strip()
 
 # To import test_data_counts we need to add infra/tests to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'infra', 'tests')))
@@ -54,6 +68,13 @@ def get_dbt_results():
 
 
 def main():
+    parser = argparse.ArgumentParser(description="ELT Pipeline Summary Report")
+    parser.add_argument("--profile", type=str, help="Environment profile to use (e.g. volzsg)", default=None)
+    args = parser.parse_args()
+
+    # Load environment variables for the specified profile before anything else
+    load_env(args.profile)
+
     print("\n" + "="*70)
     print(f" ELT PIPELINE SUMMARY REPORT - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("="*70)

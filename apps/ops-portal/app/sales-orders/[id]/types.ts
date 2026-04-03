@@ -120,7 +120,7 @@ export interface SalesInvoice {
     invoiceId: string;
     invoiceNumber: string;
     totalAmount: string;
-    totalTax: string;
+    taxAmount: string;
     createdOn: string;
     createdBy: string;
     lines?: InvoiceLine[];

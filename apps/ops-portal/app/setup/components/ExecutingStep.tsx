@@ -15,13 +15,21 @@ export default function ExecutingStep({ config }: Props) {
   
   const jobIdRef = useRef<string | null>(null);
   const pollTimerRef = useRef<any>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const isAutoScrollRef = useRef<boolean>(true);
 
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (isAutoScrollRef.current && bottomRef.current) {
+      bottomRef.current.scrollIntoView();
     }
   }, [logs, status, errorMsg]);
+
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    isAutoScrollRef.current = scrollHeight - scrollTop - clientHeight < 60;
+  };
 
   useEffect(() => {
     async function startSetup() {
@@ -118,7 +126,11 @@ export default function ExecutingStep({ config }: Props) {
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
           <div className="ml-4 text-slate-400 text-xs font-medium">Terminal (pipeline-execution.log)</div>
         </div>
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div 
+          ref={scrollContainerRef} 
+          onScroll={handleScroll} 
+          className="p-6 flex-1 overflow-y-auto"
+        >
           {logs.map((log, i) => (
             <div key={i} className="flex gap-4 mb-3 text-slate-300">
               <span className="text-[#0ea5e9] select-none">{'>'}</span>
