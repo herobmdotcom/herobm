@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e ../../.env -- cross-env-shell \"next dev --port $FE_PORT\"",
-    "dev:local": "dotenv -e ../../.env -- cross-env-shell \"next dev --port $FE_PORT\"",
+    "dev": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
+    "dev:local": "npx dotenv-cli -e ../../.env -- cross-env-shell \"next dev\"",
     "typecheck": "tsc --noEmit",
     "prebuild": "tsc --noEmit",
     "build": "next build",

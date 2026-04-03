@@ -14,6 +14,7 @@ ifeq ($(OS),Windows_NT)
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
   INIT_ENV_CMD = python scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
+  COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE = -f docker-compose.linux.yml
@@ -21,6 +22,7 @@ else
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
   INIT_ENV_CMD = python3 scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
+  COMPOSE_CMD = podman-compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 endif
 
 # Only use PROFILE if it was passed on the command line (origin=command line),
@@ -42,7 +44,6 @@ export
 export PYTHONUTF8=1
 export ENV_FILE
 
-COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 DBT_DIR = pipelines/abm_transform
 
 # --- Container Stack (Podman) ---
