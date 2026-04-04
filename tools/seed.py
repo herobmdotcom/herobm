@@ -204,52 +204,62 @@ def seed_gst_categories(dry_run: bool = False) -> None:
 
 
 def seed_organization(dry_run: bool = False) -> None:
-    """Imports the organization singleton record from raw_abm.company."""
+    """Imports the organization singleton record from raw_abm.company or seeds a fallback."""
     # Check if raw_abm.company exists before attempting to seed
     exists = psql("SELECT 1 FROM information_schema.tables WHERE table_schema = 'raw_abm' AND table_name = 'company' LIMIT 1;", capture=True)
-    if not exists:
-        print("  SKIP: raw_abm.company not found. (Expected in sterile shadow environments)")
-        return
-
+    
     if dry_run:
-        print("  [DRY RUN] Would seed organization from raw_abm")
+        if exists:
+            print("  [DRY RUN] Would seed organization from raw_abm")
+        else:
+            print("  [DRY RUN] Would seed fallback organization (sterile environment)")
         return
 
-    sql = """
-    WITH src AS (
+    if exists:
+        sql = """
+        WITH src AS (
+            SELECT 
+                TRIM(company_name) as name,
+                TRIM(COALESCE(company_url, '')) as website,
+                TRIM(COALESCE(phone_number, '')) as phone,
+                TRIM(COALESCE(tax_number, '')) as tax_number,
+                TRIM(COALESCE(company_id, '')) as company_number,
+                regexp_split_to_array(company_address, E'\\r?\\n') as addr_arr
+            FROM raw_abm.company
+            LIMIT 1
+        )
+        INSERT INTO modbm_core.organization (
+            organization_id, name, website, phone, tax_number, company_number,
+            address_line_1, address_line_2, city
+        )
         SELECT 
-            TRIM(company_name) as name,
-            TRIM(COALESCE(company_url, '')) as website,
-            TRIM(COALESCE(phone_number, '')) as phone,
-            TRIM(COALESCE(tax_number, '')) as tax_number,
-            TRIM(COALESCE(company_id, '')) as company_number,
-            regexp_split_to_array(company_address, E'\\r?\\n') as addr_arr
-        FROM raw_abm.company
-        LIMIT 1
-    )
-    INSERT INTO modbm_core.organization (
-        organization_id, name, website, phone, tax_number, company_number,
-        address_line_1, address_line_2, city
-    )
-    SELECT 
-        '00000000-0000-0000-0000-000000000000'::uuid,
-        name, website, phone, tax_number, company_number,
-        TRIM(COALESCE(addr_arr[1], '')),
-        TRIM(COALESCE(addr_arr[2], '')),
-        TRIM(COALESCE(addr_arr[3], ''))
-    FROM src
-    ON CONFLICT (organization_id) DO UPDATE SET 
-        name = EXCLUDED.name,
-        website = EXCLUDED.website,
-        phone = EXCLUDED.phone,
-        tax_number = EXCLUDED.tax_number,
-        company_number = EXCLUDED.company_number,
-        address_line_1 = EXCLUDED.address_line_1,
-        address_line_2 = EXCLUDED.address_line_2,
-        city = EXCLUDED.city;
-    """
-    psql_sql(sql)
-    print("  Seeded organization details from raw_abm.company")
+            '00000000-0000-0000-0000-000000000000'::uuid,
+            name, website, phone, tax_number, company_number,
+            TRIM(COALESCE(addr_arr[1], '')),
+            TRIM(COALESCE(addr_arr[2], '')),
+            TRIM(COALESCE(addr_arr[3], ''))
+        FROM src
+        ON CONFLICT (organization_id) DO UPDATE SET 
+            name = EXCLUDED.name,
+            website = EXCLUDED.website,
+            phone = EXCLUDED.phone,
+            tax_number = EXCLUDED.tax_number,
+            company_number = EXCLUDED.company_number,
+            address_line_1 = EXCLUDED.address_line_1,
+            address_line_2 = EXCLUDED.address_line_2,
+            city = EXCLUDED.city;
+        """
+        psql_sql(sql)
+        print("  Seeded organization details from raw_abm.company")
+    else:
+        # Sterile fallback
+        sql = """
+        INSERT INTO modbm_core.organization (organization_id, name)
+        VALUES ('00000000-0000-0000-0000-000000000000'::uuid, 'My Company')
+        ON CONFLICT (organization_id) DO NOTHING;
+        """
+        psql_sql(sql)
+        print("  Seeded default organization (Sterile Fallback)")
 
 
 def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_code: str = 'HQ') -> None:

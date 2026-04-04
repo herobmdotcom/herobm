@@ -148,9 +148,13 @@ You should see your chosen services listed as `Up` with `(healthy)` next to most
 
 ---
 
-## Step 4: Run the Interactive Setup Wizard
+## Step 4: Provision the Database
 
-Instead of running command-line scripts to provision your database, HeroBM Platform features an interactive user interface to bootstrap your environment.
+You must bootstrap the database with a Chart of Accounts, system settings, and core identity. You can do this via the **Setup Wizard (UI)** or the **CLI**.
+
+### Option A: Interactive Setup Wizard (Recommended)
+
+HeroBM Platform features an interactive user interface to bootstrap your environment.
 
 Run the following command to generate your secure, one-time setup token:
 
@@ -158,29 +162,19 @@ Run the following command to generate your secure, one-time setup token:
 make setup-wizard
 ```
 
-This will automatically create your base database tables and output a URL to your terminal. It will look like this:
+This will automatically create your base database tables and output a URL to your terminal. Click the URL to open your browser and follow the 5-step wizard to configure your region, currency, and data source.
 
-```text
-=================================
-HEROBM SETUP
+### Option B: Unified CLI Setup (Fast Path)
 
-Please complete the setup wizard to proceed:
+For developers who prefer the command line or are working in a remote environment without browser access, you can run the unified setup logic via NPM. This script handles database seeding, Chart of Accounts loading, and configuration in a single step:
 
-http://localhost:4300/setup?token=YOUR_SECURE_TOKEN_STRING
-
-=================================
+```shell
+cd apps/api
+npm run setup
 ```
 
-Click the URL to open your browser to the Interactive Setup Wizard. 
-This 5-step wizard will guide you through:
-1. **Source System Connection**: Connecting your Advanced Business Manager (ABM) MSSQL database.
-2. **Data Preview**: Verifying extraction pipelines.
-3. **Application Settings**: Selecting your region's Chart of Accounts preset (e.g., `au_standard.json`), Base Currency, Valuation Strategy, and Accounting Routing Precedence.
-4. **Execution**: Compiling your platform and visualizing real-time database seeding progress.
-
-> [!TIP]
-> **Sterile Database mode:**
-> If you do not have an ABM connection, you can click "Skip extraction (Empty Base)" during Step 1 of the wizard. This will initialize a strictly sterile database ready for new data.
+> [!NOTE]
+> The CLI setup uses defaults from your `.env` file (e.g., `HOME_CURRENCY`, `INVENTORY_VALUATION_METHOD`). Ensure these are set before running `npm run setup`.
 
 ---
 

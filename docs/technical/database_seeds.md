@@ -45,9 +45,10 @@ These records are specifically designed to handle data integrity issues during t
 | Source | Trigger | Contents |
 | :--- | :--- | :--- |
 | `seed.py` | `make seed` | Users, Organization, HQ Location, Legacy Anchors, System Product. |
-| `coa-loader.ts` | Setup Wizard | GST Categories, Trading Terms, GL Settings, Chart of Accounts. |
+| `execute-setup.ts` | `npm run setup` | **Unified CLI Setup:** Calls `SetupService.runSetupCore`. Seeds COA, GL Settings, App Settings, and Organizations. |
+| `coa-loader.ts` | Setup Wizard | **Unified UI Setup:** Calls `SetupService.runSetupCore`. Seeds COA, GL Settings, and Trading Terms. |
 | `dbt hooks` | `make elt` | Re-seeds Legacy Anchors and System Product to ensure referential integrity during import. |
 
 ## 4. Environment Synchronization
-- **Sterile (No Import):** Run `make seed` then complete the **Setup Wizard**.
-- **Migration (With Import):** `make seed` is called automatically by `make elt` or the **Setup Wizard** to ensure all anchors are in place before data arrives.
+- **Sterile (No Import):** Run `cd apps/api && npm run setup` (CLI) or complete the **Setup Wizard** (UI).
+- **Migration (With Import):** `make seed` is called automatically by `make elt`. Final configuration can then be completed via CLI or UI.
