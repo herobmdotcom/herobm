@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { ConfigState } from './SetupWizard';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export default function PreviewStep({ config, onNext }: Props) {
+  const t = useTranslations('setup.preview');
   const [tables, setTables] = useState<{name: string, rowCount: number}[]>([]);
   const [loadingPreview, setLoadingPreview] = useState(true);
 
@@ -22,7 +24,7 @@ export default function PreviewStep({ config, onNext }: Props) {
           setTables(data.tables);
         }
       } catch (err) {
-        console.error('Failed to load live preview data', err);
+        reportError(err, 'Failed to load live preview data');
       } finally {
         setLoadingPreview(false);
       }
@@ -33,21 +35,21 @@ export default function PreviewStep({ config, onNext }: Props) {
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Source Preview Data</h2>
-        <p className="text-slate-500">
-          Validating entities detected in the ABM MSSQL pipeline from <strong className="text-[#006b5c] font-semibold">{config.database}</strong> at <strong className="text-[#006b5c] font-semibold">{config.host}</strong>.
-        </p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('title')}</h2>
+        <p className="text-slate-500" dangerouslySetInnerHTML={{ 
+          __html: t('description', { database: config.database, host: config.host }) 
+        }} />
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2 mb-6" style={{ maxHeight: '400px' }}>
         {loadingPreview ? (
           <div className="h-full flex items-center justify-center text-slate-400 font-medium">
             <span className="w-5 h-5 mr-3 border-2 border-[#006b5c] border-t-transparent rounded-full animate-spin" />
-            Scanning MSSQL schema...
+            {t('loading')}
           </div>
         ) : tables.length === 0 ? (
            <div className="h-full flex items-center justify-center text-slate-400">
-             No tables returned by pipeline. Ensure extraction step succeeded.
+             {t('noTables')}
            </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
@@ -66,7 +68,7 @@ export default function PreviewStep({ config, onNext }: Props) {
           onClick={onNext}
           className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
         >
-          Confirm Mapping
+          {t('confirm')}
         </button>
       </div>
     </div>

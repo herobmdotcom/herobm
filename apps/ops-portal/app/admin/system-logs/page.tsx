@@ -1,6 +1,7 @@
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useRef } from 'react';
 import { apiFetch } from '@/lib/api';
@@ -11,6 +12,7 @@ interface LogsResponse {
 
 export default function SystemLogsPage() {
   useDocumentTitle('System Logs');
+  const t = useTranslations('admin.systemLogs');
   const [lines, setLines] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -136,11 +138,11 @@ export default function SystemLogsPage() {
         >
           {loading && lines.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
-              Loading system logs...
+              {t('loading')}
             </div>
           ) : lines.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
-              No logs available.
+              {t('noLogs')}
             </div>
           ) : (
             <>

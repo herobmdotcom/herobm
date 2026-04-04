@@ -113,21 +113,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditStreet(data.address1Line1 || '');
       setEditCity(data.address1City || '');
       setEditCountry(data.address1Country || '');
-      // @ts-ignore - mapping new backend fields which may not exist on old interface
       setEditTradingTermsId(data.tradingTermsId || null);
-      // @ts-ignore
       setEditEarlyPaymentDiscount(data.earlyPaymentDiscount || '');
       setEditNotes(data.notes || '');
       
-      // @ts-ignore
       setEditIsPurchasingBlocked(data.isPurchasingBlocked || false);
-      // @ts-ignore
       setEditPurchasingBlockReason(data.purchasingBlockReason || '');
-      // @ts-ignore
       setEditIsPaymentBlocked(data.isPaymentBlocked || false);
-      // @ts-ignore
       setEditPaymentBlockReason(data.paymentBlockReason || '');
-      // @ts-ignore
       setEditBlockNotes(data.blockNotes || '');
       
       setEditCurrency(data.currencyCode || HOME_CURRENCY.code);
@@ -438,7 +431,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Payment Terms
+                    {t('suppliers.paymentTerms')}
                   </label>
                   <select
                     className="input"
@@ -449,7 +442,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     }}
                     disabled={!isEditable || saving}
                   >
-                    <option value="">Select...</option>
+                    <option value="">{t('common.selectEllipsis')}</option>
                     {availableTradingTerms.map(t => (
                       <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
                     ))}
@@ -497,7 +490,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Early Payment Discount %
+                    {t('suppliers.earlyPaymentDiscount')}
                   </label>
                   <div className="relative">
                     <input
@@ -646,7 +639,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">gavel</span>
-              Compliance Status
+              {t('suppliers.compliance.title')}
             </h3>
             <div className="flex gap-2 pt-2 pb-4">
               <SupplierStatusBadges 
@@ -659,7 +652,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>Purchasing Block</label>
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.purchasingBlock')}</label>
                   <label className="switch" title={editIsPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
                     <input 
                       type="checkbox" 
@@ -676,7 +669,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {editIsPurchasingBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Reason</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={editPurchasingBlockReason}
@@ -684,25 +677,25 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       onBlur={() => saveField('purchasingBlockReason', editPurchasingBlockReason, supplier.purchasingBlockReason || '')}
                       disabled={!isEditable || saving}
                     >
-                      <option value="">Select Reason...</option>
-                      <option value="compliance_breach">Compliance Breach</option>
-                      <option value="quality_issues">Quality Issues</option>
-                      <option value="dispute">Dispute</option>
-                      <option value="financial_risk">Financial Risk</option>
-                      <option value="other">Other</option>
+                      <option value="">{t('common.selectEllipsis')}</option>
+                      <option value="compliance_breach">{t('suppliers.compliance.reasons.compliance_breach')}</option>
+                      <option value="quality_issues">{t('suppliers.compliance.reasons.quality_issues')}</option>
+                      <option value="dispute">{t('suppliers.compliance.reasons.dispute')}</option>
+                      <option value="financial_risk">{t('suppliers.compliance.reasons.financial_risk')}</option>
+                      <option value="other">{t('suppliers.compliance.reasons.other')}</option>
                     </select>
                   </div>
                 )}
                 {supplier.groupIsPurchasingBlocked && (
                   <div className="text-xs font-semibold text-danger">
-                    Group Inherited ({(supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ')})
+                    {t('suppliers.compliance.groupInherited', { reason: (supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>
               
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>Payment Block</label>
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.paymentBlock')}</label>
                   <label className="switch" title={editIsPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
                     <input 
                       type="checkbox" 
@@ -719,7 +712,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {editIsPaymentBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>Reason</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={editPaymentBlockReason}
@@ -727,17 +720,17 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       onBlur={() => saveField('paymentBlockReason', editPaymentBlockReason, supplier.paymentBlockReason || '')}
                       disabled={!isEditable || saving}
                     >
-                      <option value="">Select Reason...</option>
-                      <option value="invoice_dispute">Invoice Dispute</option>
-                      <option value="missing_goods">Missing Goods</option>
-                      <option value="contractual_breach">Contractual Breach</option>
-                      <option value="other">Other</option>
+                      <option value="">{t('common.selectEllipsis')}</option>
+                      <option value="invoice_dispute">{t('suppliers.compliance.reasons.invoice_dispute')}</option>
+                      <option value="missing_goods">{t('suppliers.compliance.reasons.missing_goods')}</option>
+                      <option value="contractual_breach">{t('suppliers.compliance.reasons.contractual_breach')}</option>
+                      <option value="other">{t('suppliers.compliance.reasons.other')}</option>
                     </select>
                   </div>
                 )}
                 {supplier.groupIsPaymentBlocked && (
                   <div className="text-xs font-semibold text-amber-600">
-                    Group Inherited ({(supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ')})
+                    {t('suppliers.compliance.groupInherited', { reason: (supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>
@@ -745,12 +738,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             <div className="mt-4">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Block Notes
+                {t('suppliers.compliance.blockNotes')}
               </label>
               <input
                 type="text"
                 className="input w-full"
-                placeholder="Internal notes regarding blocking..."
+                placeholder={t('suppliers.compliance.notesPlaceholder')}
                 value={editBlockNotes}
                 onChange={e => setEditBlockNotes(e.target.value)}
                 onBlur={() => saveField('blockNotes', editBlockNotes, supplier.blockNotes || null)}

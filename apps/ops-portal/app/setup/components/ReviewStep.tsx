@@ -1,5 +1,4 @@
-'use client';
-
+import { useTranslations } from 'next-intl';
 import { ConfigState } from './SetupWizard';
 
 interface Props {
@@ -8,6 +7,7 @@ interface Props {
 }
 
 export default function ReviewStep({ config, onNext }: Props) {
+  const t = useTranslations('setup.review');
   const isSsl = config.port === '1433' ? '' : ' // non-standard port';
 
   const payload = [
@@ -30,9 +30,9 @@ export default function ReviewStep({ config, onNext }: Props) {
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex flex-col items-center justify-center text-center mb-8 mt-4">
         <span className="material-symbols-outlined text-4xl text-[#006b5c] mb-4">check_circle</span>
-        <h2 className="text-3xl font-bold text-slate-900 mb-2">Ready to Initialize</h2>
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">{t('title')}</h2>
         <p className="text-slate-500 text-lg">
-          Your configuration is saved and ready to be compiled into the database.
+          {t('description')}
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function ReviewStep({ config, onNext }: Props) {
           onClick={onNext}
           className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
         >
-          Compile Platform
+          {t('confirm')}
         </button>
       </div>
     </div>

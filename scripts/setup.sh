@@ -64,6 +64,12 @@ else
 fi
 
 echo -e "\n\e[36m--- Podman Setup ---\e[0m"
+echo -e "  Creating logs directory and setting permissions..."
+mkdir -p ./logs
+# In rootless podman, UID 70 inside the container maps to a high-range host UID.
+# podman unshare handles the mapping correctly.
+podman unshare chown -R 70:70 ./logs 2>/dev/null || true
+
 echo -e "  Creating podman_logs shared volume for log scraping..."
 LOG_DIR="$HOME/.local/share/containers/storage/overlay-containers"
 mkdir -p "$LOG_DIR"

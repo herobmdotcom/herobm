@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { ConfigState } from './SetupWizard';
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export default function ExecutingStep({ config }: Props) {
+  const t = useTranslations('setup.execution');
   const [logs, setLogs] = useState<string[]>([]);
   const [status, setStatus] = useState<'starting' | 'running' | 'completed' | 'failed'>('starting');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export default function ExecutingStep({ config }: Props) {
           }
         }
       } catch (err) {
-        console.error('Polling error', err);
+        reportError(err, 'Polling error');
         // We do not stop polling on a temporary network error, but we could cap it.
       }
     }, 2000);
@@ -112,10 +114,10 @@ export default function ExecutingStep({ config }: Props) {
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h2 className="text-3xl font-bold text-slate-900 mb-2">
-          {status === 'failed' ? 'Initialization Failed' : 'Initializing System'}
+          {status === 'failed' ? t('failedTitle') : t('runningTitle')}
         </h2>
         <p className="text-slate-500">
-          {status === 'failed' ? 'An error occurred during pipeline execution. Check the terminal below.' : 'Please do not close this window. This process may take a few minutes if extracting data.'}
+          {status === 'failed' ? t('failedDescription') : t('runningDescription')}
         </p>
       </div>
 
@@ -124,7 +126,7 @@ export default function ExecutingStep({ config }: Props) {
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-          <div className="ml-4 text-slate-400 text-xs font-medium">Terminal (pipeline-execution.log)</div>
+          <div className="ml-4 text-slate-400 text-xs font-medium">{t('terminalLabel')}</div>
         </div>
         <div 
           ref={scrollContainerRef} 
@@ -146,7 +148,7 @@ export default function ExecutingStep({ config }: Props) {
           {status === 'failed' && errorMsg && (
             <div className="flex gap-4 mb-3 text-red-400">
               <span className="text-[#0ea5e9] select-none">{'>'}</span>
-              <span>[CRITICAL]: {errorMsg}</span>
+              <span>{t('criticalError', { error: errorMsg })}</span>
             </div>
           )}
           <div ref={bottomRef} />
@@ -159,14 +161,14 @@ export default function ExecutingStep({ config }: Props) {
             href="/"
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
           >
-            Go to Dashboard
+            {t('goDashboard')}
           </a>
         </div>
       )}
       
       {status === 'failed' && (
         <div className="mt-auto pt-4 flex items-center justify-center border-t border-slate-100 animate-in fade-in">
-           <span className="text-red-500 font-bold">Execution aborted. Please review error logs.</span>
+           <span className="text-red-500 font-bold">{t('aborted')}</span>
         </div>
       )}
     </div>

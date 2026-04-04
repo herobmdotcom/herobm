@@ -3,12 +3,17 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
+import { useTranslations } from 'next-intl';
 
 export default function SupplierGroupsAdmin() {
-  useDocumentTitle('Supplier Groups');
+  const t = useTranslations('admin.supplierGroups');
+  const tc = useTranslations('admin.common');
+  const t_gen = useTranslations('common');
+
+  useDocumentTitle(t('title'));
+  
   const [groups, setGroups] = useState<any[]>([]);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +23,7 @@ export default function SupplierGroupsAdmin() {
   const [isCreating, setIsCreating] = useState(false);
 
   const renderGlAccountLabel = (id: string | null | undefined) => {
-    if (!id) return <span className="text-muted text-xs italic">Not configured</span>;
+    if (!id) return <span className="text-muted text-xs italic">{tc('notConfigured')}</span>;
     const acct = glAccounts.find((a: any) => a.glAccountId === id);
     return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
   };
@@ -36,7 +41,8 @@ export default function SupplierGroupsAdmin() {
       setGroups(sorted);
       setGlAccounts(accounts || []);
     } catch(err: any) {
-      toast.error('Failed to load groups: ' + err.message);
+      toast.error(t('toasts.loadFailed') + ': ' + err.message);
+      reportError(err, 'SupplierGroupsAdmin_loadData');
     } finally {
       setLoading(false);
     }
@@ -70,32 +76,34 @@ export default function SupplierGroupsAdmin() {
 
   const handleSave = async () => {
     if (!editForm.groupCode || !editForm.name) {
-      toast.error('Code and Name are required');
+      toast.error(t('toasts.requiredFields'));
       return;
     }
     try {
       if (editingId) {
         await apiMutate(`/api/supplier-groups/${editingId}`, 'PATCH', editForm);
-        toast.success('Group updated');
+        toast.success(t('toasts.updated'));
       } else {
         await apiMutate('/api/supplier-groups', 'POST', editForm);
-        toast.success('Group created');
+        toast.success(t('toasts.created'));
       }
       handleCancel();
       loadData();
     } catch(err: any) {
       toast.error(err.message);
+      reportError(err, 'SupplierGroupsAdmin_handleSave');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if(!confirm("Are you sure you want to delete this group?")) return;
+    if(!confirm(t('confirmDelete'))) return;
     try {
       await apiMutate(`/api/supplier-groups/${id}`, 'DELETE');
-      toast.success('Group deleted');
+      toast.success(t('toasts.deleted'));
       loadData();
     } catch(err: any) {
       toast.error(err.message);
+      reportError(err, 'SupplierGroupsAdmin_handleDelete');
     }
   };
 
@@ -103,13 +111,13 @@ export default function SupplierGroupsAdmin() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Supplier Groups</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Manage group classifications for supplier accounts
+            {t('subtitle')}
           </p>
         </div>
         <button className="btn btn-primary btn-sm" onClick={handleCreate}>
-          + New Group
+          {t('newGroup')}
         </button>
       </div>
 
@@ -118,32 +126,32 @@ export default function SupplierGroupsAdmin() {
           className="text-sm font-semibold mb-4"
           style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
         >
-          Defined Groups
+          {t('definedGroups')}
         </h3>
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 120 }}>Code</th>
-              <th>Name</th>
-              <th style={{ width: 180 }}>Def. AP Account</th>
-              <th style={{ width: 180 }}>Def. Expense Account</th>
-              <th style={{ width: 120, textAlign: 'center' }}>Purchasing</th>
-              <th style={{ width: 120, textAlign: 'center' }}>Payment</th>
-              <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              <th style={{ width: 120 }}>{tc('code')}</th>
+              <th>{tc('name')}</th>
+              <th style={{ width: 180 }}>{tc('defApAccount')}</th>
+              <th style={{ width: 180 }}>{tc('defExpenseAccount')}</th>
+              <th style={{ width: 120, textAlign: 'center' }}>{t('purchasing')}</th>
+              <th style={{ width: 120, textAlign: 'center' }}>{t('payment')}</th>
+              <th style={{ width: 150, textAlign: 'right' }}>{tc('actions')}</th>
             </tr>
           </thead>
           <tbody>
             {isCreating && (
               <tr style={{ background: 'var(--bg-secondary)' }}>
                 <td>
-                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder="Code" />
+                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder={t('placeholders.code')} />
                 </td>
                 <td>
-                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="Name" />
+                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
-                    <option value="">-- None --</option>
+                    <option value="">{t_gen('selectNone')}</option>
                     {glAccounts.map((a: any) => (
                       <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                     ))}
@@ -151,28 +159,28 @@ export default function SupplierGroupsAdmin() {
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
-                    <option value="">-- None --</option>
+                    <option value="">{t_gen('selectNone')}</option>
                     {glAccounts.map((a: any) => (
                       <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                     ))}
                   </select>
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  <label className="switch" title={editForm.isPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                  <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                     <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
                     <span className="switch-slider"></span>
                   </label>
                 </td>
                 <td style={{ textAlign: 'center' }}>
-                  <label className="switch" title={editForm.isPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                  <label className="switch" title={editForm.isPaymentBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                     <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
                     <span className="switch-slider"></span>
                   </label>
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
-                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                    <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{t_gen('cancel')}</button>
+                    <button className="btn btn-primary btn-xs" onClick={handleSave}>{t_gen('save')}</button>
                   </div>
                 </td>
               </tr>
@@ -181,7 +189,7 @@ export default function SupplierGroupsAdmin() {
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
                 <td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  No supplier groups defined.
+                  {t('noGroups')}
                 </td>
               </tr>
             )}
@@ -197,7 +205,7 @@ export default function SupplierGroupsAdmin() {
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultApAccountId || ''} onChange={e => setEditForm({...editForm, defaultApAccountId: e.target.value || null})}>
-                      <option value="">-- None --</option>
+                      <option value="">{t_gen('selectNone')}</option>
                       {glAccounts.map((a: any) => (
                         <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                       ))}
@@ -205,28 +213,28 @@ export default function SupplierGroupsAdmin() {
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
-                      <option value="">-- None --</option>
+                      <option value="">{t_gen('selectNone')}</option>
                       {glAccounts.map((a: any) => (
                         <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                       ))}
                     </select>
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <label className="switch" title={editForm.isPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                       <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
                       <span className="switch-slider"></span>
                     </label>
                   </td>
                   <td style={{ textAlign: 'center' }}>
-                    <label className="switch" title={editForm.isPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                    <label className="switch" title={editForm.isPaymentBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                       <input type="checkbox" checked={!editForm.isPaymentBlocked} onChange={e => setEditForm({...editForm, isPaymentBlocked: !e.target.checked})} />
                       <span className="switch-slider"></span>
                     </label>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{t_gen('cancel')}</button>
+                      <button className="btn btn-primary btn-xs" onClick={handleSave}>{t_gen('save')}</button>
                     </div>
                   </td>
                 </tr>
@@ -238,18 +246,18 @@ export default function SupplierGroupsAdmin() {
                   <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{ color: g.isPurchasingBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                      {g.isPurchasingBlocked ? 'BLOCKED' : 'ACTIVE'}
+                      {g.isPurchasingBlocked ? t('blocked') : t('active')}
                     </span>
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{ color: g.isPaymentBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-                      {g.isPaymentBlocked ? 'BLOCKED' : 'ACTIVE'}
+                      {g.isPaymentBlocked ? t('blocked') : t('active')}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>Edit</button>
-                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.supplierGroupId)}>Delete</button>
+                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>{t_gen('edit')}</button>
+                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.supplierGroupId)}>{t_gen('delete')}</button>
                     </div>
                   </td>
                 </tr>

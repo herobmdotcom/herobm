@@ -39,6 +39,7 @@ interface Location {
 
 export default function TopographyView() {
   const tInventory = useTranslations('inventory');
+  const tLoc = useTranslations('inventory.locations');
   const tCommon = useTranslations('common');
   const { role } = useAuth();
   const canEdit = role === 'admin';
@@ -143,7 +144,7 @@ export default function TopographyView() {
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
                 style={{ fontFamily: 'Manrope, sans-serif' }}
               >
-                Zones
+                {tLoc('zones')}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
                 {loading ? '...' : totalZones}
@@ -154,7 +155,7 @@ export default function TopographyView() {
                 className="text-[11px] font-bold text-[#041627] tracking-wider uppercase"
                 style={{ fontFamily: 'Manrope, sans-serif' }}
               >
-                Bins
+                {tLoc('bins')}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
                 {loading ? '...' : totalBins.toLocaleString()}
@@ -171,7 +172,7 @@ export default function TopographyView() {
             }}
             className="btn btn-primary"
           >
-            {tCommon('add')} {tCommon('location')}
+            {tLoc('addLocation')}
           </button>
         )}
       </div>
@@ -551,7 +552,7 @@ export default function TopographyView() {
                             {isZoneExpanded && zone.bins.length === 0 && (
                               <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
                                 <p className="text-sm italic mb-2" style={{ color: 'var(--text-muted)' }}>
-                                  No bins in this zone.
+                                  {tLoc('noBinsInZone')}
                                 </p>
                                 {canEdit && (
                                   <button
@@ -774,7 +775,8 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
 }
 
 function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; initialData: { bin?: Bin; zoneId: string } | null }) {
-  const t = useTranslations('common');
+  const tCommon = useTranslations('common');
+  const tLoc = useTranslations('inventory.locations');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ binNumber: '', binType: '', isConsignment: false, isBonded: false, isUnavailable: false });
 
@@ -802,7 +804,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     
     try {
       await apiFetch(url, { method, body: JSON.stringify(body) });
-      toast.success(initialData.bin ? t('updated') : t('created'));
+      toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -816,26 +818,26 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title={initialData?.bin ? `Edit Bin` : `Add Bin`}
+      title={initialData?.bin ? tLoc('editBin') : tLoc('addBin')}
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Bin Number</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.binNumber')}</label>
           <input 
             className="input" 
             required 
             value={formData.binNumber} 
             onChange={e => setFormData({...formData, binNumber: e.target.value.toUpperCase()})}
-            placeholder="e.g. A-01-01"
+            placeholder={tLoc('placeholders.binNumber')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Bin Type</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.binType')}</label>
           <input 
             className="input" 
             value={formData.binType} 
             onChange={e => setFormData({...formData, binType: e.target.value})}
-            placeholder="e.g. Picking, Staging"
+            placeholder={tLoc('placeholders.binType')}
           />
         </div>
         <div className="flex flex-col gap-3 pt-2">
@@ -846,7 +848,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isConsignment: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">Consignment Stock</span>
+            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.consignment')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
@@ -855,7 +857,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isBonded: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">Bonded Bin</span>
+            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.bonded')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
@@ -864,11 +866,11 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isUnavailable: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">Unavailable (Locked)</span>
+            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.unavailable')}</span>
           </label>
         </div>
         <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? '...' : initialData?.bin ? t('save') : t('create')}
+          {loading ? '...' : initialData?.bin ? tCommon('save') : tCommon('create')}
         </button>
       </form>
     </SlideOver>

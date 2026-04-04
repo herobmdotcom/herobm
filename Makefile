@@ -59,12 +59,21 @@ ifeq ($(OS),Windows_NT)
 	)
 endif
 
+# Ensure PostgreSQL log directory has correct permissions for rootless podman.
+# Map UID 70 (postgres inside) correctly on host.
+# This only runs on Linux/macOS to avoid impacting Windows hosts.
+check-postgres-logs:
+ifneq ($(OS),Windows_NT)
+	@mkdir -p ./logs
+	@podman unshare chown -R 70:70 ./logs
+endif
+
 # --------------------------------------------------------------------------
 # Containerized Stacks
 # --------------------------------------------------------------------------
 
 # DB Backend Core (Local FE + API run path)
-up-db: check-logs-volume
+up-db: check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) up -d postgres-custom redis-broker
 
 down-db:
@@ -72,7 +81,7 @@ down-db:
 	$(COMPOSE_CMD) rm -f postgres-custom redis-broker
 
 # FE + API Core (The standard full-container app stack)
-up-fe-api: check-logs-volume
+up-fe-api: check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) up -d custom-api ops-portal postgres-custom redis-broker
 
 down-fe-api:
@@ -80,14 +89,14 @@ down-fe-api:
 	$(COMPOSE_CMD) rm -f custom-api ops-portal postgres-custom redis-broker
 
 # PLG (Prometheus, Loki, Grafana)
-up-plg: check-logs-volume
+up-plg: check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) --profile plg up -d
 
 down-plg:
 	$(COMPOSE_CMD) --profile plg down
 
 # ERPNext Financial Core
-up-erpnext: check-logs-volume
+up-erpnext: check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) --profile erpnext --profile finance up -d
 
 down-erpnext:
@@ -97,7 +106,7 @@ down-erpnext:
 build-worker:
 	podman build -t localhost/outbox-worker:latest -f apps/worker/Dockerfile .
 
-up-queue: build-worker check-logs-volume
+up-queue: build-worker check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) --profile queue up -d outbox-worker
 
 down-queue:
@@ -105,7 +114,7 @@ down-queue:
 	$(COMPOSE_CMD) rm -f outbox-worker
 
 # Run absolutely everything
-up-all: build-worker check-logs-volume
+up-all: build-worker check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) --profile "*" up -d
 
 down-all:

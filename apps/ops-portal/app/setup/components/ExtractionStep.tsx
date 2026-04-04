@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 import { ConfigState } from './SetupWizard';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function ExtractionStep({ config, updateConfig, onNext }: Props) {
+  const t = useTranslations('setup.extraction');
   const [loading, setLoading] = useState(false);
   
   const isFormValid = config.host.trim() !== '' && 
@@ -31,13 +33,13 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
       });
       
       if (res.success === false) {
-        toast.error(res.message || 'Connection Failed');
+        toast.error(res.message || t('toasts.connectionFailed'));
       } else {
-        toast.success(res.message || 'Connection Verified');
+        toast.success(res.message || t('toasts.connectionVerified'));
         onNext();
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to communicate with API');
+      toast.error(err.message || t('toasts.apiError'));
     } finally {
       setLoading(false);
     }
@@ -46,15 +48,15 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Source Pipeline Sync</h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('title')}</h2>
         <p className="text-slate-500">
-          Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.
+          {t('description')}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-6">
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Host</label>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.host')}</label>
           <input
             type="text"
             className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -65,7 +67,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Port</label>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.port')}</label>
           <input
             type="text"
             className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -78,7 +80,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
       </div>
 
       <div className="mb-6">
-        <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Database Name (ABM)</label>
+        <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.database')}</label>
         <input
           type="text"
           className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -91,7 +93,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
 
       <div className="grid grid-cols-2 gap-6 mb-8">
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Username</label>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.username')}</label>
           <input
             type="text"
             className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -102,7 +104,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Password</label>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.password')}</label>
           <input
             type="password"
             className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
@@ -123,7 +125,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
           disabled={loading}
         />
         <label htmlFor="resumeCheck" className="text-slate-800 font-medium cursor-pointer">
-          Resume interrupted extraction <span className="text-slate-400 font-normal">(Skips fully loaded tables)</span>
+          {t('resume')} <span className="text-slate-400 font-normal">{t('resumeNote')}</span>
         </label>
       </div>
 
@@ -133,7 +135,7 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
           className="text-slate-500 hover:text-slate-800 font-medium"
           disabled={loading}
         >
-          Skip extraction (Empty Base)
+          {t('skip')}
         </button>
         <button
           onClick={handleTestConnection}
@@ -144,8 +146,9 @@ export default function ExtractionStep({ config, updateConfig, onNext }: Props) 
               : 'bg-[#006b5c] hover:bg-[#005246] text-white cursor-pointer'
           }`}
         >
-          {loading ? 'Testing...' : 'Test Connection'}
+          {loading ? t('testing') : t('testConnection')}
         </button>
+
       </div>
     </div>
   );

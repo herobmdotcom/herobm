@@ -37,6 +37,7 @@ export default function NewJournalEntryPage() {
   useDocumentTitle('New Journal Entry');
   const t = useTranslations('gl.journalEntries');
   const tGeneral = useTranslations('gl');
+  const tCommon = useTranslations('common');
   const router = useRouter();
 
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -189,8 +190,8 @@ export default function NewJournalEntryPage() {
                 <thead style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                   <tr>
                     <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.account')}</th>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>Party Type</th>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>Party</th>
+                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.partyType')}</th>
+                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.party')}</th>
                     <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.memo')}</th>
                     <th className="text-right px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.debit')}</th>
                     <th className="text-right px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.credit')}</th>
@@ -207,7 +208,7 @@ export default function NewJournalEntryPage() {
                           className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
                           style={{ borderColor: 'var(--border)' }}
                         >
-                          <option value="">Select Account...</option>
+                          <option value="">{t('placeholders.selectAccount')}</option>
                           {accounts.map(a => (
                             <option key={a.accountCode} value={a.accountCode}>
                               {a.accountCode} - {a.name}
@@ -222,9 +223,9 @@ export default function NewJournalEntryPage() {
                           className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
                           style={{ borderColor: 'var(--border)' }}
                         >
-                          <option value="none">None</option>
-                          <option value="customer">Customer</option>
-                          <option value="supplier">Supplier</option>
+                          <option value="none">{t('partyTypes.none')}</option>
+                          <option value="customer">{t('partyTypes.customer')}</option>
+                          <option value="supplier">{t('partyTypes.supplier')}</option>
                         </select>
                       </td>
                       <td className="p-2 align-top w-48">
@@ -235,7 +236,7 @@ export default function NewJournalEntryPage() {
                           className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none disabled:opacity-50 disabled:bg-gray-100"
                           style={{ borderColor: 'var(--border)' }}
                         >
-                          <option value="">{line.partyType === 'none' ? '—' : 'Select Party...'}</option>
+                          <option value="">{line.partyType === 'none' ? '—' : t('placeholders.selectParty')}</option>
                           {line.partyType === 'customer' && customers.map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
@@ -329,7 +330,7 @@ export default function NewJournalEntryPage() {
               onClick={() => router.back()}
               className="px-5 py-2 rounded-lg font-bold text-sm bg-white border shadow-sm hover:bg-gray-50"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -337,7 +338,7 @@ export default function NewJournalEntryPage() {
               className="px-5 py-2 rounded-lg font-bold text-sm text-white shadow-sm transition-all disabled:opacity-50"
               style={{ background: canSubmit ? 'var(--accent)' : 'var(--text-muted)' }}
             >
-              Post Journal Entry
+              {t('postEntry')}
             </button>
           </div>
         </div>

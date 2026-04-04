@@ -3,7 +3,8 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect, Fragment } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 interface SyncSummary {
   pending: number;
@@ -38,7 +39,9 @@ interface SyncData {
 }
 
 export default function EventQueueDashboard() {
-  useDocumentTitle('Event Queue');
+  const t = useTranslations('admin.eventQueue');
+  useDocumentTitle(t('title'));
+  
   const [data, setData] = useState<SyncData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -59,8 +62,9 @@ export default function EventQueueDashboard() {
       const res = await apiFetch<SyncData>('/api/settings/erpnext-sync?limit=100');
       setData(res);
       setError('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load sync data');
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : t('errors.loadFailed'));
+      reportError(err, 'EventQueueDashboard_loadData');
     } finally {
       setLoading(false);
     }
@@ -89,15 +93,16 @@ export default function EventQueueDashboard() {
         `/api/settings/erpnext-sync/events?type=${encodeURIComponent(eventType)}&status=failed&limit=50`,
       );
       setDrawerEvents(res.events);
-    } catch {
+    } catch (err) {
       setDrawerEvents([]);
+      reportError(err, 'EventQueueDashboard_handleViewEvents');
     } finally {
       setDrawerLoading(false);
     }
   };
 
   const handleClearEvents = async (eventType: string) => {
-    if (!confirm(`Clear all pending "${eventType}" events from the outbox?`)) return;
+    if (!confirm(t('confirmClear', { type: eventType }))) return;
     setClearing(eventType);
     try {
       await apiMutate(
@@ -110,8 +115,9 @@ export default function EventQueueDashboard() {
         setDrawerEvents([]);
       }
       await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear events');
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : t('errors.clearFailed'));
+      reportError(err, 'EventQueueDashboard_handleClearEvents');
     } finally {
       setClearing(null);
     }
@@ -121,7 +127,7 @@ export default function EventQueueDashboard() {
     return (
       <>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>Loading event queue…</p>
+          <p style={{ color: 'var(--text-muted)' }}>{t('loading')}</p>
         </div>
       </>
     );
@@ -133,9 +139,9 @@ export default function EventQueueDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Event Queue</h1>
+            <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Visibility into external system synchronization events
+              {t('subtitle')}
             </p>
           </div>
           <div className="flex gap-2 items-center">
@@ -145,10 +151,10 @@ export default function EventQueueDashboard() {
                 checked={autoRefresh}
                 onChange={() => setAutoRefresh(!autoRefresh)}
               />
-              Auto-refresh (5s)
+              {t('autoRefresh')}
             </label>
             <button className="btn btn-secondary btn-sm" onClick={loadData}>
-              ↻ Refresh
+              ↻ {t('refresh')}
             </button>
           </div>
         </div>
@@ -179,7 +185,7 @@ export default function EventQueueDashboard() {
                 }}
               >
                 <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Pending
+                  {t('summary.pending')}
                 </div>
                 <div
                   className="text-3xl font-bold"
@@ -190,7 +196,7 @@ export default function EventQueueDashboard() {
               </div>
               <div className="card" style={{ textAlign: 'center' }}>
                 <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Processed
+                  {t('summary.processed')}
                 </div>
                 <div className="text-3xl font-bold" style={{ color: '#4ade80', fontVariantNumeric: 'tabular-nums' }}>
                   {data.summary.processed}
@@ -205,7 +211,7 @@ export default function EventQueueDashboard() {
                 }}
               >
                 <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Failed
+                  {t('summary.failed')}
                 </div>
                 <div
                   className="text-3xl font-bold"
@@ -216,7 +222,7 @@ export default function EventQueueDashboard() {
               </div>
               <div className="card" style={{ textAlign: 'center' }}>
                 <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Total Events
+                  {t('summary.total')}
                 </div>
                 <div className="text-3xl font-bold" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {data.summary.total}
@@ -231,18 +237,18 @@ export default function EventQueueDashboard() {
                   className="text-sm font-semibold mb-4"
                   style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                 >
-                  Event Types
+                  {t('eventTypes')}
                 </h3>
                 <table className="table-lines">
                   <thead>
                     <tr>
-                      <th>Event Type</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>Total</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>Pending</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>Failed</th>
-                      <th style={{ width: 80, textAlign: 'right' }}>Processed</th>
-                      <th style={{ width: 110 }}>Status</th>
-                      <th style={{ width: 160, textAlign: 'right' }}>Actions</th>
+                      <th>{t('columns.eventType')}</th>
+                      <th style={{ width: 80, textAlign: 'right' }}>{t('columns.total')}</th>
+                      <th style={{ width: 80, textAlign: 'right' }}>{t('columns.pending')}</th>
+                      <th style={{ width: 80, textAlign: 'right' }}>{t('columns.failed')}</th>
+                      <th style={{ width: 80, textAlign: 'right' }}>{t('columns.processed')}</th>
+                      <th style={{ width: 110 }}>{t('columns.status')}</th>
+                      <th style={{ width: 160, textAlign: 'right' }}>{t('columns.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -274,11 +280,11 @@ export default function EventQueueDashboard() {
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{row.processed}</td>
                           <td>
                             {row.failed > 0 ? (
-                               <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>✕ {row.failed} Error(s)</span>
+                               <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>✕ {t('status.errors', { count: row.failed })}</span>
                             ) : row.pending === 0 ? (
-                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓ All synced</span>
+                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓ {t('status.allSynced')}</span>
                             ) : (
-                              <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳ {row.pending} pending</span>
+                              <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳ {t('status.pending', { count: row.pending })}</span>
                             )}
                           </td>
                           <td style={{ textAlign: 'right' }}>
@@ -288,7 +294,7 @@ export default function EventQueueDashboard() {
                                 style={{ fontSize: 10 }}
                                 onClick={() => handleViewEvents(row.eventType)}
                               >
-                                {drawerType === row.eventType ? '▼ Hide' : '▶ View'}
+                                {drawerType === row.eventType ? t('actions.hide') : t('actions.view')}
                               </button>
                               {row.pending > 0 && (
                                 <button
@@ -302,7 +308,7 @@ export default function EventQueueDashboard() {
                                   disabled={clearing === row.eventType}
                                   onClick={() => handleClearEvents(row.eventType)}
                                 >
-                                  {clearing === row.eventType ? '…' : '✕ Clear'}
+                                  {clearing === row.eventType ? '…' : `✕ ${t('actions.clear')}`}
                                 </button>
                               )}
                             </div>
@@ -325,20 +331,20 @@ export default function EventQueueDashboard() {
                               >
                                 {drawerLoading ? (
                                   <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                    Loading events…
+                                    {t('drawer.loading')}
                                   </div>
                                 ) : drawerEvents.length === 0 ? (
                                   <div style={{ padding: 16, textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
-                                    No events of this type found.
+                                    {t('drawer.noEvents')}
                                   </div>
                                 ) : (
                                   <table className="table-lines" style={{ margin: 0 }}>
                                     <thead>
                                       <tr>
-                                        <th style={{ width: 170, fontSize: 10 }}>Timestamp</th>
-                                        <th style={{ fontSize: 10 }}>Aggregate</th>
-                                        <th style={{ width: 80, fontSize: 10 }}>Status</th>
-                                        <th style={{ width: 60, fontSize: 10 }}>Payload</th>
+                                        <th style={{ width: 170, fontSize: 10 }}>{t('columns.timestamp')}</th>
+                                        <th style={{ fontSize: 10 }}>{t('columns.aggregate')}</th>
+                                        <th style={{ width: 80, fontSize: 10 }}>{t('columns.status')}</th>
+                                        <th style={{ width: 60, fontSize: 10 }}>{t('columns.payload')}</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -417,18 +423,18 @@ export default function EventQueueDashboard() {
                 className="text-sm font-semibold mb-4"
                 style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               >
-                Recent Events ({data.recentEvents.length})
+                {t('recentEvents', { count: data.recentEvents.length })}
               </h3>
               <div style={{ maxHeight: 600, overflowY: 'auto' }}>
                 <table className="table-lines">
                   <thead>
                     <tr>
-                      <th style={{ width: 170 }}>Timestamp</th>
-                      <th style={{ width: 150 }}>Event Type</th>
-                      <th>Aggregate</th>
-                      <th style={{ width: 170 }}>Processed At</th>
-                      <th style={{ width: 80, textAlign: 'center' }}>Status</th>
-                      <th style={{ width: 70 }}>Payload</th>
+                      <th style={{ width: 170 }}>{t('columns.timestamp')}</th>
+                      <th style={{ width: 150 }}>{t('columns.eventType')}</th>
+                      <th>{t('columns.aggregate')}</th>
+                      <th style={{ width: 170 }}>{t('columns.processedAt')}</th>
+                      <th style={{ width: 80, textAlign: 'center' }}>{t('columns.status')}</th>
+                      <th style={{ width: 70 }}>{t('columns.payload')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -506,7 +512,7 @@ export default function EventQueueDashboard() {
                     {data.recentEvents.length === 0 && (
                       <tr>
                         <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                          No outbox events found. Generate invoices to see sync activity.
+                          {t('noEvents')}
                         </td>
                       </tr>
                     )}

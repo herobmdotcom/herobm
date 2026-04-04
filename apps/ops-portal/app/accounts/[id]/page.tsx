@@ -523,7 +523,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
-                {t('accounts.company', { defaultValue: 'Company' })}
+                {t('accounts.company')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

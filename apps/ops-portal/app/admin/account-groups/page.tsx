@@ -1,6 +1,7 @@
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useTranslations } from 'next-intl';
 
 import { useState, useEffect } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
@@ -8,6 +9,9 @@ import { toast } from 'react-hot-toast';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Account Groups');
+  const t = useTranslations('admin.accountGroups');
+  const tCommon = useTranslations('admin.common');
+  const tGlobalCommon = useTranslations('common');
   const [groups, setGroups] = useState<any[]>([]);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,10 +91,10 @@ export default function AccountGroupsAdmin() {
   };
 
   const handleDelete = async (id: string) => {
-    if(!confirm("Are you sure you want to delete this group?")) return;
+    if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
       await apiMutate(`/api/account-groups/${id}`, 'DELETE');
-      toast.success('Group deleted');
+      toast.success(t('toasts.deleted'));
       loadData();
     } catch(err: any) {
       toast.error(err.message);
@@ -101,13 +105,13 @@ export default function AccountGroupsAdmin() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Account Groups</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Manage group classifications for customer accounts
+            {t('subtitle')}
           </p>
         </div>
         <button className="btn btn-primary btn-sm" onClick={handleCreate}>
-          + New Group
+          {t('newGroup')}
         </button>
       </div>
 
@@ -116,34 +120,34 @@ export default function AccountGroupsAdmin() {
           className="text-sm font-semibold mb-4"
           style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
         >
-          Defined Groups
+          {t('definedGroups')}
         </h3>
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 120 }}>Code</th>
-              <th>Name</th>
-              <th style={{ width: 150 }}>Def. Discount %</th>
-              <th style={{ width: 180 }}>Def. AR Account</th>
-              <th style={{ width: 180 }}>Def. Revenue Account</th>
-              <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              <th style={{ width: 120 }}>{tCommon('code')}</th>
+              <th>{tCommon('name')}</th>
+              <th style={{ width: 150 }}>{tCommon('defDiscount')}</th>
+              <th style={{ width: 180 }}>{tCommon('defArAccount')}</th>
+              <th style={{ width: 180 }}>{tCommon('defRevAccount')}</th>
+              <th style={{ width: 150, textAlign: 'right' }}>{tCommon('actions')}</th>
             </tr>
           </thead>
           <tbody>
             {isCreating && (
               <tr style={{ background: 'var(--bg-secondary)' }}>
                 <td>
-                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder="Code" />
+                  <input className="input" value={editForm.groupCode} onChange={e => setEditForm({...editForm, groupCode: e.target.value})} placeholder={t('placeholders.code')} />
                 </td>
                 <td>
-                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder="Name" />
+                  <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
                 </td>
                 <td>
                   <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
-                    <option value="">-- None --</option>
+                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
                     {glAccounts.map((a: any) => (
                       <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                     ))}
@@ -151,7 +155,7 @@ export default function AccountGroupsAdmin() {
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
-                    <option value="">-- None --</option>
+                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
                     {glAccounts.map((a: any) => (
                       <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                     ))}
@@ -159,8 +163,8 @@ export default function AccountGroupsAdmin() {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
-                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                    <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
+                    <button className="btn btn-primary btn-xs" onClick={handleSave}>{tGlobalCommon('save')}</button>
                   </div>
                 </td>
               </tr>
@@ -169,7 +173,7 @@ export default function AccountGroupsAdmin() {
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  No account groups defined.
+                  {t('noGroups')}
                 </td>
               </tr>
             )}
@@ -188,7 +192,7 @@ export default function AccountGroupsAdmin() {
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
-                      <option value="">-- None --</option>
+                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
                       {glAccounts.map((a: any) => (
                         <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                       ))}
@@ -196,7 +200,7 @@ export default function AccountGroupsAdmin() {
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultRevenueAccountId || ''} onChange={e => setEditForm({...editForm, defaultRevenueAccountId: e.target.value || null})}>
-                      <option value="">-- None --</option>
+                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
                       {glAccounts.map((a: any) => (
                         <option key={a.glAccountId} value={a.glAccountId}>{a.accountCode} - {a.name}</option>
                       ))}
@@ -204,8 +208,8 @@ export default function AccountGroupsAdmin() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                      <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                      <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
+                      <button className="btn btn-primary btn-xs" onClick={handleSave}>{tGlobalCommon('save')}</button>
                     </div>
                   </td>
                 </tr>
@@ -218,8 +222,8 @@ export default function AccountGroupsAdmin() {
                   <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>Edit</button>
-                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.accountGroupId)}>Delete</button>
+                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>{tGlobalCommon('edit')}</button>
+                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(g.accountGroupId)}>{tGlobalCommon('delete')}</button>
                     </div>
                   </td>
                 </tr>

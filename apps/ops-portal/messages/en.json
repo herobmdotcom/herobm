@@ -62,7 +62,32 @@
     "contactLocation": "Contact & Location",
     "recordDetails": "Record Details",
     "financials": "Financials",
-    "paymentTerms": "Payment Terms"
+    "paymentTerms": "Payment Terms",
+    "supplierGroup": "Supplier Group",
+    "earlyPaymentDiscount": "Early Payment Discount %",
+    "email": "Email",
+    "phone": "Phone",
+    "city": "City",
+    "country": "Country",
+    "compliance": {
+      "title": "Compliance Status",
+      "purchasingBlock": "Purchasing Block",
+      "paymentBlock": "Payment Block",
+      "reason": "Reason",
+      "blockNotes": "Block Notes",
+      "notesPlaceholder": "Internal notes regarding blocking...",
+      "groupInherited": "Group Inherited ({reason})",
+      "reasons": {
+        "compliance_breach": "Compliance Breach",
+        "quality_issues": "Quality Issues",
+        "dispute": "Dispute",
+        "financial_risk": "Financial Risk",
+        "invoice_dispute": "Invoice Dispute",
+        "missing_goods": "Missing Goods",
+        "contractual_breach": "Contractual Breach",
+        "other": "Other"
+      }
+    }
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
@@ -131,6 +156,285 @@
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees",
       "netCredit": "Net Credit"
+    }
+  },
+  "setup": {
+    "gate": {
+      "verifying": "Verifying secure token...",
+      "unauthorized": {
+        "title": "Unauthorized Access",
+        "description": "This installation portal strictly requires a one-time cryptographic token.",
+        "instructions": "Please run <strong class=\"text-slate-800\">make setup-wizard</strong> inside the host system CLI to generate a valid secure link."
+      },
+      "loading": "Loading wizard..."
+    },
+    "page": {
+      "title": "herobm",
+      "subtitle": "Initialize your business OS environment"
+    },
+    "wizard": {
+      "steps": {
+        "extraction": "Extraction",
+        "preview": "Preview",
+        "settings": "Settings",
+        "review": "Review",
+        "execution": "Execution"
+      }
+    },
+    "extraction": {
+      "title": "Source Pipeline Sync",
+      "description": "Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.",
+      "fields": {
+        "host": "Host",
+        "port": "Port",
+        "database": "Database Name (ABM)",
+        "username": "Username",
+        "password": "Password"
+      },
+      "resume": "Resume interrupted extraction",
+      "resumeNote": "(Skips fully loaded tables)",
+      "skip": "Skip extraction (Empty Base)",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "toasts": {
+        "connectionFailed": "Connection Failed",
+        "connectionVerified": "Connection Verified",
+        "apiError": "Failed to communicate with API"
+      }
+    },
+    "preview": {
+      "title": "Source Preview Data",
+      "description": "Validating entities detected in the ABM MSSQL pipeline from <strong class=\"text-[#006b5c] font-semibold\">{database}</strong> at <strong class=\"text-[#006b5c] font-semibold\">{host}</strong>.",
+      "loading": "Scanning MSSQL schema...",
+      "noTables": "No tables returned by pipeline. Ensure extraction step succeeded.",
+      "confirm": "Confirm Mapping"
+    },
+    "settings": {
+      "title": "Application Configuration",
+      "description": "Set your core accounting and operational defaults.",
+      "fields": {
+        "companyName": "Company Registered Name",
+        "baseCurrency": "Base Currency",
+        "coaPreset": "Chart of Accounts Preset",
+        "fiscalYearStart": "Fiscal Year Start Month",
+        "revenueRouting": "Revenue Routing Precedence",
+        "expenseRouting": "Expense Routing Precedence",
+        "inventoryValuation": "Inventory Valuation",
+        "nonStockBilling": "Non-Stock Billing Mode",
+        "primaryLocation": "Select Primary Location"
+      },
+      "placeholders": {
+        "companyName": "Acme Logistics Corp.",
+        "selectCurrency": "Select base currency...",
+        "selectCoa": "Select COA preset...",
+        "selectMonth": "Select start month...",
+        "selectPrecedence": "Select precedence...",
+        "selectValuation": "Select valuation method...",
+        "selectBilling": "Select billing mode...",
+        "selectLocation": "Select primary location..."
+      },
+      "loading": "Loading...",
+      "noLocations": "No Locations Found in Source",
+      "fulfillmentHeading": "Default Fulfillment Location",
+      "finalize": "Finalize Setup",
+      "options": {
+        "currencies": {
+          "aud": "AUD - Australian Dollar",
+          "usd": "USD - US Dollar",
+          "eur": "EUR - Euro",
+          "sgd": "SGD - Singapore Dollar"
+        },
+        "months": {
+          "january": "January",
+          "february": "February",
+          "march": "March",
+          "april": "April",
+          "may": "May",
+          "june": "June",
+          "july": "July",
+          "august": "August",
+          "september": "September",
+          "october": "October",
+          "november": "November",
+          "december": "December"
+        },
+        "precedence": {
+          "product": "Product Priority",
+          "customer": "Customer Priority",
+          "location": "Location Priority",
+          "supplier": "Supplier Priority"
+        },
+        "valuation": {
+          "weightedAverage": "Weighted Average",
+          "fifo": "FIFO"
+        },
+        "billing": {
+          "perShipment": "Per Shipment",
+          "finalInvoice": "Final Invoice Only"
+        }
+      }
+    },
+    "review": {
+      "title": "Ready to Initialize",
+      "description": "Your configuration is saved and ready to be compiled into the database.",
+      "confirm": "Compile Platform"
+    },
+    "execution": {
+      "failedTitle": "Initialization Failed",
+      "runningTitle": "Initializing System",
+      "failedDescription": "An error occurred during pipeline execution. Check the terminal below.",
+      "runningDescription": "Please do not close this window. This process may take a few minutes if extracting data.",
+      "terminalLabel": "Terminal (pipeline-execution.log)",
+      "criticalError": "[CRITICAL]: {error}",
+      "goDashboard": "Go to Dashboard",
+      "aborted": "Execution aborted. Please review error logs."
+    }
+  },
+  "admin": {
+    "accountGroups": {
+      "title": "Account Groups",
+      "subtitle": "Manage group classifications for customer accounts",
+      "newGroup": "+ New Group",
+      "definedGroups": "Defined Groups",
+      "noGroups": "No account groups defined.",
+      "placeholders": {
+        "code": "e.g. WHL",
+        "name": "e.g. Wholesale"
+      },
+      "toasts": {
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "created": "Group created",
+        "updated": "Group updated",
+        "deleted": "Group deleted"
+      }
+    },
+    "productGroups": {
+      "title": "Product Groups",
+      "subtitle": "Manage group classifications for products and inventory",
+      "newGroup": "+ New Group",
+      "definedGroups": "Defined Groups",
+      "noGroups": "No product groups defined.",
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "toasts": {
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "created": "Group created",
+        "updated": "Group updated",
+        "deleted": "Group deleted"
+      }
+    },
+    "supplierGroups": {
+      "title": "Supplier Groups",
+      "subtitle": "Manage group classifications for supplier accounts",
+      "newGroup": "+ New Group",
+      "definedGroups": "Defined Groups",
+      "noGroups": "No supplier groups defined.",
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "purchasing": "Purchasing",
+      "payment": "Payment",
+      "active": "ACTIVE",
+      "blocked": "BLOCKED",
+      "currentlyActive": "Currently Active",
+      "currentlyBlocked": "Currently Blocked",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "toasts": {
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "created": "Group created",
+        "updated": "Group updated",
+        "deleted": "Group deleted"
+      }
+    },
+    "eventQueue": {
+      "title": "Event Queue",
+      "subtitle": "Visibility into external system synchronization events",
+      "autoRefresh": "Auto-refresh (5s)",
+      "refresh": "Refresh",
+      "loading": "Loading event queue…",
+      "summary": {
+        "pending": "Pending",
+        "processed": "Processed",
+        "failed": "Failed",
+        "total": "Total Events"
+      },
+      "eventTypes": "Event Types",
+      "columns": {
+        "eventType": "Event Type",
+        "total": "Total",
+        "pending": "Pending",
+        "failed": "Failed",
+        "processed": "Processed",
+        "status": "Status",
+        "actions": "Actions",
+        "timestamp": "Timestamp",
+        "aggregate": "Aggregate",
+        "payload": "Payload",
+        "processedAt": "Processed At"
+      },
+      "status": {
+        "errors": "{count} Error(s)",
+        "allSynced": "All synced",
+        "pending": "{count} pending"
+      },
+      "actions": {
+        "hide": "Hide",
+        "view": "View",
+        "clear": "Clear"
+      },
+      "drawer": {
+        "loading": "Loading events…",
+        "noEvents": "No events of this type found."
+      },
+      "recentEvents": "Recent Events ({count})",
+      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
+      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
+      "errors": {
+        "loadFailed": "Failed to load sync data",
+        "clearFailed": "Failed to clear events"
+      }
+    },
+    "systemLogs": {
+      "title": "System Logs",
+      "subtitle": "Live tail of backend container and worker file logs",
+      "refresh": "Refresh",
+      "loading": "Loading system logs...",
+      "noLogs": "No logs available.",
+      "copyLogs": "Copy Logs",
+      "logsCopied": "Logs copied to clipboard!",
+      "autoRefresh": "Auto-refresh (5s)",
+      "fields": {
+        "service": "Service",
+        "limit": "Limit"
+      },
+      "services": {
+        "api": "API",
+        "worker": "Outbox Worker",
+        "postgres": "PostgreSQL"
+      },
+      "limits": {
+        "lines": "{count} lines"
+      }
+    },
+    "common": {
+      "notConfigured": "Not configured",
+      "code": "Code",
+      "name": "Name",
+      "actions": "Actions",
+      "defDiscount": "Def. Discount %",
+      "defArAccount": "Def. AR Account",
+      "defRevAccount": "Def. Revenue Account",
+      "defInventoryAccount": "Def. Inventory Account",
+      "defCogsAccount": "Def. COGS Account",
+      "defApAccount": "Def. AP Account",
+      "defExpenseAccount": "Def. Expense Account"
     }
   },
   "salesOrders": {
@@ -262,6 +566,9 @@
     "dismiss": "dismiss",
     "loading": "Loading…",
     "noMatchingResults": "No matching results",
+    "select": "Select",
+    "selectEllipsis": "Select...",
+    "selectNone": "(None)",
     "activityTimeline": "Activity Timeline",
     "activityCardHeading": "Activity Timeline",
     "noEvents": "No events recorded",
@@ -634,6 +941,40 @@
       "ledger": "Ledger",
       "locations": "Locations"
     },
+    "locations": {
+      "zones": "Zones",
+      "bins": "Bins",
+      "addLocation": "Add Location",
+      "editLocation": "Edit Location",
+      "addZone": "Add Zone",
+      "editZone": "Edit Zone",
+      "addBin": "Add Bin",
+      "editBin": "Edit Bin",
+      "addZoneTo": "Add Zone to {name}",
+      "addBinTo": "Add Bin to {name}",
+      "noBinsInZone": "No bins in this zone.",
+      "fields": {
+        "city": "City",
+        "country": "Country",
+        "zoneCode": "Zone Code",
+        "zoneName": "Zone Name",
+        "binNumber": "Bin Number",
+        "binType": "Bin Type",
+        "flags": "Flags",
+        "source": "Source",
+        "consignment": "Consignment Stock",
+        "bonded": "Bonded Bin",
+        "unavailable": "Unavailable (Locked)"
+      },
+      "placeholders": {
+        "locationCode": "e.g. SYD01",
+        "locationName": "e.g. Sydney Warehouse",
+        "zoneCode": "e.g. BULK",
+        "zoneName": "e.g. Bulk Storage",
+        "binNumber": "e.g. A-01-01",
+        "binType": "e.g. Picking, Staging"
+      }
+    },
     "placeholders": {
       "searchInventory": "Search by product name, number, or location…",
       "searchMovements": "Search by product, reference, or type…",
@@ -717,6 +1058,13 @@
         "debit": "Debit",
         "credit": "Credit",
         "balance": "Balance"
+      },
+      "accountTypes": {
+        "asset": "Asset",
+        "liability": "Liability",
+        "equity": "Equity",
+        "income": "Income",
+        "expense": "Expense"
       }
     },
     "generalLedger": {
@@ -757,8 +1105,26 @@
         "totalCredit": "Total Credit",
         "account": "Account",
         "debit": "Debit",
-        "credit": "Credit"
+        "credit": "Credit",
+        "partyType": "Party Type",
+        "party": "Party"
+        },
+        "partyTypes": {
+        "none": "None",
+        "customer": "Customer",
+        "supplier": "Supplier"
+        },
+        "newManualEntry": "New Manual Journal Entry",
+        "totals": "Totals",
+        "addLine": "Add Line",
+        "postEntry": "Post Journal Entry",
+        "unbalancedWarning": "Entry is unbalanced by {amount}",
+        "placeholders": {
+          "memo": "Reason for journal entry...",
+          "lineMemo": "Line description",
+          "selectAccount": "Select Account...",
+          "selectParty": "Select Party..."
+        }
       }
     }
-  }
 }

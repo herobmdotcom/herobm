@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import ExtractionStep from './ExtractionStep';
 import PreviewStep from './PreviewStep';
 import SettingsStep from './SettingsStep';
@@ -29,6 +30,7 @@ export type ConfigState = {
 };
 
 export default function SetupWizard() {
+  const t = useTranslations('setup.wizard.steps');
   const [activeTab, setActiveTab] = useState('Extraction');
   
   const [config, setConfig] = useState<ConfigState>({
@@ -51,7 +53,13 @@ export default function SetupWizard() {
     nonStockBilling: '',
   });
 
-  const tabs = ['Extraction', 'Preview', 'Settings', 'Review', 'Executing'];
+  const tabs = [
+    { id: 'Extraction', label: t('extraction') },
+    { id: 'Preview', label: t('preview') },
+    { id: 'Settings', label: t('settings') },
+    { id: 'Review', label: t('review') },
+    { id: 'Executing', label: t('execution') },
+  ];
 
   const goNext = (tabName: string) => {
     setActiveTab(tabName);
@@ -66,14 +74,14 @@ export default function SetupWizard() {
       <div className="flex border-b border-slate-200">
         {tabs.map((tab) => (
           <div
-            key={tab}
+            key={tab.id}
             className={`flex-1 text-center py-4 text-sm font-semibold transition-colors ${
-              activeTab === tab
+              activeTab === tab.id
                 ? 'text-[#006b5c] border-b-[3px] border-[#006b5c]'
                 : 'text-slate-400 border-b-[3px] border-transparent'
             }`}
           >
-            {tab}
+            {tab.label}
           </div>
         ))}
       </div>
