@@ -75,7 +75,8 @@ def main():
         "DEV_VIEWER_PASSWORD",
         "DEV_SALES_PASSWORD",
         "DEV_WAREHOUSE_PASSWORD",
-        "DEV_PROCUREMENT_PASSWORD"
+        "DEV_PROCUREMENT_PASSWORD",
+        "DEV_FINANCE_PASSWORD"
     ]
 
     print("\n\033[36m=== Generating remaining local secrets ===\033[0m")
