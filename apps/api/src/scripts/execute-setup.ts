@@ -20,33 +20,39 @@ async function bootstrap() {
 
   try {
     // 1. Gather Inputs
-    const companyName = await rl.question('Company Name [My Company]: ') || 'My Company';
-    
+    const companyName =
+      (await rl.question('Company Name [My Company]: ')) || 'My Company';
+
     console.log('\n--- Regional Settings ---');
-    const baseCurrency = await rl.question('Base Currency (ISO) [AUD]: ') || 'AUD';
-    const fiscalMonth = await rl.question('Fiscal Year Start Month (1-12) [7]: ') || '7';
-    
+    const baseCurrency =
+      (await rl.question('Base Currency (ISO) [AUD]: ')) || 'AUD';
+    const fiscalMonth =
+      (await rl.question('Fiscal Year Start Month (1-12) [7]: ')) || '7';
+
     // COA Presets (Manual list to avoid complex FS scanning in this script)
     console.log('\nChart of Accounts Presets:');
     console.log('  1. au_standard.json (Australia)');
     console.log('  2. generic.json     (Global)');
-    const coaChoice = await rl.question('Choose COA [1]: ') || '1';
+    const coaChoice = (await rl.question('Choose COA [1]: ')) || '1';
     const coaPreset = coaChoice === '2' ? 'generic.json' : 'au_standard.json';
 
     console.log('\n--- Operational Logic ---');
     console.log('Inventory Valuation:');
     console.log('  1. weighted_average');
     console.log('  2. fifo');
-    const valChoice = await rl.question('Choose method [1]: ') || '1';
+    const valChoice = (await rl.question('Choose method [1]: ')) || '1';
     const valuation = valChoice === '2' ? 'fifo' : 'weighted_average';
 
     console.log('\nNon-Stock Billing:');
     console.log('  1. per_shipment (Invoice as you ship)');
     console.log('  2. final_invoice (One invoice at the end)');
-    const billChoice = await rl.question('Choose mode [1]: ') || '1';
+    const billChoice = (await rl.question('Choose mode [1]: ')) || '1';
     const billing = billChoice === '2' ? 'final_invoice' : 'per_shipment';
 
-    const abmImport = (await rl.question('\nImport legacy data from ABM? (y/N): ')).toLowerCase() === 'y';
+    const abmImport =
+      (
+        await rl.question('\nImport legacy data from ABM? (y/N): ')
+      ).toLowerCase() === 'y';
 
     rl.close();
 
@@ -72,9 +78,9 @@ async function bootstrap() {
     };
 
     logger.log(`Starting unified setup execution...`);
-    
+
     await setupService.runSetupCore(dto);
-    
+
     logger.log('✅ CLI Setup completed successfully.');
     await app.close();
     process.exit(0);

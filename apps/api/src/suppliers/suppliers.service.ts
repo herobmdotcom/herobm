@@ -106,8 +106,8 @@ export class SuppliersService {
         .where(
           and(
             eq(supplierExpiries.vendorId, id),
-            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`
-          )
+            sql`${supplierExpiries.expiryDate} < CURRENT_DATE`,
+          ),
         )
         .limit(1);
 
@@ -117,13 +117,15 @@ export class SuppliersService {
           .set({
             isPurchasingBlocked: true,
             purchasingBlockReason: 'compliance_breach',
-            blockNotes: 'System automatically blocked due to expired compliance documentation.',
+            blockNotes:
+              'System automatically blocked due to expired compliance documentation.',
           })
           .where(eq(coreSuppliers.vendorId, id));
 
         rows[0].isPurchasingBlocked = true;
         rows[0].purchasingBlockReason = 'compliance_breach';
-        rows[0].blockNotes = 'System automatically blocked due to expired compliance documentation.';
+        rows[0].blockNotes =
+          'System automatically blocked due to expired compliance documentation.';
       }
 
       return { ...rows[0], events };

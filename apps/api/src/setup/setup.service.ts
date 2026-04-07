@@ -116,9 +116,16 @@ export class SetupService {
           try {
             const previewData = JSON.parse(stdout.trim());
             this.lastAbmPreview = previewData;
-            resolve({ success: true, message: 'Connected', preview: previewData });
+            resolve({
+              success: true,
+              message: 'Connected',
+              preview: previewData,
+            });
           } catch (e) {
-            resolve({ success: false, message: 'Invalid response from preview script' });
+            resolve({
+              success: false,
+              message: 'Invalid response from preview script',
+            });
           }
         });
       },
@@ -126,7 +133,12 @@ export class SetupService {
   }
 
   async getAbmPreview() {
-    return this.lastAbmPreview || { tables: [], locations: [{ code: 'HQ', name: 'Main Headquarters' }] };
+    return (
+      this.lastAbmPreview || {
+        tables: [],
+        locations: [{ code: 'HQ', name: 'Main Headquarters' }],
+      }
+    );
   }
 
   async getValidation() {
@@ -142,7 +154,11 @@ export class SetupService {
     }
   }
 
-  private log(jobId: string | undefined, message: string, level: 'log' | 'warn' | 'error' = 'log') {
+  private log(
+    jobId: string | undefined,
+    message: string,
+    level: 'log' | 'warn' | 'error' = 'log',
+  ) {
     this.logger[level](message);
     if (jobId && this.activeJobs[jobId]) {
       this.activeJobs[jobId].logs.push(message);
@@ -192,10 +208,14 @@ export class SetupService {
           INVENTORY_VALUATION_METHOD: dto.inventoryValuationMethod,
         };
         if (dto.dbConfig) {
-          if (dto.dbConfig.host) envOverride['ABM_MSSQL_HOST'] = dto.dbConfig.host;
-          if (dto.dbConfig.database) envOverride['ABM_MSSQL_DATABASE'] = dto.dbConfig.database;
-          if (dto.dbConfig.username) envOverride['ABM_MSSQL_USER'] = dto.dbConfig.username;
-          if (dto.dbConfig.password) envOverride['ABM_MSSQL_PASSWORD'] = dto.dbConfig.password;
+          if (dto.dbConfig.host)
+            envOverride['ABM_MSSQL_HOST'] = dto.dbConfig.host;
+          if (dto.dbConfig.database)
+            envOverride['ABM_MSSQL_DATABASE'] = dto.dbConfig.database;
+          if (dto.dbConfig.username)
+            envOverride['ABM_MSSQL_USER'] = dto.dbConfig.username;
+          if (dto.dbConfig.password)
+            envOverride['ABM_MSSQL_PASSWORD'] = dto.dbConfig.password;
         }
         await this.runCommandStream(jobId, 'make', ['elt'], envOverride);
       }
@@ -226,10 +246,12 @@ export class SetupService {
       this.updateJobProgress(jobId, 5, 'done');
 
       this.log(jobId, 'SETUP COMPLETED SUCCESSFULLY');
-      if (jobId && this.activeJobs[jobId]) this.activeJobs[jobId].status = 'done';
+      if (jobId && this.activeJobs[jobId])
+        this.activeJobs[jobId].status = 'done';
     } catch (error) {
       this.log(jobId, `FATAL: Setup failed: ${error.message}`, 'error');
-      if (jobId && this.activeJobs[jobId]) this.activeJobs[jobId].status = 'failed';
+      if (jobId && this.activeJobs[jobId])
+        this.activeJobs[jobId].status = 'failed';
       throw error;
     }
   }
@@ -240,8 +262,16 @@ export class SetupService {
     return job;
   }
 
-  private updateJobProgress(jobId: string | undefined, stepIndex: number, status: string) {
-    if (jobId && this.activeJobs[jobId] && this.activeJobs[jobId].progress[stepIndex]) {
+  private updateJobProgress(
+    jobId: string | undefined,
+    stepIndex: number,
+    status: string,
+  ) {
+    if (
+      jobId &&
+      this.activeJobs[jobId] &&
+      this.activeJobs[jobId].progress[stepIndex]
+    ) {
       this.activeJobs[jobId].progress[stepIndex].status = status;
     }
   }
@@ -254,7 +284,9 @@ export class SetupService {
       revenueRoutingPrecedence: dto.revenueRoutingPrecedence,
       expenseRoutingPrecedence: dto.expenseRoutingPrecedence,
     };
-    await this.db.insert(glSettings).values({ settingsId: SETTINGS_ID, ...data })
+    await this.db
+      .insert(glSettings)
+      .values({ settingsId: SETTINGS_ID, ...data })
       .onConflictDoUpdate({ target: glSettings.settingsId, set: data });
   }
 
@@ -262,11 +294,19 @@ export class SetupService {
     let locationId = dto.defaultLocationId;
     if (!locationId) {
       const targetCode = dto.defaultLocationCode || 'HQ';
-      const existingLoc = await this.db.query.locations.findFirst({ where: eq(locations.code, targetCode) });
+      const existingLoc = await this.db.query.locations.findFirst({
+        where: eq(locations.code, targetCode),
+      });
       if (existingLoc) {
         locationId = existingLoc.locationId;
       } else if (dto.defaultLocationCode && dto.defaultLocationName) {
-        const [inserted] = await this.db.insert(locations).values({ code: dto.defaultLocationCode, name: dto.defaultLocationName }).returning();
+        const [inserted] = await this.db
+          .insert(locations)
+          .values({
+            code: dto.defaultLocationCode,
+            name: dto.defaultLocationName,
+          })
+          .returning();
         locationId = inserted.locationId;
       }
     }
@@ -280,7 +320,10 @@ export class SetupService {
 
     const [existing] = await this.db.select().from(appSettings).limit(1);
     if (existing) {
-      await this.db.update(appSettings).set(data).where(eq(appSettings.settingsId, existing.settingsId));
+      await this.db
+        .update(appSettings)
+        .set(data)
+        .where(eq(appSettings.settingsId, existing.settingsId));
     } else {
       await this.db.insert(appSettings).values(data);
     }
@@ -295,7 +338,9 @@ export class SetupService {
       email: dto.companyEmail || null,
       taxNumber: dto.taxNumber || null,
     };
-    await this.db.insert(organization).values({ organizationId: ORG_ID, ...data })
+    await this.db
+      .insert(organization)
+      .values({ organizationId: ORG_ID, ...data })
       .onConflictDoUpdate({ target: organization.organizationId, set: data });
   }
 
@@ -308,12 +353,29 @@ export class SetupService {
     return process.cwd();
   }
 
-  private runCommandStream(jobId: string | undefined, cmd: string, args: string[], envOverride?: Record<string, string>): Promise<void> {
+  private runCommandStream(
+    jobId: string | undefined,
+    cmd: string,
+    args: string[],
+    envOverride?: Record<string, string>,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const child = spawn([cmd, ...args].join(' '), { cwd: this.getWorkspaceRoot(), shell: true, env: { ...process.env, ...envOverride } });
-      child.stdout.on('data', (data) => this.log(jobId, data.toString().trim()));
-      child.stderr.on('data', (data) => this.log(jobId, data.toString().trim()));
-      child.on('close', (code) => code === 0 ? resolve() : reject(new Error(`${cmd} failed with code ${code}`)));
+      const child = spawn([cmd, ...args].join(' '), {
+        cwd: this.getWorkspaceRoot(),
+        shell: true,
+        env: { ...process.env, ...envOverride },
+      });
+      child.stdout.on('data', (data) =>
+        this.log(jobId, data.toString().trim()),
+      );
+      child.stderr.on('data', (data) =>
+        this.log(jobId, data.toString().trim()),
+      );
+      child.on('close', (code) =>
+        code === 0
+          ? resolve()
+          : reject(new Error(`${cmd} failed with code ${code}`)),
+      );
     });
   }
 }

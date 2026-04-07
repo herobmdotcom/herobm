@@ -45,15 +45,25 @@ export class SupplierGroupsService {
       .values({
         groupCode: dto.groupCode,
         name: dto.name,
-        ...(dto.defaultApAccountId && { defaultApAccountId: dto.defaultApAccountId }),
-        ...(dto.defaultExpenseAccountId && { defaultExpenseAccountId: dto.defaultExpenseAccountId }),
+        ...(dto.defaultApAccountId && {
+          defaultApAccountId: dto.defaultApAccountId,
+        }),
+        ...(dto.defaultExpenseAccountId && {
+          defaultExpenseAccountId: dto.defaultExpenseAccountId,
+        }),
         ...(dto.tradingTermsId && { tradingTermsId: dto.tradingTermsId }),
-        ...(dto.earlyPaymentDiscount && { earlyPaymentDiscount: dto.earlyPaymentDiscount }),
+        ...(dto.earlyPaymentDiscount && {
+          earlyPaymentDiscount: dto.earlyPaymentDiscount,
+        }),
         ...(dto.creditLimit && { creditLimit: dto.creditLimit }),
         isPurchasingBlocked: dto.isPurchasingBlocked ?? false,
-        ...(dto.purchasingBlockReason && { purchasingBlockReason: dto.purchasingBlockReason }),
+        ...(dto.purchasingBlockReason && {
+          purchasingBlockReason: dto.purchasingBlockReason,
+        }),
         isPaymentBlocked: dto.isPaymentBlocked ?? false,
-        ...(dto.paymentBlockReason && { paymentBlockReason: dto.paymentBlockReason }),
+        ...(dto.paymentBlockReason && {
+          paymentBlockReason: dto.paymentBlockReason,
+        }),
         ...(dto.blockNotes && { blockNotes: dto.blockNotes }),
       })
       .returning();
