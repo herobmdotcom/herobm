@@ -21,6 +21,7 @@
 .badge-ordered { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
 .badge-picking { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 .badge-shipped { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.badge-partially_received { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 .badge-received { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 .badge-dispatched { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 .badge-processed { background: rgba(16, 185, 129, 0.2); color: #34d399; }

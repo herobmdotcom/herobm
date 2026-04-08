@@ -37,9 +37,9 @@ export default function PickingTable({
           <th style={{ width: 50 }}>{tPicking('columns.lineNumber')}</th>
           <th>{tPicking('columns.product')}</th>
           <th>{tPicking('columns.description')}</th>
-          <th style={{ width: 140 }}>Location</th>
+          <th style={{ width: 140 }}>{tPicking('columns.location')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
-          <th style={{ width: 90, textAlign: 'right' }}>On Hand</th>
+          <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.onHand')}</th>
           <th style={{ width: 110, textAlign: 'right' }}>{tPicking('columns.picked')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.shipped')}</th>
           <th style={{ width: 90, textAlign: 'right' }}>{tPicking('columns.remaining')}</th>

@@ -4,6 +4,7 @@ import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SuppliersService } from '../suppliers/suppliers.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -114,6 +115,7 @@ describe('PurchaseOrdersService', () => {
   }
 
   let mockSuppliersService: any;
+  let mockGstCategoriesService: any;
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -127,6 +129,19 @@ describe('PurchaseOrdersService', () => {
         groupIsPurchasingBlocked: false,
       }),
     };
+    mockGstCategoriesService = {
+      getDefault: jest
+        .fn()
+        .mockResolvedValue({ gstCategoryId: 'gst-default', rate: '10.00' }),
+      findOneByCode: jest.fn().mockImplementation((code) => {
+        if (code === 'GST-20')
+          return Promise.resolve({ gstCategoryId: 'gst-20', rate: '20.00' });
+        return Promise.resolve(null);
+      }),
+      getById: jest
+        .fn()
+        .mockResolvedValue({ gstCategoryId: 'gst-default', rate: '10.00' }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -134,6 +149,7 @@ describe('PurchaseOrdersService', () => {
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },
+        { provide: GstCategoriesService, useValue: mockGstCategoriesService },
       ],
     }).compile();
 
@@ -264,7 +280,15 @@ describe('PurchaseOrdersService', () => {
     });
 
     it('should successfully change state to an allowed state', async () => {
-      mockSelectChain({ 1: [{ purchaseOrderId: 'po-1', stateCode: 'draft' }] });
+      mockSelectChain({
+        1: [
+          {
+            purchaseOrderId: 'po-1',
+            stateCode: 'draft',
+            deliveryLocationId: 'loc-1',
+          },
+        ],
+      });
       const tx = mockTransaction({
         purchaseOrderId: 'po-1',
         stateCode: 'ordered',

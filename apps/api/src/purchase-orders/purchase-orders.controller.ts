@@ -81,8 +81,9 @@ export class PurchaseOrdersController {
   async changeState(
     @Param('id') id: string,
     @Body('stateCode') stateCode: string,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseOrdersService.changeState(id, stateCode);
+    return this.purchaseOrdersService.changeState(id, stateCode, user.username);
   }
 
   @Post(':id/archive')
@@ -102,8 +103,9 @@ export class PurchaseOrdersController {
   async addLine(
     @Param('id') id: string,
     @Body() body: CreatePurchaseOrderLineDto,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseOrdersService.addLine(id, body);
+    return this.purchaseOrdersService.addLine(id, body, user.username);
   }
 
   @Patch(':id/lines/:lineId')
@@ -112,13 +114,23 @@ export class PurchaseOrdersController {
     @Param('id') id: string,
     @Param('lineId') lineId: string,
     @Body() body: UpdatePurchaseOrderLineDto,
+    @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseOrdersService.updateLine(id, lineId, body);
+    return this.purchaseOrdersService.updateLine(
+      id,
+      lineId,
+      body,
+      user.username,
+    );
   }
 
   @Delete(':id/lines/:lineId')
   @CasbinAction('write')
-  async removeLine(@Param('id') id: string, @Param('lineId') lineId: string) {
-    return this.purchaseOrdersService.removeLine(id, lineId);
+  async removeLine(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseOrdersService.removeLine(id, lineId, user.username);
   }
 }

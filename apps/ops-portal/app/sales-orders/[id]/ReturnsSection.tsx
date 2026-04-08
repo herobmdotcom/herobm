@@ -141,6 +141,7 @@ export default function ReturnsSection({
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
                             onClick={handleCancel}
                         >
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span aria-hidden>✕</span>
                         </button>
                     </div>
@@ -160,7 +161,7 @@ export default function ReturnsSection({
                                 <th style={{ width: 40 }}>{tSales('columns.lineNumber')}</th>
                                 <th>{tSales('columns.product')}</th>
                                 <th>{tSales('columns.description')}</th>
-                                <th style={{ width: 90, textAlign: 'right' }}>Shipped</th>
+                                <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.shipped')}</th>
                                 <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
                                 <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
                                 <th style={{ width: 140, textAlign: 'right' }}>{tSales('columns.fee')}</th>
@@ -578,7 +579,7 @@ export default function ReturnsSection({
                                                                 }}
                                                                 title={t('salesOrders.buttons.removeReturnLine')}
                                                             >
-                                                                ✕
+                                                                <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                                                             </button>
                                                         </td>
                                                     )}

@@ -6,44 +6,50 @@ import { apiMutate } from '@/lib/api';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
-import type { OrderDetail, GstCategory, SalesInvoice } from './types';
+import type { OrderDetail, GstCategory } from './types';
 import { computeLinePrice } from '@modbm/shared';
-import type { NewInvoiceLine } from './useOrder';
-import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
+import { calculatePurchaseInvoiceableQuantities, PurchaseInvoice } from '@/lib/purchase-order-utils';
+
+export interface NewPurchaseInvoiceLine {
+    purchaseOrderLineId: string;
+    quantityToInvoice: string;
+    maxQuantity: number;
+}
 
 interface InvoicesSectionProps {
     orderId: string;
     order: OrderDetail;
 
-    invoices: SalesInvoice[];
+    Invoices: PurchaseInvoice[];
     gstCategories: GstCategory[];
-    pickingSummary: any;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({
-    orderId, order, invoices, gstCategories,
-    pickingSummary, setError, loadInvoices, loadOrder,
+    orderId, order, Invoices, gstCategories,
+    setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
     const tCommon = useTranslations('common');
-    const tSales = useTranslations('salesOrders');
+    const tPurchase = useTranslations('purchaseOrders');
     const tConfirm = useTranslations('confirm');
     const tToast = useTranslations('toast');
 
-    // Local state — only this section needs it
+    // Local state
     const [showCreateInvoice, setShowCreateInvoice] = useState(false);
     const [newInvoiceNotes, setNewInvoiceNotes] = useState('');
-    const [newInvoiceLines, setNewInvoiceLines] = useState<NewInvoiceLine[]>([]);
+    const [supplierinvoiceNumber, setSupplierinvoiceNumber] = useState('');
+    const [receiptFilename, setReceiptFilename] = useState('');
+    const [newInvoiceLines, setNewInvoiceLines] = useState<NewPurchaseInvoiceLine[]>([]);
     const [invoicing, setInvoicing] = useState(false);
 
     const handleCreateClick = () => {
         setShowCreateInvoice(true);
-        const linesToInvoice = calculateInvoiceableQuantities(
-            order.lines, invoices, pickingSummary?.lines,
+        const linesToInvoice = calculatePurchaseInvoiceableQuantities(
+            order.lines, Invoices,
         ).map(l => ({
-            salesOrderLineId: l.salesOrderLineId,
+            purchaseOrderLineId: l.purchaseOrderLineId,
             quantityToInvoice: l.defaultQty,
             maxQuantity: l.maxQty,
         }));
@@ -54,49 +60,56 @@ export default function InvoicesSection({
         setShowCreateInvoice(false);
         setNewInvoiceLines([]);
         setNewInvoiceNotes('');
+        setSupplierinvoiceNumber('');
+        setReceiptFilename('');
     };
 
     const handleGenerate = async () => {
-        if (!confirm(tConfirm('generateInvoice'))) return;
+        if (!confirm(tConfirm('generateSupplierBill'))) return;
         setInvoicing(true);
         setError('');
         try {
             const lines = newInvoiceLines
                 .filter(l => l.quantityToInvoice && parseFloat(l.quantityToInvoice) > 0)
-                .map(l => ({ salesOrderLineId: l.salesOrderLineId, quantityToInvoice: parseFloat(l.quantityToInvoice) }));
-            await apiMutate(`/api/sales-orders/${orderId}/invoice`, 'POST', {
+                .map(l => ({ purchaseOrderLineId: l.purchaseOrderLineId, quantityToInvoice: parseFloat(l.quantityToInvoice) }));
+            
+            await apiMutate(`/api/purchase-orders/${orderId}/Invoice`, 'POST', {
+                supplierInvoiceNumber: supplierinvoiceNumber || undefined,
+                receiptFilename: receiptFilename || undefined,
                 notes: newInvoiceNotes || undefined,
                 lines: lines.length > 0 ? lines : undefined,
             });
-            toast.success(tToast('invoiceGenerated'));
+            toast.success(tToast('supplierBillGenerated'));
             handleCancel();
             await loadInvoices();
             await loadOrder(undefined, false);
         } catch (err) {
-            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
+            const errorMsg = err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice');
+            toast.error(errorMsg);
+            setError(errorMsg);
         } finally {
             setInvoicing(false);
         }
     };
 
+    // Calculate total received across the entire PO to see if generating a Invoice is even possible
+    const totalReceived = order.lines.reduce((sum, line) => sum + parseFloat(line.quantityReceived || '0'), 0);
+
     return (
-        <div id="invoices-section" className="card">
+        <div id="Invoices-section" className="card">
             <div className="flex items-center justify-between mb-2">
                 <h3 className="section-heading">
                     {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="material-symbols-outlined">request_quote</span>
-                    Invoices
+                    Supplier Invoices
                 </h3>
-                {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
+                {['received', 'partially_received', 'legacy'].includes(order.stateCode) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
-                        disabled={(() => {
-                            const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
-                            return totalShipped === 0;
-                        })()}
+                        disabled={totalReceived === 0}
                         onClick={handleCreateClick}
                     >
-                        {tSales('buttons.createInvoice')}
+                        {tPurchase('buttons.enterSupplierBill')}
                     </button>
                 )}
             </div>
@@ -106,8 +119,8 @@ export default function InvoicesSection({
                     <div className="flex items-center justify-between mb-3">
                         <strong style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
                             {/* eslint-disable-next-line i18next/no-literal-string */}
-                            <span className="material-symbols-outlined text-[16px]">request_quote</span>
-                            New Invoice
+                            <span className="material-symbols-outlined text-[16px]">receipt_long</span>
+                            Enter Supplier Invoice
                         </strong>
                         <button
                             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 16 }}
@@ -117,44 +130,46 @@ export default function InvoicesSection({
                             <span aria-hidden>✕</span>
                         </button>
                     </div>
-                    <div style={{ marginBottom: 12 }}>
-                        <input className="input w-full" placeholder="Invoice Notes (optional)" value={newInvoiceNotes} onChange={e => setNewInvoiceNotes(e.target.value)} />
+
+                    <div className="grid grid-cols-2 gap-3" style={{ marginBottom: 12 }}>
+                        <input className="input w-full" placeholder="Supplier Invoice Number *" value={supplierinvoiceNumber} onChange={e => setSupplierinvoiceNumber(e.target.value)} />
+                        <input className="input w-full" placeholder="Invoice filename" value={receiptFilename} onChange={e => setReceiptFilename(e.target.value)} />
                     </div>
+                    <div style={{ marginBottom: 12 }}>
+                        <input className="input w-full" placeholder="Notes" value={newInvoiceNotes} onChange={e => setNewInvoiceNotes(e.target.value)} />
+                    </div>
+
                     <table className="table-lines" style={{ marginBottom: 12 }}>
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>{tSales('columns.product')}</th>
-                                <th>{tSales('columns.description')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.ordered')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.picked')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.shipped')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.invoiced')}</th>
-                                <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.qtyToInvoice')}</th>
+                                <th>{tPurchase('columns.product')}</th>
+                                <th>{tPurchase('columns.description')}</th>
+                                <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
+                                <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
+                                <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
+                                <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.qtyToBill')}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {newInvoiceLines.map((nl, idx) => {
-                                const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
-                                const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
-                                const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
-                                const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
-                                const invoicedQty = invoices.reduce((sum, inv) => {
-                                    const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
+                                const origLine = order.lines.find(l => l.purchaseOrderLineId === nl.purchaseOrderLineId);
+                                const receivedQty = parseFloat(origLine?.quantityReceived || '0');
+                                const InvoicedQty = Invoices.reduce((sum, inv) => {
+                                    const invLine = inv.lines?.find(il => il.purchaseOrderLineId === nl.purchaseOrderLineId);
                                     return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                                 }, 0);
 
                                 return (
-                                    <tr key={nl.salesOrderLineId}>
+                                    <tr key={nl.purchaseOrderLineId}>
                                         <td style={{ color: 'var(--text-muted)' }}>{origLine?.lineNumber}</td>
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
                                         </td>
                                         <td>{origLine?.productDescription || '—'}</td>
                                         <td style={{ textAlign: 'right' }}>{origLine?.quantity}</td>
-                                        <td style={{ textAlign: 'right' }}>{pickedQty}</td>
-                                        <td style={{ textAlign: 'right' }}>{shippedQty}</td>
-                                        <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{invoicedQty}</td>
+                                        <td style={{ textAlign: 'right' }}>{receivedQty}</td>
+                                        <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{InvoicedQty}</td>
                                         <td style={{ textAlign: 'right' }}>
                                             <input
                                                 type="number" className="input" min="0" max={nl.maxQuantity} step="1"
@@ -175,8 +190,8 @@ export default function InvoicesSection({
                     </table>
                     
                     <div className="flex items-center gap-2">
-                        <button className="btn btn-primary btn-sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
-                            {tSales('buttons.generateInvoice')}
+                        <button className="btn btn-primary btn-sm" disabled={invoicing || !supplierinvoiceNumber.trim() || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
+                            {tPurchase('buttons.submitBill')}
                         </button>
                         <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
                             {tCommon('cancel')}
@@ -184,37 +199,27 @@ export default function InvoicesSection({
                     </div>
                 </div>
             )}
+
             <div className="space-y-3">
-                {invoices.map(inv => (
+                {Invoices.map(inv => (
                     <div key={inv.invoiceId} style={{ marginBottom: 12, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>
                         <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
+                                {(inv as any).supplierinvoiceNumber && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierinvoiceNumber}</span>
+                                )}
+                                {(inv as any).receiptFilename && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as any).receiptFilename}</span>
+                                )}
                             </div>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={async () => {
-                                    try {
-                                        const { apiFetchBlob } = await import('@/lib/api');
-                                        const blob = await apiFetchBlob(`/api/reports/hooks/sales-invoice/run?id=${inv.invoiceId}&context=sales-invoice`, { method: 'POST' });
-                                        const url = URL.createObjectURL(blob);
-                                        window.open(url, '_blank');
-                                    } catch (err) {
-                                        const { reportError } = await import('@/lib/api');
-                                        reportError(err, 'OrderDetailPage:printInvoice');
-                                        setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
-                                    }
-                                }}
-                            >
-                                {tSales('buttons.printInvoice')}
-                            </button>
                         </div>
                         
                         {inv.lines && inv.lines.length > 0 && (() => {
                             const cc = order.currencyCode || HOME_CURRENCY.code;
                             const sortedLines = [...inv.lines].sort((a, b) => {
-                                const aIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === a.salesOrderLineId);
-                                const bIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === b.salesOrderLineId);
+                                const aIdx = order.lines.findIndex((ol) => ol.purchaseOrderLineId === a.purchaseOrderLineId);
+                                const bIdx = order.lines.findIndex((ol) => ol.purchaseOrderLineId === b.purchaseOrderLineId);
                                 return aIdx - bIdx;
                             });
 
@@ -222,7 +227,7 @@ export default function InvoicesSection({
                             let subtotal = 0;
                             let calculatedTaxTotal = 0;
                             const linePricing = sortedLines.map((il) => {
-                                const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
+                                const orderLine = order.lines.find(ol => ol.purchaseOrderLineId === il.purchaseOrderLineId);
                                 const disc = parseFloat(orderLine?.discountPercentage || '0');
                                 const gstCat = gstCategories.find(c => c.gstCategoryId === orderLine?.gstCategoryId);
                                 const gstRate = parseFloat(gstCat?.rate || '0');
@@ -237,7 +242,7 @@ export default function InvoicesSection({
                                 return { il, orderLine, disc, gstRate, pricing };
                             });
                             
-                            // Prefer the explicit DB taxAmount to handle imported legacy shipments safely
+                            // Prefer the explicit DB taxAmount to handle imported legacy Invoices safely
                             const dbTaxAmount = inv.taxAmount != null ? parseFloat(inv.taxAmount as string) : 0;
                             const effectiveTaxTotal = dbTaxAmount !== 0 ? dbTaxAmount : calculatedTaxTotal;
                             const grandTotal = subtotal + effectiveTaxTotal;
@@ -246,18 +251,18 @@ export default function InvoicesSection({
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th>{tSales('columns.product')}</th>
-                                            <th>{tSales('columns.description')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.qty')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.gst')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.amount')}</th>
+                                            <th>{tPurchase('columns.product')}</th>
+                                            <th>{tPurchase('columns.description')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.discountPct')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.gst')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {linePricing.map(({ il, orderLine, disc, gstRate, pricing }) => (
-                                                <tr key={il.lineId || il.invoiceLineId}>
+                                                <tr key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}>
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                                                         {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
                                                     </td>
@@ -280,15 +285,15 @@ export default function InvoicesSection({
                                     </tbody>
                                     <tfoot>
                                         <tr style={{ borderTop: '1px solid var(--border)' }}>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.subtotal')}</td>
+                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('subtotal')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.tax')}</td>
+                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('tax')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tSales('totals.total')}</td>
+                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tCommon('total')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
                                         </tr>
                                     </tfoot>
@@ -303,14 +308,13 @@ export default function InvoicesSection({
                         </div>
                     </div>
                 ))}
-                {invoices.length === 0 && (
+                {Invoices.length === 0 && (
                     <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
                         {(() => {
-                            const totalShipped = pickingSummary?.lines?.reduce((sum: number, pl: any) => sum + parseFloat(pl.quantityShipped || '0'), 0) || 0;
-                            if (totalShipped === 0) {
-                                return tSales('noProductsShippedYet');
+                            if (totalReceived === 0) {
+                                return tPurchase('noProductsReceivedYet');
                             }
-                            return tSales('noInvoicesGeneratedYet');
+                            return tPurchase('noBillsGeneratedYet');
                         })()}
                     </div>
                 )}

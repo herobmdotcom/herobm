@@ -93,6 +93,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .send({
         orderNumber: `PO-FRT-${Date.now()}`,
         vendorId,
+        deliveryLocationId: locationId,
         currencyCode: 'EUR',
         lines: [
           {
@@ -101,8 +102,10 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
             pricePerUnit: '50.00',
           },
         ],
-      })
-      .expect(201);
+      });
+    if (poRes.status !== 201)
+      throw new Error('DEBUG 500 PO BODY: ' + JSON.stringify(poRes.body));
+    expect(poRes.status).toBe(201);
 
     const poId = poRes.body.purchaseOrderId;
     await request(app.getHttpServer())
@@ -121,6 +124,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         purchaseOrderId: poId,
+        locationId,
         packingSlipNumber: 'RCV-FRT-123',
         lines: [
           {

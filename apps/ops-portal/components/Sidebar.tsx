@@ -52,15 +52,8 @@ export default function Sidebar() {
       label: t('groups.purchasing'),
       items: [
         { href: '/suppliers', label: t('items.suppliers'), icon: 'factory' },
-        { 
-          href: '/purchase-orders', 
-          label: t('items.purchaseOrders'), 
-          icon: 'local_shipping',
-          subItems: [
-            { href: '/purchase-orders', label: t('items.purchaseOrders') },
-            { href: '/purchase-orders/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }) }
-          ]
-        },
+        { href: '/purchase-orders', label: t('items.purchaseOrders'), icon: 'local_shipping' },
+        { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },
       ],
     },
   ];

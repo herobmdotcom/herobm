@@ -23,6 +23,7 @@ describe('API E2E — Purchase Order Receptions', () => {
 
   let validVendorId: string;
   let appProductId: string; // app-created product (core UUID)
+  let validLocationId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -72,6 +73,13 @@ describe('API E2E — Purchase Order Receptions', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validVendorId = suppliers.body.data[0].vendorId;
+
+    // Fetch a base delivery location
+    const locationsRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    validLocationId = locationsRes.body.data[0].locationId;
   }, 30_000);
 
   afterAll(async () => {
@@ -95,6 +103,7 @@ describe('API E2E — Purchase Order Receptions', () => {
         orderNumber: `E2E-REC-PO-${today}-${rand}`,
         name: 'E2E Reception Test PO',
         vendorId: validVendorId,
+        deliveryLocationId: validLocationId,
         currencyCode: 'EUR',
         lines: [
           {
@@ -149,6 +158,7 @@ describe('API E2E — Purchase Order Receptions', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           purchaseOrderId,
+          locationId: validLocationId,
           packingSlipNumber: 'PS-001',
           notes: 'First delivery',
           lines: [
@@ -206,6 +216,7 @@ describe('API E2E — Purchase Order Receptions', () => {
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
           purchaseOrderId,
+          locationId: validLocationId,
           lines: [{ purchaseOrderLineId: lineIds[0], quantityReceived: '5' }],
         })
         .expect(403);

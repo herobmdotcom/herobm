@@ -19,7 +19,8 @@ interface Props {
 }
 
 export default function SupplierExpiries({ vendorId, isEditable }: Props) {
-  const t = useTranslations();
+  const tSupplier = useTranslations('suppliers');
+  const tCommon = useTranslations('common');
   const [expiries, setExpiries] = useState<Expiry[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -100,7 +101,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
 
   const handleDelete = async (id: string) => {
     // eslint-disable-next-line no-restricted-globals
-    if(!confirm("Are you sure you want to delete this expiry?")) return;
+    if(!confirm(tCommon('confirmDelete'))) return;
     try {
       await apiMutate(`/api/suppliers/${vendorId}/expiries/${id}`, 'DELETE');
       toast.success('Expiry deleted');
@@ -112,10 +113,10 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
 
   const getTypeLabel = (val: string) => {
     switch (val) {
-      case 'insurance': return 'Insurance';
-      case 'tax_certificate': return 'Tax Certificate';
-      case 'trial_period': return 'Trial Period';
-      case 'other': return 'Other';
+      case 'insurance': return tSupplier('expiries.types.insurance');
+      case 'tax_certificate': return tSupplier('expiries.types.tax_certificate');
+      case 'trial_period': return tSupplier('expiries.types.trial_period');
+      case 'other': return tSupplier('expiries.types.other');
       default: return val;
     }
   };
@@ -127,11 +128,11 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
           className="text-sm font-semibold mb-0"
           style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
         >
-          Expiries
+          {tSupplier('expiries.title')}
         </h3>
         {isEditable && !isCreating && !editingId && (
           <button className="btn btn-primary btn-xs" onClick={handleCreate}>
-            + Add Expiry
+            {tSupplier('expiries.addExpiry')}
           </button>
         )}
       </div>
@@ -139,10 +140,10 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
       <table className="table-lines w-full">
         <thead>
           <tr>
-            <th style={{ width: 180 }}>Type</th>
-            <th style={{ width: 150 }}>Expiry Date</th>
-            <th>Notes</th>
-            <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+            <th style={{ width: 180 }}>{tSupplier('expiries.columns.type')}</th>
+            <th style={{ width: 150 }}>{tSupplier('expiries.columns.expiryDate')}</th>
+            <th>{tSupplier('expiries.columns.notes')}</th>
+            <th style={{ width: 150, textAlign: 'right' }}>{tSupplier('expiries.columns.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -150,23 +151,23 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
             <tr style={{ background: 'var(--bg-secondary)' }}>
               <td>
                 <select className="input" value={editForm.expiryType || ''} onChange={e => setEditForm({...editForm, expiryType: e.target.value})}>
-                  <option value="">-- Select Type --</option>
-                  <option value="insurance">Insurance</option>
-                  <option value="tax_certificate">Tax Certificate</option>
-                  <option value="trial_period">Trial Period</option>
-                  <option value="other">Other</option>
+                  <option value="">{tSupplier('expiries.types.select')}</option>
+                  <option value="insurance">{tSupplier('expiries.types.insurance')}</option>
+                  <option value="tax_certificate">{tSupplier('expiries.types.tax_certificate')}</option>
+                  <option value="trial_period">{tSupplier('expiries.types.trial_period')}</option>
+                  <option value="other">{tSupplier('expiries.types.other')}</option>
                 </select>
               </td>
               <td>
                 <input type="date" className="input" value={editForm.expiryDate || ''} onChange={e => setEditForm({...editForm, expiryDate: e.target.value})} />
               </td>
               <td>
-                <input className="input w-full" value={editForm.notes || ''} onChange={e => setEditForm({...editForm, notes: e.target.value})} placeholder="Notes..." />
+                <input className="input w-full" value={editForm.notes || ''} onChange={e => setEditForm({...editForm, notes: e.target.value})} placeholder={`${tSupplier('expiries.columns.notes')}...`} />
               </td>
               <td style={{ textAlign: 'right' }}>
                 <div className="flex justify-end gap-2">
-                  <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                  <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                  <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tCommon('cancel')}</button>
+                  <button className="btn btn-primary btn-xs" onClick={handleSave}>{tCommon('save')}</button>
                 </div>
               </td>
             </tr>
@@ -175,7 +176,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
           {!loading && expiries.length === 0 && !isCreating && (
             <tr>
               <td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                No expiries defined for this supplier.
+                {tSupplier('expiries.empty')}
               </td>
             </tr>
           )}
@@ -185,11 +186,11 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
               <tr key={e.expiryId} style={{ background: 'var(--bg-secondary)' }}>
                 <td>
                   <select className="input" value={editForm.expiryType || ''} onChange={ev => setEditForm({...editForm, expiryType: ev.target.value})}>
-                    <option value="">-- Select Type --</option>
-                    <option value="insurance">Insurance</option>
-                    <option value="tax_certificate">Tax Certificate</option>
-                    <option value="trial_period">Trial Period</option>
-                    <option value="other">Other</option>
+                    <option value="">{tSupplier('expiries.types.select')}</option>
+                    <option value="insurance">{tSupplier('expiries.types.insurance')}</option>
+                    <option value="tax_certificate">{tSupplier('expiries.types.tax_certificate')}</option>
+                    <option value="trial_period">{tSupplier('expiries.types.trial_period')}</option>
+                    <option value="other">{tSupplier('expiries.types.other')}</option>
                   </select>
                 </td>
                 <td>
@@ -200,8 +201,8 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
                 </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
-                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>Cancel</button>
-                    <button className="btn btn-primary btn-xs" onClick={handleSave}>Save</button>
+                    <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tCommon('cancel')}</button>
+                    <button className="btn btn-primary btn-xs" onClick={handleSave}>{tCommon('save')}</button>
                   </div>
                 </td>
               </tr>
@@ -210,18 +211,18 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
                 <td className="font-medium">
                   {getTypeLabel(e.expiryType)}
                   {new Date(e.expiryDate) < new Date() && (
-                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider">Expired</span>
+                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 uppercase tracking-wider">{tSupplier('expiries.expired')}</span>
                   )}
                 </td>
                 <td className={`text-sm ${new Date(e.expiryDate) < new Date() ? 'text-red-700 font-bold' : ''}`}>
                   {new Date(e.expiryDate).toLocaleDateString()}
                 </td>
-                <td>{e.notes || <span className="text-muted italic text-xs">No notes</span>}</td>
+                <td>{e.notes || <span className="text-muted italic text-xs">{tSupplier('expiries.noNotes')}</span>}</td>
                 <td style={{ textAlign: 'right' }}>
                   {isEditable && (
                     <div className="flex justify-end gap-2">
-                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(e)}>Edit</button>
-                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(e.expiryId)}>Delete</button>
+                      <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(e)}>{tCommon('edit')}</button>
+                      <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleDelete(e.expiryId)}>{tCommon('delete')}</button>
                     </div>
                   )}
                 </td>

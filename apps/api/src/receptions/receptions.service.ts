@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -11,6 +16,7 @@ import {
   outbox,
   bins,
   zones,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -32,6 +38,53 @@ export class ReceptionsService {
       const method = this.appConfig.valuationMethod();
       const strategy = getValuationStrategy(method);
 
+      const [po] = await tx
+        .select({
+          stateCode: purchaseOrders.stateCode,
+          deliveryLocationId: purchaseOrders.deliveryLocationId,
+        })
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId))
+        .limit(1);
+
+      if (!po) {
+        throw new NotFoundException('Purchase order not found');
+      }
+
+      if (po.stateCode !== 'ordered' && po.stateCode !== 'partially_received') {
+        throw new BadRequestException(
+          'Receptions can only be created for ordered or partially received purchase orders',
+        );
+      }
+
+      // Resolve receiving bin in the selected location
+      const result = await tx
+        .select({
+          binId: bins.binId,
+          binName: bins.binNumber, // the original name of bin string is binNumber
+          zoneName: zones.name,
+          locationName: locations.name,
+        })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .innerJoin(locations, eq(zones.locationId, locations.locationId))
+        .where(
+          and(
+            eq(bins.binNumber, 'RECEIVING'),
+            eq(zones.locationId, createDto.locationId),
+          ),
+        )
+        .limit(1);
+
+      const dockBin = result[0];
+      if (!dockBin) {
+        throw new BadRequestException(
+          `The selected location does not have a RECEIVING bin.`,
+        );
+      }
+
+      // Move location_discrepancy_warning AFTER reception creation so we have receptionId
+
       // Create Reception
       const receptionNumber = `REC-${randomUUID().substring(0, 8).toUpperCase()}`;
 
@@ -46,6 +99,23 @@ export class ReceptionsService {
           createdBy: userId,
         })
         .returning();
+
+      // Check Location Discrepancy
+      if (
+        po.deliveryLocationId &&
+        po.deliveryLocationId !== createDto.locationId
+      ) {
+        await tx.insert(purchaseOrderEvents).values({
+          purchaseOrderId: createDto.purchaseOrderId,
+          eventType: 'location_discrepancy_warning',
+          payload: {
+            expectedLocationId: po.deliveryLocationId,
+            receivedLocationId: createDto.locationId,
+            receptionId: reception.receptionId,
+          },
+          actor: userId,
+        });
+      }
 
       // Create lines
       if (createDto.lines && createDto.lines.length > 0) {
@@ -84,6 +154,7 @@ export class ReceptionsService {
                   productId: poLine.productId,
                   orderedQuantity: Number(poLine.quantity),
                   newTotalReceived: newTotal,
+                  receptionId: reception.receptionId,
                 },
                 actor: userId,
               });
@@ -101,6 +172,7 @@ export class ReceptionsService {
                   productId: poLine.productId,
                   poPrice: Number(poLine.pricePerUnit),
                   invoicePrice: Number(line.invoicePricePerUnit),
+                  receptionId: reception.receptionId,
                 },
                 actor: userId,
               });
@@ -158,6 +230,19 @@ export class ReceptionsService {
                   newWeightedAverageCost: valuation.newWeightedAverageCost,
                 },
               });
+
+              // Record event for timeline
+              await tx.insert(purchaseOrderEvents).values({
+                purchaseOrderId: createDto.purchaseOrderId,
+                eventType: 'goods_received',
+                payload: {
+                  receptionId: reception.receptionId,
+                  receptionNumber: reception.receptionNumber,
+                  productId: productRow.productId,
+                  quantityReceived: receivedQty,
+                },
+                actor: userId,
+              });
             }
 
             await tx
@@ -194,52 +279,33 @@ export class ReceptionsService {
           }
         }
 
-        const newState = isFullyReceived ? 'received' : 'partially_received';
-
-        await tx
-          .update(purchaseOrders)
-          .set({ stateCode: newState, modifiedOn: new Date() })
+        const [existingPo] = await tx
+          .select({ stateCode: purchaseOrders.stateCode })
+          .from(purchaseOrders)
           .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId));
 
-        if (ledgerLines.length > 0) {
-          const [po] = await tx
-            .select({ deliveryLocationId: purchaseOrders.deliveryLocationId })
-            .from(purchaseOrders)
+        const newState = isFullyReceived ? 'received' : 'partially_received';
+
+        if (existingPo && existingPo.stateCode !== newState) {
+          await tx
+            .update(purchaseOrders)
+            .set({ stateCode: newState, modifiedOn: new Date() })
             .where(
               eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId),
-            )
-            .limit(1);
+            );
 
-          let dockBin;
-          if (po && po.deliveryLocationId) {
-            const result = await tx
-              .select({ binId: bins.binId })
-              .from(bins)
-              .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-              .where(
-                and(
-                  eq(bins.binNumber, 'RECEIVING'),
-                  eq(zones.locationId, po.deliveryLocationId),
-                ),
-              )
-              .limit(1);
-            dockBin = result[0];
-          }
+          await tx.insert(purchaseOrderEvents).values({
+            purchaseOrderId: createDto.purchaseOrderId,
+            eventType: 'status_changed',
+            payload: {
+              from: existingPo.stateCode,
+              to: newState,
+            },
+            actor: userId,
+          });
+        }
 
-          if (!dockBin) {
-            // Fallback for POs with missing delivery locations
-            const result = await tx
-              .select({ binId: bins.binId })
-              .from(bins)
-              .where(eq(bins.binNumber, 'RECEIVING'))
-              .limit(1);
-            dockBin = result[0];
-          }
-
-          if (!dockBin) {
-            throw new NotFoundException('System RECEIVING bin is missing.');
-          }
-
+        if (ledgerLines.length > 0) {
           const resolvedLedgerLines = ledgerLines.map((l) => ({
             ...l,
             binId: dockBin.binId,
@@ -260,11 +326,19 @@ export class ReceptionsService {
         }
       }
 
-      return this.findOne(reception.receptionId, tx);
+      const record = await this.findOne(reception.receptionId, tx);
+      return {
+        ...record,
+        destination: {
+          locationName: dockBin.locationName,
+          zoneName: dockBin.zoneName,
+          binName: dockBin.binName,
+        },
+      };
     });
   }
 
-  async findAll(params: PaginationQuery) {
+  async findAll(params: PaginationQuery, purchaseOrderId?: string) {
     const { page, limit, offset, searchTerm, includeArchived } =
       parsePagination(params);
 
@@ -279,7 +353,11 @@ export class ReceptionsService {
       ? undefined
       : sql`${purchaseOrderReceptions.stateCode} != 'archived'`;
 
-    const conditions = and(searchCondition, stateCondition);
+    const poCondition = purchaseOrderId
+      ? eq(purchaseOrderReceptions.purchaseOrderId, purchaseOrderId)
+      : undefined;
+
+    const conditions = and(searchCondition, stateCondition, poCondition);
 
     const data = await this.db
       .select({

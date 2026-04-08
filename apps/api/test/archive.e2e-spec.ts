@@ -27,6 +27,7 @@ describe('Archive E2E — Full Round-Trip', () => {
   let validCustomerId: string;
   let validProductId: string;
   let validVendorId: string;
+  let validLocationId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -77,6 +78,12 @@ describe('Archive E2E — Full Round-Trip', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validVendorId = suppliers.body.data[0].vendorId;
+
+    const locations = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    validLocationId = locations.body.data[0].locationId;
   }, 30_000);
 
   afterAll(async () => {
@@ -281,6 +288,7 @@ describe('Archive E2E — Full Round-Trip', () => {
           orderNumber: `E2E-ARCH-PO-${today}-${rand}`,
           name: 'E2E Archive Test PO',
           vendorId: validVendorId,
+          deliveryLocationId: validLocationId,
           currencyCode: 'EUR',
           lines: [
             {
@@ -315,6 +323,7 @@ describe('Archive E2E — Full Round-Trip', () => {
           orderNumber: `E2E-ARCH-PO-FAIL-${today}-${rand}`,
           name: 'E2E Draft Archive Fail',
           vendorId: validVendorId,
+          deliveryLocationId: validLocationId,
           currencyCode: 'EUR',
           lines: [
             {

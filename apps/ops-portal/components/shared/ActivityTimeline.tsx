@@ -17,6 +17,9 @@ export function EventIcon({ type }: { type: string }) {
   const typeLower = (type || '').toLowerCase();
 
   // Common emoji mappings
+  // eslint-disable-next-line i18next/no-literal-string
+  if (typeLower.includes('warning') || typeLower.includes('discrepancy')) return <span>⚠️</span>;
+  if (typeLower.includes('receive') || typeLower.includes('reception')) return <span>📥</span>;
   if (typeLower.includes('shipment')) return <span>🚚</span>;
   if (typeLower.includes('picking')) return <span>📦</span>;
   // eslint-disable-next-line i18next/no-literal-string

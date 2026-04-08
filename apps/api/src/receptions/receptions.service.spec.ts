@@ -87,6 +87,15 @@ describe('ReceptionsService', () => {
 
     it('should transition to partially_received when lines are not fully met', async () => {
       selectMocks = [
+        [{ stateCode: 'ordered', deliveryLocationId: 'loc-1' }], // 1. po lookup
+        [
+          {
+            binId: 'bin-1',
+            binName: 'RECEIVING',
+            zoneName: 'Dock',
+            locationName: 'Main',
+          },
+        ], // 2. dock bin setup
         [
           {
             purchaseOrderLineId: 'l1',
@@ -95,18 +104,18 @@ describe('ReceptionsService', () => {
             quantityReceived: '0',
             pricePerUnit: '5',
           },
-        ], // poLine
-        [{ productId: 'p1', standardCost: '5', quantityOnHand: '0' }], // productRow
-        [{ quantity: '10', quantityReceived: '5' }], // allPoLines
-        [{ deliveryLocationId: 'loc-1' }], // deliveryLocation
-        [{ binId: 'bin-1' }], // dock bin
-        [{ receptionId: 'rec-1', receptionNumber: 'REC-123' }], // findOne final return
-        [], // lines
+        ], // 3. poLine
+        [{ productId: 'p1', standardCost: '5', quantityOnHand: '0' }], // 4. productRow
+        [{ quantity: '10', quantityReceived: '5' }], // 5. allPoLines
+        [{ stateCode: 'ordered' }], // 6. existingPo lookup
+        [{ receptionId: 'rec-1', receptionNumber: 'REC-123' }], // 7. findOne final return
+        [], // 8. lines
       ];
 
       await service.create(
         {
           purchaseOrderId: 'po-1',
+          locationId: 'loc-1',
           lines: [{ purchaseOrderLineId: 'l1', quantityReceived: '5' }],
         },
         'admin',
@@ -122,6 +131,15 @@ describe('ReceptionsService', () => {
 
     it('should transition to received when all lines are fully met', async () => {
       selectMocks = [
+        [{ stateCode: 'ordered', deliveryLocationId: 'loc-1' }],
+        [
+          {
+            binId: 'bin-1',
+            binName: 'RECEIVING',
+            zoneName: 'Dock',
+            locationName: 'Main',
+          },
+        ],
         [
           {
             purchaseOrderLineId: 'l1',
@@ -133,8 +151,7 @@ describe('ReceptionsService', () => {
         ],
         [{ productId: 'p1', standardCost: '5', quantityOnHand: '0' }],
         [{ quantity: '10', quantityReceived: '10' }], // all lines
-        [{ deliveryLocationId: 'loc-1' }],
-        [{ binId: 'bin-1' }],
+        [{ stateCode: 'ordered' }], // existingPo lookup
         [{ receptionId: 'rec-1', receptionNumber: 'REC-123' }],
         [],
       ];
@@ -142,6 +159,7 @@ describe('ReceptionsService', () => {
       await service.create(
         {
           purchaseOrderId: 'po-1',
+          locationId: 'loc-1',
           lines: [{ purchaseOrderLineId: 'l1', quantityReceived: '10' }],
         },
         'admin',
@@ -156,6 +174,15 @@ describe('ReceptionsService', () => {
 
     it('should trigger over_received_warning event when receiving more than bounds', async () => {
       selectMocks = [
+        [{ stateCode: 'ordered', deliveryLocationId: 'loc-1' }],
+        [
+          {
+            binId: 'bin-1',
+            binName: 'RECEIVING',
+            zoneName: 'Dock',
+            locationName: 'Main',
+          },
+        ],
         [
           {
             purchaseOrderLineId: 'l1',
@@ -167,8 +194,7 @@ describe('ReceptionsService', () => {
         ],
         [{ productId: 'p1', standardCost: '5', quantityOnHand: '5' }],
         [{ quantity: '10', quantityReceived: '15' }],
-        [{ deliveryLocationId: 'loc-1' }],
-        [{ binId: 'bin-1' }],
+        [{ stateCode: 'ordered' }], // existingPo lookup
         [{ receptionId: 'rec-1' }],
         [],
       ];
@@ -176,6 +202,7 @@ describe('ReceptionsService', () => {
       await service.create(
         {
           purchaseOrderId: 'po-1',
+          locationId: 'loc-1',
           lines: [{ purchaseOrderLineId: 'l1', quantityReceived: '10' }],
         },
         'admin',
@@ -190,6 +217,15 @@ describe('ReceptionsService', () => {
 
     it('should trigger price_discrepancy_warning event when invoicing value mismatches', async () => {
       selectMocks = [
+        [{ stateCode: 'ordered', deliveryLocationId: 'loc-1' }],
+        [
+          {
+            binId: 'bin-1',
+            binName: 'RECEIVING',
+            zoneName: 'Dock',
+            locationName: 'Main',
+          },
+        ],
         [
           {
             purchaseOrderLineId: 'l1',
@@ -201,8 +237,7 @@ describe('ReceptionsService', () => {
         ],
         [{ productId: 'p1', standardCost: '5', quantityOnHand: '0' }],
         [{ quantity: '10', quantityReceived: '10' }],
-        [{ deliveryLocationId: 'loc-1' }],
-        [{ binId: 'bin-1' }],
+        [{ stateCode: 'ordered' }], // existingPo lookup
         [{ receptionId: 'rec-1' }],
         [],
       ];
@@ -210,6 +245,7 @@ describe('ReceptionsService', () => {
       await service.create(
         {
           purchaseOrderId: 'po-1',
+          locationId: 'loc-1',
           lines: [
             {
               purchaseOrderLineId: 'l1',

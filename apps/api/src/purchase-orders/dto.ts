@@ -32,6 +32,10 @@ export class CreatePurchaseOrderLineDto {
   @IsOptional()
   @IsString()
   unitOfMeasure?: string;
+
+  @IsOptional()
+  @IsString()
+  gstCategoryId?: string;
 }
 
 export class UpdatePurchaseOrderLineDto {
@@ -54,6 +58,10 @@ export class UpdatePurchaseOrderLineDto {
   @IsOptional()
   @IsString()
   unitOfMeasure?: string;
+
+  @IsOptional()
+  @IsString()
+  gstCategoryId?: string;
 }
 
 // ── PO Header DTOs ──
@@ -62,6 +70,10 @@ export class CreatePurchaseOrderDto {
   @IsString()
   @IsNotEmpty()
   orderNumber!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  deliveryLocationId!: string;
 
   @IsOptional()
   @IsString()
@@ -110,4 +122,8 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   @IsString()
   stateCode?: string;
+
+  @IsOptional()
+  @IsString()
+  deliveryLocationId?: string;
 }

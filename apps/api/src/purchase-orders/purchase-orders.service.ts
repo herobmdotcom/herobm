@@ -43,6 +43,7 @@ export interface UnifiedPurchaseOrderRow {
 }
 
 import { SuppliersService } from '../suppliers/suppliers.service';
+import { GstCategoriesService } from '../gst/gst-categories.service';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -50,6 +51,7 @@ export class PurchaseOrdersService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
     private readonly suppliersService: SuppliersService,
+    private readonly gstService: GstCategoriesService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
@@ -88,32 +90,92 @@ export class PurchaseOrdersService {
     }
   }
 
+  private async resolveGstForLine(
+    productId?: string,
+    gstCategoryIdOverride?: string,
+  ): Promise<{ gstCategoryId: string; rate: number }> {
+    if (gstCategoryIdOverride) {
+      try {
+        const cat = await this.gstService.getById(gstCategoryIdOverride);
+        return {
+          gstCategoryId: cat.gstCategoryId,
+          rate: parseFloat(cat.rate ?? '0'),
+        };
+      } catch (err) {
+        // Ignore and fallback
+      }
+    }
+
+    if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
+      const pRows = await this.db
+        .select({ gstCategoryId: products.gstCategoryId })
+        .from(products)
+        .where(eq(products.productId, productId))
+        .limit(1);
+
+      if (pRows.length > 0 && pRows[0].gstCategoryId) {
+        try {
+          const cat = await this.gstService.getById(pRows[0].gstCategoryId);
+          return {
+            gstCategoryId: cat.gstCategoryId,
+            rate: parseFloat(cat.rate ?? '0'),
+          };
+        } catch (err) {
+          this.logger.warn(
+            `Product ${productId} had invalid tax category ID: ${pRows[0].gstCategoryId}`,
+          );
+        }
+      }
+    }
+
+    const defaultGst = await this.gstService.getDefault();
+    return {
+      gstCategoryId: defaultGst.gstCategoryId,
+      rate: parseFloat(defaultGst.rate ?? '0'),
+    };
+  }
+
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       // Create PO
-      const [order] = await tx
-        .insert(purchaseOrders)
-        .values({
-          orderNumber: createDto.orderNumber, // In reality, should auto-gen
-          name: createDto.name,
-          vendorId: createDto.vendorId,
-          currencyCode: createDto.currencyCode || HOME_CURRENCY.code,
-          notes: createDto.notes,
-          createdBy: userId,
-          stateCode: 'draft',
-        })
-        .returning();
+      let order;
+      try {
+        const [inserted] = await tx
+          .insert(purchaseOrders)
+          .values({
+            orderNumber: createDto.orderNumber, // In reality, should auto-gen
+            name: createDto.name,
+            vendorId: createDto.vendorId,
+            currencyCode: createDto.currencyCode || HOME_CURRENCY.code,
+            notes: createDto.notes,
+            createdBy: userId,
+            stateCode: 'draft',
+            deliveryLocationId: createDto.deliveryLocationId,
+          })
+          .returning();
+        order = inserted;
+      } catch (err: any) {
+        console.error('PO INSERT ERROR:', err.message || err);
+        throw err;
+      }
 
       // Create lines if any
       if (createDto.lines && createDto.lines.length > 0) {
-        const lineValues = createDto.lines.map((line: any, index: number) => {
+        const lineValues: any[] = [];
+        let index = 0;
+        for (const line of createDto.lines) {
+          const { gstCategoryId, rate } = await this.resolveGstForLine(
+            line.productId,
+            line.gstCategoryId,
+          );
           const pricing = computeLinePriceForStorage({
             quantity: parseFloat(line.quantity || '0'),
             pricePerUnit: parseFloat(line.pricePerUnit || '0'),
             discountPercentage: parseFloat(line.discountPercentage || '0'),
+            taxRate: rate,
           });
 
-          return {
+          lineValues.push({
             purchaseOrderId: order.purchaseOrderId,
             lineNumber: index + 1,
             productId: line.productId,
@@ -123,9 +185,12 @@ export class PurchaseOrdersService {
             discountPercentage: line.discountPercentage?.toString() || '0',
             unitOfMeasure: line.unitOfMeasure || 'EA',
             amount: pricing.amount,
+            tax: pricing.tax,
             totalAmount: pricing.totalAmount,
-          };
-        });
+            gstCategoryId,
+          });
+          index++;
+        }
 
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }
@@ -330,7 +395,7 @@ export class PurchaseOrdersService {
     };
   }
 
-  async changeState(id: string, stateCode: string) {
+  async changeState(id: string, stateCode: string, actor: string = 'system') {
     const validStates = getValidStates(PURCHASE_ORDER_TRANSITIONS);
     if (!validStates.includes(stateCode)) {
       throw new BadRequestException(`Invalid state: '${stateCode}'`);
@@ -353,6 +418,12 @@ export class PurchaseOrdersService {
     }
 
     if (existing.stateCode === 'draft' && stateCode === 'ordered') {
+      if (!existing.deliveryLocationId) {
+        throw new BadRequestException(
+          'Cannot order: A Delivery Location must be specified.',
+        );
+      }
+
       const vendor = await this.suppliersService.findOne(existing.vendorId);
       if (vendor.isPurchasingBlocked || vendor.groupIsPurchasingBlocked) {
         throw new BadRequestException(
@@ -375,7 +446,7 @@ export class PurchaseOrdersService {
           from: existing.stateCode,
           to: stateCode,
         },
-        'system', // changeState doesn't take userId, usually called by controller
+        actor,
       );
 
       return this.findOne(id, tx);
@@ -452,7 +523,7 @@ export class PurchaseOrdersService {
     });
   }
 
-  async addLine(orderId: string, lineDto: any) {
+  async addLine(orderId: string, lineDto: any, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
       if (existing.stateCode !== 'draft') {
@@ -468,9 +539,16 @@ export class PurchaseOrdersService {
 
       const qty = parseFloat(lineDto.quantity || '1');
       const price = parseFloat(lineDto.pricePerUnit || '0');
+      const disc = parseFloat(lineDto.discountPercentage || '0');
+      const { gstCategoryId, rate } = await this.resolveGstForLine(
+        lineDto.productId,
+        lineDto.gstCategoryId,
+      );
       const pricing = computeLinePriceForStorage({
         quantity: qty,
         pricePerUnit: price,
+        discountPercentage: disc,
+        taxRate: rate,
       });
 
       await tx.insert(purchaseOrderLineItems).values({
@@ -483,7 +561,9 @@ export class PurchaseOrdersService {
         discountPercentage: lineDto.discountPercentage?.toString() || '0',
         unitOfMeasure: lineDto.unitOfMeasure || 'EA',
         amount: pricing.amount,
+        tax: pricing.tax,
         totalAmount: pricing.totalAmount,
+        gstCategoryId,
       });
 
       await this.writeEvent(
@@ -495,14 +575,19 @@ export class PurchaseOrdersService {
           quantity: lineDto.quantity,
           pricePerUnit: lineDto.pricePerUnit,
         },
-        'system',
+        actor,
       );
 
       return this.findOne(orderId, tx);
     });
   }
 
-  async updateLine(orderId: string, lineId: string, lineDto: any) {
+  async updateLine(
+    orderId: string,
+    lineId: string,
+    lineDto: any,
+    actor: string = 'system',
+  ) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
       if (existing.stateCode !== 'draft') {
@@ -522,11 +607,15 @@ export class PurchaseOrdersService {
         updateFields.productDescription = lineDto.productDescription;
       if (lineDto.unitOfMeasure !== undefined)
         updateFields.unitOfMeasure = lineDto.unitOfMeasure;
+      if (lineDto.gstCategoryId !== undefined)
+        updateFields.gstCategoryId = lineDto.gstCategoryId;
 
-      // Recalculate amount if qty or price changed
+      // Recalculate amount if qty, price, discount, or tax changed
       if (
         lineDto.quantity !== undefined ||
-        lineDto.pricePerUnit !== undefined
+        lineDto.pricePerUnit !== undefined ||
+        lineDto.discountPercentage !== undefined ||
+        lineDto.gstCategoryId !== undefined
       ) {
         const line = existing.lines.find(
           (l: any) => l.purchaseOrderLineId === lineId,
@@ -542,12 +631,26 @@ export class PurchaseOrdersService {
             line?.discountPercentage ||
             '0',
         );
+
+        let targetGst = line.gstCategoryId;
+        if (lineDto.gstCategoryId !== undefined) {
+          targetGst = lineDto.gstCategoryId;
+        }
+
+        const resolved = await this.resolveGstForLine(
+          line.productId,
+          targetGst,
+        );
+        updateFields.gstCategoryId = resolved.gstCategoryId;
+
         const pricing = computeLinePriceForStorage({
           quantity: qty,
           pricePerUnit: price,
           discountPercentage: disc,
+          taxRate: resolved.rate,
         });
         updateFields.amount = pricing.amount;
+        updateFields.tax = pricing.tax;
         updateFields.totalAmount = pricing.totalAmount;
       }
 
@@ -564,14 +667,14 @@ export class PurchaseOrdersService {
           lineId,
           changes: updateFields,
         },
-        'system',
+        actor,
       );
 
       return this.findOne(orderId, tx);
     });
   }
 
-  async removeLine(orderId: string, lineId: string) {
+  async removeLine(orderId: string, lineId: string, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
       if (existing.stateCode !== 'draft') {
@@ -584,7 +687,7 @@ export class PurchaseOrdersService {
         .delete(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, lineId));
 
-      await this.writeEvent(tx, orderId, 'line_removed', { lineId }, 'system');
+      await this.writeEvent(tx, orderId, 'line_removed', { lineId }, actor);
 
       return this.findOne(orderId, tx);
     });
@@ -605,6 +708,7 @@ export class PurchaseOrdersService {
           currencyCode: updateDto.currencyCode,
           notes: updateDto.notes,
           stateCode: updateDto.stateCode, // allow transition to 'ordered'
+          deliveryLocationId: updateDto.deliveryLocationId,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseOrders.purchaseOrderId, id))
@@ -619,8 +723,23 @@ export class PurchaseOrdersService {
           .where(eq(purchaseOrderLineItems.purchaseOrderId, id));
 
         if (updateDto.lines.length > 0) {
-          const lineValues = updateDto.lines.map(
-            (line: any, index: number) => ({
+          const lineValues: any[] = [];
+          let index = 0;
+          for (const line of updateDto.lines) {
+            const qty = parseFloat(line.quantity || '0');
+            const price = parseFloat(line.pricePerUnit || '0');
+            const disc = parseFloat(line.discountPercentage || '0');
+            const { gstCategoryId, rate } = await this.resolveGstForLine(
+              line.productId,
+              line.gstCategoryId,
+            );
+            const pricing = computeLinePriceForStorage({
+              quantity: qty,
+              pricePerUnit: price,
+              discountPercentage: disc,
+              taxRate: rate,
+            });
+            lineValues.push({
               purchaseOrderId: id,
               lineNumber: index + 1,
               productId: line.productId,
@@ -628,10 +747,13 @@ export class PurchaseOrdersService {
               quantity: line.quantity.toString(),
               pricePerUnit: line.pricePerUnit.toString(),
               unitOfMeasure: line.unitOfMeasure || 'EA',
-              amount: (line.quantity * line.pricePerUnit).toString(),
-              totalAmount: (line.quantity * line.pricePerUnit).toString(),
-            }),
-          );
+              amount: pricing.amount,
+              tax: pricing.tax,
+              totalAmount: pricing.totalAmount,
+              gstCategoryId,
+            });
+            index++;
+          }
           await tx.insert(purchaseOrderLineItems).values(lineValues);
         }
 

@@ -11,6 +11,7 @@ export type ValidState =
   | 'draft'
   | 'quoted'
   | 'ordered'
+  | 'partially_received'
   | 'received'
   | 'dispatched'
   | 'processed'

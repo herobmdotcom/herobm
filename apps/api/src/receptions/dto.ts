@@ -15,12 +15,20 @@ export class CreateReceptionLineDto {
 
   @IsNumberString()
   quantityReceived!: string;
+
+  @IsOptional()
+  @IsNumberString()
+  invoicePricePerUnit?: string;
 }
 
 export class CreateReceptionDto {
   @IsString()
   @IsNotEmpty()
   purchaseOrderId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  locationId!: string;
 
   @IsOptional()
   @IsString()

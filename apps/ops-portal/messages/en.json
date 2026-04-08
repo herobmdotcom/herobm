@@ -87,6 +87,32 @@
         "contractual_breach": "Contractual Breach",
         "other": "Other"
       }
+    },
+    "expiries": {
+      "title": "Expiries",
+      "addExpiry": "+ Add Expiry",
+      "columns": {
+        "type": "Type",
+        "expiryDate": "Expiry Date",
+        "notes": "Notes",
+        "actions": "Actions"
+      },
+      "types": {
+        "select": "-- Select Type --",
+        "insurance": "Insurance",
+        "tax_certificate": "Tax Certificate",
+        "trial_period": "Trial Period",
+        "other": "Other"
+      },
+      "empty": "No expiries defined for this supplier.",
+      "expired": "Expired",
+      "noNotes": "No notes"
+    },
+    "statusBadges": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "paymentBlocked": "Payment Blocked",
+      "purchaseBlocked": "Purchase Blocked"
     }
   },
   "purchaseOrders": {
@@ -94,9 +120,10 @@
     "subtitle": "Manage purchase orders",
     "buttons": {
       "createPO": "+ Create PO",
-      "copyOrder": "📋 Copy Order",
-      "createReturn": "↩ Create Return",
-      "enterSupplierBill": "Enter Supplier Bill",
+      "copyOrder": "Copy Order",
+      "createReturn": "Create Return",
+      "enterSupplierBill": "Enter Invoice",
+      "submitBill": "Submit Invoice",
       "save": "💾 Save",
       "customLine": "Custom Line"
     },
@@ -130,11 +157,18 @@
       "committed": "Committed",
       "reserved": "Reserved",
       "available": "Available",
+      "qtyReceived": "Received",
       "status": "Status",
       "qtyReturned": "Qty Returned",
       "reason": "Reason",
       "fee": "Fee",
-      "tax": "Tax"
+      "tax": "Tax",
+      "discountPct": "Disc %",
+      "gst": "GST",
+      "received": "Received",
+      "billed": "Billed",
+      "qtyToBill": "Qty to Bill",
+      "remaining": "Remaining"
     },
     "orderNotFound": "Order not found",
     "backToOrders": "← Back to Orders",
@@ -148,6 +182,8 @@
     "noInventoryData": "No inventory data",
     "newReturn": "New Return",
     "availability": "Availability",
+    "receptions": "Receptions",
+    "packingSlip": "Packing Slip",
     "returnsHeading": "Returns",
     "noReturns": "No returns",
     "noReturnLines": "No return lines",
@@ -156,7 +192,49 @@
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees",
       "netCredit": "Net Credit"
-    }
+    },
+    "receiving": {
+      "title": "Receive Goods",
+      "subtitle": "Scan products to receive against Purchase Orders",
+      "scanProduct": "Scan Product",
+      "placeholder": "Search or scan part number...",
+      "loadingLines": "Loading pending lines...",
+      "noActivePOs": "No active Purchase Orders were found containing this product.",
+      "unknownProduct": "Unknown Product",
+      "noPartNumber": "No part number",
+      "clear": "Clear",
+      "markQuarantine": "Mark for Quarantine",
+      "selectPOLine": "Select Purchase Order Line:",
+      "remaining": "{rem} remaining",
+      "quarantineBtnTitle": "Quarantine Exception",
+      "quarantineBtnSub": "Log physically but do not receive in system",
+      "ordered": "Ordered:",
+      "received": "Received:",
+      "poPrice": "PO Price:",
+      "qtyReceived": "Quantity Received",
+      "qtyToQuarantine": "Qty to Quarantine",
+      "invoicePrice": "Invoice Price",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "exceptionQuarantine": "Exception: Quarantine",
+      "receptionSummary": "Reception Summary",
+      "noItemsScanned": "No items scanned yet.",
+      "exceptionQuarantineTag": "EXCEPTION: QUARANTINE",
+      "qtyReceivedSummary": "Qty Received",
+      "priceDiscrepancy": "⚠️ Price discrepancy: Invoiced {invoiced}, PO {expected}",
+      "overReceiving": "⚠️ Over-receiving: Expected {expected} remaining, Receiving {receiving}",
+      "moveToQuarantine": "Move to Quarantine Bin. Requires Purchasing review.",
+      "remove": "Remove",
+      "confirmReceptions": "Confirm Receptions"
+    },
+    "noProductsReceivedYet": "No products have been received yet.",
+    "noBillsGeneratedYet": "No invoices entered yet.",
+    "locationWarning": "Delivery was received at a different location than specified on the Purchase Order.",
+    "receptionSummary": "Reception Summary",
+    "locationWarningPrefix": "Location Warning:",
+    "location": "Location",
+    "ref": "Ref:",
+    "file": "File:"
   },
   "setup": {
     "gate": {
@@ -475,7 +553,8 @@
       "orderName": "Order Name",
       "customerPO": "Customer PO #",
       "created": "Created",
-      "notes": "Notes"
+      "notes": "Notes",
+      "fulfillmentLocation": "Fulfillment Location"
     },
     "columns": {
       "lineNumber": "#",
@@ -504,7 +583,18 @@
       "customer": "Customer",
       "date": "Date",
       "state": "State",
-      "postConfirmation": "Post-Confirmation"
+      "postConfirmation": "Post-Confirmation",
+      "picked": "Picked",
+      "shipped": "Shipped",
+      "invoiced": "Invoiced",
+      "qtyToInvoice": "Qty to Invoice",
+      "fulfillment": "Fulfillment",
+      "incoming": "Incoming",
+      "type": "Type",
+      "orderHash": "Order #",
+      "name": "Name",
+      "required": "Required",
+      "gap": "Gap"
     },
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -543,7 +633,29 @@
       "local": "In Stock (Local)",
       "others": "In Stock (Other)",
       "shortage": "Stock Shortage"
-    }
+    },
+    "noProductsShippedYet": "No products have shipped yet.",
+    "noInvoicesGeneratedYet": "No invoices generated yet.",
+    "backordersTab": "Backorders",
+    "associatedBackorders": "Associated Orders (Backorders)",
+    "shortages": {
+      "title": "Stock Shortage Detected",
+      "description": "The following items have insufficient stock at ",
+      "option1Title": "Option 1: Backorder",
+      "option1Desc": " - Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.",
+      "option2Title": "Option 2: Manual",
+      "option2Desc": " - Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.",
+      "confirmAnyway": "Confirm Anyway (No Backorder)",
+      "splitAndCreate": "Split & Create Backorder"
+    },
+    "totals": {
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "total": "Total"
+    },
+    "parent": "Parent",
+    "child": "Child",
+    "noBackordersFound": "No associated parent or child backorders found."
   },
   "common": {
     "save": "Save",
@@ -627,6 +739,7 @@
       "invoiced": "Invoiced",
       "cancelled": "Cancelled",
       "ordered": "Ordered",
+      "partially_received": "Part Recd",
       "received": "Received",
       "dispatched": "Dispatched",
       "processed": "Processed",
@@ -762,7 +875,14 @@
       "return_processed": "Return Processed",
       "return_line_added": "Return Line Added",
       "return_line_updated": "Return Line Updated",
-      "return_line_removed": "Return Line Removed"
+      "return_line_removed": "Return Line Removed",
+      "goods_received": "Goods Received",
+      "price_discrepancy_warning": "Price Discrepancy",
+      "over_received_warning": "Over-received Warning",
+      "location_discrepancy_warning": "Location Discrepancy"
+    },
+    "reception": {
+      "inventoryMovedTo": "Inventory moved to: {locationName} {zoneName} {binName}"
     },
     "productSearch": {
       "placeholder": "Search product…",
@@ -770,7 +890,8 @@
       "noMatchingProducts": "No matching products",
       "onHandShort": "OH",
       "availableShort": "Avail"
-    }
+    },
+    "defaultOption": "(Default)"
   },
   "toast": {
     "orderStateUpdated": "Order State Updated",
@@ -786,7 +907,8 @@
     "productCreated": "Product created successfully",
     "productUpdated": "Product updated successfully",
     "invoiceGenerated": "Invoice generated successfully!",
-    "supplierBillEntered": "Supplier bill generated successfully!"
+    "supplierBillEntered": "Supplier bill generated successfully!",
+    "supplierBillGenerated": "Supplier bill generated successfully!"
   },
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
@@ -795,7 +917,8 @@
     "removeShipmentLine": "Remove this shipment line?",
     "removeReturnLineItem": "Remove this return line item?",
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
-    "enterSupplierBill": "Enter supplier bill? This will publish AP ledger entries to ERPNext."
+    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
+    "generateSupplierBill": "Generate supplier bill for selected quantities? This will publish AP ledger entries."
   },
   "picking": {
     "title": "Picking",
@@ -817,6 +940,8 @@
       "picked": "Picked",
       "shipped": "Shipped",
       "remaining": "Remaining",
+      "location": "Location",
+      "onHand": "On Hand",
       "action": "Action",
       "qtyToShip": "Qty to Ship",
       "notes": "Notes",
@@ -1109,23 +1234,23 @@
         "credit": "Credit",
         "partyType": "Party Type",
         "party": "Party"
-        },
-        "partyTypes": {
+      },
+      "partyTypes": {
         "none": "None",
         "customer": "Customer",
         "supplier": "Supplier"
-        },
-        "newManualEntry": "New Manual Journal Entry",
-        "totals": "Totals",
-        "addLine": "Add Line",
-        "postEntry": "Post Journal Entry",
-        "unbalancedWarning": "Entry is unbalanced by {amount}",
-        "placeholders": {
-          "memo": "Reason for journal entry...",
-          "lineMemo": "Line description",
-          "selectAccount": "Select Account...",
-          "selectParty": "Select Party..."
-        }
+      },
+      "newManualEntry": "New Manual Journal Entry",
+      "totals": "Totals",
+      "addLine": "Add Line",
+      "postEntry": "Post Journal Entry",
+      "unbalancedWarning": "Entry is unbalanced by {amount}",
+      "placeholders": {
+        "memo": "Reason for journal entry...",
+        "lineMemo": "Line description",
+        "selectAccount": "Select Account...",
+        "selectParty": "Select Party..."
       }
     }
+  }
 }

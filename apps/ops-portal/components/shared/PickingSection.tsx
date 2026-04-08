@@ -158,15 +158,9 @@ export default function PickingSection({
       {/* ------------------------------------------------------------------ */}
       <div className="card !border-none">
         <div className="flex items-center justify-between mb-2">
-          <h3
-            className="text-sm font-semibold flex items-center gap-2"
-            style={{
-              color: 'var(--text-muted)', textTransform: 'uppercase',
-              letterSpacing: '0.05em', margin: 0
-            }}
-          >
+          <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--accent)' }}>fact_check</span>
+            <span className="material-symbols-outlined">fact_check</span>
             {tPicking('title')}
           </h3>
 

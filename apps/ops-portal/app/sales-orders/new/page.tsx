@@ -94,7 +94,7 @@ export default function NewOrderPage() {
   const [customerId, setCustomerId] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerDiscount, setCustomerDiscount] = useState('0');
-  const [currencyCode, setCurrencyCode] = useState(HOME_CURRENCY.code);
+  const [currencyCode, setCurrencyCode] = useState('');
   const [customerGstPosition, setCustomerGstPosition] = useState<string | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [name, setName] = useState('');
@@ -166,7 +166,7 @@ export default function NewOrderPage() {
     setShowCustomerDropdown(false);
     const disc = a.customerDiscount ?? '0';
     setCustomerDiscount(disc);
-    const resolvedCurrency = a.currencyCode || HOME_CURRENCY.code;
+    const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
     setCustomerGstPosition(a.gstPosition);
 
@@ -245,6 +245,10 @@ export default function NewOrderPage() {
   const handleSubmit = async () => {
     if (!customerId) {
       setError(tSales('common.errors.pleaseSelectCustomer'));
+      return;
+    }
+    if (!currencyCode) {
+      setError('The selected customer does not have a currency configured.');
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
@@ -472,6 +476,7 @@ export default function NewOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 Fulfillment Location *
               </label>
               <select
@@ -679,7 +684,7 @@ export default function NewOrderPage() {
                       className="btn btn-danger btn-sm"
                       onClick={() => removeLine(idx)}
                     >
-                      ✕
+                      <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                     </button>
                   </td>
                 </tr>

@@ -82,6 +82,7 @@ const PO_LINE_A = {
   productId: 'prod-001',
   productDescription: 'Raw Material A',
   quantity: '20',
+  quantityReceived: '20',
   pricePerUnit: '15.00',
   tax: '10',
   amount: '300.00',
@@ -94,6 +95,7 @@ const PO_LINE_B = {
   productId: 'prod-002',
   productDescription: 'Raw Material B',
   quantity: '5',
+  quantityReceived: '5',
   pricePerUnit: '200.00',
   tax: '0',
   amount: '1000.00',
@@ -213,8 +215,9 @@ describe('PurchaseInvoiceService', () => {
       mockSelectChain({
         1: [RECEIVED_PO],
         2: [SUPPLIER],
-        3: [PO_LINE_A],
+        3: [{ line: PO_LINE_A, productExpenseAccountId: null }],
         4: [], // generateBillNumber
+        5: [], // prior invoices
       });
 
       const txInsertQb = createMockQueryBuilder([MOCK_BILL]);
@@ -241,10 +244,34 @@ describe('PurchaseInvoiceService', () => {
         1: [RECEIVED_PO],
         2: [SUPPLIER],
         3: [], // empty lines
+        4: [],
+        5: [],
       });
       await expect(service.createBill('po-001', {}, 'admin')).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('should reject invoicing more than received quantity', async () => {
+      mockSelectChain({
+        1: [RECEIVED_PO],
+        2: [SUPPLIER],
+        3: [{ line: PO_LINE_A, productExpenseAccountId: null }],
+        4: [],
+        5: [{ purchaseOrderLineId: 'poline-001', quantityInvoiced: '15' }], // 15 invoiced so far, 5 left.
+      });
+
+      await expect(
+        service.createBill(
+          'po-001',
+          {
+            lines: [
+              { purchaseOrderLineId: 'poline-001', quantityToInvoice: 8 },
+            ],
+          },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -282,7 +309,8 @@ describe('PurchaseInvoiceService', () => {
         2: [SUPPLIER], // Supplier (no accounts)
         3: [{ line: PO_LINE_A, productExpenseAccountId: null }], // Hydrated line
         4: [], // bill number
-        5: GL_ACCTS, // GL lookup
+        5: [],
+        6: GL_ACCTS, // GL lookup
       });
 
       await service.createBill('po-001', {}, 'admin');
@@ -310,7 +338,8 @@ describe('PurchaseInvoiceService', () => {
           },
         ],
         4: [],
-        5: GL_ACCTS,
+        5: [],
+        6: GL_ACCTS,
       });
 
       await service.createBill('po-001', {}, 'admin');
@@ -334,7 +363,8 @@ describe('PurchaseInvoiceService', () => {
         2: [{ ...SUPPLIER, defaultExpenseAccountId: 'gl-exp-supp' }],
         3: [{ line: PO_LINE_A, productExpenseAccountId: 'gl-exp-prod-a' }],
         4: [],
-        5: GL_ACCTS,
+        5: [],
+        6: GL_ACCTS,
       });
 
       await service.createBill('po-001', {}, 'admin');
@@ -361,7 +391,8 @@ describe('PurchaseInvoiceService', () => {
           { line: PO_LINE_B, productExpenseAccountId: 'gl-exp-prod-b' }, // $1000
         ],
         4: [],
-        5: GL_ACCTS,
+        5: [],
+        6: GL_ACCTS,
       });
 
       await service.createBill('po-001', {}, 'admin');

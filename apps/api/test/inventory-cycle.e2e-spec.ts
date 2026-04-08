@@ -90,6 +90,7 @@ describe('Inventory Cycle (e2e)', () => {
       .send({
         orderNumber: `PO-CYC-${Date.now()}`,
         vendorId,
+        deliveryLocationId: locationId,
         currencyCode: 'EUR',
         lines: [
           {
@@ -113,6 +114,7 @@ describe('Inventory Cycle (e2e)', () => {
       .get(`/api/purchase-orders/${poId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
+    console.log('DEBUG PO DETAIL:', JSON.stringify(poDetail.body, null, 2));
     const poLineId = poDetail.body.lines[0].purchaseOrderLineId;
 
     await request(app.getHttpServer())
@@ -120,6 +122,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         purchaseOrderId: poId,
+        locationId: locationId,
         packingSlipNumber: 'E2E-123',
         lines: [{ purchaseOrderLineId: poLineId, quantityReceived: '10' }],
       })
@@ -140,6 +143,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         customerId: accountId,
+        fulfillmentLocationId: locationId,
         name: 'SO Cycle Test',
         lines: [{ productId, quantity: '4', pricePerUnit: '50.00' }],
       });

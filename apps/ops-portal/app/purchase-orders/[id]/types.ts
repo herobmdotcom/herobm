@@ -1,0 +1,101 @@
+import type { ProductUom } from '@modbm/shared';
+
+export interface OrderLine {
+  purchaseOrderLineId: string;
+  lineNumber: number;
+  productId: string;
+  productNumber?: string;
+  productDescription: string;
+  quantity: string;
+  quantityReceived?: string;
+  pricePerUnit: string;
+  discountPercentage: string;
+  amount: string;
+  gstCategoryId: string | null;
+  tax: string;
+  totalAmount: string;
+  unitOfMeasure: string;
+  baseUom?: string;
+  productUoms?: ProductUom[];
+}
+
+export interface GstCategory {
+  gstCategoryId: string;
+  code: string;
+  title: string;
+  type: string;
+  rate: string;
+  isDefault: boolean;
+}
+
+export interface OrderEvent {
+  eventId: string;
+  eventType: string;
+  payload: Record<string, unknown>;
+  actor: string;
+  createdOn: string;
+}
+
+export interface OrderDetail {
+  purchaseOrderId: string;
+  orderNumber: string;
+  name: string | null;
+  vendorId: string | null;
+  vendorName?: string | null;
+  customerOrderNumber: string | null;
+  stateCode: string;
+  currencyCode: string;
+  gstCategoryId: string | null;
+  deliveryLocationId?: string | null;
+  notes: string | null;
+  createdBy: string | null;
+  createdOn: string;
+  modifiedOn: string;
+
+  lines: OrderLine[];
+  events: OrderEvent[];
+}
+
+export interface InventoryLevel {
+  inventoryLevelId: string;
+  productId: string;
+  productNumber: string;
+  productName: string;
+  locationNo: string;
+  locationName: string;
+  quantityOnHand: string;
+  quantityCommitted: string;
+  quantityOnOrder: string;
+  quantityAvailable: string;
+  quantityReserved: string;
+}
+
+export interface ReturnLine {
+  returnLineId: string;
+  purchaseOrderLineId: string;
+  quantityReturned: string;
+  reason: string | null;
+  returnFee: string;
+}
+
+export interface OrderReturn {
+  returnId: string;
+  returnNumber: string;
+  purchaseOrderId: string;
+  stateCode: string;
+  notes: string | null;
+  createdBy: string | null;
+  createdOn: string;
+  modifiedOn: string;
+  lines: ReturnLine[];
+}
+
+
+
+export function getGstLabel(category: GstCategory) {
+  if (category.type === 'exempt') return 'Exempt';
+  if (category.type === 'zero_rated') return 'Zero Rated';
+  const pct = parseFloat(category.rate || '0');
+  const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
+  return `${formattedPct}% GST`;
+}

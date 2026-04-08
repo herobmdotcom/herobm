@@ -14,6 +14,7 @@ describe('API E2E — Purchase Invoices', () => {
   let adminToken: string;
   let validVendorId: string;
   let validProductId: string;
+  let validLocationId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -55,6 +56,13 @@ describe('API E2E — Purchase Invoices', () => {
       })
       .expect(201);
     validProductId = productRes.body.productId;
+
+    // Fetch a base delivery location
+    const locationsRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    validLocationId = locationsRes.body.data[0].locationId;
   }, 30_000);
 
   afterAll(async () => {
@@ -76,6 +84,7 @@ describe('API E2E — Purchase Invoices', () => {
         .send({
           orderNumber: `E2E-INV-PO-${today}-${rand}`,
           vendorId: validVendorId,
+          deliveryLocationId: validLocationId,
           name: 'E2E Invoice Test',
           currencyCode: 'AUD',
           lines: [
@@ -109,6 +118,7 @@ describe('API E2E — Purchase Invoices', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           purchaseOrderId: orderId,
+          locationId: validLocationId,
           packingSlipNumber: `TEST-PS-${rand}`,
           lines: [{ purchaseOrderLineId: lineId, quantityReceived: '5' }],
         })

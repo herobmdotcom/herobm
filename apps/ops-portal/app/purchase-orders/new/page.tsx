@@ -2,16 +2,26 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
+import { getGstLabel } from '../[id]/types';
+
+interface GstCategory {
+  gstCategoryId: string;
+  code: string;
+  title: string;
+  type: string;
+  rate: string;
+  isDefault: boolean;
+}
 
 interface Supplier {
   vendorId: string;
@@ -27,6 +37,8 @@ interface LineItem {
   quantity: string;
   pricePerUnit: string;
   unitOfMeasure: string;
+  discountPercentage: string;
+  gstCategoryId: string | null;
 }
 
 let lineKey = 0;
@@ -40,6 +52,8 @@ function emptyLine(): LineItem {
     quantity: '1',
     pricePerUnit: '0',
     unitOfMeasure: 'EA',
+    discountPercentage: '0',
+    gstCategoryId: null,
   };
 }
 
@@ -62,6 +76,13 @@ export default function NewPurchaseOrderPage() {
   const t = useTranslations();
   const router = useRouter();
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
+  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+
+  useEffect(() => {
+    apiFetch<GstCategory[]>('/api/gst-categories')
+      .then(setGstCategories)
+      .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
+  }, []);
 
   const [vendorId, setVendorId] = useState('');
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -109,6 +130,8 @@ export default function NewPurchaseOrderPage() {
         quantity: '1',
         pricePerUnit: '0.00',
         unitOfMeasure: 'EA',
+        discountPercentage: '0',
+        gstCategoryId: null,
       },
     ]);
   };
@@ -124,6 +147,8 @@ export default function NewPurchaseOrderPage() {
         quantity: '1',
         pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         unitOfMeasure: 'EA',
+        discountPercentage: '0',
+        gstCategoryId: null,
       },
     ]);
   };
@@ -142,10 +167,31 @@ export default function NewPurchaseOrderPage() {
     setLines((prev) => [...prev, emptyLine()]);
   };
 
+  const computeTax = (line: LineItem) => {
+    const cat = gstCategories.find(c => c.gstCategoryId === line.gstCategoryId);
+    if (!cat) {
+      const defaultCat = gstCategories.find(c => c.isDefault);
+      if (!defaultCat) return 0;
+      return computeLinePrice({
+        quantity: parseFloat(line.quantity) || 0,
+        pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+        discountPercentage: parseFloat(line.discountPercentage) || 0,
+        taxRate: parseFloat(defaultCat.rate) || 0,
+      }).tax;
+    }
+    return computeLinePrice({
+      quantity: parseFloat(line.quantity) || 0,
+      pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+      discountPercentage: parseFloat(line.discountPercentage) || 0,
+      taxRate: parseFloat(cat.rate) || 0,
+    }).tax;
+  };
+
   const computeAmount = (line: LineItem) => {
     return computeLinePrice({
       quantity: parseFloat(line.quantity) || 0,
       pricePerUnit: parseFloat(line.pricePerUnit) || 0,
+      discountPercentage: parseFloat(line.discountPercentage) || 0,
     }).amount;
   };
 
@@ -178,6 +224,8 @@ export default function NewPurchaseOrderPage() {
             quantity: l.quantity,
             pricePerUnit: l.pricePerUnit,
             unitOfMeasure: l.unitOfMeasure,
+            discountPercentage: l.discountPercentage,
+            gstCategoryId: l.gstCategoryId,
           })),
       });
       router.push(`/purchase-orders/${order.purchaseOrderId}`);
@@ -190,7 +238,7 @@ export default function NewPurchaseOrderPage() {
 
   const mappedLines = lines.map(l => ({
     amount: computeAmount(l),
-    tax: 0
+    tax: computeTax(l)
   }));
   const totals = computeOrderTotals(mappedLines);
   const subtotal = totals.subtotal;
@@ -400,7 +448,10 @@ export default function NewPurchaseOrderPage() {
                 <th>{t('purchaseOrders.columns.product')}</th>
                 <th>{t('purchaseOrders.columns.description')}</th>
                 <th style={{ width: 90, textAlign: 'right' }}>{t('purchaseOrders.columns.qty')}</th>
+                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.uom')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.unitPrice')}</th>
+                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.discountPct' as any)}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.gst' as any)}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
@@ -422,7 +473,7 @@ export default function NewPurchaseOrderPage() {
                             updateLine(idx, 'productDescription', '');
                           }}
                         >
-                          ✕
+                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                         </button>
                       </div>
                     ) : (
@@ -456,6 +507,14 @@ export default function NewPurchaseOrderPage() {
                   <td style={{ textAlign: 'right' }}>
                     <input
                       className="input"
+                      style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                      value={line.unitOfMeasure}
+                      onChange={(e) => updateLine(idx, 'unitOfMeasure', e.target.value)}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <input
+                      className="input"
                       type="number"
                       min="0"
                       step="0.01"
@@ -467,6 +526,33 @@ export default function NewPurchaseOrderPage() {
                         if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
                       }}
                     />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <input
+                      className="input"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      style={{ width: '100%', textAlign: 'right' }}
+                      value={line.discountPercentage}
+                      onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <select
+                      className="input"
+                      style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                      value={line.gstCategoryId || ''}
+                      onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
+                    >
+                      <option value="">(Default)</option>
+                      {gstCategories.map((c) => (
+                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
+                          {getGstLabel(c)}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td
                     style={{
@@ -483,7 +569,7 @@ export default function NewPurchaseOrderPage() {
                         className="btn btn-danger btn-sm"
                         onClick={() => removeLine(idx)}
                       >
-                        ✕
+                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                       </button>
                     )}
                   </td>
@@ -500,10 +586,11 @@ export default function NewPurchaseOrderPage() {
                 </tr>
               )}
               {lines.length > 0 && (() => {
+                const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                 return (
                   <>
                     <tr style={{ borderTop: '2px solid var(--border)' }}>
-                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                         {t('common.subtotal')}
                       </td>
                       <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -511,12 +598,21 @@ export default function NewPurchaseOrderPage() {
                       </td>
                       <td></td>
                     </tr>
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        {t('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                        {formatAmount(totalTax, currencyCode)}
+                      </td>
+                      <td></td>
+                    </tr>
                     <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                      <td colSpan={5} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                      <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                         {t('common.total')}
                       </td>
                       <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
-                        {formatAmount(subtotal, currencyCode)}
+                        {formatAmount(subtotal + totalTax, currencyCode)}
                       </td>
                       <td></td>
                     </tr>

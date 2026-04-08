@@ -263,6 +263,9 @@ export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
   pricePerUnit: numeric('price_per_unit').notNull(),
   discountPercentage: numeric('discount_percentage').default('0'),
   amount: numeric('amount'),
+  gstCategoryId: uuid('gst_category_id').references(
+    () => gstCategories.gstCategoryId,
+  ),
   tax: numeric('tax').default('0'),
   totalAmount: numeric('total_amount'),
   unitOfMeasure: text('unit_of_measure'),
@@ -960,6 +963,7 @@ export const purchaseInvoices = modbmCore.table(
       .notNull()
       .references(() => purchaseOrders.purchaseOrderId),
     supplierInvoiceNumber: text('supplier_invoice_number'),
+    receiptFilename: text('receipt_filename'),
     totalAmount: numeric('total_amount').notNull(),
     taxAmount: numeric('tax_amount').default('0'),
     currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),

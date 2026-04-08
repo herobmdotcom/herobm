@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState, useCallback } from 'react';
+import { use, useEffect, useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
 
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
@@ -234,7 +234,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     }`}
                                                 onClick={() => handleStateClick(state)}
                                             >
-                                                {state === 'cancelled' ? <>✕ <StateName state={state as ValidState} /></> : back ? <>← <StateName state={state as ValidState} /></> : <>→ <StateName state={state as ValidState} /></>}
+                                                {state === 'cancelled' ? <><span dangerouslySetInnerHTML={{ __html: '&#10005;&nbsp;' }} /><StateName state={state as ValidState} /></> : back ? <>← <StateName state={state as ValidState} /></> : <>→ <StateName state={state as ValidState} /></>}
                                             </button>
                                         );
                                     })}
@@ -264,9 +264,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             <div className="flex flex-col gap-3">
                     {/* Order info card */}
-                    <div id="details-section" className="card col-span-2">
+                    <div id="details-section" className="card">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="section-heading !mb-0">
+                            <h3 className="section-heading">
                                 {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined">receipt_long</span>
                                 {tSales('orderDetails')}
@@ -351,7 +351,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     {tSales('labels.created')}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                                    {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
+                                    {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy || '—'}
                                 </p>
                             </div>
                             <div>
@@ -382,7 +382,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                             </div>
                             <div>
                                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                                    Fulfillment Location
+                                    {tSales('labels.fulfillmentLocation')}
                                 </label>
                                 <select
                                     className="input"
@@ -457,7 +457,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 }}
                                 onClick={() => setActiveTab('backorders')}
                             >
-                                Backorders
+                                {tSales('backordersTab')}
                             </button>
                         </div>
                         {(isOrderLinesEditable || (isOrderDetailsEditable && activeTab === 'lines' && isPostConfirmationAddingEnabled)) && (
@@ -510,10 +510,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 </tr>
                             </thead>
                             <tbody>
-                                {order.lines.map((line) => {
+                                {order.lines.map((line: any, idx: number) => {
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     return (
-                                    <tr key={line.salesOrderLineId}>
+                                    <tr key={line.salesOrderLineId || idx}>
                                         <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
                                             {line.productNumber || line.productId?.substring(0, 8) || '—'}
@@ -699,7 +699,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         onClick={() => removeLine(line.salesOrderLineId)}
                                                         title={tSales('buttons.removeLine')}
                                                     >
-                                                        ✕
+                                                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                                                     </button>
                                                 )}
                                             </td>
@@ -722,7 +722,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     return (
                                         <>
                                             <tr style={{ borderTop: '2px solid var(--border)' }}>
-                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                                                     {tCommon('subtotal')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -731,7 +731,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {isOrderLinesEditable && <td></td>}
                                             </tr>
                                             <tr>
-                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                                                     {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -740,7 +740,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {isOrderLinesEditable && <td></td>}
                                             </tr>
                                             <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                                                <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                                                <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                                                     {tCommon('total')}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
@@ -765,17 +765,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         <th>{tSales('columns.product')}</th>
                                         <th>{tSales('columns.description')}</th>
                                         <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.ordered')}</th>
-                                        <th style={{ width: 140, textAlign: 'left' }}>Fulfillment</th>
+                                        <th style={{ width: 140, textAlign: 'left' }}>{tSales('columns.fulfillment')}</th>
                                         <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.location')}</th>
                                         <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.onHand')}</th>
                                         <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.committed')}</th>
-                                        <th style={{ width: 90, textAlign: 'right' }}>Incoming</th>
+                                        <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.incoming')}</th>
                                         <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.available')}</th>
                                         <th style={{ width: 70, textAlign: 'center' }}>{tSales('columns.status')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {order.lines.map((line: any) => {
+                                    {order.lines.map((line: any, idx: number) => {
                                         const lineInventory = inventoryData.filter(
                                             (inv: any) => inv.productId === line.productId && line.productId !== '00000000-0000-0000-0000-000000000000',
                                         );
@@ -809,7 +809,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         }
 
                                         return (
-                                            <>
+                                            <Fragment key={line.salesOrderLineId || idx}>
                                                 {lineInventory.length === 0 ? (
                                                     <tr key={line.salesOrderLineId}>
                                                         <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
@@ -860,7 +860,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         </td>
                                                     </tr>
                                                 ))}
-                                            </>
+                                            </Fragment>
                                         );
                                     })}
                                 </tbody>
@@ -869,22 +869,22 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     ) : (
                         /* Backorders tab */
                         <div className="card">
-                            <h3 className="section-heading">Associated Orders (Backorders)</h3>
+                            <h3 className="section-heading">{tSales('associatedBackorders')}</h3>
                             {order.backorders && order.backorders.length > 0 ? (
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th>Type</th>
-                                            <th>Order #</th>
-                                            <th>Name</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
+                                            <th>{tSales('columns.type')}</th>
+                                            <th>{tSales('columns.orderHash')}</th>
+                                            <th>{tSales('columns.name')}</th>
+                                            <th>{tSales('columns.status')}</th>
+                                            <th>{tSales('columns.date')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {order.backorders.map((bo) => (
-                                            <tr key={bo.salesOrderId || bo.productNumber} className="cursor-pointer hover:bg-gray-50" onClick={() => bo.salesOrderId && router.push(`/sales-orders/${bo.salesOrderId}`)}>
-                                                <td>{bo.salesOrderId === order.parentId ? <span className="badge badge-confirm">Parent</span> : <span className="badge badge-quoted">Child</span>}</td>
+                                        {order.backorders.map((bo: any, bo_idx: number) => (
+                                            <tr key={bo.salesOrderId || bo.productNumber || bo_idx} className="cursor-pointer hover:bg-gray-50" onClick={() => bo.salesOrderId && router.push(`/sales-orders/${bo.salesOrderId}`)}>
+                                                <td>{bo.salesOrderId === order.parentId ? <span className="badge badge-confirm">{tSales('parent')}</span> : <span className="badge badge-quoted">{tSales('child')}</span>}</td>
                                                 <td className="font-bold">{bo.orderNumber || '—'}</td>
                                                 <td>{bo.productNumber || bo.purchaseOrderNumber || '—'}</td>
                                                 <td><StateBadge state={bo.stateCode as ValidState} /></td>
@@ -894,7 +894,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     </tbody>
                                 </table>
                             ) : (
-                                <p className="text-center py-8 text-muted">No associated parent or child backorders found.</p>
+                                <p className="text-center py-8 text-muted">{tSales('noBackordersFound')}</p>
                             )}
                         </div>
                     )}
@@ -905,7 +905,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     orderId={id}
                     orderState={order.stateCode}
                     orderLines={order.lines}
-                    onOrderUpdated={(auto) => loadOrder(auto as any[])}
+                    onOrderUpdated={(auto) => loadOrder(auto as any[], false)}
                     onVisibilityChange={onPickingVisibilityChange} 
                 />
 
@@ -946,17 +946,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
             {gapModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content max-w-2xl">
-                        <h2 className="text-xl font-bold mb-4">Stock Shortage Detected</h2>
-                        <p className="mb-4">The following items have insufficient stock at <strong>{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:</p>
+                        <h2 className="text-xl font-bold mb-4">{tSales('shortages.title')}</h2>
+                        <p className="mb-4">{tSales('shortages.description')} <strong>{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:</p>
                         
                         <div className="overflow-auto max-h-60 mb-6 border rounded">
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-50 sticky top-0">
                                     <tr>
-                                        <th className="p-2 text-left">Product</th>
-                                        <th className="p-2 text-right">Required</th>
-                                        <th className="p-2 text-right">Available</th>
-                                        <th className="p-2 text-right">Gap</th>
+                                        <th className="p-2 text-left">{tSales('columns.product')}</th>
+                                        <th className="p-2 text-right">{tSales('columns.required')}</th>
+                                        <th className="p-2 text-right">{tSales('columns.available')}</th>
+                                        <th className="p-2 text-right">{tSales('columns.gap')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -974,22 +974,22 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
                         <div className="flex flex-col gap-3">
                             <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 italic text-sm text-blue-800">
-                                <p><strong>Option 1: Backorder</strong> - Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.</p>
+                                <p><strong>{tSales('shortages.option1Title')}</strong>{tSales('shortages.option1Desc')}</p>
                             </div>
                             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 italic text-sm text-gray-700">
-                                <p><strong>Option 2: Manual</strong> - Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.</p>
+                                <p><strong>{tSales('shortages.option2Title')}</strong>{tSales('shortages.option2Desc')}</p>
                             </div>
                         </div>
 
                         <div className="flex justify-end gap-3 mt-8">
                             <button className="btn btn-secondary" onClick={() => setGapModalOpen(false)}>
-                                Cancel
+                                {tCommon('cancel')}
                             </button>
                             <button className="btn btn-secondary" onClick={confirmWithoutBackorders}>
-                                Confirm Anyway (No Backorder)
+                                {tSales('shortages.confirmAnyway')}
                             </button>
                             <button className="btn btn-primary" onClick={confirmWithBackorders}>
-                                Split & Create Backorder
+                                {tSales('shortages.splitAndCreate')}
                             </button>
                         </div>
                     </div>
@@ -1038,16 +1038,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     border-bottom: 1px solid var(--border);
                     vertical-align: middle;
                 }
-                .section-heading {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                    font-size: 1rem;
-                    font-weight: 700;
-                    color: var(--text-primary);
-                    margin-bottom: 1.5rem;
-                    letter-spacing: -0.01em;
-                }
+
                 .badge-draft { background: #f3f4f6; color: #374151; }
                 .badge-quoted { background: #e0f2fe; color: #0369a1; }
                 .badge-confirm { background: #ecfdf5; color: #047857; }

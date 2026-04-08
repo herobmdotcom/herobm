@@ -81,9 +81,9 @@ export class PurchaseInvoiceService {
     }
 
     const order = orderRows[0];
-    if (order.stateCode !== 'received') {
+    if (!['received', 'partially_received'].includes(order.stateCode)) {
       throw new BadRequestException(
-        `Order ${order.orderNumber} must be in 'received' state to generate a supplier bill. Currently: '${order.stateCode}'.`,
+        `Order ${order.orderNumber} must be in 'received' or 'partially_received' state to generate a supplier bill. Currently: '${order.stateCode}'.`,
       );
     }
 
@@ -147,6 +147,27 @@ export class PurchaseInvoiceService {
 
     const internalBillNumber = await this.generateBillNumber();
 
+    // Fetch previously invoiced lines for this order natively
+    const priorInvoices = await this.db
+      .select({
+        purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
+        quantityInvoiced: purchaseInvoiceLines.quantityInvoiced,
+      })
+      .from(purchaseInvoiceLines)
+      .innerJoin(
+        purchaseInvoices,
+        eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
+      )
+      .where(eq(purchaseInvoices.purchaseOrderId, purchaseOrderId));
+
+    const invoicedQtyByLine = new Map<string, number>();
+    for (const invLine of priorInvoices) {
+      const current = invoicedQtyByLine.get(invLine.purchaseOrderLineId) || 0;
+      invoicedQtyByLine.set(
+        invLine.purchaseOrderLineId,
+        current + parseFloat(invLine.quantityInvoiced),
+      );
+    }
     // 3. Compute the strictly typed AP payload bounds natively
     let rawTotal = 0;
     let rawTax = 0;
@@ -157,9 +178,42 @@ export class PurchaseInvoiceService {
     const expenseByAccountId = new Map<string, number>();
     let defaultExpense = 0;
 
+    let totalOrderedQty = 0;
+    let totalInvoicedSoFar = 0;
+    let totalInvoicingNow = 0;
+
     for (const line of orderLines) {
-      // ModBM natively bills the expected received quantity (committed lines)
-      const qty = parseFloat(line.quantity);
+      const orderedQty = parseFloat(line.quantity);
+      totalOrderedQty += orderedQty;
+
+      const prevInvoicedQty =
+        invoicedQtyByLine.get(line.purchaseOrderLineId) || 0;
+      totalInvoicedSoFar += prevInvoicedQty;
+
+      const receivedQty = parseFloat((line as any).quantityReceived || '0');
+
+      let qtyToInvoice = 0;
+      if (dto.lines) {
+        const reqLine = dto.lines.find(
+          (l) => l.purchaseOrderLineId === line.purchaseOrderLineId,
+        );
+        qtyToInvoice = reqLine ? reqLine.quantityToInvoice : 0;
+      } else {
+        qtyToInvoice = Math.max(0, receivedQty - prevInvoicedQty);
+      }
+
+      if (qtyToInvoice <= 0) {
+        continue;
+      }
+
+      if (prevInvoicedQty + qtyToInvoice > receivedQty + 0.001) {
+        throw new BadRequestException(
+          `Cannot invoice more than received quantity for line. Requested: ${qtyToInvoice}, Remaining Received: ${Math.max(0, receivedQty - prevInvoicedQty)}`,
+        );
+      }
+
+      totalInvoicingNow += qtyToInvoice;
+
       const price = parseFloat(line.pricePerUnit);
       const disc = parseFloat(line.discountPercentage ?? '0');
 
@@ -177,7 +231,7 @@ export class PurchaseInvoiceService {
       }
 
       const pricing = computeLinePrice({
-        quantity: qty,
+        quantity: qtyToInvoice,
         pricePerUnit: price,
         discountPercentage: disc,
         taxRate: gstRate,
@@ -204,7 +258,7 @@ export class PurchaseInvoiceService {
 
       invoiceLineValues.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
-        quantityInvoiced: String(qty),
+        quantityInvoiced: String(qtyToInvoice),
         pricePerUnit: String(price),
         amount: String(pricing.amount),
       });
@@ -212,15 +266,25 @@ export class PurchaseInvoiceService {
       outboxLineDetails.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
         productId: line.productId,
-        quantity: qty,
+        quantity: qtyToInvoice,
         amount: pricing.amount,
         tax: pricing.tax,
       });
     }
 
+    if (invoiceLineValues.length === 0) {
+      throw new BadRequestException(
+        'No quantities available to invoice, or invalid quantities provided.',
+      );
+    }
+
     const totalAmount = rawTotal;
     const taxAmount = rawTax;
     const combinedTotal = totalAmount + taxAmount;
+
+    // Check strict transition bound tolerance cleanly using floating point fallback mathematically
+    const isFullyInvoiced =
+      totalInvoicedSoFar + totalInvoicingNow >= totalOrderedQty - 0.001;
 
     // 4. Begin transactional generation natively
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -233,6 +297,7 @@ export class PurchaseInvoiceService {
           supplierInvoiceNumber: dto.supplierInvoiceNumber,
           totalAmount: String(combinedTotal), // AP assumes gross load structurally
           taxAmount: String(taxAmount),
+          receiptFilename: dto.receiptFilename,
           currencyCode: order.currencyCode,
           stateCode: 'invoiced',
           notes: dto.notes,
@@ -248,10 +313,12 @@ export class PurchaseInvoiceService {
       await tx.insert(purchaseInvoiceLines).values(preparedLines);
 
       // C. Transition originating Order cleanly natively
-      await tx
-        .update(purchaseOrders)
-        .set({ stateCode: 'invoiced', modifiedOn: new Date() })
-        .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
+      if (isFullyInvoiced && order.stateCode === 'received') {
+        await tx
+          .update(purchaseOrders)
+          .set({ stateCode: 'invoiced', modifiedOn: new Date() })
+          .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
+      }
 
       await tx.insert(purchaseOrderEvents).values({
         purchaseOrderId,
@@ -453,6 +520,41 @@ export class PurchaseInvoiceService {
       .from(purchaseInvoices)
       .where(eq(purchaseInvoices.purchaseOrderId, purchaseOrderId))
       .orderBy(desc(purchaseInvoices.createdOn));
+
+    if (invoices.length === 0) return [];
+
+    const invoiceIds = invoices.map((i) => i.invoiceId);
+    if (invoiceIds.length > 0) {
+      const allLines = await this.db
+        .select({
+          lineId: purchaseInvoiceLines.invoiceLineId,
+          invoiceId: purchaseInvoiceLines.invoiceId,
+          purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
+          quantityInvoiced: purchaseInvoiceLines.quantityInvoiced,
+          pricePerUnit: purchaseInvoiceLines.pricePerUnit,
+          amount: purchaseInvoiceLines.amount,
+        })
+        .from(purchaseInvoiceLines)
+        .where(
+          sql`${purchaseInvoiceLines.invoiceId} IN (${sql.join(
+            invoiceIds.map((id) => sql`${id}`),
+            sql`, `,
+          )})`,
+        );
+
+      const groupedLines = new Map<string, any[]>();
+      for (const line of allLines) {
+        if (!groupedLines.has(line.invoiceId)) {
+          groupedLines.set(line.invoiceId, []);
+        }
+        groupedLines.get(line.invoiceId)!.push(line);
+      }
+
+      return invoices.map((inv) => ({
+        ...inv,
+        lines: groupedLines.get(inv.invoiceId) || [],
+      }));
+    }
 
     return invoices;
   }

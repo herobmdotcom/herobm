@@ -16,112 +16,15 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 
-interface OrderLine {
-  salesOrderLineId: string;
-  lineNumber: number;
-  productId: string;
-  productNumber?: string;
-  productDescription: string;
-  quantity: string;
-  pricePerUnit: string;
-  discountPercentage: string;
-  amount: string;
-  gstCategoryId: string | null;
-  tax: string;
-  totalAmount: string;
-  unitOfMeasure: string;
-  baseUom?: string;
-  productUoms?: ProductUom[];
-}
-
-interface GstCategory {
-  gstCategoryId: string;
-  code: string;
-  title: string;
-  type: string;
-  rate: string;
-  isDefault: boolean;
-}
+import type { GstCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, ReturnLine, OrderEvent } from './types';
+import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
+import { getGstLabel } from './types';
+import InvoicesSection from './InvoicesSection';
+import ReceivingSection from './ReceivingSection';
 
 function GstLabel({ category }: { category: GstCategory }) {
-  const t = useTranslations('common.gst');
-  if (category.type === 'exempt') return t('exempt');
-  if (category.type === 'zero_rated') return t('zeroRated');
-  const pct = parseFloat(category.rate || '0');
-  const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
-  return t('pctGst', { pct: formattedPct });
-}
-
-interface OrderEvent {
-  eventId: string;
-  eventType: string;
-  payload: Record<string, unknown>;
-  actor: string;
-  createdOn: string;
-}
-
-interface OrderDetail {
-  salesOrderId: string | null;
-  orderNumber: string;
-  name: string | null;
-  customerId: string | null;
-  vendorId: string | null;
-  vendorName?: string | null;
-  customerOrderNumber: string | null;
-  stateCode: string;
-  currencyCode: string;
-  customerDiscount: string | null;
-  gstCategoryId: string | null;
-  notes: string | null;
-  createdBy: string | null;
-  createdOn: string;
-  modifiedOn: string;
-
-  lines: OrderLine[];
-  events: OrderEvent[];
-}
-
-interface InventoryLevel {
-  inventoryLevelId: string;
-  productId: string;
-  productNumber: string;
-  productName: string;
-  locationNo: string;
-  locationName: string;
-  quantityOnHand: string;
-  quantityCommitted: string;
-  quantityOnOrder: string;
-  quantityAvailable: string;
-  quantityReserved: string;
-}
-
-interface ReturnLine {
-  returnLineId: string;
-  salesOrderLineId: string;
-  quantityReturned: string;
-  reason: string | null;
-  returnFee: string;
-}
-
-interface OrderReturn {
-  returnId: string;
-  returnNumber: string;
-  salesOrderId: string;
-  stateCode: string;
-  notes: string | null;
-  createdBy: string | null;
-  createdOn: string;
-  modifiedOn: string;
-  lines: ReturnLine[];
-}
-
-interface PurchaseInvoice {
-  invoiceId: string;
-  invoiceNumber: string;
-  totalAmount: string;
-  totalTax: string;
-  createdOn: string;
-  createdBy: string;
+  if (!category) return null;
+  return <>{getGstLabel(category)}</>;
 }
 
 import {
@@ -195,7 +98,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [invoicing, setInvoicing] = useState(false);
   const [newReturnLines, setNewReturnLines] = useState<Array<{
-    salesOrderLineId: string;
+    purchaseOrderLineId: string;
     quantityReturned: string;
     reason: string;
     returnFee: string;
@@ -229,8 +132,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const loadReturns = async () => {
     setReturnsLoading(true);
     try {
-      const data = await apiFetch<OrderReturn[]>(`/api/purchase-orders/${encodeURIComponent(id)}/returns`);
-      setReturns(data);
+      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/returns`);
+      setReturns(data?.data || data || []);
     } catch (err) {
       // Returns might not exist yet, that's fine
       setReturns([]);
@@ -241,8 +144,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const loadInvoices = async () => {
     try {
-      const data = await apiFetch<PurchaseInvoice[]>(`/api/purchase-orders/${encodeURIComponent(id)}/invoices`);
-      setInvoices(data);
+      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/invoices`);
+      setInvoices(data?.data || data || []);
     } catch (err) {
       setInvoices([]);
     }
@@ -254,11 +157,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
-  // Load returns and invoices when order is received
+  // Load returns and invoices when order is received, partially_received, billed or invoiced
   useEffect(() => {
-    if (order?.stateCode === 'received' || order?.stateCode === 'legacy') {
-      loadReturns();
+    if (['received', 'partially_received', 'billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
       loadInvoices();
+    }
+    if (['billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
+      loadReturns();
     }
   }, [order?.stateCode]);
 
@@ -336,6 +241,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           productDescription: l.productDescription,
           quantity: l.quantity,
           pricePerUnit: l.pricePerUnit,
+          discountPercentage: l.discountPercentage || '0',
+          gstCategoryId: l.gstCategoryId || null,
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
       });
@@ -460,10 +367,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const sections = {
     details: { id: 'details-section', label: 'Details', show: true },
-    notes: { id: 'notes-section', label: 'Notes', show: true },
-    lines: { id: 'lines-section', label: 'Lines', show: true },
-    invoices: { id: 'invoices-section', label: 'Invoices', show: (order.stateCode === 'received' || order.stateCode === 'legacy') && invoices.length > 0 },
-    returns: { id: 'returns-section', label: 'Returns', show: (order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) },
+    receiving: { id: 'receivings-section', label: 'Receiving', show: ['partially_received', 'received', 'billed', 'invoiced', 'legacy'].includes(order.stateCode) },
+    invoices: { id: 'Invoices-section', label: 'Invoices', show: true },
     activity: { id: 'activity-section', label: 'Activity', show: true },
   };
   const visibleSections = Object.values(sections).filter(s => s.show);
@@ -481,61 +386,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             actions={
               <>
                 <PageNav sections={visibleSections} />
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={copyOrder}
-                  disabled={copying}
-                >
-                  {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
-                </button>
-                {(order.stateCode === 'ordered' || order.stateCode === 'partially_received') && (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => router.push(`/purchase-orders/receiving?poId=${id}`)}
-                  >
-                    Receive Items
-                  </button>
-                )}
-                {(order.stateCode === 'received' || order.stateCode === 'legacy') && !showCreateReturn && (
-                  <>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      onClick={async () => {
-                        if (!confirm(tConfirm('enterSupplierBill'))) return;
-                        setSaving(true);
-                        try {
-                          await apiMutate(`/api/purchase-orders/${id}/invoice`, 'POST');
-                          await loadOrder(undefined, false);
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : tCommon('errors.failedToEnterSupplierBill'));
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                      disabled={saving || invoicing}
-                    >
-                      {tPurchase('buttons.enterSupplierBill')}
-                    </button>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setShowCreateReturn(true);
-                        setNewReturnLines(
-                          order.lines.map((l) => ({
-                            salesOrderLineId: l.salesOrderLineId,
-                            quantityReturned: '',
-                            reason: '',
-                            returnFee: '0',
-                            feeMode: 'absolute' as const,
-                            originalAmount: parseFloat(l.amount || '0'),
-                          })),
-                        );
-                      }}
-                    >
-                      {tPurchase('buttons.createReturn')}
-                    </button>
-                  </>
-                )}
                 {headerDirty && isHeaderEditable && (
                   <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
                     {tPurchase('buttons.save')}
@@ -583,11 +433,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
           {/* Order info card */}
           <div id="details-section" className="card">
-            <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">receipt_long</span>
-              {tPurchase('orderDetails')}
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">receipt_long</span>
+                {tPurchase('orderDetails')}
+              </h3>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={copyOrder}
+                disabled={copying}
+              >
+                {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
+              </button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -644,7 +503,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {tPurchase('labels.created')}
                   </label>
                   <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {new Date(order.createdOn).toLocaleString()} by {order.createdBy || '—'}
+                    {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy || '—'}
                   </p>
                 </div>
                 <div className="col-span-2">
@@ -723,14 +582,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
                   <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.uom')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
-                  <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.tax')}</th>
+                  <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.discountPct' as any)}</th>
+                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.gst' as any)}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                   {isLinesEditable && <th style={{ width: 50 }}></th>}
                 </tr>
               </thead>
               <tbody>
                 {order.lines.map((line) => (
-                  <tr key={line.salesOrderLineId}>
+                  <tr key={line.purchaseOrderLineId}>
                     <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                       {line.productNumber || line.productId?.substring(0, 8) || '—'}
@@ -741,10 +601,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           className="input"
                           style={{ width: '100%', fontSize: 13 }}
                           defaultValue={line.productDescription || ''}
-                          key={`desc-${line.salesOrderLineId}-${line.productDescription}`}
+                          key={`desc-${line.purchaseOrderLineId}-${line.productDescription}`}
                           onBlur={(e) => {
                             if (e.target.value !== (line.productDescription || '')) {
-                              updateLine(line.salesOrderLineId, 'productDescription', e.target.value);
+                              updateLine(line.purchaseOrderLineId, 'productDescription', e.target.value);
                             }
                           }}
                           placeholder="Custom description..."
@@ -753,88 +613,145 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         line.productDescription || '—'
                       )}
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        step="1"
-                        style={{ width: '100%', textAlign: 'right' }}
-                        defaultValue={line.quantity}
-                        key={`qty-${line.salesOrderLineId}-${line.quantity}`}
-                        disabled={!isLinesEditable}
-                        onBlur={(e) => {
-                          if (e.target.value !== line.quantity) {
-                            updateLine(line.salesOrderLineId, 'quantity', e.target.value);
-                          }
-                        }}
-                      />
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {(() => {
-                        const uoms: ProductUom[] = line.productUoms || [];
-                        const defaultUom = line.baseUom || 'EA';
-                        const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
-                        return (
-                          <select
+                    {isLinesEditable ? (
+                      <>
+                        <td style={{ textAlign: 'right' }}>
+                          <input
                             className="input"
-                            style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
-                            value={line.unitOfMeasure || defaultUom}
-                            disabled={!isLinesEditable}
-                            onChange={(e) => {
-                              const newVal = e.target.value;
-                              const oldVal = line.unitOfMeasure || defaultUom;
-                              if (newVal !== oldVal) {
-                                const oldO = selectOptions.find(o => o.uomCode === oldVal);
-                                const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
-
-                                const newO = selectOptions.find(o => o.uomCode === newVal);
-                                const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
-
-                                const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
-                                updateLineFields(line.salesOrderLineId, {
-                                  unitOfMeasure: newVal,
-                                  pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
-                                });
+                            type="number"
+                            min="0"
+                            step="1"
+                            style={{ width: '100%', textAlign: 'right' }}
+                            defaultValue={line.quantity}
+                            key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
+                            onBlur={(e) => {
+                              if (e.target.value !== line.quantity) {
+                                updateLine(line.purchaseOrderLineId, 'quantity', e.target.value);
                               }
                             }}
-                          >
-                            {selectOptions.map(o => (
-                              <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
-                            ))}
-                          </select>
-                        );
-                      })()}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <input
-                        className="input"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        style={{ width: '100%', textAlign: 'right' }}
-                        defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
-                        key={`price-${line.salesOrderLineId}-${line.pricePerUnit}`}
-                        disabled={!isLinesEditable}
-                        onBlur={(e) => {
-                          const val = parseFloat(e.target.value);
-                          const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
-                          e.target.value = formatted;
-                          if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
-                            updateLine(line.salesOrderLineId, 'pricePerUnit', formatted);
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {(() => {
+                            const uoms: ProductUom[] = line.productUoms || [];
+                            const defaultUom = line.baseUom || 'EA';
+                            const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+                            return (
+                              <select
+                                className="input"
+                                style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
+                                value={line.unitOfMeasure || defaultUom}
+                                onChange={(e) => {
+                                  const newVal = e.target.value;
+                                  const oldVal = line.unitOfMeasure || defaultUom;
+                                  if (newVal !== oldVal) {
+                                    const oldO = selectOptions.find(o => o.uomCode === oldVal);
+                                    const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+    
+                                    const newO = selectOptions.find(o => o.uomCode === newVal);
+                                    const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+    
+                                    const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                                    updateLineFields(line.purchaseOrderLineId, {
+                                      unitOfMeasure: newVal,
+                                      pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
+                                    });
+                                  }
+                                }}
+                              >
+                                {selectOptions.map(o => (
+                                  <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
+                                ))}
+                              </select>
+                            );
+                          })()}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            style={{ width: '100%', textAlign: 'right' }}
+                            defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
+                            key={`price-${line.purchaseOrderLineId}-${line.pricePerUnit}`}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value);
+                              const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
+                              e.target.value = formatted;
+                              if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
+                                updateLine(line.purchaseOrderLineId, 'pricePerUnit', formatted);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            style={{ width: '100%', textAlign: 'right' }}
+                            defaultValue={line.discountPercentage}
+                            key={`disc-${line.purchaseOrderLineId}-${line.discountPercentage}`}
+                            onBlur={(e) => {
+                              if (e.target.value !== line.discountPercentage) {
+                                updateLine(line.purchaseOrderLineId, 'discountPercentage', e.target.value);
+                              }
+                            }}
+                          />
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          {line.quantity}
+                        </td>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          {line.unitOfMeasure || line.baseUom || 'EA'}
+                        </td>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
+                        </td>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          {parseFloat(line.discountPercentage || '0').toFixed(1)}%
+                        </td>
+                      </>
+                    )}
+                    {isLinesEditable ? (
+                      <td style={{ textAlign: 'right' }}>
+                        <select
+                          className="input"
+                          style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
+                          value={line.gstCategoryId || ''}
+                          onChange={(e) => updateLine(line.purchaseOrderLineId, 'gstCategoryId', e.target.value)}
+                        >
+                          <option value="">{tCommon('defaultOption')}</option>
+                          {gstCategories.map((c) => (
+                            <option key={c.gstCategoryId} value={c.gstCategoryId}>
+                              <GstLabel category={c} />
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    ) : (
+                      <td style={{ textAlign: 'right', fontSize: 12 }}>
+                        {(() => {
+                          const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+                          if (c) return <GstLabel category={c} />;
+                          // Legacy derivation
+                          const amt = parseFloat(line.amount || '0');
+                          const tax = parseFloat(line.tax || '0');
+                          if (amt > 0 && tax > 0) {
+                            const pct = (tax / amt) * 100;
+                            return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                           }
-                        }}
-                      />
-                    </td>
-                    <td
-                      style={{
-                        textAlign: 'right',
-                        color: 'var(--text-muted)',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {formatAmount(parseFloat(line.tax || '0'), order.currencyCode || 'EUR')}
-                    </td>
+                          if (amt > 0 && tax === 0) return tCommon('gst.exempt');
+                          return '—';
+                        })()}
+                      </td>
+                    )}
                     <td
                       style={{
                         textAlign: 'right',
@@ -848,10 +765,10 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       <td>
                         <button
                           className="btn btn-danger btn-sm"
-                          onClick={() => removeLine(line.salesOrderLineId)}
+                          onClick={() => removeLine(line.purchaseOrderLineId)}
                           title="Remove line"
                         >
-                          ✕
+                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                         </button>
                       </td>
                     )}
@@ -872,7 +789,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   return (
                     <>
                       <tr style={{ borderTop: '2px solid var(--border)' }}>
-                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('subtotal')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -881,7 +798,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr>
-                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
@@ -890,7 +807,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         {isLinesEditable && <td></td>}
                       </tr>
                       <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
-                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
+                        <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                           {tCommon('total')}
                         </td>
                         <td style={{ textAlign: 'right', fontWeight: 800, fontSize: 14, color: 'var(--accent)', fontVariantNumeric: 'tabular-nums' }}>
@@ -936,7 +853,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
                     if (lineInventory.length === 0) {
                       return (
-                        <tr key={line.salesOrderLineId}>
+                        <tr key={line.purchaseOrderLineId}>
                           <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                           <td style={{ fontWeight: 600, fontSize: 12 }}>
                             {line.productId?.substring(0, 8) || '—'}
@@ -956,7 +873,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     return lineInventory.map((inv, idx) => {
                       const avail = parseFloat(inv.quantityAvailable || '0');
                       return (
-                        <tr key={`${line.salesOrderLineId}-${inv.inventoryLevelId}`}>
+                        <tr key={`${line.purchaseOrderLineId}-${inv.inventoryLevelId}`}>
                           {idx === 0 && (
                             <>
                               <td style={{ color: 'var(--text-muted)' }} rowSpan={lineInventory.length}>{line.lineNumber}</td>
@@ -1015,501 +932,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
 
-        {/* Invoices section */}
-        {(order.stateCode === 'received' || order.stateCode === 'legacy') && invoices.length > 0 && (
-            <div id="invoices-section" className="card">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Supplier Bills
-                    </h3>
-                </div>
-                <div className="space-y-3">
-                    {invoices.map(inv => (
-                        <div key={inv.invoiceId} style={{ padding: 14, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div className="flex flex-col">
-                                <span style={{ fontWeight: 700, fontSize: 13 }}>{inv.invoiceNumber}</span>
-                                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    {new Date(inv.createdOn).toLocaleString()} {inv.createdBy && `by ${inv.createdBy}`}
-                                </span>
-                            </div>
-                            <div className="flex gap-4 items-center">
-                                <div className="text-right">
-                                    <div style={{ fontWeight: 700, fontSize: 14 }}>{formatAmount(parseFloat(inv.totalAmount || '0'), order.currencyCode || 'EUR')}</div>
-                                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Tax: {formatAmount(parseFloat(inv.totalTax || '0'), order.currencyCode || 'EUR')}</div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        )}
+        <ReceivingSection
+          orderId={id}
+          orderLines={order.lines}
+          events={order.events}
+          currencyCode={order.currencyCode}
+        />
 
-        {/* Returns section — only shown when returns exist or creating one */}
-        {(order.stateCode === 'received' || order.stateCode === 'legacy') && (returns.length > 0 || showCreateReturn) && (
-          <div id="returns-section" className="card">
-            <h3
-              className="text-sm font-semibold mb-4"
-              style={{
-                color: 'var(--text-muted)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-              }}
-            >
-              {tPurchase('returns' as any)}
-            </h3>
-
-            {/* Create return form */}
-            {showCreateReturn && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 16,
-                  borderRadius: 8,
-                  background: 'rgba(168, 85, 247, 0.05)',
-                  border: '1px solid rgba(168, 85, 247, 0.2)',
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-semibold" style={{ color: '#c084fc' }}>
-                    {tPurchase('newReturn')}
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setShowCreateReturn(false);
-                        setNewReturnLines([]);
-                        setNewReturnNotes('');
-                      }}
-                    >
-                      {tCommon('cancel')}
-                    </button>
-                    <button
-                      className="btn btn-primary btn-sm"
-                      disabled={saving || newReturnLines.every((l) => !l.quantityReturned || parseFloat(l.quantityReturned) <= 0)}
-                      onClick={async () => {
-                        setSaving(true);
-                        setError('');
-                        try {
-                          const lines = newReturnLines
-                            .filter((l) => l.quantityReturned && parseFloat(l.quantityReturned) > 0)
-                            .map((l) => ({
-                              salesOrderLineId: l.salesOrderLineId,
-                              quantityReturned: l.quantityReturned,
-                              reason: l.reason || undefined,
-                              returnFee: l.returnFee || '0',
-                            }));
-                          await apiMutate(`/api/purchase-orders/${id}/returns`, 'POST', {
-                            notes: newReturnNotes || undefined,
-                            lines,
-                          });
-                          setShowCreateReturn(false);
-                          setNewReturnLines([]);
-                          setNewReturnNotes('');
-                          await loadReturns();
-                          await loadOrder(undefined, false);
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : tCommon('errors.failedToCreateReturn'));
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                    >
-                      {tCommon('save')}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: 12 }}>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                    {tCommon('notesCardHeading')}
-                  </label>
-                  <input
-                    className="input"
-                    value={newReturnNotes}
-                    onChange={(e) => setNewReturnNotes(e.target.value)}
-                    placeholder={tPurchase('placeholders.notes')}
-                  />
-                </div>
-
-                <table className="table-lines">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
-                      <th>{tPurchase('columns.product')}</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-                      <th style={{ width: 100, textAlign: 'right' }}>{tPurchase('columns.qtyReturned')}</th>
-                      <th style={{ width: 180 }}>{tPurchase('columns.reason')}</th>
-                      <th style={{ width: 140, textAlign: 'right' }}>{tPurchase('columns.fee')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.lines.map((line, idx) => {
-                      const rl = newReturnLines[idx];
-                      if (!rl) return null;
-                      return (
-                        <tr key={line.salesOrderLineId}>
-                          <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                          <td>
-                            <span style={{ fontWeight: 600, fontSize: 12 }}>
-                              {line.productId?.substring(0, 8) || '—'}
-                            </span>
-                            <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
-                              {line.productDescription || ''}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                            {line.quantity}
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <input
-                              className="input"
-                              type="number"
-                              min="0"
-                              max={line.quantity}
-                              step="1"
-                              style={{ width: '100%', textAlign: 'right' }}
-                              value={rl.quantityReturned}
-                              onChange={(e) => {
-                                const updated = [...newReturnLines];
-                                updated[idx] = { ...rl, quantityReturned: e.target.value };
-                                setNewReturnLines(updated);
-                              }}
-                              placeholder="0"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              className="input"
-                              style={{ width: '100%' }}
-                              value={rl.reason}
-                              onChange={(e) => {
-                                const updated = [...newReturnLines];
-                                updated[idx] = { ...rl, reason: e.target.value };
-                                setNewReturnLines(updated);
-                              }}
-                              placeholder={tPurchase('placeholders.reason')}
-                            />
-                          </td>
-                          <td style={{ textAlign: 'right' }}>
-                            <div className="flex items-center gap-1">
-                              <select
-                                className="input"
-                                style={{ width: 50, fontSize: 11, padding: '4px 6px' }}
-                                value={rl.feeMode}
-                                onChange={(e) => {
-                                  const updated = [...newReturnLines];
-                                  const mode = e.target.value as 'absolute' | 'percentage';
-                                  if (mode === 'percentage' && rl.feeMode === 'absolute') {
-                                    // Convert absolute to percentage for display
-                                    const pct = rl.originalAmount > 0
-                                      ? ((parseFloat(rl.returnFee || '0') / rl.originalAmount) * 100).toFixed(1)
-                                      : '0';
-                                    updated[idx] = { ...rl, feeMode: mode, returnFee: pct };
-                                  } else if (mode === 'absolute' && rl.feeMode === 'percentage') {
-                                    // Convert percentage to absolute for storage
-                                    const abs = (rl.originalAmount * parseFloat(rl.returnFee || '0') / 100).toFixed(2);
-                                    updated[idx] = { ...rl, feeMode: mode, returnFee: abs };
-                                  }
-                                  setNewReturnLines(updated);
-                                }}
-                              >
-                                <option value="absolute">$</option>
-                                <option value="percentage">%</option>
-                              </select>
-                              <input
-                                className="input"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                style={{ width: 80, textAlign: 'right' }}
-                                value={rl.returnFee}
-                                onChange={(e) => {
-                                  const updated = [...newReturnLines];
-                                  updated[idx] = { ...rl, returnFee: e.target.value };
-                                  setNewReturnLines(updated);
-                                }}
-                                onBlur={() => {
-                                  // If in percentage mode, convert to absolute for storage
-                                  if (rl.feeMode === 'percentage') {
-                                    const updated = [...newReturnLines];
-                                    const abs = (rl.originalAmount * parseFloat(rl.returnFee || '0') / 100).toFixed(2);
-                                    updated[idx] = { ...rl, feeMode: 'absolute', returnFee: abs };
-                                    setNewReturnLines(updated);
-                                  }
-                                }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Existing returns list */}
-            {returnsLoading ? (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
-            ) : returns.length === 0 && !showCreateReturn ? (
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{tPurchase('noReturns')}</p>
-            ) : (
-              <div className="space-y-3">
-                {returns.map((ret) => {
-                  const allowedRetTransitions = RETURN_STATE_TRANSITIONS[ret.stateCode] || [];
-                  const isRetEditable = ret.stateCode === 'draft';
-                  return (
-                    <div
-                      key={ret.returnId}
-                      style={{
-                        padding: 14,
-                        borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-secondary)',
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <span style={{ fontWeight: 700, fontSize: 13 }}>{ret.returnNumber}</span>
-                          <ReturnStateBadge state={ret.stateCode as ValidState} />
-                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {new Date(ret.createdOn).toLocaleString()}
-                            {ret.createdBy && ` by ${ret.createdBy}`}
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          {allowedRetTransitions.map((s) => (
-                            <button
-                              key={s}
-                              className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
-                              onClick={async () => {
-                                try {
-                                  await apiMutate(`/api/purchase-orders/${id}/returns/${ret.returnId}/state`, 'PATCH', { stateCode: s });
-                                  await loadReturns();
-                                  await loadOrder(undefined, false);
-                                } catch (err) {
-                                  setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeReturnState'));
-                                }
-                              }}
-                            >
-                              → <StateName state={s as ValidState} />
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {ret.notes && (
-                        <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
-                          {ret.notes}
-                        </p>
-                      )}
-
-                      <table className="table-lines">
-                        <thead>
-                          <tr>
-                            <th>{tPurchase('columns.product')}</th>
-                            <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.qtyReturned')}</th>
-                            <th style={{ width: 180 }}>{tPurchase('columns.reason')}</th>
-                            <th style={{ width: 100, textAlign: 'right' }}>{tPurchase('columns.fee')}</th>
-                            <th style={{ width: 100, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
-                            {isRetEditable && <th style={{ width: 50 }}></th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ret.lines.map((rl) => {
-                            const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
-                            return (
-                              <tr key={rl.returnLineId}>
-                                <td>
-                                  <span style={{ fontWeight: 600, fontSize: 12 }}>
-                                    {origLine?.productId?.substring(0, 8) || '—'}
-                                  </span>
-                                  <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
-                                    {origLine?.productDescription || ''}
-                                  </span>
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                  {isRetEditable ? (
-                                    <input
-                                      className="input"
-                                      type="number"
-                                      min="1"
-                                      step="1"
-                                      style={{ width: '100%', textAlign: 'right' }}
-                                      defaultValue={rl.quantityReturned}
-                                      key={`retqty-${rl.returnLineId}-${rl.quantityReturned}`}
-                                      onBlur={async (e) => {
-                                        if (e.target.value !== rl.quantityReturned) {
-                                          try {
-                                            await apiMutate(
-                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                              'PATCH',
-                                              { quantityReturned: e.target.value },
-                                            );
-                                            await loadReturns();
-                                          } catch (err) {
-                                            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                          }
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    rl.quantityReturned
-                                  )}
-                                </td>
-                                <td>
-                                  {isRetEditable ? (
-                                    <input
-                                      className="input"
-                                      style={{ width: '100%' }}
-                                      defaultValue={rl.reason || ''}
-                                      key={`retrsn-${rl.returnLineId}-${rl.reason}`}
-                                      onBlur={async (e) => {
-                                        if (e.target.value !== (rl.reason || '')) {
-                                          try {
-                                            await apiMutate(
-                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                              'PATCH',
-                                              { reason: e.target.value },
-                                            );
-                                            await loadReturns();
-                                          } catch (err) {
-                                            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                          }
-                                        }
-                                      }}
-                                      placeholder={tPurchase('placeholders.reason')}
-                                    />
-                                  ) : (
-                                    <span style={{ fontSize: 12 }}>{rl.reason || '—'}</span>
-                                  )}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                  {isRetEditable ? (
-                                    <input
-                                      className="input"
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      style={{ width: '100%', textAlign: 'right' }}
-                                      defaultValue={parseFloat(rl.returnFee || '0').toFixed(2)}
-                                      key={`retfee-${rl.returnLineId}-${rl.returnFee}`}
-                                      onBlur={async (e) => {
-                                        const val = parseFloat(e.target.value);
-                                        const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
-                                        if (formatted !== parseFloat(rl.returnFee || '0').toFixed(2)) {
-                                          try {
-                                            await apiMutate(
-                                              `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                              'PATCH',
-                                              { returnFee: formatted },
-                                            );
-                                            await loadReturns();
-                                          } catch (err) {
-                                            setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateReturnLine'));
-                                          }
-                                        }
-                                      }}
-                                    />
-                                  ) : (
-                                    formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || 'EUR')
-                                  )}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                  {(() => {
-                                    const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                    const qty = parseFloat(rl.quantityReturned || '0');
-                                    return formatAmount(computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount, order.currencyCode || 'EUR');
-                                  })()}
-                                </td>
-                                {isRetEditable && (
-                                  <td>
-                                    <button
-                                      className="btn btn-danger btn-sm"
-                                      onClick={async () => {
-                                        if (!confirm(tConfirm('removeReturnLine'))) return;
-                                        try {
-                                          await apiMutate(
-                                            `/api/purchase-orders/${id}/returns/${ret.returnId}/lines/${rl.returnLineId}`,
-                                            'DELETE',
-                                          );
-                                          await loadReturns();
-                                        } catch (err) {
-                                          setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveReturnLine'));
-                                        }
-                                      }}
-                                      title="Remove return line"
-                                    >
-                                      ✕
-                                    </button>
-                                  </td>
-                                )}
-                              </tr>
-                            );
-                          })}
-                          {ret.lines.length === 0 && (
-                            <tr>
-                              <td
-                                colSpan={isRetEditable ? 6 : 5}
-                                style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '12px 0' }}
-                              >
-                                {tPurchase('noReturnLines')}
-                              </td>
-                            </tr>
-                          )}
-                          {ret.lines.length > 0 && (() => {
-                            const totalAmount = ret.lines.reduce((sum, rl) => {
-                              const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
-                              const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                              const qty = parseFloat(rl.quantityReturned || '0');
-                              return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice }).amount;
-                            }, 0);
-                            const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
-                            const totalCredit = totalAmount - totalFees;
-                            const cc = order.currencyCode || 'EUR';
-                            return (
-                              <>
-                                <tr style={{ borderTop: '2px solid var(--border)' }}>
-                                  <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                    {tPurchase('returns.totalCredit')}
-                                  </td>
-                                  <td></td>
-                                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                    {formatAmount(totalAmount, cc)}
-                                  </td>
-                                  {isRetEditable && <td></td>}
-                                </tr>
-                                <tr>
-                                  <td colSpan={3} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
-                                    {tPurchase('returns.totalFees')}
-                                  </td>
-                                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: totalFees > 0 ? '#f87171' : undefined }}>
-                                    {totalFees > 0 ? `−${formatAmount(totalFees, cc)}` : formatAmount(0, cc)}
-                                  </td>
-                                  <td></td>
-                                  {isRetEditable && <td></td>}
-                                </tr>
-                                <tr>
-                                  <td colSpan={isRetEditable ? 5 : 4} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
-                                    {tPurchase('returns.netCredit')}
-                                  </td>
-                                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13, color: '#4ade80' }}>
-                                    {formatAmount(totalCredit, cc)}
-                                  </td>
-                                </tr>
-                              </>
-                            );
-                          })()}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+        <InvoicesSection
+          orderId={id}
+          order={order}
+          Invoices={invoices}
+          gstCategories={gstCategories}
+          setError={setError}
+          loadInvoices={loadInvoices}
+          loadOrder={loadOrder as any}
+        />
 
         {/* Audit timeline */}
         <div id="activity-section" className="card">

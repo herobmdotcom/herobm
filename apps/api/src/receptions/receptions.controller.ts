@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -42,9 +42,7 @@ export class ReceptionsController {
     @Param('orderId') orderId: string,
     @Query() query: PaginationQuery,
   ) {
-    // Note: ReceptionsService.findAll currently doesn't filter by orderId,
-    // this keeps the existing behavior but nests the route.
-    return this.receptionsService.findAll(query);
+    return this.receptionsService.findAll(query, orderId);
   }
 
   @Get(':id')

@@ -121,7 +121,7 @@ export default function ProductSearchInput({
     <div className="relative" style={style}>
       <input
         className="input"
-        style={{ width: '100%', fontSize: 13 }}
+        style={{ width: '100%' }}
         placeholder={placeholder || t('placeholder')}
         value={search}
         onChange={(e) => {

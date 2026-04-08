@@ -1,0 +1,3 @@
+ALTER TABLE "modbm_core"."purchase_invoices" ADD COLUMN "receipt_filename" text;--> statement-breakpoint
+ALTER TABLE "modbm_core"."purchase_order_lines" ADD COLUMN "gst_category_id" uuid;--> statement-breakpoint
+ALTER TABLE "modbm_core"."purchase_order_lines" ADD CONSTRAINT "purchase_order_lines_gst_category_id_gst_categories_gst_category_id_fk" FOREIGN KEY ("gst_category_id") REFERENCES "modbm_core"."gst_categories"("gst_category_id") ON DELETE no action ON UPDATE no action;
