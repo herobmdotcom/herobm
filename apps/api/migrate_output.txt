@@ -1,4 +1,0 @@
-No config path provided, using default 'drizzle.config.ts'
-Reading config file 'C:\Users\Marcel\volz\modbm\modbm\apps\api\drizzle.config.ts'
-Using 'postgres' driver for database querying
-[Γú╖] applying migrations...[2K[1G[Γú╖] applying migrations...

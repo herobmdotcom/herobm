@@ -1,55 +1,71 @@
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import { SetupService } from './setup.service';
-import { SkipCasbin } from '../auth/casbin.guard';
+import {
+  CasbinResource,
+  CasbinAction,
+  CasbinGuard,
+} from '../auth/casbin.guard';
 import { SetupGuard } from './setup.guard';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { ExecuteSetupDto, TestAbmConnectionDto } from './setup.dto';
 
 @Controller('setup')
-@SkipCasbin()
-@UseGuards(SetupGuard, ThrottlerGuard)
+@CasbinResource('setup')
+@UseGuards(SetupGuard, CasbinGuard, ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}
 
   @Get('status')
-  @SkipCasbin()
+  @CasbinAction('read')
   async getStatus() {
     return this.setupService.getStatus();
   }
 
   @Post('test-abm')
-  @SkipCasbin()
+  @CasbinAction('execute')
   async testAbm(@Body() dto: TestAbmConnectionDto) {
     return this.setupService.testAbmConnection(dto);
   }
 
   @Get('abm-preview')
-  @SkipCasbin()
+  @CasbinAction('read')
   async getAbmPreview() {
     return this.setupService.getAbmPreview();
   }
 
   @Get('coa-presets')
-  @SkipCasbin()
+  @CasbinAction('read')
   async getCoaPresets() {
     return this.setupService.getCoaPresets();
   }
 
-  @Post('execute')
-  @SkipCasbin()
-  async executeSetup(@Body() dto: ExecuteSetupDto) {
-    return this.setupService.executeSetup(dto);
+  @Get('resume-state')
+  @CasbinAction('read')
+  async getResumeState() {
+    return this.setupService.getResumeState();
+  }
+
+  @Post('initialize')
+  @CasbinAction('execute')
+  async initializeSystem(@Body() dto: ExecuteSetupDto) {
+    return this.setupService.initializeSystem(dto);
+  }
+
+  @Post('execute-elt')
+  @CasbinAction('execute')
+  async executeElt(@Body() dto: ExecuteSetupDto) {
+    return this.setupService.executeElt(dto);
   }
 
   @Get('progress/:jobId')
-  @SkipCasbin()
+  @CasbinAction('read')
   @SkipThrottle()
   async getProgress(@Param('jobId') jobId: string) {
     return this.setupService.getJobProgress(jobId);
   }
 
   @Get('validation')
-  @SkipCasbin()
+  @CasbinAction('read')
   async getValidation() {
     return this.setupService.getValidation();
   }

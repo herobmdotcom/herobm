@@ -57,7 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider messages={messages} locale="en">
           <ErrorReporter />
           <Toaster
             position="top-center"

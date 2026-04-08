@@ -20,6 +20,7 @@ export default function ExecutingStep({ config }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const isAutoScrollRef = useRef<boolean>(true);
+  const hasStartedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (isAutoScrollRef.current && bottomRef.current) {
@@ -34,9 +35,13 @@ export default function ExecutingStep({ config }: Props) {
   };
 
   useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
     async function startSetup() {
       try {
-        setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting configuration...`]);
+        setStatus('running');
+        setLogs([`--- Initializing HeroBM Base System ---`, `Submitting configuration...`]);
         const monthMap: Record<string, number> = {
           'January': 1, 'February': 2, 'March': 3, 'April': 4,
           'May': 5, 'June': 6, 'July': 7, 'August': 8,
@@ -66,49 +71,26 @@ export default function ExecutingStep({ config }: Props) {
           expenseRoutingPrecedence: config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'
         };
 
-        const res = await apiMutate<any>('/api/setup/execute', 'POST', executePayload);
-        jobIdRef.current = res.jobId;
-        setStatus('running');
-        startPolling(res.jobId);
+        // Run Phase 1 - Synchronization blocking call
+        await apiMutate<any>('/api/setup/initialize', 'POST', executePayload);
+        
+        setLogs(prev => [...prev, `Base system initialization successful!`, `Admin user accounts created.`]);
+        setStatus('completed');
+
+        // If ELT is requested, save the payload for Phase 2
+        if (executePayload.abmImport) {
+           localStorage.setItem('hero_pending_elt', JSON.stringify(executePayload));
+        }
+        
       } catch (err: any) {
         setStatus('failed');
-        setErrorMsg(err.message || 'Failed to start setup execution.');
-        setLogs(prev => [...prev, `[ERROR]: Failed to start setup execution.`]);
+        setErrorMsg(err.message || 'Failed to initialize base system.');
+        setLogs(prev => [...prev, `[ERROR]: Initializing base system failed.`]);
       }
     }
     
     startSetup();
-
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-    };
   }, []);
-
-  const startPolling = (jobId: string) => {
-    pollTimerRef.current = setInterval(async () => {
-      try {
-        const progressRes = await apiFetch<any>(`/api/setup/progress/${jobId}`);
-        if (progressRes) {
-          if (progressRes.logs && progressRes.logs.length > 0) {
-             // Logs from backend are usually the complete array, we will just sync it.
-             setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting configuration...`, ...progressRes.logs]);
-          }
-          
-          if (progressRes.status === 'completed') {
-            setStatus('completed');
-            clearInterval(pollTimerRef.current);
-          } else if (progressRes.status === 'failed') {
-            setStatus('failed');
-            setErrorMsg(progressRes.error || 'Execution failed on backend.');
-            clearInterval(pollTimerRef.current);
-          }
-        }
-      } catch (err) {
-        reportError(err, 'Polling error');
-        // We do not stop polling on a temporary network error, but we could cap it.
-      }
-    }, 2000);
-  };
 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
@@ -156,12 +138,17 @@ export default function ExecutingStep({ config }: Props) {
       </div>
 
       {status === 'completed' && (
-        <div className="mt-auto pt-4 flex items-center justify-center border-t border-slate-100 animate-in fade-in">
+        <div className="mt-8 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
+          <p className="text-slate-600 mb-4 font-medium text-center">
+            {config.emptyBase 
+               ? "System successfully initialized. You must log in as 'admin' to access the platform."
+               : "Base system initialized and user accounts created. You must log in as 'admin' to run the Data Import pipeline."}
+          </p>
           <a
-            href="/"
+            href={config.emptyBase ? "/login" : "/data-import"}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
           >
-            {t('goDashboard')}
+            {config.emptyBase ? t('goDashboard', { fallback: "Log In to Continue" }) : "Proceed to Data Import"}
           </a>
         </div>
       )}

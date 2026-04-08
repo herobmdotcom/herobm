@@ -25,6 +25,7 @@ import {
   getValidStates,
   getAllowedTransitions,
   computeLinePriceForStorage,
+  HOME_CURRENCY,
 } from '@modbm/shared';
 
 export interface UnifiedPurchaseOrderRow {
@@ -96,7 +97,7 @@ export class PurchaseOrdersService {
           orderNumber: createDto.orderNumber, // In reality, should auto-gen
           name: createDto.name,
           vendorId: createDto.vendorId,
-          currencyCode: createDto.currencyCode || 'EUR',
+          currencyCode: createDto.currencyCode || HOME_CURRENCY.code,
           notes: createDto.notes,
           createdBy: userId,
           stateCode: 'draft',
@@ -652,5 +653,43 @@ export class PurchaseOrdersService {
 
       return this.findOne(id, tx);
     });
+  }
+
+  async findPendingLines(productId: string) {
+    if (!productId) {
+      throw new BadRequestException(
+        'productId is required to find pending lines',
+      );
+    }
+
+    return await this.db
+      .select({
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: purchaseOrders.stateCode,
+        vendorId: purchaseOrders.vendorId,
+        currencyCode: purchaseOrders.currencyCode,
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        lineNumber: purchaseOrderLineItems.lineNumber,
+        productDescription: purchaseOrderLineItems.productDescription,
+        quantity: purchaseOrderLineItems.quantity,
+        pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+        quantityReceived: purchaseOrderLineItems.quantityReceived,
+      })
+      .from(purchaseOrderLineItems)
+      .innerJoin(
+        purchaseOrders,
+        eq(
+          purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
+      )
+      .where(
+        and(
+          eq(purchaseOrderLineItems.productId, productId),
+          inArray(purchaseOrders.stateCode, ['ordered', 'partially_received']),
+          sql`${purchaseOrderLineItems.quantityReceived} < ${purchaseOrderLineItems.quantity}`,
+        ),
+      );
   }
 }

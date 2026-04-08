@@ -36,9 +36,13 @@ export default function PreviewStep({ config, onNext }: Props) {
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-900 mb-2">{t('title')}</h2>
-        <p className="text-slate-500" dangerouslySetInnerHTML={{ 
-          __html: t('description', { database: config.database, host: config.host }) 
-        }} />
+        <p className="text-slate-500">
+          {t.rich('description', { 
+            database: config.database, 
+            host: config.host,
+            highlight: (chunks) => <strong className="text-[#006b5c] font-semibold">{chunks}</strong>
+          })}
+        </p>
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2 mb-6" style={{ maxHeight: '400px' }}>

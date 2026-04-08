@@ -21,7 +21,7 @@ export default function ReviewStep({ config, onNext }: Props) {
     `Fiscal Start Month: ${config.fiscalStartMonth}`,
     `Valuation Strategy: ${config.inventoryValuation || 'weighted_average'}`,
     `Billing Mode: ${config.nonStockBilling || 'per_shipment'}`,
-    `Primary Location: ${config.primaryLocation !== 'none' ? config.primaryLocation : 'System Default'}`,
+    `Default Fulfillment Location: ${config.primaryLocation !== 'none' ? config.primaryLocation : 'System Default'}`,
     `Revenue Routing: ${config.revenueRouting.includes('Product') ? 'product_first' : 'customer_first'}`,
     `Expense Routing: ${config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'}`
   ].join('\n');

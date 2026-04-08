@@ -25,7 +25,7 @@ async function bootstrap() {
 
     console.log('\n--- Regional Settings ---');
     const baseCurrency =
-      (await rl.question('Base Currency (ISO) [AUD]: ')) || 'AUD';
+      (await rl.question('Base Currency (ISO) [EUR]: ')) || 'EUR';
     const fiscalMonth =
       (await rl.question('Fiscal Year Start Month (1-12) [7]: ')) || '7';
 
@@ -79,7 +79,12 @@ async function bootstrap() {
 
     logger.log(`Starting unified setup execution...`);
 
-    await setupService.runSetupCore(dto);
+    await setupService.initializeSystem(dto);
+
+    if (dto.abmImport) {
+      logger.log(`Starting ABM Import sequence...`);
+      await setupService.runEltCore(dto);
+    }
 
     logger.log('✅ CLI Setup completed successfully.');
     await app.close();
@@ -90,4 +95,4 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+bootstrap().catch(console.error);

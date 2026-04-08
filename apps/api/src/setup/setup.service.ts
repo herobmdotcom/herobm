@@ -65,6 +65,20 @@ export class SetupService {
       });
   }
 
+  async getResumeState() {
+    const rootDir = this.getWorkspaceRoot();
+    const stateFile = path.join(rootDir, '.abm_resume_state');
+    if (!fs.existsSync(stateFile)) {
+      return { completedTables: [] };
+    }
+    const content = fs.readFileSync(stateFile, 'utf-8');
+    const tables = content
+      .split('\n')
+      .map((line) => line.trim().toUpperCase())
+      .filter((line) => line.length > 0);
+    return { completedTables: tables };
+  }
+
   private lastAbmPreview: any = null;
 
   async testAbmConnection(dto: TestAbmConnectionDto) {
@@ -165,7 +179,35 @@ export class SetupService {
     }
   }
 
-  async executeSetup(dto: ExecuteSetupDto) {
+  async initializeSystem(dto: ExecuteSetupDto) {
+    this.logger.log('--- Initializing Base System ---');
+
+    // Step 1: Load Chart of Accounts
+    this.logger.log(`Loading Chart of Accounts: ${dto.coaPreset}`);
+    await this.coaLoader.loadFromFile(dto.coaPreset);
+
+    // Step 2: Configure GL settings
+    this.logger.log('Configuring GL...');
+    await this.saveGlSettings(dto);
+
+    // Step 3: Configure App settings
+    this.logger.log('Configuring App...');
+    await this.saveAppSettings(dto);
+
+    // Step 4: Seed organization
+    this.logger.log('Configuring Organization...');
+    await this.saveOrganization(dto);
+    await this.appConfig.reload();
+
+    // Step 5: Absolute Final Operation (Seed users/system)
+    this.logger.log('Seeding base system records (including users)...');
+    await this.runCommandStream(undefined, 'make', ['seed']);
+
+    this.logger.log('--- Base System Initialized Successfully ---');
+    return { success: true };
+  }
+
+  async executeElt(dto: ExecuteSetupDto) {
     const runningJobId = Object.keys(this.activeJobs).find(
       (id) => this.activeJobs[id].status === 'running',
     );
@@ -174,84 +216,56 @@ export class SetupService {
     const jobId = Math.random().toString(36).substring(7);
     this.activeJobs[jobId] = {
       status: 'running',
-      progress: [
-        { step: 1, name: 'Initializing System', status: 'pending' },
-        { step: 2, name: 'Loading Chart of Accounts', status: 'pending' },
-        { step: 3, name: 'Configuring GL', status: 'pending' },
-        { step: 4, name: 'Configuring App', status: 'pending' },
-        { step: 5, name: 'Seeding Organization', status: 'pending' },
-        { step: 6, name: 'Finalizing', status: 'pending' },
-      ],
+      progress: [{ step: 1, name: 'Importing Data (ELT)', status: 'running' }],
       logs: [],
     };
 
-    this.runSetupCore(dto, jobId).catch((err) => {
-      this.logger.error(`Setup job ${jobId} failed`, err);
-      if (this.activeJobs[jobId]) this.activeJobs[jobId].status = 'failed';
+    this.runEltCore(dto, jobId).catch((err) => {
+      this.logger.error(`ELT job ${jobId} failed`, err);
+      if (this.activeJobs[jobId]) {
+        this.activeJobs[jobId].status = 'failed';
+        this.activeJobs[jobId].progress[0].status = 'failed';
+      }
     });
 
     return { jobId };
   }
 
-  /**
-   * THE UNIFIED SETUP PATH
-   */
-  async runSetupCore(dto: ExecuteSetupDto, jobId?: string) {
+  async runEltCore(dto: ExecuteSetupDto, jobId?: string) {
     try {
-      this.updateJobProgress(jobId, 0, 'running');
-
-      if (dto.abmImport) {
-        this.log(jobId, '--- Initializing ABM ELT Pipeline ---');
-        const envOverride: Record<string, string> = {
-          DEFAULT_FULFILLMENT_LOCATION_CODE: dto.defaultLocationCode || 'HQ',
-          HOME_CURRENCY: dto.baseCurrency,
-          INVENTORY_VALUATION_METHOD: dto.inventoryValuationMethod,
-        };
-        if (dto.dbConfig) {
-          if (dto.dbConfig.host)
-            envOverride['ABM_MSSQL_HOST'] = dto.dbConfig.host;
-          if (dto.dbConfig.database)
-            envOverride['ABM_MSSQL_DATABASE'] = dto.dbConfig.database;
-          if (dto.dbConfig.username)
-            envOverride['ABM_MSSQL_USER'] = dto.dbConfig.username;
-          if (dto.dbConfig.password)
-            envOverride['ABM_MSSQL_PASSWORD'] = dto.dbConfig.password;
-        }
-        await this.runCommandStream(jobId, 'make', ['elt'], envOverride);
+      this.log(jobId, '--- Initializing ABM ELT Pipeline ---');
+      const envOverride: Record<string, string> = {
+        DEFAULT_FULFILLMENT_LOCATION_CODE: dto.defaultLocationCode || 'HQ',
+        INVENTORY_VALUATION_METHOD: dto.inventoryValuationMethod,
+      };
+      if (dto.dbConfig) {
+        if (dto.dbConfig.host)
+          envOverride['ABM_MSSQL_HOST'] = dto.dbConfig.host;
+        if (dto.dbConfig.database)
+          envOverride['ABM_MSSQL_DATABASE'] = dto.dbConfig.database;
+        if (dto.dbConfig.username)
+          envOverride['ABM_MSSQL_USER'] = dto.dbConfig.username;
+        if (dto.dbConfig.password)
+          envOverride['ABM_MSSQL_PASSWORD'] = dto.dbConfig.password;
+        if (dto.dbConfig.port)
+          envOverride['ABM_MSSQL_PORT'] = dto.dbConfig.port.toString();
       }
 
-      this.log(jobId, 'Seeding base system records...');
-      await this.runCommandStream(jobId, 'make', ['seed']);
-      this.updateJobProgress(jobId, 0, 'done');
+      envOverride['ABM_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
 
-      this.updateJobProgress(jobId, 1, 'running');
-      this.log(jobId, `Loading Chart of Accounts: ${dto.coaPreset}`);
-      await this.coaLoader.loadFromFile(dto.coaPreset);
-      this.updateJobProgress(jobId, 1, 'done');
+      await this.runCommandStream(jobId, 'make', ['elt'], envOverride);
 
-      this.updateJobProgress(jobId, 2, 'running');
-      await this.saveGlSettings(dto);
-      this.updateJobProgress(jobId, 2, 'done');
-
-      this.updateJobProgress(jobId, 3, 'running');
-      await this.saveAppSettings(dto);
-      this.updateJobProgress(jobId, 3, 'done');
-
-      this.updateJobProgress(jobId, 4, 'running');
-      await this.saveOrganization(dto);
-      this.updateJobProgress(jobId, 4, 'done');
-
-      this.updateJobProgress(jobId, 5, 'running');
-      await this.appConfig.reload();
-      this.updateJobProgress(jobId, 5, 'done');
-
-      this.log(jobId, 'SETUP COMPLETED SUCCESSFULLY');
-      if (jobId && this.activeJobs[jobId])
+      this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
+      if (jobId && this.activeJobs[jobId]) {
+        this.activeJobs[jobId].progress[0].status = 'done';
         this.activeJobs[jobId].status = 'done';
+      }
     } catch (error) {
-      this.log(jobId, `FATAL: Setup failed: ${error.message}`, 'error');
-      if (jobId && this.activeJobs[jobId])
+      this.log(jobId, `FATAL: ELT Import failed: ${error.message}`, 'error');
+      if (jobId && this.activeJobs[jobId]) {
         this.activeJobs[jobId].status = 'failed';
+        this.activeJobs[jobId].progress[0].status = 'failed';
+      }
       throw error;
     }
   }
@@ -290,9 +304,15 @@ export class SetupService {
       .onConflictDoUpdate({ target: glSettings.settingsId, set: data });
   }
 
-  private async saveAppSettings(dto: ExecuteSetupDto) {
-    let locationId = dto.defaultLocationId;
-    if (!locationId) {
+  private async saveAppSettings(
+    dto: ExecuteSetupDto,
+    linkLocation: boolean = true,
+  ) {
+    const [existing] = await this.db.select().from(appSettings).limit(1);
+    let locationId =
+      dto.defaultLocationId || existing?.defaultFulfillmentLocationId;
+
+    if (linkLocation && !dto.defaultLocationId) {
       const targetCode = dto.defaultLocationCode || 'HQ';
       const existingLoc = await this.db.query.locations.findFirst({
         where: eq(locations.code, targetCode),
@@ -318,7 +338,6 @@ export class SetupService {
       setupCompletedAt: new Date(),
     };
 
-    const [existing] = await this.db.select().from(appSettings).limit(1);
     if (existing) {
       await this.db
         .update(appSettings)

@@ -16,6 +16,7 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     where: jest.fn().mockReturnThis(),
     from: jest.fn().mockReturnThis(),
     leftJoin: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
@@ -393,6 +394,34 @@ describe('PurchaseOrdersService', () => {
       );
       mockTransaction({ purchaseOrderId: 'po-1', stateCode: 'ordered' });
       await expect(service.removeLine('po-1', 'line-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+  });
+
+  describe('findPendingLines', () => {
+    it('should query pending line items for a given productId', async () => {
+      mockSelectChain({
+        1: [
+          {
+            purchaseOrderId: 'po-1',
+            orderNumber: 'PO-001',
+            stateCode: 'ordered',
+            purchaseOrderLineId: 'l1',
+            quantity: '10',
+            quantityReceived: '0',
+          },
+        ],
+      });
+
+      const result = await service.findPendingLines('p1');
+      expect(result).toBeDefined();
+      expect(result).toHaveLength(1);
+      expect(result[0].purchaseOrderLineId).toBe('l1');
+    });
+
+    it('should throw BadRequestException if productId is not provided', async () => {
+      await expect(service.findPendingLines('')).rejects.toThrow(
         BadRequestException,
       );
     });

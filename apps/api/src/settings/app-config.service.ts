@@ -61,7 +61,7 @@ export class AppConfigService implements OnModuleInit {
 
   /** ISO currency code for the home/base currency. Falls back to 'EUR'. */
   homeCurrency(): string {
-    return this.glCache?.baseCurrency ?? process.env.HOME_CURRENCY ?? 'EUR';
+    return this.glCache?.baseCurrency ?? 'EUR';
   }
 
   /** Month (1-12) the fiscal year starts. Falls back to 7 (July). */

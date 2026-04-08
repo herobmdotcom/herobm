@@ -1,14 +1,14 @@
 """
 Data seeder for modbm_core tables.
 
-Seeds application tables from environment variables and/or mart data.
-This is separate from schema migrations (tools/migrate.py) — migrations
-handle DDL only, this script handles data population.
+Seeds UNIVERSAL application records — things needed regardless of whether
+legacy data is imported.  Import-specific anchors (LEGACY-SALES, etc.) live
+in dbt pre_hooks; inventory sync lives in a dbt post_hook.
 
 Usage:
     python tools/seed.py              # seed all
     python tools/seed.py --users      # seed users only
-    python tools/seed.py --inventory  # seed inventory only
+    python tools/seed.py --products   # seed products + UOM only
     python tools/seed.py --verify-only # only run validation checks
     python tools/seed.py --dry-run    # show what would be seeded
 """
@@ -130,6 +130,9 @@ def align_pkey(table: str, id_col: str, lookup_col: str, lookup_val: str, new_id
     print(f"    OK: {table} PKEY migration complete.")
 
 
+# ── Seed Functions ──────────────────────────────────────────────────────────
+
+
 def seed_users(dry_run: bool = False) -> None:
     """Seed dev users from environment variables."""
     required_vars = [
@@ -162,173 +165,47 @@ def seed_users(dry_run: bool = False) -> None:
     print("  Seeded users: admin, viewer, sales, warehouse, procurement, finance")
 
 
-def seed_inventory(dry_run: bool = False) -> None:
-    """Inventory levels are now imported via dbt import models (make import-legacy)."""
-    print("  SKIP: Inventory levels are imported via 'make import-legacy' (dbt import models)")
-
-
-def sync_inventory_aggregates(dry_run: bool = False) -> None:
-    """Consolidation task to fix inventory drift from native dbt imports."""
-    if dry_run:
-        print("  [DRY RUN] Would sync products.quantity_on_hand from inventory_ledger")
-        return
-    sql = """
-    WITH ledger_totals AS (
-      SELECT product_id, COALESCE(SUM(quantity), 0) as total_qty
-      FROM modbm_core.inventory_ledger
-      GROUP BY product_id
-    )
-    UPDATE modbm_core.products p
-    SET quantity_on_hand = COALESCE(lt.total_qty, 0)
-    FROM ledger_totals lt
-    WHERE p.product_id = lt.product_id
-    AND p.quantity_on_hand != COALESCE(lt.total_qty, 0);
-    """
-    psql_sql(sql)
-    print("  Synced products.quantity_on_hand with inventory_ledger totals")
-
-
 def seed_products(dry_run: bool = False) -> None:
-    """Products are now imported via dbt import models (make import-legacy)."""
-    print("  SKIP: Products are imported via 'make import-legacy' (dbt import models)")
-
-
-def seed_suppliers(dry_run: bool = False) -> None:
-    """Suppliers are now imported via dbt import models (make import-legacy)."""
-    print("  SKIP: Suppliers are imported via 'make import-legacy' (dbt import models)")
-
-
-def seed_gst_categories(dry_run: bool = False) -> None:
-    """GST categories are now seeded from the Chart of Accounts settings JSON via coa-loader.service.ts during Setup."""
-    print("  SKIP: GST categories are seeded via Setup Wizard / COA Loader")
-
-
-def seed_organization(dry_run: bool = False) -> None:
-    """Imports the organization singleton record from raw_abm.company or seeds a fallback."""
-    # Check if raw_abm.company exists before attempting to seed
-    exists = psql("SELECT 1 FROM information_schema.tables WHERE table_schema = 'raw_abm' AND table_name = 'company' LIMIT 1;", capture=True)
-    
+    """Seed the base UOM and system placeholder product."""
     if dry_run:
-        if exists:
-            print("  [DRY RUN] Would seed organization from raw_abm")
-        else:
-            print("  [DRY RUN] Would seed fallback organization (sterile environment)")
+        print("  [DRY RUN] Would seed UOM 'EA' and SYSTEM-CUSTOM-LINE product")
         return
 
-    if exists:
-        sql = """
-        WITH src AS (
-            SELECT 
-                TRIM(company_name) as name,
-                TRIM(COALESCE(company_url, '')) as website,
-                TRIM(COALESCE(phone_number, '')) as phone,
-                TRIM(COALESCE(tax_number, '')) as tax_number,
-                TRIM(COALESCE(company_id, '')) as company_number,
-                regexp_split_to_array(company_address, E'\\r?\\n') as addr_arr
-            FROM raw_abm.company
-            LIMIT 1
-        )
-        INSERT INTO modbm_core.organization (
-            organization_id, name, website, phone, tax_number, company_number,
-            address_line_1, address_line_2, city
-        )
-        SELECT 
-            '00000000-0000-0000-0000-000000000000'::uuid,
-            name, website, phone, tax_number, company_number,
-            TRIM(COALESCE(addr_arr[1], '')),
-            TRIM(COALESCE(addr_arr[2], '')),
-            TRIM(COALESCE(addr_arr[3], ''))
-        FROM src
-        ON CONFLICT (organization_id) DO UPDATE SET 
-            name = EXCLUDED.name,
-            website = EXCLUDED.website,
-            phone = EXCLUDED.phone,
-            tax_number = EXCLUDED.tax_number,
-            company_number = EXCLUDED.company_number,
-            address_line_1 = EXCLUDED.address_line_1,
-            address_line_2 = EXCLUDED.address_line_2,
-            city = EXCLUDED.city;
-        """
-        psql_sql(sql)
-        print("  Seeded organization details from raw_abm.company")
-    else:
-        # Sterile fallback
-        sql = """
-        INSERT INTO modbm_core.organization (organization_id, name)
-        VALUES ('00000000-0000-0000-0000-000000000000'::uuid, 'My Company')
-        ON CONFLICT (organization_id) DO NOTHING;
-        """
-        psql_sql(sql)
-        print("  Seeded default organization (Sterile Fallback)")
-
-
-def seed_system_records(dry_run: bool = False, base_currency: str = 'EUR', loc_code: str = 'HQ') -> None:
-    if dry_run:
-        print(f"  [DRY RUN] Would seed system records with base currency {base_currency}")
-        return
-    # Resolve the location ID gracefully
-    loc_id_res = psql(f"SELECT location_id FROM modbm_core.locations WHERE code = '{loc_code}';", capture=True)
-    
-    if loc_id_res:
-        resolved_loc_id = loc_id_res
-        print(f"  Using existing location {loc_code} ({resolved_loc_id})")
-    else:
-        resolved_loc_id = '00000000-0000-0000-0000-000000000100'
-        psql_sql(f"""
-        INSERT INTO modbm_core.locations (location_id, code, name)
-          VALUES ('{resolved_loc_id}', '{loc_code}', 'Main Headquarters')
-          ON CONFLICT (location_id) DO UPDATE SET 
-            code = EXCLUDED.code,
-            name = EXCLUDED.name;
-        """)
-
-    sql = f"""
+    sql = """
     INSERT INTO modbm_core.uom_dictionary (uom_code, description)
       VALUES ('EA', 'Each')
       ON CONFLICT (uom_code) DO NOTHING;
 
-    INSERT INTO modbm_core.products (product_id, product_number, name) 
-      VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM-CUSTOM-LINE', 'Custom Line Product') 
-      ON CONFLICT (product_id) DO UPDATE SET 
-        product_id = EXCLUDED.product_id,
-        product_number = EXCLUDED.product_number;
-
-    INSERT INTO modbm_core.sales_orders (sales_order_id, order_number, state_code, currency_code, fulfillment_location_id)
-      VALUES (
-        '00000000-0000-0000-0000-000000000001', 
-        'LEGACY-SALES', 
-        'legacy', 
-        '{base_currency}',
-        '{resolved_loc_id}'
-      )
-      ON CONFLICT (sales_order_id) DO UPDATE SET 
-        order_number = EXCLUDED.order_number,
-        state_code = EXCLUDED.state_code;
-
-    INSERT INTO modbm_core.sales_order_lines (sales_order_line_id, sales_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage, fulfillment_location_id)
-      VALUES (
-        '00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0,
-        '{resolved_loc_id}'
-      )
-      ON CONFLICT (sales_order_line_id) DO NOTHING;
-
-    INSERT INTO modbm_core.purchase_orders (purchase_order_id, order_number, state_code, currency_code)
-      VALUES ('00000000-0000-0000-0000-000000000002', 'LEGACY-PURCHASE', 'legacy', '{base_currency}')
-      ON CONFLICT (purchase_order_id) DO UPDATE SET 
-        order_number = EXCLUDED.order_number;
-
-    INSERT INTO modbm_core.purchase_order_lines (purchase_order_line_id, purchase_order_id, line_number, product_id, amount, total_amount, quantity, price_per_unit, tax, discount_percentage)
-      VALUES (
-        '00000000-0000-0000-0000-000000000020', '00000000-0000-0000-0000-000000000002', 1, '00000000-0000-0000-0000-000000000000', 0, 0, 0, 0, 0, 0
-      )
-      ON CONFLICT (purchase_order_line_id) DO NOTHING;
-
-    -- Anchor exchange rate for the base currency
-    INSERT INTO modbm_core.exchange_rates (currency_code, currency_name, buy_rate, sell_rate)
-      VALUES ('{base_currency}', '{base_currency}', 1.0, 1.0)
-      ON CONFLICT (currency_code) DO UPDATE SET buy_rate = 1.0, sell_rate = 1.0;
+    INSERT INTO modbm_core.products (product_id, product_number, name)
+      VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM-CUSTOM-LINE', 'Custom Line Product')
+      ON CONFLICT (product_id) DO UPDATE SET
+        product_number = EXCLUDED.product_number,
+        name = EXCLUDED.name;
     """
     psql_sql(sql)
+    print("  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product")
+
+
+
+
+def seed_organization(dry_run: bool = False) -> None:
+    """Seed a fallback organization record ONLY if none exists.
+    The authoritative import from raw_abm.company is handled by dbt (import_organization)."""
+    if dry_run:
+        print("  [DRY RUN] Would seed fallback organization if none exists")
+        return
+
+    exists = psql("SELECT 1 FROM modbm_core.organization LIMIT 1;", capture=True)
+    if exists:
+        print("  SKIP: Organization record already exists.")
+        return
+
+    psql_sql("""
+    INSERT INTO modbm_core.organization (organization_id, name)
+    VALUES ('00000000-0000-0000-0000-000000000000'::uuid, 'My Company')
+    ON CONFLICT (organization_id) DO NOTHING;
+    """)
+    print("  Seeded default organization (fallback)")
 
 
 def load_report_config():
@@ -414,40 +291,93 @@ def seed_reports(dry_run: bool = False) -> None:
     print(f"  Seeded {len(reports_sql)} reports and {len(hooks_sql)} hook assignments.")
 
 
-def validate_report_setup() -> bool:
-    """Verifies that the database matches the shared report config."""
-    print("Verifying report setup integrity...")
-    reports = load_report_config()
+# ── Validation ──────────────────────────────────────────────────────────────
+
+
+def validate_seeds() -> bool:
+    """Comprehensive validation of all seed categories."""
+    print("Validating seed integrity...\n")
     all_passed = True
 
+    # 1. Organization
+    org = psql("SELECT 1 FROM modbm_core.organization LIMIT 1;", capture=True)
+    if org:
+        print("  [PASS] Organization record exists")
+    else:
+        print("  [FAIL] No organization record found")
+        all_passed = False
+
+    # 2. Location (informational — created by Setup Wizard, not by seed.py)
+    loc = psql("SELECT 1 FROM modbm_core.locations LIMIT 1;", capture=True)
+    if loc:
+        loc_count = psql("SELECT count(*) FROM modbm_core.locations;", capture=True)
+        print(f"  [PASS] {loc_count} location(s) exist")
+    else:
+        print("  [INFO] No locations yet (created during Setup or ABM import)")
+
+    # 3. System Product
+    sys_prod = psql("SELECT 1 FROM modbm_core.products WHERE product_number = 'SYSTEM-CUSTOM-LINE';", capture=True)
+    if sys_prod:
+        print("  [PASS] SYSTEM-CUSTOM-LINE product exists")
+    else:
+        print("  [FAIL] SYSTEM-CUSTOM-LINE product missing")
+        all_passed = False
+
+    # 4. UOM
+    uom = psql("SELECT 1 FROM modbm_core.uom_dictionary WHERE uom_code = 'EA';", capture=True)
+    if uom:
+        print("  [PASS] UOM 'EA' exists")
+    else:
+        print("  [FAIL] UOM 'EA' missing")
+        all_passed = False
+
+    # 5. Users
+    user_count = psql("SELECT count(*) FROM modbm_core.users;", capture=True)
+    if user_count and int(user_count) > 0:
+        print(f"  [PASS] {user_count} user(s) exist")
+    else:
+        print("  [FAIL] No users found")
+        all_passed = False
+
+    # 6. Reports
+    reports = load_report_config()
+    report_failures = 0
+
     for r in reports:
-        # 1. Check report exists
         exists = psql(f"SELECT 1 FROM modbm_core.reports WHERE id = '{r['id']}' AND slug = '{r['slug']}';", capture=True)
         if not exists:
             print(f"  [FAIL] Report {r['slug']} (ID: {r['id']}) missing from DB.")
-            all_passed = False
+            report_failures += 1
             continue
 
-        # 2. Check hook assignment if applicable
         if 'hook' in r and r['hook']:
             hook_assignment = psql(f"SELECT report_id FROM modbm_core.report_hook_assignments WHERE hook_slug = '{r['hook']}';", capture=True)
             if not hook_assignment or hook_assignment != r['id']:
-                print(f"  [FAIL] Hook '{r['hook']}' not correctly assigned to report '{r['slug']}' (Expected: {r['id']}, Found: {hook_assignment})")
-                all_passed = False
+                print(f"  [FAIL] Hook '{r['hook']}' not correctly assigned to report '{r['slug']}'")
+                report_failures += 1
 
-        # 3. Check context registration
         if 'context' in r and r['context']:
             context_exists = psql(f"SELECT 1 FROM modbm_core.report_contexts WHERE report_id = '{r['id']}' AND context = '{r['context']}';", capture=True)
             if not context_exists:
                 print(f"  [FAIL] Context '{r['context']}' not registered for report '{r['slug']}'")
-                all_passed = False
+                report_failures += 1
 
-    if all_passed:
-        print("  [PASS] All reports, hooks, and contexts are correctly configured.")
+    if report_failures == 0:
+        print(f"  [PASS] All {len(reports)} reports, hooks, and contexts correctly configured")
     else:
-        print("  [FAIL] Report setup integrity check failed.")
-        
+        all_passed = False
+
+    # Summary
+    print()
+    if all_passed:
+        print("  ✅ ALL SEED CHECKS PASSED")
+    else:
+        print("  ❌ SEED VALIDATION FAILED — see failures above")
+
     return all_passed
+
+
+# ── Main ────────────────────────────────────────────────────────────────────
 
 
 def main() -> None:
@@ -455,14 +385,12 @@ def main() -> None:
     verify_only = "--verify-only" in sys.argv
     
     if verify_only:
-        success = validate_report_setup()
+        success = validate_seeds()
         sys.exit(0 if success else 1)
 
     users_only = "--users" in sys.argv
-    inventory_only = "--inventory" in sys.argv
     products_only = "--products" in sys.argv
-    suppliers_only = "--suppliers" in sys.argv
-    seed_all = not users_only and not inventory_only and not products_only and not suppliers_only
+    seed_all = not users_only and not products_only
 
     if dry_run:
         print("Dry run mode -- no data will be written.\n")
@@ -471,30 +399,20 @@ def main() -> None:
         print("Seeding users...")
         seed_users(dry_run)
 
-    if seed_all or inventory_only:
-        print("Seeding inventory...")
-        seed_inventory(dry_run)
-        print("Syncing inventory aggregates...")
-        sync_inventory_aggregates(dry_run)
-
     if seed_all or products_only:
         print("Seeding products...")
         seed_products(dry_run)
 
-    if seed_all or suppliers_only:
-        print("Seeding suppliers...")
-        seed_suppliers(dry_run)
-
     if seed_all:
-        base_currency = os.environ.get("HOME_CURRENCY", "AUD")
-
-        seed_system_records(dry_run, base_currency, os.environ.get("DEFAULT_FULFILLMENT_LOCATION_CODE", "HQ"))
+        print("Seeding organization...")
         seed_organization(dry_run)
-        seed_gst_categories(dry_run)
+
+        print("Seeding reports...")
         seed_reports(dry_run)
         
         if not dry_run:
-            validate_report_setup()
+            print()
+            validate_seeds()
 
     if not dry_run:
         print("\nDone.")

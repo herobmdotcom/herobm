@@ -164,7 +164,7 @@
       "unauthorized": {
         "title": "Unauthorized Access",
         "description": "This installation portal strictly requires a one-time cryptographic token.",
-        "instructions": "Please run <strong class=\"text-slate-800\">make setup-wizard</strong> inside the host system CLI to generate a valid secure link."
+        "instructions": "Please run <strong>make setup-wizard</strong> inside the host system CLI to generate a valid secure link."
       },
       "loading": "Loading wizard..."
     },
@@ -204,7 +204,7 @@
     },
     "preview": {
       "title": "Source Preview Data",
-      "description": "Validating entities detected in the ABM MSSQL pipeline from <strong class=\"text-[#006b5c] font-semibold\">{database}</strong> at <strong class=\"text-[#006b5c] font-semibold\">{host}</strong>.",
+      "description": "Validating entities detected in the ABM MSSQL pipeline from <highlight>{database}</highlight> at <highlight>{host}</highlight>.",
       "loading": "Scanning MSSQL schema...",
       "noTables": "No tables returned by pipeline. Ensure extraction step succeeded.",
       "confirm": "Confirm Mapping"
@@ -913,7 +913,8 @@
       "eventQueue": "Event Queue",
       "movements": "Movements",
       "systemLogs": "System Logs",
-      "invoices": "Invoices"
+      "invoices": "Invoices",
+      "receiving": "Receiving"
     }
   },
   "bins": {

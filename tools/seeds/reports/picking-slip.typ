@@ -36,7 +36,7 @@
     align: (left, left, left, right),
     [*Product Code*], [*Description*], [*Bin*], [*Qty to Pick*],
     ..for line in data.pickingLines {
-      ([#line.productCode], [#line.description], [#line.binNumber], [#str(line.qtyToPick)])
+      ([#line.at("productCode", default: "")], [#line.at("description", default: "")], [#line.at("binNumber", default: "")], [#str(line.at("qtyToPick", default: 0))])
     }
   )
 } else {

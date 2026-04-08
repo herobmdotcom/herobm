@@ -143,6 +143,11 @@ describe('API E2E — Picking & Shipments', () => {
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: state, generateBackorders: false })
+        .expect((res: any) => {
+          if (res.status !== 200) {
+            console.error(`Status change to ${state} failed:`, res.body);
+          }
+        })
         .expect(200);
     }
 

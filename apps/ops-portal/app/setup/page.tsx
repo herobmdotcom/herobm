@@ -8,16 +8,12 @@ import SetupWizard from './components/SetupWizard';
 
 function SetupGate() {
   const t = useTranslations('setup.gate');
+  const tPage = useTranslations('setup.page');
   const params = useSearchParams();
   const token = params.get('token');
   const [authed, setAuthed] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setAuthed(false);
-      return;
-    }
-
     // Attempting a simple GET against a setup route verifies the token because
     // lib/api.ts automatically intercepts '/api/setup/*' and injects the token query.
     apiFetch('/api/setup/status')
@@ -45,13 +41,13 @@ function SetupGate() {
          <h2 className="text-2xl font-bold text-slate-900 mb-3">{t('unauthorized.title')}</h2>
          <p className="text-slate-600 mb-6 border bg-slate-50 border-slate-200 p-4 rounded-lg font-mono text-sm leading-relaxed text-left">
            {t('unauthorized.description')} <br/><br/>
-           <span dangerouslySetInnerHTML={{ __html: t('unauthorized.instructions') }} />
+           {t.rich('unauthorized.instructions', {
+             strong: (chunks) => <strong className="text-slate-800">{chunks}</strong>
+           })}
          </p>
       </div>
     );
   }
-
-  const tPage = useTranslations('setup.page');
 
   return (
     <div className="w-full max-w-4xl">

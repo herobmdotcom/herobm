@@ -6,6 +6,7 @@ import {
   purchaseOrderReceptionLines,
   purchaseOrders,
   purchaseOrderLineItems,
+  purchaseOrderEvents,
   products,
   outbox,
   bins,
@@ -74,6 +75,37 @@ export class ReceptionsService {
             const newTotal =
               Number(poLine.quantityReceived) + Number(line.quantityReceived);
 
+            if (newTotal > Number(poLine.quantity)) {
+              await tx.insert(purchaseOrderEvents).values({
+                purchaseOrderId: createDto.purchaseOrderId,
+                eventType: 'over_received_warning',
+                payload: {
+                  purchaseOrderLineId: poLine.purchaseOrderLineId,
+                  productId: poLine.productId,
+                  orderedQuantity: Number(poLine.quantity),
+                  newTotalReceived: newTotal,
+                },
+                actor: userId,
+              });
+            }
+
+            if (
+              line.invoicePricePerUnit !== undefined &&
+              Number(line.invoicePricePerUnit) !== Number(poLine.pricePerUnit)
+            ) {
+              await tx.insert(purchaseOrderEvents).values({
+                purchaseOrderId: createDto.purchaseOrderId,
+                eventType: 'price_discrepancy_warning',
+                payload: {
+                  purchaseOrderLineId: poLine.purchaseOrderLineId,
+                  productId: poLine.productId,
+                  poPrice: Number(poLine.pricePerUnit),
+                  invoicePrice: Number(line.invoicePricePerUnit),
+                },
+                actor: userId,
+              });
+            }
+
             // Get product to calculate new WAC/Standard cost
             const [productRow] = await tx
               .select()
@@ -141,10 +173,32 @@ export class ReceptionsService {
         }
 
         // Check if all PO lines are fully received, update PO status if so
-        // For simplicity, just marking the PO as 'received' if a reception is created
+        const allPoLines = await tx
+          .select({
+            quantity: purchaseOrderLineItems.quantity,
+            quantityReceived: purchaseOrderLineItems.quantityReceived,
+          })
+          .from(purchaseOrderLineItems)
+          .where(
+            eq(
+              purchaseOrderLineItems.purchaseOrderId,
+              createDto.purchaseOrderId,
+            ),
+          );
+
+        let isFullyReceived = true;
+        for (const l of allPoLines) {
+          if (Number(l.quantityReceived) < Number(l.quantity)) {
+            isFullyReceived = false;
+            break;
+          }
+        }
+
+        const newState = isFullyReceived ? 'received' : 'partially_received';
+
         await tx
           .update(purchaseOrders)
-          .set({ stateCode: 'received', modifiedOn: new Date() })
+          .set({ stateCode: newState, modifiedOn: new Date() })
           .where(eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId));
 
         if (ledgerLines.length > 0) {

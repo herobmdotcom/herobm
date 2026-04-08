@@ -28,7 +28,8 @@ export const SALES_ORDER_TRANSITIONS: Record<string, string[]> = {
 
 export const PURCHASE_ORDER_TRANSITIONS: Record<string, string[]> = {
   draft: ['ordered', 'cancelled'],
-  ordered: ['received', 'cancelled'],
+  ordered: ['partially_received', 'received', 'cancelled'],
+  partially_received: ['received'],
   received: [],
   cancelled: ['draft'],
   legacy: [],
@@ -60,7 +61,7 @@ export const SALES_ORDER_LIFECYCLE: Record<string, number> = {
 };
 
 export const PURCHASE_ORDER_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, ordered: 2, received: 3, legacy: 4,
+  cancelled: 0, draft: 1, ordered: 2, partially_received: 3, received: 4, legacy: 5,
 };
 
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {

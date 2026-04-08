@@ -1007,7 +1007,7 @@ export const glAccounts = modbmCore.table(
     parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
     isGroup: boolean('is_group').notNull().default(false),
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
-    currencyCode: text('currency_code').notNull().default('AUD'), // GL accounts can have different currencies
+    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code), // GL accounts can have different currencies
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   },

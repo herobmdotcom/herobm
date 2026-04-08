@@ -34,6 +34,12 @@ p, admin, settings, write
 p, admin, gl, read
 p, admin, gl, write
 p, admin, system_logs, read
+p, admin, setup, execute
+p, admin, setup, read
+
+# system — bootstrap role for setup execution only
+p, system, setup, execute
+p, system, setup, read
 
 # finance — viewer + GL read/write + AR/AP invoicing
 p, finance, gl, read

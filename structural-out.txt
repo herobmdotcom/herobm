@@ -1,0 +1,369 @@
+Running test: test_drizzle_schema_sync
+Checking if Drizzle schema definition matches codebase migrations...
+  [OK] No ungenerated schema changes in codebase.
+Checking for duplicate migration prefixes...
+  [OK] No duplicate migration prefixes found.
+Checking if the database is fully migrated...
+  [OK] Database is fully migrated.
+
+Test Passed: test_drizzle_schema_sync
+PASS: No Docker socket mount in base docker-compose.yml
+
+=== Structural Checks ===
+  PASS: promtail-config.yaml has container_logs scrape job
+  PASS: promtail-config-windows.yaml has container_logs scrape job
+  PASS: No socket mounts in docker-compose.yml
+  PASS: podman_logs volume exists
+
+=== Live Loki Ingest Test ===
+  SKIP: -SkipLive flag set (PLG stack not expected to be running)
+
+=== Results: 4/4 passed ===
+ADV-037: All container log shipping checks passed.
+PASS: All docker-compose port bindings are restricted to 127.0.0.1.
+=== Scanning .ts files for ?? fallbacks on secret variables ===
+=== Checking all Redis services use --requirepass ===
+PASS: No weak credential fallback defaults or disabled auth found.
+=== Checking for git-tracked .env files ===
+=== Scanning for weak password literals in .ts/.tsx files ===
+=== Scanning for env var credential fallbacks in .ts/.tsx files ===
+PASS: No hardcoded credentials detected in source files.
+PASS: No wildcard CORS calls found.
+PASS: No bare print() calls found in 6 pipeline file(s).
+PASS: All third-party imports are pinned in requirements.txt.
+PASS: All 1 pipeline(s) have observability configured.
+PASS: ADV-035 -- all write services have Logger instances
+PASS: All controller handlers have proper AuthZ decorator coverage.
+PASS: ADV-045 -- all services use typed DrizzleDB injection
+PASS: AllExceptionsFilter is imported, registered, and file exists.
+PASS: ADV-032 -- all @SkipCasbin() controllers have ThrottlerGuard
+PASS: No duplicate context-critical packages found.
+--- Structural Test: Report Seeding Integrity ---
+Running tools\seed.py --verify-only...
+Validating seed integrity...
+
+  [PASS] Organization record exists
+  [PASS] 2 location(s) exist
+  [PASS] SYSTEM-CUSTOM-LINE product exists
+  [PASS] UOM 'EA' exists
+  [PASS] 6 user(s) exist
+  [PASS] All 7 reports, hooks, and contexts correctly configured
+
+  Γ£à ALL SEED CHECKS PASSED
+[PASS] Report seeding integrity confirmed.
+--- Configuration Drift & Parity Test ---
+Loading .env file...
+Spinning up sterile shadow database container (postgres-shadow-modbm)...
+b819f97217cccb1de24017fcf18fe291bb6a0be6c24d35c026e55a25a9f583f6
+Waiting for postgres to boot...
+/var/run/postgresql:5432 - no response
+/var/run/postgresql:5432 - accepting connections
+Running migrations on shadow DB...
+11 pending migration(s):
+
+  Applying: 0000_baseline.sql ...   CREATE SCHEMA
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+OK
+  Applying: 0001_medical_wild_pack.sql ...   ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0002_cynical_quicksilver.sql ...   ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0003_melodic_carnage.sql ...   ALTER TABLE
+OK
+  Applying: 0004_black_nextwave.sql ...   ALTER TABLE
+OK
+  Applying: 0005_wonderful_misty_knight.sql ...   ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0006_add-app-settings.sql ...   CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0007_nosy_richard_fisk.sql ...   CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0008_gigantic_namora.sql ...   CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+OK
+  Applying: 0009_enforce_supplier_risk.sql ...   CREATE FUNCTION
+CREATE TRIGGER
+OK
+  Applying: 0010_ambiguous_captain_cross.sql ...   ALTER TABLE
+OK
+
+Done. 11 migration(s) applied.
+
+  Applying extensions: extensions.sql ...   DROP VIEW
+CREATE VIEW
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+OK
+Running baseline seed on shadow DB...
+Seeding users...
+  CREATE EXTENSION
+INSERT 0 6
+  Seeded users: admin, viewer, sales, warehouse, procurement, finance
+Seeding products...
+  INSERT 0 1
+INSERT 0 1
+  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+Seeding organization...
+  INSERT 0 1
+  Seeded default organization (fallback)
+Seeding reports...
+  INSERT 0 7
+INSERT 0 5
+INSERT 0 7
+  Seeded 7 reports and 5 hook assignments.
+
+Validating seed integrity...
+
+  [PASS] Organization record exists
+  [INFO] No locations yet (created during Setup or ABM import)
+  [PASS] SYSTEM-CUSTOM-LINE product exists
+  [PASS] UOM 'EA' exists
+  [PASS] 6 user(s) exist
+  [PASS] All 7 reports, hooks, and contexts correctly configured
+
+  Γ£à ALL SEED CHECKS PASSED
+
+Done.
+Running COA loader on shadow DB...
+
+> api@0.0.1 seed:coa
+> ts-node src/scripts/seed-coa.ts
+
+[32m[Nest] 22756  - [39m04/07/2026, 2:32:28 PM [32m    LOG[39m [32mSeeding Chart of Accounts and GL Settings...[39m
+[32m[Nest] 22756  - [39m04/07/2026, 2:32:28 PM [32m    LOG[39m [38;5;3m[CoaLoaderService] [39m[32mLoading chart of accounts: Australia - Standard with Numbers[39m
+[32m[Nest] 22756  - [39m04/07/2026, 2:32:29 PM [32m    LOG[39m [38;5;3m[CoaLoaderService] [39m[32mChart of accounts loaded: 47 accounts created[39m
+[32m[Nest] 22756  - [39m04/07/2026, 2:32:29 PM [32m    LOG[39m [32mΓ£à COA seeded successfully (47 accounts).[39m
+
+Shadow database successfully constructed. Running parity diff...
+--- Configuration Parity Check ---
+Checking static configuration files...
+  OK
+
+Checking Schema Object Parity (Tables & Views)...
+  OK
+
+Discovering tables for Strict Parity check...
+  Found 9 strict tables (excluding 45 transactional tables).
+
+Checking STRICT PARITY on configuration tables...
+  WARN: Extra records in table 'app_settings':
+    - [EXTRA] Row in Dev DB (Key: (('credit_limit_behavior', 'soft'), ('default_fulfillment_location_id', '011d792d-9122-4a55-906b-d62fc5b90b0d'), ('inventory_valuation_method', 'weighted_average'), ('non_stock_billing_mode', 'per_shipment'), ('settings_id', '8f8b8c0f-060c-4be2-9b92-d48a96f2dea0'), ('setup_completed_at', None)))
+  WARN: Extra records in table 'gl_settings':
+    - [EXTRA] Row in Dev DB (Key: (('base_currency', 'EUR'), ('default_ap_account_id', 'baf05525-26c6-5d67-86ed-136a07a5f1fe'), ('default_ar_account_id', 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb'), ('default_cogs_account_id', 'acbb0854-271c-573c-8ca9-df7e66d0a657'), ('default_expense_account_id', 'c6dfe5ad-d679-503e-970d-8b9b512a0b3b'), ('default_revenue_account_id', 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14'), ('default_tax_account_id', '3f86d519-c670-5161-9765-a02a65e5bd4c'), ('expense_routing_precedence', 'product_first'), ('fiscal_year_start_month', '7'), ('revenue_routing_precedence', 'product_first'), ('settings_id', '4e185bce-d31a-4caa-8462-73c261864eff')))
+  FAIL: Critical drift in table 'gl_settings':
+    - [MISSING] Row in Dev DB (Key: (('base_currency', 'AUD'), ('default_ap_account_id', 'baf05525-26c6-5d67-86ed-136a07a5f1fe'), ('default_ar_account_id', 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb'), ('default_cogs_account_id', 'acbb0854-271c-573c-8ca9-df7e66d0a657'), ('default_expense_account_id', 'c6dfe5ad-d679-503e-970d-8b9b512a0b3b'), ('default_revenue_account_id', 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14'), ('default_tax_account_id', '3f86d519-c670-5161-9765-a02a65e5bd4c'), ('expense_routing_precedence', 'product_first'), ('fiscal_year_start_month', '7'), ('revenue_routing_precedence', 'product_first'), ('settings_id', '4e185bce-d31a-4caa-8462-73c261864eff')))
+  WARN: Extra records in table 'reports':
+    - [EXTRA] Row in Dev DB (Key: d0d3da76-33f6-4f7f-aaf4-2d9059974c8f)
+    - [EXTRA] Row in Dev DB (Key: 82e8aacc-060e-4624-902e-f2f9426ec035)
+    - [EXTRA] Row in Dev DB (Key: 9872d535-5374-4717-ac94-5d87b0451d50)
+    - [EXTRA] Row in Dev DB (Key: 22b0c84a-db66-4d5c-8ce9-bfe41288e0ae)
+    - [EXTRA] Row in Dev DB (Key: 82a4423c-ea91-4f65-87bd-8613444e4e98)
+    - [EXTRA] Row in Dev DB (Key: 8737005e-d5da-41a5-ad71-25d592fe03fc)
+    - [EXTRA] Row in Dev DB (Key: 11056b56-9586-47c1-a14c-3cc322bfcc35)
+    - [EXTRA] Row in Dev DB (Key: 0eeb8355-aec6-47fe-a5a5-74d3c05d2e2f)
+    - [EXTRA] Row in Dev DB (Key: 2250a188-6455-4a48-a461-eb0e507d49fe)
+    - [EXTRA] Row in Dev DB (Key: 217d4a41-99c2-47e9-b423-e2fb434c7303)
+    - [EXTRA] Row in Dev DB (Key: 92d3ece4-54d2-430b-86df-99e7cb08f640)
+    - [EXTRA] Row in Dev DB (Key: 769e54a9-8e56-44ef-bb4b-43645be85702)
+    - [EXTRA] Row in Dev DB (Key: 60aeb0e8-7d80-4797-a25c-be40e3bc629f)
+    - [EXTRA] Row in Dev DB (Key: a446d6a4-3d2b-445c-8fe1-f296d91dcdfb)
+    - [EXTRA] Row in Dev DB (Key: 7eb98bb5-ea3f-4258-b436-a7545b3a5d3f)
+    - [EXTRA] Row in Dev DB (Key: e602a051-ab52-4d2f-9ca2-4d83605a7514)
+    - [EXTRA] Row in Dev DB (Key: f8891370-dc3b-4b3f-9f4f-edfed489fe91)
+    - [EXTRA] Row in Dev DB (Key: 372f9ac0-25c5-4813-84d4-b7e40bcc1b73)
+    - [EXTRA] Row in Dev DB (Key: d3bb0c52-dea6-4f1d-96e4-859bbd002ec8)
+    - [EXTRA] Row in Dev DB (Key: 16efd89a-351a-486e-b6c6-62398c0f8352)
+    - [EXTRA] Row in Dev DB (Key: 2c9e93e2-de83-45eb-9951-24ae7de2cb4e)
+    - [EXTRA] Row in Dev DB (Key: 37388958-586f-4a84-9606-934d8ac186b5)
+    - [EXTRA] Row in Dev DB (Key: 241ec014-005f-4ee7-bc0c-3810f8aed1d9)
+    - [EXTRA] Row in Dev DB (Key: 26fdd2db-24ab-4a95-a099-cfe21327ea93)
+    - [EXTRA] Row in Dev DB (Key: 66761c48-bcf0-4b89-bd91-2d9683beb490)
+    - [EXTRA] Row in Dev DB (Key: 65e62219-86dc-450a-be5b-a1272ea4ef08)
+    - [EXTRA] Row in Dev DB (Key: ff7bd451-c495-4946-93be-94f971e76e61)
+    - [EXTRA] Row in Dev DB (Key: 455e3d85-310a-481b-9aa8-fc2fbd60e746)
+    - [EXTRA] Row in Dev DB (Key: fa0ba3bf-a459-4de0-93f7-2c4762f36eb6)
+    - [EXTRA] Row in Dev DB (Key: 63377521-50fe-4149-8693-5f4dc5f301b1)
+    - [EXTRA] Row in Dev DB (Key: 61ba44de-9a82-4938-91ed-16693485857c)
+    - [EXTRA] Row in Dev DB (Key: 4594d016-0290-4a93-87f2-a531956f531b)
+    - [EXTRA] Row in Dev DB (Key: 3376a94b-dcd9-455e-a87e-6ff5d4281edf)
+    - [EXTRA] Row in Dev DB (Key: df903f92-6b06-47da-8361-c519f5c8de92)
+    - [EXTRA] Row in Dev DB (Key: 42eff477-fbf9-4d95-9f33-c05a53829369)
+    - [EXTRA] Row in Dev DB (Key: 7e9b6df1-83d2-40e9-8f6e-0ac6972d17bd)
+    - [EXTRA] Row in Dev DB (Key: ab813362-bc83-4a72-9433-bb77c948a40c)
+    - [EXTRA] Row in Dev DB (Key: 89d946e6-6084-4c34-822c-61e27b041655)
+    - [EXTRA] Row in Dev DB (Key: a5421462-c89c-4dfc-9589-e2a41aa205e8)
+    - [EXTRA] Row in Dev DB (Key: 85fdb8ad-bf6f-47ae-9857-ddcb59cf0d4c)
+    - [EXTRA] Row in Dev DB (Key: 843cbdb7-58de-448a-83f8-f114e66c4f5c)
+    - [EXTRA] Row in Dev DB (Key: ae0b41aa-d227-4f2d-9d44-770085142987)
+    - [EXTRA] Row in Dev DB (Key: 51f61cf2-899c-42c6-aa3d-6cbc4f18b9f4)
+    - [EXTRA] Row in Dev DB (Key: 8311d7fd-87c4-4d76-916d-f416b925faf3)
+    - [EXTRA] Row in Dev DB (Key: 9aaa90ab-6a58-4e38-823e-6fa9cdcbad49)
+    - [EXTRA] Row in Dev DB (Key: 055945cc-e7b7-48d4-b7ff-aefb80ca536d)
+
+[FAIL] Configuration drift detected. Please review the errors above.
+
+Tearing down shadow database...
+postgres-shadow-modbm
+postgres-shadow-modbm
+Drift verification failed! Dev DB is out of sync with generated baseline codebase.
+At C:\Users\Marcel\volz\modbm\modbm\infra\tests\test_config_drift.ps1:66 char:32
++ ... DE -ne 0) { throw "Drift verification failed! Dev DB is out of sync w ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Drift verificat...eline codebase.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Drift verification failed! Dev DB is out of sync with generated baseline codebase.
+ 
+make: *** [Makefile:357: test-structural-local] Error 1

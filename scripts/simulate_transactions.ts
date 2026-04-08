@@ -183,7 +183,6 @@ async function runPurchaseOrderCycle(label: string): Promise<void> {
     orderNumber,
     name: `Sim PO ${orderNumber}`,
     vendorId,
-    currencyCode: 'EUR',
     lines: Array.from({ length: randomBetween(1, 3) }, () => {
       const product = randomItem(cachedProducts);
       return {

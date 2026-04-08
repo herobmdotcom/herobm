@@ -1,8 +1,0 @@
-[
-  {
-    "currency_code": "EUR"
-  },
-  {
-    "currency_code": "SGD"
-  }
-]

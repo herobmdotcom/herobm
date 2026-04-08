@@ -28,5 +28,6 @@
     "node_modules/(?!(uuid)/)"
   ],
   "setupFiles": ["./setup-env.ts"],
+  "setupFilesAfterEnv": ["./suite-setup.ts"],
   "testTimeout": 30000
 }

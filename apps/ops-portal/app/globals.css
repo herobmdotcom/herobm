@@ -427,11 +427,15 @@ h2 {
 }
 
 /* Fix missing background on pinned columns causing text bleed-through when scrolling */
-.ag-pinned-left-header,
 .ag-pinned-left-cols-container .ag-cell,
-.ag-cell-pinned-left,
-.ag-header-cell.ag-header-cell-pinned-left {
+.ag-cell-pinned-left {
   background-color: var(--ag-background-color, #ffffff) !important;
+}
+
+/* Ensure pinned headers match the grey of the rest of the header row */
+.ag-pinned-left-header,
+.ag-header-cell.ag-header-cell-pinned-left {
+  background-color: var(--bg-secondary) !important;
 }
 
 /* Override state badges to match Mock */

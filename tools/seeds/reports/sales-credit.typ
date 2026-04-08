@@ -94,16 +94,18 @@
   text(8pt, weight: "bold", fill: luma(50))[Amount],
 
   ..for line in data.lines {
+    let desc = line.at("description", default: "")
+    let rsn = line.at("reason", default: "")
     (
-      text(8pt)[#line.productNumber],
-      text(8pt)[#if line.description != "" [#line.description] else [—]],
-      text(8pt)[#line.quantity],
-      text(8pt)[#fmt(line.pricePerUnit)],
-      text(8pt)[#line.discountPercentage],
-      text(8pt)[#line.gstRate],
-      text(8pt)[#if line.reason != "" [#line.reason] else [—]],
-      text(8pt)[#fmt(line.fee)],
-      text(8pt, weight: "semibold")[#fmt(line.amount)],
+      text(8pt)[#line.at("productNumber", default: "")],
+      text(8pt)[#if desc != "" [#desc] else [—]],
+      text(8pt)[#line.at("quantity", default: 0)],
+      text(8pt)[#fmt(line.at("pricePerUnit", default: 0))],
+      text(8pt)[#line.at("discountPercentage", default: 0)],
+      text(8pt)[#line.at("gstRate", default: 0)],
+      text(8pt)[#if rsn != "" [#rsn] else [—]],
+      text(8pt)[#fmt(line.at("fee", default: 0))],
+      text(8pt, weight: "semibold")[#fmt(line.at("amount", default: 0))],
     )
   }
 )

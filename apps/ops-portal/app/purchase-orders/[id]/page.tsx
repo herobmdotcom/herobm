@@ -488,6 +488,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 >
                   {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
                 </button>
+                {(order.stateCode === 'ordered' || order.stateCode === 'partially_received') && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => router.push(`/purchase-orders/receiving?poId=${id}`)}
+                  >
+                    Receive Items
+                  </button>
+                )}
                 {(order.stateCode === 'received' || order.stateCode === 'legacy') && !showCreateReturn && (
                   <>
                     <button

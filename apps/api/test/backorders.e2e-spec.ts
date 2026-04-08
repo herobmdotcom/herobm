@@ -120,9 +120,14 @@ describe('Backorders Workflow (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         stateCode: 'confirmed',
-      })
-      .expect(409);
+      });
 
+    console.log(
+      'Conflict Response Body:',
+      JSON.stringify(conflictRes.body, null, 2),
+    );
+
+    expect(conflictRes.status).toBe(409);
     expect(conflictRes.body.message).toBe('INVENTORY_GAP');
     expect(conflictRes.body.gaps).toBeDefined();
     expect(conflictRes.body.gaps).toHaveLength(1);

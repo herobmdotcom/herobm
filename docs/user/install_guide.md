@@ -150,11 +150,11 @@ You should see your chosen services listed as `Up` with `(healthy)` next to most
 
 ## Step 4: Provision the Database
 
-You must bootstrap the database with a Chart of Accounts, system settings, and core identity. You can do this via the **Setup Wizard (UI)** or the **CLI**.
+You must bootstrap the database with system records, a Chart of Accounts, and core settings. You can do this via the **Setup Wizard (UI)** or the **CLI**.
 
 ### Option A: Interactive Setup Wizard (Recommended)
 
-HeroBM Platform features an interactive user interface to bootstrap your environment.
+HeroBM Platform features an interactive, two-phase user interface to bootstrap your environment securely.
 
 Run the following command to generate your secure, one-time setup token:
 
@@ -162,7 +162,17 @@ Run the following command to generate your secure, one-time setup token:
 make setup-wizard
 ```
 
-This will automatically create your base database tables and output a URL to your terminal. Click the URL to open your browser and follow the 5-step wizard to configure your region, currency, and data source.
+This will automatically create your base database tables and output a URL to your terminal. Click the URL to open your browser and follow the initialization process:
+
+**Phase 1: Base Initialization**
+1. Follow the interactive wizard to configure your region, currency, and data source.
+2. Upon confirming the execution, the platform provisions the base settings and securely creates the administrative user accounts. This atomic action instantaneously detonates the one-time setup token for security.
+3. You will be redirected to the Login page.
+
+**Phase 2: Data Import**
+4. Log in using the `admin` username and the password generated inside your `.env` file.
+5. The platform will automatically intercept your first login and direct you to a secure Data Import screen.
+6. The ELT (Extract-Load-Transform) pipeline will execute natively within your authenticated administrative session, pulling in the legacy ABM data.
 
 ### Option B: Unified CLI Setup (Fast Path)
 
@@ -174,7 +184,7 @@ npm run setup
 ```
 
 > [!NOTE]
-> The CLI setup uses defaults from your `.env` file (e.g., `HOME_CURRENCY`, `INVENTORY_VALUATION_METHOD`). Ensure these are set before running `npm run setup`.
+> The CLI setup uses defaults from your `.env` file (e.g., `INVENTORY_VALUATION_METHOD`). The base currency is configured during setup and stored in the database — it is not an environment variable.
 
 ---
 

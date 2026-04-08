@@ -4,7 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, or, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -12,6 +12,11 @@ import {
   zones,
   bins,
   binContents,
+  salesOrders,
+  salesOrderLineItems,
+  purchaseOrders,
+  inventoryLedger,
+  appSettings,
 } from '../drizzle/modbm-core-schema';
 import { CreateLocationDto, CreateZoneDto, CreateBinDto } from './dto';
 
@@ -53,6 +58,54 @@ export class LocationsService {
     if (zoneList.length > 0) {
       throw new BadRequestException(
         `Cannot delete location with ${zoneList.length} existing zones: ${zoneList.map((z) => z.code).join(', ')}`,
+      );
+    }
+
+    // 2. Check for referencing orders
+    const [soCount] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(salesOrders)
+      .where(eq(salesOrders.fulfillmentLocationId, id));
+
+    const [solCount] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(salesOrderLineItems)
+      .where(eq(salesOrderLineItems.fulfillmentLocationId, id));
+
+    const [poCount] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.deliveryLocationId, id));
+
+    const orderRefs =
+      Number(soCount.count) + Number(solCount.count) + Number(poCount.count);
+    if (orderRefs > 0) {
+      throw new BadRequestException(
+        `Cannot delete location referenced by ${Number(soCount.count)} sales order(s), ${Number(solCount.count)} sales order line(s), and ${Number(poCount.count)} purchase order(s)`,
+      );
+    }
+
+    // 3. Check for inventory ledger entries
+    const [ledgerCount] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(inventoryLedger)
+      .where(eq(inventoryLedger.locationId, id));
+
+    if (Number(ledgerCount.count) > 0) {
+      throw new BadRequestException(
+        `Cannot delete location with ${Number(ledgerCount.count)} inventory ledger entries`,
+      );
+    }
+
+    // 4. Check for app_settings default reference
+    const settingsRef = await this.db
+      .select({ id: appSettings.settingsId })
+      .from(appSettings)
+      .where(eq(appSettings.defaultFulfillmentLocationId, id));
+
+    if (settingsRef.length > 0) {
+      throw new BadRequestException(
+        `Cannot delete location that is set as the default fulfillment location in app settings`,
       );
     }
 

@@ -255,13 +255,17 @@ describe('API E2E — Sales Invoices', () => {
     it('GL Integration — posted a journal entry for the invoice', async () => {
       // Find the journal entries filtered by this sourceType
       const glRes = await request(app.getHttpServer())
-        .get(`/api/gl/journal-entries?sourceType=sales_invoice`)
+        .get(`/api/gl/journal-entries?sourceType=sales_invoice&limit=1000`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       const je = glRes.body.data.find(
         (j: any) => j.sourceId === createdInvoiceId,
       );
+      if (!je) {
+        console.error('FAILED TO FIND JE. ID:', createdInvoiceId);
+        console.error('ALL JEs:', JSON.stringify(glRes.body.data, null, 2));
+      }
 
       expect(je).toBeDefined();
 

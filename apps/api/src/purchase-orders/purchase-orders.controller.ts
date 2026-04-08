@@ -50,6 +50,12 @@ export class PurchaseOrdersController {
     return this.purchaseOrdersService.findAll(query);
   }
 
+  @Get('pending-lines')
+  @CasbinAction('read')
+  async findPendingLines(@Query('productId') productId: string) {
+    return this.purchaseOrdersService.findPendingLines(productId);
+  }
+
   @Get(':id')
   @CasbinAction('read')
   async findOne(@Param('id') id: string) {

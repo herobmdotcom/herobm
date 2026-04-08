@@ -71,6 +71,13 @@
       "when": 1775150633082,
       "tag": "0009_enforce_supplier_risk",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1775549897105,
+      "tag": "0010_ambiguous_captain_cross",
+      "breakpoints": true
     }
   ]
 }

@@ -178,7 +178,7 @@ export class CoaLoaderService {
             isSystem: row.isSystem,
           })
           .onConflictDoUpdate({
-            target: [glAccounts.glAccountId],
+            target: [glAccounts.accountCode],
             set: {
               name: row.name,
               accountType: row.accountType,

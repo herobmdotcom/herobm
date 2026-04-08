@@ -269,9 +269,9 @@ migrate-dry:
 seed:
 	"$(VENV_PYTHON)" tools/seed.py
 
-init: init-db migrate elt seed
+init: init-db migrate seed elt
 
-init-no-extract: init-db migrate elt-no-extract seed
+init-no-extract: init-db migrate seed elt-no-extract
 
 # --- Typechecks & Builds ---
 
@@ -314,6 +314,7 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_hooks_frontend.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
@@ -354,4 +355,5 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform
