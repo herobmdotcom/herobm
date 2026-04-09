@@ -9,21 +9,22 @@ import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './JournalEntrySlideOver';
 
-function sourceLabel(type: string) {
-  const labels: Record<string, string> = {
-    sales_invoice: 'Sales Invoice',
-    purchase_invoice: 'Purchase Invoice',
-    sales_credit_note: 'Sales Credit Note',
-    manual: 'Manual',
-  };
-  return labels[type] || type;
-}
-
 export default function JournalEntriesPage() {
-  useDocumentTitle('Journal Entries');
   const t = useTranslations('gl.journalEntries');
   const tCommon = useTranslations('common');
   const router = useRouter();
+
+  const sourceLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      sales_invoice: t('sourceSalesInvoice'),
+      purchase_invoice: t('sourcePurchaseInvoice'),
+      sales_credit_note: t('sourceSalesCreditNote'),
+      manual: t('sourceManual'),
+    };
+    return labels[type] || type;
+  };
+
+  useDocumentTitle(t('title'));
   
   const searchParams = useSearchParams();
   const entryParam = searchParams.get('entry') || '';
@@ -57,10 +58,10 @@ export default function JournalEntriesPage() {
     },
     {
       field: 'partyName',
-      headerName: 'Party',
+      headerName: t('columns.party'),
       width: 200,
       cellRenderer: (p: any) => {
-        if (!p.value) return <span className="text-gray-400">N/A</span>;
+        if (!p.value) return <span className="text-gray-400">{t('na')}</span>;
         const link = p.data.partyType === 'customer' 
           ? `/accounts/${p.data.partyId}` 
           : `/suppliers/${p.data.partyId}`;
@@ -83,12 +84,12 @@ export default function JournalEntriesPage() {
     },
     {
       field: 'sourceNumber',
-      headerName: 'Source Doc',
+      headerName: t('sourceDocument'),
       width: 160,
       cellRenderer: (p: any) => {
         if (!p.value) return null;
         let link = '';
-        if (p.data.sourceType === 'sales_invoice') link = `/sales-orders/invoices/${p.data.sourceId}`;
+        if (p.data.sourceType === 'sales_invoice') link = `/sales-invoices/${p.data.sourceId}`;
         if (p.data.sourceType === 'purchase_invoice') link = `/procurement/invoices/${p.data.sourceId}`;
         if (p.data.sourceType === 'sales_credit_note') link = `/sales-orders/credit-notes/${p.data.sourceId}`;
         
@@ -113,7 +114,7 @@ export default function JournalEntriesPage() {
     },
     { 
       field: 'createdBy', 
-      headerName: 'Created By', 
+      headerName: t('columns.createdBy'), 
       width: 140 
     }
   ], [t]);
@@ -177,7 +178,7 @@ export default function JournalEntriesPage() {
                     <option value="">{t('allSources')}</option>
                     <option value="sales_invoice">{t('sourceSalesInvoice')}</option>
                     <option value="purchase_invoice">{t('sourcePurchaseInvoice')}</option>
-                    <option value="sales_credit_note">Sales Credit Note</option>
+                    <option value="sales_credit_note">{t('sourceSalesCreditNote')}</option>
                     <option value="manual">{t('sourceManual')}</option>
                   </select>
 

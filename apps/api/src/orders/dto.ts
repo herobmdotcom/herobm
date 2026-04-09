@@ -11,9 +11,9 @@ import { Type } from 'class-transformer';
 // ── Order Line DTOs ──
 
 export class CreateOrderLineDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  productId!: string;
+  productId?: string;
 
   @IsOptional()
   @IsString()

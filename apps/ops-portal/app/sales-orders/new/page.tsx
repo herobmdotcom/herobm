@@ -248,7 +248,7 @@ export default function NewOrderPage() {
       return;
     }
     if (!currencyCode) {
-      setError('The selected customer does not have a currency configured.');
+      setError(tSales('salesOrders.errors.noCurrency'));
       return;
     }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
@@ -300,7 +300,7 @@ export default function NewOrderPage() {
       <DetailsLayout
         header={
           <EntityHeader
-            title="Create Sales Order"
+            title={tSales('salesOrders.createTitle')}
             onBack={() => router.push('/sales-orders')}
             actions={
               <>
@@ -476,15 +476,14 @@ export default function NewOrderPage() {
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                Fulfillment Location *
+                {tSales('salesOrders.labels.fulfillmentLocation')}
               </label>
               <select
                 className="input"
                 value={fulfillmentLocationId}
                 onChange={(e) => setFulfillmentLocationId(e.target.value)}
               >
-                {locations.length === 0 && <option value="" disabled>Loading...</option>}
+                {locations.length === 0 && <option value="" disabled>{tSales('common.loadingEllipsis')}</option>}
                 {locations.map((loc) => (
                   <option key={loc.locationId} value={loc.locationId}>
                     {loc.name}
@@ -568,7 +567,7 @@ export default function NewOrderPage() {
                         style={{ width: '100%', fontSize: 13 }}
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
-                        placeholder="Custom description..."
+                        placeholder={tSales('salesOrders.placeholders.customDescription')}
                       />
                     )}
                   </td>

@@ -35,7 +35,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
       // handle either array or paginated response format
       setExpiries(data.data || data || []);
     } catch(err: any) {
-      toast.error('Failed to load expiries: ' + err.message);
+      toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
 
   const handleSave = async () => {
     if (!editForm.expiryType || !editForm.expiryDate) {
-      toast.error('Type and Date are required');
+      toast.error(tCommon('errors.typeAndDateRequired'));
       return;
     }
     
@@ -87,10 +87,10 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     try {
       if (editingId) {
         await apiMutate(`/api/suppliers/${vendorId}/expiries/${editingId}`, 'PATCH', payload);
-        toast.success('Expiry updated');
+        toast.success(tCommon('toast.expiryUpdated'));
       } else {
         await apiMutate(`/api/suppliers/${vendorId}/expiries`, 'POST', payload);
-        toast.success('Expiry created');
+        toast.success(tCommon('toast.expiryCreated'));
       }
       handleCancel();
       loadData();
@@ -104,7 +104,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     if(!confirm(tCommon('confirmDelete'))) return;
     try {
       await apiMutate(`/api/suppliers/${vendorId}/expiries/${id}`, 'DELETE');
-      toast.success('Expiry deleted');
+      toast.success(tCommon('toast.expiryDeleted'));
       loadData();
     } catch(err: any) {
       toast.error(err.message);

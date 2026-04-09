@@ -11,8 +11,8 @@ interface LogsResponse {
 }
 
 export default function SystemLogsPage() {
-  useDocumentTitle('System Logs');
   const t = useTranslations('admin.systemLogs');
+  useDocumentTitle(t('title'));
   const [lines, setLines] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -53,7 +53,7 @@ export default function SystemLogsPage() {
 
   const handleCopyLogs = () => {
     navigator.clipboard.writeText(lines.join('\n'));
-    alert('Logs copied to clipboard!');
+    alert(t('actions.copied'));
   };
 
   return (
@@ -62,35 +62,35 @@ export default function SystemLogsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
           <div>
-            <h1 className="text-2xl font-bold">System Logs</h1>
+            <h1 className="text-2xl font-bold">{t('title')}</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Live tail of backend container and worker file logs
+              {t('subtitle')}
             </p>
           </div>
           <div className="flex gap-4 items-center">
             <div className="flex items-center gap-2 text-xs">
-              <label style={{ color: 'var(--text-muted)' }}>Service:</label>
+              <label style={{ color: 'var(--text-muted)' }}>{t('filters.service')}</label>
               <select 
                 className="input-field py-1 px-2 text-xs h-auto"
                 value={service} 
                 onChange={(e) => setService(e.target.value)}
               >
-                <option value="api">API</option>
-                <option value="worker">Outbox Worker</option>
-                <option value="postgres">PostgreSQL</option>
+                <option value="api">{t('filters.services.api')}</option>
+                <option value="worker">{t('filters.services.worker')}</option>
+                <option value="postgres">{t('filters.services.postgres')}</option>
               </select>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <label style={{ color: 'var(--text-muted)' }}>Limit:</label>
+              <label style={{ color: 'var(--text-muted)' }}>{t('filters.limit')}</label>
               <select 
                 className="input-field py-1 px-2 text-xs h-auto"
                 value={lineLimit} 
                 onChange={(e) => setLineLimit(Number(e.target.value))}
               >
-                <option value={100}>100 lines</option>
-                <option value={500}>500 lines</option>
-                <option value={1000}>1000 lines</option>
-                <option value={5000}>5000 lines</option>
+                <option value={100}>{t('filters.limits.100')}</option>
+                <option value={500}>{t('filters.limits.500')}</option>
+                <option value={1000}>{t('filters.limits.1000')}</option>
+                <option value={5000}>{t('filters.limits.5000')}</option>
               </select>
             </div>
             <label className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -99,13 +99,14 @@ export default function SystemLogsPage() {
                 checked={autoRefresh}
                 onChange={() => setAutoRefresh(!autoRefresh)}
               />
-              Auto-refresh (5s)
+              {t('filters.autoRefresh')}
             </label>
             <button className="btn btn-secondary btn-sm" onClick={handleCopyLogs} disabled={lines.length === 0}>
-              Copy Logs
+              {t('actions.copy')}
             </button>
             <button className="btn btn-secondary btn-sm" onClick={loadLogs}>
-              ↻ Refresh
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              ↻ {t('actions.refresh')}
             </button>
           </div>
         </div>

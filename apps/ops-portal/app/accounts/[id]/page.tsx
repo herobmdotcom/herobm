@@ -399,7 +399,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     value={dto.accountGroupId || null}
                     onChange={(val) => updateField('accountGroupId', val)}
                     disabled={!isEditable || saving}
-                    placeholder="No Account Group"
+                    placeholder={t('accounts.placeholders.noAccountGroup')}
                   />
                 </div>
                 <div>
@@ -412,7 +412,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     value={dto.gstCategoryId || ''}
                     onChange={(e) => updateField('gstCategoryId', e.target.value)}
                   >
-                    <option value="">(None)</option>
+                    <option value="">{t('common.options.none')}</option>
                     {gstCategories.map((cat) => (
                       <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                         {cat.title} ({cat.code})

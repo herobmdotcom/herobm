@@ -145,10 +145,10 @@ export default function ProductDetailPage() {
   };
 
   const removeSupplier = async (vendorId: string, vendorName: string) => {
-    if (!window.confirm(`Are you sure you want to unlink ${vendorName} from this product?`)) return;
+    if (!window.confirm(t('suppliers.confirmUnlink', { name: vendorName }))) return;
     try {
       await apiMutate(`/api/products/${id}/suppliers/${vendorId}`, 'DELETE');
-      toast.success('Supplier successfully unlinked');
+      toast.success(t('suppliers.toast.unlinked'));
       setRefreshGrid(prev => prev + 1);
     } catch (err: any) {
       toast.error(err.message);
@@ -157,10 +157,10 @@ export default function ProductDetailPage() {
 
   const supplierColumns: any[] = useMemo(() => [
     { field: 'vendorName', headerName: tCommon('columns.name'), flex: 1, minWidth: 160 },
-    { field: 'vendorNumber', headerName: 'Number', width: 140 },
-    { field: 'supplierPartNumber', headerName: 'Part No.', width: 140 },
-    { field: 'costPrice', headerName: 'Cost Price', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-    { field: 'discountPercent', headerName: 'Discount %', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
+    { field: 'vendorNumber', headerName: tCommon('columns.number'), width: 140 },
+    { field: 'supplierPartNumber', headerName: t('suppliers.supplierModal.inputs.supplierPartNo'), width: 140 },
+    { field: 'costPrice', headerName: t('suppliers.supplierModal.inputs.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+    { field: 'discountPercent', headerName: tCommon('columns.discountPct'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
     { field: 'stateCode', headerName: tCommon('columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
     {
       headerName: '',
@@ -173,7 +173,7 @@ export default function ProductDetailPage() {
         <button 
           onClick={(e) => { e.stopPropagation(); removeSupplier(p.value, p.data.vendorName); }}
           className="btn btn-xs btn-ghost text-red-500 hover:bg-red-50 px-2 h-7 min-h-7"
-          title="Unlink Supplier"
+          title={t('suppliers.buttons.unlinkSupplier')}
         >
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined text-[16px]">link_off</span>
@@ -183,12 +183,12 @@ export default function ProductDetailPage() {
   ], [tCommon, t]);
 
   const inventoryColumns: any[] = useMemo(() => [
-    { field: 'locationNo', headerName: 'Location No.', width: 140 },
-    { field: 'locationName', headerName: 'Location', flex: 1, minWidth: 160 },
-    { field: 'quantityOnHand', headerName: 'On Hand', type: 'numericColumn', width: 120 },
-    { field: 'quantityCommitted', headerName: 'Committed', type: 'numericColumn', width: 120 },
-    { field: 'quantityAvailable', headerName: 'Available', type: 'numericColumn', width: 120 },
-    { field: 'quantityOnOrder', headerName: 'On Order', type: 'numericColumn', width: 120 },
+    { field: 'locationNo', headerName: tCommon('columns.locationNo'), width: 140 },
+    { field: 'locationName', headerName: tCommon('columns.location'), flex: 1, minWidth: 160 },
+    { field: 'quantityOnHand', headerName: t('products.columns.quantityOnHand'), type: 'numericColumn', width: 120 },
+    { field: 'quantityCommitted', headerName: t('inventory.columns.committed'), type: 'numericColumn', width: 120 },
+    { field: 'quantityAvailable', headerName: t('inventory.columns.available'), type: 'numericColumn', width: 120 },
+    { field: 'quantityOnOrder', headerName: t('inventory.columns.onOrder'), type: 'numericColumn', width: 120 },
   ], []);
 
   if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
   const visibleSections = [
     {
       id: 'tab-details',
-      label: 'Overview',
+      label: tCommon('tabs.overview'),
       isSubPage: true,
       isActive: activeTab === 'details',
       onClick: () => setActiveTab('details'),
@@ -213,14 +213,14 @@ export default function ProductDetailPage() {
     },
     {
       id: 'tab-suppliers',
-      label: 'Suppliers',
+      label: tCommon('tabs.suppliers'),
       isSubPage: true,
       isActive: activeTab === 'suppliers',
       onClick: () => setActiveTab('suppliers'),
     },
     {
       id: 'tab-inventory',
-      label: 'Inventory',
+      label: tCommon('tabs.inventory'),
       isSubPage: true,
       isActive: activeTab === 'inventory',
       onClick: () => setActiveTab('inventory'),
@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
                       <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Suppliers
+                        {tCommon('tabs.suppliers')}
                       </h2>
                       <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
@@ -300,7 +300,7 @@ export default function ProductDetailPage() {
                       >
                         {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[16px]">add_link</span>
-                        Link Supplier
+                        {t('suppliers.supplierModal.title')}
                       </button>
                     </div>
                   </div>
@@ -323,7 +323,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
                       <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Inventory Levels
+                        {t('products.inventoryLevels')}
                       </h2>
                       <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
@@ -371,12 +371,12 @@ export default function ProductDetailPage() {
                   value={dto.name}
                   onChange={(e) => setDto({ ...dto, name: e.target.value })}
                   onBlur={(e) => handleBlur('name', e.target.value)}
-                  placeholder="Product display name"
+                  placeholder={t('products.placeholders.productDisplayName')}
                 />
               </div>
               <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Type
+                    {t('common.columns.type')}
                   </label>
                   <select
                     className="input"
@@ -384,9 +384,9 @@ export default function ProductDetailPage() {
                     onChange={(e) => handleSelectChange('productType', e.target.value)}
                     disabled={!isEditable}
                   >
-                    <option value="inventory">Inventory (Tracked)</option>
-                    <option value="non-stock">Non-Stock</option>
-                    <option value="service">Service</option>
+                    <option value="inventory">{t('products.types.inventory')}</option>
+                    <option value="non-stock">{t('products.types.nonStock')}</option>
+                    <option value="service">{t('products.types.service')}</option>
                   </select>
                 </div>
               
@@ -406,7 +406,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Status
+                    {t('common.columns.status')}
                   </label>
                   <select
                     className="input"
@@ -423,19 +423,19 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Product Group
+                    {t('products.productGroup')}
                   </label>
                   <GroupSelect
                     type="product"
                     value={dto.productGroupId}
                     onChange={(val) => handleSelectChange('productGroupId', val)}
                     disabled={!isEditable || saving}
-                    placeholder="No Product Group"
+                    placeholder={t('products.placeholders.noProductGroup')}
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    SC Number
+                    {t('products.columns.scNumber')}
                   </label>
                   <input
                     className="input"
@@ -443,7 +443,7 @@ export default function ProductDetailPage() {
                     value={dto.scNumber}
                     onChange={(e) => setDto({ ...dto, scNumber: e.target.value })}
                     onBlur={(e) => handleBlur('scNumber', e.target.value)}
-                    placeholder="SC Number"
+                    placeholder={t('products.columns.scNumber')}
                   />
                 </div>
                 <div>
@@ -456,7 +456,7 @@ export default function ProductDetailPage() {
                     value={dto.gstCategoryId || ''}
                     onChange={(e) => handleSelectChange('gstCategoryId', e.target.value)}
                   >
-                    <option value="">(None)</option>
+                    <option value="">{t('common.none')}</option>
                     {gstCategories.map((cat) => (
                       <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                         {cat.title} ({cat.code})
@@ -464,7 +464,7 @@ export default function ProductDetailPage() {
                     ))}
                     {/* Fallback for legacy values not in current categories */}
                     {dto.gstCategoryId && !gstCategories.find(c => c.gstCategoryId === dto.gstCategoryId) && (
-                      <option value={dto.gstCategoryId}>Unknown Category ({dto.gstCategoryId})</option>
+                      <option value={dto.gstCategoryId}>{t('products.unknownCategory', { id: dto.gstCategoryId })}</option>
                     )}
                   </select>
                 </div>
@@ -584,14 +584,14 @@ export default function ProductDetailPage() {
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">straighten</span>
-            Units of Measure
+            {t('products.unitsOfMeasure')}
           </h3>
 
           {/* Default UoM selectors */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Base UoM
+                {t('products.baseUom')}
               </label>
               <select
                 className="input"
@@ -612,7 +612,7 @@ export default function ProductDetailPage() {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Default Sales UoM
+                {t('products.defaultSalesUom')}
               </label>
               <select
                 className="input"
@@ -620,17 +620,17 @@ export default function ProductDetailPage() {
                 value={product.defaultSalesUomId || ''}
                 onChange={(e) => handleSelectChange('defaultSalesUomId', e.target.value || null)}
               >
-                <option value="">(Base: {product.baseUom || 'EA'})</option>
+                <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
                 {(product.productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
-                    {u.uomCode} (×{u.ratio})
+                    {t('products.uomRatioLabel', { uom: u.uomCode, ratio: u.ratio })}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Default Purchase UoM
+                {t('products.defaultPurchaseUom')}
               </label>
               <select
                 className="input"
@@ -638,10 +638,10 @@ export default function ProductDetailPage() {
                 value={product.defaultPurchaseUomId || ''}
                 onChange={(e) => handleSelectChange('defaultPurchaseUomId', e.target.value || null)}
               >
-                <option value="">(Base: {product.baseUom || 'EA'})</option>
+                <option value="">{t('products.baseUomLabel', { uom: product.baseUom || 'EA' })}</option>
                 {(product.productUoms || []).map((u: any) => (
                   <option key={u.productUomId} value={u.productUomId}>
-                    {u.uomCode} (×{u.ratio})
+                    {t('products.uomRatioLabel', { uom: u.uomCode, ratio: u.ratio })}
                   </option>
                 ))}
               </select>
@@ -651,7 +651,7 @@ export default function ProductDetailPage() {
           {/* Conversions table */}
           <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Packaging Conversions</span>
+              <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{t('products.packagingConversions')}</span>
               {isEditable && (
                 <button
                   className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
@@ -661,7 +661,7 @@ export default function ProductDetailPage() {
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[14px]">add</span>
-                  Add Conversion
+                  {t('products.addConversion')}
                 </button>
               )}
             </div>
@@ -670,13 +670,13 @@ export default function ProductDetailPage() {
             {addingUom && (
               <div className="flex items-end gap-3 mb-3 p-3 rounded-lg" style={{ background: 'rgba(0,107,92,0.04)', border: '1px solid rgba(0,107,92,0.15)' }}>
                 <div className="flex-1">
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>UoM Code</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.columns.uomCode')}</label>
                   <select
                     className="input"
                     value={newUomCode}
                     onChange={(e) => setNewUomCode(e.target.value)}
                   >
-                    <option value="">Select…</option>
+                    <option value="">{t('common.selectEllipsis')}</option>
                     {uomDictionary
                       .filter(u => u.uomCode !== (product.baseUom || 'EA'))
                       .filter(u => !(product.productUoms || []).some((pu: any) => pu.uomCode === u.uomCode))
@@ -688,7 +688,7 @@ export default function ProductDetailPage() {
                   </select>
                 </div>
                 <div style={{ width: 120 }}>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>Ratio</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.columns.ratio')}</label>
                   <input
                     className="input"
                     type="number"
@@ -708,7 +708,7 @@ export default function ProductDetailPage() {
                         uomCode: newUomCode,
                         ratio: newUomRatio,
                       });
-                      toast.success('Conversion added');
+                      toast.success(t('products.toast.conversionAdded'));
                       setAddingUom(false);
                       setNewUomCode('');
                       setNewUomRatio('1');
@@ -718,28 +718,28 @@ export default function ProductDetailPage() {
                     }
                   }}
                 >
-                  Save
+                  {tCommon('buttons.save')}
                 </button>
                 <button
                   className="btn btn-sm btn-ghost"
                   onClick={() => { setAddingUom(false); setNewUomCode(''); setNewUomRatio('1'); }}
                 >
-                  Cancel
+                  {tCommon('buttons.cancel')}
                 </button>
               </div>
             )}
 
             {(product.productUoms || []).length === 0 && !addingUom ? (
               <div className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>
-                No alternate packaging conversions configured.
+                {t('products.noConversions')}
               </div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>UoM Code</th>
-                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ratio (× Base)</th>
-                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Barcode</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.uomCode')}</th>
+                    <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.ratioBase')}</th>
+                    <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('products.columns.barcode')}</th>
                     <th style={{ width: 50 }}></th>
                   </tr>
                 </thead>
@@ -753,10 +753,10 @@ export default function ProductDetailPage() {
                         {isEditable && (
                           <button
                             onClick={async () => {
-                              if (!window.confirm(`Remove ${u.uomCode} conversion?`)) return;
+                              if (!window.confirm(t('products.confirmRemoveConversion', { uomCode: u.uomCode }))) return;
                               try {
                                 await apiMutate(`/api/products/${id}/uoms/${u.productUomId}`, 'DELETE');
-                                toast.success('Conversion removed');
+                                toast.success(t('products.toast.conversionRemoved'));
                                 await fetchProduct(false);
                               } catch (err: any) {
                                 toast.error(err.message);

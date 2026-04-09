@@ -21,6 +21,7 @@ import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import { getGstLabel } from './types';
 import InvoicesSection from './InvoicesSection';
 import ReceivingSection from './ReceivingSection';
+import ReturnsSection from './ReturnsSection';
 
 function GstLabel({ category }: { category: GstCategory }) {
   if (!category) return null;
@@ -933,6 +934,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <ReceivingSection
+          orderId={id}
+          orderLines={order.lines}
+          events={order.events}
+          currencyCode={order.currencyCode}
+        />
+
+        <ReturnsSection
           orderId={id}
           orderLines={order.lines}
           events={order.events}

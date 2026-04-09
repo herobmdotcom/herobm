@@ -56,6 +56,12 @@ export class PurchaseOrdersController {
     return this.purchaseOrdersService.findPendingLines(productId);
   }
 
+  @Get('returnable-lines')
+  @CasbinAction('read')
+  async findReturnableLines(@Query('productId') productId: string) {
+    return this.purchaseOrdersService.findReturnableLines(productId);
+  }
+
   @Get(':id')
   @CasbinAction('read')
   async findOne(@Param('id') id: string) {

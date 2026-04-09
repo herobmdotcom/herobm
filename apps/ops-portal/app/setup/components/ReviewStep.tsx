@@ -11,24 +11,25 @@ export default function ReviewStep({ config, onNext }: Props) {
   const isSsl = config.port === '1433' ? '' : ' // non-standard port';
 
   const payload = [
-    `# Execution Payload`,
+    `# ${t('executionPayload')}`,
     `Pipeline: ${config.emptyBase ? 'STERILE_INIT' : 'ENABLE_DLT_ABM_IMPORT'}`,
-    `Source:   ${config.emptyBase ? 'None' : `read_only@${config.host}:${config.port}/${config.database}`}`,
-    `Resume:   ${config.resume ? 'ENABLED (Skipping loaded tables)' : 'DISABLED'}`,
-    `Company Name: ${config.companyName}`,
-    `COA Preset: ${config.coaPreset}`,
-    `Currency: ${config.baseCurrency.split(' ')[0]}`,
-    `Fiscal Start Month: ${config.fiscalStartMonth}`,
-    `Valuation Strategy: ${config.inventoryValuation || 'weighted_average'}`,
-    `Billing Mode: ${config.nonStockBilling || 'per_shipment'}`,
-    `Default Fulfillment Location: ${config.primaryLocation !== 'none' ? config.primaryLocation : 'System Default'}`,
-    `Revenue Routing: ${config.revenueRouting.includes('Product') ? 'product_first' : 'customer_first'}`,
-    `Expense Routing: ${config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'}`
+    `${t('payload.source')}:   ${config.emptyBase ? 'None' : `read_only@${config.host}:${config.port}/${config.database}`}`,
+    `${t('payload.resume')}:   ${config.resume ? `${t('payload.enabled')} (Skipping loaded tables)` : t('payload.disabled')}`,
+    `${t('payload.companyName')}: ${config.companyName}`,
+    `${t('payload.coaPreset')}: ${config.coaPreset}`,
+    `${t('payload.currency')}: ${config.baseCurrency.split(' ')[0]}`,
+    `${t('payload.fiscalStartMonth')}: ${config.fiscalStartMonth}`,
+    `${t('payload.valuationStrategy')}: ${config.inventoryValuation || 'weighted_average'}`,
+    `${t('payload.billingMode')}: ${config.nonStockBilling || 'per_shipment'}`,
+    `${t('payload.defaultFulfillmentLocation')}: ${config.primaryLocation !== 'none' ? config.primaryLocation : t('payload.systemDefault')}`,
+    `${t('payload.revenueRouting')}: ${config.revenueRouting.includes('Product') ? 'product_first' : 'customer_first'}`,
+    `${t('payload.expenseRouting')}: ${config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'}`
   ].join('\n');
 
   return (
     <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-500">
       <div className="flex flex-col items-center justify-center text-center mb-8 mt-4">
+        {/* eslint-disable-next-line i18next/no-literal-string */}
         <span className="material-symbols-outlined text-4xl text-[#006b5c] mb-4">check_circle</span>
         <h2 className="text-3xl font-bold text-slate-900 mb-2">{t('title')}</h2>
         <p className="text-slate-500 text-lg">

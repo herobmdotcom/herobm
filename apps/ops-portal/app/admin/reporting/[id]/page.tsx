@@ -6,8 +6,11 @@ import { use, useEffect, useState } from 'react';
 import TemplateForm from '../TemplateForm';
 import { apiFetch, reportError } from '@/lib/api';
 
+import { useTranslations } from 'next-intl';
+
 export default function EditTemplatePage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  useDocumentTitle('Edit Report Template');
+  const t = useTranslations('admin.reporting');
+  useDocumentTitle(t('title'));
   const params = use(paramsPromise);
   const [initialData, setInitialData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,12 +26,12 @@ export default function EditTemplatePage({ params: paramsPromise }: { params: Pr
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  if (loading) return <><div className="p-8 font-bold text-gray-400">Loading template data...</div></>;
+  if (loading) return <><div className="p-8 font-bold text-gray-400">{t('errors.loading')}</div></>;
   
   if (error || !initialData) {
     return (
       <>
-        <div className="p-8 text-red-500 font-bold">Error: Template not found or unauthorized access logging in.</div>
+        <div className="p-8 text-red-500 font-bold">{t('errors.notFound')}</div>
       </>
     );
   }

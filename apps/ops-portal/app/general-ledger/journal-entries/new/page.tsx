@@ -34,8 +34,8 @@ interface JournalLineForm {
 const uid = () => Math.random().toString(36).substring(2, 9);
 
 export default function NewJournalEntryPage() {
-  useDocumentTitle('New Journal Entry');
   const t = useTranslations('gl.journalEntries');
+  useDocumentTitle(t('newManualEntry'));
   const tGeneral = useTranslations('gl');
   const tCommon = useTranslations('common');
   const router = useRouter();
@@ -147,7 +147,7 @@ export default function NewJournalEntryPage() {
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight" style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}>
-              {t('newEntry', { defaultValue: 'New Manual Journal Entry' })}
+              {t('newManualEntry')}
             </h2>
           </div>
 
@@ -173,7 +173,7 @@ export default function NewJournalEntryPage() {
                   type="text"
                   value={memo}
                   onChange={(e) => setMemo(e.target.value)}
-                  placeholder="Reason for journal entry..."
+                  placeholder={t('placeholders.memo')}
                   className="w-full text-sm px-3 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-blue-500"
                   style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                 />
@@ -250,7 +250,7 @@ export default function NewJournalEntryPage() {
                           type="text"
                           value={line.memo}
                           onChange={(e) => updateLine(line.id, 'memo', e.target.value)}
-                          placeholder="Line description"
+                          placeholder={t('placeholders.lineMemo')}
                           className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none"
                           style={{ borderColor: 'var(--border)' }}
                         />
@@ -297,12 +297,12 @@ export default function NewJournalEntryPage() {
                   className="px-3 py-1 text-xs font-semibold rounded border bg-white hover:bg-gray-100 transition-colors flex items-center gap-1"
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span className="material-symbols-outlined text-[16px]">add</span> Add Line
+                  <span className="material-symbols-outlined text-[16px]">add</span> {t('addLine')}
                 </button>
 
                 <div className="flex items-center gap-6 pr-12">
                   <div className="text-sm font-semibold text-gray-500">
-                    Totals:
+                    {t('totals')}
                   </div>
                   <div className="text-right w-24">
                     <span className="font-mono font-bold text-[#041627]">{totalDebit.toFixed(2)}</span>
@@ -318,7 +318,7 @@ export default function NewJournalEntryPage() {
             <div className="mt-4 flex justify-end">
               {!isBalanced && totalDebit > 0 && (
                 <div className="text-xs font-semibold text-red-600 bg-red-50 px-3 py-1.5 rounded-md border border-red-200">
-                  ⚠️ Entry is unbalanced by {Math.abs(totalDebit - totalCredit).toFixed(2)}
+                  {t('unbalancedWarning', { amount: Math.abs(totalDebit - totalCredit).toFixed(2) })}
                 </div>
               )}
             </div>

@@ -10,6 +10,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import { HOME_CURRENCY, getCurrency } from '@/lib/currency';
+import { useTranslations } from 'next-intl';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ const GST_TYPES = [
 
 export default function SettingsPage() {
   useDocumentTitle('General Settings');
+  const tSettings = useTranslations('admin.settings');
+  const tCommon = useTranslations('admin.common');
   const router = useRouter();
 
   // ── GST state ──────────────────────────────────────────────────────────────
@@ -296,7 +299,7 @@ export default function SettingsPage() {
   const typeLabel = (type: string) => GST_TYPES.find(t => t.value === type)?.label ?? type;
 
   const renderGlAccountLabel = (glAccountId?: string) => {
-    if (!glAccountId) return <span className="text-muted italic">Not configured</span>;
+    if (!glAccountId) return <span className="text-muted italic">{tCommon('notConfigured')}</span>;
     const acct = glAccounts.find(a => a.glAccountId === glAccountId);
     if (!acct) return <span className="text-muted italic text-xs font-mono">{glAccountId}</span>;
     return (
@@ -344,14 +347,14 @@ export default function SettingsPage() {
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={gstCancel}>Cancel</button>
-            <button className="btn btn-primary btn-xs" onClick={gstSave}>Save</button>
+            <button className="btn btn-secondary btn-xs" onClick={gstCancel}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary btn-xs" onClick={gstSave}>{tSettings('actions.save')}</button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => gstEdit(data)}>Edit</button>
+            <button className="btn btn-secondary btn-xs" onClick={() => gstEdit(data)}>{tSettings('actions.edit')}</button>
             {!data.isDefault && (
-              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => gstDelete(data.gstCategoryId)}>Delete</button>
+              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => gstDelete(data.gstCategoryId)}>{tSettings('actions.delete')}</button>
             )}
           </div>
         )}
@@ -374,13 +377,13 @@ export default function SettingsPage() {
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={uomCancel}>Cancel</button>
-            <button className="btn btn-primary btn-xs" onClick={uomSave}>Save</button>
+            <button className="btn btn-secondary btn-xs" onClick={uomCancel}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary btn-xs" onClick={uomSave}>{tSettings('actions.save')}</button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => uomEdit(data)}>Edit</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => uomDelete(data.uomCode)}>Delete</button>
+            <button className="btn btn-secondary btn-xs" onClick={() => uomEdit(data)}>{tSettings('actions.edit')}</button>
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => uomDelete(data.uomCode)}>{tSettings('actions.delete')}</button>
           </div>
         )}
       </td>
@@ -417,13 +420,13 @@ export default function SettingsPage() {
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={rateCancel}>Cancel</button>
-            <button className="btn btn-primary btn-xs" onClick={rateSave}>Save</button>
+            <button className="btn btn-secondary btn-xs" onClick={rateCancel}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary btn-xs" onClick={rateSave}>{tSettings('actions.save')}</button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => rateEdit(data)}>Edit</button>
-            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>Delete</button>
+            <button className="btn btn-secondary btn-xs" onClick={() => rateEdit(data)}>{tSettings('actions.edit')}</button>
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => rateDelete(data.exchangeRateId)}>{tSettings('actions.delete')}</button>
           </div>
         )}
       </td>

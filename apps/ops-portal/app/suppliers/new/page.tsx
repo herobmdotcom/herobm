@@ -13,8 +13,9 @@ import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
 
 export default function NewSupplierPage() {
-  useDocumentTitle('New Supplier');
-  const t = useTranslations();
+  const t = useTranslations('suppliers');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('new.documentTitle'));
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [dto, setDto] = useState({
@@ -37,7 +38,7 @@ export default function NewSupplierPage() {
 
     try {
       const supplier = await apiMutate<any>('/api/suppliers', 'POST', dto);
-      toast.success(t('toast.supplierCreated'));
+      toast.success(tCommon('toast.supplierCreated'));
       router.push(`/suppliers/${supplier.vendorId}`);
     } catch (err: any) {
       toast.error(err.message);
@@ -59,13 +60,13 @@ export default function NewSupplierPage() {
       <DetailsLayout
         header={
           <EntityHeader
-            title={t('suppliers.buttons.createSupplier')}
-            subtitle={t('suppliers.management')}
+            title={t('buttons.createSupplier')}
+            subtitle={t('management')}
             onBack={() => router.push('/suppliers')}
             isSaving={submitting}
             isDirty={isValid}
             onSave={handleSubmit}
-            saveLabel={t('suppliers.buttons.createSupplier')}
+            saveLabel={t('buttons.createSupplier')}
           />
         }
       >
@@ -78,33 +79,33 @@ export default function NewSupplierPage() {
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">info</span>
-                {t('suppliers.generalInfo')}
+                {t('generalInfo')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('suppliers.columns.vendorNumber')} *
+                      {t('columns.vendorNumber')} *
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.vendorNumber}
                       onChange={(e) => updateField('vendorNumber', e.target.value)}
-                      placeholder={t('suppliers.placeholders.vendorNumber')}
+                      placeholder={t('placeholders.vendorNumber')}
                       disabled={submitting}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('suppliers.columns.name')} *
+                      {t('columns.name')} *
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.name}
                       onChange={(e) => updateField('name', e.target.value)}
-                      placeholder={t('suppliers.placeholders.name')}
+                      placeholder={t('placeholders.name')}
                       disabled={submitting}
                     />
                   </div>
@@ -112,7 +113,7 @@ export default function NewSupplierPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.currency')}
+                      {tCommon('columns.currency')}
                     </label>
                     <select
                       className="input"
@@ -129,7 +130,7 @@ export default function NewSupplierPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Supplier Group
+                      {t('supplierGroup')}
                     </label>
                     <GroupSelect
                       type="supplier"
@@ -140,14 +141,14 @@ export default function NewSupplierPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('suppliers.columns.paymentTerms')}
+                      {t('columns.paymentTerms')}
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.paymentTerms}
                       onChange={(e) => updateField('paymentTerms', e.target.value)}
-                      placeholder={t('suppliers.placeholders.paymentTerms')}
+                      placeholder={t('placeholders.paymentTerms')}
                       disabled={submitting}
                     />
                   </div>
@@ -160,14 +161,14 @@ export default function NewSupplierPage() {
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">notes</span>
-                {t('common.notesCardHeading')}
+                {tCommon('notesCardHeading')}
               </h3>
               <textarea
                 className="input w-full"
                 style={{ minHeight: 110, paddingTop: 12, resize: 'vertical' }}
                 value={dto.notes}
                 onChange={(e) => updateField('notes', e.target.value)}
-                placeholder={t('common.notesCardPlaceholder')}
+                placeholder={tCommon('notesCardPlaceholder')}
                 disabled={submitting}
               />
             </div>
@@ -180,74 +181,74 @@ export default function NewSupplierPage() {
               <h3 className="section-heading">
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">location_on</span>
-                {t('common.columns.address')}
+                {tCommon('columns.address')}
               </h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.email')}
+                      {tCommon('columns.email')}
                     </label>
                     <input
                       type="email"
                       className="input"
                       value={dto.emailAddress1}
                       onChange={(e) => updateField('emailAddress1', e.target.value)}
-                      placeholder={t('suppliers.placeholders.email')}
+                      placeholder={t('placeholders.email')}
                       disabled={submitting}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.telephone')}
+                      {tCommon('columns.telephone')}
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.telephone1}
                       onChange={(e) => updateField('telephone1', e.target.value)}
-                      placeholder={t('suppliers.placeholders.phone')}
+                      placeholder={t('placeholders.phone')}
                       disabled={submitting}
                     />
                   </div>
                 </div>
                 <div className="col-span-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.address')}
+                    {tCommon('columns.address')}
                   </label>
                   <input
                     type="text"
                     className="input"
                     value={dto.address1Line1}
                     onChange={(e) => updateField('address1Line1', e.target.value)}
-                    placeholder={t('suppliers.placeholders.address')}
+                    placeholder={t('placeholders.address')}
                     disabled={submitting}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.city')}
+                      {tCommon('columns.city')}
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.address1City}
                       onChange={(e) => updateField('address1City', e.target.value)}
-                      placeholder={t('suppliers.placeholders.city')}
+                      placeholder={t('placeholders.city')}
                       disabled={submitting}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.country')}
+                      {tCommon('columns.country')}
                     </label>
                     <input
                       type="text"
                       className="input"
                       value={dto.address1Country}
                       onChange={(e) => updateField('address1Country', e.target.value)}
-                      placeholder={t('suppliers.placeholders.country')}
+                      placeholder={t('placeholders.country')}
                       disabled={submitting}
                     />
                   </div>

@@ -65,7 +65,9 @@ interface Supplier {
 }
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
-  const t = useTranslations();
+  const t = useTranslations('suppliers');
+  const tCommon = useTranslations('common');
+  const tSales = useTranslations('salesOrders');
   const params = use(paramsPromise);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance'>('details');
@@ -126,7 +128,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditCurrency(data.currencyCode || HOME_CURRENCY.code);
       setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.errors.failedToLoadOrder'));
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
     } finally {
       if (showSpinner) setLoading(false);
     }
@@ -147,7 +149,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: payloadValue });
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.errors.failedToUpdateOrder'));
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
     } finally {
       setSaving(false);
     }
@@ -163,18 +165,18 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { stateCode: newState });
       await loadSupplier(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.errors.failedToChangeState'));
+      setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
     } finally {
       setSaving(false);
     }
   };
 
   const archiveSupplier = async () => {
-    if (!confirm(t('confirm.archiveOrder'))) return;
+    if (!confirm(tCommon('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
       await apiMutate(`/api/suppliers/${params.id}/archive`, 'POST');
-      toast.success(t('toast.orderArchived'), { icon: '📦' });
+      toast.success(tCommon('toast.orderArchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
       setError(err.message);
@@ -187,7 +189,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     try {
       await apiMutate(`/api/suppliers/${params.id}/unarchive`, 'POST');
-      toast.success(t('toast.orderUnarchived'), { icon: '📦' });
+      toast.success(tCommon('toast.orderUnarchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
       setError(err.message);
@@ -197,13 +199,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   };
 
   const productColumns: any[] = useMemo(() => [
-    { field: 'productNumber', headerName: 'Product No.', width: 140 },
-    { field: 'productName', headerName: 'Name', flex: 1, minWidth: 160 },
-    { field: 'supplierPartNumber', headerName: 'Supplier Part No.', width: 150 },
-    { field: 'costPrice', headerName: 'Cost Price', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
-    { field: 'discountPercent', headerName: 'Discount %', type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
-    { field: 'productStateCode', headerName: 'Status', width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
-  ], []);
+    { field: 'productNumber', headerName: t('products.columns.productNo'), width: 140 },
+    { field: 'productName', headerName: t('products.columns.name'), flex: 1, minWidth: 160 },
+    { field: 'supplierPartNumber', headerName: t('products.columns.partNo'), width: 150 },
+    { field: 'costPrice', headerName: t('products.columns.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+    { field: 'discountPercent', headerName: t('products.columns.discount'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
+    { field: 'productStateCode', headerName: t('products.columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
+  ], [t]);
 
   if (loading) {
     return (
@@ -237,28 +239,28 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const visibleSections = [
     {
       id: 'tab-details',
-      label: 'Overview',
+      label: t('tabs.overview'),
       isSubPage: true,
       isActive: activeTab === 'details',
       onClick: () => setActiveTab('details'),
       subtargets: [
-        { id: 'info-section', label: 'Info', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'financials-section', label: 'Financials', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('financials-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'notes-section', label: 'Notes', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'contact-section', label: 'Contact', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
-        { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'info-section', label: t('tabs.info'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('info-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'financials-section', label: t('tabs.financials'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('financials-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'notes-section', label: t('tabs.notes'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'contact-section', label: t('tabs.contact'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'activity-section', label: t('tabs.activity'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ]
     },
     {
       id: 'tab-products',
-      label: 'Products',
+      label: t('tabs.products'),
       isSubPage: true,
       isActive: activeTab === 'products',
       onClick: () => setActiveTab('products')
     },
     {
       id: 'tab-compliance',
-      label: 'Compliance',
+      label: t('tabs.compliance'),
       isSubPage: true,
       isActive: activeTab === 'compliance',
       onClick: () => setActiveTab('compliance')
@@ -290,7 +292,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         >
           <span style={{ fontSize: '1.2rem' }}>📦</span>
           <div>
-            <strong className="font-semibold text-amber-800">{t('salesOrders.archivedBannerTitle')}</strong> {t('salesOrders.archivedBannerBody')}
+            <strong className="font-semibold text-amber-800">{tSales('archivedBannerTitle')}</strong> {tSales('archivedBannerBody')}
           </div>
         </div>
       )}
@@ -308,12 +310,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                   <div className="flex items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-4 flex-1">
                       <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Products
+                        {t('products.title')}
                       </h2>
                       <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                       <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
                         <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          ROWS
+                          {tCommon('grid.rowCountLabel')}
                         </span>
                         <span className="text-[11px] font-bold text-[#006b5c]">
                           {loading ? '...' : rowCount.toLocaleString()}
@@ -357,7 +359,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">info</span>
-              {t('suppliers.generalInfo')}
+              {t('generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div>
@@ -375,7 +377,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('suppliers.columns.vendorNumber')}
+                  {t('columns.vendorNumber')}
                 </label>
                 <input
                   type="text"
@@ -386,7 +388,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Supplier Group
+                  {t('supplierGroup')}
                 </label>
                 <GroupSelect
                   type="supplier"
@@ -396,7 +398,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     saveField('supplierGroupId', val || '', supplier.supplierGroupId);
                   }}
                   disabled={!isEditable || saving}
-                  placeholder="No Supplier Group"
+                  placeholder={t('placeholders.noGroup')}
                 />
               </div>
             </div>
@@ -407,7 +409,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
-              {t('suppliers.financials')}
+              {t('financials')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
               <div className="grid grid-cols-2 gap-4">
@@ -431,7 +433,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('suppliers.paymentTerms')}
+                    {t('paymentTerms')}
                   </label>
                   <select
                     className="input"
@@ -490,7 +492,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('suppliers.earlyPaymentDiscount')}
+                    {t('earlyPaymentDiscount')}
                   </label>
                   <div className="relative">
                     <input
@@ -536,12 +538,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">location_on</span>
-            {t('suppliers.contactLocation')}
+            {t('contactLocation')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Email
+                {t('email')}
               </label>
               <input
                 type="email"
@@ -554,7 +556,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Phone
+                {t('phone')}
               </label>
               <input
                 type="text"
@@ -580,7 +582,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                City
+                {t('city')}
               </label>
               <input
                 type="text"
@@ -593,7 +595,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Country
+                {t('country')}
               </label>
               <input
                 type="text"
@@ -617,7 +619,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         <div className="flex justify-end pt-2">
           {supplier.stateCode === 'archived' ? (
             <button className="btn btn-secondary" onClick={unarchiveSupplier} disabled={saving}>
-              📦 {t('salesOrders.buttons.unarchive')}
+              📦 {tSales('buttons.unarchive')}
             </button>
           ) : (
             <button
@@ -626,7 +628,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               onClick={archiveSupplier}
               disabled={saving}
             >
-              📦 {t('salesOrders.buttons.archive')}
+              📦 {tSales('buttons.archive')}
             </button>
           )}
         </div>
@@ -639,7 +641,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">gavel</span>
-              {t('suppliers.compliance.title')}
+              {t('compliance.title')}
             </h3>
             <div className="flex gap-2 pt-2 pb-4">
               <SupplierStatusBadges 
@@ -652,8 +654,8 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.purchasingBlock')}</label>
-                  <label className="switch" title={editIsPurchasingBlocked ? "Currently Blocked" : "Currently Active"}>
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.purchasingBlock')}</label>
+                  <label className="switch" title={editIsPurchasingBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
                     <input 
                       type="checkbox" 
                       checked={!editIsPurchasingBlocked} 
@@ -669,7 +671,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {editIsPurchasingBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.reason')}</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={editPurchasingBlockReason}
@@ -678,25 +680,25 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       disabled={!isEditable || saving}
                     >
                       <option value="">{t('common.selectEllipsis')}</option>
-                      <option value="compliance_breach">{t('suppliers.compliance.reasons.compliance_breach')}</option>
-                      <option value="quality_issues">{t('suppliers.compliance.reasons.quality_issues')}</option>
-                      <option value="dispute">{t('suppliers.compliance.reasons.dispute')}</option>
-                      <option value="financial_risk">{t('suppliers.compliance.reasons.financial_risk')}</option>
-                      <option value="other">{t('suppliers.compliance.reasons.other')}</option>
+                      <option value="compliance_breach">{t('compliance.reasons.compliance_breach')}</option>
+                      <option value="quality_issues">{t('compliance.reasons.quality_issues')}</option>
+                      <option value="dispute">{t('compliance.reasons.dispute')}</option>
+                      <option value="financial_risk">{t('compliance.reasons.financial_risk')}</option>
+                      <option value="other">{t('compliance.reasons.other')}</option>
                     </select>
                   </div>
                 )}
                 {supplier.groupIsPurchasingBlocked && (
                   <div className="text-xs font-semibold text-danger">
-                    {t('suppliers.compliance.groupInherited', { reason: (supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ') })}
+                    {t('compliance.groupInherited', { reason: (supplier.groupPurchasingBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>
               
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5 items-start">
-                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.paymentBlock')}</label>
-                  <label className="switch" title={editIsPaymentBlocked ? "Currently Blocked" : "Currently Active"}>
+                  <label className="block text-xs font-medium m-0" style={{ color: 'var(--text-muted)' }}>{t('compliance.paymentBlock')}</label>
+                  <label className="switch" title={editIsPaymentBlocked ? t('tooltips.currentlyBlocked') : t('tooltips.currentlyActive')}>
                     <input 
                       type="checkbox" 
                       checked={!editIsPaymentBlocked} 
@@ -712,7 +714,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 </div>
                 {editIsPaymentBlocked && (
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('suppliers.compliance.reason')}</label>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('compliance.reason')}</label>
                     <select
                       className="input w-full"
                       value={editPaymentBlockReason}
@@ -721,16 +723,16 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       disabled={!isEditable || saving}
                     >
                       <option value="">{t('common.selectEllipsis')}</option>
-                      <option value="invoice_dispute">{t('suppliers.compliance.reasons.invoice_dispute')}</option>
-                      <option value="missing_goods">{t('suppliers.compliance.reasons.missing_goods')}</option>
-                      <option value="contractual_breach">{t('suppliers.compliance.reasons.contractual_breach')}</option>
-                      <option value="other">{t('suppliers.compliance.reasons.other')}</option>
+                      <option value="invoice_dispute">{t('compliance.reasons.invoice_dispute')}</option>
+                      <option value="missing_goods">{t('compliance.reasons.missing_goods')}</option>
+                      <option value="contractual_breach">{t('compliance.reasons.contractual_breach')}</option>
+                      <option value="other">{t('compliance.reasons.other')}</option>
                     </select>
                   </div>
                 )}
                 {supplier.groupIsPaymentBlocked && (
                   <div className="text-xs font-semibold text-amber-600">
-                    {t('suppliers.compliance.groupInherited', { reason: (supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ') })}
+                    {t('compliance.groupInherited', { reason: (supplier.groupPaymentBlockReason || 'Unspecified').replace('_', ' ') })}
                   </div>
                 )}
               </div>
@@ -738,12 +740,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
 
             <div className="mt-4">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('suppliers.compliance.blockNotes')}
+                {t('compliance.blockNotes')}
               </label>
               <input
                 type="text"
                 className="input w-full"
-                placeholder={t('suppliers.compliance.notesPlaceholder')}
+                placeholder={t('compliance.notesPlaceholder')}
                 value={editBlockNotes}
                 onChange={e => setEditBlockNotes(e.target.value)}
                 onBlur={() => saveField('blockNotes', editBlockNotes, supplier.blockNotes || null)}

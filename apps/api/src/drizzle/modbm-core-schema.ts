@@ -286,6 +286,41 @@ export const purchaseOrderEvents = modbmCore.table('purchase_order_events', {
 });
 
 // ---------------------------------------------------------------------------
+// purchase_order_returns  (Return header against a PO)
+// ---------------------------------------------------------------------------
+export const purchaseOrderReturns = modbmCore.table('purchase_order_returns', {
+  returnId: uuid('return_id').primaryKey().defaultRandom(),
+  returnNumber: text('return_number').unique().notNull(),
+  purchaseOrderId: uuid('purchase_order_id')
+    .notNull()
+    .references(() => purchaseOrders.purchaseOrderId),
+  stateCode: text('state_code').notNull().default('draft'),
+  notes: text('notes'),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// purchase_order_return_lines  (Per-line return quantities + reason + fee)
+// ---------------------------------------------------------------------------
+export const purchaseOrderReturnLines = modbmCore.table(
+  'purchase_order_return_lines',
+  {
+    returnLineId: uuid('return_line_id').primaryKey().defaultRandom(),
+    returnId: uuid('return_id')
+      .notNull()
+      .references(() => purchaseOrderReturns.returnId),
+    purchaseOrderLineId: uuid('purchase_order_line_id')
+      .notNull()
+      .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+    quantityReturned: numeric('quantity_returned').notNull(),
+    reason: text('reason'),
+    returnFee: numeric('return_fee').default('0'), // absolute fee in order currency
+  },
+);
+
+// ---------------------------------------------------------------------------
 // backorders (Order Allocations for Cross-Dock/Picked bridging)
 // ---------------------------------------------------------------------------
 export const backorders = modbmCore.table('backorders', {

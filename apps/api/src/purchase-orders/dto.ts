@@ -11,9 +11,9 @@ import { Type } from 'class-transformer';
 // ── PO Line DTOs ──
 
 export class CreatePurchaseOrderLineDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  productId!: string;
+  productId?: string;
 
   @IsOptional()
   @IsString()
@@ -126,4 +126,33 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   @IsString()
   deliveryLocationId?: string;
+}
+
+// ── PO Return DTOs ──
+export class CreatePurchaseReturnLineDto {
+  @IsString()
+  @IsNotEmpty()
+  purchaseOrderLineId!: string;
+
+  @IsNumberString()
+  quantityReturned!: string;
+
+  @IsOptional()
+  @IsString()
+  reason?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  returnFee?: string;
+}
+
+export class CreatePurchaseReturnDto {
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePurchaseReturnLineDto)
+  lines!: CreatePurchaseReturnLineDto[];
 }

@@ -19,7 +19,7 @@ const formatMoney = (val: string | number | undefined | null) => {
 };
 
 export default function NewProductPage() {
-  useDocumentTitle('New Product');
+  useDocumentTitle(t('products.newTitle'));
   const t = useTranslations();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -146,7 +146,7 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Type
+                    {t('common.columns.type')}
                   </label>
                   <select
                     className="input"
@@ -154,14 +154,14 @@ export default function NewProductPage() {
                     onChange={(e) => updateField('productType', e.target.value)}
                     disabled={submitting}
                   >
-                    <option value="inventory">Inventory (Tracked)</option>
-                    <option value="non-stock">Non-Stock</option>
-                    <option value="service">Service</option>
+                    <option value="inventory">{t('products.types.inventory')}</option>
+                    <option value="non-stock">{t('products.types.nonStock')}</option>
+                    <option value="service">{t('products.types.service')}</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Status
+                    {t('common.columns.status')}
                   </label>
                   <select
                     className="input"
@@ -178,7 +178,7 @@ export default function NewProductPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Product Group
+                    {t('products.productGroup')}
                   </label>
                   <GroupSelect
                     type="product"
@@ -189,14 +189,14 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    SC Number
+                    {t('products.columns.scNumber')}
                   </label>
                   <input
                     type="text"
                     className="input"
                     value={dto.scNumber}
                     onChange={(e) => updateField('scNumber', e.target.value)}
-                    placeholder="SC Number"
+                    placeholder={t('products.columns.scNumber')}
                     disabled={submitting}
                   />
                 </div>
@@ -210,7 +210,7 @@ export default function NewProductPage() {
                     onChange={(e) => updateField('gstCategoryId', e.target.value)}
                     disabled={submitting}
                   >
-                    <option value="">(None)</option>
+                    <option value="">{t('common.none')}</option>
                     {gstCategories.map((cat) => (
                       <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                         {cat.title} ({cat.code})

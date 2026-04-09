@@ -214,7 +214,7 @@ export default function TopographyView() {
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleLocation(loc.locationId); } }}
                     className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[#f8f9fa] transition-colors cursor-pointer"
                   >
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    
                     <span
                       className="material-symbols-outlined text-[18px] transition-transform"
                       style={{
@@ -224,7 +224,7 @@ export default function TopographyView() {
                     >
                       chevron_right
                     </span>
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    
                     <span
                       className="material-symbols-outlined text-[22px]"
                       style={{ color: 'var(--accent)' }}
@@ -258,7 +258,7 @@ export default function TopographyView() {
                             className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                             title={tCommon('edit')}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
@@ -276,7 +276,7 @@ export default function TopographyView() {
                             className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
                             title={tCommon('delete')}
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                           </button>
                         </div>
@@ -289,7 +289,7 @@ export default function TopographyView() {
                           fontFamily: 'Manrope, sans-serif',
                         }}
                       >
-                        {loc.zones.length} {loc.zones.length === 1 ? 'zone' : 'zones'}
+                        {tLoc('zonesCount', { count: loc.zones.length })}
                       </span>
                       <span
                         className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded"
@@ -299,7 +299,7 @@ export default function TopographyView() {
                           fontFamily: 'Manrope, sans-serif',
                         }}
                       >
-                        {binCount.toLocaleString()} {binCount === 1 ? 'bin' : 'bins'}
+                        {tLoc('binsCount', { count: binCount })}
                       </span>
                       <span
                         className="text-[10px] font-medium px-2 py-0.5 rounded"
@@ -330,7 +330,7 @@ export default function TopographyView() {
                               className="w-full flex items-center gap-4 px-5 py-3 text-left hover:bg-[#f0faf8] transition-colors cursor-pointer"
                               style={{ paddingLeft: 48 }}
                             >
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
+                              
                               <span
                                 className="material-symbols-outlined text-[16px] transition-transform"
                                 style={{
@@ -340,7 +340,7 @@ export default function TopographyView() {
                               >
                                 chevron_right
                               </span>
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
+                              
                               <span
                                 className="material-symbols-outlined text-[20px]"
                                 style={{ color: '#6366f1' }}
@@ -366,7 +366,7 @@ export default function TopographyView() {
                                       }}
                                       className="p-1.5 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                     >
-                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      
                                       <span className="material-symbols-outlined text-[16px]">edit</span>
                                     </button>
                                     <button
@@ -383,7 +383,7 @@ export default function TopographyView() {
                                       }}
                                       className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
                                     >
-                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
                                     </button>
                                   </div>
@@ -393,11 +393,10 @@ export default function TopographyView() {
                                   style={{
                                     background: 'rgba(4,22,39,0.06)',
                                     color: '#041627',
-                                    fontFamily: 'Manrope, sans-serif',
                                   }}
                                 >
-                                  {zone.bins.length.toLocaleString()} {zone.bins.length === 1 ? 'bin' : 'bins'}
-                                </span>
+                                    {tLoc('binsCount', { count: zone.bins.length })}
+                                  </span>
                               </div>
                             </div>
 
@@ -415,25 +414,25 @@ export default function TopographyView() {
                                           className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
                                           style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
                                         >
-                                          Bin
+                                          {tLoc('bins')}
                                         </th>
                                         <th
                                           className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
                                           style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
                                         >
-                                          Type
+                                          {tCommon('columns.type')}
                                         </th>
                                         <th
                                           className="text-center px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
                                           style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
                                         >
-                                          Flags
+                                          {tLoc('fields.flags')}
                                         </th>
                                         <th
                                           className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
                                           style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
                                         >
-                                          Source
+                                          {tCommon('columns.source')}
                                         </th>
                                         {canEdit && <th className="w-10 px-4 py-2"></th>}
                                         </tr>
@@ -459,7 +458,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}
                                                 >
-                                                  CSG
+                                                  {tLoc('consignmentShort')}
                                                 </span>
                                               )}
                                               {bin.isBonded && (
@@ -467,7 +466,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}
                                                 >
-                                                  BND
+                                                  {tLoc('bondedShort')}
                                                 </span>
                                               )}
                                               {bin.isUnavailable && (
@@ -475,7 +474,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}
                                                 >
-                                                  N/A
+                                                  {tCommon('na')}
                                                 </span>
                                               )}
                                               {!bin.isConsignment && !bin.isBonded && !bin.isUnavailable && (
@@ -504,7 +503,7 @@ export default function TopographyView() {
                                                   }}
                                                   className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
                                                 >
-                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                  
                                                   <span className="material-symbols-outlined text-[16px]">edit</span>
                                                 </button>
                                                 <button
@@ -520,7 +519,7 @@ export default function TopographyView() {
                                                   }}
                                                   className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
                                                 >
-                                                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                  
                                                   <span className="material-symbols-outlined text-[16px]">delete</span>
                                                 </button>
                                               </div>
@@ -539,9 +538,9 @@ export default function TopographyView() {
                                         }}
                                         className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
                                       >
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                        
                                         <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                                        <span>Add Bin to {zone.code}</span>
+                                        <span>{tLoc('addBinTo', { name: zone.code })}</span>
                                       </button>
                                     </div>
                                   )}
@@ -562,9 +561,9 @@ export default function TopographyView() {
                                     }}
                                     className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
                                   >
-                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                    
                                     <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                                    <span>Add Bin to {zone.code}</span>
+                                    <span>{tLoc('addBinTo', { name: zone.code })}</span>
                                   </button>
                                 )}
                               </div>
@@ -581,9 +580,9 @@ export default function TopographyView() {
                             }}
                             className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-2 transition-colors uppercase tracking-wide"
                           >
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                            
                             <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                            <span>Add Zone to {loc.code}</span>
+                            <span>{tLoc('addZoneTo', { name: loc.code })}</span>
                           </button>
                         </div>
                       )}
@@ -683,7 +682,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">City</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.city')}</label>
           <input 
             className="input" 
             value={formData.city} 
@@ -691,7 +690,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Country</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.country')}</label>
           <input 
             className="input" 
             value={formData.country} 
@@ -699,7 +698,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? '...' : editingLocation ? t('save') : t('create')}
+          {loading ? t('loading') : editingLocation ? t('save') : t('create')}
         </button>
       </form>
     </SlideOver>
@@ -743,11 +742,11 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     <SlideOver
       isOpen={isOpen}
       onClose={onClose}
-      title={initialData?.zone ? `Edit Zone` : `Add Zone`}
+      title={initialData?.zone ? tLoc('editZone') : tLoc('addZone')}
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Zone Code</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.zoneCode')}</label>
           <input 
             className="input" 
             required 
@@ -757,7 +756,7 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">Zone Name</label>
+          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.zoneName')}</label>
           <input 
             className="input" 
             required 
@@ -870,7 +869,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
           </label>
         </div>
         <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? '...' : initialData?.bin ? tCommon('save') : tCommon('create')}
+          {loading ? tCommon('loading') : initialData?.bin ? tCommon('save') : tCommon('create')}
         </button>
       </form>
     </SlideOver>

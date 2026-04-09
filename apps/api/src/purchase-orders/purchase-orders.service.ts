@@ -814,4 +814,42 @@ export class PurchaseOrdersService {
         ),
       );
   }
+
+  async findReturnableLines(productId: string) {
+    if (!productId) {
+      throw new BadRequestException(
+        'productId is required to find returnable lines',
+      );
+    }
+
+    return await this.db
+      .select({
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: purchaseOrders.stateCode,
+        vendorId: purchaseOrders.vendorId,
+        currencyCode: purchaseOrders.currencyCode,
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        lineNumber: purchaseOrderLineItems.lineNumber,
+        productDescription: purchaseOrderLineItems.productDescription,
+        quantity: purchaseOrderLineItems.quantity,
+        pricePerUnit: purchaseOrderLineItems.pricePerUnit,
+        quantityReceived: purchaseOrderLineItems.quantityReceived,
+      })
+      .from(purchaseOrderLineItems)
+      .innerJoin(
+        purchaseOrders,
+        eq(
+          purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
+      )
+      .where(
+        and(
+          eq(purchaseOrderLineItems.productId, productId),
+          inArray(purchaseOrders.stateCode, ['received', 'partially_received', 'invoiced']),
+          sql`${purchaseOrderLineItems.quantityReceived} > 0`,
+        ),
+      );
+  }
 }

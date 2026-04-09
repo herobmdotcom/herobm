@@ -21,6 +21,7 @@ const request = require('supertest');
 describe('API E2E — Picking & Shipments', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
   let viewerToken: string;
 
   let validCustomerId: string;
@@ -68,6 +69,11 @@ describe('API E2E — Picking & Shipments', () => {
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -111,6 +117,8 @@ describe('API E2E — Picking & Shipments', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
+
         customerId: validCustomerId,
         name: 'E2E Picking Test Order',
         lines: [
@@ -653,6 +661,8 @@ describe('API E2E — Picking & Shipments', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {

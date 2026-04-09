@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface AddSupplierModalProps {
   productId: string;
@@ -22,6 +23,7 @@ export default function AddSupplierModal({
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [lastSearchQuery, setLastSearchQuery] = useState('');
+  const t = useTranslations('products.supplierModal');
   
   // Selection State
   const [vendorId, setVendorId] = useState('');
@@ -91,7 +93,7 @@ export default function AddSupplierModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendorId) {
-      setError('Please select a supplier from the dropdown');
+      setError(t('messages.selectDropdown'));
       return;
     }
 
@@ -103,7 +105,7 @@ export default function AddSupplierModal({
         supplierPartNumber: supplierPartNumber || undefined,
         costPrice: parseFloat(costPrice) || 0,
       });
-      toast.success('Supplier successfully linked');
+      toast.success(t('messages.success'));
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -133,7 +135,7 @@ export default function AddSupplierModal({
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between bg-white shrink-0 rounded-t-xl">
           <h3 className="font-bold text-xl text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-            Link Supplier
+            {t('title')}
           </h3>
           <button 
             type="button" 
@@ -161,7 +163,7 @@ export default function AddSupplierModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto bg-white flex-1 rounded-b-xl">
           
           <div className="relative" ref={wrapperRef}>
-            <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">Search & Select Supplier</label>
+            <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">{t('inputs.searchSupplier')}</label>
             <div className="relative">
                {/* eslint-disable-next-line i18next/no-literal-string */}
                <span autoFocus className="material-symbols-outlined absolute left-3.5 top-[11px] text-gray-400 text-[20px] pointer-events-none z-10">search</span>
@@ -169,7 +171,7 @@ export default function AddSupplierModal({
                  type="text" 
                  style={{ paddingLeft: '42px' }}
                  className={`input input-bordered w-full h-11 text-[15px] transition-colors focus:bg-white ${vendorId ? 'bg-[#e2f9f5] border-[#006b5c]/40 font-semibold text-[#006b5c]' : 'bg-white text-gray-900 border-gray-300'}`}
-                 placeholder="Type at least 2 characters to search..."
+                 placeholder={t('inputs.searchPlaceholder')}
                  value={search}
                  onChange={(e) => handleSearchChange(e.target.value)}
                  autoComplete="off"
@@ -203,18 +205,18 @@ export default function AddSupplierModal({
             
             {!loading && search.length >= 2 && suppliers.length === 0 && !vendorId && lastSearchQuery === search && (
               // eslint-disable-next-line i18next/no-literal-string
-              <div className="mt-2 text-sm text-gray-500 flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[16px]">info</span> No suppliers found matching "{search}"</div>
+              <div className="mt-2 text-sm text-gray-500 flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[16px]">info</span> {t('inputs.noSuppliersFound', { search })}</div>
             )}
             
             {vendorId && (
               // eslint-disable-next-line i18next/no-literal-string
-              <div className="mt-2 text-sm text-[#006b5c] font-semibold flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[18px]">check_circle</span> Supplier selected and ready.</div>
+              <div className="mt-2 text-sm text-[#006b5c] font-semibold flex items-center gap-1.5 px-1"><span className="material-symbols-outlined text-[18px]">check_circle</span> {t('inputs.supplierSelected')}</div>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-5 pt-2">
             <div>
-              <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">Supplier Part No.</label>
+              <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">{t('inputs.supplierPartNo')}</label>
               <input
                 className="input input-bordered w-full h-11 text-[15px] bg-white text-gray-900 border-gray-300 focus:border-[#006b5c]"
                 placeholder="Ex. 104-XX"
@@ -223,7 +225,7 @@ export default function AddSupplierModal({
               />
             </div>
             <div>
-              <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">Cost Price</label>
+              <label className="block text-[13px] font-bold tracking-wide uppercase text-gray-500 mb-2">{t('inputs.costPrice')}</label>
               <input
                 type="number"
                 step="0.01"
@@ -245,10 +247,10 @@ export default function AddSupplierModal({
 
           <div className="mt-8 pt-6 flex justify-end gap-3 border-t border-gray-100">
              <button type="button" className="btn btn-ghost hover:bg-gray-100 text-gray-700 h-11 min-h-[44px] px-6 font-semibold" onClick={onClose} disabled={submitting}>
-               Cancel
+               {t('buttons.cancel')}
              </button>
              <button type="submit" className="btn bg-[#006b5c] hover:bg-[#005246] border-none text-white h-11 min-h-[44px] px-8 font-semibold shadow-sm text-[15px]" disabled={submitting || !vendorId}>
-               {submitting ? <span className="loading loading-spinner loading-sm text-white"></span> : 'Link Product'}
+               {submitting ? <span className="loading loading-spinner loading-sm text-white"></span> : t('buttons.linkProduct')}
              </button>
           </div>
         </form>

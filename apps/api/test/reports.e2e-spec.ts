@@ -8,6 +8,7 @@ const request = require('supertest');
 describe('Dynamic Reports Engine (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -32,6 +33,11 @@ describe('Dynamic Reports Engine (e2e)', () => {
       );
     }
     adminToken = adminRes.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
   });
 
   afterAll(async () => {
@@ -58,6 +64,8 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
+
         customerId: accounts.body.data[0].accountId,
         lines: [
           {
@@ -107,6 +115,8 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
+
         customerId: accounts.body.data[0].accountId,
         name: 'Super Rich Demo Order',
         customerOrderNumber: 'PO-999-XYZ',

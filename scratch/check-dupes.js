@@ -5,24 +5,23 @@ const fileData = fs.readFileSync('apps/ops-portal/messages/en.json', 'utf8');
 const lines = fileData.split('\n');
 
 let currentPath = [];
-let keysAtPath = new Map(); // e.g. "root" -> ["accounts", "suppliers"], "root.suppliers" -> ["title", "buttons"]
-let indentLevels = [];
-
+let keysAtPath = new Map(); 
 let hasDuplicates = false;
 
 lines.forEach((line, index) => {
   const lineNum = index + 1;
-  const match = line.match(/^(\s*)"([^"]+)"\s*:/);
+  const trimmed = line.trim();
   
-  if (line.includes('}')) {
+  // Handle pops first if the line starts with }
+  if (trimmed.startsWith('}') || trimmed.startsWith('},')) {
     currentPath.pop();
-    indentLevels.pop();
   }
 
+  // Look for "key": value OR "key": {
+  const match = line.match(/^(\s*)"([^"]+)"\s*:/);
+  
   if (match) {
-    const indent = match[1].length;
     const key = match[2];
-
     const parentPath = currentPath.join('.');
     
     if (!keysAtPath.has(parentPath)) {
@@ -31,20 +30,17 @@ lines.forEach((line, index) => {
     
     const siblings = keysAtPath.get(parentPath);
     if (siblings.has(key)) {
-      console.error(`DUPLICATE FOUND at line ${lineNum}: Key "${key}" already exists under "${parentPath}"`);
+      console.error(`DUPLICATE FOUND at line ${lineNum}: Key "${key}" already exists under "${parentPath || 'root'}"`);
       hasDuplicates = true;
     } else {
       siblings.add(key);
     }
 
-    if (line.includes('{')) {
+    // Push to path if it's an object start
+    // We check if it ends with { (ignoring trailing whitespace)
+    if (trimmed.endsWith('{')) {
       currentPath.push(key);
-      indentLevels.push(indent);
     }
-  } else if (line.includes('{') && !line.match(/^(\s*)"([^"]+)"\s*:/)) {
-    // root object or array item
-    currentPath.push('root');
-    indentLevels.push(line.match(/^\s*/)[0].length);
   }
 });
 

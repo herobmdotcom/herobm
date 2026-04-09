@@ -134,7 +134,7 @@ export default function NewAccountPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Account Group
+                      {t('accounts.placeholders.accountGroup')}
                     </label>
                     <GroupSelect
                       type="account"
@@ -153,7 +153,7 @@ export default function NewAccountPage() {
                       onChange={(e) => updateField('gstCategoryId', e.target.value)}
                       disabled={submitting}
                     >
-                      <option value="">(None)</option>
+                      <option value="">{t('common.options.none')}</option>
                       {gstCategories.map((cat) => (
                         <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
                           {cat.title} ({cat.code})

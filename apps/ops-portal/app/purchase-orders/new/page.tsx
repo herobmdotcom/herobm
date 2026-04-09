@@ -72,7 +72,7 @@ function generateOrderNumber(): string {
 }
 
 export default function NewPurchaseOrderPage() {
-  useDocumentTitle('New Purchase Order');
+  useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const t = useTranslations();
   const router = useRouter();
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
@@ -249,7 +249,7 @@ export default function NewPurchaseOrderPage() {
       <DetailsLayout
         header={
           <EntityHeader
-            title="Create Purchase Order"
+            title={t('purchaseOrders.createTitle')}
             onBack={() => router.push('/purchase-orders')}
             actions={
               <>
@@ -489,7 +489,7 @@ export default function NewPurchaseOrderPage() {
                         style={{ width: '100%', fontSize: 13 }}
                         value={line.productDescription || ''}
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
-                        placeholder="Custom description..."
+                        placeholder={t('salesOrders.placeholders.customDescription')}
                       />
                     )}
                   </td>
@@ -546,7 +546,7 @@ export default function NewPurchaseOrderPage() {
                       value={line.gstCategoryId || ''}
                       onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
                     >
-                      <option value="">(Default)</option>
+                      <option value="">{t('common.default')}</option>
                       {gstCategories.map((c) => (
                         <option key={c.gstCategoryId} value={c.gstCategoryId}>
                           {getGstLabel(c)}

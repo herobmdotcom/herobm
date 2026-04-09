@@ -14,6 +14,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 
 import React, { useEffect } from 'react';
 import LocationSelect from '@/components/shared/LocationSelect';
+import { useTranslations } from 'next-intl';
 
 interface PendingLine {
   purchaseOrderId: string;
@@ -45,7 +46,9 @@ interface DraftLine {
 }
 
 function ReceivingFlow() {
-  useDocumentTitle('Receive Goods');
+  const t = useTranslations('purchaseOrders.receptions');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('flow.title'));
   const router = useRouter();
   const searchParams = useSearchParams();
   const poId = searchParams.get('poId');
@@ -105,7 +108,7 @@ function ReceivingFlow() {
          }
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to fetch pending lines');
+      toast.error(err.message || t('toast.failed'));
     } finally {
       setLoadingLines(false);
     }
@@ -130,7 +133,7 @@ function ReceivingFlow() {
     if (!selectedLine || !selectedProduct) return;
     const qty = Number(qtyToReceive);
     if (qty <= 0) {
-      toast.error('Quantity must be greater than 0');
+      toast.error(t('toast.qtyReq'));
       return;
     }
     
@@ -161,7 +164,7 @@ function ReceivingFlow() {
     if (!selectedProduct) return;
     const qty = Number(qtyToReceive);
     if (qty <= 0) {
-      toast.error('Quantity must be greater than 0');
+      toast.error(t('toast.qtyReq'));
       return;
     }
     
@@ -192,7 +195,7 @@ function ReceivingFlow() {
   const commitReceptions = async () => {
     if (draftLines.length === 0) return;
     if (!locationId) {
-      toast.error('Please select a receiving location.');
+      toast.error(t('toast.selectLocation'));
       return;
     }
     setSaving(true);
@@ -229,29 +232,29 @@ function ReceivingFlow() {
       
       setFinalDestinations(distinctDests);
       
-      toast.success('Receptions confirmed successfully!');
+      toast.success(t('toast.confirmed'));
       setCompleted(true);
       setSaving(false);
       
     } catch (err: any) {
-      toast.error(err.message || 'Failed to commit receptions');
+      toast.error(err.message || t('toast.failed'));
       setSaving(false);
     }
   };
 
   const renderSummaryList = (isReadonly: boolean) => {
-    if (draftLines.length === 0) return <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>No items scanned yet.</p>;
+    if (draftLines.length === 0) return <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>{t('summary.noItems')}</p>;
 
     return (
       <div className="overflow-x-auto w-full">
         <table className="table-lines">
           <thead>
             <tr>
-              <th>Product</th>
-              <th>Description</th>
-              <th style={{ width: 100, textAlign: 'right' }}>Received</th>
-              <th style={{ width: 140, textAlign: 'right' }}>Invoice Price</th>
-              <th style={{ width: 180 }}>Purchase Order</th>
+              <th>{tCommon('columns.product')}</th>
+              <th>{tCommon('columns.description')}</th>
+              <th style={{ width: 100, textAlign: 'right' }}>{tCommon('columns.received')}</th>
+              <th style={{ width: 140, textAlign: 'right' }}>{tCommon('columns.invoicePrice')}</th>
+              <th style={{ width: 180 }}>{tCommon('columns.purchaseOrder')}</th>
               {!isReadonly && <th style={{ width: 80 }}></th>}
             </tr>
           </thead>
@@ -278,7 +281,7 @@ function ReceivingFlow() {
                      </div>
                      {!line.isQuarantine && isOverReceive && (
                         <span style={{ fontSize: 11, color: 'var(--warning)', display: 'block' }}>
-                           ⚠️ Over-receiving: Expected {remaining}
+                           {t('summary.overReceive', { qty: remaining })}
                         </span>
                      )}
                   </td>
@@ -298,19 +301,19 @@ function ReceivingFlow() {
                     
                     {!line.isQuarantine && priceDiscrepancy && (
                        <span style={{ fontSize: 11, color: 'var(--warning)', display: 'block' }}>
-                          ⚠️ Discrepancy (PO: {line.currencyCode ? formatAmount(line.expectedPrice, line.currencyCode) : line.expectedPrice})
+                          {t('summary.discrepancy', { price: line.currencyCode ? formatAmount(line.expectedPrice, line.currencyCode) : line.expectedPrice })}
                        </span>
                     )}
                     {line.isQuarantine && (
                        <span style={{ fontSize: 11, color: 'var(--danger)', display: 'block', fontWeight: 500 }}>
-                          Move to Quarantine.
+                          {t('summary.quarantineMove')}
                        </span>
                     )}
                   </td>
 
                   <td>
                     {line.isQuarantine ? (
-                         <span style={{ fontWeight: 600, color: 'var(--danger)', fontSize: 13 }}>EXCEPTION: QUARANTINE</span>
+                         <span style={{ fontWeight: 600, color: 'var(--danger)', fontSize: 13 }}>{t('summary.quarantineExceptionHeader')}</span>
                     ) : (
                         isReadonly ? (
                           <Link href={`/purchase-orders/${line.purchaseOrderId}`} style={{ textDecoration: 'none', color: 'var(--accent)', fontWeight: 600, fontSize: 13 }}>
@@ -324,7 +327,7 @@ function ReceivingFlow() {
 
                   {!isReadonly && (
                     <td style={{ textAlign: 'right' }}>
-                       <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>Remove</button>
+                       <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>{tCommon('buttons.remove')}</button>
                     </td>
                   )}
                 </tr>
@@ -341,15 +344,15 @@ function ReceivingFlow() {
         <DetailsLayout
           header={
             <EntityHeader
-              title="Receptions Confirmed"
-              subtitle="The stock has been successfully registered."
+              title={t('completed.title')}
+              subtitle={t('completed.subtitle')}
               actions={
                 <div className="flex gap-2">
                   <button className="btn btn-secondary" onClick={() => router.push('/receiving')}>
-                    Back to Receptions
+                    {t('completed.backToReceptions')}
                   </button>
                   <button className="btn btn-primary" onClick={() => { setCompleted(false); setDraftLines([]); setPendingLines([]); setSelectedProduct(null); }}>
-                    New Reception
+                    {t('completed.newReception')}
                   </button>
                 </div>
               }
@@ -374,13 +377,13 @@ function ReceivingFlow() {
                 <div className="mb-6 flex gap-8 text-sm">
                   {packingSlipNumber && (
                     <div>
-                      <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Packing Slip:</strong>
+                      <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>{tCommon('columns.packingSlip')}:</strong>
                       {packingSlipNumber}
                     </div>
                   )}
                   {notes && (
                     <div>
-                      <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>Notes:</strong>
+                      <strong style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>{tCommon('columns.notes')}:</strong>
                       {notes}
                     </div>
                   )}
@@ -398,12 +401,12 @@ function ReceivingFlow() {
     <DetailsLayout
       header={
         <EntityHeader
-          title="Receive Goods"
-          subtitle="Scan products to receive against Purchase Orders"
+          title={t('flow.title')}
+          subtitle={t('flow.subtitle')}
           isSaving={saving}
           actions={
             <button className="btn btn-primary" onClick={commitReceptions} disabled={draftLines.length === 0 || saving}>
-              Confirm Reception
+              {t('flow.confirmReception')}
             </button>
           }
         />
@@ -417,13 +420,13 @@ function ReceivingFlow() {
               <LocationSelect 
                  value={locationId}
                  onChange={setLocationId}
-                 placeholder="Select Delivery Location *"
+                 placeholder={t('flow.selectLocation')}
               />
             </div>
             <div>
               <input 
                 className="input" 
-                placeholder="Packing slip number" 
+                placeholder={t('flow.packingSlipPlaceholder')} 
                 value={packingSlipNumber} 
                 onChange={(e) => setPackingSlipNumber(e.target.value)} 
               />
@@ -431,17 +434,17 @@ function ReceivingFlow() {
             <div>
               <input 
                 className="input" 
-                placeholder="Reception notes" 
+                placeholder={t('flow.notesPlaceholder')} 
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value)} 
               />
             </div>
           </div>
 
-          <h3 className="section-heading mb-0 mt-2">Scan Product</h3>
-          <ProductSearchInput onSelect={handleProductSelect} placeholder="Search or scan part number..." />
+          <h3 className="section-heading mb-0 mt-2">{t('flow.scanProduct')}</h3>
+          <ProductSearchInput onSelect={handleProductSelect} placeholder={t('flow.searchPlaceholder')} />
           
-          {loadingLines && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Loading pending lines...</p>}
+          {loadingLines && <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>{t('flow.loadingPending')}</p>}
 
           {pendingLines.length === 0 && selectedProduct && !loadingLines && !quarantineMode && (
             <div className="flex flex-col gap-4 mt-2 p-4 border rounded" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
@@ -450,14 +453,14 @@ function ReceivingFlow() {
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedProduct.productNumber || 'No part number'}</p>
               </div>
               <div className="p-3 rounded text-sm" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' }}>
-                No active Purchase Orders were found containing this product.
+                {t('flow.noOrdersFound')}
               </div>
               <div className="flex justify-end gap-2">
                 <button className="btn btn-secondary" onClick={() => setSelectedProduct(null)}>
-                  Clear
+                  {t('flow.clear')}
                 </button>
                 <button className="btn btn-secondary" onClick={() => setQuarantineMode(true)}>
-                  Mark for Quarantine
+                  {t('flow.markQuarantine')}
                 </button>
               </div>
             </div>
@@ -465,19 +468,19 @@ function ReceivingFlow() {
 
           {pendingLines.length > 0 && !selectedLine && !quarantineMode && (
              <div className="flex flex-col gap-2">
-               <h4 style={{ fontSize: 14, fontWeight: 600 }}>Select Purchase Order Line:</h4>
+               <h4 style={{ fontSize: 14, fontWeight: 600 }}>{t('flow.selectLineTitle')}</h4>
                {pendingLines.map(line => {
                   const rem = Number(line.quantity) - Number(line.quantityReceived);
                   return (
                       <button key={line.purchaseOrderLineId} onClick={() => selectLine(line)} className="btn btn-secondary" style={{ textAlign: 'left', display: 'block', padding: '10px 14px' }}>
                         <div style={{ fontWeight: 600 }}>{line.orderNumber}</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{line.productDescription} ({rem} remaining)</div>
+                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('flow.remainingInfo', { desc: line.productDescription, qty: rem })}</div>
                       </button>
                   );
                })}
                <button onClick={() => setQuarantineMode(true)} className="btn btn-secondary mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
-                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>Quarantine Exception</div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Log physically but do not receive in system</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text)' }}>{t('flow.quarantineException')}</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('flow.quarantineDesc')}</div>
                </button>
              </div>
           )}
@@ -488,14 +491,14 @@ function ReceivingFlow() {
                 <h4 style={{ fontWeight: 600, fontSize: 15 }}>{selectedLine.orderNumber}</h4>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedLine.productDescription}</p>
                 <div style={{ fontSize: 12, marginTop: 4, display: 'flex', gap: 12 }}>
-                    <span>Ordered: <strong>{selectedLine.quantity}</strong></span>
-                    <span>Received: <strong>{selectedLine.quantityReceived}</strong></span>
-                    <span>PO Price: <strong>{selectedLine.currencyCode ? formatAmount(Number(selectedLine.pricePerUnit), selectedLine.currencyCode) : selectedLine.pricePerUnit}</strong></span>
+                    <span>{t('flow.orderedInfo', { qty: <strong>{selectedLine.quantity}</strong> })}</span>
+                    <span>{t('flow.receivedInfo', { qty: <strong>{selectedLine.quantityReceived}</strong> })}</span>
+                    <span>{t('flow.poPriceInfo', { price: <strong>{selectedLine.currencyCode ? formatAmount(Number(selectedLine.pricePerUnit), selectedLine.currencyCode) : selectedLine.pricePerUnit}</strong> })}</span>
                 </div>
               </div>
               
               <div style={{ width: 140 }}>
-                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Quantity Received</label>
+                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('flow.qtyReceived')}</label>
                 <input 
                   type="number" 
                   min="0"
@@ -508,7 +511,7 @@ function ReceivingFlow() {
 
               <div style={{ width: 220 }}>
                 <label className="block mb-1 text-xs font-medium flex items-center" style={{ color: 'var(--text-muted)' }}>
-                  Invoice Price
+                  {t('flow.invoicePrice')}
                   {selectedLine.currencyCode && (
                     <span
                       style={{
@@ -536,8 +539,8 @@ function ReceivingFlow() {
               </div>
 
               <div className="flex gap-2 self-end pb-1">
-                <button className="btn btn-primary" onClick={addToDraft}>Confirm</button>
-                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setPendingLines([]); }}>Cancel</button>
+                <button className="btn btn-primary" onClick={addToDraft}>{t('flow.confirm')}</button>
+                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setPendingLines([]); }}>{t('flow.cancel')}</button>
               </div>
             </div>
           )}
@@ -545,12 +548,12 @@ function ReceivingFlow() {
           {quarantineMode && selectedProduct && (
             <div className="flex items-center gap-6 mt-4 p-4 border rounded" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
               <div className="flex-1">
-                <h4 style={{ fontWeight: 600, fontSize: 15 }}>Exception: Quarantine</h4>
+                <h4 style={{ fontWeight: 600, fontSize: 15 }}>{t('summary.quarantineException')}</h4>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedProduct.name} ({selectedProduct.productNumber})</p>
               </div>
               
               <div style={{ width: 140 }}>
-                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Qty to Quarantine</label>
+                <label className="block mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('flow.qtyReceived')}</label>
                 <input 
                   type="number" 
                   min="0"
@@ -564,8 +567,8 @@ function ReceivingFlow() {
               <div style={{ width: 220 }} />
 
               <div className="flex gap-2 self-end pb-1">
-                <button className="btn btn-primary" onClick={addQuarantineToDraft}>Confirm</button>
-                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); if(pendingLines.length===0) setSelectedProduct(null); }}>Cancel</button>
+                <button className="btn btn-primary" onClick={addQuarantineToDraft}>{t('flow.confirm')}</button>
+                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); if(pendingLines.length===0) setSelectedProduct(null); }}>{t('flow.cancel')}</button>
               </div>
             </div>
           )}
@@ -573,7 +576,7 @@ function ReceivingFlow() {
 
         {/* Bottom Side: Draft Cart & Review */}
         <div className="card flex flex-col gap-4" style={{ height: 'fit-content' }}>
-          <h3 className="section-heading">Reception Summary</h3>
+          <h3 className="section-heading">{t('flow.receptionSummary')}</h3>
           {renderSummaryList(false)}
         </div>
       </div>
@@ -606,8 +609,9 @@ function ReceivingFlow() {
 }
 
 export default function ReceivingPage() {
+  const tCommon = useTranslations('common');
   return (
-    <Suspense fallback={<p style={{ padding: 20 }}>Loading...</p>}>
+    <Suspense fallback={<p style={{ padding: 20 }}>{tCommon('loadingEllipsis')}</p>}>
       <ReceivingFlow />
     </Suspense>
   );

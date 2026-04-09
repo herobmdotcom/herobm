@@ -37,15 +37,8 @@ export default function Sidebar() {
       label: t('groups.sales'),
       items: [
         { href: '/accounts', label: t('items.accounts'), icon: 'storefront' },
-        { 
-          href: '/sales-orders', 
-          label: t('items.salesOrders'), 
-          icon: 'receipt_long',
-          subItems: [
-            { href: '/sales-orders', label: t('items.salesOrders') },
-            { href: '/sales-orders/invoices', label: t('items.invoices') }
-          ]
-        },
+        { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
+        { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
       ],
     },
     {

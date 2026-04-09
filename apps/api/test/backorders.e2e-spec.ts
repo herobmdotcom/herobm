@@ -8,6 +8,7 @@ const request = require('supertest');
 describe('Backorders Workflow (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
   let productId: string;
   let accountId: string;
   let vendorId: string;
@@ -35,6 +36,11 @@ describe('Backorders Workflow (e2e)', () => {
       );
     }
     adminToken = loginRes.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     // Fetch dependencies
     const accounts = await request(app.getHttpServer())
@@ -85,6 +91,7 @@ describe('Backorders Workflow (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
         customerId: accountId,
         orderNumber: `SO-BO-${Date.now()}`,
         lines: [],

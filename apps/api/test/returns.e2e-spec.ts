@@ -22,6 +22,7 @@ const request = require('supertest');
 describe('API E2E — Sales Order Returns', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
   let viewerToken: string;
 
   let validCustomerId: string;
@@ -72,6 +73,11 @@ describe('API E2E — Sales Order Returns', () => {
       })
       .expect(201);
     adminToken = adminLogin.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -119,6 +125,8 @@ describe('API E2E — Sales Order Returns', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
+
         customerId: validCustomerId,
         name: 'E2E-RET Test Order',
         lines: [

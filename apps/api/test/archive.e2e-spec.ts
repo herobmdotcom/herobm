@@ -21,6 +21,7 @@ const request = require('supertest');
 describe('Archive E2E — Full Round-Trip', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
   let viewerToken: string;
 
   // IDs captured during setup
@@ -49,6 +50,11 @@ describe('Archive E2E — Full Round-Trip', () => {
       })
       .expect(201);
     adminToken = adminLogin.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     // Login as viewer (read-only, no archive action)
     const viewerLogin = await request(app.getHttpServer())
@@ -181,6 +187,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: validLocationId,
           customerId: validCustomerId,
           name: 'E2E Archive Test SO',
           lines: [
@@ -210,6 +217,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: validLocationId,
           customerId: validCustomerId,
           name: 'E2E Draft Archive Fail',
           lines: [

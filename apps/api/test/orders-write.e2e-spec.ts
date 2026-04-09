@@ -21,6 +21,7 @@ const request = require('supertest');
 describe('API E2E — Sales Portal Write Endpoints', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
   let viewerToken: string;
 
   // IDs captured from mart data for creating test orders
@@ -69,6 +70,11 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     // Login as viewer (read-only)
     const viewerLogin = await request(app.getHttpServer())
@@ -107,6 +113,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${viewerToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {
@@ -123,6 +131,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       await request(app.getHttpServer())
         .post('/api/sales-orders')
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [],
         })
@@ -145,6 +155,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           name: 'E2E Test Order',
           notes: 'Created by E2E test suite',
@@ -322,6 +334,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {
@@ -340,6 +354,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: 'NONEXISTENT-CUSTOMER-ID',
           lines: [
             {
@@ -357,6 +373,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {
@@ -393,6 +411,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {
@@ -442,6 +462,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             {
@@ -483,6 +505,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
+
           customerId: validCustomerId,
           lines: [
             { productId: validProductId, quantity: '1', pricePerUnit: '10.00' },

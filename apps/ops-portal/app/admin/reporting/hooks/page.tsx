@@ -5,6 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface Assignment {
   hookSlug: string;
@@ -22,9 +23,10 @@ interface ReportTemplate {
 function ReportingHooksRow(props: { 
   assignment: Assignment, 
   templates: ReportTemplate[],
-  onUpdate: () => void 
+  onUpdate: () => void,
+  t: any
 }) {
-  const { assignment, templates, onUpdate } = props;
+  const { assignment, templates, onUpdate, t } = props;
   const [updating, setUpdating] = useState(false);
 
   // Filter templates to only those that support this hook's context
@@ -40,7 +42,7 @@ function ReportingHooksRow(props: {
       onUpdate();
     } catch (e) {
       reportError(e, 'ReportingHooksRow');
-      alert('Failed to update assignment: ' + (e as any).message);
+      alert(t('errors.updateFailed') + (e as any).message);
     } finally {
       setUpdating(false);
     }
@@ -60,7 +62,7 @@ function ReportingHooksRow(props: {
             onChange={(e) => handleChange(e.target.value)}
             disabled={updating}
           >
-            <option value="" disabled>Select a template...</option>
+            <option value="" disabled>{t('table.selectTemplate')}</option>
             {filteredTemplates.map(t => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
@@ -74,7 +76,7 @@ function ReportingHooksRow(props: {
             href={`/admin/reporting/${assignment.reportId}`}
             className="text-[11px] font-bold text-[#006b5c] hover:underline uppercase tracking-widest"
           >
-            Edit Template
+            {t('actions.editTemplate')}
           </Link>
         )}
       </td>
@@ -83,7 +85,8 @@ function ReportingHooksRow(props: {
 }
 
 export default function ReportingHooksPage() {
-  useDocumentTitle('Reporting Hooks');
+  const t = useTranslations('admin.reporting.hooks');
+  useDocumentTitle(t('moduleTitle'));
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,9 +115,9 @@ export default function ReportingHooksPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '20px 0' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Hook Assignments</h1>
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Map standard actions (like printing an invoice) to specific templates.
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -124,16 +127,16 @@ export default function ReportingHooksPage() {
           className="text-sm font-semibold mb-4"
           style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
         >
-          Hook Mappings
+          {t('table.title')}
         </h3>
         
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 250 }}>Hook Slug</th>
-              <th style={{ width: 200 }}>Context Resolver</th>
-              <th>Assigned Template</th>
-              <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+              <th style={{ width: 250 }}>{t('table.columns.hookSlug')}</th>
+              <th style={{ width: 200 }}>{t('table.columns.contextResolver')}</th>
+              <th>{t('table.columns.assignedTemplate')}</th>
+              <th style={{ width: 150, textAlign: 'right' }}>{t('table.columns.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -146,7 +149,7 @@ export default function ReportingHooksPage() {
             ) : assignments.length === 0 ? (
               <tr>
                 <td colSpan={4} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  No system hooks registered in the database.
+                  {t('table.empty')}
                 </td>
               </tr>
             ) : (
@@ -156,6 +159,7 @@ export default function ReportingHooksPage() {
                   assignment={a} 
                   templates={templates} 
                   onUpdate={loadData}
+                  t={t}
                 />
               ))
             )}

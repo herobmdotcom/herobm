@@ -21,7 +21,7 @@ export default function AccountGroupsAdmin() {
   const [isCreating, setIsCreating] = useState(false);
 
   const renderGlAccountLabel = (id: string | null | undefined) => {
-    if (!id) return <span className="text-muted text-xs italic">Not configured</span>;
+    if (!id) return <span className="text-muted text-xs italic">{t('notConfigured')}</span>;
     const acct = glAccounts.find((a: any) => a.glAccountId === id);
     return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
   };

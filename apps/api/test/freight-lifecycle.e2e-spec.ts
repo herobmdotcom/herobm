@@ -145,6 +145,8 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .post('/api/sales-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
+        fulfillmentLocationId: locationId,
+
         customerId: accountId,
         name: 'Freight Test Order',
         lines: [

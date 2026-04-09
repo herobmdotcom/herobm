@@ -11,6 +11,7 @@ const request = require('supertest');
 describe('Audit Events (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
+  let locationId: string;
 
   beforeAll(async () => {
     register.clear();
@@ -60,6 +61,11 @@ describe('Audit Events (e2e)', () => {
       );
     }
     adminToken = adminRes.body.access_token;
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
   }, 30_000);
 
   afterAll(async () => {
@@ -160,6 +166,7 @@ describe('Audit Events (e2e)', () => {
         .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
+          fulfillmentLocationId: locationId,
           customerId,
           name: 'E2E Audit Order',
           lines: [],

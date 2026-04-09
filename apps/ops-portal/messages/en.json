@@ -16,7 +16,9 @@
       "createAccount": "Create Account"
     },
     "placeholders": {
-      "searchAccounts": "Search by name, account number, or email…"
+      "searchAccounts": "Search by name, account number, or email…",
+      "noAccountGroup": "No Account Group",
+      "accountGroup": "Account Group"
     },
     "financials": "Financials",
     "management": "Account Management",
@@ -31,7 +33,8 @@
     "buttons": {
       "createSupplier": "+ Create Supplier",
       "editSupplier": "Edit Supplier",
-      "save": "Save Supplier"
+      "save": "Save Supplier",
+      "unlinkSupplier": "Unlink Supplier"
     },
     "placeholders": {
       "searchSuppliers": "Search suppliers…",
@@ -43,7 +46,8 @@
       "address": "123 Main St",
       "city": "City",
       "country": "Country",
-      "notes": "Key relationship details, preferred delivery methods, etc."
+      "notes": "Key relationship details, preferred delivery methods, etc.",
+      "noGroup": "No Supplier Group"
     },
     "columns": {
       "vendorNumber": "Vendor #",
@@ -113,6 +117,38 @@
       "inactive": "Inactive",
       "paymentBlocked": "Payment Blocked",
       "purchaseBlocked": "Purchase Blocked"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "products": "Products",
+      "compliance": "Compliance",
+      "info": "Info",
+      "financials": "Financials",
+      "notes": "Notes",
+      "contact": "Contact",
+      "activity": "Activity"
+    },
+    "products": {
+      "title": "Products",
+      "columns": {
+        "productNo": "Product No.",
+        "name": "Name",
+        "partNo": "Supplier Part No.",
+        "costPrice": "Cost Price",
+        "discount": "Discount %",
+        "status": "Status"
+      }
+    },
+    "tooltips": {
+      "currentlyBlocked": "Currently Blocked",
+      "currentlyActive": "Currently Active"
+    },
+    "new": {
+      "documentTitle": "New Supplier"
+    },
+    "confirmUnlink": "Are you sure you want to unlink {name} from this product?",
+    "toast": {
+      "unlinked": "Supplier successfully unlinked"
     }
   },
   "purchaseOrders": {
@@ -182,16 +218,98 @@
     "noInventoryData": "No inventory data",
     "newReturn": "New Return",
     "availability": "Availability",
-    "receptions": "Receptions",
+    "receptions": {
+      "title": "Receiving",
+      "newReception": "Receive Goods",
+      "columns": {
+        "receptionNo": "Reception No.",
+        "purchaseOrderNo": "Purchase Order No.",
+        "packingSlip": "Packing Slip"
+      },
+      "flow": {
+        "title": "Receive Goods",
+        "subtitle": "Scan products to receive against Purchase Orders",
+        "confirmReception": "Confirm Reception",
+        "scanProduct": "Scan Product",
+        "searchPlaceholder": "Search or scan part number...",
+        "loadingPending": "Loading pending lines...",
+        "noOrdersFound": "No active Purchase Orders were found containing this product.",
+        "clear": "Clear",
+        "markQuarantine": "Mark for Quarantine",
+        "selectLineTitle": "Select Purchase Order Line:",
+        "quarantineException": "Quarantine Exception",
+        "quarantineDesc": "Log physically but do not receive in system",
+        "qtyReceived": "Quantity Received",
+        "invoicePrice": "Invoice Price",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "receptionSummary": "Reception Summary",
+        "packingSlipPlaceholder": "Packing slip number",
+        "notesPlaceholder": "Reception notes",
+        "selectLocation": "Select Delivery Location *",
+        "remainingInfo": "{desc} ({qty} remaining)",
+        "orderedInfo": "Ordered: {qty}",
+        "receivedInfo": "Received: {qty}",
+        "poPriceInfo": "PO Price: {price}"
+      },
+      "toast": {
+        "confirmed": "Receptions confirmed successfully!",
+        "failed": "Failed to commit receptions",
+        "selectLocation": "Please select a receiving location.",
+        "qtyReq": "Quantity must be greater than 0"
+      },
+      "summary": {
+        "noItems": "No items scanned yet.",
+        "overReceive": "⚠️ Over-receiving: Expected {qty}",
+        "discrepancy": "⚠️ Discrepancy (PO: {price})",
+        "quarantineMove": "Move to Quarantine.",
+        "quarantineException": "Quarantine Exception",
+        "quarantineExceptionHeader": "EXCEPTION: QUARANTINE"
+      },
+      "completed": {
+        "title": "Receptions Confirmed",
+        "subtitle": "The stock has been successfully registered.",
+        "backToReceptions": "Back to Receptions",
+        "newReception": "New Reception"
+      }
+    },
     "packingSlip": "Packing Slip",
     "returnsHeading": "Returns",
     "noReturns": "No returns",
     "noReturnLines": "No return lines",
     "loadingReturns": "Loading returns…",
     "returns": {
-      "totalCredit": "Total Credit",
-      "totalFees": "Total Fees",
-      "netCredit": "Net Credit"
+      "title": "Purchase Returns",
+      "subtitle": "Return items back to suppliers",
+      "scanProduct": "Scan Product to Return",
+      "placeholder": "Scan or search product...",
+      "loadingLines": "Loading...",
+      "unknownProduct": "Unknown Product",
+      "noPartNumber": "No Part Number",
+      "noActivePOs": "No returnable PO lines found for this product.",
+      "clear": "Clear",
+      "markQuarantine": "Mark Quarantine",
+      "selectPOLine": "Select received PO Line to return against",
+      "remaining": "received: {rem}",
+      "quarantineBtnTitle": "Exceptional Quarantine",
+      "quarantineBtnSub": "Add to quarantine without a PO",
+      "ordered": "Ordered",
+      "received": "Received",
+      "poPrice": "PO Price",
+      "qtyReturned": "Quantity to Return",
+      "returnFee": "Return Fee",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "exceptionQuarantine": "Exception Quarantine",
+      "qtyToQuarantine": "Qty to Quarantine",
+      "exceptionQuarantineTag": "QUARANTINE",
+      "returnsSummary": "Returns Draft Cart",
+      "noItemsScanned": "No items staged for return.",
+      "qtyReturnedSummary": "Return Qty",
+      "returnFeeDiscrepancy": "Fee: {amount}",
+      "moveToQuarantine": "Move to Quarantine",
+      "remove": "Remove",
+      "confirmReturns": "Complete Returns"
     },
     "receiving": {
       "title": "Receive Goods",
@@ -234,7 +352,10 @@
     "locationWarningPrefix": "Location Warning:",
     "location": "Location",
     "ref": "Ref:",
-    "file": "File:"
+    "file": "File:",
+    "billSummary": "Bill Summary",
+    "createTitle": "Create Purchase Order",
+    "newOrderTitle": "New Purchase Order"
   },
   "setup": {
     "gate": {
@@ -355,7 +476,24 @@
     "review": {
       "title": "Ready to Initialize",
       "description": "Your configuration is saved and ready to be compiled into the database.",
-      "confirm": "Compile Platform"
+      "confirm": "Compile Platform",
+      "executionPayload": "Execution Payload",
+      "payload": {
+        "source": "Source",
+        "resume": "Resume",
+        "companyName": "Company Name",
+        "coaPreset": "COA Preset",
+        "currency": "Currency",
+        "fiscalStartMonth": "Fiscal Start Month",
+        "valuationStrategy": "Valuation Strategy",
+        "billingMode": "Billing Mode",
+        "defaultFulfillmentLocation": "Default Fulfillment Location",
+        "revenueRouting": "Revenue Routing",
+        "expenseRouting": "Expense Routing",
+        "enabled": "ENABLED",
+        "disabled": "DISABLED",
+        "systemDefault": "System Default"
+      }
     },
     "execution": {
       "failedTitle": "Initialization Failed",
@@ -366,6 +504,42 @@
       "criticalError": "[CRITICAL]: {error}",
       "goDashboard": "Go to Dashboard",
       "aborted": "Execution aborted. Please review error logs."
+    },
+    "dataImport": {
+      "title": {
+        "pending": "Data Import Staged",
+        "failed": "Data Import Failed",
+        "completed": "Data Import Complete",
+        "running": "Executing Data Import"
+      },
+      "subtitle": {
+        "pending": "Your legacy Data Import task is ready to begin. Review extraction settings before confirming.",
+        "failed": "The ABM extract-load-transform sequence failed to complete safely.",
+        "completed": "Your legacy data has been successfully imported into the HeroBM platform.",
+        "running": "Migrating legacy ERP records into HeroBM databases using dbt pipelines..."
+      },
+      "sections": {
+        "confirmedSettings": "Confirmed Settings",
+        "executionOptions": "Execution Options",
+        "terminal": "etl-worker terminal"
+      },
+      "options": {
+        "resumeModeTitle": "Resume Mode (Recommended)",
+        "resumeModeDesc": "Skip tables that have already been fully extracted successfully and only pull missing tables. This is much faster.",
+        "tablesCached": "{count} Tables Cached",
+        "alreadyStaged": "Already Staged: ",
+        "fullExtractionTitle": "Full Extraction",
+        "fullExtractionDesc": "Wipe the staging area and pull every single table firmly from scratch. Required if upstream schema changed."
+      },
+      "buttons": {
+        "startExecution": "Start Execution",
+        "goToDashboard": "Go to Dashboard",
+        "retryImport": "Retry Import",
+        "returnToDashboard": "Return to Dashboard"
+      },
+      "errors": {
+        "criticalError": "Critical Error: {message}"
+      }
     }
   },
   "admin": {
@@ -385,7 +559,8 @@
         "created": "Group created",
         "updated": "Group updated",
         "deleted": "Group deleted"
-      }
+      },
+      "notConfigured": "Not configured"
     },
     "productGroups": {
       "title": "Product Groups",
@@ -469,7 +644,8 @@
       },
       "drawer": {
         "loading": "Loading events…",
-        "noEvents": "No events of this type found."
+        "noEvents": "No events of this type found.",
+        "errorLabel": "Error:"
       },
       "recentEvents": "Recent Events ({count})",
       "noEvents": "No outbox events found. Generate invoices to see sync activity.",
@@ -499,6 +675,27 @@
       },
       "limits": {
         "lines": "{count} lines"
+      },
+      "actions": {
+        "copy": "Copy Logs",
+        "refresh": "Refresh",
+        "copied": "Logs copied to clipboard!"
+      },
+      "filters": {
+        "service": "Service:",
+        "limit": "Limit:",
+        "autoRefresh": "Auto-refresh (5s)",
+        "services": {
+          "api": "API",
+          "worker": "Outbox Worker",
+          "postgres": "PostgreSQL"
+        },
+        "limits": {
+          "100": "100 lines",
+          "500": "500 lines",
+          "1000": "1000 lines",
+          "5000": "5000 lines"
+        }
       }
     },
     "common": {
@@ -513,6 +710,102 @@
       "defCogsAccount": "Def. COGS Account",
       "defApAccount": "Def. AP Account",
       "defExpenseAccount": "Def. Expense Account"
+    },
+    "reporting": {
+      "form": {
+        "labels": {
+          "displayName": "Display Name",
+          "uniqueSlug": "Unique Slug",
+          "outputPattern": "Output Filename Pattern",
+          "description": "Description",
+          "supportedContexts": "Supported Contexts",
+          "typstSource": "Typst Source Code",
+          "contextResolver": "Context Resolver",
+          "targetRecordId": "Target Record ID"
+        },
+        "placeholders": {
+          "slug": "e.g. default-quote",
+          "selectContexts": "Select contexts...",
+          "uuid": "UUID..."
+        },
+        "descriptions": {
+          "contextHelp": "Only templates assigned to a context will appear in the action menus for those records."
+        },
+        "buttons": {
+          "save": "Save Template",
+          "saving": "Saving...",
+          "delete": "Delete Template",
+          "deleting": "Deleting...",
+          "returnToList": "Return to Reporting List",
+          "generatePdf": "Generate PDF",
+          "compiling": "Compiling...",
+          "getRandomId": "Get Random ID"
+        },
+        "livePreview": {
+          "title": "Live Preview",
+          "badge": "Typst Compiler",
+          "waiting": "Waiting for compilation..."
+        },
+        "toasts": {
+          "created": "Template created successfully!",
+          "saved": "Saved successfully!",
+          "saveFailed": "Failed to save template",
+          "deleteConfirm": "Are you sure you want to delete this report template? This action cannot be undone.",
+          "deleted": "Template deleted",
+          "deleteFailed": "Failed to delete template",
+          "previewFailed": "Preview generation failed. Check typo in template or missing ID data."
+        },
+        "loadingContexts": "Loading contexts...",
+        "none": "-- None --"
+      },
+      "errors": {
+        "notFound": "Error: Template not found or unauthorized access logging in.",
+        "loading": "Loading template data..."
+      },
+      "hooks": {
+        "title": "Hook Assignments",
+        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
+        "moduleTitle": "Reporting Hooks",
+        "table": {
+          "title": "Hook Mappings",
+          "columns": {
+            "hookSlug": "Hook Slug",
+            "contextResolver": "Context Resolver",
+            "assignedTemplate": "Assigned Template",
+            "actions": "Actions"
+          },
+          "empty": "No system hooks registered in the database.",
+          "selectTemplate": "Select a template..."
+        },
+        "errors": {
+          "updateFailed": "Failed to update assignment: "
+        },
+        "actions": {
+          "editTemplate": "Edit Template"
+        }
+      },
+      "title": "Reporting Templates",
+      "grid": {
+        "columns": {
+          "templateName": "Template Name",
+          "systemToken": "System Token",
+          "description": "Description",
+          "outputFilename": "Output Filename",
+          "lastModified": "Last Modified",
+          "createdOn": "Created On"
+        },
+        "searchPlaceholder": "Search Typst templates...",
+        "totalCount": "Total Templates",
+        "createButton": "Create Template"
+      }
+    },
+    "settings": {
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel"
+      }
     }
   },
   "salesOrders": {
@@ -546,7 +839,8 @@
       "returnNotes": "Return reason / notes",
       "reason": "Reason",
       "searchCustomers": "Search customers…",
-      "zero": "0"
+      "zero": "0",
+      "customDescription": "Custom description..."
     },
     "labels": {
       "customer": "Customer",
@@ -554,7 +848,7 @@
       "customerPO": "Customer PO #",
       "created": "Created",
       "notes": "Notes",
-      "fulfillmentLocation": "Fulfillment Location"
+      "fulfillmentLocation": "Fulfillment Location *"
     },
     "columns": {
       "lineNumber": "#",
@@ -655,7 +949,11 @@
     },
     "parent": "Parent",
     "child": "Child",
-    "noBackordersFound": "No associated parent or child backorders found."
+    "noBackordersFound": "No associated parent or child backorders found.",
+    "errors": {
+      "noCurrency": "The selected customer does not have a currency configured."
+    },
+    "createTitle": "Create Sales Order"
   },
   "common": {
     "save": "Save",
@@ -679,7 +977,7 @@
     "loading": "Loading…",
     "noMatchingResults": "No matching results",
     "select": "Select",
-    "selectEllipsis": "Select...",
+    "selectEllipsis": "Select…",
     "selectNone": "(None)",
     "activityTimeline": "Activity Timeline",
     "activityCardHeading": "Activity Timeline",
@@ -813,7 +1111,13 @@
       "modifiedOn": "Modified On",
       "customerGroup": "Customer Group",
       "telephone": "Telephone",
-      "notes": "Notes"
+      "notes": "Notes",
+      "product": "Product",
+      "description": "Description",
+      "received": "Received",
+      "invoicePrice": "Invoice Price",
+      "purchaseOrder": "Purchase Order",
+      "packingSlip": "Packing Slip"
     },
     "errors": {
       "failedToLoadOrder": "Failed to load order",
@@ -840,7 +1144,9 @@
       "pleaseSelectSupplier": "Please select a supplier",
       "pleaseAddLineItem": "Please add at least one line item",
       "failedToEnterSupplierBill": "Failed to generate supplier bill",
-      "failedToGenerateReport": "Failed to generate report"
+      "failedToGenerateReport": "Failed to generate report",
+      "failedToLoadExpiries": "Failed to load expiries",
+      "typeAndDateRequired": "Type and Date are required"
     },
     "gst": {
       "exempt": "Exempt",
@@ -891,7 +1197,30 @@
       "onHandShort": "OH",
       "availableShort": "Avail"
     },
-    "defaultOption": "(Default)"
+    "defaultOption": "(Default)",
+    "options": {
+      "none": "(None)"
+    },
+    "address": {
+      "city": "City",
+      "country": "Country"
+    },
+    "toast": {
+      "expiryUpdated": "Expiry updated",
+      "expiryCreated": "Expiry created",
+      "expiryDeleted": "Expiry deleted",
+      "supplierCreated": "Supplier created successfully"
+    },
+    "buttons": {
+      "remove": "Remove"
+    },
+    "none": "(None)",
+    "default": "(Default)",
+    "tabs": {
+      "overview": "Overview",
+      "suppliers": "Suppliers",
+      "inventory": "Inventory"
+    }
   },
   "toast": {
     "orderStateUpdated": "Order State Updated",
@@ -984,7 +1313,10 @@
         "account_created": "Customer Account created",
         "supplier_created": "Supplier created"
       },
-      "empty": "No recent events to display."
+      "empty": "No recent events to display.",
+      "errors": {
+        "failedToLoad": "Failed to load timeline."
+      }
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -1030,6 +1362,7 @@
       "bins": "Bin Contents",
       "accounts": "Accounts",
       "salesOrders": "Sales Orders",
+      "salesInvoices": "Sales Invoices",
       "suppliers": "Suppliers",
       "purchaseOrders": "Purchase Orders",
       "trialBalance": "Trial Balance",
@@ -1099,7 +1432,11 @@
         "zoneName": "e.g. Bulk Storage",
         "binNumber": "e.g. A-01-01",
         "binType": "e.g. Picking, Staging"
-      }
+      },
+      "consignmentShort": "CSG",
+      "bondedShort": "BND",
+      "zonesCount": "{count, plural, =1 {# zone} other {# zones}}",
+      "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
     },
     "placeholders": {
       "searchInventory": "Search by product name, number, or location…",
@@ -1131,7 +1468,10 @@
       "stockIn": "Stock In",
       "stockOut": "Stock Out",
       "netChange": "Net Change",
-      "onHand": "On Hand"
+      "onHand": "On Hand",
+      "committed": "Committed",
+      "available": "Available",
+      "onOrder": "On Order"
     }
   },
   "products": {
@@ -1151,7 +1491,10 @@
       "barcode": "Barcode",
       "gstCategory": "GST Category",
       "scNumber": "SC Number",
-      "quantityOnHand": "On Hand"
+      "quantityOnHand": "On Hand",
+      "uomCode": "UoM Code",
+      "ratio": "Ratio",
+      "ratioBase": "Ratio (× Base)"
     },
     "generalInfo": "General Information",
     "pricing": "Pricing & Costs",
@@ -1167,8 +1510,51 @@
       "productNumber": "e.g. PROD-001",
       "productName": "e.g. Widget Deluxe",
       "barcode": "EAN / UPC barcode",
-      "notes": "Handling instructions, storage requirements, or product description..."
-    }
+      "notes": "Handling instructions, storage requirements, or product description...",
+      "productDisplayName": "Product display name",
+      "noProductGroup": "No Product Group"
+    },
+    "supplierModal": {
+      "title": "Link Supplier",
+      "inputs": {
+        "searchSupplier": "Search & Select Supplier",
+        "searchPlaceholder": "Type at least 2 characters to search...",
+        "noSuppliersFound": "No suppliers found matching \"{search}\"",
+        "supplierSelected": "Supplier selected and ready.",
+        "supplierPartNo": "Supplier Part No.",
+        "costPrice": "Cost Price"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "linkProduct": "Link Product"
+      },
+      "messages": {
+        "success": "Supplier successfully linked",
+        "selectDropdown": "Please select a supplier from the dropdown"
+      }
+    },
+    "newTitle": "New Product",
+    "types": {
+      "inventory": "Inventory (Tracked)",
+      "nonStock": "Non-Stock",
+      "service": "Service"
+    },
+    "unitsOfMeasure": "Units of Measure",
+    "baseUom": "Base UoM",
+    "defaultSalesUom": "Default Sales UoM",
+    "defaultPurchaseUom": "Default Purchase UoM",
+    "packagingConversions": "Packaging Conversions",
+    "addConversion": "Add Conversion",
+    "noConversions": "No alternate packaging conversions configured.",
+    "inventoryLevels": "Inventory Levels",
+    "toast": {
+      "conversionAdded": "Conversion added",
+      "conversionRemoved": "Conversion removed"
+    },
+    "confirmRemoveConversion": "Remove {uomCode} conversion?",
+    "unknownCategory": "Unknown Category ({id})",
+    "baseUomLabel": "(Base: {uom})",
+    "uomRatioLabel": "{uom} (×{ratio})"
   },
   "gl": {
     "loading": "Loading…",
@@ -1233,7 +1619,8 @@
         "debit": "Debit",
         "credit": "Credit",
         "partyType": "Party Type",
-        "party": "Party"
+        "party": "Party",
+        "createdBy": "Created By"
       },
       "partyTypes": {
         "none": "None",
@@ -1250,7 +1637,12 @@
         "lineMemo": "Line description",
         "selectAccount": "Select Account...",
         "selectParty": "Select Party..."
-      }
+      },
+      "sourceDocument": "Source Document",
+      "total": "Total",
+      "noLines": "No journal lines found for this entry.",
+      "sourceSalesCreditNote": "Sales Credit Note",
+      "na": "N/A"
     }
   }
 }

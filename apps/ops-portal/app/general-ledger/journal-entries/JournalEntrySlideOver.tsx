@@ -39,20 +39,21 @@ function fmt(v: string | number) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function sourceLabel(type: string) {
-  const labels: Record<string, string> = {
-    sales_invoice: 'Sales Invoice',
-    purchase_invoice: 'Purchase Invoice',
-    manual: 'Manual',
-  };
-  return labels[type] || type;
-}
-
 export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySlideOverProps) {
   const t = useTranslations('gl.journalEntries');
   const tCommon = useTranslations('common');
   const [lines, setLines] = useState<JournalLine[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const sourceLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      sales_invoice: t('sourceSalesInvoice'),
+      purchase_invoice: t('sourcePurchaseInvoice'),
+      sales_credit_note: t('sourceSalesCreditNote'),
+      manual: t('sourceManual'),
+    };
+    return labels[type] || type;
+  };
 
   useEffect(() => {
     if (!entry) {
@@ -71,7 +72,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
     <SlideOver
       isOpen={!!entry}
       onClose={onClose}
-      title={entry ? entry.entryNumber : 'Journal Entry'}
+      title={entry ? entry.entryNumber : t('title')}
       subtitle={entry ? `${new Date(entry.entryDate).toLocaleDateString()} · ${sourceLabel(entry.sourceType)}` : undefined}
       width="max-w-3xl"
     >
@@ -80,11 +81,11 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
           <div className="card space-y-5">
             <div className="flex flex-col gap-5 text-sm">
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Memo</span>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('columns.memo')}</span>
                 <span className="text-[#041627]">{entry.memo || '—'}</span>
               </div>
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Document</span>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
                 {entry.sourceId && (entry.sourceType === 'sales_invoice' || entry.sourceType === 'sales_credit_note') ? (
                   <Link 
                     href={`/sales-orders/${entry.sourceId}${entry.sourceType === 'sales_invoice' ? '#invoices-section' : ''}`} 
@@ -111,7 +112,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                 <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                   <tr>
                     <th className="px-5 py-3">{t('columns.account')}</th>
-                    <th className="px-5 py-3">Party</th>
+                    <th className="px-5 py-3">{t('columns.party')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.debit')}</th>
                     <th className="px-5 py-3 text-right">{t('columns.credit')}</th>
                     <th className="px-5 py-3">{t('columns.memo')}</th>
@@ -154,7 +155,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                   {lines.length > 0 && (
                     <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
                       <td colSpan={2} className="px-5 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
-                        Total
+                        {t('total')}
                       </td>
                       <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
                         {fmt(lines.reduce((s, l) => s + parseFloat(l.debit || '0'), 0))}
@@ -170,7 +171,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
             )}
             {!loading && lines.length === 0 && (
               <div className="p-8 text-center text-gray-500 text-sm">
-                No journal lines found for this entry.
+                {t('noLines')}
               </div>
             )}
           </div>

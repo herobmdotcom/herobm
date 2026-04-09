@@ -12,8 +12,9 @@ import Link from 'next/link';
 
 export default function GlobalReceptionsPage() {
     const t = useTranslations('purchaseOrders');
+    const tReceptions = useTranslations('purchaseOrders.receptions');
     const tCommon = useTranslations('common');
-    useDocumentTitle('Receiving');
+    useDocumentTitle(tReceptions('title'));
     const router = useRouter();
     const [days, setDays] = useState('90');
 
@@ -26,15 +27,15 @@ export default function GlobalReceptionsPage() {
     const gridEndpoint = `/api/receptions?days=${days}&limit=0`;
     
     const gridColumns: any[] = [
-        { field: 'receptionId', headerName: 'ID', hide: true },
-        { field: 'receptionNumber', headerName: 'Reception No.', width: 160 },
-        { field: 'purchaseOrderNumber', headerName: 'Purchase Order No.', width: 180 },
-        { field: 'createdOn', headerName: 'Date', width: 140, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
-        { field: 'packingSlipNumber', headerName: 'Packing Slip', width: 160 },
-        { field: 'notes', headerName: 'Notes', flex: 1, minWidth: 200 },
+        { field: 'receptionId', headerName: tCommon('columns.id'), hide: true },
+        { field: 'receptionNumber', headerName: tReceptions('columns.receptionNo'), width: 160 },
+        { field: 'purchaseOrderNumber', headerName: tReceptions('columns.purchaseOrderNo'), width: 180 },
+        { field: 'createdOn', headerName: tCommon('columns.date'), width: 140, valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+        { field: 'packingSlipNumber', headerName: tReceptions('columns.packingSlip'), width: 160 },
+        { field: 'notes', headerName: tCommon('columns.notes'), flex: 1, minWidth: 200 },
         { 
             field: 'stateCode', 
-            headerName: 'State', 
+            headerName: tCommon('columns.state'), 
             width: 140,
             cellRenderer: (params: { value: string }) => {
                 if (!params.value) return null;
@@ -58,7 +59,7 @@ export default function GlobalReceptionsPage() {
                             <div className="flex items-center justify-between px-6 py-4">
                                 <div className="flex items-center gap-4 flex-1">
                                     <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                        Receiving
+                                        {tReceptions('title')}
                                     </h2>
                                     <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
@@ -89,7 +90,7 @@ export default function GlobalReceptionsPage() {
                                     </select>
                                     {optionsButton}
                                     <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                                      Receive Goods
+                                      {tReceptions('newReception')}
                                     </Link>
                                 </div>
                             </div>

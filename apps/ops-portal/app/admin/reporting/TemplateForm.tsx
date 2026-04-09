@@ -4,8 +4,10 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, apiFetchBlob, apiMutate, reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?: boolean }) {
+  const t = useTranslations('admin.reporting.form');
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     slug: initialData?.slug || '',
@@ -38,30 +40,30 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     try {
       if (isNew) {
         await apiMutate('/api/reports', 'POST', formData);
-        toast.success('Template created successfully!');
+        toast.success(t('toasts.created'));
         router.push('/admin/reporting');
       } else {
         await apiMutate(`/api/reports/${initialData.id}`, 'PATCH', formData);
-        toast.success('Saved successfully!');
+        toast.success(t('toasts.saved'));
         router.refresh();
       }
     } catch (e: any) {
-      toast.error(e.message || 'Failed to save template');
+      toast.error(e.message || t('toasts.saveFailed'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this report template? This action cannot be undone.')) return;
+    if (!window.confirm(t('toasts.deleteConfirm'))) return;
     
     setDeleting(true);
     try {
       await apiMutate(`/api/reports/${initialData.id}`, 'DELETE');
-      toast.success('Template deleted');
+      toast.success(t('toasts.deleted'));
       router.push('/admin/reporting');
     } catch (e: any) {
-      toast.error(e.message || 'Failed to delete template');
+      toast.error(e.message || t('toasts.deleteFailed'));
       setDeleting(false);
     }
   };
@@ -83,7 +85,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl(url);
     } catch (e: any) {
-      toast.error(e.message || 'Preview generation failed. Check typo in template or missing ID data.');
+      toast.error(e.message || t('toasts.previewFailed'));
     } finally {
       setPreviewing(false);
     }
@@ -122,47 +124,47 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
             <button 
               onClick={() => router.push('/admin/reporting')} 
               className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-800 transition-colors flex items-center justify-center shrink-0"
-              title="Return to Reporting List"
+              title={t('buttons.returnToList')}
             >
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              {isNew ? 'Create New Template' : `Editing: ${formData.name}`}
+              {isNew ? t('labels.displayName') /* actually handled dynamically below but let's fix */ : formData.name}
             </h2>
           </div>
           
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Display Name</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.displayName')}</label>
               <input className="input w-full" value={formData.name} onChange={e => setFormData(d => ({ ...d, name: e.target.value }))} />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Unique Slug</label>
-              <input className="input w-full" value={formData.slug} onChange={e => setFormData(d => ({ ...d, slug: e.target.value }))} placeholder="e.g. default-quote" />
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.uniqueSlug')}</label>
+              <input className="input w-full" value={formData.slug} onChange={e => setFormData(d => ({ ...d, slug: e.target.value }))} placeholder={t('placeholders.slug')} />
             </div>
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Output Filename Pattern</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.outputPattern')}</label>
               <input className="input w-full" value={formData.outputNamePattern} onChange={e => setFormData(d => ({ ...d, outputNamePattern: e.target.value }))} />
             </div>
             <div className="flex-[2]">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.description')}</label>
               <input className="input w-full" value={formData.description} onChange={e => setFormData(d => ({ ...d, description: e.target.value }))} />
             </div>
           </div>
           
           <div className="flex gap-4 mt-4">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Supported Contexts</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{t('labels.supportedContexts')}</label>
               <div className="relative w-full">
                 <div 
                   className="input flex items-center justify-between cursor-pointer font-normal border-gray-300 bg-white shadow-sm"
                   onClick={() => setContextsOpen(!contextsOpen)}
                 >
                   <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
-                    {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">Select contexts...</span>}
+                    {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">{t('placeholders.selectContexts')}</span>}
                   </span>
                   {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
@@ -173,7 +175,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                     <div className="fixed inset-0 z-40" onClick={() => setContextsOpen(false)}></div>
                     <div className="absolute top-[calc(100%+4px)] left-0 w-full min-w-[200px] max-h-60 overflow-y-auto bg-white border border-[rgba(196,198,205,0.4)] rounded-lg shadow-xl z-50 py-1">
                       {availableHooks.length === 0 ? (
-                        <div className="text-xs text-gray-400 italic p-3">Loading contexts...</div>
+                        <div className="text-xs text-gray-400 italic p-3">{t('loadingContexts')}</div>
                       ) : (
                         availableHooks.map(h => (
                           <label key={h.contextSlug} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f8f9fa] transition-colors border-b border-gray-100 last:border-0">
@@ -200,13 +202,13 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                 )}
               </div>
               <p className="text-[10px] text-gray-400 mt-2 italic">
-                Only templates assigned to a context will appear in the action menus for those records.
+                {t('descriptions.contextHelp')}
               </p>
             </div>
           </div>
 
           <div className="flex flex-col flex-1 mt-4 min-h-[500px]">
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Typst Source Code</label>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">{t('labels.typstSource')}</label>
             <textarea 
               className="flex-1 w-full border border-[rgba(196,198,205,0.4)] rounded-lg font-mono text-sm leading-relaxed p-4 bg-[#f8f9fa] whitespace-pre focus:outline-none focus:ring-2 focus:ring-[#006b5c]/30 focus:border-[#006b5c]"
               value={formData.template}
@@ -218,7 +220,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
           <div className="flex items-center gap-3 mt-4">
             <button className="btn btn-primary px-8 py-3 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110" onClick={handleSave} disabled={saving || deleting}>
-              {saving ? 'Saving...' : 'Save Template'}
+              {saving ? t('buttons.saving') : t('buttons.save')}
             </button>
             {!isNew && (
               <button 
@@ -226,7 +228,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                 onClick={handleDelete} 
                 disabled={saving || deleting}
               >
-                {deleting ? 'Deleting...' : 'Delete Template'}
+                {deleting ? t('buttons.deleting') : t('buttons.delete')}
               </button>
             )}
           </div>
@@ -237,30 +239,30 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
       <div className="flex flex-col w-full min-h-[800px] shrink-0">
         <div className="card p-6 flex flex-col gap-4 h-full bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>Live Preview</h3>
-            <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-2 py-1 rounded">Typst Compiler</span>
+            <h3 className="text-lg font-bold text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>{t('livePreview.title')}</h3>
+            <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-2 py-1 rounded">{t('livePreview.badge')}</span>
           </div>
           <div className="flex gap-3 items-end bg-[#f8f9fa] p-4 rounded-lg border border-[rgba(196,198,205,0.4)]">
             <div className="flex-1">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Context Resolver</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{t('labels.contextResolver')}</label>
               <select className="select w-full bg-white" value={previewVars.hookSlug} onChange={e => handleHookChange(e.target.value)}>
-                <option value="">-- None --</option>
+                <option value="">{t('none')}</option>
                 {availableHooks.map(h => (
                   <option key={h.contextSlug} value={h.contextSlug}>{h.contextSlug}</option>
                 ))}
               </select>
             </div>
             <div className="flex-1 relative">
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Target Record ID</label>
+              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">{t('labels.targetRecordId')}</label>
               <div className="flex gap-2">
-                 <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder="UUID..." />
-                 <button className="btn btn-secondary px-3 bg-white" title="Get Random ID" onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
+                 <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
+                 <button className="btn btn-secondary px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
                    🎲
                  </button>
               </div>
             </div>
             <button className="btn btn-secondary w-36 px-4 py-2 text-sm font-bold rounded-lg transition-all bg-white border border-[#041627] text-[#041627] hover:bg-gray-50" disabled={previewing || !previewVars.entityId} onClick={handlePreview}>
-               {previewing ? 'Compiling...' : 'Generate PDF'}
+               {previewing ? t('buttons.compiling') : t('buttons.generatePdf')}
             </button>
           </div>
           
@@ -270,7 +272,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-3">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <span className="font-semibold text-sm">Waiting for compilation...</span>
+                <span className="font-semibold text-sm">{t('livePreview.waiting')}</span>
               </div>
             )}
           </div>

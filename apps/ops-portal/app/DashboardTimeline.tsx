@@ -99,7 +99,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
   }
 
   if (error) {
-    return <div className="p-4 text-red-500 rounded-lg" style={{ background: 'var(--bg-card)' }}>Failed to load timeline.</div>;
+    return <div className="p-4 text-red-500 rounded-lg" style={{ background: 'var(--bg-card)' }}>{t('errors.failedToLoad')}</div>;
   }
 
   const events = data?.events || [];

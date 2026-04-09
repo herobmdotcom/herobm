@@ -3,9 +3,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function DataImportPage() {
   const router = useRouter();
+  const t = useTranslations('setup.dataImport');
   const [logs, setLogs] = useState<string[]>([]);
   const [status, setStatus] = useState<'pending' | 'starting' | 'running' | 'completed' | 'failed'>('pending');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -97,25 +99,25 @@ export default function DataImportPage() {
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          {status === 'pending' ? 'Data Import Staged' :
-           status === 'failed' ? 'Data Import Failed' : 
-           status === 'completed' ? 'Data Import Complete' : 'Executing Data Import'}
+          {status === 'pending' ? t('title.pending') :
+           status === 'failed' ? t('title.failed') : 
+           status === 'completed' ? t('title.completed') : t('title.running')}
         </h1>
         <p className="text-slate-500">
           {status === 'pending'
-            ? 'Your legacy Data Import task is ready to begin. Review extraction settings before confirming.'
+            ? t('subtitle.pending')
             : status === 'failed' 
-            ? 'The ABM extract-load-transform sequence failed to complete safely.' 
+            ? t('subtitle.failed') 
             : status === 'completed'
-            ? 'Your legacy data has been successfully imported into the HeroBM platform.'
-            : 'Migrating legacy ERP records into HeroBM databases using dbt pipelines...'}
+            ? t('subtitle.completed')
+            : t('subtitle.running')}
         </p>
       </div>
 
       {status === 'pending' && config && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 mb-6 max-w-2xl mx-auto w-full">
           
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Confirmed Settings</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.confirmedSettings')}</h2>
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 font-mono text-sm text-slate-800 whitespace-pre leading-relaxed mb-8 flex-1">
             {[
               `# Execution Payload`,
@@ -133,7 +135,7 @@ export default function DataImportPage() {
             ].join('\n')}
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Execution Options</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions')}</h2>
           
           <div className="flex flex-col gap-4 mb-8">
             <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={config.resumeExtraction}>
@@ -146,18 +148,18 @@ export default function DataImportPage() {
               />
               <div>
                 <div className="font-bold text-slate-800 flex items-center gap-2">
-                  Resume Mode (Recommended)
+                  {t('options.resumeModeTitle')}
                   {completedTables !== null && (
                     <span className="bg-[#006b5c]/10 text-[#006b5c] text-xs font-bold px-2 py-0.5 rounded-full">
-                      {completedTables.length} Tables Cached
+                      {t('options.tablesCached', { count: completedTables.length })}
                     </span>
                   )}
                 </div>
-                <div className="text-sm text-slate-500">Skip tables that have already been fully extracted successfully and only pull missing tables. This is much faster.</div>
+                <div className="text-sm text-slate-500">{t('options.resumeModeDesc')}</div>
                 
                 {completedTables !== null && completedTables.length > 0 && (
                   <div className="mt-3 text-xs font-mono text-slate-400 bg-slate-50 border border-slate-100 rounded p-2 max-h-24 overflow-y-auto">
-                    <strong>Already Staged: </strong> 
+                    <strong>{t('options.alreadyStaged')}</strong> 
                     {completedTables.join(', ')}
                   </div>
                 )}
@@ -173,8 +175,8 @@ export default function DataImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">Full Extraction</div>
-                <div className="text-sm text-slate-500">Wipe the staging area and pull every single table firmly from scratch. Required if upstream schema changed.</div>
+                <div className="font-bold text-slate-800">{t('options.fullExtractionTitle')}</div>
+                <div className="text-sm text-slate-500">{t('options.fullExtractionDesc')}</div>
               </div>
             </label>
           </div>
@@ -184,7 +186,7 @@ export default function DataImportPage() {
               onClick={handleStartElt}
               className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
             >
-              Start Execution
+              {t('buttons.startExecution')}
             </button>
           </div>
         </div>
@@ -196,7 +198,7 @@ export default function DataImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-          <div className="ml-4 text-slate-400 text-xs font-medium">etl-worker terminal</div>
+          <div className="ml-4 text-slate-400 text-xs font-medium">{t('sections.terminal')}</div>
         </div>
         <div 
           ref={scrollContainerRef} 
@@ -218,7 +220,7 @@ export default function DataImportPage() {
           {status === 'failed' && errorMsg && (
             <div className="flex gap-4 mb-3 text-red-400">
               <span className="text-[#0ea5e9] select-none">{'>'}</span>
-              <span>Critical Error: {errorMsg}</span>
+              <span>{t('errors.criticalError', { message: errorMsg })}</span>
             </div>
           )}
           <div ref={bottomRef} />
@@ -232,7 +234,7 @@ export default function DataImportPage() {
             onClick={() => router.push('/')}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
           >
-            Go to Dashboard
+            {t('buttons.goToDashboard')}
           </button>
         </div>
       )}
@@ -243,13 +245,13 @@ export default function DataImportPage() {
             onClick={() => setStatus('pending')}
             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
            >
-             Retry Import
+             {t('buttons.retryImport')}
            </button>
            <button
             onClick={() => router.push('/')}
             className="text-slate-500 hover:text-slate-800 underline"
           >
-            Return to Dashboard
+            {t('buttons.returnToDashboard')}
           </button>
         </div>
       )}

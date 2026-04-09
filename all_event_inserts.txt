@@ -1,0 +1,58 @@
+﻿=== \.insert\(orderEvents\) ===
+sales-invoice.service.ts:352: await tx.insert(orderEvents).values({
+backorders.service.ts:218: await tx.insert(orderEvents).values({
+shipment-helpers.ts:147: await tx.insert(orderEvents).values({
+
+=== \.insert\(purchaseOrderEvents\) ===
+purchase-invoice.service.ts:323: await tx.insert(purchaseOrderEvents).values({
+backorders.service.ts:211: await tx.insert(purchaseOrderEvents).values({
+purchase-orders.service.ts:75: await tx.insert(purchaseOrderEvents).values({
+purchase-returns.service.ts:98: await tx.insert(purchaseOrderEvents).values({
+purchase-returns.service.ts:252: await tx.insert(purchaseOrderEvents).values({
+receptions.service.ts:108: await tx.insert(purchaseOrderEvents).values({
+receptions.service.ts:149: await tx.insert(purchaseOrderEvents).values({
+receptions.service.ts:167: await tx.insert(purchaseOrderEvents).values({
+receptions.service.ts:235: await tx.insert(purchaseOrderEvents).values({
+receptions.service.ts:297: await tx.insert(purchaseOrderEvents).values({
+
+=== \.insert\(productEvents\) ===
+products-write.service.ts:41: await tx.insert(productEvents).values({
+products-write.service.ts:89: await tx.insert(productEvents).values({
+products-write.service.ts:99: await tx.insert(productEvents).values({
+products-write.service.ts:143: await tx.insert(productEvents).values({
+products-write.service.ts:195: await tx.insert(productEvents).values({
+products-write.service.ts:326: await tx.insert(productEvents).values({
+products-write.service.ts:361: await tx.insert(productEvents).values({
+
+=== \.insert\(accountEvents\) ===
+accounts-write.service.ts:83: await tx.insert(accountEvents).values({
+accounts-write.service.ts:166: await tx.insert(accountEvents).values({
+accounts-write.service.ts:222: await tx.insert(accountEvents).values({
+accounts-write.service.ts:278: await tx.insert(accountEvents).values({
+
+=== \.insert\(supplierEvents\) ===
+suppliers-write.service.ts:44: await tx.insert(supplierEvents).values({
+suppliers-write.service.ts:91: await tx.insert(supplierEvents).values({
+suppliers-write.service.ts:101: await tx.insert(supplierEvents).values({
+suppliers-write.service.ts:145: await tx.insert(supplierEvents).values({
+suppliers-write.service.ts:197: await tx.insert(supplierEvents).values({
+suppliers-write.service.ts:236: await this.db.insert(supplierEvents).values({
+suppliers-write.service.ts:272: await this.db.insert(supplierEvents).values({
+suppliers-write.service.ts:297: await this.db.insert(supplierEvents).values({
+
+=== \.insert\(productSupplierEvents\) ===
+products-write.service.ts:251: await tx.insert(productSupplierEvents).values({
+products-write.service.ts:279: await tx.insert(productSupplierEvents).values({
+
+=== \.insert\(outbox\) ===
+gl.service.ts:144: await tx.insert(outbox).values({
+inventory.service.ts:595: await tx.insert(outbox).values({
+purchase-invoice.service.ts:351: await tx.insert(outbox).values({
+sales-invoice.service.ts:375: await tx.insert(outbox).values({
+returns-write.service.ts:904: await this.db.insert(outbox).values({
+shipment-helpers.ts:156: await tx.insert(outbox).values({
+shipment.service.ts:405: await tx.insert(outbox).values({
+shipment.service.ts:503: await tx.insert(outbox).values({
+purchase-orders.service.ts:84: await tx.insert(outbox).values({
+receptions.service.ts:218: await tx.insert(outbox).values({
+
