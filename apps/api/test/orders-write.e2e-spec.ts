@@ -47,7 +47,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       DECLARE
           r RECORD;
       BEGIN
-          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
+          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E-OW%'
           LOOP
               DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
@@ -158,7 +158,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           fulfillmentLocationId: locationId,
 
           customerId: validCustomerId,
-          name: 'E2E Test Order',
+          name: 'E2E-OW Test Order',
           notes: 'Created by E2E test suite',
           lines: [
             {
@@ -182,7 +182,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       expect(res.body).toHaveProperty('salesOrderId');
       expect(res.body).toHaveProperty('orderNumber');
       expect(res.body.stateCode).toBe('draft');
-      expect(res.body.name).toBe('E2E Test Order');
+      expect(res.body.name).toBe('E2E-OW Test Order');
 
       orderId = res.body.salesOrderId;
       orderNumber = res.body.orderNumber;
@@ -222,12 +222,12 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .patch(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          name: 'E2E Test Order — Updated',
+          name: 'E2E-OW Test Order — Updated',
           customerOrderNumber: 'CUST-PO-12345',
         })
         .expect(200);
 
-      expect(res.body.name).toBe('E2E Test Order — Updated');
+      expect(res.body.name).toBe('E2E-OW Test Order — Updated');
       expect(res.body.customerOrderNumber).toBe('CUST-PO-12345');
     });
 

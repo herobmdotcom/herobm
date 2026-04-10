@@ -186,29 +186,45 @@ describe('PurchaseInvoiceService', () => {
     it('should reject if purchase order is not found', async () => {
       mockSelectChain({ 1: [] });
       await expect(
-        service.createBill('nonexistent', { supplierInvoiceNumber: 'TEST-1' }, 'admin'),
+        service.createBill(
+          'nonexistent',
+          { supplierInvoiceNumber: 'TEST-1' },
+          'admin',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
     it('should reject if PO is in draft state', async () => {
       mockSelectChain({ 1: [{ ...RECEIVED_PO, stateCode: 'draft' }] });
-      await expect(service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createBill(
+          'po-001',
+          { supplierInvoiceNumber: 'TEST-1' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject if PO is in ordered state', async () => {
       mockSelectChain({ 1: [{ ...RECEIVED_PO, stateCode: 'ordered' }] });
-      await expect(service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createBill(
+          'po-001',
+          { supplierInvoiceNumber: 'TEST-1' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject if PO is already invoiced', async () => {
       mockSelectChain({ 1: [{ ...RECEIVED_PO, stateCode: 'invoiced' }] });
-      await expect(service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createBill(
+          'po-001',
+          { supplierInvoiceNumber: 'TEST-1' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should accept PO in received state', async () => {
@@ -228,7 +244,11 @@ describe('PurchaseInvoiceService', () => {
         return cb(tx);
       });
 
-      const result = await service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin');
+      const result = await service.createBill(
+        'po-001',
+        { supplierInvoiceNumber: 'TEST-1' },
+        'admin',
+      );
       expect(result).toHaveProperty('invoiceId', 'bill-001');
       expect(mockDb.transaction).toHaveBeenCalled();
     });
@@ -247,9 +267,13 @@ describe('PurchaseInvoiceService', () => {
         4: [],
         5: [],
       });
-      await expect(service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.createBill(
+          'po-001',
+          { supplierInvoiceNumber: 'TEST-1' },
+          'admin',
+        ),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject invoicing more than received quantity', async () => {
@@ -314,7 +338,11 @@ describe('PurchaseInvoiceService', () => {
         6: GL_ACCTS, // GL lookup
       });
 
-      await service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin');
+      await service.createBill(
+        'po-001',
+        { supplierInvoiceNumber: 'TEST-1' },
+        'admin',
+      );
 
       expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -343,7 +371,11 @@ describe('PurchaseInvoiceService', () => {
         6: GL_ACCTS,
       });
 
-      await service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin');
+      await service.createBill(
+        'po-001',
+        { supplierInvoiceNumber: 'TEST-1' },
+        'admin',
+      );
 
       // Should prefer Product account
       expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
@@ -368,7 +400,11 @@ describe('PurchaseInvoiceService', () => {
         6: GL_ACCTS,
       });
 
-      await service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin');
+      await service.createBill(
+        'po-001',
+        { supplierInvoiceNumber: 'TEST-1' },
+        'admin',
+      );
 
       // Should prefer Supplier account
       expect(mockGlService.postJournalEntry).toHaveBeenCalledWith(
@@ -396,7 +432,11 @@ describe('PurchaseInvoiceService', () => {
         6: GL_ACCTS,
       });
 
-      await service.createBill('po-001', { supplierInvoiceNumber: 'TEST-1' }, 'admin');
+      await service.createBill(
+        'po-001',
+        { supplierInvoiceNumber: 'TEST-1' },
+        'admin',
+      );
 
       const lines = mockGlService.postJournalEntry.mock.calls[0][0];
       const expenseLines = lines.filter((l: any) => l.debit > 0);

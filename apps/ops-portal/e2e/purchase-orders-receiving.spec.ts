@@ -20,7 +20,7 @@ test('page: /purchase-orders/receiving loads without errors', async ({ page }) =
   // Verify that there is no Next.js error fallback or blank fatal crash state
   await expect(page.getByText('Error', { exact: true })).not.toBeVisible();
   
-  // Verify that the core UI initialized
+  // Verify that the core UI initialized (now works because auth.setup.ts provides a valid session)
   await expect(page.locator('h3', { hasText: 'Scan Product' })).toBeVisible();
   await expect(page.locator('h3', { hasText: 'Reception Summary' })).toBeVisible();
 

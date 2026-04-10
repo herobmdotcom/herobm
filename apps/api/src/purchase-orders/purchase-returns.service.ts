@@ -5,7 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { eq, sql, and } from 'drizzle-orm';
+import { eq, sql, and, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -18,6 +18,8 @@ import {
   zones,
   products as coreProducts,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { InventoryService } from '../inventory/inventory.service';
 import { CreatePurchaseReturnDto } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
@@ -65,8 +67,14 @@ export class PurchaseReturnsService {
 
     if (!order) throw new NotFoundException('Purchase order not found');
 
-    if (order.stateCode !== 'received' && order.stateCode !== 'partially_received' && order.stateCode !== 'invoiced') {
-      throw new BadRequestException('Cannot return against a PO that has no receptions.');
+    if (
+      order.stateCode !== 'received' &&
+      order.stateCode !== 'partially_received' &&
+      order.stateCode !== 'invoiced'
+    ) {
+      throw new BadRequestException(
+        'Cannot return against a PO that has no receptions.',
+      );
     }
 
     const returnNumber = await this.generateReturnNumber();
@@ -113,7 +121,7 @@ export class PurchaseReturnsService {
       .select()
       .from(purchaseOrderReturns)
       .where(eq(purchaseOrderReturns.purchaseOrderId, purchaseOrderId))
-      .orderBy(purchaseOrderReturns.createdOn);
+      .orderBy(desc(purchaseOrderReturns.createdOn));
 
     const result = [];
     for (const ret of returns) {
@@ -180,7 +188,12 @@ export class PurchaseReturnsService {
         const [orderLine] = await tx
           .select()
           .from(purchaseOrderLineItems)
-          .where(eq(purchaseOrderLineItems.purchaseOrderLineId, rl.purchaseOrderLineId))
+          .where(
+            eq(
+              purchaseOrderLineItems.purchaseOrderLineId,
+              rl.purchaseOrderLineId,
+            ),
+          )
           .limit(1);
 
         if (orderLine) {
@@ -196,20 +209,31 @@ export class PurchaseReturnsService {
           .select({ binId: bins.binId })
           .from(bins)
           .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-          .where(and(eq(bins.binNumber, 'RECEIVING'), eq(zones.locationId, po.deliveryLocationId)))
+          .where(
+            and(
+              eq(bins.binNumber, 'RECEIVING'),
+              eq(zones.locationId, po.deliveryLocationId),
+            ),
+          )
           .limit(1);
 
         if (dockBin) {
-          const validStockLines = stockLines.filter(l => l.productId != null) as { productId: string, quantity: string }[];
-          const moveLines = validStockLines.map(line => ({
+          const validStockLines = stockLines.filter(
+            (l) => l.productId != null,
+          ) as { productId: string; quantity: string }[];
+          const moveLines = validStockLines.map((line) => ({
             productId: line.productId,
             binId: dockBin.binId,
             quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
           }));
-          
+
           if (moveLines.length > 0) {
             await this.inventoryService.recordInventoryMovement(tx, {
-              entryNumber: 'PRT-' + ret.returnNumber + '-' + Date.now().toString().slice(-4),
+              entryNumber:
+                'PRT-' +
+                ret.returnNumber +
+                '-' +
+                Date.now().toString().slice(-4),
               sourceType: 'PO_RETURN',
               sourceId: returnId,
               memo: 'Return to Supplier',
@@ -223,7 +247,7 @@ export class PurchaseReturnsService {
       // Decrement PO quantity Received
       for (const rl of returnLines) {
         await tx.execute(
-          sql`UPDATE modbm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`
+          sql`UPDATE modbm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`,
         );
       }
 
@@ -232,19 +256,29 @@ export class PurchaseReturnsService {
 
       for (const line of stockLines) {
         if (!line.productId) continue;
-        const [product] = await tx.select().from(coreProducts).where(eq(coreProducts.productId, line.productId));
+        const [product] = await tx
+          .select()
+          .from(coreProducts)
+          .where(eq(coreProducts.productId, line.productId));
 
         if (product) {
           // Returning removes qty from stock.
-          const updatedProduct = strategy.onDispatch({
-            productId: product.productId,
-            standardCost: product.standardCost || '0',
-            weightedAverageCost: product.weightedAverageCost || '0',
-            quantityOnHand: product.quantityOnHand || '0',
-          }, parseFloat(line.quantity));
+          const updatedProduct = strategy.onDispatch(
+            {
+              productId: product.productId,
+              standardCost: product.standardCost || '0',
+              weightedAverageCost: product.weightedAverageCost || '0',
+              quantityOnHand: product.quantityOnHand || '0',
+            },
+            parseFloat(line.quantity),
+          );
 
-          await tx.update(coreProducts)
-            .set({ quantityOnHand: updatedProduct.quantityOnHand, modifiedOn: new Date() })
+          await tx
+            .update(coreProducts)
+            .set({
+              quantityOnHand: updatedProduct.quantityOnHand,
+              modifiedOn: new Date(),
+            })
             .where(eq(coreProducts.productId, product.productId));
         }
       }

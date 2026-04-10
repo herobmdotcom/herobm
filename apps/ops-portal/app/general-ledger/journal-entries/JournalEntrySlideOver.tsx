@@ -33,15 +33,15 @@ interface JournalEntrySlideOverProps {
   onClose: () => void;
 }
 
-function fmt(v: string | number) {
-  const n = typeof v === 'string' ? parseFloat(v) : v;
-  if (!n || n === 0) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySlideOverProps) {
   const t = useTranslations('gl.journalEntries');
   const tCommon = useTranslations('common');
+
+  function fmt(v: string | number) {
+    const n = typeof v === 'string' ? parseFloat(v) : v;
+    if (!n || n === 0) return tCommon('na');
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   const [lines, setLines] = useState<JournalLine[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -82,7 +82,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
             <div className="flex flex-col gap-5 text-sm">
               <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('columns.memo')}</span>
-                <span className="text-[#041627]">{entry.memo || '—'}</span>
+                <span className="text-[#041627]">{entry.memo || tCommon('na')}</span>
               </div>
               <div>
                 <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
@@ -138,7 +138,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                           <span className="text-gray-600">
                             {l.partyType}: {l.partyId?.substring(0, 8)}...
                           </span>
-                        ) : '—'}
+                        ) : tCommon('na')}
                       </td>
                       <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
                         {fmt(l.debit)}
@@ -147,7 +147,7 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
                         {fmt(l.credit)}
                       </td>
                       <td className="px-5 py-3 text-gray-500 text-xs">
-                        {l.memo || '—'}
+                        {l.memo || tCommon('na')}
                       </td>
                     </tr>
                   ))}

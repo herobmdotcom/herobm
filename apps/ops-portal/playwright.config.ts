@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load environment variables from the root .env file
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
+
+const authFile = path.join(__dirname, '.playwright', '.auth', 'user.json');
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -30,9 +37,21 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    /* Auth setup — runs first, saves storageState for all other projects */
+    {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+    },
+
+    /* All e2e smoke tests — inherit authenticated storageState from setup */
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: authFile,
+      },
+      dependencies: ['setup'],
+      testIgnore: /auth\.setup\.ts/,
     },
   ],
 

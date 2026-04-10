@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:4301",
+      "localStorage": [
+        {
+          "name": "modbm_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmZjY1ZjdiNC0yZDdhLTQ5NGYtYTUzYS1mNTU5NTI2ODM2NzEiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzc1ODQxOTExLCJleHAiOjE3NzU4NzA3MTF9.r8T13z4LtXV1ihLy45un2b42WGG20fc92eRGNTbLR-0"
+        },
+        {
+          "name": "modbm_role",
+          "value": "admin"
+        }
+      ]
+    }
+  ]
+}

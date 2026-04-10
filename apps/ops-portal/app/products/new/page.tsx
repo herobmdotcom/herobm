@@ -19,8 +19,8 @@ const formatMoney = (val: string | number | undefined | null) => {
 };
 
 export default function NewProductPage() {
-  useDocumentTitle(t('products.newTitle'));
   const t = useTranslations();
+  useDocumentTitle(t('products.newTitle'));
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [gstCategories, setGstCategories] = useState<any[]>([]);

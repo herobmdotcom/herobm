@@ -14,6 +14,8 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 interface ReturnableLine {
   purchaseOrderId: string;
   orderNumber: string;
+  purchaseOrderName?: string;
+  vendorName?: string;
   purchaseOrderLineId: string;
   lineNumber: number;
   productDescription: string;
@@ -104,7 +106,8 @@ function ReturnsFlow() {
     const remaining = Number(line.quantity) - prevReceived - draftedQty;
     
     setQtyToReceive(remaining > 0 ? remaining.toString() : '0');
-    setInvoicePrice(line.pricePerUnit);
+    // Standardize to 2 decimals
+    setInvoicePrice(parseFloat(line.pricePerUnit).toFixed(2));
   };
 
   const addToDraft = () => {
@@ -253,15 +256,32 @@ function ReturnsFlow() {
           )}
 
           {returnableLines.length > 0 && !selectedLine && !quarantineMode && (
-             <div className="flex flex-col gap-2">
+             <div className="flex flex-col gap-3">
                <h4 style={{ fontSize: 14, fontWeight: 600 }}>{t('selectPOLine')}</h4>
                {returnableLines.map(line => {
                   const rem = Number(line.quantity) - Number(line.quantityReturned);
                   return (
-                      <button key={line.purchaseOrderLineId} onClick={() => selectLine(line)} className="btn btn-secondary" style={{ textAlign: 'left', display: 'block', padding: '10px 14px' }}>
-                        <div style={{ fontWeight: 600 }}>{line.orderNumber}</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{line.productDescription} ({t('remaining', { rem })})</div>
-                      </button>
+                      <div key={line.purchaseOrderLineId} className="border rounded-lg p-4 transition-all" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                        <div className="flex justify-between items-start mb-2">
+                           <div>
+                              <a href={`/purchase-orders/${line.purchaseOrderId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#006b5c] hover:underline flex items-center gap-1">
+                                 {line.orderNumber}
+                                 <span style={{ fontSize: 13 }}>↗</span>
+                              </a>
+                              <div className="text-xs font-medium text-[rgba(4,22,39,0.7)] mt-0.5">{line.purchaseOrderName || tCommon('orderReadView.untitledOrder')}</div>
+                           </div>
+                           <button onClick={() => selectLine(line)} className="btn btn-primary btn-sm px-4">
+                              {tCommon('select')}
+                           </button>
+                        </div>
+                        <div className="text-xs text-[rgba(4,22,39,0.5)] flex flex-col gap-1">
+                           <div className="flex items-center gap-1.5">
+                              <span className="font-semibold uppercase tracking-wider text-[10px]">{tCommon('columns.vendor')}:</span>
+                              <span className="text-[rgba(4,22,39,0.8)]">{line.vendorName || tCommon('none')}</span>
+                           </div>
+                           <div>{line.productDescription} ({t('remaining', { rem: rem.toFixed(2) })})</div>
+                        </div>
+                      </div>
                   );
                })}
                <button onClick={() => setQuarantineMode(true)} className="btn btn-secondary mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
@@ -325,8 +345,8 @@ function ReturnsFlow() {
               </div>
 
               <div className="flex gap-2 self-end pb-1">
+                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setReturnableLines([]); setSelectedProduct(null); }}>{t('cancel')}</button>
                 <button className="btn btn-primary" onClick={addToDraft}>{t('confirm')}</button>
-                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setReturnableLines([]); }}>{t('cancel')}</button>
               </div>
             </div>
           )}
@@ -353,8 +373,8 @@ function ReturnsFlow() {
               <div style={{ width: 220 }} />
 
               <div className="flex gap-2 self-end pb-1">
+                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); setSelectedProduct(null); }}>{t('cancel')}</button>
                 <button className="btn" style={{ background: 'var(--text)', color: 'var(--bg)' }} onClick={addQuarantineToDraft}>{t('confirm')}</button>
-                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); if(returnableLines.length===0) setSelectedProduct(null); }}>{t('cancel')}</button>
               </div>
             </div>
           )}
@@ -373,7 +393,7 @@ function ReturnsFlow() {
                  const returnFeeDiscrepancy = line.returnFeePerUnit !== undefined && line.returnFeePerUnit !== line.expectedPrice;
                  
                  return (
-                  <div key={line.id} className="flex items-center gap-6 p-4 border rounded" style={{ borderColor: line.isQuarantine ? 'var(--danger)' : 'var(--border)', backgroundColor: line.isQuarantine ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}>
+                   <div key={line.id} className="flex items-center gap-6 p-4 border rounded" style={{ borderColor: line.isQuarantine ? 'var(--danger)' : 'var(--border)', backgroundColor: line.isQuarantine ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}>
                     <div className="flex-1">
                        <h4 style={{ fontWeight: 600, fontSize: 15, color: line.isQuarantine ? 'var(--danger)' : undefined }}>
                          {line.isQuarantine ? t('exceptionQuarantineTag') : line.orderNumber}
@@ -387,9 +407,18 @@ function ReturnsFlow() {
                     </div>
 
                     <div style={{ width: 220 }}>
+                       <div style={{ marginBottom: returnFeeDiscrepancy ? 4 : 0 }}>
+                          <span style={{ color: 'var(--text)', fontSize: 13 }}>
+                             {line.returnFeePerUnit !== undefined ? (
+                                line.currencyCode ? formatAmount(line.returnFeePerUnit, line.currencyCode) : Number(line.returnFeePerUnit).toFixed(2)
+                             ) : (
+                                <span style={{ color: 'var(--text-muted)' }}>—</span>
+                             )}
+                          </span>
+                       </div>
                       {!line.isQuarantine && returnFeeDiscrepancy && (
                          <span style={{ fontSize: 12, color: 'var(--warning)', display: 'block' }}>
-                            {t('returnFeeDiscrepancy', { invoiced: line.currencyCode ? formatAmount(line.returnFeePerUnit || 0, line.currencyCode) : line.returnFeePerUnit || 0, expected: line.currencyCode ? formatAmount(line.expectedPrice, line.currencyCode) : line.expectedPrice })}
+                            {t('returnFeeDiscrepancy', { amount: line.currencyCode ? formatAmount(line.returnFeePerUnit || 0, line.currencyCode) : line.returnFeePerUnit || 0, expected: line.currencyCode ? formatAmount(line.expectedPrice, line.currencyCode) : line.expectedPrice })}
                          </span>
                       )}
                       {!line.isQuarantine && isOverReceive && (
@@ -407,7 +436,7 @@ function ReturnsFlow() {
                     <div className="flex gap-2">
                        <button className="btn btn-secondary" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => removeDraftLine(line.id)}>{t('remove')}</button>
                     </div>
-                  </div>
+                   </div>
                  )
               })}
             </div>

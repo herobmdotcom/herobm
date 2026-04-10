@@ -2,6 +2,8 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { calculateAvailableQuantity } from '@modbm/shared';
 import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -15,6 +17,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
+import LocationSelect from '@/components/shared/LocationSelect';
 
 import type { GstCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, ReturnLine, OrderEvent } from './types';
 import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
@@ -79,6 +82,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const [editName, setEditName] = useState('');
   const [editPO, setEditPO] = useState('');
   const [editNotes, setEditNotes] = useState('');
+  const [editLocationId, setEditLocationId] = useState<string | null>(null);
   const [headerDirty, setHeaderDirty] = useState(false);
 
   // Add-line product search is handled by shared ProductSearchInput
@@ -117,6 +121,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       setEditName(data.name || '');
       setEditPO(data.customerOrderNumber || '');
       setEditNotes(data.notes || '');
+      setEditLocationId(data.deliveryLocationId || null);
       setHeaderDirty(false);
 
       if (autoTransitions && autoTransitions.length > 0) {
@@ -192,7 +197,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     const changed =
       editName !== (order.name || '') ||
       editPO !== (order.customerOrderNumber || '') ||
-      editNotes !== (order.notes || '');
+      editNotes !== (order.notes || '') ||
+      editLocationId !== (order.deliveryLocationId || null);
     setHeaderDirty(changed);
   }, [editName, editPO, editNotes, order]);
 
@@ -205,6 +211,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         name: editName || null,
         customerOrderNumber: editPO || null,
         notes: editNotes || null,
+        deliveryLocationId: editLocationId || null,
       });
       await loadOrder(undefined, false);
     } catch (err) {
@@ -235,6 +242,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         orderNumber: `PO-${today}-${rand}`,
         name: order.name ? `Copy of ${order.name}` : undefined,
         vendorId: order.vendorId || undefined,
+        deliveryLocationId: order.deliveryLocationId || undefined,
         currencyCode: order.currencyCode || 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
@@ -393,6 +401,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   </button>
                 )}
                 {[...allowedTransitions]
+                  .filter(state => !['received', 'partially_received'].includes(state))
                   .sort((a, b) => {
                     const aBack = isBackTransition(order.stateCode, a);
                     const bBack = isBackTransition(order.stateCode, b);
@@ -507,6 +516,25 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {new Date(order.createdOn).toLocaleString()} {tCommon('by')} {order.createdBy || '—'}
                   </p>
                 </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tPurchase('labels.location')}
+                  </label>
+                  {isHeaderEditable && order.stateCode === 'draft' ? (
+                    <LocationSelect
+                      value={editLocationId || ''}
+                      onChange={(loc) => setEditLocationId(loc)}
+                      className="text-sm"
+                    />
+                  ) : (
+                    <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                      {order.locationName || order.deliveryLocationId || '—'}
+                    </p>
+                  )}
+                </div>
+                <div className="col-span-1">
+                   {/* notes pushed to full width if needed, or matched next column */}
+                </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tCommon('notesCardHeading')}
@@ -594,7 +622,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <tr key={line.purchaseOrderLineId}>
                     <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                     <td style={{ fontWeight: 600, fontSize: 12 }}>
-                      {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                      {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                          {line.productNumber || line.productId?.substring(0, 8)}
+                        </Link>
+                      ) : (
+                        line.productNumber || line.productId?.substring(0, 8) || '—'
+                      )}
                     </td>
                     <td>
                       {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
@@ -832,10 +866,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
                     <th>{tPurchase('columns.product')}</th>
                     <th>{tPurchase('columns.description')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.thisOrder')}</th>
                     <th style={{ width: 100, textAlign: 'right' }}>{tPurchase('columns.location')}</th>
                     <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.onHand')}</th>
                     <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.committed')}</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
                     <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.reserved')}</th>
                     <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.available')}</th>
                     <th style={{ width: 70, textAlign: 'center' }}>{tPurchase('columns.status')}</th>
@@ -847,7 +882,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       (inv) => inv.productId === line.productId,
                     );
                     const totalAvail = lineInventory.reduce(
-                      (sum, inv) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
+                      (sum, inv) => sum + calculateAvailableQuantity(inv.quantityOnHand, inv.quantityCommitted, inv.quantityReserved), 0,
                     );
                     const orderedQty = parseFloat(line.quantity || '0');
                     const canFulfil = totalAvail >= orderedQty;
@@ -857,11 +892,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         <tr key={line.purchaseOrderLineId}>
                           <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                           <td style={{ fontWeight: 600, fontSize: 12 }}>
-                            {line.productId?.substring(0, 8) || '—'}
+                            {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                              <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                {line.productNumber || line.productId?.substring(0, 8)}
+                              </Link>
+                            ) : (
+                              line.productNumber || line.productId?.substring(0, 8) || '—'
+                            )}
                           </td>
                           <td>{line.productDescription || '—'}</td>
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
-                          <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
+                          <td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 12 }}>
                             {tPurchase('noInventoryData')}
                           </td>
                           <td style={{ textAlign: 'center' }}>
@@ -872,14 +913,20 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     }
 
                     return lineInventory.map((inv, idx) => {
-                      const avail = parseFloat(inv.quantityAvailable || '0');
+                      const avail = calculateAvailableQuantity(inv.quantityOnHand, inv.quantityCommitted, inv.quantityReserved);
                       return (
                         <tr key={`${line.purchaseOrderLineId}-${inv.inventoryLevelId}`}>
                           {idx === 0 && (
                             <>
                               <td style={{ color: 'var(--text-muted)' }} rowSpan={lineInventory.length}>{line.lineNumber}</td>
                               <td style={{ fontWeight: 600, fontSize: 12 }} rowSpan={lineInventory.length}>
-                                {line.productId?.substring(0, 8) || '—'}
+                                {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                                  <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                    {line.productNumber || line.productId?.substring(0, 8)}
+                                  </Link>
+                                ) : (
+                                  line.productNumber || line.productId?.substring(0, 8) || '—'
+                                )}
                               </td>
                               <td rowSpan={lineInventory.length}>{line.productDescription || '—'}</td>
                               <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }} rowSpan={lineInventory.length}>
@@ -893,6 +940,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           </td>
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                             {parseFloat(inv.quantityCommitted || '0')}
+                          </td>
+                          <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                            {parseFloat(inv.quantityOnOrder || '0')}
                           </td>
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                             {parseFloat(inv.quantityReserved || '0')}

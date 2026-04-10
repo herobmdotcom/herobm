@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { ConfigState } from './SetupWizard';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 interface Props {
   config: ConfigState;
@@ -190,7 +191,7 @@ export default function SettingsStep({ config, updateConfig, onNext }: Props) {
               <option value="none">{t('noLocations')}</option>
             )}
             {locations.map(loc => (
-              <option key={loc.code} value={loc.code}>{loc.name} ({loc.code})</option>
+              <option key={loc.code} value={loc.code}>{formatLocationDisplay(loc)}</option>
             ))}
         </select>
       </div>

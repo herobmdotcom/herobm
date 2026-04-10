@@ -18,6 +18,8 @@ import {
   zones,
   locations,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import { eq, or, and, ilike, desc, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
@@ -105,9 +107,10 @@ export class ReceptionsService {
         po.deliveryLocationId &&
         po.deliveryLocationId !== createDto.locationId
       ) {
-        await tx.insert(purchaseOrderEvents).values({
-          purchaseOrderId: createDto.purchaseOrderId,
-          eventType: 'location_discrepancy_warning',
+        await emitEvent(tx, {
+          aggregateType: AggregateType.PURCHASE_ORDER,
+          aggregateId: createDto.purchaseOrderId,
+          eventType: EventType.LOCATION_DISCREPANCY_WARNING,
           payload: {
             expectedLocationId: po.deliveryLocationId,
             receivedLocationId: createDto.locationId,
@@ -146,9 +149,10 @@ export class ReceptionsService {
               Number(poLine.quantityReceived) + Number(line.quantityReceived);
 
             if (newTotal > Number(poLine.quantity)) {
-              await tx.insert(purchaseOrderEvents).values({
-                purchaseOrderId: createDto.purchaseOrderId,
-                eventType: 'over_received_warning',
+              await emitEvent(tx, {
+                aggregateType: AggregateType.PURCHASE_ORDER,
+                aggregateId: createDto.purchaseOrderId,
+                eventType: EventType.OVER_RECEIVED_WARNING,
                 payload: {
                   purchaseOrderLineId: poLine.purchaseOrderLineId,
                   productId: poLine.productId,
@@ -164,9 +168,10 @@ export class ReceptionsService {
               line.invoicePricePerUnit !== undefined &&
               Number(line.invoicePricePerUnit) !== Number(poLine.pricePerUnit)
             ) {
-              await tx.insert(purchaseOrderEvents).values({
-                purchaseOrderId: createDto.purchaseOrderId,
-                eventType: 'price_discrepancy_warning',
+              await emitEvent(tx, {
+                aggregateType: AggregateType.PURCHASE_ORDER,
+                aggregateId: createDto.purchaseOrderId,
+                eventType: EventType.PRICE_DISCREPANCY_WARNING,
                 payload: {
                   purchaseOrderLineId: poLine.purchaseOrderLineId,
                   productId: poLine.productId,
@@ -214,11 +219,11 @@ export class ReceptionsService {
                 })
                 .where(eq(products.productId, productRow.productId));
 
-              // Record event for general ledger mapping & sync
-              await tx.insert(outbox).values({
-                aggregateType: 'purchase_order',
+              // Record unified event (writes to audit + outbox)
+              await emitEvent(tx, {
+                aggregateType: AggregateType.PURCHASE_ORDER,
                 aggregateId: createDto.purchaseOrderId,
-                eventType: 'goods_received',
+                eventType: EventType.GOODS_RECEIVED,
                 payload: {
                   receptionId: reception.receptionId,
                   receptionNumber: reception.receptionNumber,
@@ -228,18 +233,6 @@ export class ReceptionsService {
                   inventoryValueAdded: valuation.inventoryValueAdded,
                   purchasePriceVariance: valuation.purchasePriceVariance,
                   newWeightedAverageCost: valuation.newWeightedAverageCost,
-                },
-              });
-
-              // Record event for timeline
-              await tx.insert(purchaseOrderEvents).values({
-                purchaseOrderId: createDto.purchaseOrderId,
-                eventType: 'goods_received',
-                payload: {
-                  receptionId: reception.receptionId,
-                  receptionNumber: reception.receptionNumber,
-                  productId: productRow.productId,
-                  quantityReceived: receivedQty,
                 },
                 actor: userId,
               });
@@ -294,9 +287,10 @@ export class ReceptionsService {
               eq(purchaseOrders.purchaseOrderId, createDto.purchaseOrderId),
             );
 
-          await tx.insert(purchaseOrderEvents).values({
-            purchaseOrderId: createDto.purchaseOrderId,
-            eventType: 'status_changed',
+          await emitEvent(tx, {
+            aggregateType: AggregateType.PURCHASE_ORDER,
+            aggregateId: createDto.purchaseOrderId,
+            eventType: EventType.STATUS_CHANGED,
             payload: {
               from: existingPo.stateCode,
               to: newState,

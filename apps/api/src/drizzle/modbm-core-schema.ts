@@ -515,6 +515,39 @@ export const binContents = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
+// product_default_bins (WMS Directed Putaway & Replenishment routing)
+// ---------------------------------------------------------------------------
+export const productDefaultBins = modbmCore.table(
+  'product_default_bins',
+  {
+    productDefaultBinId: uuid('product_default_bin_id')
+      .primaryKey()
+      .defaultRandom(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    isPrimaryPerLocation: boolean('is_primary_per_loc').notNull().default(true),
+    minQuantity: numeric('min_quantity').default('0'),
+    maxQuantity: numeric('max_quantity'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    unq: unique('product_default_bins_prod_loc_bin_unq').on(
+      t.productId,
+      t.locationId,
+      t.binId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
 // outbox  (Transactional outbox for async BullMQ/ERPNext sync)
 // ---------------------------------------------------------------------------
 export const outbox = modbmCore.table('outbox', {
@@ -539,6 +572,7 @@ export const inventoryLevels = modbmCore
     productId: uuid('product_id'),
     quantityOnHand: numeric('quantity_on_hand'),
     quantityCommitted: numeric('quantity_committed'),
+    quantityReserved: numeric('quantity_reserved'),
     quantityOnOrder: numeric('quantity_on_order'),
   })
   .existing();
@@ -659,6 +693,8 @@ export const products = modbmCore.table('products', {
   ),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
   quantityOnHand: numeric('quantity_on_hand').default('0'),
+  alternateInvoiceDescription: text('alternate_invoice_description'),
+  boxQuantity: numeric('box_quantity').default('1'),
   baseUom: text('base_uom')
     .notNull()
     .default('EA')
@@ -1207,3 +1243,31 @@ export const reportHookAssignments = modbmCore.table(
       .notNull(),
   },
 );
+
+// ---------------------------------------------------------------------------
+// system_events  (Cross-cutting audit log for GL, inventory, and other
+//                 domain events that don't belong to a specific entity table)
+// ---------------------------------------------------------------------------
+export const systemEvents = modbmCore.table('system_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  aggregateType: text('aggregate_type').notNull(),
+  aggregateId: uuid('aggregate_id').notNull(),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// dashboard_timeline  (Unified operational timeline combining all entity and
+//                      system events for the dashboard chronological feed)
+// ---------------------------------------------------------------------------
+export const dashboardTimeline = pgView('dashboard_timeline', {
+  eventId: uuid('event_id'),
+  aggregateType: text('aggregate_type'),
+  aggregateId: uuid('aggregate_id'),
+  eventType: text('event_type'),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }),
+}).existing();

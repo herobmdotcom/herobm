@@ -31,6 +31,7 @@ interface EntryDetails {
 }
 
 export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySlideOverProps) {
+  const t = useTranslations('inventory.ledger');
   const tCommon = useTranslations('common');
   
   const [loading, setLoading] = useState(false);
@@ -53,8 +54,8 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
     <SlideOver
       isOpen={!!entryId}
       onClose={onClose}
-      title={details ? `${details.sourceType}: ${details.entryNumber}` : 'Entry Details'}
-      subtitle={details ? `${new Date(details.entryDate).toLocaleString()} · ${details.createdBy || 'System'}` : undefined}
+      title={details ? `${details.sourceType}: ${details.entryNumber}` : t('title')}
+      subtitle={details ? `${new Date(details.entryDate).toLocaleString()} · ${details.createdBy || t('system')}` : undefined}
       width="max-w-2xl"
     >
       {loading ? (
@@ -67,12 +68,12 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
           <div className="card space-y-5">
             <div className="flex flex-col gap-5 text-sm">
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Type</span>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceType')}</span>
                 <span className="text-[#041627]">{details.sourceType}</span>
               </div>
               {details.relatedDocument && (
                 <div>
-                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Source Document</span>
+                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('sourceDocument')}</span>
                   {details.relatedDocument.link ? (
                     <Link href={details.relatedDocument.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
                       {details.relatedDocument.number}
@@ -84,7 +85,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
               )}
               {details.relatedParty && (
                 <div>
-                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Related Party</span>
+                  <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('relatedParty')}</span>
                   <div className="text-[#041627]">
                     {details.relatedParty.link ? (
                       <Link href={details.relatedParty.link} className="text-[var(--accent)] hover:underline" onClick={onClose}>
@@ -97,7 +98,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
                 </div>
               )}
               <div>
-                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Operation Memo</span>
+                <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('operationMemo')}</span>
                 <span className="text-[#041627]">{details.memo || '—'}</span>
               </div>
             </div>
@@ -107,9 +108,9 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
             <table className="w-full text-sm text-left">
               <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                 <tr>
-                  <th className="px-5 py-3">Product</th>
-                  <th className="px-5 py-3">Location & Bin</th>
-                  <th className="px-5 py-3 text-right">Qty Change</th>
+                  <th className="px-5 py-3">{t('columns.product')}</th>
+                  <th className="px-5 py-3">{t('columns.locationBin')}</th>
+                  <th className="px-5 py-3 text-right">{t('columns.qtyChange')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -138,14 +139,14 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
             </table>
             {details.lines.length === 0 && (
               <div className="p-8 text-center text-gray-500 text-sm">
-                No ledger lines found for this entry.
+                {t('noLines')}
               </div>
             )}
           </div>
         </div>
       ) : (
         <div className="py-12 text-center text-gray-500">
-          Failed to load entry details.
+          {t('loadFailed')}
         </div>
       )}
     </SlideOver>

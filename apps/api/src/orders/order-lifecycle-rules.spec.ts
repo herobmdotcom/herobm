@@ -42,10 +42,15 @@ function createMockDb(
 jest.mock('./shipment-helpers', () => ({
   findOrder: jest.fn(),
   getCommittedPerLine: jest.fn(),
-  writeEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { findOrder, getCommittedPerLine, writeEvent } from './shipment-helpers';
+jest.mock('../common/emit-event', () => ({
+  emitEvent: jest.fn().mockResolvedValue(undefined),
+}));
+
+import { findOrder, getCommittedPerLine } from './shipment-helpers';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -91,12 +96,15 @@ describe('Order Lifecycle Rules', () => {
       expect(result).toBeDefined();
       expect(result?.to).toBe('shipped');
       expect(db.update).toHaveBeenCalled();
-      expect(writeEvent).toHaveBeenCalledWith(
+      expect(emitEvent).toHaveBeenCalledWith(
         db,
-        'order-1',
-        'auto_status_changed',
-        expect.objectContaining({ to: 'shipped' }),
-        'admin',
+        expect.objectContaining({
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: 'order-1',
+          eventType: 'auto_status_changed',
+          actor: 'admin',
+          payload: expect.objectContaining({ to: 'shipped' }),
+        }),
       );
     });
 
@@ -191,12 +199,15 @@ describe('Order Lifecycle Rules', () => {
       expect(result).toBeDefined();
       expect(result?.to).toBe('picking');
       expect(db.update).toHaveBeenCalled();
-      expect(writeEvent).toHaveBeenCalledWith(
+      expect(emitEvent).toHaveBeenCalledWith(
         db,
-        'order-1',
-        'auto_status_changed',
-        expect.objectContaining({ to: 'picking' }),
-        'admin',
+        expect.objectContaining({
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: 'order-1',
+          eventType: 'auto_status_changed',
+          actor: 'admin',
+          payload: expect.objectContaining({ to: 'picking' }),
+        }),
       );
     });
 

@@ -48,6 +48,12 @@ export {
   getReportBySlug,
 } from './reports';
 
+export {
+  calculateInventoryGaps,
+  calculateAvailableQuantity,
+} from './inventory';
+export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLevelData } from './inventory';
+
 export type { ReportDefinition } from './reports';
 
 export type { ProductUom } from './uom';

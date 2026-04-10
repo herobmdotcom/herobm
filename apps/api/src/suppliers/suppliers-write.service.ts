@@ -13,6 +13,8 @@ import {
   supplierEvents,
   supplierExpiries,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   CreateSupplierDto,

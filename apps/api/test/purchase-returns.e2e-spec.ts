@@ -181,7 +181,7 @@ describe('API E2E — Purchase Order Returns', () => {
             {
               purchaseOrderLineId: lineIds[0],
               quantityReturned: '3',
-              returnFee: '15.00'
+              returnFee: '15.00',
             },
           ],
         })
@@ -204,9 +204,7 @@ describe('API E2E — Purchase Order Returns', () => {
 
     it('GET /returns/:id — retrieves return detail', async () => {
       const res = await request(app.getHttpServer())
-        .get(
-          `/api/purchase-orders/${purchaseOrderId}/returns/${returnId}`,
-        )
+        .get(`/api/purchase-orders/${purchaseOrderId}/returns/${returnId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

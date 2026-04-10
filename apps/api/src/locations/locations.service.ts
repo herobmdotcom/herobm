@@ -142,6 +142,12 @@ export class LocationsService {
   }
 
   async deleteZone(id: string) {
+    const [zone] = await this.db
+      .select()
+      .from(zones)
+      .where(eq(zones.zoneId, id));
+    if (!zone) throw new NotFoundException(`Zone ${id} not found`);
+
     // 1. Check for bins
     const binCount = await this.db
       .select({ count: sql`count(*)` })
@@ -187,6 +193,9 @@ export class LocationsService {
   }
 
   async deleteBin(id: string) {
+    const [bin] = await this.db.select().from(bins).where(eq(bins.binId, id));
+    if (!bin) throw new NotFoundException(`Bin ${id} not found`);
+
     // 1. Check for stock (bin_contents)
     const stockCount = await this.db
       .select({ count: sql`count(*)` })

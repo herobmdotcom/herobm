@@ -72,12 +72,23 @@ graph TD
 | `quantity_committed` | NUMERIC | Reserved by confirmed orders |
 | `quantity_on_order` | NUMERIC | Expected from purchase orders |
 
-### Derived Quantities
+### The Inventory Funnel & Derived Quantities
 
-| Quantity | Formula | Meaning |
-|----------|---------|---------| 
-| **Available** | `on_hand − committed` | Stock available for new orders |
-| **Projected** | `on_hand − committed + on_order` | Expected future availability |
+The journey of stock follows a strict funnel. The master metric is **Available**, which dictates what can be promised to new customers.  
+
+| Quantity | Source / Formula | Meaning |
+|----------|------------------|---------|
+| **On Order (Incoming)** | Sum of incoming PO lines | Stock that is currently in transit or promised by vendors. |
+| **On Hand (Physical)** | Sum of ledger quantities | The physical count of stock currently in the warehouse bins. Strictly incremented/decremented by physical movements (Receiving, Shipping). |
+| **Committed (Pending Outbound)** | Sum of unpicked SO lines (excluding backorders) | Stock promised to standard Sales Orders. When an SO is confirmed, this mathematically carves out stock from what is "Available" without moving it. |
+| **Reserved (Backorder)** | Sum of Backorders in `received_reserved` | Mutually exclusive to Committed. Physical stock specifically fenced off to fulfill a backordered customer, not available for others. |
+| **Available (Sellable)** | `on_hand - committed - reserved` | The ultimate sellable number used by sales reps and the ecommerce frontend. |
+
+> [!IMPORTANT]
+> **Cancellation Consequences**:
+> - **Cancel a Sales Order**: Decreases `Committed`. `Available` goes UP instantly. Associated Backorders are deleted; if they were in `received_reserved`, `Reserved` decreases and `Available` goes UP.
+> - **Cancel a Purchase Order**: Decreases `On Order`. If linked to a Backorder, the Backorder reverts from `ordered` to `awaiting_po`.
+> - **Cancel a Backorder**: Decreases `Reserved` (if received) or removes the link. If `Reserved` decreases, the physical `On Hand` stock is released back to `Available`.
 
 ### `bin_contents` (Snapshot Cache)
 

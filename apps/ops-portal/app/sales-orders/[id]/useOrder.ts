@@ -208,10 +208,12 @@ export function useOrder(id: string) {
             await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState, generateBackorders });
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
             await loadOrder(undefined, false);
-        } catch (err) {
-            if (err instanceof ApiError && err.status === 409 && err.data?.message === 'INVENTORY_GAP') {
+        } catch (err: any) {
+            const isApiError = err && (err.status === 409 || err.name === 'ApiError');
+            if (isApiError && err.data?.message === 'INVENTORY_GAP') {
                 return err.data.gaps;
             }
+
             setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
         }
         return null;
@@ -253,8 +255,9 @@ export function useOrder(id: string) {
                 customerId: order.customerId || undefined,
                 customerOrderNumber: order.customerOrderNumber || undefined,
                 notes: order.notes || undefined,
+                fulfillmentLocationId: order.fulfillmentLocationId || undefined,
                 lines: order.lines.map((l) => ({
-                    productId: l.productId,
+                    productId: l.productId && l.productId !== '' ? l.productId : '00000000-0000-0000-0000-000000000000',
                     productDescription: l.productDescription,
                     quantity: l.quantity,
                     pricePerUnit: l.pricePerUnit,

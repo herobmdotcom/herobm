@@ -68,6 +68,9 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
+  const tToast = useTranslations('toast');
+  const tConfirm = useTranslations('confirm');
+  const tSidebar = useTranslations('sidebar');
   const params = use(paramsPromise);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'details' | 'products' | 'compliance'>('details');
@@ -172,11 +175,11 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   };
 
   const archiveSupplier = async () => {
-    if (!confirm(tCommon('confirm.archiveOrder'))) return;
+    if (!confirm(tConfirm('archiveOrder'))) return;
     setSaving(true);
     try {
       await apiMutate(`/api/suppliers/${params.id}/archive`, 'POST');
-      toast.success(tCommon('toast.orderArchived'), { icon: '📦' });
+      toast.success(tToast('orderArchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
       setError(err.message);
@@ -189,7 +192,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     try {
       await apiMutate(`/api/suppliers/${params.id}/unarchive`, 'POST');
-      toast.success(tCommon('toast.orderUnarchived'), { icon: '📦' });
+      toast.success(tToast('orderUnarchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
       setError(err.message);
@@ -211,7 +214,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     return (
       <>
         <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>{t('common.loading')}</p>
+          <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
         </div>
       </>
     );
@@ -222,10 +225,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       <>
         <div className="flex flex-col items-center justify-center flex-1">
           <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-            {error || t('common.noMatchingResults')}
+            {error || tCommon('noMatchingResults')}
           </p>
           <button className="btn btn-secondary" onClick={() => router.push('/suppliers')}>
-            ← {t('sidebar.items.suppliers')}
+            ← {tSidebar('items.suppliers')}
           </button>
         </div>
       </>
@@ -348,7 +351,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           }}
         >
           {error}
-          <button className="ml-3 text-xs underline" onClick={() => setError('')}>{t('common.dismiss')}</button>
+          <button className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</button>
         </div>
       )}
 
@@ -364,7 +367,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('common.columns.name')}
+                  {tCommon('columns.name')}
                 </label>
                 <input
                   type="text"
@@ -415,7 +418,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.currency')}
+                    {tCommon('columns.currency')}
                   </label>
                   <select
                     className="input"
@@ -444,7 +447,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                     }}
                     disabled={!isEditable || saving}
                   >
-                    <option value="">{t('common.selectEllipsis')}</option>
+                    <option value="">{tCommon('selectEllipsis')}</option>
                     {availableTradingTerms.map(t => (
                       <option key={t.tradingTermsId} value={t.tradingTermsId}>{t.code} - {t.description}</option>
                     ))}
@@ -454,7 +457,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.status')}
+                    {tCommon('columns.status')}
                   </label>
                   <div
                     className="flex items-center gap-3"
@@ -520,7 +523,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">notes</span>
-            {t('common.notesCardHeading')}
+            {tCommon('notesCardHeading')}
           </h3>
           <textarea
             className="input w-full"
@@ -528,7 +531,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             value={editNotes}
             onChange={(e) => setEditNotes(e.target.value)}
             onBlur={() => saveField('notes', editNotes, supplier.notes)}
-            placeholder={t('common.notesCardPlaceholder')}
+            placeholder={tCommon('notesCardPlaceholder')}
             disabled={!isEditable || saving}
           />
         </div>
@@ -569,7 +572,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.columns.address')}
+                {tCommon('columns.address')}
               </label>
               <input
                 type="text"
@@ -679,7 +682,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       onBlur={() => saveField('purchasingBlockReason', editPurchasingBlockReason, supplier.purchasingBlockReason || '')}
                       disabled={!isEditable || saving}
                     >
-                      <option value="">{t('common.selectEllipsis')}</option>
+                      <option value="">{tCommon('selectEllipsis')}</option>
                       <option value="compliance_breach">{t('compliance.reasons.compliance_breach')}</option>
                       <option value="quality_issues">{t('compliance.reasons.quality_issues')}</option>
                       <option value="dispute">{t('compliance.reasons.dispute')}</option>
@@ -722,7 +725,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                       onBlur={() => saveField('paymentBlockReason', editPaymentBlockReason, supplier.paymentBlockReason || '')}
                       disabled={!isEditable || saving}
                     >
-                      <option value="">{t('common.selectEllipsis')}</option>
+                      <option value="">{tCommon('selectEllipsis')}</option>
                       <option value="invoice_dispute">{t('compliance.reasons.invoice_dispute')}</option>
                       <option value="missing_goods">{t('compliance.reasons.missing_goods')}</option>
                       <option value="contractual_breach">{t('compliance.reasons.contractual_breach')}</option>

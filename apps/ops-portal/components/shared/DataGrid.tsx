@@ -163,6 +163,7 @@ export default function DataGrid<T>({
   }, [gridKey]);
 
   const [data, setData] = useState<T[]>([]);
+  const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch ?? "");
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -243,7 +244,10 @@ export default function DataGrid<T>({
 
     const separator = endpoint.includes('?') ? '&' : '?';
     apiFetch<{ data: T[] }>(`${endpoint}${separator}${params}`)
-      .then((res) => setData(res.data))
+      .then((res) => {
+        setData(res.data);
+        setDisplayedRowCount(res.data.length);
+      })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
   }, [endpoint, search, includeArchived, page, apiFetch, onError]);
@@ -616,12 +620,12 @@ export default function DataGrid<T>({
   return (
     <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${renderHeader ? '' : 'gap-4'}`}>
       {renderHeader ? (
-        renderHeader({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: data.length, loading })
+        renderHeader({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: displayedRowCount, loading })
       ) : (
         <div className="flex items-center gap-3">
           {searchInputNode}
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(data.length) })}
+            {loading ? tGrid('loadingEllipsis') : tGrid('rows', { count: String(displayedRowCount) })}
           </span>
           {optionsButtonNode}
         </div>
@@ -675,6 +679,7 @@ export default function DataGrid<T>({
           onGridReady={onGridReady}
           onFirstDataRendered={onFirstDataRendered}
           onStateUpdated={onStateUpdated}
+          onModelUpdated={(e) => setDisplayedRowCount(e.api.getDisplayedRowCount())}
           onRowClicked={onRowClicked ? handleRowClicked : undefined}
           tooltipShowDelay={300}
           {...(fetchAll ? { quickFilterText: search } : {})}

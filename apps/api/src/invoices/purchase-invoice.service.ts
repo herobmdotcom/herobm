@@ -21,6 +21,8 @@ import {
   productGroups,
   glAccounts,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { computeLinePrice, EXPENSE_ROUTING_PRECEDENCE } from '@modbm/shared';
@@ -320,17 +322,6 @@ export class PurchaseInvoiceService {
           .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
       }
 
-      await tx.insert(purchaseOrderEvents).values({
-        purchaseOrderId,
-        eventType: 'purchase_invoiced',
-        payload: {
-          invoiceId: invoice.invoiceId,
-          internalBillNumber,
-          supplierInvoiceNumber: dto.supplierInvoiceNumber,
-        },
-        actor,
-      });
-
       // D. Generate specific AP Outbox Sync Event asynchronously routing back
       const outboxPayload = {
         invoiceId: invoice.invoiceId,
@@ -348,11 +339,12 @@ export class PurchaseInvoiceService {
         lines: outboxLineDetails,
       };
 
-      await tx.insert(outbox).values({
-        aggregateType: 'purchase_invoice',
-        aggregateId: invoice.invoiceId,
-        eventType: 'purchase_invoiced',
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: purchaseOrderId,
+        eventType: EventType.PURCHASE_INVOICED,
         payload: outboxPayload,
+        actor,
       });
 
       return invoice;

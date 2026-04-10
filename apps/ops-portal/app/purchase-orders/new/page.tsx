@@ -12,6 +12,7 @@ import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
+import LocationSelect from '@/components/shared/LocationSelect';
 import { getGstLabel } from '../[id]/types';
 
 interface GstCategory {
@@ -72,8 +73,8 @@ function generateOrderNumber(): string {
 }
 
 export default function NewPurchaseOrderPage() {
-  useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const t = useTranslations();
+  useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
@@ -89,6 +90,7 @@ export default function NewPurchaseOrderPage() {
   const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
   const [currencyCode, setCurrencyCode] = useState(HOME_CURRENCY.code);
   const [name, setName] = useState('');
+  const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -214,6 +216,7 @@ export default function NewPurchaseOrderPage() {
         name: name || undefined,
         vendorId,
         currencyCode,
+        deliveryLocationId: deliveryLocationId || undefined,
         invoiceNumber: invoiceNumber || undefined,
         notes: notes || undefined,
         lines: lines
@@ -375,6 +378,17 @@ export default function NewPurchaseOrderPage() {
                 placeholder={t('purchaseOrders.placeholders.invoiceNumber')}
                 value={invoiceNumber}
                 onChange={(e) => setInvoiceNumber(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('common.location')}
+              </label>
+              <LocationSelect
+                value={deliveryLocationId}
+                onChange={setDeliveryLocationId}
+                placeholder={t('purchaseOrders.receptions.flow.selectLocation').replace(' *', '')}
               />
             </div>
 

@@ -38,18 +38,18 @@ interface ExchangeRate {
   updatedOn: string;
 }
 
-const GST_TYPES = [
-  { value: 'gst_applies', label: 'GST Applies' },
-  { value: 'zero_rated', label: 'Zero Rated' },
-  { value: 'exempt', label: 'Exempt' },
-  { value: 'not_relevant', label: 'Not Relevant' },
+const GST_TYPES = (t: any) => [
+  { value: 'gst_applies', label: t('admin.settings.gstTypes.gst_applies') },
+  { value: 'zero_rated', label: t('admin.settings.gstTypes.zero_rated') },
+  { value: 'exempt', label: t('admin.settings.gstTypes.exempt') },
+  { value: 'not_relevant', label: t('admin.settings.gstTypes.not_relevant') },
 ];
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  useDocumentTitle('General Settings');
   const tSettings = useTranslations('admin.settings');
+  useDocumentTitle(tSettings('title'));
   const tCommon = useTranslations('admin.common');
   const router = useRouter();
 
@@ -94,7 +94,7 @@ export default function SettingsPage() {
       setOrgForm(data);
       setIsOrgDirty(false);
     } catch (err: any) {
-      toast.error('Failed to load company information: ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.company') }) + ': ' + err.message);
     } finally {
       setOrgLoading(false);
     }
@@ -142,6 +142,14 @@ export default function SettingsPage() {
     }
   };
 
+  const areaMap: Record<string, string> = {
+    org: tSettings('sections.company'),
+    gl: tSettings('sections.gl'),
+    gst: tSettings('sections.gst'),
+    uom: tSettings('sections.uom'),
+    rates: tSettings('sections.rates'),
+  };
+
   // ── GL Settings data ───────────────────────────────────────────────────────
   
   const loadGl = async () => {
@@ -154,7 +162,7 @@ export default function SettingsPage() {
       setGlSettings(settingsRes || {});
       setGlAccounts(accountsRes || []);
     } catch (err: any) {
-      toast.error('Failed to load GL Settings: ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
     } finally {
       setGlLoading(false);
     }
@@ -168,7 +176,7 @@ export default function SettingsPage() {
       const data = await apiFetch<GstCategory[]>('/api/gst-categories');
       setCategories(data.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
     } catch (err: any) {
-      toast.error('Failed to load GST categories: ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.gst }) + ': ' + err.message);
     } finally {
       setGstLoading(false);
     }
@@ -179,23 +187,22 @@ export default function SettingsPage() {
   const gstCancel = () => { setGstEditingId(null); setGstCreating(false); };
 
   const gstSave = async () => {
-    if (!gstForm.code || !gstForm.title) { toast.error('Code and Title are required'); return; }
     try {
-      const payload = { code: gstForm.code, title: gstForm.title, type: gstForm.type, rate: gstForm.rate, isDefault: gstForm.isDefault === true || gstForm.isDefault === 'true' };
+      const payload = { ...gstForm };
       if (gstEditingId) {
         await apiMutate(`/api/gst-categories/${gstEditingId}`, 'PATCH', payload);
-        toast.success('GST category updated');
+        toast.success(tSettings('toasts.gstUpdated'));
       } else {
         await apiMutate('/api/gst-categories', 'POST', payload);
-        toast.success('GST category created');
+        toast.success(tSettings('toasts.gstCreated'));
       }
       gstCancel(); loadGst();
     } catch (err: any) { toast.error(err.message); }
   };
 
   const gstDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this GST category?')) return;
-    try { await apiMutate(`/api/gst-categories/${id}`, 'DELETE'); toast.success('GST category deleted'); loadGst(); }
+    if (!confirm(tSettings('confirmations.deleteGst'))) return;
+    try { await apiMutate(`/api/gst-categories/${id}`, 'DELETE'); toast.success(tSettings('toasts.gstDeleted')); loadGst(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -207,7 +214,7 @@ export default function SettingsPage() {
       const data = await apiFetch<UomEntry[]>('/api/settings/uom-dictionary');
       setUoms(data);
     } catch (err: any) {
-      toast.error('Failed to load UOM dictionary: ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.uom') }) + ': ' + err.message);
     } finally {
       setUomLoading(false);
     }
@@ -218,22 +225,22 @@ export default function SettingsPage() {
   const uomCancel = () => { setUomEditingCode(null); setUomCreating(false); };
 
   const uomSave = async () => {
-    if (!uomForm.uomCode || !uomForm.description) { toast.error('Code and Description are required'); return; }
+    if (!uomForm.uomCode || !uomForm.description) { toast.error(tCommon('errors.typeAndDateRequired')); return; }
     try {
-      if (uomEditingCode) {
+    if (uomEditingCode) {
         await apiMutate(`/api/settings/uom-dictionary/${uomEditingCode}`, 'PATCH', { description: uomForm.description });
-        toast.success('UOM updated');
+        toast.success(tSettings('toasts.uomUpdated'));
       } else {
         await apiMutate('/api/settings/uom-dictionary', 'POST', { uomCode: uomForm.uomCode, description: uomForm.description });
-        toast.success('UOM created');
+        toast.success(tSettings('toasts.uomCreated'));
       }
       uomCancel(); loadUom();
     } catch (err: any) { toast.error(err.message); }
   };
 
   const uomDelete = async (code: string) => {
-    if (!confirm(`Delete UOM "${code}"?`)) return;
-    try { await apiMutate(`/api/settings/uom-dictionary/${code}`, 'DELETE'); toast.success('UOM deleted'); loadUom(); }
+    if (!confirm(tSettings('confirmations.deleteUom', { code }))) return;
+    try { await apiMutate(`/api/settings/uom-dictionary/${code}`, 'DELETE'); toast.success(tSettings('toasts.uomDeleted')); loadUom(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -245,7 +252,7 @@ export default function SettingsPage() {
       const data = await apiFetch<ExchangeRate[]>('/api/settings/exchange-rates');
       setRates(data);
     } catch (err: any) {
-      toast.error('Failed to load exchange rates: ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.rates') }) + ': ' + err.message);
     } finally {
       setRateLoading(false);
     }
@@ -257,7 +264,7 @@ export default function SettingsPage() {
 
   const rateSave = async () => {
     if (!rateForm.currencyCode || !rateForm.currencyName || !rateForm.buyRate || !rateForm.sellRate) {
-      toast.error('All fields are required'); return;
+      toast.error(tCommon('errors.typeAndDateRequired')); return;
     }
     try {
       const payload = {
@@ -269,18 +276,18 @@ export default function SettingsPage() {
       };
       if (rateEditingId) {
         await apiMutate(`/api/settings/exchange-rates/${rateEditingId}`, 'PATCH', payload);
-        toast.success('Exchange rate updated');
+        toast.success(tSettings('toasts.rateUpdated'));
       } else {
         await apiMutate('/api/settings/exchange-rates', 'POST', payload);
-        toast.success('Exchange rate created');
+        toast.success(tSettings('toasts.rateCreated'));
       }
       rateCancel(); loadRates();
     } catch (err: any) { toast.error(err.message); }
   };
 
   const rateDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this exchange rate?')) return;
-    try { await apiMutate(`/api/settings/exchange-rates/${id}`, 'DELETE'); toast.success('Exchange rate deleted'); loadRates(); }
+    if (!confirm(tSettings('confirmations.deleteRate'))) return;
+    try { await apiMutate(`/api/settings/exchange-rates/${id}`, 'DELETE'); toast.success(tSettings('toasts.rateDeleted')); loadRates(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -296,7 +303,7 @@ export default function SettingsPage() {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  const typeLabel = (type: string) => GST_TYPES.find(t => t.value === type)?.label ?? type;
+  const typeLabel = (type: string) => GST_TYPES(useTranslations()).find(t => t.value === type)?.label ?? type;
 
   const renderGlAccountLabel = (glAccountId?: string) => {
     if (!glAccountId) return <span className="text-muted italic">{tCommon('notConfigured')}</span>;
@@ -316,18 +323,18 @@ export default function SettingsPage() {
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit
-          ? <input className="input" value={gstForm.code} onChange={e => setGstForm({ ...gstForm, code: e.target.value })} placeholder="Code" />
+          ? <input className="input" value={gstForm.code} onChange={e => setGstForm({ ...gstForm, code: e.target.value })} placeholder={tSettings('labels.code')} />
           : <span className="font-mono text-xs">{data.code}</span>}
       </td>
       <td>
         {isEdit
-          ? <input className="input" value={gstForm.title} onChange={e => setGstForm({ ...gstForm, title: e.target.value })} placeholder="Title" />
+          ? <input className="input" value={gstForm.title} onChange={e => setGstForm({ ...gstForm, title: e.target.value })} placeholder={tSettings('labels.title')} />
           : <span className="font-medium">{data.title}</span>}
       </td>
       <td>
         {isEdit ? (
           <select className="input" value={gstForm.type} onChange={e => setGstForm({ ...gstForm, type: e.target.value })}>
-            {GST_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {GST_TYPES(useTranslations()).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         ) : typeLabel(data.type)}
       </td>
@@ -366,12 +373,12 @@ export default function SettingsPage() {
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit && uomCreating
-          ? <input className="input" value={uomForm.uomCode} onChange={e => setUomForm({ ...uomForm, uomCode: e.target.value.toUpperCase() })} placeholder="EA" style={{ width: 100 }} />
+          ? <input className="input" value={uomForm.uomCode} onChange={e => setUomForm({ ...uomForm, uomCode: e.target.value.toUpperCase() })} placeholder={tSettings('placeholders.uomCode')} style={{ width: 100 }} />
           : <span className="font-mono text-xs">{data.uomCode}</span>}
       </td>
       <td>
         {isEdit
-          ? <input className="input" value={uomForm.description} onChange={e => setUomForm({ ...uomForm, description: e.target.value })} placeholder="Description" />
+          ? <input className="input" value={uomForm.description} onChange={e => setUomForm({ ...uomForm, description: e.target.value })} placeholder={tSettings('placeholders.uomDescription')} />
           : <span className="font-medium">{data.description}</span>}
       </td>
       <td style={{ textAlign: 'right' }}>
@@ -394,12 +401,12 @@ export default function SettingsPage() {
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit && rateCreating
-          ? <input className="input" value={rateForm.currencyCode} onChange={e => setRateForm({ ...rateForm, currencyCode: e.target.value.toUpperCase() })} placeholder="USD" style={{ width: 80 }} />
+          ? <input className="input" value={rateForm.currencyCode} onChange={e => setRateForm({ ...rateForm, currencyCode: e.target.value.toUpperCase() })} placeholder={tSettings('placeholders.currencyCode')} style={{ width: 80 }} />
           : <span className="font-mono text-xs">{data.currencyCode}</span>}
       </td>
       <td>
         {isEdit
-          ? <input className="input" value={rateForm.currencyName} onChange={e => setRateForm({ ...rateForm, currencyName: e.target.value })} placeholder="US Dollar" />
+          ? <input className="input" value={rateForm.currencyName} onChange={e => setRateForm({ ...rateForm, currencyName: e.target.value })} placeholder={tSettings('placeholders.currencyName')} />
           : <span className="font-medium">{data.currencyName}</span>}
       </td>
       <td>
@@ -436,13 +443,13 @@ export default function SettingsPage() {
   // ── Nav Configuration ─────────────────────────────────────────────────────
 
   const navSections = useMemo(() => [
-    { id: 'org-section', label: 'Company Info', show: true },
-    { id: 'bank-section', label: 'Bank Details', show: true },
-    { id: 'gl-section', label: 'General Ledger', show: true },
-    { id: 'gst-section', label: 'GST / Tax', show: true },
-    { id: 'rates-section', label: 'Exchange Rates', show: true },
-    { id: 'uom-section', label: 'Units of Measure', show: true },
-  ], []);
+    { id: 'org-section', label: tSettings('sections.company'), show: true },
+    { id: 'bank-section', label: tSettings('sections.bank'), show: true },
+    { id: 'gl-section', label: tSettings('sections.gl'), show: true },
+    { id: 'gst-section', label: tSettings('sections.gst'), show: true },
+    { id: 'rates-section', label: tSettings('sections.rates'), show: true },
+    { id: 'uom-section', label: tSettings('sections.uom'), show: true },
+  ], [tSettings]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -450,8 +457,8 @@ export default function SettingsPage() {
     <DetailsLayout
       header={
         <EntityHeader
-          title="Settings"
-          subtitle="Global platform configuration"
+          title={tSettings('title')}
+          subtitle={tSettings('subtitle')}
           onBack={() => router.push('/')}
           actions={
             <div className="flex items-center gap-2">
@@ -467,90 +474,90 @@ export default function SettingsPage() {
             <h3 className="section-heading mb-4">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">business</span>
-              Company Information
+              {tSettings('sections.company')}
             </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Company Name
+                  {tSettings('labels.companyName')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.name || ''}
                   onChange={(e) => updateOrgField('name', e.target.value)}
-                  placeholder="e.g. Acme Corp"
+                  placeholder={tSettings('placeholders.companyName')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Email Address
+                    {tSettings('labels.email')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.email || ''}
                     onChange={(e) => updateOrgField('email', e.target.value)}
-                    placeholder="info@acme.com"
+                    placeholder={tSettings('placeholders.email')}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Phone Number
+                    {tSettings('labels.phone')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.phone || ''}
                     onChange={(e) => updateOrgField('phone', e.target.value)}
-                    placeholder="+1 234 567 890"
+                    placeholder={tSettings('placeholders.phone')}
                   />
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Website
+                  {tSettings('labels.website')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.website || ''}
                   onChange={(e) => updateOrgField('website', e.target.value)}
-                  placeholder="https://acme.com"
+                  placeholder={tSettings('placeholders.website')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Company Number
+                    {tSettings('labels.companyNumber')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.companyNumber || ''}
                     onChange={(e) => updateOrgField('companyNumber', e.target.value)}
-                    placeholder="e.g. ABN / BRN"
+                    placeholder={tSettings('placeholders.companyNumber')}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Tax Number
+                    {tSettings('labels.taxNumber')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.taxNumber || ''}
                     onChange={(e) => updateOrgField('taxNumber', e.target.value)}
-                    placeholder="e.g. VAT / GST"
+                    placeholder={tSettings('placeholders.taxNumber')}
                   />
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Logo URL
+                  {tSettings('labels.logoUrl')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.logoUrl || ''}
                   onChange={(e) => updateOrgField('logoUrl', e.target.value)}
-                  placeholder="https://acme.com/logo.png"
+                  placeholder={tSettings('placeholders.logoUrl')}
                 />
               </div>
             </div>
@@ -558,71 +565,71 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Address Line 1
+                  {tSettings('labels.address1')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.addressLine1 || ''}
                   onChange={(e) => updateOrgField('addressLine1', e.target.value)}
-                  placeholder="123 Business Way"
+                  placeholder={tSettings('placeholders.address1')}
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Address Line 2
+                  {tSettings('labels.address2')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.addressLine2 || ''}
                   onChange={(e) => updateOrgField('addressLine2', e.target.value)}
-                  placeholder="Suite 101"
+                  placeholder={tSettings('placeholders.address2')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    City
+                    {tSettings('labels.city')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.city || ''}
                     onChange={(e) => updateOrgField('city', e.target.value)}
-                    placeholder="Melbourne"
+                    placeholder={tSettings('placeholders.city')}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    State / Province
+                    {tSettings('labels.state')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.state || ''}
                     onChange={(e) => updateOrgField('state', e.target.value)}
-                    placeholder="VIC"
+                    placeholder={tSettings('placeholders.state')}
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Post Code
+                    {tSettings('labels.postCode')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.postCode || ''}
                     onChange={(e) => updateOrgField('postCode', e.target.value)}
-                    placeholder="3000"
+                    placeholder={tSettings('placeholders.postCode')}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Country
+                    {tSettings('labels.country')}
                   </label>
                   <input
                     className="input"
                     value={orgForm.country || ''}
                     onChange={(e) => updateOrgField('country', e.target.value)}
-                    placeholder="Australia"
+                    placeholder={tSettings('placeholders.country')}
                   />
                 </div>
               </div>
@@ -636,7 +643,7 @@ export default function SettingsPage() {
             <h3 className="section-heading !mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">account_balance</span>
-              Bank Details & Accounting
+              {tSettings('sections.bank')}
             </h3>
           </div>
 
@@ -644,24 +651,24 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Bank Name
+                  {tSettings('labels.bankName')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.bankName || ''}
                   onChange={(e) => updateOrgField('bankName', e.target.value)}
-                  placeholder="e.g. Commonwealth Bank"
+                  placeholder={tSettings('placeholders.bankName')}
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Account Name
+                  {tSettings('labels.accountName')}
                 </label>
                 <input
                   className="input"
                   value={orgForm.bankAccountName || ''}
                   onChange={(e) => updateOrgField('bankAccountName', e.target.value)}
-                  placeholder="Acme Corp Pty Ltd"
+                  placeholder={tSettings('placeholders.accountName')}
                 />
               </div>
             </div>
@@ -669,7 +676,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Account Number
+                  {tSettings('labels.accountNumber')}
                 </label>
                 <input
                   className="input"
@@ -680,7 +687,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    IBAN
+                    {tSettings('labels.iban')}
                   </label>
                   <input
                     className="input"
@@ -690,7 +697,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    SWIFT / BIC
+                    {tSettings('labels.swiftBic')}
                   </label>
                   <input
                     className="input"
@@ -707,19 +714,19 @@ export default function SettingsPage() {
         <div id="gl-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
-              General Ledger
+              {tSettings('sections.gl')}
             </h3>
             <span className="badge badge-secondary">Read-Only</span>
           </div>
 
           {glLoading ? (
-            <div className="text-sm text-muted animate-pulse">Loading settings...</div>
+            <div className="text-sm text-muted animate-pulse">{tSettings('gl.loading')}</div>
           ) : (
             <div className="flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Accounts Receivable (AR)
+                    {tSettings('labels.defaultAr')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultArAccountId)}
@@ -727,7 +734,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Revenue / Sales
+                    {tSettings('labels.defaultRevenue')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultRevenueAccountId)}
@@ -735,7 +742,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Accounts Payable (AP)
+                    {tSettings('labels.defaultAp')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultApAccountId)}
@@ -743,7 +750,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Tax Collected
+                    {tSettings('labels.defaultTax')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultTaxAccountId)}
@@ -751,7 +758,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Cost of Goods Sold (COGS)
+                    {tSettings('labels.defaultCogs')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultCogsAccountId)}
@@ -759,7 +766,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Expense
+                    {tSettings('labels.defaultExpense')}
                   </label>
                   <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
                     {renderGlAccountLabel(glSettings?.defaultExpenseAccountId)}
@@ -770,22 +777,22 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Revenue Routing Strategy
+                    {tSettings('labels.revenueRouting')}
                   </label>
                   <p className="text-sm font-medium mt-1">
                     {glSettings?.revenueRoutingPrecedence === 'customer_first'
-                      ? 'Customer Group Overrides take precedence over Product Group Overrides'
-                      : 'Product Group Overrides take precedence over Customer Group Overrides'}
+                      ? tSettings('gl.customerFirst')
+                      : tSettings('gl.productFirst')}
                   </p>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Expense Routing Strategy
+                    {tSettings('labels.expenseRouting')}
                   </label>
                   <p className="text-sm font-medium mt-1">
                     {glSettings?.expenseRoutingPrecedence === 'supplier_first'
-                      ? 'Supplier Group Overrides take precedence over Product Group Overrides'
-                      : 'Product Group Overrides take precedence over Supplier Group Overrides'}
+                      ? tSettings('gl.supplierFirst')
+                      : tSettings('gl.productFirst')}
                   </p>
                 </div>
               </div>
@@ -798,25 +805,25 @@ export default function SettingsPage() {
             <h3 className="section-heading !mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
-              GST / Tax Categories
+              {tSettings('sections.gst')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={gstCreate}>+ New Category</button>
+            <button className="btn btn-primary btn-sm" onClick={gstCreate}>+ {tSettings('actions.create')}</button>
           </div>
           <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ width: 100 }}>Code</th>
-                <th>Title</th>
-                <th style={{ width: 140 }}>Type</th>
-                <th style={{ width: 80 }}>Rate</th>
-                <th style={{ width: 80, textAlign: 'center' }}>Default</th>
-                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+                <th style={{ width: 100 }}>{tSettings('labels.code')}</th>
+                <th>{tSettings('labels.title')}</th>
+                <th style={{ width: 140 }}>{tSettings('labels.type')}</th>
+                <th style={{ width: 80 }}>{tSettings('labels.rate')}</th>
+                <th style={{ width: 80, textAlign: 'center' }}>{tSettings('labels.isDefault')}</th>
+                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {gstCreating && renderGstRow(true, gstForm, 'new-gst')}
               {!gstLoading && categories.length === 0 && !gstCreating && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No GST categories defined.</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('gst.empty')}</td></tr>
               )}
               {categories.map(cat =>
                 gstEditingId === cat.gstCategoryId
@@ -833,19 +840,19 @@ export default function SettingsPage() {
             <h3 className="section-heading !mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">currency_exchange</span>
-              Currency Exchange Rates
+              {tSettings('sections.rates')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={rateCreate}>+ New Rate</button>
+            <button className="btn btn-primary btn-sm" onClick={rateCreate}>+ {tSettings('actions.create')}</button>
           </div>
           <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ width: 100 }}>Currency</th>
-                <th>Name</th>
-                <th style={{ width: 110 }}>Buy Rate</th>
-                <th style={{ width: 110 }}>Sell Rate</th>
-                <th style={{ width: 130 }}>Effective Date</th>
-                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+                <th style={{ width: 100 }}>{tSettings('labels.currencyCode')}</th>
+                <th>{tSettings('labels.currencyName')}</th>
+                <th style={{ width: 110 }}>{tSettings('labels.buyRate')}</th>
+                <th style={{ width: 110 }}>{tSettings('labels.sellRate')}</th>
+                <th style={{ width: 130 }}>{tSettings('labels.effectiveDate')}</th>
+                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -867,7 +874,7 @@ export default function SettingsPage() {
 
               {rateCreating && renderRateRow(true, rateForm, 'new-rate')}
               {!rateLoading && rates.length === 0 && !rateCreating && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No additional exchange rates defined.</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('rates.empty')}</td></tr>
               )}
               {rates.map(r =>
                 rateEditingId === r.exchangeRateId
@@ -884,22 +891,22 @@ export default function SettingsPage() {
             <h3 className="section-heading !mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">straighten</span>
-              Units of Measure
+              {tSettings('sections.uom')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={uomCreate}>+ New UOM</button>
+            <button className="btn btn-primary btn-sm" onClick={uomCreate}>+ {tSettings('actions.create')}</button>
           </div>
           <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ width: 120 }}>Code</th>
-                <th>Description</th>
-                <th style={{ width: 150, textAlign: 'right' }}>Actions</th>
+                <th style={{ width: 120 }}>{tSettings('labels.code')}</th>
+                <th>{tSettings('labels.description')}</th>
+                <th style={{ width: 150, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {uomCreating && renderUomRow(true, uomForm, 'new-uom')}
               {!uomLoading && uoms.length === 0 && !uomCreating && (
-                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>No units of measure defined.</td></tr>
+                <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('uom.empty')}</td></tr>
               )}
               {uoms.map(u =>
                 uomEditingCode === u.uomCode

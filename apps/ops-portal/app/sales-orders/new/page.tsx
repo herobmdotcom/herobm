@@ -14,6 +14,7 @@ import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment } from '@modbm/shared';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 interface Account {
   accountId: string;
@@ -27,6 +28,7 @@ interface Account {
 interface Location {
   locationId: string;
   name: string;
+  code?: string;
 }
 
 interface GstCategory {
@@ -486,7 +488,7 @@ export default function NewOrderPage() {
                 {locations.length === 0 && <option value="" disabled>{tSales('common.loadingEllipsis')}</option>}
                 {locations.map((loc) => (
                   <option key={loc.locationId} value={loc.locationId}>
-                    {loc.name}
+                    {formatLocationDisplay(loc)}
                   </option>
                 ))}
               </select>

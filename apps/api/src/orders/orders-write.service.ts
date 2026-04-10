@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { BackordersService, InventoryGap } from './backorders.service';
+import { BackordersService } from './backorders.service';
+import { InventoryGap } from '@modbm/shared';
 import {
   Injectable,
   Inject,
@@ -15,7 +16,6 @@ import {
   salesOrders,
   salesOrderLineItems,
   orderEvents,
-  outbox,
   accounts as coreAccounts,
   products as coreProducts,
   backorders,
@@ -30,10 +30,9 @@ import {
   UpdateOrderLineDto as UpdateLineDto,
 } from './dto';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-import {
-  writeEvent as sharedWriteEvent,
-  findOrderLine as sharedFindOrderLine,
-} from './shipment-helpers';
+import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { PickingService } from './picking.service';
@@ -314,19 +313,6 @@ export class OrdersWriteService {
     await this.lookupProduct(productId);
   }
 
-  /**
-   * Write an audit event and outbox record in the same transaction scope.
-   */
-  private async writeEvent(
-    tx: any,
-    salesOrderId: string,
-    eventType: string,
-    payload: any,
-    actor: string,
-  ): Promise<void> {
-    await sharedWriteEvent(tx, salesOrderId, eventType, payload, actor);
-  }
-
   // -------------------------------------------------------------------------
   // CRUD Operations
   // -------------------------------------------------------------------------
@@ -430,17 +416,17 @@ export class OrdersWriteService {
       }
 
       // Audit + outbox
-      await this.writeEvent(
-        tx,
-        order.salesOrderId,
-        'created',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: order.salesOrderId,
+        eventType: 'created',
+        payload: {
           orderNumber,
           customerId: dto.customerId,
           lineCount: lineValues.length,
         },
         actor,
-      );
+      });
 
       return order;
     });
@@ -479,16 +465,16 @@ export class OrdersWriteService {
         .returning();
 
       if (audit.hasChanges) {
-        await this.writeEvent(
-          tx,
-          id,
-          'updated',
-          {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: id,
+          eventType: 'updated',
+          payload: {
             changes: audit.changes,
             previousValues: audit.previousValues,
           },
           actor,
-        );
+        });
       }
 
       return updated;
@@ -584,16 +570,16 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'status_changed',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: id,
+        eventType: 'status_changed',
+        payload: {
           from: existing.stateCode,
           to: newState,
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -626,16 +612,16 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'archived',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: id,
+        eventType: 'archived',
+        payload: {
           from: existing.stateCode,
           to: 'archived',
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -671,16 +657,16 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'unarchived',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: id,
+        eventType: 'unarchived',
+        payload: {
           from: 'archived',
           to: previousState,
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -775,18 +761,18 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'line_added',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_added',
+        payload: {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
           quantity: dto.quantity,
           gstCategoryId,
         },
         actor,
-      );
+      });
 
       return line;
     });
@@ -888,11 +874,11 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'post_confirmation_line_added',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'post_confirmation_line_added',
+        payload: {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
           quantity: dto.quantity,
@@ -900,7 +886,7 @@ export class OrdersWriteService {
           pricePerUnit: dto.pricePerUnit,
         },
         actor,
-      );
+      });
 
       return line;
     });
@@ -987,17 +973,17 @@ export class OrdersWriteService {
         .where(eq(salesOrders.salesOrderId, orderId));
 
       if (audit.hasChanges) {
-        await this.writeEvent(
-          tx,
-          orderId,
-          'line_updated',
-          {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: orderId,
+          eventType: 'line_updated',
+          payload: {
             lineId,
             changes: audit.changes,
             previousValues: audit.previousValues,
           },
           actor,
-        );
+        });
       }
 
       return updated;
@@ -1035,17 +1021,17 @@ export class OrdersWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'line_removed',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_removed',
+        payload: {
           lineId,
           productId: existingLine.productId,
           quantity: existingLine.quantity,
         },
         actor,
-      );
+      });
     });
   }
 
@@ -1125,6 +1111,7 @@ export class OrdersWriteService {
         stateCode: backorders.stateCode,
         purchaseOrderId: backorders.purchaseOrderId,
         purchaseOrderNumber: purchaseOrders.orderNumber,
+        purchaseOrderState: purchaseOrders.stateCode,
         createdOn: backorders.createdOn,
       })
       .from(backorders)

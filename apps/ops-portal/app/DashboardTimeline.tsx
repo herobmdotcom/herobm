@@ -37,19 +37,19 @@ function getEventStyle(eventType: string) {
   return EVENT_ICONS[eventType] || { icon: 'event', color: 'var(--text-primary)', bg: 'var(--bg-hover)', path: '#' };
 }
 
-function formatRelativeTime(dateString: string) {
+function formatRelativeTime(dateString: string, t: any) {
   const d = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - d.getTime();
   const diffSecs = Math.floor(diffMs / 1000);
   
-  if (diffSecs < 60) return 'just now';
+  if (diffSecs < 60) return t('relativeUnits.justNow');
   const diffMins = Math.floor(diffSecs / 60);
-  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffMins < 60) return t('relativeUnits.m', { count: diffMins });
   const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
+  if (diffHrs < 24) return t('relativeUnits.h', { count: diffHrs });
   const diffDays = Math.floor(diffHrs / 24);
-  return `${diffDays}d ago`;
+  return t('relativeUnits.d', { count: diffDays });
 }
 
 export default function DashboardTimeline({ enabledEvents }: Props) {
@@ -118,7 +118,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
     <div className="flex flex-col gap-4">
       {events.map((evt: TimelineEvent) => {
         const style = getEventStyle(evt.eventType);
-        const relativeTime = formatRelativeTime(evt.timestamp);
+        const relativeTime = formatRelativeTime(evt.timestamp, t);
         
         return (
           <Link 

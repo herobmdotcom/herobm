@@ -13,7 +13,6 @@ import {
   salesOrderShipmentLines,
   salesOrderLineItems,
   products as coreProducts,
-  outbox,
   bins,
   inventoryEntries,
   inventoryLedger,
@@ -26,10 +25,11 @@ import {
   findShipment,
   findShipmentLine,
   assertShipmentQtyAvailable,
-  writeEvent,
   getInvoicedPerLine,
   getCommittedPerLine,
 } from './shipment-helpers';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -149,18 +149,17 @@ export class ShipmentService {
         await tx.insert(salesOrderShipmentLines).values(lineValues);
       }
 
-      await writeEvent(
-        tx,
-        salesOrderId,
-        'shipment_created',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: salesOrderId,
+        eventType: 'shipment_created',
+        payload: {
           shipmentId: shipment.shipmentId,
           shipmentNumber,
           lineCount: lineValues.length,
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
 
       return shipment;
     });
@@ -200,17 +199,16 @@ export class ShipmentService {
         .where(eq(salesOrderShipments.shipmentId, shipmentId))
         .returning();
 
-      await writeEvent(
-        tx,
-        shipment.salesOrderId,
-        'shipment_updated',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: shipment.salesOrderId,
+        eventType: 'shipment_updated',
+        payload: {
           shipmentId,
           changes: dto,
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
 
       return updated;
     });
@@ -402,9 +400,9 @@ export class ShipmentService {
           }
         }
 
-        await tx.insert(outbox).values({
-          aggregateType: 'sales_order_shipment',
-          aggregateId: shipmentId,
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: shipment.salesOrderId,
           eventType: 'goods_dispatched',
           payload: {
             shipmentId,
@@ -412,6 +410,7 @@ export class ShipmentService {
             salesOrderId: shipment.salesOrderId,
             cogsDetails,
           },
+          actor,
         });
       } else if (
         shipment.stateCode === 'dispatched' &&
@@ -500,15 +499,16 @@ export class ShipmentService {
         }
 
         // Record reversal outbox event to mathematically restore COGS dynamically
-        await tx.insert(outbox).values({
-          aggregateType: 'sales_order_shipment',
-          aggregateId: shipmentId,
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: shipment.salesOrderId,
           eventType: 'goods_dispatch_reverted',
           payload: {
             shipmentId,
             shipmentNumber: shipment.shipmentNumber,
             salesOrderId: shipment.salesOrderId,
           },
+          actor,
         });
       }
 
@@ -517,19 +517,18 @@ export class ShipmentService {
           ? 'shipment_dispatched'
           : 'shipment_status_changed';
 
-      await writeEvent(
-        tx,
-        shipment.salesOrderId,
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: shipment.salesOrderId,
         eventType,
-        {
+        payload: {
           shipmentId,
           shipmentNumber: shipment.shipmentNumber,
           from: shipment.stateCode,
           to: newState,
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
 
       const autoTransitions = await evaluateLifecycleRules(
         tx,
@@ -591,19 +590,18 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(
-        tx,
-        shipment.salesOrderId,
-        'shipment_line_added',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: shipment.salesOrderId,
+        eventType: 'shipment_line_added',
+        payload: {
           shipmentId,
           shipmentLineId: line.shipmentLineId,
           salesOrderLineId: dto.salesOrderLineId,
           quantityShipped: dto.quantityShipped,
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
 
       return line;
     });
@@ -662,11 +660,11 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(
-        tx,
-        shipment.salesOrderId,
-        'shipment_line_updated',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: shipment.salesOrderId,
+        eventType: 'shipment_line_updated',
+        payload: {
           shipmentId,
           shipmentLineId: lineId,
           changes: dto,
@@ -675,8 +673,7 @@ export class ShipmentService {
           },
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
 
       return updated;
     });
@@ -708,19 +705,18 @@ export class ShipmentService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
-      await writeEvent(
-        tx,
-        shipment.salesOrderId,
-        'shipment_line_removed',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: shipment.salesOrderId,
+        eventType: 'shipment_line_removed',
+        payload: {
           shipmentId,
           shipmentLineId: lineId,
           salesOrderLineId: existingLine.salesOrderLineId,
           quantityShipped: existingLine.quantityShipped,
         },
         actor,
-        'sales_order_shipment',
-      );
+      });
     });
   }
 

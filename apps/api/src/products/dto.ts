@@ -191,3 +191,24 @@ export class UpdateProductGroupDto {
   @IsUUID()
   defaultExpenseAccountId?: string;
 }
+
+export class LinkBinDto {
+  @IsUUID('4')
+  @IsNotEmpty()
+  locationId!: string;
+
+  @IsUUID('4')
+  @IsNotEmpty()
+  binId!: string;
+
+  @IsOptional()
+  isPrimaryPerLocation?: boolean;
+
+  @IsOptional()
+  @IsNumberString()
+  minQuantity?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  maxQuantity?: string;
+}

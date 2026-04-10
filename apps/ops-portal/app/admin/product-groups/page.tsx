@@ -222,7 +222,7 @@ export default function ProductGroupsAdmin() {
                 <tr key={g.productGroupId}>
                   <td className="font-mono text-xs">{g.groupCode}</td>
                   <td className="font-medium">{g.name}</td>
-                  <td>{g.defaultDiscountPercentage}%</td>
+                  <td>{parseFloat(g.defaultDiscountPercentage || '0').toFixed(2)}%</td>
                   <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
                   <td style={{ textAlign: 'right' }}>

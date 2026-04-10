@@ -14,9 +14,17 @@ import {
   productSuppliers,
   productSupplierEvents,
   productUoms,
+  productDefaultBins,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
-import { CreateProductDto, UpdateProductDto, AddSupplierDto } from './dto';
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  AddSupplierDto,
+  LinkBinDto,
+} from './dto';
 
 @Injectable()
 export class ProductsWriteService {
@@ -362,6 +370,104 @@ export class ProductsWriteService {
         productId,
         eventType: 'uom_removed',
         payload: { uomCode: existing[0].uomCode, ratio: existing[0].ratio },
+        actor,
+      });
+    });
+
+    return { deleted: true };
+  }
+
+  /**
+   * Link a default bin to a product.
+   */
+  async linkDefaultBin(productId: string, dto: LinkBinDto, actor: string) {
+    const existing = await this.db
+      .select({ id: coreProducts.productId })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!existing.length) {
+      throw new NotFoundException(`Product not found`);
+    }
+
+    return await this.db.transaction(async (tx) => {
+      if (dto.isPrimaryPerLocation) {
+        // Demote existing primary pins in that location
+        await tx
+          .update(productDefaultBins)
+          .set({ isPrimaryPerLocation: false, modifiedOn: new Date() })
+          .where(
+            and(
+              eq(productDefaultBins.productId, productId),
+              eq(productDefaultBins.locationId, dto.locationId),
+            ),
+          );
+      }
+
+      const [binLink] = await tx
+        .insert(productDefaultBins)
+        .values({
+          productId,
+          locationId: dto.locationId,
+          binId: dto.binId,
+          isPrimaryPerLocation: dto.isPrimaryPerLocation ?? true,
+          minQuantity: dto.minQuantity || '0',
+          maxQuantity: dto.maxQuantity || null,
+        })
+        .onConflictDoUpdate({
+          target: [
+            productDefaultBins.productId,
+            productDefaultBins.locationId,
+            productDefaultBins.binId,
+          ],
+          set: {
+            isPrimaryPerLocation: dto.isPrimaryPerLocation ?? true,
+            minQuantity: dto.minQuantity || '0',
+            maxQuantity: dto.maxQuantity || null,
+            modifiedOn: new Date(),
+          },
+        })
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: 'updated',
+        payload: {
+          action: 'linked_default_bin',
+          binId: dto.binId,
+          isPrimary: dto.isPrimaryPerLocation,
+        },
+        actor,
+      });
+
+      return binLink;
+    });
+  }
+
+  /**
+   * Remove a default bin mapping from a product.
+   */
+  async removeDefaultBin(productDefaultBinId: string, actor: string) {
+    const existing = await this.db
+      .select()
+      .from(productDefaultBins)
+      .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId))
+      .limit(1);
+
+    if (!existing.length) {
+      throw new NotFoundException('Default bin mapping not found');
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(productDefaultBins)
+        .where(eq(productDefaultBins.productDefaultBinId, productDefaultBinId));
+
+      await tx.insert(productEvents).values({
+        productId: existing[0].productId,
+        eventType: 'updated',
+        payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
         actor,
       });
     });

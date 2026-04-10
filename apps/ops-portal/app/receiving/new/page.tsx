@@ -19,6 +19,8 @@ import { useTranslations } from 'next-intl';
 interface PendingLine {
   purchaseOrderId: string;
   orderNumber: string;
+  purchaseOrderName?: string;
+  vendorName?: string;
   purchaseOrderLineId: string;
   lineNumber: number;
   productDescription: string;
@@ -126,7 +128,8 @@ function ReceivingFlow() {
     const remaining = Number(line.quantity) - prevReceived - draftedQty;
     
     setQtyToReceive(remaining > 0 ? remaining.toString() : '0');
-    setInvoicePrice(line.pricePerUnit);
+    // Format to 2 decimals to ensure consistent UI rendering
+    setInvoicePrice(parseFloat(line.pricePerUnit).toFixed(2));
   };
 
   const addToDraft = () => {
@@ -291,7 +294,7 @@ function ReceivingFlow() {
                       <div style={{ marginBottom: priceDiscrepancy ? 4 : 0 }}>
                          <span style={{ color: 'var(--text)', fontSize: 13 }}>
                             {line.invoicePricePerUnit !== undefined ? (
-                               line.currencyCode ? formatAmount(line.invoicePricePerUnit, line.currencyCode) : line.invoicePricePerUnit
+                               line.currencyCode ? formatAmount(line.invoicePricePerUnit, line.currencyCode) : Number(line.invoicePricePerUnit).toFixed(2)
                             ) : (
                                <span style={{ color: 'var(--text-muted)' }}>—</span>
                             )}
@@ -467,15 +470,32 @@ function ReceivingFlow() {
           )}
 
           {pendingLines.length > 0 && !selectedLine && !quarantineMode && (
-             <div className="flex flex-col gap-2">
-               <h4 style={{ fontSize: 14, fontWeight: 600 }}>{t('flow.selectLineTitle')}</h4>
+             <div className="flex flex-col gap-3">
+               <h4 style={{ fontSize: 14, fontWeight: 600 }}>{(t as any)('flow.selectOrderLine')}</h4>
                {pendingLines.map(line => {
                   const rem = Number(line.quantity) - Number(line.quantityReceived);
                   return (
-                      <button key={line.purchaseOrderLineId} onClick={() => selectLine(line)} className="btn btn-secondary" style={{ textAlign: 'left', display: 'block', padding: '10px 14px' }}>
-                        <div style={{ fontWeight: 600 }}>{line.orderNumber}</div>
-                        <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{t('flow.remainingInfo', { desc: line.productDescription, qty: rem })}</div>
-                      </button>
+                      <div key={line.purchaseOrderLineId} className="border rounded-lg p-4 transition-all" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                        <div className="flex justify-between items-start mb-2">
+                           <div>
+                              <a href={`/purchase-orders/${line.purchaseOrderId}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-[#006b5c] hover:underline flex items-center gap-1">
+                                 {line.orderNumber}
+                                 <span style={{ fontSize: 13 }}>↗</span>
+                              </a>
+                              <div className="text-xs font-medium text-[rgba(4,22,39,0.7)] mt-0.5">{line.purchaseOrderName || (t as any)('flow.untitledPO')}</div>
+                           </div>
+                           <button onClick={() => selectLine(line)} className="btn btn-primary btn-sm px-4">
+                              {tCommon('select')}
+                           </button>
+                        </div>
+                        <div className="text-xs text-[rgba(4,22,39,0.5)] flex flex-col gap-1">
+                           <div className="flex items-center gap-1.5">
+                              <span className="font-semibold uppercase tracking-wider text-[10px]">{tCommon('columns.vendor')}:</span>
+                              <span className="text-[rgba(4,22,39,0.8)]">{line.vendorName || tCommon('selectNone')}</span>
+                           </div>
+                           <div>{t('flow.remainingInfo', { desc: line.productDescription, qty: rem.toFixed(2) })}</div>
+                        </div>
+                      </div>
                   );
                })}
                <button onClick={() => setQuarantineMode(true)} className="btn btn-secondary mt-2" style={{ textAlign: 'left', display: 'block', padding: '10px 14px', borderStyle: 'dashed', borderColor: 'var(--border)' }}>
@@ -491,9 +511,9 @@ function ReceivingFlow() {
                 <h4 style={{ fontWeight: 600, fontSize: 15 }}>{selectedLine.orderNumber}</h4>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedLine.productDescription}</p>
                 <div style={{ fontSize: 12, marginTop: 4, display: 'flex', gap: 12 }}>
-                    <span>{t('flow.orderedInfo', { qty: <strong>{selectedLine.quantity}</strong> })}</span>
-                    <span>{t('flow.receivedInfo', { qty: <strong>{selectedLine.quantityReceived}</strong> })}</span>
-                    <span>{t('flow.poPriceInfo', { price: <strong>{selectedLine.currencyCode ? formatAmount(Number(selectedLine.pricePerUnit), selectedLine.currencyCode) : selectedLine.pricePerUnit}</strong> })}</span>
+                    <span>{t('flow.orderedInfo', { qty: selectedLine.quantity })}</span>
+                    <span>{t('flow.receivedInfo', { qty: selectedLine.quantityReceived })}</span>
+                    <span>{t('flow.poPriceInfo', { price: selectedLine.currencyCode ? formatAmount(Number(selectedLine.pricePerUnit), selectedLine.currencyCode) : selectedLine.pricePerUnit })}</span>
                 </div>
               </div>
               
@@ -539,8 +559,8 @@ function ReceivingFlow() {
               </div>
 
               <div className="flex gap-2 self-end pb-1">
+                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setPendingLines([]); setSelectedProduct(null); }}>{t('flow.cancel')}</button>
                 <button className="btn btn-primary" onClick={addToDraft}>{t('flow.confirm')}</button>
-                <button className="btn btn-secondary" onClick={() => { setSelectedLine(null); setPendingLines([]); }}>{t('flow.cancel')}</button>
               </div>
             </div>
           )}
@@ -567,8 +587,8 @@ function ReceivingFlow() {
               <div style={{ width: 220 }} />
 
               <div className="flex gap-2 self-end pb-1">
+                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); setSelectedProduct(null); }}>{t('flow.cancel')}</button>
                 <button className="btn btn-primary" onClick={addQuarantineToDraft}>{t('flow.confirm')}</button>
-                <button className="btn btn-secondary" onClick={() => { setQuarantineMode(false); setSelectedLine(null); if(pendingLines.length===0) setSelectedProduct(null); }}>{t('flow.cancel')}</button>
               </div>
             </div>
           )}

@@ -21,6 +21,8 @@ import {
   accountGroups,
   productGroups,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
@@ -349,13 +351,6 @@ export class SalesInvoiceService {
           .where(eq(salesOrders.salesOrderId, salesOrderId));
       }
 
-      await tx.insert(orderEvents).values({
-        salesOrderId,
-        eventType: 'sales_invoiced',
-        payload: { invoiceId: invoice.invoiceId, invoiceNumber },
-        actor,
-      });
-
       // D. Generate specific Outbox Sync Event asynchronously routing back
       const outboxPayload = {
         invoiceId: invoice.invoiceId,
@@ -372,11 +367,12 @@ export class SalesInvoiceService {
         lines: outboxLineDetails,
       };
 
-      await tx.insert(outbox).values({
-        aggregateType: 'sales_invoice',
-        aggregateId: invoice.invoiceId,
-        eventType: 'sales_invoiced',
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: salesOrderId,
+        eventType: EventType.SALES_INVOICED,
         payload: outboxPayload,
+        actor,
       });
 
       return invoice;

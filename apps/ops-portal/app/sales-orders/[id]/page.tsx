@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState, useCallback, Fragment } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { apiMutate, reportError } from '@/lib/api';
@@ -17,6 +18,7 @@ import PageNav from '@/components/shared/PageNav';
 
 import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 import type { GstCategory } from './types';
 import { getGstLabel } from './types';
@@ -29,7 +31,8 @@ import {
     RETURN_LIFECYCLE,
     isBackTransition as sharedIsBackTransition,
     cap,
-    calculateUomPriceAdjustment
+    calculateUomPriceAdjustment,
+    calculateInventoryGaps
 } from '@modbm/shared';
 import type { ProductUom } from '@modbm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
@@ -100,6 +103,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const [gapModalOpen, setGapModalOpen] = useState(false);
     const [pendingGaps, setPendingGaps] = useState<any[]>([]);
     const [pendingStateChange, setPendingStateChange] = useState('');
+    const [selectedGapOption, setSelectedGapOption] = useState<'backorder' | 'ignore'>('backorder');
 
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
     const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
@@ -185,7 +189,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     };
 
     /* ── Centralised section visibility rules ──────────────────────── */
-    const PICKING_INVOICE_STATES = ['picking', 'shipped', 'invoiced', 'legacy'];
+    const PICKING_INVOICE_STATES = ['picking', 'shipped', 'invoiced', 'legacy', 'archived'];
     const sections = {
         details:   { id: 'details-section',   label: 'Details',   show: true },
         lines:     { id: 'lines-section',     label: 'Lines',     show: true },
@@ -196,6 +200,18 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         activity:  { id: 'activity-section',  label: 'Activity',  show: true },
     };
     const visibleSections = Object.values(sections).filter(s => s.show);
+    
+    // Pre-calculate gaps for the Availability tab
+    const gaps = calculateInventoryGaps(
+        order.lines, 
+        inventoryData.map(inv => ({ 
+            productId: inv.productId, 
+            locationId: inv.locationId, 
+            quantityAvailable: inv.quantityAvailable 
+        })), 
+        order.fulfillmentLocationId
+    );
+    const gapMap = new Map(gaps.map(g => [g.salesOrderLineId, g]));
 
     return (
         <>
@@ -288,6 +304,24 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         }}
                                     >
                                         {tSales('buttons.createQuote')}
+                                    </button>
+                                )}
+                                {(order.stateCode !== 'draft' && order.stateCode !== 'quoted') && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        onClick={async () => {
+                                            try {
+                                                const { apiFetchBlob } = await import('@/lib/api');
+                                                const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-confirmation/run?id=${id}&context=sales-order`, { method: 'POST' });
+                                                const url = URL.createObjectURL(blob);
+                                                window.open(url, '_blank');
+                                            } catch (err) {
+                                                reportError(err, 'OrderDetailPage:generateConfirmation');
+                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                            }
+                                        }}
+                                    >
+                                        {tSales('buttons.confirmationPdf')}
                                     </button>
                                 )}
                                 {(order.stateCode === 'confirmed' || order.stateCode === 'picking') && (
@@ -391,9 +425,9 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
                                     onBlur={saveHeader}
                                 >
-                                    {locations.map((loc: { locationId: string; name: string }) => (
+                                    {locations.map((loc: { locationId: string; name: string; code?: string }) => (
                                         <option key={loc.locationId} value={loc.locationId}>
-                                            {loc.name}
+                                            {formatLocationDisplay(loc)}
                                         </option>
                                     ))}
                                 </select>
@@ -516,7 +550,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     <tr key={line.salesOrderLineId || idx}>
                                         <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                            {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                            {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                    {line.productNumber || line.productId?.substring(0, 8)}
+                                                </Link>
+                                            ) : (
+                                                line.productNumber || line.productId?.substring(0, 8) || '—'
+                                            )}
                                             {line.isPostConfirmation && (
                                                 <span className="ml-2 badge" style={{ fontSize: 10, padding: '2px 4px', background: 'var(--accent)', color: 'white', borderRadius: 4 }}>
                                                     {tSales('columns.postConfirmation')}
@@ -782,8 +822,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         const totalAvail = lineInventory.reduce(
                                             (sum: number, inv: any) => sum + parseFloat(inv.quantityAvailable || '0'), 0,
                                         );
-                                        const orderedQty = parseFloat(line.quantity || '0');
-                                        const canFulfil = totalAvail >= orderedQty;
+                                        const gap = gapMap.get(line.salesOrderLineId);
+                                        const canFulfil = !gap;
 
                                         const isCustom = !line.productId || line.productId === '00000000-0000-0000-0000-000000000000';
                                         if (line.productType === 'non-stock' || line.productType === 'service' || isCustom) {
@@ -813,7 +853,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 {lineInventory.length === 0 ? (
                                                     <tr key={line.salesOrderLineId}>
                                                         <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                                        <td style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber}</td>
+                                                        <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                                            {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                                    {line.productNumber}
+                                                                </Link>
+                                                            ) : (
+                                                                line.productNumber || '—'
+                                                            )}
+                                                        </td>
                                                         <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{line.productDescription}</td>
                                                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{line.quantity}</td>
                                                         <td colSpan={6} style={{ textAlign: 'center', color: 'var(--danger)', fontSize: 12, fontStyle: 'italic' }}>
@@ -826,7 +874,15 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         {idx === 0 && (
                                                             <>
                                                                 <td rowSpan={lineInventory.length} style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                                                <td rowSpan={lineInventory.length} style={{ fontWeight: 600, fontSize: 12 }}>{line.productNumber}</td>
+                                                                <td rowSpan={lineInventory.length} style={{ fontWeight: 600, fontSize: 12 }}>
+                                                                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                                                                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                                            {line.productNumber}
+                                                                        </Link>
+                                                                    ) : (
+                                                                        line.productNumber || '—'
+                                                                    )}
+                                                                </td>
                                                                 <td rowSpan={lineInventory.length} style={{ fontSize: 12 }}>{line.productDescription}</td>
                                                                 <td rowSpan={lineInventory.length} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{line.quantity}</td>
                                                                 <td rowSpan={lineInventory.length}>
@@ -868,33 +924,60 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         )
                     ) : (
                         /* Backorders tab */
-                        <div className="card">
-                            <h3 className="section-heading">{tSales('associatedBackorders')}</h3>
+                        <div>
                             {order.backorders && order.backorders.length > 0 ? (
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th>{tSales('columns.type')}</th>
                                             <th>{tSales('columns.orderHash')}</th>
-                                            <th>{tSales('columns.name')}</th>
+                                            <th>{tSales('columns.product')}</th>
+                                            <th>{tSales('columns.type')}</th>
                                             <th>{tSales('columns.status')}</th>
                                             <th>{tSales('columns.date')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {order.backorders.map((bo: any, bo_idx: number) => (
-                                            <tr key={bo.salesOrderId || bo.productNumber || bo_idx} className="cursor-pointer hover:bg-gray-50" onClick={() => bo.salesOrderId && router.push(`/sales-orders/${bo.salesOrderId}`)}>
-                                                <td>{bo.salesOrderId === order.parentId ? <span className="badge badge-confirm">{tSales('parent')}</span> : <span className="badge badge-quoted">{tSales('child')}</span>}</td>
-                                                <td className="font-bold">{bo.orderNumber || '—'}</td>
-                                                <td>{bo.productNumber || bo.purchaseOrderNumber || '—'}</td>
-                                                <td><StateBadge state={bo.stateCode as ValidState} /></td>
-                                                <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
-                                            </tr>
-                                        ))}
+                                        {order.backorders.map((bo: any, bo_idx: number) => {
+                                            const displayOrderNumber = bo.purchaseOrderNumber || bo.orderNumber || '—';
+                                            const isPo = !!bo.purchaseOrderId;
+                                            const displayStatus = bo.purchaseOrderState || bo.stateCode;
+                                            
+                                            return (
+                                                <tr 
+                                                    key={bo.salesOrderId || bo.productNumber || bo_idx} 
+                                                    className="cursor-pointer hover:bg-gray-50" 
+                                                    onClick={() => {
+                                                        if (isPo) {
+                                                            router.push(`/purchase-orders/${bo.purchaseOrderId}`);
+                                                        } else if (bo.salesOrderId) {
+                                                            router.push(`/sales-orders/${bo.salesOrderId}`);
+                                                        }
+                                                    }}
+                                                >
+                                                    <td style={{ color: 'var(--accent)', fontWeight: 400 }}>{displayOrderNumber}</td>
+                                                    <td>{bo.productNumber || '—'}</td>
+                                                    <td>
+                                                        {isPo ? (
+                                                            <span className="badge badge-confirm">PO</span>
+                                                        ) : (
+                                                            bo.salesOrderId === order.parentId ? (
+                                                                <span className="badge badge-confirm">{tSales('parent')}</span>
+                                                            ) : (
+                                                                <span className="badge badge-quoted">{tSales('child')}</span>
+                                                            )
+                                                        )}
+                                                    </td>
+                                                    <td><StateBadge state={displayStatus as ValidState} /></td>
+                                                    <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             ) : (
-                                <p className="text-center py-8 text-muted">{tSales('noBackordersFound')}</p>
+                                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                                    {tSales('noBackordersFound')}
+                                </div>
                             )}
                         </div>
                     )}
@@ -909,31 +992,35 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     onVisibilityChange={onPickingVisibilityChange} 
                 />
 
-                <InvoicesSection 
-                    orderId={id}
-                    order={order} 
-                    invoices={invoices} 
-                    gstCategories={gstCategories}
-                    pickingSummary={pickingSummary}
-                    setError={setError}
-                    loadInvoices={loadInvoices}
-                    loadOrder={loadOrder}
-                />
+                {sections.invoices.show && (
+                    <InvoicesSection 
+                        orderId={id}
+                        order={order} 
+                        invoices={invoices} 
+                        gstCategories={gstCategories}
+                        pickingSummary={pickingSummary}
+                        setError={setError}
+                        loadInvoices={loadInvoices}
+                        loadOrder={loadOrder}
+                    />
+                )}
 
-                <ReturnsSection 
-                    orderId={id}
-                    order={order} 
-                    returns={returns} 
-                    returnsLoading={returnsLoading}
-                    showCreateReturn={showCreateReturn}
-                    setShowCreateReturn={setShowCreateReturn} 
-                    setError={setError}
-                    loadReturns={loadReturns}
-                    loadOrder={loadOrder}
-                    pickingSummary={pickingSummary}
-                    gstCategories={gstCategories}
-                    locations={locations}
-                />
+                {sections.returns.show && (
+                    <ReturnsSection 
+                        orderId={id}
+                        order={order} 
+                        returns={returns} 
+                        returnsLoading={returnsLoading}
+                        showCreateReturn={showCreateReturn}
+                        setShowCreateReturn={setShowCreateReturn} 
+                        setError={setError}
+                        loadReturns={loadReturns}
+                        loadOrder={loadOrder}
+                        pickingSummary={pickingSummary}
+                        gstCategories={gstCategories}
+                        locations={locations}
+                    />
+                )}
 
                 <div id="activity-section" className="card">
                     <ActivityTimeline events={order.events} />
@@ -945,27 +1032,29 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
             {/* Gap/Backorder Modal */}
             {gapModalOpen && (
                 <div className="modal-overlay">
-                    <div className="modal-content max-w-2xl">
-                        <h2 className="text-xl font-bold mb-4">{tSales('shortages.title')}</h2>
-                        <p className="mb-4">{tSales('shortages.description')} <strong>{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:</p>
+                    <div className="modal-content max-w-2xl p-8 !bg-[var(--bg-card)] !rounded-2xl shadow-2xl border border-[var(--border)]">
+                        <h2 className="text-[22px] font-bold mb-2 text-[var(--text-primary)]">{tSales('shortages.title')}</h2>
+                        <p className="text-[14px] text-[var(--text-secondary)] mb-6">
+                            {tSales('shortages.description')} <strong className="text-[var(--text-primary)]">{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:
+                        </p>
                         
-                        <div className="overflow-auto max-h-60 mb-6 border rounded">
-                            <table className="w-full text-sm">
-                                <thead className="bg-gray-50 sticky top-0">
+                        <div className="overflow-hidden border border-[var(--border)] rounded-xl mb-6 bg-white">
+                            <table className="w-full text-[13px] border-collapse">
+                                <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)]">
                                     <tr>
-                                        <th className="p-2 text-left">{tSales('columns.product')}</th>
-                                        <th className="p-2 text-right">{tSales('columns.required')}</th>
-                                        <th className="p-2 text-right">{tSales('columns.available')}</th>
-                                        <th className="p-2 text-right">{tSales('columns.gap')}</th>
+                                        <th className="px-4 py-3 text-left font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.product')}</th>
+                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.required')}</th>
+                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.available')}</th>
+                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.gap')}</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-[var(--border)]">
                                     {pendingGaps.map((gap, i) => (
-                                        <tr key={i} className="border-t">
-                                            <td className="p-2 font-medium">{gap.productNumber}</td>
-                                            <td className="p-2 text-right">{gap.required}</td>
-                                            <td className="p-2 text-right">{gap.available}</td>
-                                            <td className="p-2 text-right text-rose-600 font-bold">{gap.gap}</td>
+                                        <tr key={i} className="hover:bg-[var(--bg-secondary)] transition-colors">
+                                            <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{gap.productDescription || gap.productId}</td>
+                                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{gap.orderedQuantity}</td>
+                                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{gap.availableQuantity}</td>
+                                            <td className="px-4 py-3 text-right text-[#ef4444] font-bold">{gap.shortage}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -973,23 +1062,66 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 italic text-sm text-blue-800">
-                                <p><strong>{tSales('shortages.option1Title')}</strong>{tSales('shortages.option1Desc')}</p>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 italic text-sm text-gray-700">
-                                <p><strong>{tSales('shortages.option2Title')}</strong>{tSales('shortages.option2Desc')}</p>
-                            </div>
+                            <label 
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                                    selectedGapOption === 'backorder' 
+                                        ? 'border-[var(--accent)] bg-[rgba(0,107,92,0.04)] ring-1 ring-[var(--accent)]' 
+                                        : 'border-[var(--border)] bg-white hover:border-[var(--text-muted)]'
+                                }`}
+                                onClick={() => setSelectedGapOption('backorder')}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                        selectedGapOption === 'backorder' ? 'border-[var(--accent)]' : 'border-[var(--border)]'
+                                    }`}>
+                                        {selectedGapOption === 'backorder' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className={`text-[14px] font-bold mb-1 ${selectedGapOption === 'backorder' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
+                                            {tSales('shortages.option1Title')}
+                                        </p>
+                                        <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                                            {tSales('shortages.option1Desc')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
+                            
+                            <label 
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                                    selectedGapOption === 'ignore' 
+                                        ? 'border-[var(--accent)] bg-[rgba(0,107,92,0.04)] ring-1 ring-[var(--accent)]' 
+                                        : 'border-[var(--border)] bg-white hover:border-[var(--text-muted)]'
+                                }`}
+                                onClick={() => setSelectedGapOption('ignore')}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                        selectedGapOption === 'ignore' ? 'border-[var(--accent)]' : 'border-[var(--border)]'
+                                    }`}>
+                                        {selectedGapOption === 'ignore' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className={`text-[14px] font-bold mb-1 ${selectedGapOption === 'ignore' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
+                                            {tSales('shortages.option2Title')}
+                                        </p>
+                                        <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
+                                            {tSales('shortages.option2Desc')}
+                                        </p>
+                                    </div>
+                                </div>
+                            </label>
                         </div>
 
                         <div className="flex justify-end gap-3 mt-8">
-                            <button className="btn btn-secondary" onClick={() => setGapModalOpen(false)}>
+                            <button className="btn btn-secondary px-6" onClick={() => setGapModalOpen(false)}>
                                 {tCommon('cancel')}
                             </button>
-                            <button className="btn btn-secondary" onClick={confirmWithoutBackorders}>
-                                {tSales('shortages.confirmAnyway')}
-                            </button>
-                            <button className="btn btn-primary" onClick={confirmWithBackorders}>
-                                {tSales('shortages.splitAndCreate')}
+                            <button 
+                                className="btn btn-primary px-8" 
+                                onClick={selectedGapOption === 'backorder' ? confirmWithBackorders : confirmWithoutBackorders}
+                            >
+                                {tCommon('confirm')}
                             </button>
                         </div>
                     </div>

@@ -43,6 +43,16 @@ const SEEDS = [
     outputPattern: 'Quote-{{orderNumber}}.pdf',
   },
   {
+    slug: 'sales-order-confirmation',
+    name: 'Standard Order Confirmation',
+    contexts: ['sales-order'],
+    description:
+      'System default template for generating Sales Order Confirmations.',
+    templatePath:
+      '../../../../tools/seeds/reports/sales-order-confirmation.typ',
+    outputPattern: 'Confirmation-{{orderNumber}}.pdf',
+  },
+  {
     slug: 'pro-forma-invoice',
     name: 'Standard Pro Forma Invoice',
     contexts: ['sales-order'],

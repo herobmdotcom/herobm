@@ -12,8 +12,8 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     name: initialData?.name || '',
     slug: initialData?.slug || '',
     description: initialData?.description || '',
-    template: initialData?.template || '#set page(paper: "a4")\n\n= Standard Report\n',
-    outputNamePattern: initialData?.outputNamePattern || 'Report-${id}.pdf',
+    template: initialData?.template || t('defaults.template'),
+    outputNamePattern: initialData?.outputNamePattern || t('defaults.outputPattern'),
     contexts: (initialData?.contexts as string[]) || [],
   });
   
@@ -130,7 +130,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              {isNew ? t('labels.displayName') /* actually handled dynamically below but let's fix */ : formData.name}
+              {isNew ? t('newTemplate') : formData.name}
             </h2>
           </div>
           
@@ -257,6 +257,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
               <div className="flex gap-2">
                  <input className="input w-full bg-white font-mono text-sm" value={previewVars.entityId} onChange={e => setPreviewVars(p => ({ ...p, entityId: e.target.value }))} placeholder={t('placeholders.uuid')} />
                  <button className="btn btn-secondary px-3 bg-white" title={t('buttons.getRandomId')} onClick={handleRandomizeId} disabled={!previewVars.hookSlug}>
+                   {/* eslint-disable-next-line i18next/no-literal-string */}
                    🎲
                  </button>
               </div>

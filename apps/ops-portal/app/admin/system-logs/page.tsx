@@ -28,7 +28,7 @@ export default function SystemLogsPage() {
       setLines(res.lines);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load system logs');
+      setError(err instanceof Error ? err.message : t('toasts.loadFailed'));
     } finally {
       setLoading(false);
     }

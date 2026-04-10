@@ -37,6 +37,7 @@ describe('ProductsService', () => {
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
     $dynamic: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
     then: jest.fn().mockImplementation((cb) => cb(mockProducts)),
     [Symbol.asyncIterator]: jest.fn(),
   };

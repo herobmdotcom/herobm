@@ -100,7 +100,6 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    // eslint-disable-next-line no-restricted-globals
     if(!confirm(tCommon('confirmDelete'))) return;
     try {
       await apiMutate(`/api/suppliers/${vendorId}/expiries/${id}`, 'DELETE');

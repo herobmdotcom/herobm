@@ -17,6 +17,8 @@ import {
   suppliers,
   outbox,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import {
   HOME_CURRENCY,
   REVENUE_ROUTING_PRECEDENCE,
@@ -140,11 +142,11 @@ export class GlService {
 
       await tx.insert(glJournalLines).values(lineValues);
 
-      // Write 'gl_posted' outbox event for sync routing
-      await tx.insert(outbox).values({
-        aggregateType: 'journal_entry',
+      // Write 'gl_posted' event for sync routing + audit trail
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SYSTEM,
         aggregateId: entry.journalEntryId,
-        eventType: 'gl_posted',
+        eventType: EventType.GL_POSTED,
         payload: {
           entryNumber,
           entryDate,

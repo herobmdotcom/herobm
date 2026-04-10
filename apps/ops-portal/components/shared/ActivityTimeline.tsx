@@ -35,6 +35,7 @@ export function EventIcon({ type }: { type: string }) {
     updated: '✏️',
     status_changed: '🔄',
     line_added: '➕',
+    post_confirmation_line_added: '➕',
     line_updated: '📝',
     line_removed: '🗑️',
     quoted: '📨',

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 interface Location {
   locationId: string;
@@ -58,7 +59,7 @@ export default function LocationSelect({
       </option>
       {locations.map((loc) => (
         <option key={loc.locationId} value={loc.locationId}>
-          {loc.code} — {loc.name}
+          {formatLocationDisplay(loc)}
         </option>
       ))}
     </select>

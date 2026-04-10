@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, apiMutate } from '@/lib/api';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
@@ -136,7 +136,7 @@ export default function TopographyView() {
                 {tCommon('columns.location', { defaultValue: 'Location' })}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
-                {loading ? '...' : locations.length}
+                {loading ? tCommon('loadingEllipsis') : locations.length}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg">
@@ -147,7 +147,7 @@ export default function TopographyView() {
                 {tLoc('zones')}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
-                {loading ? '...' : totalZones}
+                {loading ? tCommon('loadingEllipsis') : totalZones}
               </span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg">
@@ -158,7 +158,7 @@ export default function TopographyView() {
                 {tLoc('bins')}
               </span>
               <span className="text-[11px] font-bold text-[#006b5c]">
-                {loading ? '...' : totalBins.toLocaleString()}
+                {loading ? tCommon('loadingEllipsis') : totalBins.toLocaleString()}
               </span>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function TopographyView() {
             }}
             className="btn btn-primary"
           >
-            {tLoc('addLocation')}
+            + {tLoc('addLocation')}
           </button>
         )}
       </div>
@@ -252,6 +252,17 @@ export default function TopographyView() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              setEditingZone({ locationId: loc.locationId });
+                              setIsZoneModalOpen(true);
+                            }}
+                            className="p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
+                            title={tLoc('addZoneTo', { name: loc.code })}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setEditingLocation(loc);
                               setIsLocationModalOpen(true);
                             }}
@@ -300,15 +311,6 @@ export default function TopographyView() {
                         }}
                       >
                         {tLoc('binsCount', { count: binCount })}
-                      </span>
-                      <span
-                        className="text-[10px] font-medium px-2 py-0.5 rounded"
-                        style={{
-                          background: loc.source === 'app' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
-                          color: loc.source === 'app' ? '#2563eb' : '#b45309',
-                        }}
-                      >
-                        {loc.source}
                       </span>
                     </div>
                   </div>
@@ -361,6 +363,17 @@ export default function TopographyView() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        setEditingBin({ zoneId: zone.zoneId });
+                                        setIsBinModalOpen(true);
+                                      }}
+                                      className="p-1.5 hover:bg-emerald-50 rounded text-emerald-600 transition-colors"
+                                      title={tLoc('addBinTo', { name: zone.code })}
+                                    >
+                                      <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setEditingZone({ zone, locationId: loc.locationId });
                                         setIsZoneModalOpen(true);
                                       }}
@@ -372,6 +385,7 @@ export default function TopographyView() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        if (zone.code === 'HANDLING') return;
                                         if (confirm(tCommon('confirmDelete'))) {
                                           apiFetch(`/api/inventory/zones/${zone.zoneId}`, { method: 'DELETE' })
                                             .then(() => {
@@ -381,7 +395,9 @@ export default function TopographyView() {
                                             .catch((err) => toast.error(err.message));
                                         }
                                       }}
-                                      className="p-1.5 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                      disabled={zone.code === 'HANDLING'}
+                                      title={zone.code === 'HANDLING' ? 'System zones cannot be deleted' : tCommon('delete')}
+                                      className={`p-1.5 rounded transition-colors ${zone.code === 'HANDLING' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
                                     >
                                       
                                       <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -428,12 +444,6 @@ export default function TopographyView() {
                                         >
                                           {tLoc('fields.flags')}
                                         </th>
-                                        <th
-                                          className="text-left px-4 py-2 text-[11px] font-bold uppercase tracking-wider"
-                                          style={{ color: 'var(--text-muted)', fontFamily: 'Manrope, sans-serif' }}
-                                        >
-                                          {tCommon('columns.source')}
-                                        </th>
                                         {canEdit && <th className="w-10 px-4 py-2"></th>}
                                         </tr>
                                       </thead>
@@ -458,7 +468,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}
                                                 >
-                                                  {tLoc('consignmentShort')}
+                                                  {'CSG'}
                                                 </span>
                                               )}
                                               {bin.isBonded && (
@@ -466,7 +476,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}
                                                 >
-                                                  {tLoc('bondedShort')}
+                                                  {'BND'}
                                                 </span>
                                               )}
                                               {bin.isUnavailable && (
@@ -481,17 +491,6 @@ export default function TopographyView() {
                                                 <span style={{ color: 'var(--text-muted)' }}>—</span>
                                               )}
                                             </div>
-                                          </td>
-                                          <td className="px-4 py-2">
-                                            <span
-                                              className="text-[10px] font-medium px-2 py-0.5 rounded"
-                                              style={{
-                                                background: bin.source === 'app' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
-                                                color: bin.source === 'app' ? '#2563eb' : '#b45309',
-                                              }}
-                                            >
-                                              {bin.source}
-                                            </span>
                                           </td>
                                           {canEdit && (
                                             <td className="px-2 py-2">
@@ -508,6 +507,7 @@ export default function TopographyView() {
                                                 </button>
                                                 <button
                                                   onClick={() => {
+                                                    if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
                                                     if (confirm(tCommon('confirmDelete'))) {
                                                       apiFetch(`/api/inventory/bins/${bin.binId}`, { method: 'DELETE' })
                                                         .then(() => {
@@ -517,7 +517,9 @@ export default function TopographyView() {
                                                         .catch((err) => toast.error(err.message));
                                                     }
                                                   }}
-                                                  className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                                  disabled={bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING'}
+                                                  title={(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'System bins cannot be deleted' : tCommon('delete')}
+                                                  className={`p-1 rounded transition-colors ${(bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-50 text-red-500'}`}
                                                 >
                                                   
                                                   <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -529,63 +531,20 @@ export default function TopographyView() {
                                       ))}
                                     </tbody>
                                   </table>
-                                  {canEdit && (
-                                    <div className="px-4 py-2 bg-slate-50 border-t border-[rgba(196,198,205,0.2)]">
-                                      <button
-                                        onClick={() => {
-                                          setEditingBin({ zoneId: zone.zoneId });
-                                          setIsBinModalOpen(true);
-                                        }}
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
-                                      >
-                                        
-                                        <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                                        <span>{tLoc('addBinTo', { name: zone.code })}</span>
-                                      </button>
-                                    </div>
-                                  )}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
                             {isZoneExpanded && zone.bins.length === 0 && (
                               <div style={{ paddingLeft: 80 }} className="pb-3 pr-5">
                                 <p className="text-sm italic mb-2" style={{ color: 'var(--text-muted)' }}>
                                   {tLoc('noBinsInZone')}
                                 </p>
-                                {canEdit && (
-                                  <button
-                                    onClick={() => {
-                                      setEditingBin({ zoneId: zone.zoneId });
-                                      setIsBinModalOpen(true);
-                                    }}
-                                    className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5 transition-colors"
-                                  >
-                                    
-                                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                                    <span>{tLoc('addBinTo', { name: zone.code })}</span>
-                                  </button>
-                                )}
                               </div>
                             )}
                           </div>
                         );
                       })}
-                      {canEdit && (
-                        <div className="py-3 px-12 border-t border-[rgba(196,198,205,0.2)] bg-[#fdfdfd]">
-                          <button
-                            onClick={() => {
-                              setEditingZone({ locationId: loc.locationId });
-                              setIsZoneModalOpen(true);
-                            }}
-                            className="text-xs font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-2 transition-colors uppercase tracking-wide"
-                          >
-                            
-                            <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                            <span>{tLoc('addZoneTo', { name: loc.code })}</span>
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -620,6 +579,7 @@ export default function TopographyView() {
 
 function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; editingLocation: Location | null }) {
   const t = useTranslations('common');
+  const tLoc = useTranslations('inventory.locations');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ code: '', name: '', city: '', country: '' });
 
@@ -643,7 +603,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
     const url = editingLocation ? `/api/inventory/locations/${editingLocation.locationId}` : '/api/inventory/locations';
     
     try {
-      await apiFetch(url, { method, body: JSON.stringify(formData) });
+      await apiMutate(url, method, formData);
       toast.success(editingLocation ? t('updated') : t('created'));
       onSuccess();
       onClose();
@@ -662,27 +622,27 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{t('columns.code')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('columns.code')}</label>
           <input 
             className="input" 
             required 
             value={formData.code} 
             onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})}
-            placeholder="e.g. SYD01"
+            placeholder={tLoc('placeholders.locationCode')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{t('columns.name')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{t('columns.name')}</label>
           <input 
             className="input" 
             required 
             value={formData.name} 
             onChange={e => setFormData({...formData, name: e.target.value})}
-            placeholder="e.g. Sydney Warehouse"
+            placeholder={tLoc('placeholders.locationName')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.city')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.city')}</label>
           <input 
             className="input" 
             value={formData.city} 
@@ -690,16 +650,21 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.country')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.country')}</label>
           <input 
             className="input" 
             value={formData.country} 
             onChange={e => setFormData({...formData, country: e.target.value})}
           />
         </div>
-        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? t('loading') : editingLocation ? t('save') : t('create')}
-        </button>
+        <div className="flex justify-end gap-3 mt-4">
+          <button type="button" onClick={onClose} className="btn btn-secondary">
+            {t('cancel')}
+          </button>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? t('loading') : editingLocation ? t('save') : t('create')}
+          </button>
+        </div>
       </form>
     </SlideOver>
   );
@@ -707,6 +672,7 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
 
 function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean; onClose: () => void; onSuccess: () => void; initialData: { zone?: Zone; locationId: string } | null }) {
   const t = useTranslations('common');
+  const tLoc = useTranslations('inventory.locations');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ code: '', name: '' });
 
@@ -727,7 +693,7 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     const body = initialData.zone ? formData : { ...formData, locationId: initialData.locationId };
     
     try {
-      await apiFetch(url, { method, body: JSON.stringify(body) });
+      await apiMutate(url, method, body);
       toast.success(initialData.zone ? t('updated') : t('created'));
       onSuccess();
       onClose();
@@ -746,28 +712,33 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.zoneCode')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.zoneCode')}</label>
           <input 
             className="input" 
             required 
             value={formData.code} 
             onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})}
-            placeholder="e.g. BULK"
+            placeholder={tLoc('placeholders.zoneCode')}
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.zoneName')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.zoneName')}</label>
           <input 
             className="input" 
             required 
             value={formData.name} 
             onChange={e => setFormData({...formData, name: e.target.value})}
-            placeholder="e.g. Bulk Storage"
+            placeholder={tLoc('placeholders.zoneName')}
           />
         </div>
-        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? '...' : initialData?.zone ? t('save') : t('create')}
-        </button>
+        <div className="flex justify-end gap-3 mt-4">
+          <button type="button" onClick={onClose} className="btn btn-secondary">
+            {t('cancel')}
+          </button>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? t('loadingEllipsis') : initialData?.zone ? t('save') : t('create')}
+          </button>
+        </div>
       </form>
     </SlideOver>
   );
@@ -802,7 +773,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     const body = initialData.bin ? formData : { ...formData, zoneId: initialData.zoneId };
     
     try {
-      await apiFetch(url, { method, body: JSON.stringify(body) });
+      await apiMutate(url, method, body);
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();
       onClose();
@@ -821,7 +792,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     >
       <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.binNumber')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binNumber')}</label>
           <input 
             className="input" 
             required 
@@ -831,12 +802,12 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] font-bold uppercase tracking-wider text-[#041627]">{tLoc('fields.binType')}</label>
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binType')}</label>
           <input 
             className="input" 
             value={formData.binType} 
             onChange={e => setFormData({...formData, binType: e.target.value})}
-            placeholder={tLoc('placeholders.binType')}
+            placeholder={'e.g. Picking, Staging'}
           />
         </div>
         <div className="flex flex-col gap-3 pt-2">
@@ -847,7 +818,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isConsignment: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.consignment')}</span>
+            <span className="text-sm font-medium">{tLoc('fields.consignment')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
@@ -856,7 +827,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isBonded: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.bonded')}</span>
+            <span className="text-sm font-medium">{tLoc('fields.bonded')}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer group">
             <input 
@@ -865,12 +836,17 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
               onChange={e => setFormData({...formData, isUnavailable: e.target.checked})}
               className="checkbox-blue"
             />
-            <span className="text-sm font-medium text-[#041627]">{tLoc('fields.unavailable')}</span>
+            <span className="text-sm font-medium">{tLoc('fields.unavailable')}</span>
           </label>
         </div>
-        <button type="submit" disabled={loading} className="btn btn-primary mt-4 py-3 text-sm font-bold uppercase tracking-wider">
-          {loading ? tCommon('loading') : initialData?.bin ? tCommon('save') : tCommon('create')}
-        </button>
+        <div className="flex justify-end gap-3 mt-4">
+          <button type="button" onClick={onClose} className="btn btn-secondary">
+            {tCommon('cancel')}
+          </button>
+          <button type="submit" disabled={loading} className="btn btn-primary">
+            {loading ? tCommon('loading') : initialData?.bin ? tCommon('save') : tCommon('create')}
+          </button>
+        </div>
       </form>
     </SlideOver>
   );

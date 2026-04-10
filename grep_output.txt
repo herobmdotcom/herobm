@@ -1,0 +1,24 @@
+﻿
+apps\api\src\orders\orders-write.service.ts:17:  orderEvents,
+apps\api\src\orders\orders-write.service.ts:34:  writeEvent as sharedWriteEvent,
+apps\api\src\orders\orders-write.service.ts:320:  private async writeEvent(
+apps\api\src\orders\orders-write.service.ts:327:    await sharedWriteEvent(tx, salesOrderId, eventType, payload, 
+actor);
+apps\api\src\orders\orders-write.service.ts:433:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:482:        await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:587:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:629:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:656:      .from(orderEvents)
+apps\api\src\orders\orders-write.service.ts:658:        sql`${orderEvents.salesOrderId} = ${id} AND 
+${orderEvents.eventType} = 'archived'`,
+apps\api\src\orders\orders-write.service.ts:660:      .orderBy(sql`${orderEvents.createdOn} DESC`)
+apps\api\src\orders\orders-write.service.ts:674:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:778:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:891:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:990:        await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:1038:      await this.writeEvent(
+apps\api\src\orders\orders-write.service.ts:1116:      .from(orderEvents)
+apps\api\src\orders\orders-write.service.ts:1117:      .where(eq(orderEvents.salesOrderId, id))
+apps\api\src\orders\orders-write.service.ts:1118:      .orderBy(orderEvents.createdOn);
+
+

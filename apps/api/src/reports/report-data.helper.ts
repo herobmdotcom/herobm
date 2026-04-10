@@ -105,7 +105,7 @@ export function assembleOrderData(
       description: l.productDescription || '—',
       quantity: l.quantity,
       pricePerUnit: l.pricePerUnit,
-      discountPercentage: l.discountPercentage || '0',
+      discountPercentage: parseFloat(l.discountPercentage || '0').toFixed(2),
       gstRate: `${taxRate.toFixed(1)}%`,
       tax: pricing.tax.toFixed(2),
       amount: pricing.amount.toFixed(2),

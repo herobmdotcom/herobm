@@ -159,7 +159,9 @@ def seed_users(dry_run: bool = False) -> None:
         ('warehouse',   crypt(:'DEV_WAREHOUSE_PASSWORD',   gen_salt('bf')), 'warehouse'),
         ('procurement', crypt(:'DEV_PROCUREMENT_PASSWORD', gen_salt('bf')), 'procurement'),
         ('finance',     crypt(:'DEV_FINANCE_PASSWORD',     gen_salt('bf')), 'finance')
-    ON CONFLICT (username) DO NOTHING;
+    ON CONFLICT (username) DO UPDATE SET
+        password_hash = EXCLUDED.password_hash,
+        role = EXCLUDED.role;
     """
     psql_sql(sql, env_vars=required_vars)
     print("  Seeded users: admin, viewer, sales, warehouse, procurement, finance")
@@ -370,9 +372,9 @@ def validate_seeds() -> bool:
     # Summary
     print()
     if all_passed:
-        print("  ✅ ALL SEED CHECKS PASSED")
+        print("  [OK] ALL SEED CHECKS PASSED")
     else:
-        print("  ❌ SEED VALIDATION FAILED — see failures above")
+        print("  [FAIL] SEED VALIDATION FAILED — see failures above")
 
     return all_passed
 

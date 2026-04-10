@@ -13,18 +13,12 @@ import {
   products as coreProducts,
   orderEvents,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
-
-export interface InventoryGap {
-  salesOrderLineId: string;
-  productId: string;
-  productDescription: string | null;
-  orderedQuantity: number;
-  availableQuantity: number;
-  shortage: number;
-  locationId: string | null;
-}
+import { calculateInventoryGaps } from '@modbm/shared';
+import type { InventoryGap } from '@modbm/shared';
 
 @Injectable()
 export class BackordersService {
@@ -56,6 +50,12 @@ export class BackordersService {
       )
       .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
 
+    const [header] = await this.db
+      .select({ fulfillmentLocationId: salesOrders.fulfillmentLocationId })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, salesOrderId))
+      .limit(1);
+
     const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     const validLines = lines.filter(
       (l) =>
@@ -63,43 +63,23 @@ export class BackordersService {
         l.productId !== CUSTOM_LINE_ID &&
         (!l.productType || l.productType === 'inventory'),
     );
-    if (validLines.length === 0) return [];
+    if (validLines.length === 0) {
+      Logger.warn(
+        `[evaluateGaps] No valid lines found for order ${salesOrderId}`,
+        'BackordersService',
+      );
+      return [];
+    }
 
     const productIds = validLines.map((l) => l.productId as string);
     const { data: levels } =
       await this.inventoryService.findByProductIds(productIds);
 
-    // Roll up available quantities strictly mapped by product AND location
-    const availabilityMap = new Map<string, number>();
-    for (const lvl of levels) {
-      if (!lvl.productId || !lvl.locationId) continue;
-      const key = `${lvl.productId}_${lvl.locationId}`;
-      const current = availabilityMap.get(key) || 0;
-      availabilityMap.set(key, current + (lvl.quantityAvailable || 0));
-    }
-
-    const gaps: InventoryGap[] = [];
-
-    for (const line of validLines) {
-      const pid = line.productId as string;
-      const locId = line.fulfillmentLocationId;
-      const ordered = parseFloat(line.quantity || '0');
-
-      const key = `${pid}_${locId}`;
-      const available = availabilityMap.get(key) || 0;
-
-      if (ordered > available) {
-        gaps.push({
-          salesOrderLineId: line.salesOrderLineId,
-          productId: pid,
-          productDescription: line.productDescription,
-          orderedQuantity: ordered,
-          availableQuantity: available,
-          shortage: ordered - available,
-          locationId: locId,
-        });
-      }
-    }
+    const gaps = calculateInventoryGaps(
+      lines as any,
+      levels as any,
+      header?.fulfillmentLocationId,
+    );
 
     return gaps;
   }
@@ -208,16 +188,18 @@ export class BackordersService {
 
       activePoId = po.purchaseOrderId;
 
-      await tx.insert(purchaseOrderEvents).values({
-        purchaseOrderId: activePoId,
-        eventType: 'created',
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: activePoId,
+        eventType: EventType.CREATED,
         actor,
         payload: { reason: 'auto_backorder' },
       });
 
-      await tx.insert(orderEvents).values({
-        salesOrderId,
-        eventType: 'backorders_allocated',
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: salesOrderId,
+        eventType: EventType.BACKORDERS_ALLOCATED,
         actor,
         payload: {
           purchaseOrderNumber: orderNumber,

@@ -65,9 +65,17 @@ Almost all detail and module pages must utilize the `<EntityHeader>` component (
 ## 5. Styling Ecosystem
 - **CSS Architecture**: Use utility classes (TailwindCSS patterns) combined with specific CSS variables defined in `/theme.css` and `/globals.css`.
 - **Theme Variables**: Always prioritize our mapped variables (e.g., `var(--text-primary)`, `var(--bg-card)`, `var(--border)`, `var(--accent)`) to ensure the application automatically adheres to dark-mode capabilities and aesthetic redesigns securely.
-- **Internationalization**: Texts, especially for standard UI elements like grid options, save buttons, and error messages, must be driven through `next-intl` (e.g., `const t = useTranslations('common')`). Do not hardcode literal textual values into the React components where possible.
+- **Internationalization**: Texts, especially for standard UI elements like grid options, save buttons, and error messages, must be driven through `next-intl` (e.g., `const t = useTranslations('common')`). Do not hardcode literal textual values into the React components where possible. See [messages/README.md](../../apps/ops-portal/messages/README.md) for the full namespace structure, key naming conventions, and rules for adding new translation keys.
 
-## 6. Testing & Verification
+## 6. Internationalization (i18n)
+
+The `ops-portal` uses `next-intl` with **strict TypeScript type checking** enabled. Every key passed to `t()` or `useTranslations()` must exist in `apps/ops-portal/messages/en.json` — otherwise `tsc` will reject it with a `TS2345` error.
+
+- **Namespace Reference**: See [`messages/README.md`](../../apps/ops-portal/messages/README.md) for the complete namespace map (16 namespaces), sub-key grouping conventions (`columns.*`, `buttons.*`, `labels.*`, etc.), and instructions for adding new keys.
+- **Validation**: Run `npm run typecheck -w apps/ops-portal` to verify all keys resolve correctly.
+- **Shared keys**: Common strings (column headers, button labels, state names) go under `common`. Module-specific strings go under their respective namespace (`salesOrders`, `products`, etc.).
+
+## 7. Testing & Verification
 
 For verifying frontend layouts and functionality quickly without the overhead of heavy integration tests or manual clicks, the `ops-portal` uses a lightweight verification workflow.
 

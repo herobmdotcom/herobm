@@ -75,7 +75,7 @@ export default function MovementsView() {
                   {tCommon('grid.rowCountLabel')}
                 </span>
                 <span className="text-[11px] font-bold text-[#006b5c]">
-                  {loading ? '...' : rowCount.toLocaleString()}
+                  {loading ? tCommon('loadingEllipsis') : rowCount.toLocaleString()}
                 </span>
               </div>
               

@@ -7,6 +7,10 @@ import {
   productEvents,
   productGroups,
   productUoms,
+  productDefaultBins,
+  locations,
+  bins,
+  inventoryLedger,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -107,7 +111,44 @@ export class ProductsService {
         .from(productUoms)
         .where(eq(productUoms.productId, id));
 
-      return { ...rows[0], events, productUoms: uoms };
+      const defaultBins = await this.db
+        .select({
+          productDefaultBinId: productDefaultBins.productDefaultBinId,
+          productId: productDefaultBins.productId,
+          locationId: productDefaultBins.locationId,
+          binId: productDefaultBins.binId,
+          isPrimaryPerLocation: productDefaultBins.isPrimaryPerLocation,
+          minQuantity: productDefaultBins.minQuantity,
+          maxQuantity: productDefaultBins.maxQuantity,
+          locationName: locations.name,
+          locationNo: locations.code,
+          binNumber: bins.binNumber,
+          binType: bins.binType,
+          quantityOnHand: sql<number>`COALESCE(SUM(${inventoryLedger.quantity}), 0)`,
+        })
+        .from(productDefaultBins)
+        .leftJoin(
+          locations,
+          eq(productDefaultBins.locationId, locations.locationId),
+        )
+        .leftJoin(bins, eq(productDefaultBins.binId, bins.binId))
+        .leftJoin(
+          inventoryLedger,
+          and(
+            eq(productDefaultBins.binId, inventoryLedger.binId),
+            eq(productDefaultBins.productId, inventoryLedger.productId),
+          ),
+        )
+        .where(eq(productDefaultBins.productId, id))
+        .groupBy(
+          productDefaultBins.productDefaultBinId,
+          locations.name,
+          locations.code,
+          bins.binNumber,
+          bins.binType,
+        );
+
+      return { ...rows[0], events, productUoms: uoms, defaultBins };
     }
 
     throw new NotFoundException(`Product '${id}' not found`);

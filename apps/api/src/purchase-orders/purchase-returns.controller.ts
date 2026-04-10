@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PurchaseReturnsService } from './purchase-returns.service';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 import { CreatePurchaseReturnDto } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -19,7 +23,9 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('purchase-orders')
 export class PurchaseReturnsController {
-  constructor(private readonly purchaseReturnsService: PurchaseReturnsService) {}
+  constructor(
+    private readonly purchaseReturnsService: PurchaseReturnsService,
+  ) {}
 
   @Post()
   @CasbinAction('write')

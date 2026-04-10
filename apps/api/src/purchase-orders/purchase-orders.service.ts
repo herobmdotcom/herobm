@@ -15,11 +15,14 @@ import {
   suppliers as coreSuppliers,
   products,
   productUoms,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import {
   PURCHASE_ORDER_TRANSITIONS,
   getValidStates,
@@ -55,40 +58,6 @@ export class PurchaseOrdersService {
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
-
-  /** Event types that have active ERPNext mappers in the outbox-relay worker. */
-  private static readonly OUTBOX_EVENT_TYPES = new Set([
-    'goods_received',
-    'goods_dispatched',
-    'sales_invoiced',
-    'purchase_invoiced',
-  ]);
-
-  private async writeEvent(
-    tx: any,
-    purchaseOrderId: string,
-    eventType: string,
-    payload: any,
-    actor: string,
-  ): Promise<void> {
-    // Always write to the entity event table (audit log)
-    await tx.insert(purchaseOrderEvents).values({
-      purchaseOrderId,
-      eventType,
-      payload,
-      actor,
-    });
-
-    // Only enqueue to the outbox if the worker has a mapper for this type
-    if (PurchaseOrdersService.OUTBOX_EVENT_TYPES.has(eventType)) {
-      await tx.insert(outbox).values({
-        aggregateType: 'purchase_order',
-        aggregateId: purchaseOrderId,
-        eventType,
-        payload,
-      });
-    }
-  }
 
   private async resolveGstForLine(
     productId?: string,
@@ -195,17 +164,17 @@ export class PurchaseOrdersService {
         await tx.insert(purchaseOrderLineItems).values(lineValues);
       }
 
-      await this.writeEvent(
-        tx,
-        order.purchaseOrderId,
-        'created',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: order.purchaseOrderId,
+        eventType: 'created',
+        payload: {
           orderNumber: order.orderNumber,
           vendorId: createDto.vendorId,
           lineCount: createDto.lines?.length || 0,
         },
-        userId,
-      );
+        actor: userId,
+      });
 
       return this.findOne(order.purchaseOrderId, tx);
     });
@@ -311,6 +280,10 @@ export class PurchaseOrdersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
+      .leftJoin(
+        locations,
+        eq(purchaseOrders.deliveryLocationId, locations.locationId),
+      )
       .where(eq(purchaseOrders.purchaseOrderId, id))
       .limit(1)
       .then((res: any[]) => res[0]);
@@ -322,10 +295,13 @@ export class PurchaseOrdersService {
     // Support both tuple JOIN structure (drizzle live engine) and flat structure (jest mocks)
     const poEntity = rawOrder.purchase_orders || rawOrder;
     const vendorName = rawOrder.suppliers?.name || poEntity.vendorId;
+    const locationName =
+      rawOrder.locations?.name || poEntity.deliveryLocationId;
 
     const order = {
       ...poEntity,
       vendorName,
+      locationName,
       customerName: vendorName,
     };
 
@@ -438,16 +414,16 @@ export class PurchaseOrdersService {
         .set({ stateCode, modifiedOn: new Date() })
         .where(eq(purchaseOrders.purchaseOrderId, id));
 
-      await this.writeEvent(
-        tx,
-        id,
-        'status_changed',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: id,
+        eventType: 'status_changed',
+        payload: {
           from: existing.stateCode,
           to: stateCode,
         },
         actor,
-      );
+      });
 
       return this.findOne(id, tx);
     });
@@ -475,16 +451,16 @@ export class PurchaseOrdersService {
         .where(eq(purchaseOrders.purchaseOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'archived',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: id,
+        eventType: 'archived',
+        payload: {
           from: existing.stateCode,
           to: 'archived',
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -508,16 +484,16 @@ export class PurchaseOrdersService {
         .where(eq(purchaseOrders.purchaseOrderId, id))
         .returning();
 
-      await this.writeEvent(
-        tx,
-        id,
-        'unarchived',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: id,
+        eventType: 'unarchived',
+        payload: {
           from: 'archived',
           to: 'cancelled',
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -566,17 +542,17 @@ export class PurchaseOrdersService {
         gstCategoryId,
       });
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'line_added',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_added',
+        payload: {
           productId: lineDto.productId,
           quantity: lineDto.quantity,
           pricePerUnit: lineDto.pricePerUnit,
         },
         actor,
-      );
+      });
 
       return this.findOne(orderId, tx);
     });
@@ -659,16 +635,16 @@ export class PurchaseOrdersService {
         .set(updateFields)
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, lineId));
 
-      await this.writeEvent(
-        tx,
-        orderId,
-        'line_updated',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_updated',
+        payload: {
           lineId,
           changes: updateFields,
         },
         actor,
-      );
+      });
 
       return this.findOne(orderId, tx);
     });
@@ -687,7 +663,13 @@ export class PurchaseOrdersService {
         .delete(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, lineId));
 
-      await this.writeEvent(tx, orderId, 'line_removed', { lineId }, actor);
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_removed',
+        payload: { lineId },
+        actor,
+      });
 
       return this.findOne(orderId, tx);
     });
@@ -759,17 +741,17 @@ export class PurchaseOrdersService {
 
         const audit = calculateAuditTrail(updateDto, existing, AuditMode.DIFF);
         if (audit.hasChanges) {
-          await this.writeEvent(
-            tx,
-            id,
-            'updated',
-            {
+          await emitEvent(tx, {
+            aggregateType: AggregateType.PURCHASE_ORDER,
+            aggregateId: id,
+            eventType: 'updated',
+            payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
               linesCount: updateDto.lines?.length,
             },
-            userId,
-          );
+            actor: userId,
+          });
         }
       }
 
@@ -788,6 +770,8 @@ export class PurchaseOrdersService {
       .select({
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
+        purchaseOrderName: purchaseOrders.name,
+        vendorName: coreSuppliers.name,
         stateCode: purchaseOrders.stateCode,
         vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
@@ -805,6 +789,10 @@ export class PurchaseOrdersService {
           purchaseOrderLineItems.purchaseOrderId,
           purchaseOrders.purchaseOrderId,
         ),
+      )
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
       .where(
         and(
@@ -826,6 +814,8 @@ export class PurchaseOrdersService {
       .select({
         purchaseOrderId: purchaseOrders.purchaseOrderId,
         orderNumber: purchaseOrders.orderNumber,
+        purchaseOrderName: purchaseOrders.name,
+        vendorName: coreSuppliers.name,
         stateCode: purchaseOrders.stateCode,
         vendorId: purchaseOrders.vendorId,
         currencyCode: purchaseOrders.currencyCode,
@@ -844,10 +834,18 @@ export class PurchaseOrdersService {
           purchaseOrders.purchaseOrderId,
         ),
       )
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
       .where(
         and(
           eq(purchaseOrderLineItems.productId, productId),
-          inArray(purchaseOrders.stateCode, ['received', 'partially_received', 'invoiced']),
+          inArray(purchaseOrders.stateCode, [
+            'received',
+            'partially_received',
+            'invoiced',
+          ]),
           sql`${purchaseOrderLineItems.quantityReceived} > 0`,
         ),
       );

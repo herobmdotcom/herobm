@@ -194,94 +194,91 @@ export class DashboardService {
       return { events: [] };
     }
 
-    const fragments = [];
+    const conditions = [];
 
     if (types.includes('so_created')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'so_created' as "eventType", o.sales_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.order_events e
-            JOIN modbm_core.sales_orders o ON e.sales_order_id = o.sales_order_id
-            WHERE e.event_type = 'created'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'created')`,
       );
     }
     if (types.includes('so_confirmed')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'so_confirmed' as "eventType", o.sales_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.order_events e
-            JOIN modbm_core.sales_orders o ON e.sales_order_id = o.sales_order_id
-            WHERE e.event_type = 'status_changed' AND e.payload->>'to' = 'confirmed'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'confirmed')`,
       );
     }
     if (types.includes('so_shipped')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'so_shipped' as "eventType", o.sales_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.order_events e
-            JOIN modbm_core.sales_orders o ON e.sales_order_id = o.sales_order_id
-            WHERE e.event_type = 'status_changed' AND e.payload->>'to' = 'shipped'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'shipped')`,
       );
     }
     if (types.includes('so_invoiced')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'so_invoiced' as "eventType", o.sales_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.order_events e
-            JOIN modbm_core.sales_orders o ON e.sales_order_id = o.sales_order_id
-            WHERE e.event_type = 'status_changed' AND e.payload->>'to' = 'invoiced'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'invoiced')`,
       );
     }
 
     if (types.includes('po_created')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'po_created' as "eventType", o.purchase_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.purchase_order_events e
-            JOIN modbm_core.purchase_orders o ON e.purchase_order_id = o.purchase_order_id
-            WHERE e.event_type = 'created'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'created')`,
       );
     }
     if (types.includes('po_ordered')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'po_ordered' as "eventType", o.purchase_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.purchase_order_events e
-            JOIN modbm_core.purchase_orders o ON e.purchase_order_id = o.purchase_order_id
-            WHERE e.event_type = 'status_changed' AND e.payload->>'to' = 'ordered'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'ordered')`,
       );
     }
     if (types.includes('po_received')) {
-      fragments.push(
-        sql`SELECT e.event_id as "eventId", 'po_received' as "eventType", o.purchase_order_id as "entityId", o.order_number as "entityDisplay", e.actor, e.created_on as "timestamp"
-            FROM modbm_core.purchase_order_events e
-            JOIN modbm_core.purchase_orders o ON e.purchase_order_id = o.purchase_order_id
-            WHERE e.event_type = 'status_changed' AND e.payload->>'to' = 'fulfilled'`,
+      conditions.push(
+        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'fulfilled')`,
       );
     }
 
     if (types.includes('account_created')) {
-      fragments.push(
-        sql`SELECT a.account_id as "eventId", 'account_created' as "eventType", a.account_id as "entityId", a.name as "entityDisplay", a.created_by as "actor", a.created_on as "timestamp"
-            FROM modbm_core.accounts a
-            WHERE a.created_on IS NOT NULL`,
+      conditions.push(
+        sql`(e.aggregate_type = 'account' AND e.event_type = 'created')`,
       );
     }
 
     if (types.includes('supplier_created')) {
-      fragments.push(
-        sql`SELECT s.vendor_id as "eventId", 'supplier_created' as "eventType", s.vendor_id as "entityId", s.name as "entityDisplay", s.created_by as "actor", s.created_on as "timestamp"
-            FROM modbm_core.suppliers s
-            WHERE s.created_on IS NOT NULL`,
+      conditions.push(
+        sql`(e.aggregate_type = 'supplier' AND e.event_type = 'created')`,
       );
     }
 
-    if (fragments.length === 0) {
+    if (conditions.length === 0) {
       return { events: [] };
     }
 
-    const unionQuery = fragments.reduce(
-      (acc, frag, i) => (i === 0 ? frag : sql`${acc} UNION ALL ${frag}`),
+    const whereClause = conditions.reduce(
+      (acc, cond, i) => (i === 0 ? cond : sql`${acc} OR ${cond}`),
       sql``,
     );
 
     const fullQuery = sql`
-      SELECT * FROM (${unionQuery}) as combined
-      ORDER BY "timestamp" DESC
+      SELECT 
+        e.event_id as "eventId", 
+        CASE 
+          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'created' THEN 'so_created'
+          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'confirmed' THEN 'so_confirmed'
+          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'shipped' THEN 'so_shipped'
+          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'invoiced' THEN 'so_invoiced'
+          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'created' THEN 'po_created'
+          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'ordered' THEN 'po_ordered'
+          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'fulfilled' THEN 'po_received'
+          WHEN e.aggregate_type = 'account' AND e.event_type = 'created' THEN 'account_created'
+          WHEN e.aggregate_type = 'supplier' AND e.event_type = 'created' THEN 'supplier_created'
+        END as "eventType",
+        e.aggregate_id as "entityId", 
+        COALESCE(so.order_number, po.order_number, a.name, s.name, e.aggregate_id::text) as "entityDisplay", 
+        e.actor, 
+        e.created_on as "timestamp"
+      FROM modbm_core.dashboard_timeline e
+      LEFT JOIN modbm_core.sales_orders so ON e.aggregate_type = 'sales_order' AND e.aggregate_id = so.sales_order_id
+      LEFT JOIN modbm_core.purchase_orders po ON e.aggregate_type = 'purchase_order' AND e.aggregate_id = po.purchase_order_id
+      LEFT JOIN modbm_core.accounts a ON e.aggregate_type = 'account' AND e.aggregate_id = a.account_id
+      LEFT JOIN modbm_core.suppliers s ON e.aggregate_type = 'supplier' AND e.aggregate_id = s.vendor_id
+      WHERE ${whereClause}
+      ORDER BY e.created_on DESC
       LIMIT ${limit}
     `;
 

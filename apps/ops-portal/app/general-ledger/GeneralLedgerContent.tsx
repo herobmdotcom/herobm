@@ -22,15 +22,16 @@ interface AccountOption {
   name: string;
 }
 
-function fmt(v: string | number) {
-  const n = typeof v === 'string' ? parseFloat(v) : v;
-  if (!n || n === 0) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 export default function GeneralLedgerContent() {
   const t = useTranslations('gl.generalLedger');
   const tGeneral = useTranslations('gl');
+  const tCommon = useTranslations('common');
+
+  function fmt(v: string | number) {
+    const n = typeof v === 'string' ? parseFloat(v) : v;
+    if (!n || n === 0) return tCommon('na');
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   const [rows, setRows] = useState<GlRow[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,7 +188,7 @@ export default function GeneralLedgerContent() {
                       {' '}{r.account_name}
                     </td>
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {r.line_memo ? r.line_memo : (r.entry_memo || '—')}
+                      {r.line_memo ? r.line_memo : (r.entry_memo || tCommon('na'))}
                     </td>
                     <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.debit)}</td>
                     <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.credit)}</td>

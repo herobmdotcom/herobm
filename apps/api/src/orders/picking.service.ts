@@ -21,8 +21,9 @@ import {
   findOrder,
   findOrderLine,
   getCommittedPerLine,
-  writeEvent,
 } from './shipment-helpers';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
 
@@ -194,17 +195,17 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(
-        tx,
-        orderId,
-        'picking_line_updated',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'picking_line_updated',
+        payload: {
           lineId,
           quantityPicked,
           previousQuantityPicked: line.quantityPicked,
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -250,17 +251,17 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(
-        tx,
-        orderId,
-        'picking_line_picked_all',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'picking_line_picked_all',
+        payload: {
           lineId,
           quantityPicked: line.quantity,
           previousQuantityPicked: line.quantityPicked,
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -303,17 +304,17 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(
-        tx,
-        orderId,
-        'line_updated',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'line_updated',
+        payload: {
           lineId,
           changes: { fulfillmentLocationId: locationId },
           previousValues: { fulfillmentLocationId: line.fulfillmentLocationId },
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -372,15 +373,15 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      await writeEvent(
-        tx,
-        orderId,
-        'picking_order_picked_all',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'picking_order_picked_all',
+        payload: {
           lineCount: lines.length,
         },
         actor,
-      );
+      });
     });
 
     // Now create the shipment with unshipped quantities, using the ShipmentService

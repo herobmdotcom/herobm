@@ -1,7 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
-import { findOrder, getCommittedPerLine, writeEvent } from './shipment-helpers';
+import { findOrder, getCommittedPerLine } from './shipment-helpers';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 
 export interface LifecycleTrigger {
   entity: 'shipment';
@@ -74,11 +76,11 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
       .set({ stateCode: 'shipped', modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await writeEvent(
-      db as any,
-      salesOrderId,
-      'auto_status_changed',
-      {
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: salesOrderId,
+      eventType: 'auto_status_changed',
+      payload: {
         rule: 'auto-ship-when-fully-shipped',
         trigger,
         from: 'picking',
@@ -86,7 +88,7 @@ export const autoShipWhenFullyShipped: LifecycleRule = {
         reason: 'All lines fully shipped',
       },
       actor,
-    );
+    });
 
     return {
       ruleName: 'auto-ship-when-fully-shipped',
@@ -143,11 +145,11 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
       .set({ stateCode: 'picking', modifiedOn: new Date() })
       .where(eq(salesOrders.salesOrderId, salesOrderId));
 
-    await writeEvent(
-      db as any,
-      salesOrderId,
-      'auto_status_changed',
-      {
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: salesOrderId,
+      eventType: 'auto_status_changed',
+      payload: {
         rule: 'revert-to-picking-on-shipment-cancel',
         trigger,
         from: 'shipped',
@@ -155,7 +157,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
         reason: `Shipment ${trigger.action === 'draft' ? 'reverted to draft' : trigger.action}, order no longer fully shipped`,
       },
       actor,
-    );
+    });
 
     return {
       ruleName: 'revert-to-picking-on-shipment-cancel',

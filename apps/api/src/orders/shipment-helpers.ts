@@ -14,8 +14,6 @@ import {
   salesOrderShipmentLines,
   salesInvoices,
   salesInvoiceLines,
-  orderEvents,
-  outbox,
 } from '../drizzle/modbm-core-schema';
 
 // ============================================================================
@@ -121,45 +119,6 @@ export async function assertShipmentQtyAvailable(
   }
 
   validateShipmentQuantity(requestedQty, picked, alreadyCommitted, lineNumber);
-}
-
-// ============================================================================
-// Audit + outbox
-// ============================================================================
-
-/** Event types that have active ERPNext mappers in the outbox-relay worker. */
-const OUTBOX_EVENT_TYPES = new Set([
-  'goods_received',
-  'goods_dispatched',
-  'sales_invoiced',
-  'purchase_invoiced',
-]);
-
-export async function writeEvent(
-  tx: any,
-  salesOrderId: string,
-  eventType: string,
-  payload: any,
-  actor: string,
-  aggregateType: string = 'sales_order',
-): Promise<void> {
-  // Always write to the entity event table (audit log)
-  await tx.insert(orderEvents).values({
-    salesOrderId,
-    eventType,
-    payload,
-    actor,
-  });
-
-  // Only enqueue to the outbox if the worker has a mapper for this type
-  if (OUTBOX_EVENT_TYPES.has(eventType)) {
-    await tx.insert(outbox).values({
-      aggregateType,
-      aggregateId: salesOrderId,
-      eventType,
-      payload,
-    });
-  }
 }
 
 // ============================================================================

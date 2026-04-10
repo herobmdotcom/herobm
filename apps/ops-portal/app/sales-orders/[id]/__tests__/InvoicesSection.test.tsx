@@ -91,12 +91,12 @@ const defaultProps = {
 describe('InvoicesSection — rendering', () => {
     it('shows "No products have shipped yet" when nothing shipped', () => {
         render(<InvoicesSection {...defaultProps} pickingSummary={{ lines: [] }} />);
-        expect(screen.getByText(/No products have shipped yet/i)).toBeInTheDocument();
+        expect(screen.getByText('noProductsShippedYet')).toBeInTheDocument();
     });
 
     it('shows "No invoices generated yet" when shipped but no invoices', () => {
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} />);
-        expect(screen.getByText(/No invoices generated yet/i)).toBeInTheDocument();
+        expect(screen.getByText('noInvoicesGeneratedYet')).toBeInTheDocument();
     });
 
     it('renders existing invoice with invoice number and line details', () => {
@@ -332,7 +332,7 @@ describe('InvoicesSection — invoice line table', () => {
         const amounts = screen.getAllByText('AUD 250.00');
         expect(amounts.length).toBeGreaterThanOrEqual(1);
         // Check subtotal row is present
-        expect(screen.getByText('Subtotal')).toBeInTheDocument();
+        expect(screen.getByText('totals.subtotal')).toBeInTheDocument();
         // Check total row
         expect(screen.getAllByText('AUD 250.00').length).toBeGreaterThan(0);
     });

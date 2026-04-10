@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
 const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
@@ -73,6 +74,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('common.errorBoundary');
+
   useEffect(() => {
     sendTelemetry(error);
   }, [error]);
@@ -88,29 +91,29 @@ export default function Error({
         className="max-w-md p-8 rounded-2xl text-center"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+        <h2 className="text-xl font-bold mb-2">{t('title')}</h2>
         <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
-          {displayMessage || 'An unexpected error occurred.'}
+          {displayMessage || t('unexpected')}
         </p>
         {error?.digest && (
           <p className="text-xs mb-4" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-            Reference: {error.digest}
+            {t('reference', { digest: error.digest })}
           </p>
         )}
         {typeof window !== 'undefined' && (
           <p className="text-xs mb-6" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>
-            Page: {window.location.pathname}
+            {t('page', { path: window.location.pathname })}
           </p>
         )}
         <button onClick={reset} className="btn btn-primary mb-6">
-          Try Again
+          {t('tryAgain')}
         </button>
         {(supportPhone || supportEmail) && (
           <div
             className="text-xs pt-4"
             style={{ borderTop: '1px solid var(--border)', color: 'var(--text-muted)' }}
           >
-            <p className="mb-2">If this problem persists, please contact support:</p>
+            <p className="mb-2">{t('contactSupport')}</p>
             {supportPhone && (
               <p className="mb-1">
                 📞{' '}

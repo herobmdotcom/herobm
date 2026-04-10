@@ -13,7 +13,7 @@ export default function BinContentsView() {
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'binNumber', headerName: tBins('columns.bin'), width: 120, pinned: 'left' },
-    { field: 'locationNo', headerName: tBins('columns.locationNo'), width: 110 },
+    { field: 'locationName', headerName: tBins('columns.locationName'), width: 150 },
     { field: 'productNumber', headerName: tBins('columns.productNumber'), width: 130 },
     { field: 'productName', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'actualQuantity', headerName: tCommon('columns.qty'), width: 90, type: 'numericColumn' },

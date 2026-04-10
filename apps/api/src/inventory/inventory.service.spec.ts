@@ -3,6 +3,12 @@ import { AppConfigService } from '../settings/app-config.service';
 import { InventoryService } from './inventory.service';
 import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
+
+jest.mock('../common/emit-event', () => ({
+  emitEvent: jest.fn().mockResolvedValue(undefined),
+}));
 
 describe('InventoryService', () => {
   let service: InventoryService;
@@ -21,6 +27,7 @@ describe('InventoryService', () => {
       locationName: 'MAIN',
       quantityOnHand: '100',
       quantityCommitted: '0',
+      quantityReserved: '0',
       quantityOnOrder: '0',
       quantityAvailable: 100,
     },
@@ -33,6 +40,7 @@ describe('InventoryService', () => {
       locationName: 'MAIN',
       quantityOnHand: '200',
       quantityCommitted: '0',
+      quantityReserved: '0',
       quantityOnOrder: '0',
       quantityAvailable: 200,
     },
@@ -56,6 +64,8 @@ describe('InventoryService', () => {
     limit: jest.fn().mockReturnThis(),
     offset: jest.fn().mockReturnThis(),
     $dynamic: jest.fn(),
+    groupBy: jest.fn().mockReturnThis(),
+    having: jest.fn().mockReturnThis(),
     then: jest.fn(),
   };
 
@@ -246,7 +256,7 @@ describe('InventoryService', () => {
     it('should insert an entry header, ledger lines, and outbox event', async () => {
       await service.recordInventoryMovement(mockTx, baseLedgerParams);
 
-      expect(mockTx.insert).toHaveBeenCalledTimes(5);
+      expect(mockTx.insert).toHaveBeenCalledTimes(4); // entry, ledger, and 2 bin updates
 
       // Header
       expect(insertedEntries).toHaveLength(1);
@@ -276,11 +286,14 @@ describe('InventoryService', () => {
       });
 
       // Outbox event
-      expect(insertedOutbox).toHaveLength(1);
-      expect(insertedOutbox[0]).toMatchObject({
-        eventType: 'INVENTORY_ENTRY_CREATED',
+      expect(emitEvent).toHaveBeenCalledWith(mockTx, {
+        aggregateType: AggregateType.SYSTEM,
         aggregateId: 'entry-uuid-001',
-        aggregateType: 'inventory_entries',
+        eventType: EventType.INVENTORY_ENTRY_CREATED,
+        payload: {
+          header: baseLedgerParams,
+          lines: ledgerPayload,
+        },
       });
     });
 

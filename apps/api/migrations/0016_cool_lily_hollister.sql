@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."product_default_bins" DROP COLUMN "is_primary";

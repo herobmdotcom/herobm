@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { computeLinePrice } from '@modbm/shared';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 import type { OrderDetail, OrderReturn, GstCategory } from './types';
 import {
@@ -41,7 +42,7 @@ interface ReturnsSectionProps {
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
     pickingSummary?: any;
     gstCategories: GstCategory[];
-    locations: { locationId: string; name: string }[];
+    locations: { locationId: string; name: string; code?: string }[];
 }
 
 export default function ReturnsSection({
@@ -118,7 +119,7 @@ export default function ReturnsSection({
                     <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
-                {!showCreateReturn && (
+                {!showCreateReturn && ['picking', 'shipped', 'invoiced', 'legacy'].includes(order.stateCode) && (
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setShowCreateReturn(true)}
@@ -372,7 +373,7 @@ export default function ReturnsSection({
                                             >
                                                 <option value="">{t('salesOrders.selectLocation')}</option>
                                                 {locations.map(loc => (
-                                                    <option key={loc.locationId} value={loc.locationId}>{loc.name}</option>
+                                                    <option key={loc.locationId} value={loc.locationId}>{formatLocationDisplay(loc)}</option>
                                                 ))}
                                             </select>
                                         )}

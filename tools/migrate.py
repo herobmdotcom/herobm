@@ -30,7 +30,7 @@ def psql(sql: str, capture: bool = False) -> str | None:
         "-t", "-A",  # tuples-only, unaligned output
         "-c", sql,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
         print(f"ERROR: {result.stderr.strip()}", file=sys.stderr)
         sys.exit(1)
@@ -41,7 +41,7 @@ def psql(sql: str, capture: bool = False) -> str | None:
 
 def psql_file(filepath: str) -> None:
     """Execute a SQL file via docker exec psql."""
-    with open(filepath, "r", encoding="utf-8") as f:
+    with open(filepath, "r", encoding="utf-8-sig") as f:
         sql = f.read()
     cmd = [
         "podman", "exec", "-i", CONTAINER,
@@ -56,7 +56,7 @@ def psql_file(filepath: str) -> None:
         val = os.environ.get(env_key, "")
         if val:
             cmd.extend(["-v", f"{env_key}={val}"])
-    result = subprocess.run(cmd, input=sql, capture_output=True, text=True)
+    result = subprocess.run(cmd, input=sql, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
         print(f"ERROR applying migration:\n{result.stderr.strip()}", file=sys.stderr)
         sys.exit(1)

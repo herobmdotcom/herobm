@@ -96,7 +96,9 @@ export class SalesReturnCreditService {
         description: orderLine.productDescription || '—',
         quantity: rl.quantityReturned,
         pricePerUnit: orderLine.pricePerUnit,
-        discountPercentage: orderLine.discountPercentage || '0',
+        discountPercentage: parseFloat(
+          orderLine.discountPercentage || '0',
+        ).toFixed(2),
         gstRate: `${taxRate.toFixed(1)}%`,
         tax: pricing.tax.toFixed(2),
         reason: rl.reason || '',

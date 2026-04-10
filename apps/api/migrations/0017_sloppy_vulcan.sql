@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."product_default_bins" ADD COLUMN "is_primary_per_loc" boolean DEFAULT true NOT NULL;

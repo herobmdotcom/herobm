@@ -349,12 +349,7 @@ export default function InvoicesSection({
                 ))}
                 {Invoices.length === 0 && (
                     <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-                        {(() => {
-                            if (totalReceived === 0) {
-                                return tPurchase('noProductsReceivedYet');
-                            }
-                            return tPurchase('noBillsGeneratedYet');
-                        })()}
+                        {tPurchase('noBillsGeneratedYet')}
                     </div>
                 )}
             </div>

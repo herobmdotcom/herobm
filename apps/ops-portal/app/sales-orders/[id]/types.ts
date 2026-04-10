@@ -78,12 +78,14 @@ export interface InventoryLevel {
     productId: string;
     productNumber: string;
     productName: string;
+    locationId: string;
     locationNo: string;
     locationName: string;
     quantityOnHand: string;
     quantityCommitted: string;
     quantityOnOrder: string;
     quantityAvailable: string;
+    availableQuantity?: string | number; // For compatibility with shared utility
     quantityReserved: string;
 }
 

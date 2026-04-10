@@ -18,6 +18,15 @@ if (fs.existsSync(input)) {
   sql = fs.readFileSync(input, 'utf8');
 }
 
+// Security: Prevent agents from bypassing make migrate or corrupting data natively
+const isSafeQuery = /^\s*(SELECT|WITH|EXPLAIN|SHOW)\b/i.test(sql);
+if (!isSafeQuery) {
+  console.error("ERROR: The tools/query_pg.ts utility is strictly for READ-ONLY queries (SELECT, WITH, EXPLAIN).");
+  console.error("If you are an agent attempting to modify the schema (CREATE, ALTER, DROP) or data (INSERT, UPDATE, DELETE), you are VIOLATING the Constitution.");
+  console.error("MANDATED: You must use Drizzle schema updates and 'make migrate', or 'tools/seed.py' for data testing.");
+  process.exit(1);
+}
+
 const sqlClient = process.env.DATABASE_URL
   ? postgres(process.env.DATABASE_URL)
   : postgres({

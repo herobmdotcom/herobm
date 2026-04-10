@@ -12,7 +12,12 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ProductsService } from './products.service';
 import { ProductsWriteService } from './products-write.service';
-import { AddSupplierDto, CreateProductDto, UpdateProductDto } from './dto';
+import {
+  AddSupplierDto,
+  CreateProductDto,
+  UpdateProductDto,
+  LinkBinDto,
+} from './dto';
 import {
   CasbinGuard,
   CasbinResource,
@@ -113,5 +118,27 @@ export class ProductsController {
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.removeUom(productId, uomId, user.username);
+  }
+  @Post(':id/default-bins')
+  @CasbinAction('write')
+  linkDefaultBin(
+    @Param('id') productId: string,
+    @Body() dto: LinkBinDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.linkDefaultBin(
+      productId,
+      dto,
+      user.username,
+    );
+  }
+
+  @Delete(':id/default-bins/:binLinkId')
+  @CasbinAction('write')
+  removeDefaultBin(
+    @Param('binLinkId') binLinkId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.productsWriteService.removeDefaultBin(binLinkId, user.username);
   }
 }

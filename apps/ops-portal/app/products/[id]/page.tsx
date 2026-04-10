@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
@@ -15,12 +15,20 @@ import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
 import GroupSelect from '@/components/shared/GroupSelect';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
   const num = typeof val === 'string' ? parseFloat(val) : val;
   if (isNaN(num)) return '0.00';
   return num.toFixed(2);
+};
+
+const formatInt = (val: string | number | undefined | null) => {
+  if (!val) return '0';
+  const num = typeof val === 'string' ? parseFloat(val) : val;
+  if (isNaN(num)) return '0';
+  return Math.round(num).toString();
 };
 
 export default function ProductDetailPage() {
@@ -39,6 +47,16 @@ export default function ProductDetailPage() {
   const [addingUom, setAddingUom] = useState(false);
   const [newUomCode, setNewUomCode] = useState('');
   const [newUomRatio, setNewUomRatio] = useState('1');
+
+  // Storage Strategy State
+  const [locations, setLocations] = useState<any[]>([]);
+  const [addingBinLink, setAddingBinLink] = useState(false);
+  const [newBinLink, setNewBinLink] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+  const [editingBinId, setEditingBinId] = useState<string | null>(null);
+  const [editingBinData, setEditingBinData] = useState({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+  const [availableBins, setAvailableBins] = useState<any[]>([]);
+  const [inventoryLevels, setInventoryLevels] = useState<any[]>([]);
+
   const [dto, setDto] = useState<any>({
     name: '',
     barcode: '',
@@ -75,6 +93,9 @@ export default function ProductDetailPage() {
         stateCode: data.stateCode || 'active',
         productGroupId: data.productGroupId || null,
       });
+
+      const invData = await apiFetch<any>(`/api/inventory/by-products?productIds=${encodeURIComponent(id as string)}`);
+      setInventoryLevels(invData.data || []);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -86,7 +107,22 @@ export default function ProductDetailPage() {
     fetchProduct();
     apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
     apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch(console.error);
+    apiFetch<any>('/api/inventory/locations').then(res => setLocations(res.data || [])).catch(console.error);
   }, [fetchProduct]);
+
+  useEffect(() => {
+    if (!newBinLink.locationId) {
+      setAvailableBins([]);
+      return;
+    }
+    const loc = locations.find(l => l.locationId === newBinLink.locationId);
+    if (!loc) return;
+
+    const bins = (loc.zones || []).flatMap((z: any) => z.bins || []);
+    bins.sort((a: any, b: any) => (a.binNumber || '').localeCompare(b.binNumber || ''));
+    
+    setAvailableBins(bins);
+  }, [newBinLink.locationId, locations]);
 
   const saveProduct = async (updatedValues: any) => {
     if (saving) return;
@@ -158,8 +194,8 @@ export default function ProductDetailPage() {
   const supplierColumns: any[] = useMemo(() => [
     { field: 'vendorName', headerName: tCommon('columns.name'), flex: 1, minWidth: 160 },
     { field: 'vendorNumber', headerName: tCommon('columns.number'), width: 140 },
-    { field: 'supplierPartNumber', headerName: t('suppliers.supplierModal.inputs.supplierPartNo'), width: 140 },
-    { field: 'costPrice', headerName: t('suppliers.supplierModal.inputs.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
+    { field: 'supplierPartNumber', headerName: t('products.supplierModal.inputs.supplierPartNo'), width: 140 },
+    { field: 'costPrice', headerName: t('products.supplierModal.inputs.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'discountPercent', headerName: tCommon('columns.discountPct'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
     { field: 'stateCode', headerName: tCommon('columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
     {
@@ -181,10 +217,76 @@ export default function ProductDetailPage() {
       )
     }
   ], [tCommon, t]);
+  const unifiedInventory = useMemo(() => {
+    if (!product || !inventoryLevels) return [];
+
+    const locMap = new Map<string, any>();
+
+    inventoryLevels.forEach(lvl => {
+      const loc = {
+        locationId: lvl.locationId,
+        locationNo: lvl.locationNo,
+        locationName: lvl.locationName,
+        quantityOnHand: lvl.quantityOnHand || 0,
+        quantityCommitted: lvl.quantityCommitted || 0,
+        quantityAvailable: lvl.quantityAvailable || 0,
+        quantityOnOrder: lvl.quantityOnOrder || 0,
+        bins: new Map<string, any>()
+      };
+      
+      (lvl.binBalances || []).forEach((b: any) => {
+        loc.bins.set(b.binId, { ...b, isDefault: false });
+      });
+      locMap.set(lvl.locationId, loc);
+    });
+
+    (product.defaultBins || []).forEach((db: any) => {
+      let loc = locMap.get(db.locationId);
+      if (!loc) {
+        loc = {
+          locationId: db.locationId,
+          locationNo: db.locationNo || 'Unknown',
+          locationName: db.locationName || 'Unknown Location',
+          quantityOnHand: 0,
+          quantityCommitted: 0,
+          quantityAvailable: 0,
+          quantityOnOrder: 0,
+          bins: new Map<string, any>()
+        };
+        locMap.set(db.locationId, loc);
+      }
+      
+      let bin = loc.bins.get(db.binId);
+      if (!bin) {
+        bin = {
+          binId: db.binId,
+          binNumber: db.binNumber,
+          quantityOnHand: db.quantityOnHand || 0,
+        };
+        loc.bins.set(db.binId, bin);
+      }
+      bin.isDefault = true;
+      bin.isPrimary = db.isPrimaryPerLocation;
+      bin.productDefaultBinId = db.productDefaultBinId;
+    });
+
+    return Array.from(locMap.values())
+      .map(loc => ({
+        ...loc,
+        bins: Array.from(loc.bins.values()).sort((a: any, b: any) => {
+          if (a.isPrimary) return -1;
+          if (b.isPrimary) return 1;
+          return (a.binNumber || '').localeCompare(b.binNumber || '');
+        })
+      }))
+      .sort((a, b) => a.locationNo?.localeCompare(b.locationNo));
+
+  }, [inventoryLevels, product]);
 
   const inventoryColumns: any[] = useMemo(() => [
     { field: 'locationNo', headerName: tCommon('columns.locationNo'), width: 140 },
     { field: 'locationName', headerName: tCommon('columns.location'), flex: 1, minWidth: 160 },
+    { field: 'bins', headerName: t('products.storage.columns.bin'), flex: 1, minWidth: 120 },
     { field: 'quantityOnHand', headerName: t('products.columns.quantityOnHand'), type: 'numericColumn', width: 120 },
     { field: 'quantityCommitted', headerName: t('inventory.columns.committed'), type: 'numericColumn', width: 120 },
     { field: 'quantityAvailable', headerName: t('inventory.columns.available'), type: 'numericColumn', width: 120 },
@@ -300,7 +402,7 @@ export default function ProductDetailPage() {
                       >
                         {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[16px]">add_link</span>
-                        {t('suppliers.supplierModal.title')}
+                        {t('products.supplierModal.title')}
                       </button>
                     </div>
                   </div>
@@ -313,37 +415,291 @@ export default function ProductDetailPage() {
       {activeTab === 'inventory' && (
         <div className="flex-1 min-h-0 flex flex-col w-full h-full pb-6">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-              <DataGrid 
-                endpoint={`/api/inventory/by-products?productIds=${encodeURIComponent(id as string)}`}
-                columns={inventoryColumns}
-                gridKey={`product-inventory-grid`}
-                fetchAll
-                rowIdField="locationId"
-                renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                  <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {t('products.inventoryLevels')}
-                      </h2>
-                      <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                          {tCommon('grid.rowCountLabel')}
-                        </span>
-                        <span className="text-[11px] font-bold text-[#006b5c]">
-                          {loading ? '...' : rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex-1 ml-4 max-w-md">
-                        {searchInput}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                      {optionsButton}
-                    </div>
-                  </div>
-                )}
-            />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[rgba(196,198,205,0.4)]">
+              <div className="flex items-center gap-4 flex-1">
+                <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  {t('products.inventoryLevels')}
+                </h2>
+              </div>
+              {!addingBinLink && isEditable && (
+                <button
+                  className="btn btn-sm btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm flex items-center gap-1.5"
+                  style={{ fontSize: 13 }}
+                  onClick={() => setAddingBinLink(true)}
+                  disabled={saving}
+                >
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  + {t('products.storage.addBinLink')}
+                </button>
+              )}
+            </div>
+
+            {addingBinLink && (
+              <div className="flex flex-wrap items-end gap-3 p-5 border-b border-gray-100 bg-white">
+                <div style={{ flex: '1 1 200px' }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.location')}</label>
+                  <select
+                    className="input w-full"
+                    value={newBinLink.locationId}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, locationId: e.target.value, binId: '' })}
+                  >
+                    <option value="">{t('common.selectEllipsis')}</option>
+                    {locations.map((loc) => (
+                      <option key={loc.locationId} value={loc.locationId}>
+                        {formatLocationDisplay(loc)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ flex: '1 1 150px' }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.bin')}</label>
+                  <select
+                    className="input w-full"
+                    disabled={!newBinLink.locationId}
+                    value={newBinLink.binId}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, binId: e.target.value })}
+                  >
+                    <option value="">{t('common.selectEllipsis')}</option>
+                    {availableBins.map((b) => (
+                      <option key={b.binId} value={b.binId}>
+                        {b.binNumber}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ width: 90 }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.minQty')}</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    value={newBinLink.minQty}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, minQty: e.target.value })}
+                    style={{ textAlign: 'right' }}
+                  />
+                </div>
+                <div style={{ width: 90 }}>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.maxQty')}</label>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    value={newBinLink.maxQty}
+                    onChange={(e) => setNewBinLink({ ...newBinLink, maxQty: e.target.value })}
+                    style={{ textAlign: 'right' }}
+                  />
+                </div>
+                <div style={{ width: 80 }}>
+                  <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Primary</label>
+                  <label className="switch mt-1">
+                    <input 
+                      type="checkbox" 
+                      checked={newBinLink.isPrimaryPerLocation}
+                      onChange={(e) => setNewBinLink({ ...newBinLink, isPrimaryPerLocation: e.target.checked })}
+                    />
+                    <span className="switch-slider"></span>
+                  </label>
+                </div>
+                
+                <div className="flex gap-2.5">
+                  <button
+                    className="btn btn-ghost hover:bg-gray-100 text-gray-700 font-semibold px-5"
+                    onClick={() => {
+                      setAddingBinLink(false);
+                      setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+                    }}
+                  >
+                    {tCommon('buttons.cancel')}
+                  </button>
+                  <button
+                    className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm font-semibold px-5"
+                    disabled={!newBinLink.locationId || !newBinLink.binId || saving}
+                    onClick={async () => {
+                      try {
+                        await apiMutate(`/api/products/${id}/default-bins`, 'POST', newBinLink);
+                        toast.success(t('products.storage.toastLinkAdded'));
+                        setAddingBinLink(false);
+                        setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
+                        await fetchProduct(false);
+                      } catch (err: any) {
+                        toast.error(err.message);
+                      }
+                    }}
+                  >
+                    {tCommon('buttons.save')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-auto flex-1">
+              <table className="w-full text-left" style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead className="bg-[#f9fafb] sticky top-0 z-10">
+                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                    <th className="py-2 px-6 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{tCommon('columns.location')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider">{t('products.storage.columns.bin')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.minQty')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.storage.columns.maxQty')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('products.columns.quantityOnHand')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.committed')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.available')}</th>
+                    <th className="py-2 px-4 font-bold text-[#64748b] text-[11px] uppercase tracking-wider text-right">{t('inventory.columns.onOrder')}</th>
+                    <th style={{ width: 90 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unifiedInventory.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-[#64748b] text-sm">{t('common.noMatchingResults')}</td>
+                    </tr>
+                  ) : (
+                    unifiedInventory.map((lvl) => (
+                      <Fragment key={lvl.locationId}>
+                        <tr className="bg-[#f1f5f9] border-b border-[#e2e8f0]">
+                          <td className="py-2 px-6 font-bold text-[#0f172a]" colSpan={4}>
+                            {lvl.locationName} <span className="text-[#64748b] ml-1 font-semibold">({lvl.locationNo})</span>
+                          </td>
+                          <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityOnHand)}</td>
+                          <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityCommitted)}</td>
+                          <td className="py-2 px-4 font-bold text-[#006b5c] text-right tabular-nums">{formatInt(lvl.quantityAvailable)}</td>
+                          <td className="py-2 px-4 font-bold text-[#0f172a] text-right tabular-nums">{formatInt(lvl.quantityOnOrder)}</td>
+                          <td></td>
+                        </tr>
+                        {lvl.bins.length === 0 ? (
+                          <tr className="border-b border-[#e2e8f0]">
+                            <td className="py-2 px-6"></td>
+                            <td className="py-2 px-4 text-[#64748b] italic text-xs" colSpan={8}>No bins or storage links</td>
+                          </tr>
+                        ) : (
+                          Array.from(lvl.bins.values()).map((bin: any) => editingBinId === bin.binId ? (
+                            <tr key={bin.binId} className="bg-white border-b border-[#e2e8f0]">
+                              <td className="py-2 px-6"></td>
+                              <td className="py-2 px-4">
+                                <span className="font-semibold text-[#334155]">{bin.binNumber}</span>
+                              </td>
+                              <td className="py-2 px-4">
+                                <input
+                                  className="input input-sm w-full text-right h-[32px]"
+                                  type="number"
+                                  min="0"
+                                  value={editingBinData.minQty}
+                                  onChange={(e) => setEditingBinData({ ...editingBinData, minQty: e.target.value })}
+                                />
+                              </td>
+                              <td className="py-2 px-4">
+                                <input
+                                  className="input input-sm w-full text-right h-[32px]"
+                                  type="number"
+                                  min="0"
+                                  value={editingBinData.maxQty}
+                                  onChange={(e) => setEditingBinData({ ...editingBinData, maxQty: e.target.value })}
+                                />
+                              </td>
+                              <td colSpan={4} className="py-2 px-4">
+                                <div className="flex items-center gap-2 pt-1">
+                                  <label className="switch">
+                                    <input 
+                                      type="checkbox" 
+                                      checked={editingBinData.isPrimaryPerLocation}
+                                      onChange={(e) => setEditingBinData({ ...editingBinData, isPrimaryPerLocation: e.target.checked })}
+                                    />
+                                    <span className="switch-slider"></span>
+                                  </label>
+                                  <span className="text-xs text-[#64748b] font-medium leading-none mt-[-2px]">Primary</span>
+                                </div>
+                              </td>
+                              <td className="py-2 px-4 text-right">
+                                <div className="flex justify-end gap-1">
+                                  <button onClick={() => setEditingBinId(null)} className="btn btn-xs btn-ghost px-1.5" title={tCommon('buttons.cancel')}>
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                    <span className="material-symbols-outlined text-[16px] text-gray-500">close</span>
+                                  </button>
+                                  <button 
+                                    className="btn btn-xs btn-primary bg-[#006b5c] border-none px-1.5"
+                                    onClick={async () => {
+                                      try {
+                                        await apiMutate(`/api/products/${id}/default-bins`, 'POST', editingBinData);
+                                        toast.success(t('products.storage.toastLinkUpdated', { defaultValue: 'Bin configuration updated' }));
+                                        setEditingBinId(null);
+                                        await fetchProduct(false);
+                                      } catch (err: any) {
+                                        toast.error(err.message);
+                                      }
+                                    }}
+                                    title={tCommon('buttons.save')}
+                                    disabled={saving}
+                                  >
+                                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                                    <span className="material-symbols-outlined text-[16px]">check</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : (
+                            <tr key={bin.binId} className="border-b border-[#e2e8f0] hover:bg-[#f8fafc]">
+                              <td className="py-2 px-6"></td>
+                              <td className="py-2 px-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-[#334155]">
+                                    {bin.binNumber}
+                                  </span>
+                                  {bin.isPrimary && (
+                                    <span title="Primary Bin" className="text-[10px] font-bold text-[#64748b] bg-[#e2e8f0] px-1.5 py-0.5 rounded leading-tight cursor-help mt-[1px]">P</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? bin.minQty || '0' : '—'}</td>
+                              <td className="py-2 px-4 text-[#475569] text-right tabular-nums">{bin.isDefault ? bin.maxQty || '0' : '—'}</td>
+                              <td className="py-2 px-4 font-medium text-[#475569] text-right tabular-nums">{formatInt(bin.quantityOnHand)}</td>
+                              <td colSpan={3}></td>
+                              <td className="py-2 px-4 text-center">
+                                {isEditable && (
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button
+                                      onClick={() => {
+                                        setEditingBinId(bin.binId);
+                                        setEditingBinData({
+                                          locationId: lvl.locationId,
+                                          binId: bin.binId,
+                                          isPrimaryPerLocation: bin.isPrimary || false,
+                                          minQty: bin.minQty || '',
+                                          maxQty: bin.maxQty || '',
+                                        });
+                                      }}
+                                      className="p-1 hover:bg-[#eef2f6] rounded text-[#475569] transition-colors"
+                                    >
+                                      {/* eslint-disable-next-line i18next/no-literal-string */}
+                                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                                    </button>
+                                    {bin.isDefault && (
+                                      <button
+                                        onClick={async () => {
+                                          if (!window.confirm(t('products.storage.confirmRemoveLink', { bin: bin.binNumber, location: lvl.locationName }))) return;
+                                          try {
+                                            await apiMutate(`/api/products/${id}/default-bins/${bin.productDefaultBinId}`, 'DELETE');
+                                            toast.success(t('products.storage.toastLinkRemoved'));
+                                            await fetchProduct(false);
+                                          } catch (err: any) {
+                                            toast.error(err.message);
+                                          }
+                                        }}
+                                        className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </Fragment>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -660,8 +1016,7 @@ export default function ProductDetailPage() {
                   disabled={saving}
                 >
                   {/* eslint-disable-next-line i18next/no-literal-string */}
-                  <span className="material-symbols-outlined text-[14px]">add</span>
-                  {t('products.addConversion')}
+                  + {t('products.addConversion')}
                 </button>
               )}
             </div>

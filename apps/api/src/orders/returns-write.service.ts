@@ -21,13 +21,14 @@ import {
   zones,
   products as coreProducts,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { computeLinePrice } from '@modbm/shared';
 import {
-  writeEvent as sharedWriteEvent,
   findOrder as sharedFindOrder,
   findOrderLine as sharedFindOrderLine,
 } from './shipment-helpers';
@@ -81,26 +82,6 @@ export class ReturnsWriteService {
         : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
-  }
-
-  /**
-   * Write an audit event and outbox record in the same transaction scope.
-   */
-  private async writeEvent(
-    tx: any,
-    salesOrderId: string,
-    eventType: string,
-    payload: any,
-    actor: string,
-  ): Promise<void> {
-    await sharedWriteEvent(
-      tx,
-      salesOrderId,
-      eventType,
-      payload,
-      actor,
-      'sales_order_return',
-    );
   }
 
   /**
@@ -206,17 +187,17 @@ export class ReturnsWriteService {
         await tx.insert(salesOrderReturnLines).values(lineValues);
       }
 
-      await this.writeEvent(
-        tx,
-        salesOrderId,
-        'return_created',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: salesOrderId,
+        eventType: 'return_created',
+        payload: {
           returnId: ret.returnId,
           returnNumber,
           lineCount: lineValues.length,
         },
         actor,
-      );
+      });
 
       return ret;
     });
@@ -252,17 +233,17 @@ export class ReturnsWriteService {
         .returning();
 
       if (audit.hasChanges) {
-        await this.writeEvent(
-          tx,
-          existing.salesOrderId,
-          'return_updated',
-          {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: existing.salesOrderId,
+          eventType: 'return_updated',
+          payload: {
             returnId,
             changes: audit.changes,
             previousValues: audit.previousValues,
           },
           actor,
-        );
+        });
       }
 
       return updated;
@@ -408,18 +389,18 @@ export class ReturnsWriteService {
       const eventType =
         newState === 'processed' ? 'return_processed' : 'return_status_changed';
 
-      await this.writeEvent(
-        tx,
-        existing.salesOrderId,
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: existing.salesOrderId,
         eventType,
-        {
+        payload: {
           returnId,
           returnNumber: existing.returnNumber,
           from: existing.stateCode,
           to: newState,
         },
         actor,
-      );
+      });
 
       return updated;
     });
@@ -499,18 +480,18 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(
-        tx,
-        ret.salesOrderId,
-        'return_line_added',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: ret.salesOrderId,
+        eventType: 'return_line_added',
+        payload: {
           returnId,
           returnLineId: line.returnLineId,
           salesOrderLineId: dto.salesOrderLineId,
           quantityReturned: dto.quantityReturned,
         },
         actor,
-      );
+      });
 
       return line;
     });
@@ -585,18 +566,18 @@ export class ReturnsWriteService {
         .where(eq(salesOrderReturns.returnId, returnId));
 
       if (audit.hasChanges) {
-        await this.writeEvent(
-          tx,
-          ret.salesOrderId,
-          'return_line_updated',
-          {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: ret.salesOrderId,
+          eventType: 'return_line_updated',
+          payload: {
             returnId,
             returnLineId: lineId,
             changes: audit.changes,
             previousValues: audit.previousValues,
           },
           actor,
-        );
+        });
       }
 
       return updated;
@@ -629,18 +610,18 @@ export class ReturnsWriteService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrderReturns.returnId, returnId));
 
-      await this.writeEvent(
-        tx,
-        ret.salesOrderId,
-        'return_line_removed',
-        {
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: ret.salesOrderId,
+        eventType: 'return_line_removed',
+        payload: {
           returnId,
           returnLineId: lineId,
           salesOrderLineId: existingLine.salesOrderLineId,
           quantityReturned: existingLine.quantityReturned,
         },
         actor,
-      );
+      });
     });
   }
 
@@ -901,9 +882,9 @@ export class ReturnsWriteService {
     });
 
     // Write outbox event for downstream consumers (mirrors sales_invoiced pattern)
-    await this.db.insert(outbox).values({
-      aggregateType: 'sales_credit_note',
-      aggregateId: returnId,
+    await emitEvent(this.db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: existing.salesOrderId,
       eventType: 'credit_note_posted',
       payload: {
         returnId,
@@ -918,6 +899,7 @@ export class ReturnsWriteService {
         currency: order.currencyCode,
         lines: outboxLineDetails,
       },
+      actor,
     });
 
     this.logger.log(

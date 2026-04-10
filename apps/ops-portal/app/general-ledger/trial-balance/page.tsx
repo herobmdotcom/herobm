@@ -15,11 +15,6 @@ interface TrialBalanceRow {
   balance: string;
 }
 
-function fmt(v: string | number) {
-  const n = typeof v === 'string' ? parseFloat(v) : v;
-  if (!n || n === 0) return '—';
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function typeBadge(type: string) {
   const colors: Record<string, string> = {
@@ -50,6 +45,13 @@ export default function TrialBalancePage() {
   useDocumentTitle('Trial Balance');
   const t = useTranslations('gl.trialBalance');
   const tGeneral = useTranslations('gl');
+  const tCommon = useTranslations('common');
+
+  function fmt(v: string | number) {
+    const n = typeof v === 'string' ? parseFloat(v) : v;
+    if (!n || n === 0) return tCommon('na');
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   const [rows, setRows] = useState<TrialBalanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [asOfDate, setAsOfDate] = useState(() => new Date().toISOString().slice(0, 10));

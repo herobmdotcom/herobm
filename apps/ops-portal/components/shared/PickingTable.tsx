@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PickingSummaryLine, PickingSummary, OrderLine } from '../../hooks/usePickingData';
+import { formatLocationDisplay } from '@/lib/formatters';
 
 // ---------------------------------------------------------------------------
 // PickingTable — Pure presentation of pick lines with inline qty editing
@@ -23,7 +24,7 @@ export default function PickingTable({
   onPickLine: (lineId: string, qty: string) => void;
   onPickAllForLine: (lineId: string) => void;
   onUpdateLocation?: (lineId: string, locationId: string) => void;
-  locations?: { locationId: string; name: string }[];
+  locations?: { locationId: string; name: string; code?: string }[];
 }) {
   const tPicking = useTranslations('picking');
 
@@ -64,7 +65,7 @@ export default function PickingTable({
                 >
                   {locations.map((loc) => (
                     <option key={loc.locationId} value={loc.locationId}>
-                      {loc.name}
+                      {formatLocationDisplay(loc)}
                     </option>
                   ))}
                 </select>

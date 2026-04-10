@@ -6,6 +6,12 @@ import { GlService } from '../gl/gl.service';
 import { GstCategoriesService } from '../gst/gst-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType } from '../common/event-types';
+
+jest.mock('../common/emit-event', () => ({
+  emitEvent: jest.fn().mockResolvedValue(undefined),
+}));
 
 // ---------------------------------------------------------------------------
 // Mock helpers (reuse pattern from orders-write.service.spec.ts)
@@ -723,26 +729,27 @@ describe('ReturnsWriteService', () => {
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
-      // Outbox insert should have been called
-      expect(mockDb.insert).toHaveBeenCalled();
+      // emitEvent should have been called for return_processed AND credit_note_posted
+      expect(emitEvent).toHaveBeenCalled();
 
-      const insertCall = mockDb.insert.mock.calls[0];
-      // The insert is into the outbox table — we verify via .values()
-      const valuesCall =
-        mockDb.insert.mock.results[0].value.values.mock.calls[0][0];
-
-      expect(valuesCall.aggregateType).toBe('sales_credit_note');
-      expect(valuesCall.eventType).toBe('credit_note_posted');
-      expect(valuesCall.payload.returnId).toBe('ret-001');
-      expect(valuesCall.payload.customerId).toBe(
-        'c0000000-0000-0000-0000-000000000001',
+      // Find the emit call for credit_note_posted
+      const emitCall = (emitEvent as jest.Mock).mock.calls.find(
+        (call) => call[1].eventType === 'credit_note_posted',
       );
-      expect(valuesCall.payload.totalCredit).toBe(250);
-      expect(valuesCall.payload.totalTax).toBe(25);
-      expect(valuesCall.payload.totalFees).toBe(10);
-      expect(valuesCall.payload.netCredit).toBe(265);
-      expect(valuesCall.payload.lines).toHaveLength(1);
-      expect(valuesCall.payload.lines[0].productId).toBe('PROD-001');
+
+      expect(emitCall).toBeDefined();
+      const payload = emitCall[1].payload;
+
+      expect(emitCall[1].aggregateType).toBe(AggregateType.SALES_ORDER);
+      expect(emitCall[1].eventType).toBe('credit_note_posted');
+      expect(payload.returnId).toBe('ret-001');
+      expect(payload.customerId).toBe('c0000000-0000-0000-0000-000000000001');
+      expect(payload.totalCredit).toBe(250);
+      expect(payload.totalTax).toBe(25);
+      expect(payload.totalFees).toBe(10);
+      expect(payload.netCredit).toBe(265);
+      expect(payload.lines).toHaveLength(1);
+      expect(payload.lines[0].productId).toBe('PROD-001');
     });
 
     it('should use per-line GST from gstCategoryId', async () => {

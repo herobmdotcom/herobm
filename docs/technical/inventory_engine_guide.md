@@ -78,8 +78,17 @@ The fulfillment flow moves stock from storage bins, through location-specific st
 ## Common Operations
 
 ### Read: Current Stock Levels
-To read total stock levels per product and location, use the PostgreSQL View `modbm_core.inventory_levels`. This view automatically aggregates the `inventory_ledger` grouping by `product_id` and `location_no`.
-It handles calculating `quantityCommitted` based on open Sales Orders.
+To read total stock levels per product and location, use the PostgreSQL View `modbm_core.inventory_levels`. This view automatically aggregates the `inventory_ledger` grouping by `product_id` and `location_no`, extracting `quantityCommitted` and `quantityReserved`.
+
+> [!IMPORTANT]
+> **Shared Inventory Functions**
+> The database view DOES NOT evaluate the final `Available` metric. By design, you must never write raw SQL queries relying on `available > 0` directly. Instead, any backend logic or frontend component MUST import and use the `@modbm/shared` library:
+> ```typescript
+> import { calculateAvailableQuantity } from '@modbm/shared';
+> 
+> const available = calculateAvailableQuantity(onHand, committed, reserved);
+> ```
+> This guarantees structural parity between the API mappings and Client UI calculations.
 
 ### Read: Bin Contents
 To see exactly what stock is in what bin, use the `InventoryService.findBins` method which queries the `modbm_core.bin_contents` view.

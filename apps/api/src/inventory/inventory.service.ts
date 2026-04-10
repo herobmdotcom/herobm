@@ -22,7 +22,10 @@ import {
   suppliers,
   productUoms,
 } from '../drizzle/modbm-core-schema';
+import { emitEvent } from '../common/emit-event';
+import { AggregateType, EventType } from '../common/event-types';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { calculateAvailableQuantity } from '@modbm/shared';
 import { UomService } from './uom.service';
 
 @Injectable()
@@ -50,8 +53,8 @@ export class InventoryService {
         locationName: locations.name,
         quantityOnHand: inventoryLevels.quantityOnHand,
         quantityCommitted: inventoryLevels.quantityCommitted,
+        quantityReserved: inventoryLevels.quantityReserved,
         quantityOnOrder: inventoryLevels.quantityOnOrder,
-        quantityAvailable: sql<number>`(${inventoryLevels.quantityOnHand} - ${inventoryLevels.quantityCommitted})`,
       })
       .from(inventoryLevels)
       .leftJoin(products, eq(inventoryLevels.productId, products.productId))
@@ -77,6 +80,11 @@ export class InventoryService {
     // Provide default backward-compatible fields
     const mappedRows = rows.map((r) => ({
       ...r,
+      quantityAvailable: calculateAvailableQuantity(
+        r.quantityOnHand,
+        r.quantityCommitted,
+        r.quantityReserved,
+      ),
       scNumber: null,
       defaultBinNumber: null,
     }));
@@ -96,32 +104,80 @@ export class InventoryService {
       filters.push(eq(inventoryLevels.locationId, locationId));
     }
 
-    const rows = await this.db
+    let rows;
+    try {
+      rows = await this.db
+        .select({
+          inventoryLevelId: inventoryLevels.inventoryLevelId,
+          productId: inventoryLevels.productId,
+          productNumber: products.productNumber,
+          productName: products.name,
+          locationId: inventoryLevels.locationId,
+          locationNo: locations.code,
+          locationName: locations.name,
+          quantityOnHand: inventoryLevels.quantityOnHand,
+          quantityCommitted: inventoryLevels.quantityCommitted,
+          quantityReserved: inventoryLevels.quantityReserved,
+          quantityOnOrder: inventoryLevels.quantityOnOrder,
+        })
+        .from(inventoryLevels)
+        .leftJoin(products, eq(inventoryLevels.productId, products.productId))
+        .leftJoin(
+          locations,
+          eq(inventoryLevels.locationId, locations.locationId),
+        )
+        .where(and(...filters))
+        .orderBy(products.name, locations.code);
+    } catch (err) {
+      console.error('>>> CAUGHT ERROR IN findByProductIds <<<');
+      console.error(err);
+      console.error('>>> INNER CAUSE <<<');
+      console.error(err.cause);
+      throw err;
+    }
+
+    const ledgerBalances = await this.db
       .select({
-        inventoryLevelId: inventoryLevels.inventoryLevelId,
-        productId: inventoryLevels.productId,
-        productNumber: products.productNumber,
-        productName: products.name,
-        locationId: inventoryLevels.locationId,
-        locationNo: locations.code,
-        locationName: locations.name,
-        quantityOnHand: inventoryLevels.quantityOnHand,
-        quantityCommitted: inventoryLevels.quantityCommitted,
-        quantityOnOrder: inventoryLevels.quantityOnOrder,
-        quantityAvailable: sql<number>`(${inventoryLevels.quantityOnHand} - ${inventoryLevels.quantityCommitted})`,
+        productId: inventoryLedger.productId,
+        locationId: inventoryLedger.locationId,
+        binId: inventoryLedger.binId,
+        binNumber: bins.binNumber,
+        quantityOnHand: sql<string>`SUM(${inventoryLedger.quantity})`,
       })
-      .from(inventoryLevels)
-      .leftJoin(products, eq(inventoryLevels.productId, products.productId))
-      .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
-      .where(and(...filters))
-      .orderBy(products.name, locations.code);
+      .from(inventoryLedger)
+      .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
+      .where(inArray(inventoryLedger.productId, productIds))
+      .groupBy(
+        inventoryLedger.productId,
+        inventoryLedger.locationId,
+        inventoryLedger.binId,
+        bins.binNumber,
+      )
+      .having(sql`SUM(${inventoryLedger.quantity}) > 0`);
 
     // Provide default backward-compatible fields
-    const mappedRows = rows.map((r) => ({
-      ...r,
-      scNumber: null,
-      defaultBinNumber: null,
-    }));
+    const mappedRows = rows.map((r) => {
+      const binBalances = ledgerBalances
+        .filter(
+          (b) => b.productId === r.productId && b.locationId === r.locationId,
+        )
+        .map((b) => ({
+          binId: b.binId,
+          binNumber: b.binNumber,
+          quantityOnHand: Number(b.quantityOnHand ?? '0'),
+        }));
+      return {
+        ...r,
+        quantityAvailable: calculateAvailableQuantity(
+          r.quantityOnHand,
+          r.quantityCommitted,
+          r.quantityReserved,
+        ),
+        binBalances,
+        scNumber: null,
+        defaultBinNumber: null,
+      };
+    });
 
     return { data: mappedRows };
   }
@@ -135,6 +191,7 @@ export class InventoryService {
         binId: binContents.binId,
         binNumber: bins.binNumber,
         locationNo: locations.code,
+        locationName: locations.name,
         productId: binContents.productId,
         productNumber: products.productNumber,
         productName: products.name,
@@ -591,11 +648,11 @@ export class InventoryService {
         });
     }
 
-    // 4. Emit Outbox Event for ERP sync
-    await tx.insert(outbox).values({
-      eventType: 'INVENTORY_ENTRY_CREATED',
+    // 4. Emit event for ERP sync (and system events audit)
+    await emitEvent(tx, {
+      aggregateType: AggregateType.SYSTEM,
       aggregateId: entry.entryId,
-      aggregateType: 'inventory_entries',
+      eventType: EventType.INVENTORY_ENTRY_CREATED,
       payload: { header: params, lines: ledgerPayload },
     });
   }
