@@ -23,7 +23,7 @@ import type { GstCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, 
 import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import { getGstLabel } from './types';
 import InvoicesSection from './InvoicesSection';
-import ReceivingSection from './ReceivingSection';
+
 import ReturnsSection from './ReturnsSection';
 
 function GstLabel({ category }: { category: GstCategory }) {
@@ -376,7 +376,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const sections = {
     details: { id: 'details-section', label: 'Details', show: true },
-    receiving: { id: 'receivings-section', label: 'Receiving', show: ['partially_received', 'received', 'billed', 'invoiced', 'legacy'].includes(order.stateCode) },
     invoices: { id: 'Invoices-section', label: 'Invoices', show: true },
     activity: { id: 'activity-section', label: 'Activity', show: true },
   };
@@ -744,6 +743,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                           {line.quantity}
                         </td>
                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                          {/* eslint-disable-next-line no-restricted-syntax */}
                           {line.unitOfMeasure || line.baseUom || 'EA'}
                         </td>
                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -983,12 +983,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
 
-        <ReceivingSection
-          orderId={id}
-          orderLines={order.lines}
-          events={order.events}
-          currencyCode={order.currencyCode}
-        />
+
 
         <ReturnsSection
           orderId={id}

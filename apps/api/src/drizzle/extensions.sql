@@ -35,6 +35,7 @@ SELECT
          AND so.state_code IN ('confirmed', 'picking', 'partially_picked', 'packed', 'partially_dispatched')
         )
     ), 0) AS quantity_committed,
+    0 AS quantity_reserved,
     COALESCE((
         -- Incoming: Active POs excluding 'draft'
         SELECT SUM(pol.quantity - pol.quantity_received) 

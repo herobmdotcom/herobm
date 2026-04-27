@@ -10,6 +10,10 @@
     "updated": "Updated",
     "created": "Created",
     "deleted": "Deleted",
+    "actions": "Actions",
+    "tabs": {
+      "lines": "Lines"
+    },
     "confirmDelete": "Are you sure you want to delete this item?",
     "location": "Location",
     "subtotal": "Subtotal",
@@ -163,6 +167,8 @@
       "purchaseOrder": "Purchase Order",
       "packingSlip": "Packing Slip",
       "type": "Type",
+      "quantity": "Quantity",
+      "reference": "Reference",
       "number": "Number",
       "locationNo": "Location No.",
       "id": "ID"
@@ -910,6 +916,9 @@
   },
   "inventory": {
     "title": "Inventory",
+    "buttons": {
+      "reallocate": "Reallocate"
+    },
     "tabs": {
       "products": "Products",
       "binContents": "Bin Contents",
@@ -1836,5 +1845,57 @@
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
     "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
     "generateSupplierBill": "Generate supplier bill for selected quantities? This will publish AP ledger entries."
+  },
+  "goodsReceived": {
+    "title": "Goods Received",
+    "buttons": {
+      "newReception": "Receive Goods"
+    },
+    "labels": {
+      "supplier": "Supplier",
+      "location": "Receiving Location",
+      "packingSlip": "Packing Slip"
+    },
+    "placeholders": {
+      "selectSupplier": "Select Supplier…",
+      "selectLocation": "Select Receiving Location…",
+      "packingSlip": "Packing slip number",
+      "notes": "Reception notes",
+      "searchProduct": "Search or scan product…"
+    },
+    "columns": {
+      "receiptNo": "Receipt No.",
+      "supplier": "Supplier",
+      "packingSlip": "Packing Slip",
+      "matchStatus": "PO Match",
+      "matched": "matched"
+    },
+    "matchStatus": {
+      "matched": "Matched",
+      "unmatched": "Unmatched",
+      "ambiguous": "Multiple POs"
+    },
+    "flow": {
+      "title": "Receive Goods",
+      "subtitle": "Record items received from a supplier packing slip",
+      "confirmReception": "Confirm Reception",
+      "scanProduct": "Scan Product",
+      "itemsReceived": "Items Received",
+      "noItems": "No items scanned yet.",
+      "selectedProduct": "Selected Product"
+    },
+    "toast": {
+      "confirmed": "Goods receipt confirmed!",
+      "failed": "Failed to commit goods receipt",
+      "selectSupplier": "Please select a supplier.",
+      "selectLocation": "Please select a receiving location.",
+      "qtyReq": "Quantity must be greater than 0"
+    },
+    "completed": {
+      "title": "Goods Receipt Confirmed",
+      "subtitle": "The packing slip has been recorded. Items are held on dock pending invoice entry.",
+      "backToList": "Back to Receiving",
+      "newReception": "New Reception"
+    }
   }
 }

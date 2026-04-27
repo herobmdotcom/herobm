@@ -166,7 +166,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
                   <span className="truncate pr-4 text-sm text-gray-700 font-semibold">
                     {formData.contexts.length > 0 ? formData.contexts.join(', ') : <span className="text-gray-400 font-normal">{t('placeholders.selectContexts')}</span>}
                   </span>
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable-next-line no-restricted-syntax */}
                   <span className="material-symbols-outlined text-gray-400 text-[18px]">{contextsOpen ? 'expand_less' : 'expand_more'}</span>
                 </div>
                 

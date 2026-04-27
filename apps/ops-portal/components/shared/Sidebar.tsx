@@ -86,6 +86,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
                     <span className="flex-1">{item.label}</span>
                     {item.subItems && (
                       <span className="material-symbols-outlined text-[16px] opacity-70">
+                        {/* eslint-disable-next-line no-restricted-syntax */}
                         {isActive ? 'expand_less' : 'expand_more'}
                       </span>
                     )}
@@ -120,6 +121,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
         ))}
       </nav>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: '1px solid var(--border)' }}>
+        {/* eslint-disable-next-line no-restricted-syntax */}
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{footer || 'herobm'}</p>
         <button
           onClick={() => logout()}

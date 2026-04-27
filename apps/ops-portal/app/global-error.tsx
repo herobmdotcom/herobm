@@ -101,6 +101,7 @@ export default function GlobalError({
             Something went wrong
           </h2>
           <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
+            {/* eslint-disable-next-line no-restricted-syntax */}
             {error?.message || 'An unexpected error occurred.'}
           </p>
           <button

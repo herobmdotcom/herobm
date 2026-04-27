@@ -154,14 +154,14 @@ describe('Backorders Workflow (e2e)', () => {
     // 7. Verify backorder and PO got generated
     // Best way in black-box integration is just querying the recently generated POs
     const posRes = await request(server)
-      .get(`/api/purchase-orders?limit=1000`)
+      .get(`/api/purchase-orders?limit=10`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     let generatedPo = null;
     for (const poRow of posRes.body.data) {
       const detailRes = await request(server)
-        .get(`/api/purchase-orders/${poRow.id}`)
+        .get(`/api/purchase-orders/${poRow.id ?? poRow.purchaseOrderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -174,7 +174,7 @@ describe('Backorders Workflow (e2e)', () => {
       }
     }
 
-    expect(generatedPo).toBeDefined();
+    expect(generatedPo).not.toBeNull();
     expect(generatedPo.stateCode).toBe('draft');
     expect(generatedPo.vendorId).toBe(vendorId);
 

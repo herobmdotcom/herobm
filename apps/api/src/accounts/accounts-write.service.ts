@@ -17,6 +17,7 @@ import { AggregateType } from '../common/event-types';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { CreateAccountDto, UpdateAccountDto } from './dto';
+import { HOME_CURRENCY } from '@modbm/shared';
 
 const isUuid = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -78,6 +79,7 @@ export class AccountsWriteService {
         .insert(coreAccounts)
         .values({
           ...sanitizedDto,
+          currencyCode: sanitizedDto.currencyCode || HOME_CURRENCY.code,
           createdBy: actor,
         })
         .returning();

@@ -13,6 +13,7 @@ import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
+import SupplierSelect from '@/components/shared/SupplierSelect';
 import { getGstLabel } from '../[id]/types';
 
 interface GstCategory {
@@ -28,6 +29,7 @@ interface Supplier {
   vendorId: string;
   vendorNumber: string;
   name: string;
+  currencyCode: string;
 }
 
 interface LineItem {
@@ -76,7 +78,6 @@ export default function NewPurchaseOrderPage() {
   const t = useTranslations();
   useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
-  const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
 
   useEffect(() => {
@@ -86,8 +87,6 @@ export default function NewPurchaseOrderPage() {
   }, []);
 
   const [vendorId, setVendorId] = useState('');
-  const [supplierSearch, setSupplierSearch] = useState('');
-  const [showSupplierDropdown, setShowSupplierDropdown] = useState(false);
   const [currencyCode, setCurrencyCode] = useState(HOME_CURRENCY.code);
   const [name, setName] = useState('');
   const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
@@ -99,26 +98,7 @@ export default function NewPurchaseOrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Debounced server-side search for suppliers (300ms)
-  const searchSuppliers = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setFilteredSuppliers([]); return; }
-    try {
-      const data = await apiFetch<{ data: Supplier[] }>(
-        `/api/suppliers?q=${encodeURIComponent(term)}&limit=10`,
-      );
-      setFilteredSuppliers(data.data);
-    } catch { setFilteredSuppliers([]); }
-  }, []);
 
-  const debouncedSupplierSearch = useDebounce(
-    (term: unknown) => searchSuppliers(term as string), 300,
-  );
-
-  const selectSupplier = (s: Supplier) => {
-    setVendorId(s.vendorId);
-    setSupplierSearch(`${s.vendorNumber} — ${s.name}`);
-    setShowSupplierDropdown(false);
-  };
 
   const addBlankLine = () => {
     const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
@@ -321,51 +301,15 @@ export default function NewPurchaseOrderPage() {
                   </span>
                 )}
               </label>
-              <input
-                id="order-supplier"
-                className="input"
-                autoComplete="off"
-                placeholder={t('purchaseOrders.placeholders.searchSuppliers')}
-                value={supplierSearch}
-                onChange={(e) => {
-                  setSupplierSearch(e.target.value);
-                  setShowSupplierDropdown(true);
-                  setVendorId('');
-                  debouncedSupplierSearch(e.target.value);
+              <SupplierSelect
+                value={vendorId}
+                onChange={(s) => {
+                  setVendorId(s?.vendorId || '');
+                  setCurrencyCode(s?.currencyCode || HOME_CURRENCY.code);
                 }}
-                onFocus={() => setShowSupplierDropdown(true)}
+                placeholder={t('purchaseOrders.placeholders.searchSuppliers')}
+                required
               />
-              {showSupplierDropdown && supplierSearch && (
-                <div
-                  className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                  }}
-                >
-                  {filteredSuppliers.slice(0, 10).map((s) => (
-                    <div
-                      key={s.vendorId}
-                      className="px-3 py-2 cursor-pointer text-sm"
-                      style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
-                      onMouseDown={() => selectSupplier(s)}
-                    >
-                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                        {s.vendorNumber}
-                      </span>
-                      <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                        {s.name}
-                      </span>
-                    </div>
-                  ))}
-                  {filteredSuppliers.length === 0 && (
-                    <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.noMatchingResults')}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
              <div>

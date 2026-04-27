@@ -121,6 +121,7 @@ export default function UniversalSearch() {
           className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[20px]"
           style={{ color: 'var(--text-muted)' }}
         >
+          {/* eslint-disable-next-line no-restricted-syntax */}
           {'search'}
         </span>
         <input
@@ -214,6 +215,7 @@ export default function UniversalSearch() {
                         className="material-symbols-outlined text-[16px]"
                         style={{ color: 'var(--text-muted)', opacity: isActive ? 1 : 0 }}
                       >
+                        {/* eslint-disable-next-line no-restricted-syntax */}
                         {'arrow_forward'}
                       </span>
                     </div>

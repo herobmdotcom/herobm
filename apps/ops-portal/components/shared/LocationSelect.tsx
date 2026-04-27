@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import { formatLocationDisplay } from '@/lib/formatters';
+import { useTranslations } from 'next-intl';
 
 interface Location {
   locationId: string;
@@ -27,6 +28,7 @@ export default function LocationSelect({
 }: LocationSelectProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = useTranslations('common');
 
   useEffect(() => {
     let active = true;
@@ -55,7 +57,7 @@ export default function LocationSelect({
       required={required}
     >
       <option value="" disabled={required}>
-        {loading ? 'Loading...' : placeholder || 'Choose Location'}
+        {loading ? t('loadingEllipsis') : placeholder || t('selectNone')}
       </option>
       {locations.map((loc) => (
         <option key={loc.locationId} value={loc.locationId}>

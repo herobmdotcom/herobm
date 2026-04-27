@@ -18,7 +18,6 @@ import {
   salesOrderReturns,
   accounts,
   purchaseOrders,
-  purchaseOrderReceptions,
   suppliers,
   productUoms,
 } from '../drizzle/modbm-core-schema';
@@ -446,44 +445,6 @@ export class InventoryService {
                 name: s.customerName,
                 number: s.customerNumber || '',
                 link: `/accounts/${s.accountId}`,
-              }
-            : null;
-        }
-      } else if (
-        entry.sourceType === 'PO_RECEIPT' ||
-        entry.sourceType === 'PO_RECEPTION'
-      ) {
-        const [r] = await this.db
-          .select({
-            receptionNumber: purchaseOrderReceptions.receptionNumber,
-            purchaseOrderId: purchaseOrders.purchaseOrderId,
-            orderNumber: purchaseOrders.orderNumber,
-            supplierId: suppliers.vendorId,
-            supplierName: suppliers.name,
-            supplierNumber: suppliers.vendorNumber,
-          })
-          .from(purchaseOrderReceptions)
-          .innerJoin(
-            purchaseOrders,
-            eq(
-              purchaseOrders.purchaseOrderId,
-              purchaseOrderReceptions.purchaseOrderId,
-            ),
-          )
-          .leftJoin(suppliers, eq(purchaseOrders.vendorId, suppliers.vendorId))
-          .where(eq(purchaseOrderReceptions.receptionId, entry.sourceId))
-          .limit(1);
-
-        if (r) {
-          relatedDocument = {
-            number: r.orderNumber,
-            link: `/purchase-orders/${r.purchaseOrderId}`,
-          };
-          relatedParty = r.supplierName
-            ? {
-                name: r.supplierName,
-                number: r.supplierNumber || '',
-                link: `/suppliers/${r.supplierId}`,
               }
             : null;
         }

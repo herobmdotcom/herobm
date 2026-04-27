@@ -8,23 +8,19 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateReceptionLineDto {
+export class CreateGoodsReceivedLineDto {
   @IsString()
   @IsNotEmpty()
-  purchaseOrderLineId!: string;
+  productId!: string;
 
   @IsNumberString()
   quantityReceived!: string;
-
-  @IsOptional()
-  @IsNumberString()
-  invoicePricePerUnit?: string;
 }
 
-export class CreateReceptionDto {
+export class CreateGoodsReceivedDto {
   @IsString()
   @IsNotEmpty()
-  purchaseOrderId!: string;
+  vendorId!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -40,6 +36,12 @@ export class CreateReceptionDto {
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateReceptionLineDto)
-  lines!: CreateReceptionLineDto[];
+  @Type(() => CreateGoodsReceivedLineDto)
+  lines!: CreateGoodsReceivedLineDto[];
+}
+
+export class ResolveAllocationDto {
+  @IsString()
+  @IsNotEmpty()
+  purchaseOrderLineId!: string;
 }

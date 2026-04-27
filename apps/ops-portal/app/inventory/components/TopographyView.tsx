@@ -468,6 +468,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}
                                                 >
+                                                  {/* eslint-disable-next-line no-restricted-syntax */}
                                                   {'CSG'}
                                                 </span>
                                               )}
@@ -476,6 +477,7 @@ export default function TopographyView() {
                                                   className="text-[10px] font-bold px-1.5 py-0.5 rounded"
                                                   style={{ background: 'rgba(245,158,11,0.1)', color: '#b45309' }}
                                                 >
+                                                  {/* eslint-disable-next-line no-restricted-syntax */}
                                                   {'BND'}
                                                 </span>
                                               )}

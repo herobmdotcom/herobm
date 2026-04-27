@@ -13,6 +13,11 @@ services:
     depends_on:
       custom-api:
         condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     networks:
       - app-net
     logging:
@@ -174,6 +179,11 @@ services:
     depends_on:
       postgres-custom:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9187/metrics"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     networks:
       - monitoring-net
       - app-net
@@ -240,6 +250,8 @@ services:
     restart: unless-stopped
     profiles:
       - plg
+    expose:
+      - "9080"
     volumes:
       - ./configs/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
       - ./logs:/var/log/pipelines:ro

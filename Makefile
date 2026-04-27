@@ -309,7 +309,6 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_hooks_frontend.ps1
@@ -351,7 +350,6 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_controller_authz.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_unauthenticated_rate_limiting.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1

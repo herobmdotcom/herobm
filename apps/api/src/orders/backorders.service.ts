@@ -12,7 +12,9 @@ import {
   purchaseOrderEvents,
   products as coreProducts,
   orderEvents,
+  suppliers as coreSuppliers,
 } from '../drizzle/modbm-core-schema';
+import { HOME_CURRENCY } from '@modbm/shared';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { eq, inArray, and, sql } from 'drizzle-orm';
@@ -123,8 +125,13 @@ export class BackordersService {
         vendorId: productSuppliers.vendorId,
         costPrice: productSuppliers.costPrice,
         isPreferred: productSuppliers.isPreferred,
+        currencyCode: coreSuppliers.currencyCode,
       })
       .from(productSuppliers)
+      .leftJoin(
+        coreSuppliers,
+        eq(productSuppliers.vendorId, coreSuppliers.vendorId),
+      )
       .where(inArray(productSuppliers.productId, productIds));
 
     // Sort so preferred suppliers override generic ones in the map later
@@ -134,13 +141,14 @@ export class BackordersService {
 
     const preferredSupplierMap = new Map<
       string,
-      { vendorId: string; costPrice: string | null }
+      { vendorId: string; costPrice: string | null; currencyCode: string }
     >();
     for (const sup of suppliers) {
       if (sup.productId && sup.vendorId) {
         preferredSupplierMap.set(sup.productId, {
           vendorId: sup.vendorId,
           costPrice: sup.costPrice,
+          currencyCode: sup.currencyCode || HOME_CURRENCY.code,
         });
       }
     }
@@ -172,6 +180,10 @@ export class BackordersService {
       let activePoId: string | null = null;
       let openLineNumber = 1;
 
+      const firstGap = vendorGaps[0];
+      const pref = preferredSupplierMap.get(firstGap.productId);
+      const currencyCode = pref?.currencyCode || HOME_CURRENCY.code;
+
       const orderNumber = await this.generatePurchaseOrderNumber(tx);
       const [po] = await tx
         .insert(purchaseOrders)
@@ -181,6 +193,7 @@ export class BackordersService {
           vendorId,
           deliveryLocationId,
           stateCode: 'draft',
+          currencyCode,
           notes: `Auto-generated backorder allocation for Sales Order: ${soRefLabel}`,
           createdBy: actor,
         })

@@ -22,6 +22,7 @@ import {
   CreateSupplierExpiryDto,
   UpdateSupplierExpiryDto,
 } from './dto';
+import { HOME_CURRENCY } from '@modbm/shared';
 
 @Injectable()
 export class SuppliersWriteService {
@@ -39,6 +40,7 @@ export class SuppliersWriteService {
         .insert(coreSuppliers)
         .values({
           ...dto,
+          currencyCode: dto.currencyCode || HOME_CURRENCY.code,
           createdBy: actor,
         })
         .returning();

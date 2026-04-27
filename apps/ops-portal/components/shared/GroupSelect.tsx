@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 interface GroupSelectProps {
   type: 'account' | 'supplier' | 'product';
@@ -20,6 +21,7 @@ export default function GroupSelect({
 }: GroupSelectProps) {
   const [groups, setGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const t = useTranslations('common');
 
   useEffect(() => {
     let active = true;
@@ -48,7 +50,7 @@ export default function GroupSelect({
       onChange={(e) => onChange(e.target.value || null)}
       disabled={disabled || loading}
     >
-      <option value="">{loading ? 'Loading...' : placeholder || 'No Group Specified'}</option>
+      <option value="">{loading ? t('loadingEllipsis') : placeholder || t('selectNone')}</option>
       {groups.map((g) => (
         <option key={g[idField]} value={g[idField]}>
           {g.groupCode} — {g.name}

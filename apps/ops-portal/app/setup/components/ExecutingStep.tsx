@@ -140,14 +140,17 @@ export default function ExecutingStep({ config }: Props) {
       {status === 'completed' && (
         <div className="mt-8 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4">
           <p className="text-slate-600 mb-4 font-medium text-center">
+            {/* eslint-disable no-restricted-syntax */}
             {config.emptyBase 
                ? "System successfully initialized. You must log in as 'admin' to access the platform."
                : "Base system initialized and user accounts created. You must log in as 'admin' to run the Data Import pipeline."}
+            {/* eslint-enable no-restricted-syntax */}
           </p>
           <a
             href={config.emptyBase ? "/login" : "/data-import"}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
           >
+            {/* eslint-disable-next-line no-restricted-syntax */}
             {config.emptyBase ? t('goDashboard', { fallback: "Log In to Continue" }) : "Proceed to Data Import"}
           </a>
         </div>

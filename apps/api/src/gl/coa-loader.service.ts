@@ -11,6 +11,7 @@ import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
+import { HOME_CURRENCY } from '@modbm/shared';
 
 export function resolveChartsDir(dirnameFallback: string): string {
   // 1. Standard flat structure / ts-node
@@ -176,6 +177,7 @@ export class CoaLoaderService {
             accountType: row.accountType,
             isGroup: row.isGroup,
             isSystem: row.isSystem,
+            currencyCode: HOME_CURRENCY.code,
           })
           .onConflictDoUpdate({
             target: [glAccounts.accountCode],

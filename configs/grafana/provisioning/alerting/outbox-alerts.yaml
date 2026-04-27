@@ -1,13 +1,5 @@
 apiVersion: 1
 
-policies:
-  - orgId: 1
-    receiver: default
-
-contactPoints:
-  - orgId: 1
-    name: default
-    receivers: []
 
 groups:
   - orgId: 1

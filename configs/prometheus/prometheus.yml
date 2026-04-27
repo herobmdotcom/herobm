@@ -18,7 +18,7 @@ scrape_configs:
   - job_name: 'outbox-worker'
     metrics_path: '/metrics'
     static_configs:
-      - targets: ['outbox-worker:9090']
+      - targets: ['outbox-worker:9091']
 
   # --- Loki (log aggregation) ---
   - job_name: 'loki'
@@ -49,3 +49,9 @@ scrape_configs:
   # EXCEPTION: erpnext-* containers (Backend/Frontend/Worker) — Frappe does not expose a /metrics
   # endpoint natively on its standard ports. Scraping requires installing a custom Frappe Prometheus app.
   # Tracked for future implementation.
+  
+  # EXCEPTION: ops-portal — Next.js frontend application. Does not expose a /metrics route natively.
+  # Telemetry relies on OpenTelemetry traces rather than daemon-style metric scraping.
+
+  # EXCEPTION: abm-extract — Ephemeral Python/dlt pipeline script. Prometheus is pull-based and
+  # polling transient scripts introduces race conditions. Observability is handled via Pushgateway or Loki.

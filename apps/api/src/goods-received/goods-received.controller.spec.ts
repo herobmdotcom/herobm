@@ -1,18 +1,16 @@
-import { AppConfigService } from '../settings/app-config.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ReceptionsController } from './receptions.controller';
-import { ReceptionsService } from './receptions.service';
+import { GoodsReceivedController } from './goods-received.controller';
+import { GoodsReceivedService } from './goods-received.service';
 
-describe('ReceptionsController', () => {
-  let controller: ReceptionsController;
+describe('GoodsReceivedController', () => {
+  let controller: GoodsReceivedController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ReceptionsController],
+      controllers: [GoodsReceivedController],
       providers: [
-        { provide: AppConfigService, useValue: {} },
         {
-          provide: ReceptionsService,
+          provide: GoodsReceivedService,
           useValue: {
             findAll: jest.fn().mockResolvedValue({ data: [], total: 0 }),
             findOne: jest.fn().mockResolvedValue({}),
@@ -22,7 +20,7 @@ describe('ReceptionsController', () => {
       ],
     }).compile();
 
-    controller = module.get<ReceptionsController>(ReceptionsController);
+    controller = module.get<GoodsReceivedController>(GoodsReceivedController);
   });
 
   it('should be defined', () => {

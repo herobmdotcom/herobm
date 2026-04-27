@@ -678,6 +678,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     {line.quantity}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                    {/* eslint-disable-next-line no-restricted-syntax */}
                                                     {line.unitOfMeasure || line.baseUom || 'EA'}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -836,6 +837,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     <td>
                                                         {line.productDescription || '—'}
                                                         <span className="ml-2 badge badge-draft" style={{ fontSize: 10, padding: '1px 4px' }}>
+                                                            {/* eslint-disable-next-line no-restricted-syntax */}
                                                             {line.productType || 'custom'}
                                                         </span>
                                                     </td>

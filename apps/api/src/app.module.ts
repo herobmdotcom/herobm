@@ -14,7 +14,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { MetricsInterceptor } from './common/metrics.interceptor';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
-import { ReceptionsModule } from './receptions/receptions.module';
+
 import { ReportsModule } from './reports/reports.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { GlModule } from './gl/gl.module';
@@ -22,6 +22,7 @@ import { SystemModule } from './system/system.module';
 import { SettingsModule } from './settings/settings.module';
 import { LocationsModule } from './locations/locations.module';
 import { SetupModule } from './setup/setup.module';
+import { GoodsReceivedModule } from './goods-received/goods-received.module';
 
 @Module({
   imports: [
@@ -42,13 +43,14 @@ import { SetupModule } from './setup/setup.module';
     TelemetryModule,
     SuppliersModule,
     PurchaseOrdersModule,
-    ReceptionsModule,
+
     ReportsModule,
     GlModule,
     SystemModule,
     SettingsModule,
     LocationsModule,
     SetupModule,
+    GoodsReceivedModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })

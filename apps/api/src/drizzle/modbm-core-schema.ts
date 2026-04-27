@@ -11,7 +11,6 @@ import {
   primaryKey,
   unique,
   uniqueIndex,
-  pgView,
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -94,7 +93,7 @@ export const salesOrders = modbmCore.table(
       .notNull()
       .references(() => locations.locationId),
     stateCode: text('state_code').notNull().default('draft'),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
     sourceId: text('source_id').unique(),
@@ -234,7 +233,7 @@ export const purchaseOrders = modbmCore.table(
     ),
     invoiceNumber: text('invoice_number'),
     stateCode: text('state_code').notNull().default('draft'),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
     createdBy: text('created_by'),
@@ -344,43 +343,6 @@ export const backorders = modbmCore.table('backorders', {
   stateCode: text('state_code').notNull().default('pending_supply'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
-
-// ---------------------------------------------------------------------------
-// purchase_order_receptions  (Goods Receipt)
-// ---------------------------------------------------------------------------
-export const purchaseOrderReceptions = modbmCore.table(
-  'purchase_order_receptions',
-  {
-    receptionId: uuid('reception_id').primaryKey().defaultRandom(),
-    receptionNumber: text('reception_number').unique().notNull(),
-    purchaseOrderId: uuid('purchase_order_id')
-      .notNull()
-      .references(() => purchaseOrders.purchaseOrderId),
-    stateCode: text('state_code').notNull().default('draft'),
-    notes: text('notes'),
-    packingSlipNumber: text('packing_slip_number'),
-    createdBy: text('created_by'),
-    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-  },
-);
-
-// ---------------------------------------------------------------------------
-// purchase_order_reception_lines  (Per-line quantities received)
-// ---------------------------------------------------------------------------
-export const purchaseOrderReceptionLines = modbmCore.table(
-  'purchase_order_reception_lines',
-  {
-    receptionLineId: uuid('reception_line_id').primaryKey().defaultRandom(),
-    receptionId: uuid('reception_id')
-      .notNull()
-      .references(() => purchaseOrderReceptions.receptionId),
-    purchaseOrderLineId: uuid('purchase_order_line_id')
-      .notNull()
-      .references(() => purchaseOrderLineItems.purchaseOrderLineId),
-    quantityReceived: numeric('quantity_received').notNull(),
-  },
-);
 
 // ---------------------------------------------------------------------------
 // locations  (Physical warehouses or regional centers)
@@ -788,7 +750,7 @@ export const accounts = modbmCore.table(
     gstCategoryId: uuid('gst_category_id').references(
       () => gstCategories.gstCategoryId,
     ),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     tradingTermsId: uuid('trading_terms_id').references(
       () => tradingTerms.tradingTermsId,
     ),
@@ -866,7 +828,7 @@ export const suppliers = modbmCore.table(
       enum: ['invoice_dispute', 'missing_goods', 'contractual_breach', 'other'],
     }),
     blockNotes: text('block_notes'),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('active'),
     erpnextId: text('erpnext_id'),
     notes: text('notes'),
@@ -994,7 +956,7 @@ export const salesInvoices = modbmCore.table(
       .references(() => salesOrders.salesOrderId),
     totalAmount: numeric('total_amount').notNull(),
     taxAmount: numeric('tax_amount').default('0'),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('draft'),
     notes: text('notes'),
     createdBy: text('created_by'),
@@ -1037,7 +999,7 @@ export const purchaseInvoices = modbmCore.table(
     receiptFilename: text('receipt_filename'),
     totalAmount: numeric('total_amount').notNull(),
     taxAmount: numeric('tax_amount').default('0'),
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code),
+    currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('draft'),
     notes: text('notes'),
     createdBy: text('created_by'),
@@ -1065,6 +1027,19 @@ export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
   amount: numeric('amount').notNull(),
 });
 
+// ---------------------------------------------------------------------------
+// purchase_invoice_receipts  (N:N mapping for 3-way matching between invoice lines and received goods lines)
+// ---------------------------------------------------------------------------
+export const purchaseInvoiceReceipts = modbmCore.table('purchase_invoice_receipts', {
+  invoiceReceiptId: uuid('invoice_receipt_id').primaryKey().defaultRandom(),
+  invoiceLineId: uuid('invoice_line_id')
+    .notNull()
+    .references(() => purchaseInvoiceLines.invoiceLineId),
+  goodsReceivedLineId: uuid('goods_received_line_id')
+    .notNull()
+    .references(() => goodsReceivedLines.goodsReceivedLineId),
+  quantityBilled: numeric('quantity_billed').notNull(),
+});
 // ===========================================================================
 // GENERAL LEDGER (Native Double-Entry Accounting)
 // ===========================================================================
@@ -1082,7 +1057,7 @@ export const glAccounts = modbmCore.table(
     parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
     isGroup: boolean('is_group').notNull().default(false),
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
-    currencyCode: text('currency_code').notNull().default(HOME_CURRENCY.code), // GL accounts can have different currencies
+    currencyCode: text('currency_code').notNull(), // GL accounts can have different currencies
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   },
@@ -1259,15 +1234,60 @@ export const systemEvents = modbmCore.table('system_events', {
 });
 
 // ---------------------------------------------------------------------------
+// goods_received  (Physical dock manifest — one per incoming package/packing slip)
+// ---------------------------------------------------------------------------
+export const goodsReceived = modbmCore.table('goods_received', {
+  goodsReceivedId: uuid('goods_received_id').primaryKey().defaultRandom(),
+  receiptNumber: text('receipt_number').unique().notNull(),
+  vendorId: uuid('vendor_id')
+    .notNull()
+    .references(() => suppliers.vendorId),
+  locationId: uuid('location_id')
+    .notNull()
+    .references(() => locations.locationId),
+  packingSlipNumber: text('packing_slip_number'),
+  notes: text('notes'),
+  stateCode: text('state_code').notNull().default('received'), // received | invoiced | archived
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// goods_received_lines  (Per-product quantities from the packing slip)
+// ---------------------------------------------------------------------------
+export const goodsReceivedLines = modbmCore.table('goods_received_lines', {
+  goodsReceivedLineId: uuid('goods_received_line_id')
+    .primaryKey()
+    .defaultRandom(),
+  goodsReceivedId: uuid('goods_received_id')
+    .notNull()
+    .references(() => goodsReceived.goodsReceivedId),
+  productId: uuid('product_id')
+    .notNull()
+    .references(() => products.productId),
+  quantityReceived: numeric('quantity_received').notNull(),
+  matchStatus: text('match_status').notNull().default('unmatched'), // matched | unmatched | ambiguous
+  purchaseOrderLineId: uuid('purchase_order_line_id').references(
+    () => purchaseOrderLineItems.purchaseOrderLineId,
+  ),
+  purchaseOrderId: uuid('purchase_order_id').references(
+    () => purchaseOrders.purchaseOrderId,
+  ),
+});
+
+// ---------------------------------------------------------------------------
 // dashboard_timeline  (Unified operational timeline combining all entity and
 //                      system events for the dashboard chronological feed)
 // ---------------------------------------------------------------------------
-export const dashboardTimeline = pgView('dashboard_timeline', {
-  eventId: uuid('event_id'),
-  aggregateType: text('aggregate_type'),
-  aggregateId: uuid('aggregate_id'),
-  eventType: text('event_type'),
-  payload: jsonb('payload'),
-  actor: text('actor'),
-  createdOn: timestamp('created_on', { withTimezone: true }),
-}).existing();
+export const dashboardTimeline = modbmCore
+  .view('dashboard_timeline', {
+    eventId: uuid('event_id'),
+    aggregateType: text('aggregate_type'),
+    aggregateId: uuid('aggregate_id'),
+    eventType: text('event_type'),
+    payload: jsonb('payload'),
+    actor: text('actor'),
+    createdOn: timestamp('created_on', { withTimezone: true }),
+  })
+  .existing();

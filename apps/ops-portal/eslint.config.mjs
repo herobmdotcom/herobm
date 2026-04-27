@@ -46,10 +46,21 @@ export default tseslint.config(
           selector: "Literal[value=/€/], TemplateElement[value.raw=/€/]",
           message: "Do not hardcode currency symbols. Use the formatted amount from the backend or the shared currency formatter."
         },
-        // ADV-041: Enforce API Client Usage
         {
           selector: "CallExpression[callee.name='fetch']",
           message: "ADV-041: Do not use raw fetch(). Use apiFetch(), apiMutate(), or apiFetchBlob() from @/lib/api to ensure consistent authentication and error handling."
+        },
+        {
+          selector: ":matches(JSXElement, JSXFragment) > JSXExpressionContainer > Literal[value=/[a-zA-Z]/]",
+          message: "ADV-071: Do not use hardcoded string literals inside JSX expressions. Use useTranslations() instead."
+        },
+        {
+          selector: ":matches(JSXElement, JSXFragment) > JSXExpressionContainer > ConditionalExpression > Literal[value=/[a-zA-Z]/]",
+          message: "ADV-071: Do not use hardcoded string literals inside JSX conditionals. Use useTranslations() instead."
+        },
+        {
+          selector: ":matches(JSXElement, JSXFragment) > JSXExpressionContainer > LogicalExpression > Literal[value=/[a-zA-Z]/]",
+          message: "ADV-071: Do not use hardcoded string literals inside JSX logical expressions. Use useTranslations() instead."
         }
       ]
     },

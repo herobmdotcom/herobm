@@ -47,6 +47,7 @@ export const EventType = {
   // ── Procurement domain ──────────────────────────────────────────────
   PURCHASE_INVOICED: 'purchase_invoiced',
   GOODS_RECEIVED: 'goods_received',
+  ALLOCATION_RESOLVED: 'allocation_resolved',
   RETURN_CREATED: 'return_created',
   RETURN_PROCESSED: 'return_processed',
   LOCATION_DISCREPANCY_WARNING: 'location_discrepancy_warning',

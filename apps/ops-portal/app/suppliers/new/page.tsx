@@ -27,7 +27,7 @@ export default function NewSupplierPage() {
     address1City: '',
     address1Country: '',
     paymentTerms: 'NET30',
-    currencyCode: HOME_CURRENCY.code,
+    currencyCode: '',
     supplierGroupId: '',
     notes: '',
   });
@@ -51,9 +51,7 @@ export default function NewSupplierPage() {
     setDto((prev) => ({ ...prev, [field]: value }));
   };
 
-  const isValid = dto.vendorNumber.trim() !== '' && dto.name.trim() !== '';
-
-  
+  const isValid = dto.vendorNumber.trim() !== '' && dto.name.trim() !== '' && dto.currencyCode !== '';
   
   return (
     <>
@@ -121,6 +119,7 @@ export default function NewSupplierPage() {
                       onChange={(e) => updateField('currencyCode', e.target.value)}
                       disabled={submitting}
                     >
+                      <option value="" disabled>Select Currency</option>
                       {CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
                           {c.code} - {c.name}

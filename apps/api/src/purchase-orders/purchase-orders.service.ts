@@ -204,6 +204,7 @@ export class PurchaseOrdersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
+      .orderBy(desc(purchaseOrders.createdOn))
       .$dynamic();
 
     const conditions = [];
@@ -759,11 +760,21 @@ export class PurchaseOrdersService {
     });
   }
 
-  async findPendingLines(productId: string) {
+  async findPendingLines(productId: string, vendorId?: string) {
     if (!productId) {
       throw new BadRequestException(
         'productId is required to find pending lines',
       );
+    }
+
+    const conditions = [
+      eq(purchaseOrderLineItems.productId, productId),
+      inArray(purchaseOrders.stateCode, ['ordered', 'partially_received']),
+      sql`${purchaseOrderLineItems.quantityReceived} < ${purchaseOrderLineItems.quantity}`,
+    ];
+
+    if (vendorId) {
+      conditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
 
     return await this.db
@@ -794,13 +805,7 @@ export class PurchaseOrdersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .where(
-        and(
-          eq(purchaseOrderLineItems.productId, productId),
-          inArray(purchaseOrders.stateCode, ['ordered', 'partially_received']),
-          sql`${purchaseOrderLineItems.quantityReceived} < ${purchaseOrderLineItems.quantity}`,
-        ),
-      );
+      .where(and(...conditions));
   }
 
   async findReturnableLines(productId: string) {
