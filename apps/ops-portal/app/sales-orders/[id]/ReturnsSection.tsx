@@ -7,7 +7,7 @@ import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { computeLinePrice } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
-import type { OrderDetail, OrderReturn, GstCategory } from './types';
+import type { OrderDetail, OrderReturn, TaxCategory } from './types';
 import {
     RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
     RETURN_LIFECYCLE,
@@ -41,14 +41,14 @@ interface ReturnsSectionProps {
     loadReturns: () => Promise<void>;
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
     pickingSummary?: any;
-    gstCategories: GstCategory[];
+    taxCategories: TaxCategory[];
     locations: { locationId: string; name: string; code?: string }[];
 }
 
 export default function ReturnsSection({
     orderId, order, returns, returnsLoading,
     showCreateReturn, setShowCreateReturn,
-    setError, loadReturns, loadOrder, pickingSummary, gstCategories, locations,
+    setError, loadReturns, loadOrder, pickingSummary, taxCategories, locations,
 }: ReturnsSectionProps) {
     const t = useTranslations();
     const tCommon = useTranslations('common');
@@ -433,7 +433,7 @@ export default function ReturnsSection({
                                             <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.gst')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tSales('columns.tax')}</th>
                                             <th style={{ width: 180 }}>{tSales('columns.reason')}</th>
                                             <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.fee')}</th>
                                             <th style={{ width: 100, textAlign: 'right' }}>{tSales('columns.amount')}</th>
@@ -444,14 +444,14 @@ export default function ReturnsSection({
                                         {ret.lines.map((rl) => {
                                             const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                             const disc = parseFloat(origLine?.discountPercentage || '0');
-                                            const gstCat = gstCategories.find(c => c.gstCategoryId === origLine?.gstCategoryId);
-                                            const gstRate = parseFloat(gstCat?.rate || '0');
+                                            const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
+                                            const taxRate = parseFloat(taxCat?.rate || '0');
                                             const cc = order.currencyCode || HOME_CURRENCY.code;
                                             const pricing = computeLinePrice({
                                                 quantity: parseFloat(rl.quantityReturned || '0'),
                                                 pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
                                                 discountPercentage: disc,
-                                                taxRate: gstRate,
+                                                taxRate: taxRate,
                                             });
                                             return (
                                                 <tr key={rl.returnLineId}>
@@ -498,8 +498,8 @@ export default function ReturnsSection({
                                                     <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
                                                         {disc.toFixed(1)}%
                                                     </td>
-                                                    <td style={{ textAlign: 'right', color: gstRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                        {gstRate.toFixed(1)}%
+                                                    <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                        {taxRate.toFixed(1)}%
                                                     </td>
                                                     <td>
                                                         {isRetEditable ? (
@@ -602,10 +602,10 @@ export default function ReturnsSection({
                                                 const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
                                                 const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
                                                 const disc = parseFloat(origLine?.discountPercentage || '0');
-                                                const gstCat = gstCategories.find(c => c.gstCategoryId === origLine?.gstCategoryId);
-                                                const gstRate = parseFloat(gstCat?.rate || '0');
+                                                const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
+                                                const taxRate = parseFloat(taxCat?.rate || '0');
                                                 const qty = parseFloat(rl.quantityReturned || '0');
-                                                return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice, discountPercentage: disc, taxRate: gstRate }).amount;
+                                                return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice, discountPercentage: disc, taxRate: taxRate }).amount;
                                             }, 0);
                                             const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
                                             const totalCredit = totalAmount - totalFees;

@@ -32,15 +32,15 @@ export default function NewAccountPage() {
     address1PostalCode: '',
     address1Country: '',
     accountGroupId: '',
-    gstCategoryId: '',
+    TaxCategoryId: '',
     currencyCode: 'EUR',
     customerDiscount: '0',
     notes: '',
   });
-  const [gstCategories, setGstCategories] = useState<any[]>([]);
+  const [taxCategories, settaxCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+    apiFetch<any[]>('/api/tax-categories').then(settaxCategories).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -145,17 +145,17 @@ export default function NewAccountPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      {t('common.columns.gstPosition')}
+                      {t('common.columns.taxPosition')}
                     </label>
                     <select
                       className="input"
-                      value={dto.gstCategoryId || ''}
-                      onChange={(e) => updateField('gstCategoryId', e.target.value)}
+                      value={dto.TaxCategoryId || ''}
+                      onChange={(e) => updateField('TaxCategoryId', e.target.value)}
                       disabled={submitting}
                     >
                       <option value="">{t('common.options.none')}</option>
-                      {gstCategories.map((cat) => (
-                        <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                      {taxCategories.map((cat) => (
+                        <option key={cat.TaxCategoryId} value={cat.TaxCategoryId}>
                           {cat.title} ({cat.code})
                         </option>
                       ))}

@@ -4,7 +4,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   glAccounts,
   glSettings,
-  gstCategories,
+  taxCategories,
   tradingTerms,
 } from '../drizzle/modbm-core-schema';
 import { eq, count } from 'drizzle-orm';
@@ -245,7 +245,7 @@ export class CoaLoaderService {
         // Seed GST Categories
         if (settings.gst_categories && Array.isArray(settings.gst_categories)) {
           // Neutralize defaults first to avoid unique constraint if we are updating
-          await tx.update(gstCategories).set({ isDefault: false });
+          await tx.update(taxCategories).set({ isDefault: false });
 
           for (const category of settings.gst_categories) {
             const deterministicId = uuidv5(
@@ -253,9 +253,9 @@ export class CoaLoaderService {
               NAMESPACE_COA,
             );
             await tx
-              .insert(gstCategories)
+              .insert(taxCategories)
               .values({
-                gstCategoryId: deterministicId,
+                taxCategoryId: deterministicId,
                 code: category.code,
                 title: category.title,
                 type: category.type,
@@ -263,7 +263,7 @@ export class CoaLoaderService {
                 isDefault: category.is_default || false,
               })
               .onConflictDoUpdate({
-                target: [gstCategories.code],
+                target: [taxCategories.code],
                 set: {
                   title: category.title,
                   type: category.type,

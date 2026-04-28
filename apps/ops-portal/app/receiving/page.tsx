@@ -171,7 +171,7 @@ export default function GoodsReceivedListPage() {
                                 <div className="flex items-center gap-4 flex-1">
                                     {/* eslint-disable-next-line i18next/no-literal-string */}
                                     <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                        {t('title')} (Lines)
+                                        {t('title')}
                                     </h2>
                                     <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">

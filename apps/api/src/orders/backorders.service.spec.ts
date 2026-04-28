@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BackordersService, InventoryGap } from './backorders.service';
+import { BackordersService } from './backorders.service';
+import type { InventoryGap } from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 
@@ -128,14 +129,14 @@ describe('BackordersService', () => {
     });
   });
 
-  describe('triggerBackorders', () => {
+  describe('generateDemand', () => {
     it('should gracefully return if no gaps are provided', async () => {
       const tx = createMockTx();
-      await service.triggerBackorders('SO1', [], 'system', tx as any);
+      await service.generateDemand('SO1', [], 'system', tx as any);
       expect(tx.insert).not.toHaveBeenCalled();
     });
 
-    it('should create draft POs for gaps with preferred suppliers', async () => {
+    it('should create demand for gaps', async () => {
       const tx = createMockTx();
       const gaps: InventoryGap[] = [
         {
@@ -158,7 +159,7 @@ describe('BackordersService', () => {
         },
       ];
 
-      await service.triggerBackorders('SO1', gaps, 'test-user', tx as any);
+      await service.generateDemand('SO1', gaps, 'test-user', tx as any);
 
       expect(tx.insert).toHaveBeenCalled();
     });

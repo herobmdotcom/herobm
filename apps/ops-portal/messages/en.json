@@ -11,9 +11,6 @@
     "created": "Created",
     "deleted": "Deleted",
     "actions": "Actions",
-    "tabs": {
-      "lines": "Lines"
-    },
     "confirmDelete": "Are you sure you want to delete this item?",
     "location": "Location",
     "subtotal": "Subtotal",
@@ -139,7 +136,7 @@
       "contactEmail": "Contact Email",
       "contactPhone": "Contact Phone",
       "group": "Group",
-      "gstPosition": "GST Position",
+      "taxPosition": "Tax Position",
       "deliveryAddrs": "Delivery Addrs",
       "priceScale": "Price Scale",
       "groupDisc": "Grp Disc",
@@ -202,10 +199,10 @@
       "failedToLoadExpiries": "Failed to load expiries",
       "typeAndDateRequired": "Type and Date are required"
     },
-    "gst": {
+    "taxLabels": {
       "exempt": "Exempt",
       "zeroRated": "Zero Rated",
-      "pctGst": "{pct}% GST"
+      "pctTax": "{pct}% Tax"
     },
     "eventTypes": {
       "created": "Created",
@@ -275,7 +272,8 @@
     "tabs": {
       "overview": "Overview",
       "suppliers": "Suppliers",
-      "inventory": "Inventory"
+      "inventory": "Inventory",
+      "lines": "Lines"
     },
     "na": "N/A",
     "loadingEllipsis": "Loading…",
@@ -456,7 +454,7 @@
       "priceLevel3": "Level 3",
       "priceLevel4": "Level 4",
       "barcode": "Barcode",
-      "gstCategory": "GST Category",
+      "taxCategory": "Tax Category",
       "scNumber": "SC Number",
       "quantityOnHand": "On Hand",
       "uomCode": "UoM Code",
@@ -587,7 +585,7 @@
       "uom": "UOM",
       "unitPrice": "Unit Price",
       "discountPct": "Disc %",
-      "gst": "GST",
+      "tax": "Tax",
       "amount": "Amount",
       "ordered": "Ordered",
       "location": "Location",
@@ -614,21 +612,27 @@
       "fulfillment": "Fulfillment",
       "incoming": "Incoming",
       "type": "Type",
-      "orderHash": "Order #",
+      "allocatedTo": "Allocated To",
+      "demandDate": "Demand Date",
       "name": "Name",
-      "product": "Product",
       "required": "Required",
       "gap": "Gap"
     },
     "shortages": {
-      "title": "Inventory Shortage Detected",
-      "description": "The following items do not have enough stock to fulfill this order immediately. Confirming will create material requirements.",
+      "title": "Stock Shortage Detected",
+      "description": "The following items have insufficient stock at ",
       "item": "Item",
       "ordered": "Ordered",
       "available": "Available",
       "shortage": "Shortage",
       "ignoreAndConfirm": "Ignore & Confirm State",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "option1Title": "Option 1: Backorder",
+      "option1Desc": "Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.",
+      "option2Title": "Option 2: Manual",
+      "option2Desc": "Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.",
+      "confirmAnyway": "Confirm Anyway (No Backorder)",
+      "splitAndCreate": "Split & Create Backorder"
     },
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -671,16 +675,6 @@
     "noProductsShippedYet": "No products have shipped yet.",
     "noInvoicesGeneratedYet": "No invoices generated yet.",
     "backordersTab": "Backorders",
-    "shortages": {
-      "title": "Stock Shortage Detected",
-      "description": "The following items have insufficient stock at ",
-      "option1Title": "Option 1: Backorder",
-      "option1Desc": "Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.",
-      "option2Title": "Option 2: Manual",
-      "option2Desc": "Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.",
-      "confirmAnyway": "Confirm Anyway (No Backorder)",
-      "splitAndCreate": "Split & Create Backorder"
-    },
     "totals": {
       "subtotal": "Subtotal",
       "tax": "Tax",
@@ -696,6 +690,7 @@
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
+    "demandTitle": "Open Demand",
     "subtitle": "Manage purchase orders",
     "buttons": {
       "createPO": "+ Create PO",
@@ -745,7 +740,7 @@
       "fee": "Fee",
       "tax": "Tax",
       "discountPct": "Disc %",
-      "gst": "GST",
+      "taxCategory": "Tax",
       "received": "Received",
       "billed": "Billed",
       "qtyToBill": "Qty to Bill",
@@ -1242,6 +1237,7 @@
       "salesOrders": "Sales Orders",
       "salesInvoices": "Sales Invoices",
       "suppliers": "Suppliers",
+      "demand": "Demand",
       "purchaseOrders": "Purchase Orders",
       "trialBalance": "Trial Balance",
       "generalLedger": "General Ledger",
@@ -1531,11 +1527,17 @@
         "actions": "Actions"
       },
       "title": "System Settings",
+      "taxTypes": {
+        "tax_applies": "Tax Applies",
+        "zero_rated": "Zero Rated",
+        "exempt": "Exempt",
+        "not_relevant": "Not Relevant"
+      },
       "toasts": {
         "loadFailed": "Failed to load data",
-        "gstUpdated": "GST code updated",
-        "gstCreated": "GST code created",
-        "gstDeleted": "GST code deleted",
+        "taxUpdated": "Tax code updated",
+        "taxCreated": "Tax code created",
+        "taxDeleted": "Tax code deleted",
         "uomUpdated": "Unit of measure updated",
         "uomCreated": "Unit of measure created",
         "uomDeleted": "Unit of measure deleted",
@@ -1546,13 +1548,13 @@
       "sections": {
         "company": "Company Details",
         "gl": "General Ledger",
-        "gst": "GST Codes",
+        "tax": "Tax Codes",
         "uom": "Units of Measure",
         "rates": "Exchange Rates",
         "bank": "Bank Details"
       },
       "confirmations": {
-        "deleteGst": "Are you sure you want to delete this GST code?",
+        "deleteTax": "Are you sure you want to delete this tax code?",
         "deleteUom": "Are you sure you want to delete this unit of measure?",
         "deleteRate": "Are you sure you want to delete this exchange rate?"
       },
@@ -1616,15 +1618,15 @@
         "bankName": "Bank name",
         "accountName": "Account name"
       },
-      "subtitle": "Manage company details, GL defaults, GST codes, currencies and units of measure",
+      "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
       "gl": {
         "loading": "Loading GL accounts…",
         "customerFirst": "Customer first",
         "productFirst": "Product first",
         "supplierFirst": "Supplier first"
       },
-      "gst": {
-        "empty": "No GST codes defined. Create one to get started."
+      "tax": {
+        "empty": "No tax codes defined. Create one to get started."
       },
       "rates": {
         "empty": "No exchange rates defined. Create one to get started."

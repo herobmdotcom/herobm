@@ -7,7 +7,7 @@
  * test will automatically fail until the projection is updated.
  *
  * Root cause: the GST select widget bug in the Sales Order Detail page
- * was caused by `findOne` missing `gstCategoryId` in its projection.
+ * was caused by `findOne` missing `taxCategoryId` in its projection.
  */
 import * as fs from 'fs';
 import * as path from 'path';

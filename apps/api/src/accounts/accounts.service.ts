@@ -6,7 +6,7 @@ import {
   accounts,
   accountEvents,
   accountGroups,
-  gstCategories,
+  taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
@@ -52,7 +52,7 @@ export class AccountsService {
         accountGroupTradingTermsId: accountGroups.tradingTermsId,
         accountGroupCreditLimit: accountGroups.creditLimit,
         accountGroupIsOnCreditHold: accountGroups.isOnCreditHold,
-        gstCategoryName: gstCategories.code,
+        gstCategoryName: taxCategories.code,
       })
       .from(accounts)
       .leftJoin(
@@ -60,8 +60,8 @@ export class AccountsService {
         eq(accounts.accountGroupId, accountGroups.accountGroupId),
       )
       .leftJoin(
-        gstCategories,
-        eq(accounts.gstCategoryId, gstCategories.gstCategoryId),
+        taxCategories,
+        eq(accounts.taxCategoryId, taxCategories.taxCategoryId),
       )
       .orderBy(asc(sql`lower(${accounts.name})`))
       .limit(limit)
@@ -93,7 +93,7 @@ export class AccountsService {
         accountGroupTradingTermsId: accountGroups.tradingTermsId,
         accountGroupCreditLimit: accountGroups.creditLimit,
         accountGroupIsOnCreditHold: accountGroups.isOnCreditHold,
-        gstCategoryName: gstCategories.code,
+        gstCategoryName: taxCategories.code,
       })
       .from(accounts)
       .leftJoin(
@@ -101,8 +101,8 @@ export class AccountsService {
         eq(accounts.accountGroupId, accountGroups.accountGroupId),
       )
       .leftJoin(
-        gstCategories,
-        eq(accounts.gstCategoryId, gstCategories.gstCategoryId),
+        taxCategories,
+        eq(accounts.taxCategoryId, taxCategories.taxCategoryId),
       )
       .where(isUuid ? eq(accounts.accountId, id) : eq(accounts.sourceId, id))
       .limit(1);

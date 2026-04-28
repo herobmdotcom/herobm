@@ -18,6 +18,8 @@ export interface PurchaseInvoiceLine {
     quantityInvoiced: string;
     pricePerUnit: string;
     amount: string;
+    goodsReceivedLineId?: string | null;
+    quantityBilled?: string;
 }
 
 export interface PurchaseInvoiceableQty {

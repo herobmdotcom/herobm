@@ -5,6 +5,12 @@ export {
   SHIPMENT_TRANSITIONS,
   RETURN_TRANSITIONS,
 
+  // Union types
+  SalesOrderState,
+  PurchaseOrderState,
+  ShipmentState,
+  ReturnState,
+
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,

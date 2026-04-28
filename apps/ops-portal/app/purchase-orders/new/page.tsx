@@ -14,10 +14,10 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
-import { getGstLabel } from '../[id]/types';
+import { getTaxLabel } from '../[id]/types';
 
-interface GstCategory {
-  gstCategoryId: string;
+interface TaxCategory {
+  taxCategoryId: string;
   code: string;
   title: string;
   type: string;
@@ -41,7 +41,7 @@ interface LineItem {
   pricePerUnit: string;
   unitOfMeasure: string;
   discountPercentage: string;
-  gstCategoryId: string | null;
+  taxCategoryId: string | null;
 }
 
 let lineKey = 0;
@@ -56,7 +56,7 @@ function emptyLine(): LineItem {
     pricePerUnit: '0',
     unitOfMeasure: 'EA',
     discountPercentage: '0',
-    gstCategoryId: null,
+    taxCategoryId: null,
   };
 }
 
@@ -78,11 +78,11 @@ export default function NewPurchaseOrderPage() {
   const t = useTranslations();
   useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
-  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+  const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
   useEffect(() => {
-    apiFetch<GstCategory[]>('/api/gst-categories')
-      .then(setGstCategories)
+    apiFetch<TaxCategory[]>('/api/tax-categories')
+      .then(setTaxCategories)
       .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
   }, []);
 
@@ -113,7 +113,7 @@ export default function NewPurchaseOrderPage() {
         pricePerUnit: '0.00',
         unitOfMeasure: 'EA',
         discountPercentage: '0',
-        gstCategoryId: null,
+        taxCategoryId: null,
       },
     ]);
   };
@@ -130,7 +130,7 @@ export default function NewPurchaseOrderPage() {
         pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         unitOfMeasure: 'EA',
         discountPercentage: '0',
-        gstCategoryId: null,
+        taxCategoryId: null,
       },
     ]);
   };
@@ -150,9 +150,9 @@ export default function NewPurchaseOrderPage() {
   };
 
   const computeTax = (line: LineItem) => {
-    const cat = gstCategories.find(c => c.gstCategoryId === line.gstCategoryId);
+    const cat = taxCategories.find(c => c.taxCategoryId === line.taxCategoryId);
     if (!cat) {
-      const defaultCat = gstCategories.find(c => c.isDefault);
+      const defaultCat = taxCategories.find(c => c.isDefault);
       if (!defaultCat) return 0;
       return computeLinePrice({
         quantity: parseFloat(line.quantity) || 0,
@@ -208,7 +208,7 @@ export default function NewPurchaseOrderPage() {
             pricePerUnit: l.pricePerUnit,
             unitOfMeasure: l.unitOfMeasure,
             discountPercentage: l.discountPercentage,
-            gstCategoryId: l.gstCategoryId,
+            taxCategoryId: l.taxCategoryId,
           })),
       });
       router.push(`/purchase-orders/${order.purchaseOrderId}`);
@@ -409,7 +409,7 @@ export default function NewPurchaseOrderPage() {
                 <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.uom')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.unitPrice')}</th>
                 <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.discountPct' as any)}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.gst' as any)}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.taxCategory' as any)}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
@@ -501,13 +501,13 @@ export default function NewPurchaseOrderPage() {
                     <select
                       className="input"
                       style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                      value={line.gstCategoryId || ''}
-                      onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
+                      value={line.taxCategoryId || ''}
+                      onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
                     >
                       <option value="">{t('common.default')}</option>
-                      {gstCategories.map((c) => (
-                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                          {getGstLabel(c)}
+                      {taxCategories.map((c) => (
+                        <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                          {getTaxLabel(c)}
                         </option>
                       ))}
                     </select>

@@ -5,10 +5,10 @@ import { PurchaseReturnsController } from './purchase-returns.controller';
 import { PurchaseReturnsService } from './purchase-returns.service';
 import { InventoryModule } from '../inventory/inventory.module';
 import { SuppliersModule } from '../suppliers/suppliers.module';
-import { GstModule } from '../gst/gst.module';
+import { TaxModule } from '../tax/tax.module';
 
 @Module({
-  imports: [InventoryModule, SuppliersModule, GstModule],
+  imports: [InventoryModule, SuppliersModule, TaxModule],
   controllers: [PurchaseOrdersController, PurchaseReturnsController],
   providers: [PurchaseOrdersService, PurchaseReturnsService],
 })

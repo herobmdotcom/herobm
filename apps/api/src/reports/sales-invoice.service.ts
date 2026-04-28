@@ -10,7 +10,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesInvoices,
   salesInvoiceLines,
-  gstCategories,
+  taxCategories,
 } from '../drizzle/modbm-core-schema';
 
 @Injectable()
@@ -23,11 +23,11 @@ export class SalesInvoiceService {
 
   private readonly logger = new Logger(SalesInvoiceService.name);
 
-  /** Build a gstCategoryId → rate% map from the gst_categories table. */
-  private async buildGstRateMap(): Promise<Map<string, number>> {
-    const rows = await this.db.select().from(gstCategories);
+  /** Build a taxCategoryId → rate% map from the tax_categories table. */
+  private async buildtaxRateMap(): Promise<Map<string, number>> {
+    const rows = await this.db.select().from(taxCategories);
     return new Map(
-      rows.map((r) => [r.gstCategoryId, parseFloat(r.rate ?? '0')]),
+      rows.map((r) => [r.taxCategoryId, parseFloat(r.rate ?? '0')]),
     );
   }
 
@@ -43,10 +43,10 @@ export class SalesInvoiceService {
       source,
     );
 
-    const gstRateMap = await this.buildGstRateMap();
+    const taxRateMap = await this.buildtaxRateMap();
 
     if (!invoiceId) {
-      return assembleOrderData(orderDetail, gstRateMap);
+      return assembleOrderData(orderDetail, taxRateMap);
     }
 
     // Fetch the specific invoice and its lines
@@ -92,11 +92,11 @@ export class SalesInvoiceService {
     // Build the invoice-specific report data
     const invoiceData = assembleOrderData(
       { ...orderDetail, lines: filteredLines },
-      gstRateMap,
+      taxRateMap,
     );
 
     // Compute the full (unfiltered) order total for comparison
-    const fullOrderData = assembleOrderData(orderDetail, gstRateMap);
+    const fullOrderData = assembleOrderData(orderDetail, taxRateMap);
 
     // Determine this invoice's ordinal position among all invoices for the order
     const allOrderInvoices = await this.db

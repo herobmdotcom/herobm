@@ -70,7 +70,7 @@ export class CreateAccountDto {
 
   @IsOptional()
   @IsUUID()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 
   @IsOptional()
   @IsString()
@@ -148,7 +148,7 @@ export class UpdateAccountDto {
 
   @IsOptional()
   @IsUUID()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 
   @IsOptional()
   @IsString()

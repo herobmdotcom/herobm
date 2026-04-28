@@ -65,8 +65,15 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         productNumber: `E2E-GR-P-${Date.now()}`,
         name: 'E2E Goods Received Test Product',
         listPrice: '25.00',
-      })
-      .expect(201);
+      });
+
+    if (productRes.status !== 201) {
+      console.error(
+        '❌ Product creation failed in E2E setup:',
+        productRes.body,
+      );
+    }
+    expect(productRes.status).toBe(201);
     appProductId = productRes.body.productId;
 
     // Fetch a real supplier
@@ -204,7 +211,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
           locationId: validLocationId,
           lines: [
             {
-              productId: '00000000-0000-0000-0000-000000000000',
+              productId: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
               quantityReceived: '5',
             },
           ],
@@ -239,20 +246,19 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
   });
 
   // =========================================================================
-  // Dock-only: no inventory impact
+  // Inventory Impact
   // =========================================================================
-
-  describe('Dock-only — no inventory impact', () => {
-    it('goods receipt does NOT change product QOH', async () => {
+  describe('Inventory Impact', () => {
+    it('goods receipt INCREASES product QOH in RECV bin', async () => {
       // Get current inventory for the product
       const beforeRes = await request(app.getHttpServer())
         .get(`/api/inventory?q=E2E-GR-P`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const beforeQoh = beforeRes.body.data.find(
-        (r: any) => r.productId === appProductId,
-      )?.quantityOnHand ?? '0';
+      const beforeQoh =
+        beforeRes.body.data.find((r: any) => r.productId === appProductId)
+          ?.quantityOnHand ?? '0';
 
       // Create another goods receipt
       await request(app.getHttpServer())
@@ -265,17 +271,17 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         })
         .expect(201);
 
-      // Check QOH is unchanged
+      // Check QOH is increased
       const afterRes = await request(app.getHttpServer())
         .get(`/api/inventory?q=E2E-GR-P`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const afterQoh = afterRes.body.data.find(
-        (r: any) => r.productId === appProductId,
-      )?.quantityOnHand ?? '0';
+      const afterQoh =
+        afterRes.body.data.find((r: any) => r.productId === appProductId)
+          ?.quantityOnHand ?? '0';
 
-      expect(afterQoh).toBe(beforeQoh);
+      expect(parseFloat(afterQoh)).toBe(parseFloat(beforeQoh) + 100);
     });
   });
 });

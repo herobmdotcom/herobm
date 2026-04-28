@@ -1,21 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GstCategoriesController } from './gst-categories.controller';
-import { GstCategoriesService } from './gst-categories.service';
+import { TaxCategoriesController } from './tax-categories.controller';
+import { TaxCategoriesService } from './tax-categories.service';
 
-describe('GstCategoriesController', () => {
-  let controller: GstCategoriesController;
+describe('TaxCategoriesController', () => {
+  let controller: TaxCategoriesController;
 
   const mockCategories = [
     {
-      gstCategoryId: 'uuid-gst-1',
+      taxCategoryId: 'uuid-tax-1',
       code: 'GST',
       title: 'GST 10%',
-      type: 'gst_applies',
+      type: 'tax_applies',
       rate: '10',
       isDefault: true,
     },
     {
-      gstCategoryId: 'uuid-gst-2',
+      taxCategoryId: 'uuid-tax-2',
       code: 'EXE',
       title: 'Exempt',
       type: 'exempt',
@@ -32,15 +32,15 @@ describe('GstCategoriesController', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [GstCategoriesController],
-      providers: [{ provide: GstCategoriesService, useValue: mockService }],
+      controllers: [TaxCategoriesController],
+      providers: [{ provide: TaxCategoriesService, useValue: mockService }],
     }).compile();
 
-    controller = module.get<GstCategoriesController>(GstCategoriesController);
+    controller = module.get<TaxCategoriesController>(TaxCategoriesController);
   });
 
   describe('findAll', () => {
-    it('should return all GST categories', async () => {
+    it('should return all tax categories', async () => {
       const result = await controller.findAll();
       expect(result).toEqual(mockCategories);
       expect(mockService.findAll).toHaveBeenCalledTimes(1);
@@ -48,10 +48,10 @@ describe('GstCategoriesController', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single GST category by ID', async () => {
-      const result = await controller.findOne('uuid-gst-1');
+    it('should return a single tax category by ID', async () => {
+      const result = await controller.findOne('uuid-tax-1');
       expect(result).toEqual(mockCategories[0]);
-      expect(mockService.getById).toHaveBeenCalledWith('uuid-gst-1');
+      expect(mockService.getById).toHaveBeenCalledWith('uuid-tax-1');
     });
   });
 });

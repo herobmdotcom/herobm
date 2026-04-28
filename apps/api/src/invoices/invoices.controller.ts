@@ -81,7 +81,6 @@ export class PurchaseInvoiceController {
  */
 @Controller()
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
-@CasbinResource('sales-orders')
 export class InvoiceDetailController {
   constructor(
     private readonly salesInvoiceService: SalesInvoiceService,
@@ -89,12 +88,14 @@ export class InvoiceDetailController {
   ) {}
 
   @Get('sales-invoices/:id')
+  @CasbinResource('sales-orders')
   @CasbinAction('read')
   async getSalesInvoiceDetails(@Param('id') id: string) {
     return this.salesInvoiceService.findOne(id);
   }
 
   @Get('sales-invoices')
+  @CasbinResource('sales-orders')
   @CasbinAction('read')
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
@@ -112,6 +113,7 @@ export class InvoiceDetailController {
   }
 
   @Get('purchase-invoices/:id')
+  @CasbinResource('purchase-orders')
   @CasbinAction('read')
   async getPurchaseBillDetails(@Param('id') id: string) {
     return this.purchaseInvoiceService.findOne(id);

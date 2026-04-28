@@ -28,7 +28,7 @@ export interface OrderLine {
   tax: string;
   totalAmount: string;
   unitOfMeasure: string;
-  gstCategoryId?: string | null;
+  taxCategoryId?: string | null;
 }
 
 export interface OrderEvent {
@@ -191,7 +191,7 @@ export default function OrderDetailReadView({
               <th style={{ width: 90, textAlign: 'right' }}>{tCols('qty')}</th>
               <th style={{ width: 110, textAlign: 'right' }}>{tCols('unitPrice')}</th>
               <th style={{ width: 80, textAlign: 'right' }}>{tCols('discountPct')}</th>
-              <th style={{ width: 110, textAlign: 'right' }}>{tCols('gst')}</th>
+              <th style={{ width: 110, textAlign: 'right' }}>{tCols('tax')}</th>
               <th style={{ width: 110, textAlign: 'right' }}>{tCols('amount')}</th>
             </tr>
           </thead>

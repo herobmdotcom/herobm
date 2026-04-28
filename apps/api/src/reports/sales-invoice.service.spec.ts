@@ -27,7 +27,7 @@ describe('SalesInvoiceService', () => {
         quantity: '2',
         pricePerUnit: '10.00',
         discountPercentage: '0',
-        gstCategoryId: 'gst-cat-1',
+        taxCategoryId: 'tax-cat-1',
         amount: '20.00',
         tax: '4.00',
         totalAmount: '24.00',
@@ -58,7 +58,7 @@ describe('SalesInvoiceService', () => {
           useValue: {
             select: () => ({
               from: () =>
-                Promise.resolve([{ gstCategoryId: 'gst-cat-1', rate: '20' }]),
+                Promise.resolve([{ taxCategoryId: 'tax-cat-1', rate: '20' }]),
             }),
           },
         },

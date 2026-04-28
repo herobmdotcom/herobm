@@ -45,6 +45,7 @@ export default function Sidebar() {
       label: t('groups.purchasing'),
       items: [
         { href: '/suppliers', label: t('items.suppliers'), icon: 'factory' },
+        { href: '/purchase-orders/demands', label: t('items.demand'), icon: 'list_alt' },
         { href: '/purchase-orders', label: t('items.purchaseOrders'), icon: 'local_shipping' },
         { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },
       ],

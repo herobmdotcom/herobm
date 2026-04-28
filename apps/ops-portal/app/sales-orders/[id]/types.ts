@@ -9,7 +9,7 @@ export interface OrderLine {
     pricePerUnit: string;
     discountPercentage: string;
     amount: string;
-    gstCategoryId: string | null;
+    taxCategoryId: string | null;
     tax: string;
     totalAmount: string;
     unitOfMeasure: string;
@@ -19,8 +19,8 @@ export interface OrderLine {
     isPostConfirmation?: boolean | null;
 }
 
-export interface GstCategory {
-    gstCategoryId: string;
+export interface TaxCategory {
+    taxCategoryId: string;
     code: string;
     title: string;
     type: string;
@@ -28,7 +28,7 @@ export interface GstCategory {
     isDefault: boolean;
 }
 
-export function getGstLabel(category: GstCategory) {
+export function getTaxLabel(category: TaxCategory) {
     const pct = parseFloat(category.rate || '0');
     const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
     return `${category.title} (${formattedPct}%)`;

@@ -26,7 +26,7 @@ import { AggregateType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { computeLinePrice } from '@modbm/shared';
 import {
   findOrder as sharedFindOrder,
@@ -56,7 +56,7 @@ export class ReturnsWriteService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
-    private readonly gstService: GstCategoriesService,
+    private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
   ) {}
 
@@ -794,12 +794,12 @@ export class ReturnsWriteService {
       const qty = parseFloat(rl.quantityReturned || '0');
       const fee = parseFloat(rl.returnFee || '0');
 
-      // Resolve per-line GST rate from the line's gstCategoryId
-      let gstRate = 0;
-      if (orderLine.gstCategoryId) {
+      // Resolve per-line GST rate from the line's taxCategoryId
+      let taxRate = 0;
+      if (orderLine.taxCategoryId) {
         try {
-          const cat = await this.gstService.getById(orderLine.gstCategoryId);
-          gstRate = parseFloat(cat.rate ?? '0');
+          const cat = await this.taxService.getById(orderLine.taxCategoryId);
+          taxRate = parseFloat(cat.rate ?? '0');
         } catch {
           // Category not found — fall back to 0%
         }
@@ -809,7 +809,7 @@ export class ReturnsWriteService {
         quantity: qty,
         pricePerUnit: unitPrice,
         discountPercentage: disc,
-        taxRate: gstRate,
+        taxRate: taxRate,
       });
 
       totalCreditAmount += pricing.amount;

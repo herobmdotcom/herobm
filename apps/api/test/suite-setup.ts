@@ -52,7 +52,7 @@ beforeAll(async () => {
           END LOOP;
 
           -- 2. Purchase Orders & related
-          FOR r_po IN SELECT purchase_order_id FROM modbm_core.purchase_orders WHERE name LIKE 'E2E%'
+          FOR r_po IN SELECT purchase_order_id, vendor_id FROM modbm_core.purchase_orders WHERE name LIKE 'E2E%'
           LOOP
               -- Delete Invoices and their GL entries
               FOR r_inv IN SELECT invoice_id FROM modbm_core.purchase_invoices WHERE purchase_order_id = r_po.purchase_order_id
@@ -66,8 +66,8 @@ beforeAll(async () => {
               DELETE FROM modbm_core.purchase_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id);
               DELETE FROM modbm_core.purchase_order_returns WHERE purchase_order_id = r_po.purchase_order_id;
 
-              DELETE FROM modbm_core.purchase_order_reception_lines WHERE reception_id IN (SELECT reception_id FROM modbm_core.purchase_order_receptions WHERE purchase_order_id = r_po.purchase_order_id);
-              DELETE FROM modbm_core.purchase_order_receptions WHERE purchase_order_id = r_po.purchase_order_id;
+              DELETE FROM modbm_core.goods_received_lines WHERE goods_received_id IN (SELECT goods_received_id FROM modbm_core.goods_received WHERE vendor_id = r_po.vendor_id);
+              DELETE FROM modbm_core.goods_received WHERE vendor_id = r_po.vendor_id;
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r_po.purchase_order_id;
               DELETE FROM modbm_core.purchase_order_events WHERE purchase_order_id = r_po.purchase_order_id;
               DELETE FROM modbm_core.purchase_order_lines WHERE purchase_order_id = r_po.purchase_order_id;

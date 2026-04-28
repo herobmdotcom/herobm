@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import {
   Injectable,
   Inject,
@@ -5,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, and, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -20,11 +21,13 @@ import {
   products as coreProducts,
   productGroups,
   glAccounts,
+  goodsReceivedLines,
+  purchaseInvoiceReceipts,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { computeLinePrice, EXPENSE_ROUTING_PRECEDENCE } from '@modbm/shared';
 import { CreatePurchaseBillDto } from './dto';
 
@@ -35,7 +38,7 @@ export class PurchaseInvoiceService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
-    private readonly gstService: GstCategoriesService,
+    private readonly taxService: TaxCategoriesService,
   ) {}
 
   /**
@@ -174,7 +177,44 @@ export class PurchaseInvoiceService {
     let rawTotal = 0;
     let rawTax = 0;
     const invoiceLineValues: any[] = [];
+    const invoiceReceiptValues: any[] = [];
     const outboxLineDetails: any[] = [];
+
+    // 3-way matching: track previously billed quantities per receipt line
+    const receiptLineBilledMap = new Map<string, number>();
+    const grLineIds = dto.lines
+      ?.map((l) => l.goodsReceivedLineId)
+      .filter(Boolean) as string[];
+
+    if (grLineIds && grLineIds.length > 0) {
+      const priorBilled = await this.db
+        .select({
+          goodsReceivedLineId: purchaseInvoiceReceipts.goodsReceivedLineId,
+          quantityBilled: purchaseInvoiceReceipts.quantityBilled,
+        })
+        .from(purchaseInvoiceReceipts)
+        .where(inArray(purchaseInvoiceReceipts.goodsReceivedLineId, grLineIds));
+
+      for (const pb of priorBilled) {
+        const current = receiptLineBilledMap.get(pb.goodsReceivedLineId) || 0;
+        receiptLineBilledMap.set(
+          pb.goodsReceivedLineId,
+          current + parseFloat(pb.quantityBilled),
+        );
+      }
+    }
+
+    // Fetch receipt line details for validation
+    const grLineDetailsMap = new Map<string, any>();
+    if (grLineIds && grLineIds.length > 0) {
+      const details = await this.db
+        .select()
+        .from(goodsReceivedLines)
+        .where(inArray(goodsReceivedLines.goodsReceivedLineId, grLineIds));
+      for (const d of details) {
+        grLineDetailsMap.set(d.goodsReceivedLineId, d);
+      }
+    }
 
     // Expense GL Routing tallies
     const expenseByAccountId = new Map<string, number>();
@@ -194,12 +234,16 @@ export class PurchaseInvoiceService {
 
       const receivedQty = parseFloat((line as any).quantityReceived || '0');
 
+      const reqLine = dto.lines?.find(
+        (l) => l.purchaseOrderLineId === line.purchaseOrderLineId,
+      );
+
       let qtyToInvoice = 0;
-      if (dto.lines) {
-        const reqLine = dto.lines.find(
-          (l) => l.purchaseOrderLineId === line.purchaseOrderLineId,
-        );
-        qtyToInvoice = reqLine ? reqLine.quantityToInvoice : 0;
+      let grLineId: string | undefined = undefined;
+
+      if (reqLine) {
+        qtyToInvoice = reqLine.quantityToInvoice;
+        grLineId = reqLine.goodsReceivedLineId;
       } else {
         qtyToInvoice = Math.max(0, receivedQty - prevInvoicedQty);
       }
@@ -208,7 +252,32 @@ export class PurchaseInvoiceService {
         continue;
       }
 
-      if (prevInvoicedQty + qtyToInvoice > receivedQty + 0.001) {
+      // 3-Way Matching Validation
+      if (grLineId) {
+        const grLine = grLineDetailsMap.get(grLineId);
+        if (!grLine) {
+          throw new BadRequestException(`Receipt line ${grLineId} not found`);
+        }
+        if (grLine.purchaseOrderLineId !== line.purchaseOrderLineId) {
+          throw new BadRequestException(
+            `Receipt line ${grLineId} does not belong to PO line ${line.purchaseOrderLineId}`,
+          );
+        }
+
+        const prevBilledOnThisReceipt = receiptLineBilledMap.get(grLineId) || 0;
+        const totalReceivedOnThisReceipt = parseFloat(grLine.quantityReceived);
+
+        if (
+          prevBilledOnThisReceipt + qtyToInvoice >
+          totalReceivedOnThisReceipt + 0.001
+        ) {
+          throw new BadRequestException(
+            `Cannot bill ${qtyToInvoice} against receipt line ${grLineId}. ` +
+              `Already billed: ${prevBilledOnThisReceipt}, Received: ${totalReceivedOnThisReceipt}`,
+          );
+        }
+      } else if (prevInvoicedQty + qtyToInvoice > receivedQty + 0.001) {
+        // Fallback validation for non-receipt billing
         throw new BadRequestException(
           `Cannot invoice more than received quantity for line. Requested: ${qtyToInvoice}, Remaining Received: ${Math.max(0, receivedQty - prevInvoicedQty)}`,
         );
@@ -220,13 +289,13 @@ export class PurchaseInvoiceService {
       const disc = parseFloat(line.discountPercentage ?? '0');
 
       // Resolve GST rate from the line's category
-      let gstRate = 0;
-      if ((line as any).gstCategoryId) {
+      let taxRate = 0;
+      if ((line as any).taxCategoryId) {
         try {
-          const cat = await this.gstService.getById(
-            (line as any).gstCategoryId,
+          const cat = await this.taxService.getById(
+            (line as any).taxCategoryId,
           );
-          gstRate = parseFloat(cat.rate ?? '0');
+          taxRate = parseFloat(cat.rate ?? '0');
         } catch {
           // Category not found — fall back to 0% tax
         }
@@ -236,7 +305,7 @@ export class PurchaseInvoiceService {
         quantity: qtyToInvoice,
         pricePerUnit: price,
         discountPercentage: disc,
-        taxRate: gstRate,
+        taxRate: taxRate,
       });
 
       rawTotal += pricing.amount;
@@ -258,12 +327,22 @@ export class PurchaseInvoiceService {
         defaultExpense += pricing.amount;
       }
 
+      const tempLineId = randomUUID();
       invoiceLineValues.push({
+        invoiceLineId: tempLineId,
         purchaseOrderLineId: line.purchaseOrderLineId,
         quantityInvoiced: String(qtyToInvoice),
         pricePerUnit: String(price),
         amount: String(pricing.amount),
       });
+
+      if (grLineId) {
+        invoiceReceiptValues.push({
+          invoiceLineId: tempLineId,
+          goodsReceivedLineId: grLineId,
+          quantityBilled: String(qtyToInvoice),
+        });
+      }
 
       outboxLineDetails.push({
         purchaseOrderLineId: line.purchaseOrderLineId,
@@ -308,11 +387,17 @@ export class PurchaseInvoiceService {
         .returning();
 
       // B. Structure local Bill Details mapping natively
-      const preparedLines = invoiceLineValues.map((l) => ({
-        ...l,
-        invoiceId: invoice.invoiceId,
-      }));
-      await tx.insert(purchaseInvoiceLines).values(preparedLines);
+      await tx.insert(purchaseInvoiceLines).values(
+        invoiceLineValues.map((l) => ({
+          ...l,
+          invoiceId: invoice.invoiceId,
+        })),
+      );
+
+      // C. Record 3-way matching receipts natively
+      if (invoiceReceiptValues.length > 0) {
+        await tx.insert(purchaseInvoiceReceipts).values(invoiceReceiptValues);
+      }
 
       // C. Transition originating Order cleanly natively
       if (isFullyInvoiced && order.stateCode === 'received') {
@@ -489,6 +574,8 @@ export class PurchaseInvoiceService {
         pricePerUnit: purchaseInvoiceLines.pricePerUnit,
         amount: purchaseInvoiceLines.amount,
         productId: purchaseOrderLineItems.productId,
+        goodsReceivedLineId: purchaseInvoiceReceipts.goodsReceivedLineId,
+        quantityBilled: purchaseInvoiceReceipts.quantityBilled,
       })
       .from(purchaseInvoiceLines)
       .innerJoin(
@@ -496,6 +583,13 @@ export class PurchaseInvoiceService {
         eq(
           purchaseInvoiceLines.purchaseOrderLineId,
           purchaseOrderLineItems.purchaseOrderLineId,
+        ),
+      )
+      .leftJoin(
+        purchaseInvoiceReceipts,
+        eq(
+          purchaseInvoiceLines.invoiceLineId,
+          purchaseInvoiceReceipts.invoiceLineId,
         ),
       )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));

@@ -7,7 +7,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InvoicesSection from '../InvoicesSection';
-import type { OrderDetail, SalesInvoice, GstCategory } from '../types';
+import type { OrderDetail, SalesInvoice, TaxCategory } from '../types';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 jest.mock('next-intl', () => ({
@@ -60,7 +60,7 @@ const baseOrder: OrderDetail = {
         pricePerUnit: '50.00',
         discountPercentage: '0',
         amount: '500.00',
-        gstCategoryId: null,
+        taxCategoryId: null,
         tax: '50.00',
         totalAmount: '550.00',
         unitOfMeasure: 'EA',
@@ -68,7 +68,7 @@ const baseOrder: OrderDetail = {
     events: [],
 };
 
-const gstCategories: GstCategory[] = [];
+const taxCategories: TaxCategory[] = [];
 
 const picking = {
     lines: [{ salesOrderLineId: 'L1', quantityShipped: '5', quantityPicked: '5' }],
@@ -79,7 +79,7 @@ const defaultProps = {
     order: baseOrder,
 
     invoices: [] as SalesInvoice[],
-    gstCategories,
+    taxCategories,
     pickingSummary: null,
     setError: jest.fn(),
     loadInvoices: jest.fn().mockResolvedValue(undefined),

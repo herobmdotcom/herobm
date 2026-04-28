@@ -23,7 +23,7 @@ export default function NewProductPage() {
   useDocumentTitle(t('products.newTitle'));
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
-  const [gstCategories, setGstCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<any[]>([]);
   const [dto, setDto] = useState({
     productNumber: '',
     name: '',
@@ -34,7 +34,7 @@ export default function NewProductPage() {
     tradePrice: '0.00',
     priceLevel3: '0.00',
     priceLevel4: '0.00',
-    gstCategoryId: '',
+    taxCategoryId: '',
     scNumber: '',
     stateCode: 'active',
     productGroupId: null,
@@ -42,7 +42,7 @@ export default function NewProductPage() {
   });
 
   useEffect(() => {
-    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -202,17 +202,17 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.gstCategory')}
+                    {t('products.columns.taxCategory')}
                   </label>
                   <select
                     className="input"
-                    value={dto.gstCategoryId || ''}
-                    onChange={(e) => updateField('gstCategoryId', e.target.value)}
+                    value={dto.taxCategoryId || ''}
+                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
                     disabled={submitting}
                   >
                     <option value="">{t('common.none')}</option>
-                    {gstCategories.map((cat) => (
-                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
                         {cat.title} ({cat.code})
                       </option>
                     ))}

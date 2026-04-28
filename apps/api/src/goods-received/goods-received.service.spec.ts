@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GoodsReceivedService } from './goods-received.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { InventoryService } from '../inventory/inventory.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -44,6 +45,7 @@ function buildMockTx(selectResults: any[][]) {
       return qb;
     }),
     insert: jest.fn().mockReturnValue(createMockQueryBuilder([{}])),
+    update: jest.fn().mockReturnValue(createMockQueryBuilder([{}])),
   };
 
   return tx;
@@ -57,6 +59,7 @@ describe('GoodsReceivedService', () => {
   let service: GoodsReceivedService;
   let mockDb: any;
   let mockTx: any;
+  let mockInventoryService: any;
 
   beforeEach(async () => {
     mockTx = buildMockTx([]);
@@ -67,10 +70,15 @@ describe('GoodsReceivedService', () => {
       $count: jest.fn().mockReturnValue(0),
     };
 
+    mockInventoryService = {
+      recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GoodsReceivedService,
         { provide: DRIZZLE, useValue: mockDb },
+        { provide: InventoryService, useValue: mockInventoryService },
       ],
     }).compile();
 
@@ -103,7 +111,7 @@ describe('GoodsReceivedService', () => {
     it('should throw NotFoundException when location does not exist', async () => {
       mockTx = buildMockTx([
         [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor found
-        [],                                   // 2. location → not found
+        [], // 2. location → not found
       ]);
       mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
 
@@ -126,10 +134,10 @@ describe('GoodsReceivedService', () => {
       ]);
 
       mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],       // 1. vendor
-        [{ locationId: 'loc-1' }],                  // 2. location
+        [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor
+        [{ locationId: 'loc-1' }], // 2. location
         // product lookup is the next select after insert — handled below
-        [],                                          // 3. product → not found
+        [], // 3. product → not found
       ]);
       mockTx.insert = jest.fn().mockReturnValue(headerInsertQb);
       mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -155,10 +163,11 @@ describe('GoodsReceivedService', () => {
       // The service calls findOne at the end, which also uses tx.select().
       // We provide mock results for that too.
       mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],                 // 1. vendor
-        [{ locationId: 'loc-1' }],                            // 2. location
-        [{ productId: 'p-1' }],                               // 3. product validation
-        [                                                      // 4. open PO lines → exactly 1
+        [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor
+        [{ locationId: 'loc-1' }], // 2. location
+        [{ productId: 'p-1' }], // 3. product validation
+        [
+          // 4. open PO lines → exactly 1
           {
             purchaseOrderLineId: 'pol-1',
             purchaseOrderId: 'po-1',
@@ -166,9 +175,18 @@ describe('GoodsReceivedService', () => {
             quantityReceived: '0',
           },
         ],
+        [{ zoneId: 'z1' }], // 5. Find zone
+        [{ binId: 'b1' }], // 6. Find bin
+        [{ quantity: '20', quantityReceived: '5' }], // 7. Recompute PO state
         // findOne selects:
-        [{ receipt: { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' }, vendorName: 'ACME', vendorNumber: 'V001' }],
-        [],  // findOne lines
+        [
+          {
+            receipt: { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
+            vendorName: 'ACME',
+            vendorNumber: 'V001',
+          },
+        ],
+        [], // findOne lines
       ]);
 
       // Track what insert().values() receives
@@ -185,8 +203,8 @@ describe('GoodsReceivedService', () => {
       mockTx.insert = jest.fn().mockImplementation(() => {
         insertCallCount++;
         if (insertCallCount === 1) return headerInsertQb; // goods_received header
-        if (insertCallCount === 2) return lineInsertMock;  // goods_received_lines
-        return createMockQueryBuilder([{}]);                // event emit
+        if (insertCallCount === 2) return lineInsertMock; // goods_received_lines
+        return createMockQueryBuilder([{}]); // event emit
       });
 
       mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
@@ -218,11 +236,31 @@ describe('GoodsReceivedService', () => {
         [{ vendorId: 'v1', name: 'ACME' }],
         [{ locationId: 'loc-1' }],
         [{ productId: 'p-1' }],
-        [ // multiple open PO lines
-          { purchaseOrderLineId: 'pol-1', purchaseOrderId: 'po-1', quantity: '20', quantityReceived: '0' },
-          { purchaseOrderLineId: 'pol-2', purchaseOrderId: 'po-2', quantity: '10', quantityReceived: '0' },
+        [
+          // multiple open PO lines
+          {
+            purchaseOrderLineId: 'pol-1',
+            purchaseOrderId: 'po-1',
+            quantity: '20',
+            quantityReceived: '0',
+          },
+          {
+            purchaseOrderLineId: 'pol-2',
+            purchaseOrderId: 'po-2',
+            quantity: '10',
+            quantityReceived: '0',
+          },
         ],
-        [{ receipt: { goodsReceivedId: 'gr-1' }, vendorName: 'ACME', vendorNumber: 'V001' }],
+        [{ zoneId: 'z1' }], // 5. Find zone
+        [{ binId: 'b1' }], // 6. Find bin
+        // (No PO update for ambiguous matches)
+        [
+          {
+            receipt: { goodsReceivedId: 'gr-1' },
+            vendorName: 'ACME',
+            vendorNumber: 'V001',
+          },
+        ],
         [],
       ]);
 
@@ -270,7 +308,15 @@ describe('GoodsReceivedService', () => {
         [{ locationId: 'loc-1' }],
         [{ productId: 'p-1' }],
         [], // no open PO lines
-        [{ receipt: { goodsReceivedId: 'gr-1' }, vendorName: 'ACME', vendorNumber: 'V001' }],
+        [{ zoneId: 'z1' }], // 5. Find zone
+        [{ binId: 'b1' }], // 6. Find bin
+        [
+          {
+            receipt: { goodsReceivedId: 'gr-1' },
+            vendorName: 'ACME',
+            vendorNumber: 'V001',
+          },
+        ],
         [],
       ]);
 
@@ -318,12 +364,28 @@ describe('GoodsReceivedService', () => {
         [{ locationId: 'loc-1' }],
         // Line 1: product A
         [{ productId: 'p-A' }],
-        [{ purchaseOrderLineId: 'pol-A', purchaseOrderId: 'po-A', quantity: '10', quantityReceived: '0' }], // matched
+        [
+          {
+            purchaseOrderLineId: 'pol-A',
+            purchaseOrderId: 'po-A',
+            quantity: '10',
+            quantityReceived: '0',
+          },
+        ], // matched
         // Line 2: product B
         [{ productId: 'p-B' }],
         [], // unmatched
+        [{ zoneId: 'z1' }], // 7. Find zone
+        [{ binId: 'b1' }], // 8. Find bin
+        [{ quantity: '10', quantityReceived: '3' }], // 9. Recompute PO state (for po-A)
         // findOne
-        [{ receipt: { goodsReceivedId: 'gr-1' }, vendorName: 'ACME', vendorNumber: 'V001' }],
+        [
+          {
+            receipt: { goodsReceivedId: 'gr-1' },
+            vendorName: 'ACME',
+            vendorNumber: 'V001',
+          },
+        ],
         [],
       ]);
 
@@ -373,8 +435,24 @@ describe('GoodsReceivedService', () => {
         [{ vendorId: 'v1', name: 'ACME' }],
         [{ locationId: 'loc-1' }],
         [{ productId: 'p-1' }],
-        [{ purchaseOrderLineId: 'pol-1', purchaseOrderId: 'po-1', quantity: '10', quantityReceived: '0' }],
-        [{ receipt: { goodsReceivedId: 'gr-1' }, vendorName: 'ACME', vendorNumber: 'V001' }],
+        [
+          {
+            purchaseOrderLineId: 'pol-1',
+            purchaseOrderId: 'po-1',
+            quantity: '10',
+            quantityReceived: '0',
+          },
+        ],
+        [{ zoneId: 'z1' }], // 5. Find zone
+        [{ binId: 'b1' }], // 6. Find bin
+        [{ quantity: '10', quantityReceived: '10' }], // 7. Recompute PO state
+        [
+          {
+            receipt: { goodsReceivedId: 'gr-1' },
+            vendorName: 'ACME',
+            vendorNumber: 'V001',
+          },
+        ],
         [],
       ]);
 
@@ -384,7 +462,10 @@ describe('GoodsReceivedService', () => {
         insertCallCount++;
         if (insertCallCount === 1) return headerInsertQb;
         if (insertCallCount === 2) {
-          return { values: jest.fn().mockReturnValue(linesInsertQb), returning: jest.fn().mockResolvedValue([{}]) };
+          return {
+            values: jest.fn().mockReturnValue(linesInsertQb),
+            returning: jest.fn().mockResolvedValue([{}]),
+          };
         }
         return createMockQueryBuilder([{}]);
       });
@@ -400,9 +481,9 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      // The service should NOT call tx.update at all — no PO state changes,
-      // no inventory updates.
-      expect(mockTx.update).toBeUndefined();
+      // The service SHOULD call tx.update to update PO line quantity_received 
+      // and PO header stateCode.
+      expect(mockTx.update).toHaveBeenCalled();
     });
   });
 

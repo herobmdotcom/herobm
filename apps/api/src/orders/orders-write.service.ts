@@ -34,7 +34,7 @@ import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { AccountsService } from '../accounts/accounts.service';
@@ -59,7 +59,7 @@ const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 export class OrdersWriteService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
-    private readonly gstService: GstCategoriesService,
+    private readonly taxService: TaxCategoriesService,
     private readonly pickingService: PickingService,
     private readonly inventoryService: InventoryService,
     private readonly accountsService: AccountsService,
@@ -108,35 +108,35 @@ export class OrdersWriteService {
     quantity: string,
     pricePerUnit: string,
     discountPercentage: string,
-    gstRate: number,
+    taxRate: number,
   ): { amount: string; tax: string; totalAmount: string } {
     return computeLinePriceForStorage({
       quantity: parseFloat(quantity),
       pricePerUnit: parseFloat(pricePerUnit),
       discountPercentage: parseFloat(discountPercentage || '0'),
-      taxRate: gstRate,
+      taxRate: taxRate,
     });
   }
-  // ABM gst_category text mapping has been migrated directly into modbm_core.products schema
+  // ABM tax_category text mapping has been migrated directly into modbm_core.products schema
   /**
    * Resolve the GST category for a single order line.
    *
    * Priority:
-   *   1. Explicit per-line override (gstCategoryIdOverride) — manual escape hatch
+   *   1. Explicit per-line override (taxCategoryIdOverride) — manual escape hatch
    *   2. Customer exempt → EXE (0%) regardless of product
-   *   3. Product's physical gstCategoryId foreign key
+   *   3. Product's physical taxCategoryId foreign key
    *   4. System default GST (fallback)
    */
-  private async resolveGstForLine(
+  private async resolveTaxForLine(
     customerId: string,
     productId?: string,
-    gstCategoryIdOverride?: string,
-  ): Promise<{ gstCategoryId: string; rate: number }> {
+    taxCategoryIdOverride?: string,
+  ): Promise<{ taxCategoryId: string; rate: number }> {
     // 1. Explicit override wins
-    if (gstCategoryIdOverride) {
-      const cat = await this.gstService.getById(gstCategoryIdOverride);
+    if (taxCategoryIdOverride) {
+      const cat = await this.taxService.getById(taxCategoryIdOverride);
       return {
-        gstCategoryId: cat.gstCategoryId,
+        taxCategoryId: cat.taxCategoryId,
         rate: parseFloat(cat.rate ?? '0'),
       };
     }
@@ -144,11 +144,11 @@ export class OrdersWriteService {
     // 2. Customer exempt → always 0%
     const account = await this.accountsService.findOne(customerId);
 
-    if (account.gstCategoryId) {
-      const acctCat = await this.gstService.getById(account.gstCategoryId);
+    if (account.taxCategoryId) {
+      const acctCat = await this.taxService.getById(account.taxCategoryId);
       if (acctCat.code === 'EXE') {
         return {
-          gstCategoryId: acctCat.gstCategoryId,
+          taxCategoryId: acctCat.taxCategoryId,
           rate: parseFloat(acctCat.rate ?? '0'),
         };
       }
@@ -157,26 +157,26 @@ export class OrdersWriteService {
     // 3. Product's GST category
     if (productId) {
       const product = await this.lookupProduct(productId);
-      if (product.gstCategoryId) {
+      if (product.salesTaxCategoryId) {
         try {
-          const cat = await this.gstService.getById(product.gstCategoryId);
+          const cat = await this.taxService.getById(product.salesTaxCategoryId);
           return {
-            gstCategoryId: cat.gstCategoryId,
+            taxCategoryId: cat.taxCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
           };
         } catch (err) {
           // Bad link, fallback to default
           this.logger.warn(
-            `Product ${productId} had invalid tax category ID: ${product.gstCategoryId}`,
+            `Product ${productId} had invalid tax category ID: ${product.salesTaxCategoryId}`,
           );
         }
       }
     }
 
     // 4. Fallback: system default
-    const defaultGst = await this.gstService.getDefault();
+    const defaultGst = await this.taxService.getDefault();
     return {
-      gstCategoryId: defaultGst.gstCategoryId,
+      taxCategoryId: defaultGst.taxCategoryId,
       rate: parseFloat(defaultGst.rate ?? '0'),
     };
   }
@@ -286,17 +286,17 @@ export class OrdersWriteService {
   /**
    * Look up a product from modbm_core.products.
    * Throws BadRequestException if not found.
-   * Returns productId and gstCategoryId.
+   * Returns productId and taxCategoryId.
    */
   private async lookupProduct(productId: string): Promise<{
     productId: string;
-    gstCategoryId: string | null;
+    salesTaxCategoryId: string | null;
   }> {
     try {
       const product = await this.productsService.findOne(productId);
       return {
         productId: product.productId,
-        gstCategoryId: product.gstCategoryId ?? null,
+        salesTaxCategoryId: product.salesTaxCategoryId ?? null,
       };
     } catch (err) {
       if (err instanceof NotFoundException) {
@@ -376,10 +376,10 @@ export class OrdersWriteService {
       const lineValues = [];
       for (let idx = 0; idx < dto.lines.length; idx++) {
         const line = dto.lines[idx];
-        const lineGst = await this.resolveGstForLine(
+        const lineTax = await this.resolveTaxForLine(
           dto.customerId,
           line.productId,
-          line.gstCategoryId,
+          line.taxCategoryId,
         );
         const lineDiscount =
           line.discountPercentage ?? customer.customerDiscount;
@@ -387,7 +387,7 @@ export class OrdersWriteService {
           line.quantity,
           line.pricePerUnit,
           lineDiscount,
-          lineGst.rate,
+          lineTax.rate,
         );
         lineValues.push({
           salesOrderId: order.salesOrderId,
@@ -397,7 +397,7 @@ export class OrdersWriteService {
           quantity: line.quantity,
           pricePerUnit: line.pricePerUnit,
           discountPercentage: lineDiscount,
-          gstCategoryId: lineGst.gstCategoryId,
+          taxCategoryId: lineTax.taxCategoryId,
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -562,8 +562,15 @@ export class OrdersWriteService {
         generateBackorders === true &&
         gaps.length > 0
       ) {
-        await this.backordersService.triggerBackorders(id, gaps, actor, tx);
+        await this.backordersService.generateDemand(id, gaps, actor, tx);
       }
+      if (newState === 'cancelled') {
+        await tx
+          .update(backorders)
+          .set({ stateCode: 'cancelled', modifiedOn: new Date() })
+          .where(eq(backorders.salesOrderId, id));
+      }
+
       const [updated] = await tx
         .update(salesOrders)
         .set({ stateCode: newState, modifiedOn: new Date() })
@@ -717,13 +724,13 @@ export class OrdersWriteService {
     const lineNumber = (maxLine[0]?.max ?? 0) + 1;
 
     // Resolve GST: product × customer intersection, with per-line override
-    const lineGst = await this.resolveGstForLine(
+    const lineTax = await this.resolveTaxForLine(
       order.customerId ?? '',
       dto.productId,
-      dto.gstCategoryId,
+      dto.taxCategoryId,
     );
-    const gstCategoryId = lineGst.gstCategoryId;
-    const gstRate = lineGst.rate;
+    const taxCategoryId = lineTax.taxCategoryId;
+    const taxRate = lineTax.rate;
 
     const customer = await this.resolveCustomer(order.customerId ?? '');
     const lineDiscount =
@@ -733,7 +740,7 @@ export class OrdersWriteService {
       dto.quantity,
       dto.pricePerUnit,
       lineDiscount,
-      gstRate,
+      taxRate,
     );
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -747,7 +754,7 @@ export class OrdersWriteService {
           quantity: dto.quantity,
           pricePerUnit: dto.pricePerUnit,
           discountPercentage: lineDiscount,
-          gstCategoryId,
+          taxCategoryId,
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -769,7 +776,7 @@ export class OrdersWriteService {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
           quantity: dto.quantity,
-          gstCategoryId,
+          taxCategoryId,
         },
         actor,
       });
@@ -829,13 +836,13 @@ export class OrdersWriteService {
     const lineNumber = (maxLine[0]?.max ?? 0) + 1;
 
     // Resolve GST: product × customer intersection, with per-line override
-    const lineGst = await this.resolveGstForLine(
+    const lineTax = await this.resolveTaxForLine(
       order.customerId ?? '',
       dto.productId,
-      dto.gstCategoryId,
+      dto.taxCategoryId,
     );
-    const gstCategoryId = lineGst.gstCategoryId;
-    const gstRate = lineGst.rate;
+    const taxCategoryId = lineTax.taxCategoryId;
+    const taxRate = lineTax.rate;
 
     const customer = await this.resolveCustomer(order.customerId ?? '');
     const lineDiscount =
@@ -845,7 +852,7 @@ export class OrdersWriteService {
       dto.quantity,
       dto.pricePerUnit,
       lineDiscount,
-      gstRate,
+      taxRate,
     );
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -859,7 +866,7 @@ export class OrdersWriteService {
           quantity: dto.quantity,
           pricePerUnit: dto.pricePerUnit,
           discountPercentage: lineDiscount,
-          gstCategoryId,
+          taxCategoryId,
           amount: computed.amount,
           tax: computed.tax,
           totalAmount: computed.totalAmount,
@@ -882,7 +889,7 @@ export class OrdersWriteService {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
           quantity: dto.quantity,
-          gstCategoryId,
+          taxCategoryId,
           pricePerUnit: dto.pricePerUnit,
         },
         actor,
@@ -919,26 +926,26 @@ export class OrdersWriteService {
     }
 
     // Resolve GST: DTO override → existing line category → default product/customer resolution
-    let gstCategoryId = existingLine.gstCategoryId;
-    let gstRate = 0;
+    let taxCategoryId = existingLine.taxCategoryId;
+    let taxRate = 0;
 
-    if (dto.gstCategoryId) {
+    if (dto.taxCategoryId) {
       // 1. Explicit override via DTO
-      const cat = await this.gstService.getById(dto.gstCategoryId);
-      gstCategoryId = cat.gstCategoryId;
-      gstRate = parseFloat(cat.rate ?? '0');
-    } else if (gstCategoryId) {
+      const cat = await this.taxService.getById(dto.taxCategoryId);
+      taxCategoryId = cat.taxCategoryId;
+      taxRate = parseFloat(cat.rate ?? '0');
+    } else if (taxCategoryId) {
       // 2. Keep existing line category
-      const cat = await this.gstService.getById(gstCategoryId);
-      gstRate = parseFloat(cat.rate ?? '0');
+      const cat = await this.taxService.getById(taxCategoryId);
+      taxRate = parseFloat(cat.rate ?? '0');
     } else {
       // 3. Re-resolve dynamically from product x customer rules
-      const resolved = await this.resolveGstForLine(
+      const resolved = await this.resolveTaxForLine(
         order.customerId ?? '',
         existingLine.productId ?? undefined,
       );
-      gstCategoryId = resolved.gstCategoryId;
-      gstRate = resolved.rate;
+      taxCategoryId = resolved.taxCategoryId;
+      taxRate = resolved.rate;
     }
 
     const quantity = dto.quantity ?? existingLine.quantity;
@@ -950,7 +957,7 @@ export class OrdersWriteService {
       quantity,
       pricePerUnit,
       discountPercentage,
-      gstRate,
+      taxRate,
     );
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -1012,6 +1019,11 @@ export class OrdersWriteService {
     }
 
     await this.db.transaction(async (tx: DrizzleDB) => {
+      // Delete associated demand records
+      await tx
+        .delete(backorders)
+        .where(eq(backorders.salesOrderLineId, lineId));
+
       await tx
         .delete(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, lineId));
@@ -1058,7 +1070,7 @@ export class OrdersWriteService {
         totalAmount: salesOrderLineItems.totalAmount,
         unitOfMeasure: salesOrderLineItems.unitOfMeasure,
         quantityPicked: salesOrderLineItems.quantityPicked,
-        gstCategoryId: salesOrderLineItems.gstCategoryId,
+        taxCategoryId: salesOrderLineItems.taxCategoryId,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
         isPostConfirmation: salesOrderLineItems.isPostConfirmation,
         baseUom: coreProducts.baseUom,
@@ -1105,6 +1117,7 @@ export class OrdersWriteService {
 
     const backorderList = await this.db
       .select({
+        lineNumber: salesOrderLineItems.lineNumber,
         productId: backorders.productId,
         productNumber: coreProducts.productNumber,
         quantity: backorders.quantity,
@@ -1120,8 +1133,12 @@ export class OrdersWriteService {
         purchaseOrders,
         eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
       )
+      .leftJoin(
+        salesOrderLineItems,
+        eq(backorders.salesOrderLineId, salesOrderLineItems.salesOrderLineId),
+      )
       .where(eq(backorders.salesOrderId, order.salesOrderId))
-      .orderBy(backorders.createdOn);
+      .orderBy(salesOrderLineItems.lineNumber, backorders.createdOn);
 
     return {
       ...order,

@@ -42,7 +42,7 @@ export default function ProductDetailPage() {
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false);
   const [refreshGrid, setRefreshGrid] = useState(0);
   const [product, setProduct] = useState<any>(null);
-  const [gstCategories, setGstCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<any[]>([]);
   const [uomDictionary, setUomDictionary] = useState<{ uomCode: string; description: string }[]>([]);
   const [addingUom, setAddingUom] = useState(false);
   const [newUomCode, setNewUomCode] = useState('');
@@ -65,7 +65,7 @@ export default function ProductDetailPage() {
     tradePrice: '0',
     priceLevel3: '0',
     priceLevel4: '0',
-    gstCategoryId: '',
+    taxCategoryId: '',
     scNumber: '',
     notes: '',
     stateCode: 'active',
@@ -87,7 +87,7 @@ export default function ProductDetailPage() {
         tradePrice: formatMoney(data.tradePrice),
         priceLevel3: formatMoney(data.priceLevel3),
         priceLevel4: formatMoney(data.priceLevel4),
-        gstCategoryId: data.gstCategoryId || '',
+        taxCategoryId: data.taxCategoryId || '',
         scNumber: data.scNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
@@ -105,7 +105,7 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
-    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
     apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch(console.error);
     apiFetch<any>('/api/inventory/locations').then(res => setLocations(res.data || [])).catch(console.error);
   }, [fetchProduct]);
@@ -804,23 +804,23 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.gstCategory')}
+                    {t('products.columns.taxCategory')}
                   </label>
                   <select
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.gstCategoryId || ''}
-                    onChange={(e) => handleSelectChange('gstCategoryId', e.target.value)}
+                    value={dto.taxCategoryId || ''}
+                    onChange={(e) => handleSelectChange('taxCategoryId', e.target.value)}
                   >
                     <option value="">{t('common.none')}</option>
-                    {gstCategories.map((cat) => (
-                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
                         {cat.title} ({cat.code})
                       </option>
                     ))}
                     {/* Fallback for legacy values not in current categories */}
-                    {dto.gstCategoryId && !gstCategories.find(c => c.gstCategoryId === dto.gstCategoryId) && (
-                      <option value={dto.gstCategoryId}>{t('products.unknownCategory', { id: dto.gstCategoryId })}</option>
+                    {dto.taxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.taxCategoryId) && (
+                      <option value={dto.taxCategoryId}>{t('products.unknownCategory', { id: dto.taxCategoryId })}</option>
                     )}
                   </select>
                 </div>

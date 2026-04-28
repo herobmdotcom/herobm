@@ -19,16 +19,17 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import LocationSelect from '@/components/shared/LocationSelect';
 
-import type { GstCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, ReturnLine, OrderEvent } from './types';
+import type { TaxCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, ReturnLine, OrderEvent } from './types';
 import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
-import { getGstLabel } from './types';
+import { getTaxLabel } from './types';
 import InvoicesSection from './InvoicesSection';
+import AllocationsSection from './AllocationsSection';
 
 import ReturnsSection from './ReturnsSection';
 
-function GstLabel({ category }: { category: GstCategory }) {
+function TaxLabel({ category }: { category: TaxCategory }) {
   if (!category) return null;
-  return <>{getGstLabel(category)}</>;
+  return <>{getTaxLabel(category)}</>;
 }
 
 import {
@@ -88,7 +89,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   // Add-line product search is handled by shared ProductSearchInput
 
   // GST categories
-  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+  const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
   // Tab state for line items / availability
   const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
@@ -160,7 +161,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     loadOrder();
     // Load GST categories
-    apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
+    apiFetch<TaxCategory[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
   // Load returns and invoices when order is received, partially_received, billed or invoiced
@@ -251,7 +252,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           quantity: l.quantity,
           pricePerUnit: l.pricePerUnit,
           discountPercentage: l.discountPercentage || '0',
-          gstCategoryId: l.gstCategoryId || null,
+          taxCategoryId: l.taxCategoryId || null,
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
       });
@@ -376,6 +377,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   const sections = {
     details: { id: 'details-section', label: 'Details', show: true },
+    allocations: { id: 'allocations-section', label: 'Allocations', show: true },
     invoices: { id: 'Invoices-section', label: 'Invoices', show: true },
     activity: { id: 'activity-section', label: 'Activity', show: true },
   };
@@ -611,7 +613,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.uom')}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
                   <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.discountPct' as any)}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.gst' as any)}</th>
+                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.tax' as any)}</th>
                   <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                   {isLinesEditable && <th style={{ width: 50 }}></th>}
                 </tr>
@@ -759,13 +761,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         <select
                           className="input"
                           style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                          value={line.gstCategoryId || ''}
-                          onChange={(e) => updateLine(line.purchaseOrderLineId, 'gstCategoryId', e.target.value)}
+                          value={line.taxCategoryId || ''}
+                          onChange={(e) => updateLine(line.purchaseOrderLineId, 'taxCategoryId', e.target.value)}
                         >
-                          <option value="">{tCommon('defaultOption')}</option>
-                          {gstCategories.map((c) => (
-                            <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                              <GstLabel category={c} />
+                          {taxCategories.map((c) => (
+                            <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                              <TaxLabel category={c} />
                             </option>
                           ))}
                         </select>
@@ -773,8 +774,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     ) : (
                       <td style={{ textAlign: 'right', fontSize: 12 }}>
                         {(() => {
-                          const c = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
-                          if (c) return <GstLabel category={c} />;
+                          const c = taxCategories.find((c) => c.taxCategoryId === line.taxCategoryId);
+                          if (c) return <TaxLabel category={c} />;
                           // Legacy derivation
                           const amt = parseFloat(line.amount || '0');
                           const tax = parseFloat(line.tax || '0');
@@ -782,7 +783,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             const pct = (tax / amt) * 100;
                             return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                           }
-                          if (amt > 0 && tax === 0) return tCommon('gst.exempt');
+                          if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
                           return '—';
                         })()}
                       </td>
@@ -983,7 +984,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
         </div>
 
-
+        <AllocationsSection orderId={id} />
 
         <ReturnsSection
           orderId={id}
@@ -996,7 +997,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           orderId={id}
           order={order}
           Invoices={invoices}
-          gstCategories={gstCategories}
+          taxCategories={taxCategories}
           setError={setError}
           loadInvoices={loadInvoices}
           loadOrder={loadOrder as any}

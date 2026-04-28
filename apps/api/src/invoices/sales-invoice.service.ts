@@ -24,7 +24,7 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
 import { computeLinePrice } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
@@ -37,7 +37,7 @@ export class SalesInvoiceService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
-    private readonly gstService: GstCategoriesService,
+    private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
   ) {}
 
@@ -139,7 +139,7 @@ export class SalesInvoiceService {
         quantity: salesOrderLineItems.quantity,
         pricePerUnit: salesOrderLineItems.pricePerUnit,
         discountPercentage: salesOrderLineItems.discountPercentage,
-        gstCategoryId: salesOrderLineItems.gstCategoryId,
+        taxCategoryId: salesOrderLineItems.taxCategoryId,
         productType: coreProducts.productType,
         productRevenueAccountId: productGroups.defaultRevenueAccountId,
       })
@@ -255,11 +255,11 @@ export class SalesInvoiceService {
       const disc = parseFloat(line.discountPercentage ?? '0');
 
       // Resolve GST rate from the line's category (not the stored tax dollar amount)
-      let gstRate = 0;
-      if (line.gstCategoryId) {
+      let taxRate = 0;
+      if (line.taxCategoryId) {
         try {
-          const cat = await this.gstService.getById(line.gstCategoryId);
-          gstRate = parseFloat(cat.rate ?? '0');
+          const cat = await this.taxService.getById(line.taxCategoryId);
+          taxRate = parseFloat(cat.rate ?? '0');
         } catch {
           // Category not found — fall back to 0% tax
         }
@@ -269,7 +269,7 @@ export class SalesInvoiceService {
         quantity: qtyToInvoice,
         pricePerUnit: price,
         discountPercentage: disc,
-        taxRate: gstRate,
+        taxRate: taxRate,
       });
 
       rawTotal += pricing.amount;

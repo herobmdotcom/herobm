@@ -9,7 +9,7 @@ import { ProductsModule } from './products/products.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
 import { DashboardModule } from './dashboard/dashboard.module';
-import { GstModule } from './gst/gst.module';
+import { TaxModule } from './tax/tax.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { MetricsInterceptor } from './common/metrics.interceptor';
 import { SuppliersModule } from './suppliers/suppliers.module';
@@ -39,7 +39,7 @@ import { GoodsReceivedModule } from './goods-received/goods-received.module';
     OrdersModule,
     InvoicesModule,
     DashboardModule,
-    GstModule,
+    TaxModule,
     TelemetryModule,
     SuppliersModule,
     PurchaseOrdersModule,

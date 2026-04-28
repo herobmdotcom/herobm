@@ -6,7 +6,7 @@ import { ReturnsWriteService } from '../orders/returns-write.service';
 import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { gstCategories } from '../drizzle/modbm-core-schema';
+import { taxCategories } from '../drizzle/modbm-core-schema';
 import { computeLinePrice, HOME_CURRENCY } from '@modbm/shared';
 
 @Injectable()
@@ -20,10 +20,10 @@ export class SalesReturnCreditService {
 
   private readonly logger = new Logger(SalesReturnCreditService.name);
 
-  private async buildGstRateMap(): Promise<Map<string, number>> {
-    const rows = await this.db.select().from(gstCategories);
+  private async buildtaxRateMap(): Promise<Map<string, number>> {
+    const rows = await this.db.select().from(taxCategories);
     return new Map(
-      rows.map((r) => [r.gstCategoryId, parseFloat(r.rate ?? '0')]),
+      rows.map((r) => [r.taxCategoryId, parseFloat(r.rate ?? '0')]),
     );
   }
 
@@ -40,7 +40,7 @@ export class SalesReturnCreditService {
       source,
     );
 
-    const gstRateMap = await this.buildGstRateMap();
+    const taxRateMap = await this.buildtaxRateMap();
 
     // Map order lines by id
     const orderLineMap = new Map<string, any>(
@@ -63,8 +63,8 @@ export class SalesReturnCreditService {
       const fee = parseFloat(rl.returnFee || '0');
 
       let taxRate = 0;
-      if (orderLine.gstCategoryId && gstRateMap.has(orderLine.gstCategoryId)) {
-        taxRate = gstRateMap.get(orderLine.gstCategoryId)!;
+      if (orderLine.taxCategoryId && taxRateMap.has(orderLine.taxCategoryId)) {
+        taxRate = taxRateMap.get(orderLine.taxCategoryId)!;
       } else if (
         parseFloat(orderLine.amount || '0') > 0 &&
         parseFloat(orderLine.tax || '0') > 0
@@ -99,7 +99,7 @@ export class SalesReturnCreditService {
         discountPercentage: parseFloat(
           orderLine.discountPercentage || '0',
         ).toFixed(2),
-        gstRate: `${taxRate.toFixed(1)}%`,
+        taxRate: `${taxRate.toFixed(1)}%`,
         tax: pricing.tax.toFixed(2),
         reason: rl.reason || '',
         fee: fee.toFixed(2),

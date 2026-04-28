@@ -114,13 +114,13 @@ describe('API E2E — Purchase Invoices', () => {
       const lineId = detail.body.lines[0].purchaseOrderLineId;
 
       await request(app.getHttpServer())
-        .post(`/api/purchase-orders/${orderId}/receptions`)
+        .post(`/api/goods-received`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          purchaseOrderId: orderId,
+          vendorId: validVendorId,
           locationId: validLocationId,
           packingSlipNumber: `TEST-PS-${rand}`,
-          lines: [{ purchaseOrderLineId: lineId, quantityReceived: '5' }],
+          lines: [{ productId: validProductId, quantityReceived: '5' }],
         })
         .expect(201);
 

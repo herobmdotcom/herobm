@@ -22,7 +22,7 @@ interface Account {
   name: string;
   customerDiscount: string | null;
   currencyCode: string | null;
-  gstPosition: string | null;
+  taxPosition: string | null;
 }
 
 interface Location {
@@ -31,8 +31,8 @@ interface Location {
   code?: string;
 }
 
-interface GstCategory {
-  gstCategoryId: string;
+interface TaxCategory {
+  TaxCategoryId: string;
   code: string;
   title: string;
   type: string;
@@ -40,7 +40,7 @@ interface GstCategory {
   isDefault: boolean;
 }
 
-function getGstLabel(category: GstCategory) {
+function getTaxLabel(category: TaxCategory) {
     const pct = parseFloat(category.rate || '0');
     const formattedPct = pct % 1 === 0 ? pct.toFixed(0) : pct.toString();
     return `${category.title} (${formattedPct}%)`;
@@ -54,7 +54,7 @@ interface LineItem {
   quantity: string;
   pricePerUnit: string;
   discountPercentage: string;
-  gstCategoryId: string;
+  TaxCategoryId: string;
   unitOfMeasure: string;
   fulfillmentLocationId: string;
   baseUom?: string | null;
@@ -63,7 +63,7 @@ interface LineItem {
 
 let lineKey = 0;
 
-function emptyLine(defaultDiscount = '0', defaultGstCategoryId = '', defaultLocationId = ''): LineItem {
+function emptyLine(defaultDiscount = '0', defaultTaxCategoryId = '', defaultLocationId = ''): LineItem {
   const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
   return {
     key: ++lineKey,
@@ -73,7 +73,7 @@ function emptyLine(defaultDiscount = '0', defaultGstCategoryId = '', defaultLoca
     quantity: '1',
     pricePerUnit: '0',
     discountPercentage: defaultDiscount,
-    gstCategoryId: defaultGstCategoryId,
+    TaxCategoryId: defaultTaxCategoryId,
     unitOfMeasure: 'EA',
     fulfillmentLocationId: defaultLocationId,
   };
@@ -97,18 +97,18 @@ export default function NewOrderPage() {
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerDiscount, setCustomerDiscount] = useState('0');
   const [currencyCode, setCurrencyCode] = useState('');
-  const [customerGstPosition, setCustomerGstPosition] = useState<string | null>(null);
+  const [customerTaxPosition, setCustomerTaxPosition] = useState<string | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
   const [notes, setNotes] = useState('');
 
-  const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
-  const defaultGstCategoryId = gstCategories.find((c) => c.isDefault)?.gstCategoryId || '';
-  const exemptGstCategoryId = gstCategories.find((c) => c.type === 'exempt')?.gstCategoryId || '';
-  const isCustomerExempt = customerGstPosition?.toLowerCase() === 'exempt';
+  const [taxCategories, settaxCategories] = useState<TaxCategory[]>([]);
+  const defaultTaxCategoryId = taxCategories.find((c) => c.isDefault)?.TaxCategoryId || '';
+  const exemptTaxCategoryId = taxCategories.find((c) => c.type === 'exempt')?.TaxCategoryId || '';
+  const isCustomerExempt = customerTaxPosition?.toLowerCase() === 'exempt';
   // Exempt customers always get the exempt GST category
-  const effectiveGstCategoryId = isCustomerExempt ? exemptGstCategoryId : defaultGstCategoryId;
+  const effectiveTaxCategoryId = isCustomerExempt ? exemptTaxCategoryId : defaultTaxCategoryId;
 
   const [lines, setLines] = useState<LineItem[]>([]);
 
@@ -134,18 +134,18 @@ export default function NewOrderPage() {
 
   // Load GST categories on mount
   useEffect(() => {
-    apiFetch<GstCategory[]>('/api/gst-categories')
-      .then(setGstCategories)
+    apiFetch<TaxCategory[]>('/api/tax-categories')
+      .then(settaxCategories)
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
 
   // When GST categories load or customer changes, backfill effective GST onto lines missing one
   useEffect(() => {
-    if (!effectiveGstCategoryId) return;
+    if (!effectiveTaxCategoryId) return;
     setLines((prev) =>
-      prev.map((l) => (l.gstCategoryId ? l : { ...l, gstCategoryId: effectiveGstCategoryId })),
+      prev.map((l) => (l.TaxCategoryId ? l : { ...l, TaxCategoryId: effectiveTaxCategoryId })),
     );
-  }, [effectiveGstCategoryId]);
+  }, [effectiveTaxCategoryId]);
 
   // Debounced server-side search for customers (300ms)
   const searchAccounts = useCallback(async (term: string) => {
@@ -170,18 +170,18 @@ export default function NewOrderPage() {
     setCustomerDiscount(disc);
     const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
-    setCustomerGstPosition(a.gstPosition);
+    setCustomerTaxPosition(a.taxPosition);
 
     // Resolve the GST category: exempt customers force all lines to exempt
-    const custExempt = a.gstPosition?.toLowerCase() === 'exempt';
-    const lineGstId = custExempt ? exemptGstCategoryId : defaultGstCategoryId;
+    const custExempt = a.taxPosition?.toLowerCase() === 'exempt';
+    const lineTaxId = custExempt ? exemptTaxCategoryId : defaultTaxCategoryId;
 
     // Update discount + GST on all existing lines
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
         discountPercentage: l.discountPercentage === '0' ? disc : l.discountPercentage,
-        gstCategoryId: custExempt ? lineGstId : l.gstCategoryId,
+        TaxCategoryId: custExempt ? lineTaxId : l.TaxCategoryId,
       })),
     );
   };
@@ -202,7 +202,7 @@ export default function NewOrderPage() {
         quantity: '1',
         pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
         discountPercentage: customerDiscount,
-        gstCategoryId: effectiveGstCategoryId,
+        TaxCategoryId: effectiveTaxCategoryId,
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
@@ -222,7 +222,7 @@ export default function NewOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveGstCategoryId, fulfillmentLocationId)]);
+    setLines((prev) => [...prev, emptyLine(customerDiscount, effectiveTaxCategoryId, fulfillmentLocationId)]);
   };
 
   const computeAmount = (line: LineItem) => {
@@ -234,7 +234,7 @@ export default function NewOrderPage() {
   };
 
   const computeTax = (line: LineItem) => {
-    const cat = gstCategories.find((c) => c.gstCategoryId === line.gstCategoryId);
+    const cat = taxCategories.find((c) => c.TaxCategoryId === line.TaxCategoryId);
     const rate = cat ? parseFloat(cat.rate || '0') : 0;
     return computeLinePrice({
       quantity: parseFloat(line.quantity) || 0,
@@ -276,7 +276,7 @@ export default function NewOrderPage() {
             quantity: l.quantity,
             pricePerUnit: l.pricePerUnit,
             discountPercentage: l.discountPercentage,
-            gstCategoryId: l.gstCategoryId || undefined,
+            TaxCategoryId: l.TaxCategoryId || undefined,
             unitOfMeasure: l.unitOfMeasure,
             fulfillmentLocationId: l.fulfillmentLocationId || fulfillmentLocationId || undefined,
           })),
@@ -383,7 +383,7 @@ export default function NewOrderPage() {
                         letterSpacing: '0.04em',
                       }}
                     >
-                      {tSales('common.gst.exempt')}
+                      {tSales('common.taxLabels.exempt')}
                     </span>
                 )}
                 {customerId && parseFloat(customerDiscount) > 0 && (
@@ -542,7 +542,7 @@ export default function NewOrderPage() {
                 <th style={{ width: 80, textAlign: 'right' }}>{tSales('salesOrders.columns.uom')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.unitPrice')}</th>
                 <th style={{ width: 80, textAlign: 'right' }}>{tSales('salesOrders.columns.discountPct')}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.gst')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.tax')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{tSales('salesOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>
@@ -661,12 +661,12 @@ export default function NewOrderPage() {
                     <select
                       className="input"
                       style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                      value={line.gstCategoryId}
-                      onChange={(e) => updateLine(idx, 'gstCategoryId', e.target.value)}
+                      value={line.TaxCategoryId}
+                      onChange={(e) => updateLine(idx, 'TaxCategoryId', e.target.value)}
                     >
-                      {gstCategories.map((c) => (
-                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                          {getGstLabel(c)}
+                      {taxCategories.map((c) => (
+                        <option key={c.TaxCategoryId} value={c.TaxCategoryId}>
+                          {getTaxLabel(c)}
                         </option>
                       ))}
                     </select>

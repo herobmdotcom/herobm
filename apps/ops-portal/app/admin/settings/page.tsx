@@ -14,8 +14,8 @@ import { useTranslations } from 'next-intl';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface GstCategory {
-  gstCategoryId: string;
+interface TaxCategory {
+  taxCategoryId: string;
   code: string;
   title: string;
   type: string;
@@ -38,11 +38,11 @@ interface ExchangeRate {
   updatedOn: string;
 }
 
-const GST_TYPES = (t: any) => [
-  { value: 'gst_applies', label: t('admin.settings.gstTypes.gst_applies') },
-  { value: 'zero_rated', label: t('admin.settings.gstTypes.zero_rated') },
-  { value: 'exempt', label: t('admin.settings.gstTypes.exempt') },
-  { value: 'not_relevant', label: t('admin.settings.gstTypes.not_relevant') },
+const TAX_TYPES = (t: any) => [
+  { value: 'tax_applies', label: t('admin.settings.taxTypes.tax_applies') },
+  { value: 'zero_rated', label: t('admin.settings.taxTypes.zero_rated') },
+  { value: 'exempt', label: t('admin.settings.taxTypes.exempt') },
+  { value: 'not_relevant', label: t('admin.settings.taxTypes.not_relevant') },
 ];
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -53,12 +53,12 @@ export default function SettingsPage() {
   const tCommon = useTranslations('admin.common');
   const router = useRouter();
 
-  // ── GST state ──────────────────────────────────────────────────────────────
-  const [categories, setCategories] = useState<GstCategory[]>([]);
-  const [gstLoading, setGstLoading] = useState(true);
-  const [gstEditingId, setGstEditingId] = useState<string | null>(null);
-  const [gstForm, setGstForm] = useState<any>({});
-  const [gstCreating, setGstCreating] = useState(false);
+  // ── Tax state ──────────────────────────────────────────────────────────────
+  const [categories, setCategories] = useState<TaxCategory[]>([]);
+  const [taxLoading, setTaxLoading] = useState(true);
+  const [taxEditingId, setTaxEditingId] = useState<string | null>(null);
+  const [taxForm, setTaxForm] = useState<any>({});
+  const [taxCreating, setTaxCreating] = useState(false);
 
   // ── UOM state ──────────────────────────────────────────────────────────────
   const [uoms, setUoms] = useState<UomEntry[]>([]);
@@ -145,7 +145,7 @@ export default function SettingsPage() {
   const areaMap: Record<string, string> = {
     org: tSettings('sections.company'),
     gl: tSettings('sections.gl'),
-    gst: tSettings('sections.gst'),
+    tax: tSettings('sections.tax'),
     uom: tSettings('sections.uom'),
     rates: tSettings('sections.rates'),
   };
@@ -168,41 +168,41 @@ export default function SettingsPage() {
     }
   };
 
-  // ── GST data ───────────────────────────────────────────────────────────────
+  // ── Tax data ───────────────────────────────────────────────────────────────
 
-  const loadGst = async () => {
+  const loadTax = async () => {
     try {
-      setGstLoading(true);
-      const data = await apiFetch<GstCategory[]>('/api/gst-categories');
+      setTaxLoading(true);
+      const data = await apiFetch<TaxCategory[]>('/api/tax-categories');
       setCategories(data.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
     } catch (err: any) {
-      toast.error(tSettings('toasts.loadFailed', { area: areaMap.gst }) + ': ' + err.message);
+      toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + err.message);
     } finally {
-      setGstLoading(false);
+      setTaxLoading(false);
     }
   };
 
-  const gstEdit = (cat: GstCategory) => { setGstEditingId(cat.gstCategoryId); setGstForm({ ...cat }); setGstCreating(false); };
-  const gstCreate = () => { setGstCreating(true); setGstEditingId(null); setGstForm({ code: '', title: '', type: 'gst_applies', rate: '0', isDefault: false }); };
-  const gstCancel = () => { setGstEditingId(null); setGstCreating(false); };
+  const taxEdit = (cat: TaxCategory) => { setTaxEditingId(cat.taxCategoryId); setTaxForm({ ...cat }); setTaxCreating(false); };
+  const taxCreate = () => { setTaxCreating(true); setTaxEditingId(null); setTaxForm({ code: '', title: '', type: 'tax_applies', rate: '0', isDefault: false }); };
+  const taxCancel = () => { setTaxEditingId(null); setTaxCreating(false); };
 
-  const gstSave = async () => {
+  const taxSave = async () => {
     try {
-      const payload = { ...gstForm };
-      if (gstEditingId) {
-        await apiMutate(`/api/gst-categories/${gstEditingId}`, 'PATCH', payload);
-        toast.success(tSettings('toasts.gstUpdated'));
+      const payload = { ...taxForm };
+      if (taxEditingId) {
+        await apiMutate(`/api/tax-categories/${taxEditingId}`, 'PATCH', payload);
+        toast.success(tSettings('toasts.taxUpdated'));
       } else {
-        await apiMutate('/api/gst-categories', 'POST', payload);
-        toast.success(tSettings('toasts.gstCreated'));
+        await apiMutate('/api/tax-categories', 'POST', payload);
+        toast.success(tSettings('toasts.taxCreated'));
       }
-      gstCancel(); loadGst();
+      taxCancel(); loadTax();
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const gstDelete = async (id: string) => {
-    if (!confirm(tSettings('confirmations.deleteGst'))) return;
-    try { await apiMutate(`/api/gst-categories/${id}`, 'DELETE'); toast.success(tSettings('toasts.gstDeleted')); loadGst(); }
+  const taxDelete = async (id: string) => {
+    if (!confirm(tSettings('confirmations.deleteTax'))) return;
+    try { await apiMutate(`/api/tax-categories/${id}`, 'DELETE'); toast.success(tSettings('toasts.taxDeleted')); loadTax(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -295,7 +295,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadOrg();
-    loadGst();
+    loadTax();
     loadUom();
     loadRates();
     loadGl();
@@ -303,7 +303,7 @@ export default function SettingsPage() {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  const typeLabel = (type: string) => GST_TYPES(useTranslations()).find(t => t.value === type)?.label ?? type;
+  const typeLabel = (type: string) => TAX_TYPES(useTranslations()).find(t => t.value === type)?.label ?? type;
 
   const renderGlAccountLabel = (glAccountId?: string) => {
     if (!glAccountId) return <span className="text-muted italic">{tCommon('notConfigured')}</span>;
@@ -319,33 +319,33 @@ export default function SettingsPage() {
 
   // ── Row Renderers ─────────────────────────────────────────────────────────
 
-  const renderGstRow = (isEdit: boolean, data: any, key: string) => (
+  const renderTaxRow = (isEdit: boolean, data: any, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
         {isEdit
-          ? <input className="input" value={gstForm.code} onChange={e => setGstForm({ ...gstForm, code: e.target.value })} placeholder={tSettings('labels.code')} />
+          ? <input className="input" value={taxForm.code} onChange={e => setTaxForm({ ...taxForm, code: e.target.value })} placeholder={tSettings('labels.code')} />
           : <span className="font-mono text-xs">{data.code}</span>}
       </td>
       <td>
         {isEdit
-          ? <input className="input" value={gstForm.title} onChange={e => setGstForm({ ...gstForm, title: e.target.value })} placeholder={tSettings('labels.title')} />
+          ? <input className="input" value={taxForm.title} onChange={e => setTaxForm({ ...taxForm, title: e.target.value })} placeholder={tSettings('labels.title')} />
           : <span className="font-medium">{data.title}</span>}
       </td>
       <td>
         {isEdit ? (
-          <select className="input" value={gstForm.type} onChange={e => setGstForm({ ...gstForm, type: e.target.value })}>
-            {GST_TYPES(useTranslations()).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          <select className="input" value={taxForm.type} onChange={e => setTaxForm({ ...taxForm, type: e.target.value })}>
+            {TAX_TYPES(useTranslations()).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         ) : typeLabel(data.type)}
       </td>
       <td>
         {isEdit
-          ? <input className="input" value={gstForm.rate} onChange={e => setGstForm({ ...gstForm, rate: e.target.value })} type="number" step="0.01" style={{ width: 80 }} />
+          ? <input className="input" value={taxForm.rate} onChange={e => setTaxForm({ ...taxForm, rate: e.target.value })} type="number" step="0.01" style={{ width: 80 }} />
           : <>{data.rate}%</>}
       </td>
       <td style={{ textAlign: 'center' }}>
         {isEdit ? (
-          <input type="checkbox" checked={gstForm.isDefault === true || gstForm.isDefault === 'true'} onChange={e => setGstForm({ ...gstForm, isDefault: e.target.checked })} />
+          <input type="checkbox" checked={taxForm.isDefault === true || taxForm.isDefault === 'true'} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
           // eslint-disable-next-line i18next/no-literal-string
           <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
@@ -354,14 +354,14 @@ export default function SettingsPage() {
       <td style={{ textAlign: 'right' }}>
         {isEdit ? (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={gstCancel}>{tSettings('actions.cancel')}</button>
-            <button className="btn btn-primary btn-xs" onClick={gstSave}>{tSettings('actions.save')}</button>
+            <button className="btn btn-secondary btn-xs" onClick={taxCancel}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary btn-xs" onClick={taxSave}>{tSettings('actions.save')}</button>
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <button className="btn btn-secondary btn-xs" onClick={() => gstEdit(data)}>{tSettings('actions.edit')}</button>
+            <button className="btn btn-secondary btn-xs" onClick={() => taxEdit(data)}>{tSettings('actions.edit')}</button>
             {!data.isDefault && (
-              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => gstDelete(data.gstCategoryId)}>{tSettings('actions.delete')}</button>
+              <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => taxDelete(data.taxCategoryId)}>{tSettings('actions.delete')}</button>
             )}
           </div>
         )}
@@ -446,7 +446,7 @@ export default function SettingsPage() {
     { id: 'org-section', label: tSettings('sections.company'), show: true },
     { id: 'bank-section', label: tSettings('sections.bank'), show: true },
     { id: 'gl-section', label: tSettings('sections.gl'), show: true },
-    { id: 'gst-section', label: tSettings('sections.gst'), show: true },
+    { id: 'tax-section', label: tSettings('sections.tax'), show: true },
     { id: 'rates-section', label: tSettings('sections.rates'), show: true },
     { id: 'uom-section', label: tSettings('sections.uom'), show: true },
   ], [tSettings]);
@@ -799,15 +799,15 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-        {/* ── GST Categories ─────────────────────────────────────────────── */}
-        <div id="gst-section" className="card">
+        {/* ── Tax Categories ─────────────────────────────────────────────── */}
+        <div id="tax-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
-              {tSettings('sections.gst')}
+              {tSettings('sections.tax')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={gstCreate}>+ {tSettings('actions.create')}</button>
+            <button className="btn btn-primary btn-sm" onClick={taxCreate}>+ {tSettings('actions.create')}</button>
           </div>
           <table className="table-lines w-full">
             <thead>
@@ -821,14 +821,14 @@ export default function SettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {gstCreating && renderGstRow(true, gstForm, 'new-gst')}
-              {!gstLoading && categories.length === 0 && !gstCreating && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('gst.empty')}</td></tr>
+              {taxCreating && renderTaxRow(true, taxForm, 'new-tax')}
+              {!taxLoading && categories.length === 0 && !taxCreating && (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{tSettings('tax.empty')}</td></tr>
               )}
               {categories.map(cat =>
-                gstEditingId === cat.gstCategoryId
-                  ? renderGstRow(true, cat, cat.gstCategoryId)
-                  : renderGstRow(false, cat, cat.gstCategoryId)
+                taxEditingId === cat.taxCategoryId
+                  ? renderTaxRow(true, cat, cat.taxCategoryId)
+                  : renderTaxRow(false, cat, cat.taxCategoryId)
               )}
             </tbody>
           </table>

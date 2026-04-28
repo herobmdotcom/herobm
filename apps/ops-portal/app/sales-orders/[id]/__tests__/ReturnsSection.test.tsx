@@ -74,7 +74,7 @@ const baseOrder: OrderDetail = {
         pricePerUnit: '50.00',
         discountPercentage: '0',
         amount: '500.00',
-        gstCategoryId: null,
+        taxCategoryId: null,
         tax: '50.00',
         totalAmount: '550.00',
         unitOfMeasure: 'EA',
@@ -118,7 +118,7 @@ const defaultProps = {
     setError: jest.fn(),
     loadReturns: jest.fn().mockResolvedValue(undefined),
     loadOrder: jest.fn().mockResolvedValue(undefined),
-    gstCategories: [],
+    taxCategories: [],
     locations: [],
 };
 

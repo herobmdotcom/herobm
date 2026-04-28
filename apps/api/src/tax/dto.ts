@@ -7,7 +7,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 
-export class CreateGstCategoryDto {
+export class CreateTaxCategoryDto {
   @IsString()
   @IsNotEmpty()
   code!: string;
@@ -16,8 +16,8 @@ export class CreateGstCategoryDto {
   @IsNotEmpty()
   title!: string;
 
-  @IsEnum(['not_relevant', 'exempt', 'zero_rated', 'gst_applies'])
-  type!: 'not_relevant' | 'exempt' | 'zero_rated' | 'gst_applies';
+  @IsEnum(['not_relevant', 'exempt', 'zero_rated', 'tax_applies'])
+  type!: 'not_relevant' | 'exempt' | 'zero_rated' | 'tax_applies';
 
   @IsOptional()
   @IsNumberString()
@@ -28,7 +28,7 @@ export class CreateGstCategoryDto {
   isDefault?: boolean;
 }
 
-export class UpdateGstCategoryDto {
+export class UpdateTaxCategoryDto {
   @IsOptional()
   @IsString()
   code?: string;
@@ -38,8 +38,8 @@ export class UpdateGstCategoryDto {
   title?: string;
 
   @IsOptional()
-  @IsEnum(['not_relevant', 'exempt', 'zero_rated', 'gst_applies'])
-  type?: 'not_relevant' | 'exempt' | 'zero_rated' | 'gst_applies';
+  @IsEnum(['not_relevant', 'exempt', 'zero_rated', 'tax_applies'])
+  type?: 'not_relevant' | 'exempt' | 'zero_rated' | 'tax_applies';
 
   @IsOptional()
   @IsNumberString()

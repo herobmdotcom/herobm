@@ -159,7 +159,10 @@ export class GoodsReceivedService {
           .select({ zoneId: zones.zoneId })
           .from(zones)
           .where(
-            and(eq(zones.locationId, createDto.locationId), eq(zones.code, 'RECV'))
+            and(
+              eq(zones.locationId, createDto.locationId),
+              eq(zones.code, 'RECV'),
+            ),
           )
           .limit(1)
           .then((res) => res[0]);
@@ -183,8 +186,8 @@ export class GoodsReceivedService {
           .where(
             and(
               eq(bins.zoneId, receivingZone.zoneId),
-              eq(bins.binNumber, 'RECEIVING')
-            )
+              eq(bins.binNumber, 'RECEIVING'),
+            ),
           )
           .limit(1)
           .then((res) => res[0]);
@@ -217,18 +220,29 @@ export class GoodsReceivedService {
         });
 
         // --- 6. PO Update: Update matched PO lines ---
-        const matchedLines = lineValues.filter((l) => l.matchStatus === 'matched');
+        const matchedLines = lineValues.filter(
+          (l) => l.matchStatus === 'matched',
+        );
         for (const ml of matchedLines) {
           await tx
             .update(purchaseOrderLineItems)
             .set({
               quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${ml.quantityReceived} AS NUMERIC)`,
             })
-            .where(eq(purchaseOrderLineItems.purchaseOrderLineId, ml.purchaseOrderLineId!));
+            .where(
+              eq(
+                purchaseOrderLineItems.purchaseOrderLineId,
+                ml.purchaseOrderLineId!,
+              ),
+            );
         }
 
         // Recompute PO State for any affected POs
-        const updatedPoIds = [...new Set(matchedLines.map((l) => l.purchaseOrderId!).filter(Boolean))];
+        const updatedPoIds = [
+          ...new Set(
+            matchedLines.map((l) => l.purchaseOrderId!).filter(Boolean),
+          ),
+        ];
         for (const poId of updatedPoIds) {
           const poLines = await tx
             .select({
@@ -237,11 +251,13 @@ export class GoodsReceivedService {
             })
             .from(purchaseOrderLineItems)
             .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
-          
+
           const allFullyReceived = poLines.every(
-            (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity || '0'),
+            (l) =>
+              parseFloat(l.quantityReceived || '0') >=
+              parseFloat(l.quantity || '0'),
           );
-          
+
           await tx
             .update(purchaseOrders)
             .set({
@@ -408,10 +424,16 @@ export class GoodsReceivedService {
         orderNumber: purchaseOrders.orderNumber,
       })
       .from(goodsReceivedLines)
-      .leftJoin(goodsReceived, eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId))
+      .leftJoin(
+        goodsReceived,
+        eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+      )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
-      .leftJoin(purchaseOrders, eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId))
+      .leftJoin(
+        purchaseOrders,
+        eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
       .where(whereClause)
       .limit(limit)
       .offset(offset)
@@ -420,7 +442,10 @@ export class GoodsReceivedService {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(goodsReceivedLines)
-      .leftJoin(goodsReceived, eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId))
+      .leftJoin(
+        goodsReceived,
+        eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+      )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .where(whereClause);
 
@@ -547,10 +572,12 @@ export class GoodsReceivedService {
           quantityReceived: purchaseOrderLineItems.quantityReceived,
         })
         .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId!));
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId));
 
       const allFullyReceived = poLines.every(
-        (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity || '0'),
+        (l) =>
+          parseFloat(l.quantityReceived || '0') >=
+          parseFloat(l.quantity || '0'),
       );
 
       await tx
@@ -558,7 +585,7 @@ export class GoodsReceivedService {
         .set({
           stateCode: allFullyReceived ? 'received' : 'partially_received',
         })
-        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId!));
+        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId));
 
       // Emit Event
       await emitEvent(tx, {
@@ -580,10 +607,7 @@ export class GoodsReceivedService {
   /**
    * Unresolve a previously matched line back to ambiguous state.
    */
-  async unresolveAllocation(
-    goodsReceivedLineId: string,
-    userId: string,
-  ) {
+  async unresolveAllocation(goodsReceivedLineId: string, userId: string) {
     return await this.db.transaction(async (tx) => {
       const [grLine] = await tx
         .select()
@@ -604,7 +628,12 @@ export class GoodsReceivedService {
           quantityReceived: purchaseOrderLineItems.quantityReceived,
         })
         .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, grLine.purchaseOrderLineId))
+        .where(
+          eq(
+            purchaseOrderLineItems.purchaseOrderLineId,
+            grLine.purchaseOrderLineId,
+          ),
+        )
         .limit(1);
 
       if (!poLine) throw new NotFoundException('Linked PO Line not found');
@@ -634,12 +663,14 @@ export class GoodsReceivedService {
           quantityReceived: purchaseOrderLineItems.quantityReceived,
         })
         .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId!));
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, poLine.poId));
 
       const allFullyReceived = poLines.every(
-        (l) => parseFloat(l.quantityReceived || '0') >= parseFloat(l.quantity || '0'),
+        (l) =>
+          parseFloat(l.quantityReceived || '0') >=
+          parseFloat(l.quantity || '0'),
       );
-      
+
       const anyReceived = poLines.some(
         (l) => parseFloat(l.quantityReceived || '0') > 0,
       );
@@ -647,9 +678,13 @@ export class GoodsReceivedService {
       await tx
         .update(purchaseOrders)
         .set({
-          stateCode: allFullyReceived ? 'received' : (anyReceived ? 'partially_received' : 'ordered'),
+          stateCode: allFullyReceived
+            ? 'received'
+            : anyReceived
+              ? 'partially_received'
+              : 'ordered',
         })
-        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId!));
+        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId));
 
       // 4. Emit Event
       await emitEvent(tx, {

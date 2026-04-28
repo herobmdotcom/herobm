@@ -89,15 +89,18 @@ export function calculateInventoryGaps(
 
     const key = `${pid}_${locId}`;
     const available = availabilityMap.get(key) || 0;
+    
+    // If available is negative (due to other backorders), treat it as 0 for this specific line's gap calculation
+    const effectiveAvailable = Math.max(0, available);
 
-    if (ordered > available) {
+    if (ordered > effectiveAvailable) {
       gaps.push({
         salesOrderLineId: line.salesOrderLineId,
         productId: pid,
         productDescription: line.productDescription,
         orderedQuantity: ordered,
-        availableQuantity: available,
-        shortage: ordered - available,
+        availableQuantity: available, // keep raw available for reference
+        shortage: ordered - effectiveAvailable,
         locationId: locId || null,
       });
     }

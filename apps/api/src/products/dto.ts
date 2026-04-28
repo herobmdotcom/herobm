@@ -71,7 +71,11 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsUUID()
-  gstCategoryId?: string;
+  purchaseTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  salesTaxCategoryId?: string;
 
   @IsOptional()
   @IsString()
@@ -125,7 +129,11 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsUUID()
-  gstCategoryId?: string;
+  purchaseTaxCategoryId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  salesTaxCategoryId?: string;
 
   @IsOptional()
   @IsString()

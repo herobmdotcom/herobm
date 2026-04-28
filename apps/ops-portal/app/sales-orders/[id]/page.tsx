@@ -20,8 +20,8 @@ import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
 import { formatLocationDisplay } from '@/lib/formatters';
 
-import type { GstCategory } from './types';
-import { getGstLabel } from './types';
+import type { TaxCategory } from './types';
+import { getTaxLabel } from './types';
 import { useOrder } from './useOrder';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
@@ -99,12 +99,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
     const o = useOrder(id);
 
-    /* ── Gap / Backorder Modal State ───────────────────────────────── */
-    const [gapModalOpen, setGapModalOpen] = useState(false);
-    const [pendingGaps, setPendingGaps] = useState<any[]>([]);
-    const [pendingStateChange, setPendingStateChange] = useState('');
-    const [selectedGapOption, setSelectedGapOption] = useState<'backorder' | 'ignore'>('backorder');
-
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
     const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
 
@@ -158,7 +152,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const {
         order, error, setError, saving, copying, locations,
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, editFulfillmentLocationId, setEditFulfillmentLocationId, headerDirty,
-        gstCategories,
+        taxCategories,
         activeTab, setActiveTab, inventoryData, inventoryLoading,
         returns, returnsLoading, showCreateReturn, setShowCreateReturn,
         invoices, pickingSummary,
@@ -170,22 +164,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     } = o;
 
     const handleStateClick = async (state: string) => {
-        const result = await changeState(state);
-        if (Array.isArray(result) && result.length > 0) {
-            setPendingGaps(result);
-            setPendingStateChange(state);
-            setGapModalOpen(true);
-        }
-    };
-
-    const confirmWithBackorders = async () => {
-        setGapModalOpen(false);
-        await changeState(pendingStateChange, true); // true = generateBackorders
-    };
-
-    const confirmWithoutBackorders = async () => {
-        setGapModalOpen(false);
-        await changeState(pendingStateChange, false);
+        await changeState(state, true);
     };
 
     /* ── Centralised section visibility rules ──────────────────────── */
@@ -538,7 +517,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.uom')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
                                     <th style={{ width: 80, textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
-                                    <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.gst')}</th>
+                                    <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.tax')}</th>
                                     <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.amount')}</th>
                                     {(isOrderLinesEditable || order.lines.some(l => l.isPostConfirmation && isOrderDetailsEditable) || isPostConfirmationAddingEnabled) && <th style={{ width: 50 }}></th>}
                                 </tr>
@@ -694,14 +673,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 <select
                                                     className="input"
                                                     style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                                                    value={line.gstCategoryId || ''}
+                                                    value={line.taxCategoryId || ''}
                                                     onChange={(e) => {
-                                                        updateLine(line.salesOrderLineId, 'gstCategoryId', e.target.value);
+                                                        updateLine(line.salesOrderLineId, 'taxCategoryId', e.target.value);
                                                     }}
                                                 >
-                                                    {gstCategories.map((c: GstCategory) => (
-                                                        <option key={c.gstCategoryId} value={c.gstCategoryId}>
-                                                            {getGstLabel(c)}
+                                                    {taxCategories.map((c: TaxCategory) => (
+                                                        <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                                                            {getTaxLabel(c)}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -709,8 +688,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         ) : (
                                             <td style={{ textAlign: 'right', fontSize: 12 }}>
                                                 {(() => {
-                                                    const c = gstCategories.find((c: GstCategory) => c.gstCategoryId === line.gstCategoryId);
-                                                    if (c) return getGstLabel(c);
+                                                    const c = taxCategories.find((c: TaxCategory) => c.taxCategoryId === line.taxCategoryId);
+                                                    if (c) return getTaxLabel(c);
                                                     // ABM legacy: derive effective rate from tax / amount
                                                     const amt = parseFloat(line.amount || '0');
                                                     const tax = parseFloat(line.tax || '0');
@@ -718,7 +697,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                         const pct = (tax / amt) * 100;
                                                         return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
                                                     }
-                                                    if (amt > 0 && tax === 0) return tCommon('gst.exempt');
+                                                    if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
                                                     return '—';
                                                 })()}
                                             </td>
@@ -931,45 +910,47 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th>{tSales('columns.orderHash')}</th>
+                                            <th>{tSales('columns.lineNumber')}</th>
                                             <th>{tSales('columns.product')}</th>
-                                            <th>{tSales('columns.type')}</th>
+                                            <th>{tSales('columns.allocatedTo')}</th>
                                             <th>{tSales('columns.status')}</th>
-                                            <th>{tSales('columns.date')}</th>
+                                            <th>{tSales('columns.demandDate')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {order.backorders.map((bo: any, bo_idx: number) => {
-                                            const displayOrderNumber = bo.purchaseOrderNumber || bo.orderNumber || '—';
                                             const isPo = !!bo.purchaseOrderId;
-                                            const displayStatus = bo.purchaseOrderState || bo.stateCode;
+                                            const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
+                                            const displayStatus = isPo ? bo.purchaseOrderState || 'draft' : bo.stateCode || 'pending_supply';
                                             
                                             return (
                                                 <tr 
-                                                    key={bo.salesOrderId || bo.productNumber || bo_idx} 
-                                                    className="cursor-pointer hover:bg-gray-50" 
+                                                    key={bo_idx} 
+                                                    className={isPo ? "cursor-pointer hover:bg-gray-50" : ""} 
                                                     onClick={() => {
                                                         if (isPo) {
                                                             router.push(`/purchase-orders/${bo.purchaseOrderId}`);
-                                                        } else if (bo.salesOrderId) {
-                                                            router.push(`/sales-orders/${bo.salesOrderId}`);
                                                         }
                                                     }}
                                                 >
-                                                    <td style={{ color: 'var(--accent)', fontWeight: 400 }}>{displayOrderNumber}</td>
-                                                    <td>{bo.productNumber || '—'}</td>
+                                                    <td className="w-12 text-center text-[var(--text-muted)] font-medium">
+                                                        {bo.lineNumber || '—'}
+                                                    </td>
+                                                    <td>
+                                                        {bo.productNumber || '—'}
+                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{bo.quantity} demanded</div>
+                                                    </td>
+                                                    <td style={{ color: isPo ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 400 }}>{displayOrderNumber}</td>
                                                     <td>
                                                         {isPo ? (
-                                                            <span className="badge badge-confirm">PO</span>
+                                                            <div className="flex flex-col gap-1 items-start">
+                                                                <span className="badge badge-confirm" style={{ fontSize: '10px' }}>Allocated</span>
+                                                                <StateBadge state={bo.purchaseOrderState as ValidState} />
+                                                            </div>
                                                         ) : (
-                                                            bo.salesOrderId === order.parentId ? (
-                                                                <span className="badge badge-confirm">{tSales('parent')}</span>
-                                                            ) : (
-                                                                <span className="badge badge-quoted">{tSales('child')}</span>
-                                                            )
+                                                            <span className="badge badge-draft">Open Demand</span>
                                                         )}
                                                     </td>
-                                                    <td><StateBadge state={displayStatus as ValidState} /></td>
                                                     <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
                                                 </tr>
                                             );
@@ -999,7 +980,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         orderId={id}
                         order={order} 
                         invoices={invoices} 
-                        gstCategories={gstCategories}
+                        taxCategories={taxCategories}
                         pickingSummary={pickingSummary}
                         setError={setError}
                         loadInvoices={loadInvoices}
@@ -1019,7 +1000,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         loadReturns={loadReturns}
                         loadOrder={loadOrder}
                         pickingSummary={pickingSummary}
-                        gstCategories={gstCategories}
+                        taxCategories={taxCategories}
                         locations={locations}
                     />
                 )}
@@ -1030,105 +1011,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
             </div>
 
             </DetailsLayout>
-
-            {/* Gap/Backorder Modal */}
-            {gapModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-content max-w-2xl p-8 !bg-[var(--bg-card)] !rounded-2xl shadow-2xl border border-[var(--border)]">
-                        <h2 className="text-[22px] font-bold mb-2 text-[var(--text-primary)]">{tSales('shortages.title')}</h2>
-                        <p className="text-[14px] text-[var(--text-secondary)] mb-6">
-                            {tSales('shortages.description')} <strong className="text-[var(--text-primary)]">{locations.find((l: any) => l.locationId === order.fulfillmentLocationId)?.name}</strong>:
-                        </p>
-                        
-                        <div className="overflow-hidden border border-[var(--border)] rounded-xl mb-6 bg-white">
-                            <table className="w-full text-[13px] border-collapse">
-                                <thead className="bg-[var(--bg-secondary)] border-b border-[var(--border)]">
-                                    <tr>
-                                        <th className="px-4 py-3 text-left font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.product')}</th>
-                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.required')}</th>
-                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.available')}</th>
-                                        <th className="px-4 py-3 text-right font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">{tSales('columns.gap')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-[var(--border)]">
-                                    {pendingGaps.map((gap, i) => (
-                                        <tr key={i} className="hover:bg-[var(--bg-secondary)] transition-colors">
-                                            <td className="px-4 py-3 font-medium text-[var(--text-primary)]">{gap.productDescription || gap.productId}</td>
-                                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{gap.orderedQuantity}</td>
-                                            <td className="px-4 py-3 text-right text-[var(--text-secondary)]">{gap.availableQuantity}</td>
-                                            <td className="px-4 py-3 text-right text-[#ef4444] font-bold">{gap.shortage}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <label 
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                                    selectedGapOption === 'backorder' 
-                                        ? 'border-[var(--accent)] bg-[rgba(0,107,92,0.04)] ring-1 ring-[var(--accent)]' 
-                                        : 'border-[var(--border)] bg-white hover:border-[var(--text-muted)]'
-                                }`}
-                                onClick={() => setSelectedGapOption('backorder')}
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                        selectedGapOption === 'backorder' ? 'border-[var(--accent)]' : 'border-[var(--border)]'
-                                    }`}>
-                                        {selectedGapOption === 'backorder' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className={`text-[14px] font-bold mb-1 ${selectedGapOption === 'backorder' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                                            {tSales('shortages.option1Title')}
-                                        </p>
-                                        <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                                            {tSales('shortages.option1Desc')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </label>
-                            
-                            <label 
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                                    selectedGapOption === 'ignore' 
-                                        ? 'border-[var(--accent)] bg-[rgba(0,107,92,0.04)] ring-1 ring-[var(--accent)]' 
-                                        : 'border-[var(--border)] bg-white hover:border-[var(--text-muted)]'
-                                }`}
-                                onClick={() => setSelectedGapOption('ignore')}
-                            >
-                                <div className="flex items-start gap-4">
-                                    <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                        selectedGapOption === 'ignore' ? 'border-[var(--accent)]' : 'border-[var(--border)]'
-                                    }`}>
-                                        {selectedGapOption === 'ignore' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className={`text-[14px] font-bold mb-1 ${selectedGapOption === 'ignore' ? 'text-[var(--accent)]' : 'text-[var(--text-primary)]'}`}>
-                                            {tSales('shortages.option2Title')}
-                                        </p>
-                                        <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">
-                                            {tSales('shortages.option2Desc')}
-                                        </p>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-
-                        <div className="flex justify-end gap-3 mt-8">
-                            <button className="btn btn-secondary px-6" onClick={() => setGapModalOpen(false)}>
-                                {tCommon('cancel')}
-                            </button>
-                            <button 
-                                className="btn btn-primary px-8" 
-                                onClick={selectedGapOption === 'backorder' ? confirmWithBackorders : confirmWithoutBackorders}
-                            >
-                                {tCommon('confirm')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             <style jsx>{`
                 .modal-overlay {

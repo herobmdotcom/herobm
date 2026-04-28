@@ -31,7 +31,7 @@ export class CreateOrderLineDto {
 
   @IsOptional()
   @IsString()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 
   @IsOptional()
   @IsString()
@@ -57,7 +57,7 @@ export class UpdateOrderLineDto {
 
   @IsOptional()
   @IsString()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 
   @IsOptional()
   @IsString()

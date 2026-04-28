@@ -11,7 +11,7 @@ p, viewer, suppliers, read
 p, viewer, receptions, read
 p, viewer, goods-received, read
 p, viewer, dashboard, read
-p, viewer, gst-categories, read
+p, viewer, tax-categories, read
 p, viewer, settings, read
 p, viewer, report, read
 

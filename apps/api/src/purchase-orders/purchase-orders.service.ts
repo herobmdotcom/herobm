@@ -16,6 +16,7 @@ import {
   products,
   productUoms,
   locations,
+  backorders,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
@@ -46,7 +47,7 @@ export interface UnifiedPurchaseOrderRow {
 }
 
 import { SuppliersService } from '../suppliers/suppliers.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -54,20 +55,20 @@ export class PurchaseOrdersService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
     private readonly suppliersService: SuppliersService,
-    private readonly gstService: GstCategoriesService,
+    private readonly taxService: TaxCategoriesService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
-  private async resolveGstForLine(
+  private async resolveTaxForLine(
     productId?: string,
-    gstCategoryIdOverride?: string,
-  ): Promise<{ gstCategoryId: string; rate: number }> {
-    if (gstCategoryIdOverride) {
+    taxCategoryIdOverride?: string,
+  ): Promise<{ taxCategoryId: string; rate: number }> {
+    if (taxCategoryIdOverride) {
       try {
-        const cat = await this.gstService.getById(gstCategoryIdOverride);
+        const cat = await this.taxService.getById(taxCategoryIdOverride);
         return {
-          gstCategoryId: cat.gstCategoryId,
+          taxCategoryId: cat.taxCategoryId,
           rate: parseFloat(cat.rate ?? '0'),
         };
       } catch (err) {
@@ -77,29 +78,29 @@ export class PurchaseOrdersService {
 
     if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
       const pRows = await this.db
-        .select({ gstCategoryId: products.gstCategoryId })
+        .select({ taxCategoryId: products.purchaseTaxCategoryId })
         .from(products)
         .where(eq(products.productId, productId))
         .limit(1);
 
-      if (pRows.length > 0 && pRows[0].gstCategoryId) {
+      if (pRows.length > 0 && pRows[0].taxCategoryId) {
         try {
-          const cat = await this.gstService.getById(pRows[0].gstCategoryId);
+          const cat = await this.taxService.getById(pRows[0].taxCategoryId);
           return {
-            gstCategoryId: cat.gstCategoryId,
+            taxCategoryId: cat.taxCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
           };
         } catch (err) {
           this.logger.warn(
-            `Product ${productId} had invalid tax category ID: ${pRows[0].gstCategoryId}`,
+            `Product ${productId} had invalid tax category ID: ${pRows[0].taxCategoryId}`,
           );
         }
       }
     }
 
-    const defaultGst = await this.gstService.getDefault();
+    const defaultGst = await this.taxService.getDefault();
     return {
-      gstCategoryId: defaultGst.gstCategoryId,
+      taxCategoryId: defaultGst.taxCategoryId,
       rate: parseFloat(defaultGst.rate ?? '0'),
     };
   }
@@ -133,9 +134,9 @@ export class PurchaseOrdersService {
         const lineValues: any[] = [];
         let index = 0;
         for (const line of createDto.lines) {
-          const { gstCategoryId, rate } = await this.resolveGstForLine(
+          const { taxCategoryId, rate } = await this.resolveTaxForLine(
             line.productId,
-            line.gstCategoryId,
+            line.taxCategoryId,
           );
           const pricing = computeLinePriceForStorage({
             quantity: parseFloat(line.quantity || '0'),
@@ -156,7 +157,7 @@ export class PurchaseOrdersService {
             amount: pricing.amount,
             tax: pricing.tax,
             totalAmount: pricing.totalAmount,
-            gstCategoryId,
+            taxCategoryId,
           });
           index++;
         }
@@ -415,6 +416,17 @@ export class PurchaseOrdersService {
         .set({ stateCode, modifiedOn: new Date() })
         .where(eq(purchaseOrders.purchaseOrderId, id));
 
+      if (stateCode === 'cancelled') {
+        await tx
+          .update(backorders)
+          .set({
+            purchaseOrderId: null,
+            purchaseOrderLineId: null,
+            stateCode: 'pending_supply',
+          })
+          .where(eq(backorders.purchaseOrderId, id));
+      }
+
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: id,
@@ -517,9 +529,9 @@ export class PurchaseOrdersService {
       const qty = parseFloat(lineDto.quantity || '1');
       const price = parseFloat(lineDto.pricePerUnit || '0');
       const disc = parseFloat(lineDto.discountPercentage || '0');
-      const { gstCategoryId, rate } = await this.resolveGstForLine(
+      const { taxCategoryId, rate } = await this.resolveTaxForLine(
         lineDto.productId,
-        lineDto.gstCategoryId,
+        lineDto.taxCategoryId,
       );
       const pricing = computeLinePriceForStorage({
         quantity: qty,
@@ -540,7 +552,7 @@ export class PurchaseOrdersService {
         amount: pricing.amount,
         tax: pricing.tax,
         totalAmount: pricing.totalAmount,
-        gstCategoryId,
+        taxCategoryId,
       });
 
       await emitEvent(tx, {
@@ -584,15 +596,15 @@ export class PurchaseOrdersService {
         updateFields.productDescription = lineDto.productDescription;
       if (lineDto.unitOfMeasure !== undefined)
         updateFields.unitOfMeasure = lineDto.unitOfMeasure;
-      if (lineDto.gstCategoryId !== undefined)
-        updateFields.gstCategoryId = lineDto.gstCategoryId;
+      if (lineDto.taxCategoryId !== undefined)
+        updateFields.taxCategoryId = lineDto.taxCategoryId;
 
       // Recalculate amount if qty, price, discount, or tax changed
       if (
         lineDto.quantity !== undefined ||
         lineDto.pricePerUnit !== undefined ||
         lineDto.discountPercentage !== undefined ||
-        lineDto.gstCategoryId !== undefined
+        lineDto.taxCategoryId !== undefined
       ) {
         const line = existing.lines.find(
           (l: any) => l.purchaseOrderLineId === lineId,
@@ -609,16 +621,16 @@ export class PurchaseOrdersService {
             '0',
         );
 
-        let targetGst = line.gstCategoryId;
-        if (lineDto.gstCategoryId !== undefined) {
-          targetGst = lineDto.gstCategoryId;
+        let targetGst = line.taxCategoryId;
+        if (lineDto.taxCategoryId !== undefined) {
+          targetGst = lineDto.taxCategoryId;
         }
 
-        const resolved = await this.resolveGstForLine(
+        const resolved = await this.resolveTaxForLine(
           line.productId,
           targetGst,
         );
-        updateFields.gstCategoryId = resolved.gstCategoryId;
+        updateFields.taxCategoryId = resolved.taxCategoryId;
 
         const pricing = computeLinePriceForStorage({
           quantity: qty,
@@ -659,6 +671,16 @@ export class PurchaseOrdersService {
           'Can only remove lines from draft purchase orders',
         );
       }
+
+      // Reset associated demand records so they reappear as open demand
+      await tx
+        .update(backorders)
+        .set({
+          purchaseOrderId: null,
+          purchaseOrderLineId: null,
+          stateCode: 'pending_supply',
+        })
+        .where(eq(backorders.purchaseOrderLineId, lineId));
 
       await tx
         .delete(purchaseOrderLineItems)
@@ -712,9 +734,9 @@ export class PurchaseOrdersService {
             const qty = parseFloat(line.quantity || '0');
             const price = parseFloat(line.pricePerUnit || '0');
             const disc = parseFloat(line.discountPercentage || '0');
-            const { gstCategoryId, rate } = await this.resolveGstForLine(
+            const { taxCategoryId, rate } = await this.resolveTaxForLine(
               line.productId,
-              line.gstCategoryId,
+              line.taxCategoryId,
             );
             const pricing = computeLinePriceForStorage({
               quantity: qty,
@@ -733,7 +755,7 @@ export class PurchaseOrdersService {
               amount: pricing.amount,
               tax: pricing.tax,
               totalAmount: pricing.totalAmount,
-              gstCategoryId,
+              taxCategoryId,
             });
             index++;
           }
@@ -769,8 +791,12 @@ export class PurchaseOrdersService {
 
     const conditions = [
       eq(purchaseOrderLineItems.productId, productId),
-      inArray(purchaseOrders.stateCode, ['ordered', 'partially_received']),
-      sql`${purchaseOrderLineItems.quantityReceived} < ${purchaseOrderLineItems.quantity}`,
+      inArray(purchaseOrders.stateCode, [
+        'ordered',
+        'partially_received',
+        'legacy',
+      ]),
+      sql`COALESCE(CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC), 0) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
     ];
 
     if (vendorId) {

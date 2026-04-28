@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { GlService } from '../gl/gl.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 
@@ -174,7 +174,7 @@ describe('SalesInvoiceService', () => {
         { provide: AppConfigService, useValue: mockAppConfigService },
         { provide: GlService, useValue: mockGlService },
         {
-          provide: GstCategoriesService,
+          provide: TaxCategoriesService,
           useValue: {
             getById: jest.fn().mockResolvedValue({ rate: '0' }),
             getByCode: jest.fn().mockResolvedValue({ rate: '0' }),

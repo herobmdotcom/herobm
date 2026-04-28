@@ -39,7 +39,7 @@ export default function AccountsContent() {
         return <StateBadge state={params.value as ValidState} />;
       }
     },
-    { field: 'gstCategoryName', headerName: tCommon('columns.gstPosition'), width: 110, hide: true },
+    { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },
     { field: 'currencyCode', headerName: tCommon('columns.currency'), width: 90 },
     {
       field: 'createdOn',

@@ -1,0 +1,160 @@
+﻿npm run build -w apps/api
+
+> api@0.0.1 build
+> nest build
+
+npm run typecheck -w apps/ops-portal
+
+> ops-portal@0.1.0 typecheck
+> tsc --noEmit
+
+npm run test -w apps/api
+
+> api@0.0.1 test
+> npm run test:deps && npm run lint && jest
+
+
+> api@0.0.1 test:deps
+> npx -y depcheck
+
+No depcheck issue
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix
+
+make : PASS src/purchase-orders/purchase-orders.controller.spec.ts
+At line:1 char:1
++ make verify-local PROFILE=volzau > verify_output_5.txt 2>&1
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS src/purcha...troller.spec.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+PASS src/inventory/inventory.service.spec.ts
+PASS src/goods-received/goods-received.controller.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/accounts/accounts.service.spec.ts
+PASS src/orders/shipment.service.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/purchase-orders/purchase-orders.service.spec.ts
+PASS src/tax/tax-categories.controller.spec.ts
+PASS src/orders/orders.controller.spec.ts
+[31m[Nest] 27120  - [39m04/28/2026, 2:34:21 PM [31m  ERROR[39m [38;5;3m[ReturnsWriteService] [39m[31mGL credit 
+note failed for return RET-20260315-0001: Error: GL service unavailable[39m
+PASS src/orders/backorders.service.spec.ts
+PASS src/orders/picking.service.spec.ts
+FAIL src/goods-received/goods-received.service.spec.ts
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should not update inventory, QOH, or PO state
+
+    expect(received).toBeUndefined()
+
+    Received: [Function mockConstructor]
+
+    [0m [90m 484 |[39m       [90m// The service should NOT call tx.update at all ΓÇö no PO state changes,[39m
+     [90m 485 |[39m       [90m// no inventory updates.[39m
+    [31m[1m>[22m[39m[90m 486 |[39m       expect(mockTx[33m.[39mupdate)[33m.[39mtoBeUndefined()[33m;[39m
+     [90m     |[39m                             [31m[1m^[22m[39m
+     [90m 487 |[39m     })[33m;[39m
+     [90m 488 |[39m   })[33m;[39m
+     [90m 489 |[39m[0m
+
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:486:29)
+
+PASS src/orders/returns-write.service.spec.ts
+PASS src/reports/reports.controller.spec.ts
+PASS src/orders/orders-write.service.spec.ts
+PASS src/auth/auth.service.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/invoices/sales-invoice.service.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/invoices/purchase-invoice.service.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/gl/gl.service.spec.ts
+PASS src/suppliers/suppliers.service.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/inventory/uom.service.spec.ts
+PASS src/accounts/credit-assessment.service.spec.ts
+PASS src/products/products.service.spec.ts
+PASS src/products/products-write.service.spec.ts
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+[31m[Nest] 24084  - [39m04/28/2026, 2:34:22 PM [31m  ERROR[39m [38;5;3m[ReportsService] [39m[31mTypst execution 
+failed for report r1: Compiler failed[39m
+PASS src/reports/picking-slip.service.spec.ts
+PASS src/settings/app-config.service.spec.ts
+PASS src/orders/orders.service.spec.ts
+PASS src/reports/reports.service.spec.ts
+PASS src/dashboard/dashboard.service.spec.ts
+PASS src/orders/returns-math.utils.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/gl/coa-loader.service.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+  ΓùÅ Console
+
+    console.warn
+      Projection has fields not in schema: productType, baseUom. These should be either computed / joined columns or 
+projection errors.
+
+    [0m [90m 153 |[39m       [90m// but flag them for review.[39m
+     [90m 154 |[39m       [36mif[39m (unknownFields[33m.[39mlength [33m>[39m [35m0[39m) {
+    [31m[1m>[22m[39m[90m 155 |[39m         console[33m.[39mwarn(
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 156 |[39m           [32m`Projection has fields not in schema: ${unknownFields.join(', ')}. `[39m 
+[33m+[39m
+     [90m 157 |[39m             [32m`These should be either computed / joined columns or projection 
+errors.`[39m[33m,[39m
+     [90m 158 |[39m         )[33m;[39m[0m
+
+      at Object.<anonymous> (orders/projection-completeness.spec.ts:155:17)
+
+PASS src/suppliers/suppliers-write.service.spec.ts
+PASS src/tax/tax-categories.service.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/common/pricing.spec.ts
+PASS src/suppliers/supplier-risk.domain.spec.ts
+PASS src/accounts/accounts-write.service.spec.ts
+PASS src/accounts/credit-control.utils.spec.ts
+PASS src/setup/setup.guard.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/orders/order-lifecycle-rules.spec.ts
+PASS src/common/emit-event.spec.ts
+PASS src/orders/picking-math.utils.spec.ts
+[33m[Nest] 26724  - [39m04/28/2026, 2:34:22 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+[33m[Nest] 26724  - [39m04/28/2026, 2:34:22 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+
+Summary of all failing tests
+FAIL goods-received/goods-received.service.spec.ts
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should not update inventory, QOH, or PO state
+
+    expect(received).toBeUndefined()
+
+    Received: [Function mockConstructor]
+
+    [0m [90m 484 |[39m       [90m// The service should NOT call tx.update at all ΓÇö no PO state changes,[39m
+     [90m 485 |[39m       [90m// no inventory updates.[39m
+    [31m[1m>[22m[39m[90m 486 |[39m       expect(mockTx[33m.[39mupdate)[33m.[39mtoBeUndefined()[33m;[39m
+     [90m     |[39m                             [31m[1m^[22m[39m
+     [90m 487 |[39m     })[33m;[39m
+     [90m 488 |[39m   })[33m;[39m
+     [90m 489 |[39m[0m
+
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:486:29)
+
+
+Test Suites: 1 failed, 56 passed, 57 total
+Tests:       1 failed, 585 passed, 586 total
+Snapshots:   0 total
+Time:        2.967 s, estimated 3 s
+Ran all test suites.
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c npm run test:deps && npm run lint && jest
+make: *** [Makefile:238: test-api] Error 1

@@ -14,15 +14,15 @@ import {
 import { eq, ne, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { gstCategories } from '../drizzle/modbm-core-schema';
-import { CreateGstCategoryDto, UpdateGstCategoryDto } from './dto';
+import { taxCategories } from '../drizzle/modbm-core-schema';
+import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 
 @Injectable()
-export class GstCategoriesService {
+export class TaxCategoriesService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll() {
-    return this.db.select().from(gstCategories);
+    return this.db.select().from(taxCategories);
   }
 
   async getById(id: string) {
@@ -31,16 +31,16 @@ export class GstCategoriesService {
         id,
       );
     if (!isUuid) {
-      throw new NotFoundException(`Invalid GST category ID: ${id}`);
+      throw new NotFoundException(`Invalid tax category ID: ${id}`);
     }
 
     const rows = await this.db
       .select()
-      .from(gstCategories)
-      .where(eq(gstCategories.gstCategoryId, id))
+      .from(taxCategories)
+      .where(eq(taxCategories.taxCategoryId, id))
       .limit(1);
     if (rows.length === 0) {
-      throw new NotFoundException(`GST category '${id}' not found`);
+      throw new NotFoundException(`Tax category '${id}' not found`);
     }
     return rows[0];
   }
@@ -48,11 +48,11 @@ export class GstCategoriesService {
   async getDefault() {
     const rows = await this.db
       .select()
-      .from(gstCategories)
-      .where(eq(gstCategories.isDefault, true))
+      .from(taxCategories)
+      .where(eq(taxCategories.isDefault, true))
       .limit(1);
     if (rows.length === 0) {
-      throw new NotFoundException('No default GST category configured');
+      throw new NotFoundException('No default tax category configured');
     }
     return rows[0];
   }
@@ -60,26 +60,26 @@ export class GstCategoriesService {
   async getByCode(code: string) {
     const rows = await this.db
       .select()
-      .from(gstCategories)
-      .where(eq(gstCategories.code, code))
+      .from(taxCategories)
+      .where(eq(taxCategories.code, code))
       .limit(1);
     if (rows.length === 0) {
-      throw new NotFoundException(`GST category code '${code}' not found`);
+      throw new NotFoundException(`Tax category code '${code}' not found`);
     }
     return rows[0];
   }
 
-  async create(dto: CreateGstCategoryDto) {
+  async create(dto: CreateTaxCategoryDto) {
     // If the new category wants to be default, unset any existing default first
     if (dto.isDefault) {
       await this.db
-        .update(gstCategories)
+        .update(taxCategories)
         .set({ isDefault: false })
-        .where(eq(gstCategories.isDefault, true));
+        .where(eq(taxCategories.isDefault, true));
     }
 
     const rows = await this.db
-      .insert(gstCategories)
+      .insert(taxCategories)
       .values({
         code: dto.code,
         title: dto.title,
@@ -91,24 +91,24 @@ export class GstCategoriesService {
     return rows[0];
   }
 
-  async update(id: string, dto: UpdateGstCategoryDto) {
+  async update(id: string, dto: UpdateTaxCategoryDto) {
     await this.getById(id); // ensure exists
 
     // If toggling isDefault to true, unset the current default
     if (dto.isDefault === true) {
       await this.db
-        .update(gstCategories)
+        .update(taxCategories)
         .set({ isDefault: false })
         .where(
           and(
-            eq(gstCategories.isDefault, true),
-            ne(gstCategories.gstCategoryId, id),
+            eq(taxCategories.isDefault, true),
+            ne(taxCategories.taxCategoryId, id),
           ),
         );
     }
 
     const rows = await this.db
-      .update(gstCategories)
+      .update(taxCategories)
       .set({
         ...(dto.code !== undefined && { code: dto.code }),
         ...(dto.title !== undefined && { title: dto.title }),
@@ -116,7 +116,7 @@ export class GstCategoriesService {
         ...(dto.rate !== undefined && { rate: dto.rate }),
         ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
       })
-      .where(eq(gstCategories.gstCategoryId, id))
+      .where(eq(taxCategories.taxCategoryId, id))
       .returning();
 
     return rows[0];
@@ -127,20 +127,20 @@ export class GstCategoriesService {
 
     if (cat.isDefault) {
       throw new BadRequestException(
-        'Cannot delete the default GST category. Assign a different default first.',
+        'Cannot delete the default tax category. Assign a different default first.',
       );
     }
 
     try {
       await this.db
-        .delete(gstCategories)
-        .where(eq(gstCategories.gstCategoryId, id));
+        .delete(taxCategories)
+        .where(eq(taxCategories.taxCategoryId, id));
       return { deleted: true };
     } catch (err: any) {
       // Postgres foreign_key_violation
       if (err?.code === '23503') {
         throw new BadRequestException(
-          'Cannot delete this GST category because it is assigned to one or more accounts or products. Remove the assignments first.',
+          'Cannot delete this tax category because it is assigned to one or more accounts or products. Remove the assignments first.',
         );
       }
       throw err;

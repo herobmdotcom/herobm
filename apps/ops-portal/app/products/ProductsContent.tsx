@@ -33,7 +33,7 @@ export default function ProductsContent() {
     { field: 'priceLevel4', headerName: tProducts('columns.priceLevel4'), width: 100, type: 'numericColumn', hide: true,
       valueFormatter: (p: any) => p.value && parseFloat(p.value) > 0 ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'barcode', headerName: tProducts('columns.barcode'), width: 130 },
-    { field: 'gstCategoryId', headerName: tProducts('columns.gstCategory'), width: 120, hide: true },
+    { field: 'taxCategoryId', headerName: tProducts('columns.taxCategory'), width: 120, hide: true },
     {
       field: 'stateCode',
       headerName: tCommon('columns.status'),

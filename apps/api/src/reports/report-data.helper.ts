@@ -38,7 +38,7 @@ interface RawOrderLine {
   quantity: string;
   pricePerUnit: string;
   discountPercentage?: string;
-  gstCategoryId?: string;
+  taxCategoryId?: string;
   tax?: string;
   amount?: string;
   totalAmount?: string;
@@ -48,7 +48,7 @@ interface RawOrderLine {
 /**
  * Assemble the JSON data structure consumed by Typst report templates.
  *
- * When `gstRateMap` is provided (gstCategoryId → rate%), pricing is
+ * When `taxRateMap` is provided (taxCategoryId → rate%), pricing is
  * recomputed via the shared `computeLinePrice` function — guaranteeing
  * the PDF matches the frontend display exactly.
  *
@@ -64,7 +64,7 @@ export function assembleOrderData(
     name?: string;
     lines: RawOrderLine[];
   },
-  gstRateMap?: Map<string, number>,
+  taxRateMap?: Map<string, number>,
 ): SalesQuoteData {
   const lines = orderDetail.lines.map((l) => {
     const qty = parseFloat(l.quantity);
@@ -73,8 +73,8 @@ export function assembleOrderData(
 
     // Resolve GST rate from the map, or reverse-engineer from stored values
     let taxRate = 0;
-    if (gstRateMap && l.gstCategoryId) {
-      taxRate = gstRateMap.get(l.gstCategoryId) ?? 0;
+    if (taxRateMap && l.taxCategoryId) {
+      taxRate = taxRateMap.get(l.taxCategoryId) ?? 0;
     } else if (
       parseFloat(l.amount || '0') > 0 &&
       parseFloat(l.tax || '0') > 0
@@ -83,7 +83,7 @@ export function assembleOrderData(
     }
 
     // Compute pricing via the shared function when we have GST data
-    const pricing = gstRateMap
+    const pricing = taxRateMap
       ? computeLinePrice({
           quantity: qty,
           pricePerUnit: price,
@@ -106,7 +106,7 @@ export function assembleOrderData(
       quantity: l.quantity,
       pricePerUnit: l.pricePerUnit,
       discountPercentage: parseFloat(l.discountPercentage || '0').toFixed(2),
-      gstRate: `${taxRate.toFixed(1)}%`,
+      taxRate: `${taxRate.toFixed(1)}%`,
       tax: pricing.tax.toFixed(2),
       amount: pricing.amount.toFixed(2),
       totalAmount: pricing.totalAmount.toFixed(2),

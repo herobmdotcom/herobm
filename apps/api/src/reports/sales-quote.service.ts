@@ -5,7 +5,7 @@ import { OrdersWriteService } from '../orders/orders-write.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { gstCategories } from '../drizzle/modbm-core-schema';
+import { taxCategories } from '../drizzle/modbm-core-schema';
 
 export interface SalesQuoteData {
   header: {
@@ -23,7 +23,7 @@ export interface SalesQuoteData {
     quantity: string;
     pricePerUnit: string;
     discountPercentage: string;
-    gstRate: string;
+    taxRate: string;
     tax: string;
     amount: string;
     totalAmount: string;
@@ -47,11 +47,11 @@ export class SalesQuoteService {
 
   private readonly logger = new Logger(SalesQuoteService.name);
 
-  /** Build a gstCategoryId → rate% map from the gst_categories table. */
-  private async buildGstRateMap(): Promise<Map<string, number>> {
-    const rows = await this.db.select().from(gstCategories);
+  /** Build a taxCategoryId → rate% map from the tax_categories table. */
+  private async buildtaxRateMap(): Promise<Map<string, number>> {
+    const rows = await this.db.select().from(taxCategories);
     return new Map(
-      rows.map((r) => [r.gstCategoryId, parseFloat(r.rate ?? '0')]),
+      rows.map((r) => [r.taxCategoryId, parseFloat(r.rate ?? '0')]),
     );
   }
 
@@ -65,7 +65,7 @@ export class SalesQuoteService {
       orderId,
       source,
     );
-    const gstRateMap = await this.buildGstRateMap();
-    return assembleOrderData(orderDetail, gstRateMap);
+    const taxRateMap = await this.buildtaxRateMap();
+    return assembleOrderData(orderDetail, taxRateMap);
   }
 }

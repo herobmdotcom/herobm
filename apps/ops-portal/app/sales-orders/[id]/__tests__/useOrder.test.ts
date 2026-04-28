@@ -58,7 +58,7 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
                 pricePerUnit: '50.00',
                 discountPercentage: '0',
                 amount: '500.00',
-                gstCategoryId: null,
+                taxCategoryId: null,
                 tax: '50.00',
                 totalAmount: '550.00',
                 unitOfMeasure: 'EA',
@@ -73,7 +73,7 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
                 pricePerUnit: '100.00',
                 discountPercentage: '10',
                 amount: '450.00',
-                gstCategoryId: null,
+                taxCategoryId: null,
                 tax: '45.00',
                 totalAmount: '495.00',
                 unitOfMeasure: 'EA',
@@ -87,7 +87,7 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
 function setupMocks(order: OrderDetail) {
     mockApiFetch.mockImplementation((url: string) => {
         if (url.includes('/picking')) return Promise.resolve(null);
-        if (url.includes('/gst-categories')) return Promise.resolve([]);
+        if (url.includes('/tax-categories')) return Promise.resolve([]);
         return Promise.resolve(order);
     });
     mockApiMutate.mockResolvedValue({});

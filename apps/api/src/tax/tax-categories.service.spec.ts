@@ -1,22 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GstCategoriesService } from './gst-categories.service';
+import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 
-describe('GstCategoriesService', () => {
-  let service: GstCategoriesService;
+describe('TaxCategoriesService', () => {
+  let service: TaxCategoriesService;
 
   const mockCategories = [
     {
-      gstCategoryId: '550e8400-e29b-41d4-a716-446655440000',
+      taxCategoryId: '550e8400-e29b-41d4-a716-446655440000',
       code: 'GST',
       title: 'GST 10%',
-      type: 'gst_applies',
+      type: 'tax_applies',
       rate: '10',
       isDefault: true,
     },
     {
-      gstCategoryId: '550e8400-e29b-41d4-a716-446655440001',
+      taxCategoryId: '550e8400-e29b-41d4-a716-446655440001',
       code: 'EXE',
       title: 'Exempt',
       type: 'exempt',
@@ -24,7 +24,7 @@ describe('GstCategoriesService', () => {
       isDefault: false,
     },
     {
-      gstCategoryId: '550e8400-e29b-41d4-a716-446655440002',
+      taxCategoryId: '550e8400-e29b-41d4-a716-446655440002',
       code: 'ZRO',
       title: 'Zero Rated',
       type: 'zero_rated',
@@ -57,10 +57,10 @@ describe('GstCategoriesService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GstCategoriesService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [TaxCategoriesService, { provide: DRIZZLE, useValue: mockDb }],
     }).compile();
 
-    service = module.get<GstCategoriesService>(GstCategoriesService);
+    service = module.get<TaxCategoriesService>(TaxCategoriesService);
   });
 
   // Helper to reconfigure the mock for a specific resolved value
@@ -72,7 +72,7 @@ describe('GstCategoriesService', () => {
   }
 
   describe('findAll', () => {
-    it('should return all GST categories', async () => {
+    it('should return all tax categories', async () => {
       // findAll does select().from() — no where/limit
       const result = await service.findAll();
       expect(result).toEqual(mockCategories);
@@ -109,7 +109,7 @@ describe('GstCategoriesService', () => {
       await expect(service.getDefault()).rejects.toThrow(NotFoundException);
       mockReturns([]);
       await expect(service.getDefault()).rejects.toThrow(
-        'No default GST category configured',
+        'No default tax category configured',
       );
     });
   });
@@ -128,7 +128,7 @@ describe('GstCategoriesService', () => {
       );
       mockReturns([]);
       await expect(service.getByCode('INVALID')).rejects.toThrow(
-        "GST category code 'INVALID' not found",
+        "Tax category code 'INVALID' not found",
       );
     });
   });

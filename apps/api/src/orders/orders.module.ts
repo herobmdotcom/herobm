@@ -26,7 +26,8 @@ import { BackordersService } from './backorders.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
-import { GstModule } from '../gst/gst.module';
+import { AllocationsController } from './allocations.controller';
+import { TaxModule } from '../tax/tax.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { ProductsModule } from '../products/products.module';
@@ -39,7 +40,7 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
 @Module({
   imports: [
     ConfigModule,
-    GstModule,
+    TaxModule,
     InventoryModule,
     AccountsModule,
     ProductsModule,
@@ -51,6 +52,7 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
     OrderReturnsController,
     OrderPickingController,
     OrderShipmentsController,
+    AllocationsController,
   ],
   providers: [
     OrdersService,

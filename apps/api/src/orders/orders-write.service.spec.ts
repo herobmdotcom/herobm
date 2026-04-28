@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersWriteService } from './orders-write.service';
 import { BackordersService } from './backorders.service';
 import { PickingService } from './picking.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
@@ -59,20 +59,20 @@ function createMockDb() {
 }
 
 // Default GST categories used across tests
-const GST_DEFAULT = {
-  gstCategoryId: 'gst-default',
+const TAX_DEFAULT = {
+  taxCategoryId: 'tax-default',
   code: 'GST',
   rate: '10',
   isDefault: true,
 };
-const GST_EXEMPT = {
-  gstCategoryId: 'gst-exempt',
+const TAX_EXEMPT = {
+  taxCategoryId: 'tax-exempt',
   code: 'EXE',
   rate: '0',
   isDefault: false,
 };
-const GST_ZERO = {
-  gstCategoryId: 'gst-zero',
+const TAX_ZERO = {
+  taxCategoryId: 'tax-zero',
   code: 'ZR',
   rate: '0',
   isDefault: false,
@@ -85,7 +85,7 @@ describe('OrdersWriteService', () => {
   let mockInventoryService: any;
   let mockAccountsService: any;
   let mockProductsService: any;
-  let mockGstService: any;
+  let mocktaxService: any;
   let mockBackordersService: any;
   let mockCreditAssessmentService: any;
 
@@ -133,19 +133,19 @@ describe('OrdersWriteService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockDb = createMockDb();
-    mockGstService = {
-      getDefault: jest.fn().mockResolvedValue(GST_DEFAULT),
+    mocktaxService = {
+      getDefault: jest.fn().mockResolvedValue(TAX_DEFAULT),
       getByCode: jest.fn().mockImplementation(async (code: string) => {
-        if (code === 'EXE') return GST_EXEMPT;
-        if (code === 'ZR') return GST_ZERO;
-        if (code === 'GST') return GST_DEFAULT;
+        if (code === 'EXE') return TAX_EXEMPT;
+        if (code === 'ZR') return TAX_ZERO;
+        if (code === 'GST') return TAX_DEFAULT;
         throw new Error('GST category not found by code');
       }),
       getById: jest.fn().mockImplementation(async (id: string) => {
         if (id === 'unknown-id') throw new Error('Not found by ID');
-        if (id === 'gst-zero') return GST_ZERO;
-        if (id === 'gst-exempt') return GST_EXEMPT;
-        return GST_DEFAULT;
+        if (id === 'tax-zero') return TAX_ZERO;
+        if (id === 'tax-exempt') return TAX_EXEMPT;
+        return TAX_DEFAULT;
       }),
     };
 
@@ -167,14 +167,14 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
-        gstCategoryId: 'gst-default',
+        taxCategoryId: 'tax-default',
       }),
     };
     mockProductsService = {
       findOne: jest.fn().mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategoryId: 'gst-default',
+        salesTaxCategoryId: 'tax-default',
       }),
     };
     mockCreditAssessmentService = {
@@ -196,7 +196,7 @@ describe('OrdersWriteService', () => {
         },
         OrdersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
-        { provide: GstCategoriesService, useValue: mockGstService },
+        { provide: TaxCategoriesService, useValue: mocktaxService },
         { provide: PickingService, useValue: mockPickingService },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: AccountsService, useValue: mockAccountsService },
@@ -221,14 +221,14 @@ describe('OrdersWriteService', () => {
       qty: string,
       price: string,
       disc: string,
-      gstRate: number,
+      taxRate: number,
     ) =>
       (OrdersWriteService.prototype as any).computeLineAmount.call(
         null,
         qty,
         price,
         disc,
-        gstRate,
+        taxRate,
       );
 
     it('should compute amount without discount or tax', () => {
@@ -270,7 +270,7 @@ describe('OrdersWriteService', () => {
   // generateOrderNumber() is now called inside the transaction (uses tx.execute).
   // The remaining select calls outside the transaction are:
   //   - resolveCustomer → AccountsService.findOne (mocked)
-  //   - resolveGstForLine → AccountsService + ProductsService (mocked)
+  //   - resolveTaxForLine → AccountsService + ProductsService (mocked)
   //   - validateProduct → ProductsService.findOne (mocked)
   // =========================================================================
 
@@ -281,27 +281,27 @@ describe('OrdersWriteService', () => {
     };
 
     function setupCreate(opts?: {
-      gstCategoryId?: string;
+      taxCategoryId?: string;
       disc?: string;
-      productGstId?: string;
+      productTaxId?: string;
       currency?: string;
     }) {
-      const gstId = opts?.gstCategoryId ?? 'gst-default';
+      const gstId = opts?.taxCategoryId ?? 'tax-default';
       const disc = opts?.disc ?? '0';
-      const prodGstId = opts?.productGstId ?? 'gst-default';
+      const prodGstId = opts?.productTaxId ?? 'tax-default';
       const currency = opts?.currency ?? 'EUR';
 
       mockAccountsService.findOne.mockResolvedValue({
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: disc,
         currencyCode: currency,
-        gstCategoryId: gstId,
+        taxCategoryId: gstId,
       });
 
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategoryId: prodGstId,
+        salesTaxCategoryId: prodGstId,
       });
 
       // DB calls: generateOrderNumber is now inside the tx (handled by mockTransaction)
@@ -313,7 +313,7 @@ describe('OrdersWriteService', () => {
         stateCode: 'draft',
         customerDiscount: disc,
         currencyCode: currency,
-        gstCategoryId: 'gst-default',
+        taxCategoryId: 'tax-default',
       });
     }
 
@@ -342,13 +342,13 @@ describe('OrdersWriteService', () => {
     it('should use product GST category directly without fallback if possible', async () => {
       setupCreate();
       await service.create(validDto, 'admin');
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-default');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-default');
     });
 
     it('should use zero-rated GST for zero-rated product', async () => {
-      setupCreate({ productGstId: 'gst-zero' });
+      setupCreate({ productTaxId: 'tax-zero' });
       await service.create(validDto, 'admin');
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-zero');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-zero');
     });
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
@@ -356,7 +356,7 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '0',
         currencyCode: 'EUR',
-        gstCategoryId: 'gst-exempt',
+        taxCategoryId: 'tax-exempt',
       });
       mockSelectChain({});
       mockTransaction({
@@ -364,11 +364,11 @@ describe('OrdersWriteService', () => {
         orderNumber: 'ORD-20260313-0001',
         stateCode: 'draft',
         customerDiscount: '0',
-        gstCategoryId: 'gst-exempt',
+        taxCategoryId: 'tax-exempt',
       });
 
       await service.create(validDto, 'admin');
-      expect(mockGstService.getById).toHaveBeenCalledTimes(1);
+      expect(mocktaxService.getById).toHaveBeenCalledTimes(1);
     });
 
     it('should reject unknown customer', async () => {
@@ -392,14 +392,14 @@ describe('OrdersWriteService', () => {
     });
 
     it('should create order with no lines', async () => {
-      // No productId → resolveGstForLine skips product lookup
+      // No productId → resolveTaxForLine skips product lookup
       mockSelectChain({});
       mockTransaction({
         salesOrderId: 'uuid-no-lines',
         orderNumber: 'ORD-20260313-0001',
         stateCode: 'draft',
         customerDiscount: '0',
-        gstCategoryId: 'gst-default',
+        taxCategoryId: 'tax-default',
       });
 
       const dto = {
@@ -411,10 +411,10 @@ describe('OrdersWriteService', () => {
     });
 
     it('should fall back to system default when product has unknown GST category', async () => {
-      setupCreate({ productGstId: 'unknown-id' });
+      setupCreate({ productTaxId: 'unknown-id' });
       await service.create(validDto, 'admin');
       // The default should be fetched from fallback!
-      expect(mockGstService.getDefault).toHaveBeenCalled();
+      expect(mocktaxService.getDefault).toHaveBeenCalled();
     });
   });
 
@@ -709,8 +709,8 @@ describe('OrdersWriteService', () => {
   //   1. findOrder → order row (with customerId)
   //   2. validateProduct → lookupProduct
   //   3. max line number query
-  //   4. resolveGstForLine → accounts.gstCategoryId
-  //   5. resolveGstForLine → lookupProduct (for product gstCategory)
+  //   4. resolveTaxForLine → accounts.taxCategoryId
+  //   5. resolveTaxForLine → lookupProduct (for product gstCategory)
   // =========================================================================
 
   describe('addLine', () => {
@@ -725,13 +725,13 @@ describe('OrdersWriteService', () => {
         accountId: 'c0000000-0000-0000-0000-000000000001',
         customerDiscount: '10',
         currencyCode: 'EUR',
-        gstCategoryId: 'gst-default',
+        taxCategoryId: 'tax-default',
       });
 
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-001',
         name: 'Test Product',
-        gstCategoryId: 'gst-default',
+        salesTaxCategoryId: 'tax-default',
       });
 
       mockSelectChain({
@@ -781,17 +781,17 @@ describe('OrdersWriteService', () => {
         lineDto,
         'admin',
       );
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-default');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-default');
     });
 
     it('should use per-line GST override when provided', async () => {
       setupForAddLine('draft');
       await service.addLine(
         '00000000-0000-4000-a000-000000000001',
-        { ...lineDto, gstCategoryId: 'gst-exempt' },
+        { ...lineDto, taxCategoryId: 'tax-exempt' },
         'admin',
       );
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-exempt');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-exempt');
     });
 
     it('should reject adding to an invoiced order', async () => {
@@ -849,7 +849,7 @@ describe('OrdersWriteService', () => {
               orderNumber: 'ORD-123',
               customerId: 'c0000000-0000-0000-0000-000000000001',
               customerDiscount: '0',
-              gstCategoryId: 'gst-default',
+              taxCategoryId: 'tax-default',
             },
             customerName: 'Test Customer',
           },
@@ -869,14 +869,14 @@ describe('OrdersWriteService', () => {
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-ZR',
         name: 'Zero Rated Product',
-        gstCategoryId: 'gst-zero',
+        salesTaxCategoryId: 'tax-zero',
       });
       await service.addLine(
         '00000000-0000-4000-a000-000000000001',
         { ...lineDto, productId: 'PROD-ZR' },
         'admin',
       );
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-zero');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-zero');
     });
   });
 
@@ -892,7 +892,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: orderState,
-              gstCategoryId: 'gst-default',
+              taxCategoryId: 'tax-default',
             },
             customerName: 'Test Customer',
           },
@@ -904,7 +904,7 @@ describe('OrdersWriteService', () => {
             quantity: '10',
             pricePerUnit: '5.00',
             discountPercentage: '0',
-            gstCategoryId: 'gst-default',
+            taxCategoryId: 'tax-default',
           },
         ],
       });
@@ -943,7 +943,7 @@ describe('OrdersWriteService', () => {
         { quantity: '20' },
         'admin',
       );
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-default');
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-default');
     });
 
     it('should reject update on invoiced order', async () => {
@@ -1122,7 +1122,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'draft',
-              gstCategoryId: 'gst-default',
+              taxCategoryId: 'tax-default',
             },
             customerName: 'Test Customer',
           },
@@ -1147,7 +1147,7 @@ describe('OrdersWriteService', () => {
             order: {
               salesOrderId: '00000000-0000-4000-a000-000000000001',
               stateCode: 'draft',
-              gstCategoryId: 'gst-default',
+              taxCategoryId: 'tax-default',
             },
             customerName: 'Test Customer',
           },

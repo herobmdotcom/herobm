@@ -6,7 +6,7 @@ import { apiMutate } from '@/lib/api';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
-import type { OrderDetail, GstCategory, SalesInvoice } from './types';
+import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
 import { computeLinePrice } from '@modbm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
@@ -16,7 +16,7 @@ interface InvoicesSectionProps {
     order: OrderDetail;
 
     invoices: SalesInvoice[];
-    gstCategories: GstCategory[];
+    taxCategories: TaxCategory[];
     pickingSummary: any;
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
@@ -24,7 +24,7 @@ interface InvoicesSectionProps {
 }
 
 export default function InvoicesSection({
-    orderId, order, invoices, gstCategories,
+    orderId, order, invoices, taxCategories,
     pickingSummary, setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
     const tCommon = useTranslations('common');
@@ -224,17 +224,17 @@ export default function InvoicesSection({
                             const linePricing = sortedLines.map((il) => {
                                 const orderLine = order.lines.find(ol => ol.salesOrderLineId === il.salesOrderLineId);
                                 const disc = parseFloat(orderLine?.discountPercentage || '0');
-                                const gstCat = gstCategories.find(c => c.gstCategoryId === orderLine?.gstCategoryId);
-                                const gstRate = parseFloat(gstCat?.rate || '0');
+                                const taxCat = taxCategories.find(c => c.taxCategoryId === orderLine?.taxCategoryId);
+                                const taxRate = parseFloat(taxCat?.rate || '0');
                                 const pricing = computeLinePrice({
                                     quantity: parseFloat(il.quantityInvoiced),
                                     pricePerUnit: parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'),
                                     discountPercentage: disc,
-                                    taxRate: gstRate,
+                                    taxRate: taxRate,
                                 });
                                 subtotal += pricing.amount;
                                 calculatedTaxTotal += pricing.tax;
-                                return { il, orderLine, disc, gstRate, pricing };
+                                return { il, orderLine, disc, taxRate, pricing };
                             });
                             
                             // Prefer the explicit DB taxAmount to handle imported legacy shipments safely
@@ -251,12 +251,12 @@ export default function InvoicesSection({
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.qty')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.gst')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tSales('columns.tax')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.amount')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {linePricing.map(({ il, orderLine, disc, gstRate, pricing }) => (
+                                        {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
                                                 <tr key={il.lineId || il.invoiceLineId}>
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                                                         {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
@@ -269,8 +269,8 @@ export default function InvoicesSection({
                                                     <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
                                                         {disc.toFixed(1)}%
                                                     </td>
-                                                    <td style={{ textAlign: 'right', color: gstRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                        {gstRate.toFixed(1)}%
+                                                    <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                        {taxRate.toFixed(1)}%
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                                                         {formatAmount(pricing.amount, cc)}

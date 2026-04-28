@@ -38,7 +38,7 @@ interface Account {
   primaryContactEmail: string | null;
   primaryContactPhone: string | null;
   accountGroupId: string | null;
-  gstCategoryId: string | null;
+  taxCategoryId: string | null;
   currencyCode: string;
   customerDiscount: string | null;
   stateCode: ValidState;
@@ -63,7 +63,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   useDocumentTitle(account ? (account.accountNumber ? `${account.accountNumber} - ${account.name}` : account.name) : null);
   const [isDirty, setIsDirty] = useState(false);
   const [dto, setDto] = useState<Partial<Account>>({});
-  const [gstCategories, setGstCategories] = useState<any[]>([]);
+  const [taxCategories, setTaxCategories] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
 
   const handleOrderRowClicked = useCallback((order: any) => {
@@ -130,7 +130,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       .catch((err) => reportError(err, 'AccountDetailPage'))
       .finally(() => setLoading(false));
       
-    apiFetch<any[]>('/api/gst-categories').then(setGstCategories).catch(console.error);
+    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
   }, [params.id]);
 
   // Auto-save effect
@@ -404,17 +404,17 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.gstPosition')}
+                    {t('common.columns.taxPosition')}
                   </label>
                   <select
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.gstCategoryId || ''}
-                    onChange={(e) => updateField('gstCategoryId', e.target.value)}
+                    value={dto.taxCategoryId || ''}
+                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
                   >
                     <option value="">{t('common.options.none')}</option>
-                    {gstCategories.map((cat) => (
-                      <option key={cat.gstCategoryId} value={cat.gstCategoryId}>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
                         {cat.title} ({cat.code})
                       </option>
                     ))}

@@ -35,6 +35,10 @@ export class CreatePurchaseBillLineDto {
 
   @IsNumber()
   quantityToInvoice!: number;
+
+  @IsOptional()
+  @IsUUID()
+  goodsReceivedLineId?: string;
 }
 
 export class CreatePurchaseBillDto {

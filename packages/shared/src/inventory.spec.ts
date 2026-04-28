@@ -18,7 +18,22 @@ describe('Inventory Logic (Shared)', () => {
     const gaps = calculateInventoryGaps(lines, levels);
     
     expect(gaps).toHaveLength(1);
-    expect(gaps[0].shortage).toBe(207); // 23 - (-184) = 207
+    expect(gaps[0].shortage).toBe(23); // shortage should be clamped to ordered quantity (23) rather than adding negative availability
+  });
+
+  it('should clamp negative available inventory so it does not over-inflate demand', () => {
+    const lines: OrderLineMinimal[] = [
+      { salesOrderLineId: 'l1', productId: p1, productDescription: 'p1', quantity: 5, fulfillmentLocationId: loc1, productType: 'inventory' }
+    ];
+    const levels: InventoryLevelMinimal[] = [
+      { productId: p1, locationId: loc1, quantityAvailable: -60 }
+    ];
+
+    const gaps = calculateInventoryGaps(lines, levels);
+    
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0].shortage).toBe(5); // Not 65!
+    expect(gaps[0].availableQuantity).toBe(-60); // Verify it retains original available context
   });
 
   it('should handle location fallback from header', () => {

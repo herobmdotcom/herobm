@@ -49,6 +49,11 @@ export const RETURN_TRANSITIONS: Record<string, string[]> = {
   cancelled: [],
 };
 
+export type SalesOrderState = keyof typeof SALES_ORDER_TRANSITIONS;
+export type PurchaseOrderState = keyof typeof PURCHASE_ORDER_TRANSITIONS;
+export type ShipmentState = keyof typeof SHIPMENT_TRANSITIONS;
+export type ReturnState = keyof typeof RETURN_TRANSITIONS;
+
 // ============================================================================
 // Lifecycle ordinals  (higher = further along the happy path)
 //

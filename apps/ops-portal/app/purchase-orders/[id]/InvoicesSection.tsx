@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiMutate } from '@/lib/api';
+import { apiMutate, apiFetch } from '@/lib/api';
 import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
-import type { OrderDetail, GstCategory } from './types';
+import type { OrderDetail, TaxCategory } from './types';
 import { computeLinePrice } from '@modbm/shared';
 import { calculatePurchaseInvoiceableQuantities, PurchaseInvoice } from '@/lib/purchase-order-utils';
 
@@ -14,6 +14,7 @@ export interface NewPurchaseInvoiceLine {
     purchaseOrderLineId: string;
     quantityToInvoice: string;
     maxQuantity: number;
+    goodsReceivedLineId?: string;
 }
 
 interface InvoicesSectionProps {
@@ -21,14 +22,14 @@ interface InvoicesSectionProps {
     order: OrderDetail;
 
     Invoices: PurchaseInvoice[];
-    gstCategories: GstCategory[];
+    taxCategories: TaxCategory[];
     setError: (msg: string) => void;
     loadInvoices: () => Promise<void>;
     loadOrder: (autoTransitions?: any[], showSpinner?: boolean) => Promise<void>;
 }
 
 export default function InvoicesSection({
-    orderId, order, Invoices, gstCategories,
+    orderId, order, Invoices, taxCategories,
     setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
     const tCommon = useTranslations('common');
@@ -42,7 +43,23 @@ export default function InvoicesSection({
     const [supplierinvoiceNumber, setSupplierinvoiceNumber] = useState('');
     const [receiptFilename, setReceiptFilename] = useState('');
     const [newInvoiceLines, setNewInvoiceLines] = useState<NewPurchaseInvoiceLine[]>([]);
+    const [receiptLines, setReceiptLines] = useState<any[]>([]);
     const [invoicing, setInvoicing] = useState(false);
+
+    useEffect(() => {
+        if (showCreateInvoice && orderId) {
+            loadReceiptLines();
+        }
+    }, [showCreateInvoice, orderId]);
+
+    const loadReceiptLines = async () => {
+        try {
+            const res = await apiFetch<{ data: any[] }>(`/api/goods-received/lines?purchaseOrderId=${orderId}`);
+            setReceiptLines(res.data || []);
+        } catch (err) {
+            console.error('Failed to load receipt lines', err);
+        }
+    };
 
     const handleCreateClick = () => {
         setShowCreateInvoice(true);
@@ -71,9 +88,13 @@ export default function InvoicesSection({
         try {
             const lines = newInvoiceLines
                 .filter(l => l.quantityToInvoice && parseFloat(l.quantityToInvoice) > 0)
-                .map(l => ({ purchaseOrderLineId: l.purchaseOrderLineId, quantityToInvoice: parseFloat(l.quantityToInvoice) }));
+                .map(l => ({
+                    purchaseOrderLineId: l.purchaseOrderLineId,
+                    quantityToInvoice: parseFloat(l.quantityToInvoice),
+                    goodsReceivedLineId: l.goodsReceivedLineId || undefined,
+                }));
             
-            await apiMutate(`/api/purchase-orders/${orderId}/Invoice`, 'POST', {
+            await apiMutate(`/api/purchase-orders/${orderId}/invoice`, 'POST', {
                 supplierInvoiceNumber: supplierinvoiceNumber || undefined,
                 receiptFilename: receiptFilename || undefined,
                 notes: newInvoiceNotes || undefined,
@@ -186,7 +207,8 @@ export default function InvoicesSection({
                                 <th>{tPurchase('columns.description')}</th>
                                 <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
                                 <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
-                                <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
+                                 <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
+                                <th style={{ width: 180 }}>Receipt Mapping</th>
                                 <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.qtyToBill')}</th>
                             </tr>
                         </thead>
@@ -199,6 +221,8 @@ export default function InvoicesSection({
                                     return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
                                 }, 0);
 
+                                const lineReceipts = receiptLines.filter(r => r.line.purchaseOrderLineId === nl.purchaseOrderLineId);
+
                                 return (
                                     <tr key={nl.purchaseOrderLineId}>
                                         <td style={{ color: 'var(--text-muted)' }}>{origLine?.lineNumber}</td>
@@ -209,6 +233,47 @@ export default function InvoicesSection({
                                         <td style={{ textAlign: 'right' }}>{origLine?.quantity}</td>
                                         <td style={{ textAlign: 'right' }}>{receivedQty}</td>
                                         <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{InvoicedQty}</td>
+                                        <td>
+                                            {lineReceipts.length > 0 ? (
+                                                <select
+                                                    className="input w-full"
+                                                    style={{ padding: '2px 4px', fontSize: 11 }}
+                                                    value={nl.goodsReceivedLineId || ''}
+                                                    onChange={e => {
+                                                        const updated = [...newInvoiceLines];
+                                                        const val = e.target.value;
+                                                        updated[idx].goodsReceivedLineId = val || undefined;
+                                                        if (val) {
+                                                            const rect = lineReceipts.find(r => r.line.goodsReceivedLineId === val);
+                                                            if (rect) {
+                                                                // Pre-fill remaining for this receipt
+                                                                const billedOnThisRect = Invoices.reduce((sum, inv) => {
+                                                                    const invLine = inv.lines?.find(il => il.goodsReceivedLineId === val);
+                                                                    return sum + (invLine ? parseFloat(invLine.quantityBilled || '0') : 0);
+                                                                }, 0);
+                                                                const rem = Math.max(0, parseFloat(rect.line.quantityReceived) - billedOnThisRect);
+                                                                updated[idx].quantityToInvoice = String(rem);
+                                                                updated[idx].maxQuantity = rem;
+                                                            }
+                                                        } else {
+                                                            // Revert to PO-wide remaining
+                                                            updated[idx].maxQuantity = Math.max(0, receivedQty - InvoicedQty);
+                                                            updated[idx].quantityToInvoice = String(updated[idx].maxQuantity);
+                                                        }
+                                                        setNewInvoiceLines(updated);
+                                                    }}
+                                                >
+                                                    <option value="">{tCommon('none')} (PO Direct)</option>
+                                                    {lineReceipts.map(r => (
+                                                        <option key={r.line.goodsReceivedLineId} value={r.line.goodsReceivedLineId}>
+                                                            {r.receiptNumber} ({r.line.quantityReceived})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            ) : (
+                                                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>No receipts found</span>
+                                            )}
+                                        </td>
                                         <td style={{ textAlign: 'right' }}>
                                             <input
                                                 type="number" className="input" min="0" max={nl.maxQuantity} step="1"
@@ -268,17 +333,17 @@ export default function InvoicesSection({
                             const linePricing = sortedLines.map((il) => {
                                 const orderLine = order.lines.find(ol => ol.purchaseOrderLineId === il.purchaseOrderLineId);
                                 const disc = parseFloat(orderLine?.discountPercentage || '0');
-                                const gstCat = gstCategories.find(c => c.gstCategoryId === orderLine?.gstCategoryId);
-                                const gstRate = parseFloat(gstCat?.rate || '0');
+                                const taxCat = taxCategories.find(c => c.taxCategoryId === orderLine?.taxCategoryId);
+                                const taxRate = parseFloat(taxCat?.rate || '0');
                                 const pricing = computeLinePrice({
                                     quantity: parseFloat(il.quantityInvoiced),
                                     pricePerUnit: parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'),
                                     discountPercentage: disc,
-                                    taxRate: gstRate,
+                                    taxRate: taxRate,
                                 });
                                 subtotal += pricing.amount;
                                 calculatedTaxTotal += pricing.tax;
-                                return { il, orderLine, disc, gstRate, pricing };
+                                return { il, orderLine, disc, taxRate, pricing };
                             });
                             
                             // Prefer the explicit DB taxAmount to handle imported legacy Invoices safely
@@ -295,12 +360,13 @@ export default function InvoicesSection({
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.discountPct')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.gst')}</th>
+                                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.tax')}</th>
+                                            <th>Receipt</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {linePricing.map(({ il, orderLine, disc, gstRate, pricing }) => (
+                                        {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
                                                 <tr key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}>
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
                                                         {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
@@ -313,8 +379,13 @@ export default function InvoicesSection({
                                                     <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
                                                         {disc.toFixed(1)}%
                                                     </td>
-                                                    <td style={{ textAlign: 'right', color: gstRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                        {gstRate.toFixed(1)}%
+                                                    <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                        {taxRate.toFixed(1)}%
+                                                    </td>
+                                                    <td style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                                                        {il.goodsReceivedLineId ? (
+                                                            receiptLines.find(r => r.line.goodsReceivedLineId === il.goodsReceivedLineId)?.receiptNumber || 'Receipt'
+                                                        ) : '—'}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                                                         {formatAmount(pricing.amount, cc)}
@@ -324,15 +395,15 @@ export default function InvoicesSection({
                                     </tbody>
                                     <tfoot>
                                         <tr style={{ borderTop: '1px solid var(--border)' }}>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('subtotal')}</td>
+                                            <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('subtotal')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('tax')}</td>
+                                            <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tCommon('tax')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
                                         </tr>
                                         <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tCommon('total')}</td>
+                                            <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tCommon('total')}</td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
                                         </tr>
                                     </tfoot>

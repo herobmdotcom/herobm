@@ -35,7 +35,7 @@ export class CreatePurchaseOrderLineDto {
 
   @IsOptional()
   @IsString()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 }
 
 export class UpdatePurchaseOrderLineDto {
@@ -61,7 +61,7 @@ export class UpdatePurchaseOrderLineDto {
 
   @IsOptional()
   @IsString()
-  gstCategoryId?: string;
+  taxCategoryId?: string;
 }
 
 // ── PO Header DTOs ──

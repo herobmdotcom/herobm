@@ -141,6 +141,13 @@
       "when": 1777315267248,
       "tag": "0019_add_invoice_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1777371159679,
+      "tag": "0020_state_constraints",
+      "breakpoints": true
     }
   ]
 }

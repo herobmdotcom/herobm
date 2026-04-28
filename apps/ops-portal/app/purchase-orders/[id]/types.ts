@@ -11,7 +11,7 @@ export interface OrderLine {
   pricePerUnit: string;
   discountPercentage: string;
   amount: string;
-  gstCategoryId: string | null;
+  taxCategoryId: string | null;
   tax: string;
   totalAmount: string;
   unitOfMeasure: string;
@@ -19,8 +19,8 @@ export interface OrderLine {
   productUoms?: ProductUom[];
 }
 
-export interface GstCategory {
-  gstCategoryId: string;
+export interface TaxCategory {
+  taxCategoryId: string;
   code: string;
   title: string;
   type: string;
@@ -45,7 +45,7 @@ export interface OrderDetail {
   customerOrderNumber: string | null;
   stateCode: string;
   currencyCode: string;
-  gstCategoryId: string | null;
+  taxCategoryId: string | null;
   deliveryLocationId?: string | null;
   locationName?: string | null;
   notes: string | null;
@@ -93,7 +93,7 @@ export interface OrderReturn {
 
 
 
-export function getGstLabel(category: GstCategory) {
+export function getTaxLabel(category: TaxCategory) {
   if (category.type === 'exempt') return 'Exempt';
   if (category.type === 'zero_rated') return 'Zero Rated';
   const pct = parseFloat(category.rate || '0');

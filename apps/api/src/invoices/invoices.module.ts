@@ -8,10 +8,10 @@ import {
 } from './invoices.controller';
 import { OutboxSyncController } from './outbox-sync.controller';
 import { GlModule } from '../gl/gl.module';
-import { GstModule } from '../gst/gst.module';
+import { TaxModule } from '../tax/tax.module';
 
 @Module({
-  imports: [GlModule, GstModule],
+  imports: [GlModule, TaxModule],
   controllers: [
     SalesInvoiceController,
     PurchaseInvoiceController,

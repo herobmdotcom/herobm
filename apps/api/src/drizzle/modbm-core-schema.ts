@@ -14,7 +14,19 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { CURRENCIES, HOME_CURRENCY } from '@modbm/shared';
+import {
+  CURRENCIES,
+  HOME_CURRENCY,
+  getValidStates,
+  SALES_ORDER_TRANSITIONS,
+  PURCHASE_ORDER_TRANSITIONS,
+  SHIPMENT_TRANSITIONS,
+  RETURN_TRANSITIONS,
+  SalesOrderState,
+  PurchaseOrderState,
+  ShipmentState,
+  ReturnState,
+} from '@modbm/shared';
 
 const validCurrencyCheck = (
   tableName: string,
@@ -38,21 +50,21 @@ const validCurrencyCheck = (
 export const modbmCore = pgSchema('modbm_core');
 
 // ---------------------------------------------------------------------------
-// gst_categories  (Tax classification for order lines)
+// tax_categories  (Tax classification for order lines)
 // ---------------------------------------------------------------------------
-export const gstCategories = modbmCore.table(
-  'gst_categories',
+export const taxCategories = modbmCore.table(
+  'tax_categories',
   {
-    gstCategoryId: uuid('gst_category_id').primaryKey().defaultRandom(),
+    taxCategoryId: uuid('tax_category_id').primaryKey().defaultRandom(),
     code: text('code').unique().notNull(),
     title: text('title').notNull(),
-    type: text('type').notNull(), // not_relevant | exempt | zero_rated | gst_applies
+    type: text('type').notNull(), // not_relevant | exempt | zero_rated | tax_applies
     rate: numeric('rate').default('0'), // percentage, e.g. '9' = 9%
     isDefault: boolean('is_default').default(false),
   },
   (table) => {
     return {
-      singleDefaultIndex: uniqueIndex('gst_categories_single_default_idx')
+      singleDefaultIndex: uniqueIndex('tax_categories_single_default_idx')
         .on(table.isDefault)
         .where(sql`${table.isDefault} = true`),
     };
@@ -92,7 +104,10 @@ export const salesOrders = modbmCore.table(
     fulfillmentLocationId: uuid('fulfillment_location_id')
       .notNull()
       .references(() => locations.locationId),
-    stateCode: text('state_code').notNull().default('draft'),
+    stateCode: text('state_code')
+      .$type<SalesOrderState>()
+      .notNull()
+      .default('draft'),
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
@@ -104,6 +119,14 @@ export const salesOrders = modbmCore.table(
   },
   (t) => ({
     currencyCheck: validCurrencyCheck('sales_orders'),
+    stateCheck: check(
+      'sales_order_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(SALES_ORDER_TRANSITIONS)
+          .map((s) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
   }),
 );
 
@@ -122,8 +145,8 @@ export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
   pricePerUnit: numeric('price_per_unit').notNull(),
   discountPercentage: numeric('discount_percentage').default('0'),
   amount: numeric('amount'),
-  gstCategoryId: uuid('gst_category_id').references(
-    () => gstCategories.gstCategoryId,
+  taxCategoryId: uuid('tax_category_id').references(
+    () => taxCategories.taxCategoryId,
   ),
   tax: numeric('tax').default('0'),
   totalAmount: numeric('total_amount'),
@@ -152,18 +175,34 @@ export const orderEvents = modbmCore.table('order_events', {
 // ---------------------------------------------------------------------------
 // sales_order_returns  (Return header against an invoiced order)
 // ---------------------------------------------------------------------------
-export const salesOrderReturns = modbmCore.table('sales_order_returns', {
-  returnId: uuid('return_id').primaryKey().defaultRandom(),
-  returnNumber: text('return_number').unique().notNull(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  stateCode: text('state_code').notNull().default('draft'),
-  notes: text('notes'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const salesOrderReturns = modbmCore.table(
+  'sales_order_returns',
+  {
+    returnId: uuid('return_id').primaryKey().defaultRandom(),
+    returnNumber: text('return_number').unique().notNull(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    stateCode: text('state_code')
+      .$type<ReturnState>()
+      .notNull()
+      .default('draft'),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    stateCheck: check(
+      'sales_order_return_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(RETURN_TRANSITIONS)
+          .map((s) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // sales_order_return_lines  (Per-line return quantities + reason + fee)
@@ -187,19 +226,35 @@ export const salesOrderReturnLines = modbmCore.table(
 // ---------------------------------------------------------------------------
 // sales_order_shipments  (Shipment/delivery batch header)
 // ---------------------------------------------------------------------------
-export const salesOrderShipments = modbmCore.table('sales_order_shipments', {
-  shipmentId: uuid('shipment_id').primaryKey().defaultRandom(),
-  shipmentNumber: text('shipment_number').unique().notNull(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  stateCode: text('state_code').notNull().default('draft'),
-  notes: text('notes'),
-  trackingNumber: text('tracking_number'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const salesOrderShipments = modbmCore.table(
+  'sales_order_shipments',
+  {
+    shipmentId: uuid('shipment_id').primaryKey().defaultRandom(),
+    shipmentNumber: text('shipment_number').unique().notNull(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    stateCode: text('state_code')
+      .$type<ShipmentState>()
+      .notNull()
+      .default('draft'),
+    notes: text('notes'),
+    trackingNumber: text('tracking_number'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    stateCheck: check(
+      'sales_order_shipment_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(SHIPMENT_TRANSITIONS)
+          .map((s) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // sales_order_shipment_lines  (Per-line quantities in each shipment)
@@ -232,7 +287,10 @@ export const purchaseOrders = modbmCore.table(
       () => locations.locationId,
     ),
     invoiceNumber: text('invoice_number'),
-    stateCode: text('state_code').notNull().default('draft'),
+    stateCode: text('state_code')
+      .$type<PurchaseOrderState>()
+      .notNull()
+      .default('draft'),
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
@@ -242,6 +300,14 @@ export const purchaseOrders = modbmCore.table(
   },
   (t) => ({
     currencyCheck: validCurrencyCheck('purchase_orders'),
+    stateCheck: check(
+      'purchase_order_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(PURCHASE_ORDER_TRANSITIONS)
+          .map((s) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
   }),
 );
 
@@ -262,8 +328,8 @@ export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
   pricePerUnit: numeric('price_per_unit').notNull(),
   discountPercentage: numeric('discount_percentage').default('0'),
   amount: numeric('amount'),
-  gstCategoryId: uuid('gst_category_id').references(
-    () => gstCategories.gstCategoryId,
+  taxCategoryId: uuid('tax_category_id').references(
+    () => taxCategories.taxCategoryId,
   ),
   tax: numeric('tax').default('0'),
   totalAmount: numeric('total_amount'),
@@ -342,6 +408,7 @@ export const backorders = modbmCore.table('backorders', {
   quantity: numeric('quantity').notNull(),
   stateCode: text('state_code').notNull().default('pending_supply'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -663,8 +730,11 @@ export const products = modbmCore.table('products', {
     .references(() => uomDictionary.uomCode),
   defaultSalesUomId: uuid('default_sales_uom_id'),
   defaultPurchaseUomId: uuid('default_purchase_uom_id'),
-  gstCategoryId: uuid('gst_category_id').references(
-    () => gstCategories.gstCategoryId,
+  purchaseTaxCategoryId: uuid('purchase_tax_category_id').references(
+    () => taxCategories.taxCategoryId,
+  ),
+  salesTaxCategoryId: uuid('sales_tax_category_id').references(
+    () => taxCategories.taxCategoryId,
   ),
   scNumber: text('sc_number'),
   stateCode: text('state_code').notNull().default('active'),
@@ -747,8 +817,8 @@ export const accounts = modbmCore.table(
       () => accountGroups.accountGroupId,
     ),
     stateCode: text('state_code').notNull().default('active'),
-    gstCategoryId: uuid('gst_category_id').references(
-      () => gstCategories.gstCategoryId,
+    taxCategoryId: uuid('tax_category_id').references(
+      () => taxCategories.taxCategoryId,
     ),
     currencyCode: text('currency_code').notNull(),
     tradingTermsId: uuid('trading_terms_id').references(
@@ -1030,16 +1100,19 @@ export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
 // ---------------------------------------------------------------------------
 // purchase_invoice_receipts  (N:N mapping for 3-way matching between invoice lines and received goods lines)
 // ---------------------------------------------------------------------------
-export const purchaseInvoiceReceipts = modbmCore.table('purchase_invoice_receipts', {
-  invoiceReceiptId: uuid('invoice_receipt_id').primaryKey().defaultRandom(),
-  invoiceLineId: uuid('invoice_line_id')
-    .notNull()
-    .references(() => purchaseInvoiceLines.invoiceLineId),
-  goodsReceivedLineId: uuid('goods_received_line_id')
-    .notNull()
-    .references(() => goodsReceivedLines.goodsReceivedLineId),
-  quantityBilled: numeric('quantity_billed').notNull(),
-});
+export const purchaseInvoiceReceipts = modbmCore.table(
+  'purchase_invoice_receipts',
+  {
+    invoiceReceiptId: uuid('invoice_receipt_id').primaryKey().defaultRandom(),
+    invoiceLineId: uuid('invoice_line_id')
+      .notNull()
+      .references(() => purchaseInvoiceLines.invoiceLineId),
+    goodsReceivedLineId: uuid('goods_received_line_id')
+      .notNull()
+      .references(() => goodsReceivedLines.goodsReceivedLineId),
+    quantityBilled: numeric('quantity_billed').notNull(),
+  },
+);
 // ===========================================================================
 // GENERAL LEDGER (Native Double-Entry Accounting)
 // ===========================================================================

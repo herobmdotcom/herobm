@@ -772,36 +772,36 @@ export interface paths {
         patch: operations["OrderShipmentsController_updateShipmentLine"];
         trace?: never;
     };
-    "/api/gst-categories": {
+    "/api/tax-categories": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["GstCategoriesController_findAll"];
+        get: operations["taxCategoriesController_findAll"];
         put?: never;
-        post: operations["GstCategoriesController_create"];
+        post: operations["taxCategoriesController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/gst-categories/{id}": {
+    "/api/tax-categories/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["GstCategoriesController_findOne"];
+        get: operations["taxCategoriesController_findOne"];
         put?: never;
         post?: never;
-        delete: operations["GstCategoriesController_remove"];
+        delete: operations["taxCategoriesController_remove"];
         options?: never;
         head?: never;
-        patch: operations["GstCategoriesController_update"];
+        patch: operations["taxCategoriesController_update"];
         trace?: never;
     };
     "/api/gl/accounts": {
@@ -1676,7 +1676,7 @@ export interface components {
             primaryContactEmail?: string;
             primaryContactPhone?: string;
             accountGroupId?: string;
-            gstCategoryId?: string;
+            TaxCategoryId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
@@ -1697,7 +1697,7 @@ export interface components {
             primaryContactPhone?: string;
             accountGroupId?: string;
             stateCode?: string;
-            gstCategoryId?: string;
+            TaxCategoryId?: string;
             currencyCode?: string;
             customerDiscount?: string;
             notes?: string;
@@ -1734,7 +1734,7 @@ export interface components {
             quantity: string;
             pricePerUnit: string;
             discountPercentage?: string;
-            gstCategoryId?: string;
+            TaxCategoryId?: string;
             unitOfMeasure?: string;
             fulfillmentLocationId?: string;
         };
@@ -1756,7 +1756,7 @@ export interface components {
             quantity?: string;
             pricePerUnit?: string;
             discountPercentage?: string;
-            gstCategoryId?: string;
+            TaxCategoryId?: string;
             productDescription?: string;
             unitOfMeasure?: string;
             fulfillmentLocationId?: string;
@@ -1805,14 +1805,14 @@ export interface components {
         UpdateShipmentLineDto: {
             quantityShipped?: string;
         };
-        CreateGstCategoryDto: {
+        CreateTaxCategoryDto: {
             code: string;
             title: string;
             type: Record<string, never>;
             rate?: string;
             isDefault?: boolean;
         };
-        UpdateGstCategoryDto: {
+        UpdateTaxCategoryDto: {
             code?: string;
             title?: string;
             type?: Record<string, never>;
@@ -3399,7 +3399,7 @@ export interface operations {
             };
         };
     };
-    GstCategoriesController_findAll: {
+    taxCategoriesController_findAll: {
         parameters: {
             query?: never;
             header?: never;
@@ -3416,7 +3416,7 @@ export interface operations {
             };
         };
     };
-    GstCategoriesController_create: {
+    taxCategoriesController_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -3425,7 +3425,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateGstCategoryDto"];
+                "application/json": components["schemas"]["CreateTaxCategoryDto"];
             };
         };
         responses: {
@@ -3437,7 +3437,7 @@ export interface operations {
             };
         };
     };
-    GstCategoriesController_findOne: {
+    taxCategoriesController_findOne: {
         parameters: {
             query?: never;
             header?: never;
@@ -3456,7 +3456,7 @@ export interface operations {
             };
         };
     };
-    GstCategoriesController_remove: {
+    taxCategoriesController_remove: {
         parameters: {
             query?: never;
             header?: never;
@@ -3475,7 +3475,7 @@ export interface operations {
             };
         };
     };
-    GstCategoriesController_update: {
+    taxCategoriesController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -3486,7 +3486,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateGstCategoryDto"];
+                "application/json": components["schemas"]["UpdateTaxCategoryDto"];
             };
         };
         responses: {

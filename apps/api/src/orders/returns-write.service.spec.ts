@@ -3,7 +3,7 @@ import { AppConfigService } from '../settings/app-config.service';
 import { ReturnsWriteService } from './returns-write.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
-import { GstCategoriesService } from '../gst/gst-categories.service';
+import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
@@ -108,7 +108,7 @@ describe('ReturnsWriteService', () => {
   let mockDb: any;
   let mockInventoryService: any;
   let mockGlService: any;
-  let mockGstService: any;
+  let mocktaxService: any;
 
   /**
    * Flexible select-chain mock that maps call indices to results.
@@ -163,7 +163,7 @@ describe('ReturnsWriteService', () => {
       }),
     };
 
-    mockGstService = {
+    mocktaxService = {
       getById: jest.fn().mockResolvedValue({ rate: '0' }),
     };
 
@@ -179,7 +179,7 @@ describe('ReturnsWriteService', () => {
         { provide: DRIZZLE, useValue: mockDb },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
-        { provide: GstCategoriesService, useValue: mockGstService },
+        { provide: TaxCategoriesService, useValue: mocktaxService },
       ],
     }).compile();
 
@@ -493,13 +493,13 @@ describe('ReturnsWriteService', () => {
 
     const ORDER_LINE_WITH_GST = {
       ...ORDER_LINE,
-      gstCategoryId: 'gst-cat-001',
+      taxCategoryId: 'tax-cat-001',
       discountPercentage: '0',
     };
 
     const ORDER_LINE_NO_GST = {
       ...ORDER_LINE,
-      gstCategoryId: null,
+      taxCategoryId: null,
       discountPercentage: '0',
     };
 
@@ -512,20 +512,20 @@ describe('ReturnsWriteService', () => {
       glAccountRows?: any[];
       returnLines?: any[];
       orderLine?: any;
-      gstRate?: string;
+      taxRate?: string;
     }) {
       const settings =
         opts.settings !== undefined ? opts.settings : GL_SETTINGS;
       const glAccountRows = opts.glAccountRows ?? GL_ACCOUNT_ROWS;
       const returnLines = opts.returnLines ?? [RETURN_LINE_WITH_FEE];
       const orderLine = opts.orderLine ?? ORDER_LINE_WITH_GST;
-      const gstRate = opts.gstRate ?? '10';
+      const taxRate = opts.taxRate ?? '10';
 
       // GL settings
       mockGlService.getSettings.mockResolvedValue(settings);
 
       // GST service
-      mockGstService.getById.mockResolvedValue({ rate: gstRate });
+      mocktaxService.getById.mockResolvedValue({ rate: taxRate });
 
       // The changeReturnState call sequence:
       // Phase 1 (before tx): select #1 = findReturn
@@ -583,7 +583,7 @@ describe('ReturnsWriteService', () => {
     }
 
     it('should post GL journal with correct lines (revenue + GST + fees)', async () => {
-      setupGlTest({ gstRate: '10' });
+      setupGlTest({ taxRate: '10' });
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
@@ -637,7 +637,7 @@ describe('ReturnsWriteService', () => {
     it('should omit fee line when no fees', async () => {
       setupGlTest({
         returnLines: [RETURN_LINE_NO_FEE],
-        gstRate: '10',
+        taxRate: '10',
       });
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
@@ -667,7 +667,7 @@ describe('ReturnsWriteService', () => {
     it('should omit GST line when no tax applies', async () => {
       setupGlTest({
         orderLine: ORDER_LINE_NO_GST,
-        gstRate: '0',
+        taxRate: '0',
       });
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
@@ -725,7 +725,7 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should write outbox event with correct payload', async () => {
-      setupGlTest({ gstRate: '10' });
+      setupGlTest({ taxRate: '10' });
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
@@ -752,13 +752,13 @@ describe('ReturnsWriteService', () => {
       expect(payload.lines[0].productId).toBe('PROD-001');
     });
 
-    it('should use per-line GST from gstCategoryId', async () => {
-      setupGlTest({ gstRate: '15' }); // 15% GST
+    it('should use per-line GST from taxCategoryId', async () => {
+      setupGlTest({ taxRate: '15' }); // 15% Tax
 
       await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
 
-      // Verify gstService.getById was called with the line's category
-      expect(mockGstService.getById).toHaveBeenCalledWith('gst-cat-001');
+      // Verify taxService.getById was called with the line's category
+      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-cat-001');
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 

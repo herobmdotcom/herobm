@@ -64,11 +64,17 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
               </p>
             )}
             {section.items.map((item) => {
+              const allItems = sections.flatMap((s) => s.items);
               const isActive =
                 item.href === '/'
                   ? pathname === '/'
-                  : pathname.startsWith(item.href) ||
-                    !!item.subItems?.some(sub => pathname.startsWith(sub.href));
+                  : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+                    !allItems.some(
+                      (other) =>
+                        other.href !== item.href &&
+                        other.href.length > item.href.length &&
+                        (pathname === other.href || pathname.startsWith(other.href + '/')),
+                    );
 
               return (
                 <div key={item.href} className="mb-0.5">

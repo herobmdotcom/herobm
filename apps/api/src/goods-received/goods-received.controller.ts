@@ -72,9 +72,6 @@ export class GoodsReceivedController {
     @Param('lineId') lineId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.goodsReceivedService.unresolveAllocation(
-      lineId,
-      user.username,
-    );
+    return this.goodsReceivedService.unresolveAllocation(lineId, user.username);
   }
 }

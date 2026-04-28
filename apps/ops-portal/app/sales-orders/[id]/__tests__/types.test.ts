@@ -1,9 +1,9 @@
-import { getGstLabel } from '../types';
-import type { GstCategory } from '../types';
+import { getTaxLabel } from '../types';
+import type { TaxCategory } from '../types';
 
-function makeCategory(overrides: Partial<GstCategory> = {}): GstCategory {
+function makeCategory(overrides: Partial<TaxCategory> = {}): TaxCategory {
     return {
-        gstCategoryId: 'cat-1',
+        taxCategoryId: 'cat-1',
         code: 'GST',
         title: 'GST',
         type: 'standard',
@@ -13,24 +13,24 @@ function makeCategory(overrides: Partial<GstCategory> = {}): GstCategory {
     };
 }
 
-describe('getGstLabel', () => {
+describe('getTaxLabel', () => {
     it('formats integer rate without decimals', () => {
-        expect(getGstLabel(makeCategory({ title: 'GST', rate: '10' }))).toBe('GST (10%)');
+        expect(getTaxLabel(makeCategory({ title: 'GST', rate: '10' }))).toBe('GST (10%)');
     });
 
     it('formats fractional rate with decimals', () => {
-        expect(getGstLabel(makeCategory({ title: 'GST', rate: '10.5' }))).toBe('GST (10.5%)');
+        expect(getTaxLabel(makeCategory({ title: 'GST', rate: '10.5' }))).toBe('GST (10.5%)');
     });
 
     it('formats zero rate', () => {
-        expect(getGstLabel(makeCategory({ title: 'GST Free', rate: '0' }))).toBe('GST Free (0%)');
+        expect(getTaxLabel(makeCategory({ title: 'GST Free', rate: '0' }))).toBe('GST Free (0%)');
     });
 
     it('handles empty rate string as zero', () => {
-        expect(getGstLabel(makeCategory({ title: 'GST Free', rate: '' }))).toBe('GST Free (0%)');
+        expect(getTaxLabel(makeCategory({ title: 'GST Free', rate: '' }))).toBe('GST Free (0%)');
     });
 
     it('uses the category title in the output', () => {
-        expect(getGstLabel(makeCategory({ title: 'Export', rate: '0' }))).toBe('Export (0%)');
+        expect(getTaxLabel(makeCategory({ title: 'Export', rate: '0' }))).toBe('Export (0%)');
     });
 });

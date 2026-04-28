@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import { SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS } from '@modbm/shared';
 
 import type {
-    OrderDetail, GstCategory, InventoryLevel,
+    OrderDetail, TaxCategory, InventoryLevel,
     OrderReturn, SalesInvoice,
 } from './types';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -65,7 +65,7 @@ export function useOrder(id: string) {
     const [headerDirty, setHeaderDirty] = useState(false);
 
     /* ── GST categories ──────────────────────────────────────────── */
-    const [gstCategories, setGstCategories] = useState<GstCategory[]>([]);
+    const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
     /* ── Tab state for line items / availability / backorders ────── */
     const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'backorders'>('lines');
@@ -145,7 +145,7 @@ export function useOrder(id: string) {
     // Initial load
     useEffect(() => {
         loadOrder();
-        apiFetch<GstCategory[]>('/api/gst-categories').then(setGstCategories).catch((err) => reportError(err, 'OrderDetailPage'));
+        apiFetch<TaxCategory[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'OrderDetailPage'));
     }, [id]);
 
     // Load returns and invoices when order state involves invoicing
@@ -262,7 +262,7 @@ export function useOrder(id: string) {
                     quantity: l.quantity,
                     pricePerUnit: l.pricePerUnit,
                     discountPercentage: l.discountPercentage || '0',
-                    gstCategoryId: l.gstCategoryId || undefined,
+                    taxCategoryId: l.taxCategoryId || undefined,
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
@@ -413,7 +413,7 @@ export function useOrder(id: string) {
         editName, setEditName, editPO, setEditPO, editNotes, setEditNotes, headerDirty,
 
         // GST
-        gstCategories,
+        taxCategories,
 
         // Tabs
         activeTab, setActiveTab, inventoryData, inventoryLoading,

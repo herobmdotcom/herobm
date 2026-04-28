@@ -16,7 +16,7 @@ function makeLine(overrides: Partial<OrderLine> & { salesOrderLineId: string }):
         pricePerUnit: '100',
         discountPercentage: '0',
         amount: '1000',
-        gstCategoryId: null,
+        taxCategoryId: null,
         tax: '0',
         totalAmount: '1000',
         unitOfMeasure: 'EA',

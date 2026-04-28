@@ -14,42 +14,42 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { GstCategoriesService } from './gst-categories.service';
-import { CreateGstCategoryDto, UpdateGstCategoryDto } from './dto';
+import { TaxCategoriesService } from './tax-categories.service';
+import { CreateTaxCategoryDto, UpdateTaxCategoryDto } from './dto';
 
-@Controller('gst-categories')
+@Controller('tax-categories')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
-export class GstCategoriesController {
-  constructor(private readonly gstService: GstCategoriesService) {}
+export class TaxCategoriesController {
+  constructor(private readonly taxService: TaxCategoriesService) {}
 
   @Get()
   @CasbinAction('read')
   findAll() {
-    return this.gstService.findAll();
+    return this.taxService.findAll();
   }
 
   @Get(':id')
   @CasbinAction('read')
   findOne(@Param('id') id: string) {
-    return this.gstService.getById(id);
+    return this.taxService.getById(id);
   }
 
   @Post()
   @CasbinAction('write')
-  create(@Body() dto: CreateGstCategoryDto) {
-    return this.gstService.create(dto);
+  create(@Body() dto: CreateTaxCategoryDto) {
+    return this.taxService.create(dto);
   }
 
   @Patch(':id')
   @CasbinAction('write')
-  update(@Param('id') id: string, @Body() dto: UpdateGstCategoryDto) {
-    return this.gstService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateTaxCategoryDto) {
+    return this.taxService.update(id, dto);
   }
 
   @Delete(':id')
   @CasbinAction('write')
   remove(@Param('id') id: string) {
-    return this.gstService.delete(id);
+    return this.taxService.delete(id);
   }
 }
