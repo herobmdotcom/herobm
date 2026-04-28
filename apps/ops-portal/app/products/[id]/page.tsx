@@ -65,7 +65,8 @@ export default function ProductDetailPage() {
     tradePrice: '0',
     priceLevel3: '0',
     priceLevel4: '0',
-    taxCategoryId: '',
+    purchaseTaxCategoryId: '',
+    salesTaxCategoryId: '',
     scNumber: '',
     notes: '',
     stateCode: 'active',
@@ -87,7 +88,8 @@ export default function ProductDetailPage() {
         tradePrice: formatMoney(data.tradePrice),
         priceLevel3: formatMoney(data.priceLevel3),
         priceLevel4: formatMoney(data.priceLevel4),
-        taxCategoryId: data.taxCategoryId || '',
+        purchaseTaxCategoryId: data.purchaseTaxCategoryId || '',
+        salesTaxCategoryId: data.salesTaxCategoryId || '',
         scNumber: data.scNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
@@ -804,13 +806,13 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.taxCategory')}
+                    {t('products.columns.purchaseTaxCategory')}
                   </label>
                   <select
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.taxCategoryId || ''}
-                    onChange={(e) => handleSelectChange('taxCategoryId', e.target.value)}
+                    value={dto.purchaseTaxCategoryId || ''}
+                    onChange={(e) => handleSelectChange('purchaseTaxCategoryId', e.target.value)}
                   >
                     <option value="">{t('common.none')}</option>
                     {taxCategories.map((cat) => (
@@ -819,8 +821,30 @@ export default function ProductDetailPage() {
                       </option>
                     ))}
                     {/* Fallback for legacy values not in current categories */}
-                    {dto.taxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.taxCategoryId) && (
-                      <option value={dto.taxCategoryId}>{t('products.unknownCategory', { id: dto.taxCategoryId })}</option>
+                    {dto.purchaseTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.purchaseTaxCategoryId) && (
+                      <option value={dto.purchaseTaxCategoryId}>{t('products.unknownCategory', { id: dto.purchaseTaxCategoryId })}</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.salesTaxCategory')}
+                  </label>
+                  <select
+                    className="input"
+                    disabled={!isEditable || saving}
+                    value={dto.salesTaxCategoryId || ''}
+                    onChange={(e) => handleSelectChange('salesTaxCategoryId', e.target.value)}
+                  >
+                    <option value="">{t('common.none')}</option>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                    {/* Fallback for legacy values not in current categories */}
+                    {dto.salesTaxCategoryId && !taxCategories.find(c => c.taxCategoryId === dto.salesTaxCategoryId) && (
+                      <option value={dto.salesTaxCategoryId}>{t('products.unknownCategory', { id: dto.salesTaxCategoryId })}</option>
                     )}
                   </select>
                 </div>

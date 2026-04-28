@@ -3,6 +3,7 @@ import { GlService, JournalMeta } from './gl.service';
 import { JournalLineDto } from './dto';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { AppConfigService } from '../settings/app-config.service';
 
 /**
  * Comprehensive unit tests for the GL Service.
@@ -133,7 +134,14 @@ describe('GlService', () => {
     mock = createMockDb();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GlService, { provide: DRIZZLE, useValue: mock.db }],
+      providers: [
+        GlService,
+        { provide: DRIZZLE, useValue: mock.db },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+        },
+      ],
     }).compile();
 
     service = module.get<GlService>(GlService);

@@ -5,6 +5,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 // ---------------------------------------------------------------------------
 // Mock helpers
@@ -150,6 +151,10 @@ describe('PurchaseOrdersService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },
         { provide: TaxCategoriesService, useValue: mockTaxCategoriesService },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+        },
       ],
     }).compile();
 

@@ -39,7 +39,6 @@ export {
 export {
   CURRENCIES,
   CURRENCY_DISPLAY,
-  HOME_CURRENCY,
   getCurrency,
   getCurrencyByAbmCode,
   formatAmount,

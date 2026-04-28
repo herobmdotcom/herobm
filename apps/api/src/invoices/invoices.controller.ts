@@ -16,7 +16,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { CreateSalesInvoiceDto, CreatePurchaseBillDto } from './dto';
+import { CreateSalesInvoiceDto } from './dto';
 
 /**
  * Sales-order–scoped invoice endpoints (AR).
@@ -57,17 +57,6 @@ export class PurchaseInvoiceController {
   constructor(
     private readonly purchaseInvoiceService: PurchaseInvoiceService,
   ) {}
-
-  @Post(':id/invoice')
-  @CasbinAction('write')
-  async createPurchaseBill(
-    @Param('id') id: string,
-    @Body() dto: CreatePurchaseBillDto,
-    @Request() req: any,
-  ) {
-    const actor = req.user?.username || 'system';
-    return this.purchaseInvoiceService.createBill(id, dto, actor);
-  }
 
   @Get(':id/invoices')
   @CasbinAction('read')
@@ -112,10 +101,74 @@ export class InvoiceDetailController {
     return { data };
   }
 
+  @Get('purchase-invoices')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('read')
+  async getPurchaseInvoicesGlobal(
+    @Query('days') days?: string,
+    @Query('vendorId') vendorId?: string,
+    @Query('invoiceId') invoiceId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const data = await this.purchaseInvoiceService.findActiveInvoices({
+      days: days ? parseInt(days, 10) : undefined,
+      vendorId,
+      invoiceId,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
+    return { data };
+  }
+
   @Get('purchase-invoices/:id')
   @CasbinResource('purchase-orders')
   @CasbinAction('read')
   async getPurchaseBillDetails(@Param('id') id: string) {
     return this.purchaseInvoiceService.findOne(id);
+  }
+
+  @Post('purchase-invoices')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async createDraftInvoice(
+    @Body() dto: import('./dto').CreateStandaloneInvoiceDto,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.createDraftInvoice(dto, actor);
+  }
+
+  @Post('purchase-invoices/:id/post')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async postInvoice(@Param('id') id: string, @Request() req: any) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.postInvoice(id, actor);
+  }
+
+  @Post('purchase-invoices/lines/:lineId/resolve')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async resolveInvoiceLine(
+    @Param('lineId') lineId: string,
+    @Body('purchaseOrderLineId') purchaseOrderLineId: string,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.resolveInvoiceLine(
+      lineId,
+      purchaseOrderLineId,
+      actor,
+    );
+  }
+
+  @Post('purchase-invoices/lines/:lineId/unresolve')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async unresolveInvoiceLine(
+    @Param('lineId') lineId: string,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.unresolveInvoiceLine(lineId, actor);
   }
 }

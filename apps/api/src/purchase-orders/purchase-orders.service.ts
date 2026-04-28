@@ -29,7 +29,6 @@ import {
   getValidStates,
   getAllowedTransitions,
   computeLinePriceForStorage,
-  HOME_CURRENCY,
 } from '@modbm/shared';
 
 export interface UnifiedPurchaseOrderRow {
@@ -48,6 +47,7 @@ export interface UnifiedPurchaseOrderRow {
 
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -56,6 +56,7 @@ export class PurchaseOrdersService {
     private readonly inventoryService: InventoryService,
     private readonly suppliersService: SuppliersService,
     private readonly taxService: TaxCategoriesService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
@@ -116,7 +117,8 @@ export class PurchaseOrdersService {
             orderNumber: createDto.orderNumber, // In reality, should auto-gen
             name: createDto.name,
             vendorId: createDto.vendorId,
-            currencyCode: createDto.currencyCode || HOME_CURRENCY.code,
+            currencyCode:
+              createDto.currencyCode || this.appConfig.homeCurrency(),
             notes: createDto.notes,
             createdBy: userId,
             stateCode: 'draft',

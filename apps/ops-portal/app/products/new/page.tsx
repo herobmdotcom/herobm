@@ -34,7 +34,8 @@ export default function NewProductPage() {
     tradePrice: '0.00',
     priceLevel3: '0.00',
     priceLevel4: '0.00',
-    taxCategoryId: '',
+    purchaseTaxCategoryId: '',
+    salesTaxCategoryId: '',
     scNumber: '',
     stateCode: 'active',
     productGroupId: null,
@@ -202,12 +203,30 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.taxCategory')}
+                    {t('products.columns.purchaseTaxCategory')}
                   </label>
                   <select
                     className="input"
-                    value={dto.taxCategoryId || ''}
-                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
+                    value={dto.purchaseTaxCategoryId || ''}
+                    onChange={(e) => updateField('purchaseTaxCategoryId', e.target.value)}
+                    disabled={submitting}
+                  >
+                    <option value="">{t('common.none')}</option>
+                    {taxCategories.map((cat) => (
+                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                        {cat.title} ({cat.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.columns.salesTaxCategory')}
+                  </label>
+                  <select
+                    className="input"
+                    value={dto.salesTaxCategoryId || ''}
+                    onChange={(e) => updateField('salesTaxCategoryId', e.target.value)}
                     disabled={submitting}
                   >
                     <option value="">{t('common.none')}</option>

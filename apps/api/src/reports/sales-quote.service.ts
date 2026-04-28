@@ -6,6 +6,7 @@ import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories } from '../drizzle/modbm-core-schema';
+import { AppConfigService } from '../settings/app-config.service';
 
 export interface SalesQuoteData {
   header: {
@@ -43,6 +44,7 @@ export class SalesQuoteService {
     private readonly ordersService: OrdersService,
     private readonly ordersWriteService: OrdersWriteService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(SalesQuoteService.name);
@@ -66,6 +68,10 @@ export class SalesQuoteService {
       source,
     );
     const taxRateMap = await this.buildtaxRateMap();
-    return assembleOrderData(orderDetail, taxRateMap);
+    return assembleOrderData(
+      orderDetail,
+      this.appConfig.homeCurrency(),
+      taxRateMap,
+    );
   }
 }

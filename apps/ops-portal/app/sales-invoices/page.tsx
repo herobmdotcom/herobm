@@ -6,12 +6,14 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
 import StateBadge from '@/components/StateBadge';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { ValidState } from '@/types/states';
+import { useSettings } from '@/components/SettingsProvider';
 
 
 
 export default function GlobalInvoicesPage() {
+  const { baseCurrency } = useSettings();
     const t = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
     useDocumentTitle(t('invoicesCardHeading', { defaultValue: 'Sales Invoices' }));
@@ -43,7 +45,7 @@ export default function GlobalInvoicesPage() {
             },
             valueFormatter: (params: any) => {
                 if (!params.value || params.value === 0) return '—';
-                return formatAmount(params.value, params.data?.currencyCode || HOME_CURRENCY.code);
+                return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
             },
         },
         { 

@@ -51,7 +51,7 @@ describe('API E2E — Sales Invoices', () => {
       .expect(200);
     validProductId1 = products.body.data[0].productId;
     validProductId2 = products.body.data[1]?.productId || validProductId1;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

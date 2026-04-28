@@ -24,8 +24,9 @@ async function bootstrap() {
       (await rl.question('Company Name [My Company]: ')) || 'My Company';
 
     console.log('\n--- Regional Settings ---');
-    const baseCurrency =
-      (await rl.question('Base Currency (ISO) [EUR]: ')) || 'EUR';
+    console.log(
+      `Base Currency: ${process.env.NEXT_PUBLIC_HOME_CURRENCY || 'AUD'} (from Environment)`,
+    );
     const fiscalMonth =
       (await rl.question('Fiscal Year Start Month (1-12) [7]: ')) || '7';
 
@@ -65,7 +66,7 @@ async function bootstrap() {
 
     const dto: ExecuteSetupDto = {
       coaPreset,
-      baseCurrency,
+      baseCurrency: process.env.HOME_CURRENCY || 'EUR',
       fiscalYearStartMonth: Number(fiscalMonth),
       inventoryValuationMethod: valuation,
       nonStockBillingMode: billing,

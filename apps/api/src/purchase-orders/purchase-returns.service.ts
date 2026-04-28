@@ -262,24 +262,8 @@ export class PurchaseReturnsService {
           .where(eq(coreProducts.productId, line.productId));
 
         if (product) {
-          // Returning removes qty from stock.
-          const updatedProduct = strategy.onDispatch(
-            {
-              productId: product.productId,
-              standardCost: product.standardCost || '0',
-              weightedAverageCost: product.weightedAverageCost || '0',
-              quantityOnHand: product.quantityOnHand || '0',
-            },
-            parseFloat(line.quantity),
-          );
-
-          await tx
-            .update(coreProducts)
-            .set({
-              quantityOnHand: updatedProduct.quantityOnHand,
-              modifiedOn: new Date(),
-            })
-            .where(eq(coreProducts.productId, product.productId));
+          // Note: Returning removes qty from stock, which is handled automatically by the inventory service above.
+          // WAC does not change during dispatch/returns, and quantityOnHand is no longer cached on the products table.
         }
       }
 

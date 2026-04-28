@@ -11,12 +11,13 @@ import {
   primaryKey,
   unique,
   uniqueIndex,
+  index,
   check,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import {
   CURRENCIES,
-  HOME_CURRENCY,
   getValidStates,
   SALES_ORDER_TRANSITIONS,
   PURCHASE_ORDER_TRANSITIONS,
@@ -133,30 +134,39 @@ export const salesOrders = modbmCore.table(
 // ---------------------------------------------------------------------------
 // sales_order_lines  (CDM: SalesOrderProduct)
 // ---------------------------------------------------------------------------
-export const salesOrderLineItems = modbmCore.table('sales_order_lines', {
-  salesOrderLineId: uuid('sales_order_line_id').primaryKey().defaultRandom(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  lineNumber: integer('line_number').notNull(),
-  productId: uuid('product_id').references(() => products.productId),
-  productDescription: text('product_description'),
-  quantity: numeric('quantity').notNull(),
-  pricePerUnit: numeric('price_per_unit').notNull(),
-  discountPercentage: numeric('discount_percentage').default('0'),
-  amount: numeric('amount'),
-  taxCategoryId: uuid('tax_category_id').references(
-    () => taxCategories.taxCategoryId,
-  ),
-  tax: numeric('tax').default('0'),
-  totalAmount: numeric('total_amount'),
-  unitOfMeasure: text('unit_of_measure'),
-  quantityPicked: numeric('quantity_picked').default('0'),
-  fulfillmentLocationId: uuid('fulfillment_location_id')
-    .notNull()
-    .references(() => locations.locationId),
-  isPostConfirmation: boolean('is_post_confirmation').default(false),
-});
+export const salesOrderLineItems = modbmCore.table(
+  'sales_order_lines',
+  {
+    salesOrderLineId: uuid('sales_order_line_id').primaryKey().defaultRandom(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    lineNumber: integer('line_number').notNull(),
+    productId: uuid('product_id').references(() => products.productId),
+    productDescription: text('product_description'),
+    quantity: numeric('quantity').notNull(),
+    pricePerUnit: numeric('price_per_unit').notNull(),
+    discountPercentage: numeric('discount_percentage').default('0'),
+    amount: numeric('amount'),
+    taxCategoryId: uuid('tax_category_id')
+      .notNull()
+      .references(() => taxCategories.taxCategoryId),
+    tax: numeric('tax').default('0'),
+    totalAmount: numeric('total_amount'),
+    unitOfMeasure: text('unit_of_measure'),
+    quantityPicked: numeric('quantity_picked').default('0'),
+    fulfillmentLocationId: uuid('fulfillment_location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    isPostConfirmation: boolean('is_post_confirmation').default(false),
+  },
+  (t) => ({
+    productLocationIdx: index('idx_sales_order_lines_product_location').on(
+      t.productId,
+      t.fulfillmentLocationId,
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // order_events  (Audit log + event sourcing)
@@ -308,34 +318,43 @@ export const purchaseOrders = modbmCore.table(
           .join(', ')})`,
       ),
     ),
+    deliveryLocIdx: index('idx_purchase_orders_delivery_location').on(
+      t.deliveryLocationId,
+    ),
   }),
 );
 
 // ---------------------------------------------------------------------------
 // purchase_order_lines  (CDM: PurchaseOrderProduct)
 // ---------------------------------------------------------------------------
-export const purchaseOrderLineItems = modbmCore.table('purchase_order_lines', {
-  purchaseOrderLineId: uuid('purchase_order_line_id')
-    .primaryKey()
-    .defaultRandom(),
-  purchaseOrderId: uuid('purchase_order_id')
-    .notNull()
-    .references(() => purchaseOrders.purchaseOrderId),
-  lineNumber: integer('line_number').notNull(),
-  productId: uuid('product_id').references(() => products.productId),
-  productDescription: text('product_description'),
-  quantity: numeric('quantity').notNull(),
-  pricePerUnit: numeric('price_per_unit').notNull(),
-  discountPercentage: numeric('discount_percentage').default('0'),
-  amount: numeric('amount'),
-  taxCategoryId: uuid('tax_category_id').references(
-    () => taxCategories.taxCategoryId,
-  ),
-  tax: numeric('tax').default('0'),
-  totalAmount: numeric('total_amount'),
-  unitOfMeasure: text('unit_of_measure'),
-  quantityReceived: numeric('quantity_received').default('0'),
-});
+export const purchaseOrderLineItems = modbmCore.table(
+  'purchase_order_lines',
+  {
+    purchaseOrderLineId: uuid('purchase_order_line_id')
+      .primaryKey()
+      .defaultRandom(),
+    purchaseOrderId: uuid('purchase_order_id')
+      .notNull()
+      .references(() => purchaseOrders.purchaseOrderId),
+    lineNumber: integer('line_number').notNull(),
+    productId: uuid('product_id').references(() => products.productId),
+    productDescription: text('product_description'),
+    quantity: numeric('quantity').notNull(),
+    pricePerUnit: numeric('price_per_unit').notNull(),
+    discountPercentage: numeric('discount_percentage').default('0'),
+    amount: numeric('amount'),
+    taxCategoryId: uuid('tax_category_id')
+      .notNull()
+      .references(() => taxCategories.taxCategoryId),
+    tax: numeric('tax').default('0'),
+    totalAmount: numeric('total_amount'),
+    unitOfMeasure: text('unit_of_measure'),
+    quantityReceived: numeric('quantity_received').default('0'),
+  },
+  (t) => ({
+    productIdx: index('idx_purchase_order_lines_product').on(t.productId),
+  }),
+);
 // ---------------------------------------------------------------------------
 // purchase_order_events (Audit log + event sourcing)
 // ---------------------------------------------------------------------------
@@ -388,28 +407,38 @@ export const purchaseOrderReturnLines = modbmCore.table(
 // ---------------------------------------------------------------------------
 // backorders (Order Allocations for Cross-Dock/Picked bridging)
 // ---------------------------------------------------------------------------
-export const backorders = modbmCore.table('backorders', {
-  backorderId: uuid('backorder_id').primaryKey().defaultRandom(),
-  salesOrderId: uuid('sales_order_id')
-    .notNull()
-    .references(() => salesOrders.salesOrderId),
-  salesOrderLineId: uuid('sales_order_line_id')
-    .notNull()
-    .references(() => salesOrderLineItems.salesOrderLineId),
-  productId: uuid('product_id')
-    .notNull()
-    .references(() => products.productId),
-  purchaseOrderId: uuid('purchase_order_id').references(
-    () => purchaseOrders.purchaseOrderId,
-  ),
-  purchaseOrderLineId: uuid('purchase_order_line_id').references(
-    () => purchaseOrderLineItems.purchaseOrderLineId,
-  ),
-  quantity: numeric('quantity').notNull(),
-  stateCode: text('state_code').notNull().default('pending_supply'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const backorders = modbmCore.table(
+  'backorders',
+  {
+    backorderId: uuid('backorder_id').primaryKey().defaultRandom(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    salesOrderLineId: uuid('sales_order_line_id')
+      .notNull()
+      .references(() => salesOrderLineItems.salesOrderLineId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    purchaseOrderId: uuid('purchase_order_id').references(
+      () => purchaseOrders.purchaseOrderId,
+    ),
+    purchaseOrderLineId: uuid('purchase_order_line_id').references(
+      () => purchaseOrderLineItems.purchaseOrderLineId,
+    ),
+    quantity: numeric('quantity').notNull(),
+    stateCode: text('state_code').notNull().default('pending_supply'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    solStateIdx: index('idx_backorders_sol_state').on(
+      t.salesOrderLineId,
+      t.stateCode,
+    ),
+    productIdx: index('idx_backorders_product').on(t.productId),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // locations  (Physical warehouses or regional centers)
@@ -458,6 +487,15 @@ export const zones = modbmCore.table(
 // ---------------------------------------------------------------------------
 // bins  (Physical storage locations within a location)
 // ---------------------------------------------------------------------------
+export const binTypeEnum = pgEnum('bin_type_enum', [
+  'storage',
+  'pick',
+  'bulk',
+  'receiving',
+  'staging',
+  'quarantine',
+]);
+
 export const bins = modbmCore.table(
   'bins',
   {
@@ -466,7 +504,7 @@ export const bins = modbmCore.table(
     zoneId: uuid('zone_id')
       .notNull()
       .references(() => zones.zoneId),
-    binType: text('bin_type'),
+    binType: binTypeEnum('bin_type').notNull().default('storage'),
     isConsignment: boolean('is_consignment').default(false),
     isBonded: boolean('is_bonded').default(false),
     isUnavailable: boolean('is_unavailable').default(false),
@@ -502,25 +540,34 @@ export const inventoryEntries = modbmCore.table('inventory_entries', {
 // ---------------------------------------------------------------------------
 // inventory_ledger (Immutable double-entry ledger of all stock movement lines)
 // ---------------------------------------------------------------------------
-export const inventoryLedger = modbmCore.table('inventory_ledger', {
-  ledgerId: uuid('ledger_id').primaryKey().defaultRandom(),
-  entryId: uuid('entry_id')
-    .notNull()
-    .references(() => inventoryEntries.entryId),
-  productId: uuid('product_id')
-    .notNull()
-    .references(() => products.productId),
-  binId: uuid('bin_id')
-    .notNull()
-    .references(() => bins.binId),
-  locationId: uuid('location_id')
-    .notNull()
-    .references(() => locations.locationId),
-  zoneId: uuid('zone_id')
-    .notNull()
-    .references(() => zones.zoneId),
-  quantity: numeric('quantity').notNull(),
-});
+export const inventoryLedger = modbmCore.table(
+  'inventory_ledger',
+  {
+    ledgerId: uuid('ledger_id').primaryKey().defaultRandom(),
+    entryId: uuid('entry_id')
+      .notNull()
+      .references(() => inventoryEntries.entryId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    locationId: uuid('location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    zoneId: uuid('zone_id')
+      .notNull()
+      .references(() => zones.zoneId),
+    quantity: numeric('quantity').notNull(),
+  },
+  (t) => ({
+    productLocationIdx: index('idx_inventory_ledger_product_location').on(
+      t.productId,
+      t.locationId,
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // bin_contents (Real-time calculated snapshot cache of current stock)
@@ -721,7 +768,6 @@ export const products = modbmCore.table('products', {
     '0',
   ),
   weightedAverageCost: numeric('weighted_average_cost').default('0'),
-  quantityOnHand: numeric('quantity_on_hand').default('0'),
   alternateInvoiceDescription: text('alternate_invoice_description'),
   boxQuantity: numeric('box_quantity').default('1'),
   baseUom: text('base_uom')
@@ -1062,9 +1108,12 @@ export const purchaseInvoices = modbmCore.table(
   {
     invoiceId: uuid('invoice_id').primaryKey().defaultRandom(),
     invoiceNumber: text('invoice_number').unique().notNull(),
-    purchaseOrderId: uuid('purchase_order_id')
+    vendorId: uuid('vendor_id')
       .notNull()
-      .references(() => purchaseOrders.purchaseOrderId),
+      .references(() => suppliers.vendorId),
+    purchaseOrderId: uuid('purchase_order_id').references(
+      () => purchaseOrders.purchaseOrderId,
+    ),
     supplierInvoiceNumber: text('supplier_invoice_number'),
     receiptFilename: text('receipt_filename'),
     totalAmount: numeric('total_amount').notNull(),
@@ -1089,12 +1138,16 @@ export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
   invoiceId: uuid('invoice_id')
     .notNull()
     .references(() => purchaseInvoices.invoiceId),
-  purchaseOrderLineId: uuid('purchase_order_line_id')
-    .notNull()
-    .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+  purchaseOrderLineId: uuid('purchase_order_line_id').references(
+    () => purchaseOrderLineItems.purchaseOrderLineId,
+  ),
+  productId: uuid('product_id').references(() => products.productId),
+  glAccountId: uuid('gl_account_id').references(() => glAccounts.glAccountId),
+  description: text('description'),
   quantityInvoiced: numeric('quantity_invoiced').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
   amount: numeric('amount').notNull(),
+  matchStatus: text('match_status').notNull().default('unmatched'),
 });
 
 // ---------------------------------------------------------------------------

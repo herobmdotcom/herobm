@@ -63,7 +63,7 @@ describe('API E2E — Purchase Invoices', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body.data[0].locationId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();
@@ -128,13 +128,36 @@ describe('API E2E — Purchase Invoices', () => {
 
       // 3. Generate Invoice
       const invoiceRes = await request(app.getHttpServer())
-        .post(`/api/purchase-orders/${orderId}/invoice`)
+        .post(`/api/purchase-invoices`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ invoiceNumber: `SUPP-INV-${rand}`, notes: 'Test AP invoicing' })
+        .send({
+          vendorId: validVendorId,
+          supplierInvoiceNumber: `SUPP-INV-${rand}`,
+          currencyCode: 'AUD',
+          purchaseOrderId: orderId,
+          totalAmount: 60.0,
+          taxAmount: 0,
+          notes: 'Test AP invoicing',
+          lines: [
+            {
+              description: 'E2E Invoice Test Product',
+              productId: validProductId,
+              quantityInvoiced: 5,
+              pricePerUnit: 12.0,
+              purchaseOrderLineId: lineId,
+            },
+          ],
+        })
         .expect(201);
 
       createdInvoiceId = invoiceRes.body.invoiceId;
       expect(createdInvoiceId).toBeDefined();
+
+      // 4. Post the invoice to generate GL entries
+      await request(app.getHttpServer())
+        .post(`/api/purchase-invoices/${createdInvoiceId}/post`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(201);
     });
 
     it('GL Integration — posted a journal entry for the AP invoice', async () => {

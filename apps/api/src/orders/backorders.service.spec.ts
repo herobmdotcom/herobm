@@ -3,6 +3,7 @@ import { BackordersService } from './backorders.service';
 import type { InventoryGap } from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 
 function createMockQueryBuilder(resolvedValue: any = []) {
   const qb: any = {
@@ -71,6 +72,10 @@ describe('BackordersService', () => {
         BackordersService,
         { provide: DRIZZLE, useValue: db },
         { provide: InventoryService, useValue: inventoryService },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+        },
       ],
     }).compile();
 

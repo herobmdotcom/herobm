@@ -837,7 +837,7 @@ describe('OrdersWriteService', () => {
       mockProductsService.findOne.mockResolvedValue({
         productId: 'PROD-ZR',
         name: 'Zero Prod',
-        gstCategory: 'Zero Rated Products',
+        salesTaxCategoryId: 'tax-zero',
       });
 
       mockSelectChain({

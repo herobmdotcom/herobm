@@ -20,7 +20,6 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import {
-  HOME_CURRENCY,
   REVENUE_ROUTING_PRECEDENCE,
   EXPENSE_ROUTING_PRECEDENCE,
 } from '@modbm/shared';
@@ -47,11 +46,16 @@ export class JournalMeta {
 // Service
 // ---------------------------------------------------------------------------
 
+import { AppConfigService } from '../settings/app-config.service';
+
 @Injectable()
 export class GlService {
   private readonly logger = new Logger(GlService.name);
 
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
+  ) {}
 
   // -------------------------------------------------------------------------
   // Core: Post a balanced journal entry
@@ -248,7 +252,7 @@ export class GlService {
         accountType: data.accountType,
         parentAccountId: data.parentAccountId,
         isGroup: data.isGroup ?? false,
-        currencyCode: data.currencyCode ?? HOME_CURRENCY.code,
+        currencyCode: data.currencyCode ?? this.appConfig.homeCurrency(),
       })
       .returning();
 

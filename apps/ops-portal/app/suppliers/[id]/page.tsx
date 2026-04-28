@@ -15,13 +15,14 @@ import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
+import { CURRENCIES } from '@/lib/currency';
 import PageNav from '@/components/shared/PageNav';
 import DataGrid from '@/components/DataGrid';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface Supplier {
   vendorId: string;
@@ -65,6 +66,7 @@ interface Supplier {
 }
 
 export default function SupplierDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const { baseCurrency } = useSettings();
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
@@ -91,7 +93,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editTradingTermsId, setEditTradingTermsId] = useState<string | null>(null);
   const [editEarlyPaymentDiscount, setEditEarlyPaymentDiscount] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
-  const [editCurrency, setEditCurrency] = useState(HOME_CURRENCY.code);
+  const [editCurrency, setEditCurrency] = useState(baseCurrency);
   const [editSupplierGroupId, setEditSupplierGroupId] = useState<string | null>(null);
   
   const [editIsPurchasingBlocked, setEditIsPurchasingBlocked] = useState(false);
@@ -128,7 +130,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditPaymentBlockReason(data.paymentBlockReason || '');
       setEditBlockNotes(data.blockNotes || '');
       
-      setEditCurrency(data.currencyCode || HOME_CURRENCY.code);
+      setEditCurrency(data.currencyCode || baseCurrency);
       setEditSupplierGroupId(data.supplierGroupId || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));

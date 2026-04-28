@@ -46,7 +46,8 @@ export class AppConfigService implements OnModuleInit {
     try {
       const [app] = await this.db.select().from(appSettings).limit(1);
       this.appCache = app ?? null;
-    } catch {
+    } catch (err) {
+      this.logger.error('Failed to load appSettings:', err);
       this.appCache = null;
     }
 
@@ -55,55 +56,61 @@ export class AppConfigService implements OnModuleInit {
     );
   }
 
+  private getGl(): typeof glSettings.$inferSelect {
+    if (!this.glCache) {
+      throw new Error(
+        'GL Settings not configured or cache empty. Run setup first.',
+      );
+    }
+    return this.glCache;
+  }
+
+  private getApp(): typeof appSettings.$inferSelect {
+    if (!this.appCache) {
+      throw new Error(
+        'App Settings not configured or cache empty. Run setup first.',
+      );
+    }
+    return this.appCache;
+  }
+
   // ---------------------------------------------------------------------------
   // GL Settings Getters
   // ---------------------------------------------------------------------------
 
-  /** ISO currency code for the home/base currency. Falls back to 'EUR'. */
+  /** ISO currency code for the home/base currency. */
   homeCurrency(): string {
-    return this.glCache?.baseCurrency ?? 'EUR';
+    return this.getGl().baseCurrency;
   }
 
-  /** Month (1-12) the fiscal year starts. Falls back to 7 (July). */
+  /** Month (1-12) the fiscal year starts. */
   fiscalYearStartMonth(): number {
-    return this.glCache?.fiscalYearStartMonth ?? 7;
+    return this.getGl().fiscalYearStartMonth;
   }
 
-  /**
-   * Revenue routing precedence: determines which group's GL account takes
-   * priority when routing revenue in invoicing.
-   */
+  /** Revenue routing precedence */
   revenueRoutingPrecedence(): RevenueRoutingStrategy {
-    return (
-      (this.glCache?.revenueRoutingPrecedence as RevenueRoutingStrategy) ??
-      'product_first'
-    );
+    return this.getGl().revenueRoutingPrecedence as RevenueRoutingStrategy;
   }
 
-  /**
-   * Expense routing precedence: determines which group's GL account takes
-   * priority when routing expenses in purchase invoicing.
-   */
+  /** Expense routing precedence */
   expenseRoutingPrecedence(): ExpenseRoutingStrategy {
-    return (
-      (this.glCache?.expenseRoutingPrecedence as ExpenseRoutingStrategy) ??
-      'product_first'
-    );
+    return this.getGl().expenseRoutingPrecedence as ExpenseRoutingStrategy;
   }
 
   /** Default AR account UUID. */
   defaultArAccountId(): string | null {
-    return this.glCache?.defaultArAccountId ?? null;
+    return this.getGl().defaultArAccountId;
   }
 
   /** Default Revenue account UUID. */
   defaultRevenueAccountId(): string | null {
-    return this.glCache?.defaultRevenueAccountId ?? null;
+    return this.getGl().defaultRevenueAccountId;
   }
 
   /** Default Tax account UUID. */
   defaultTaxAccountId(): string | null {
-    return this.glCache?.defaultTaxAccountId ?? null;
+    return this.getGl().defaultTaxAccountId;
   }
 
   // ---------------------------------------------------------------------------
@@ -112,30 +119,22 @@ export class AppConfigService implements OnModuleInit {
 
   /** Default fulfillment location UUID. Returns null if not configured. */
   defaultFulfillmentLocationId(): string | null {
-    return this.appCache?.defaultFulfillmentLocationId ?? null;
+    return this.getApp().defaultFulfillmentLocationId;
   }
 
   /** Inventory valuation method: 'weighted_average' or 'fifo'. */
   valuationMethod(): string {
-    return (
-      this.appCache?.inventoryValuationMethod ??
-      process.env.INVENTORY_VALUATION_METHOD ??
-      'weighted_average'
-    );
+    return this.getApp().inventoryValuationMethod;
   }
 
   /** Non-stock billing mode: 'per_shipment' or 'final_invoice'. */
   nonStockBillingMode(): string {
-    return (
-      this.appCache?.nonStockBillingMode ??
-      process.env.NON_STOCK_BILLING_MODE ??
-      'per_shipment'
-    );
+    return this.getApp().nonStockBillingMode;
   }
 
   /** Credit limit behavior: 'hard' or 'soft'. */
   creditLimitBehavior(): 'hard' | 'soft' {
-    return (this.appCache?.creditLimitBehavior as 'hard' | 'soft') ?? 'soft';
+    return this.getApp().creditLimitBehavior as 'hard' | 'soft';
   }
 
   /** Whether the initial setup wizard has been completed. */

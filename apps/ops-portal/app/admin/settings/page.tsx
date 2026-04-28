@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
-import { HOME_CURRENCY, getCurrency } from '@/lib/currency';
+import { getCurrency } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -51,6 +51,8 @@ export default function SettingsPage() {
   const tSettings = useTranslations('admin.settings');
   useDocumentTitle(tSettings('title'));
   const tCommon = useTranslations('admin.common');
+  const t = useTranslations();
+  const taxTypes = useMemo(() => TAX_TYPES(t), [t]);
   const router = useRouter();
 
   // ── Tax state ──────────────────────────────────────────────────────────────
@@ -303,7 +305,7 @@ export default function SettingsPage() {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  const typeLabel = (type: string) => TAX_TYPES(useTranslations()).find(t => t.value === type)?.label ?? type;
+  const typeLabel = (type: string) => taxTypes.find(t => t.value === type)?.label ?? type;
 
   const renderGlAccountLabel = (glAccountId?: string) => {
     if (!glAccountId) return <span className="text-muted italic">{tCommon('notConfigured')}</span>;
@@ -334,7 +336,7 @@ export default function SettingsPage() {
       <td>
         {isEdit ? (
           <select className="input" value={taxForm.type} onChange={e => setTaxForm({ ...taxForm, type: e.target.value })}>
-            {TAX_TYPES(useTranslations()).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {taxTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         ) : typeLabel(data.type)}
       </td>
@@ -450,6 +452,16 @@ export default function SettingsPage() {
     { id: 'rates-section', label: tSettings('sections.rates'), show: true },
     { id: 'uom-section', label: tSettings('sections.uom'), show: true },
   ], [tSettings]);
+
+  const flushCache = async () => {
+    try {
+      await apiMutate('/api/gl/settings/reload', 'POST');
+      // eslint-disable-next-line i18next/no-literal-string
+      toast.success('Settings cache flushed successfully.');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -860,10 +872,10 @@ export default function SettingsPage() {
               <tr style={{ backgroundColor: 'rgba(var(--primary-rgb), 0.03)', fontWeight: 500 }}>
                 <td>
                   <div className="flex items-center gap-2">
-                    {HOME_CURRENCY.code}
+                    {glSettings?.baseCurrency ?? '—'}
                   </div>
                 </td>
-                <td>{HOME_CURRENCY.name}</td>
+                <td>{glSettings?.baseCurrency ? getCurrency(glSettings.baseCurrency).name : '—'}</td>
                 <td>1.0000</td>
                 <td>1.0000</td>
                 <td><span className="text-xs italic text-muted">System Base</span></td>
@@ -916,6 +928,18 @@ export default function SettingsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="flex justify-end mt-8">
+        <button 
+          className="btn btn-secondary" 
+          onClick={flushCache}
+        >
+          {/* eslint-disable-next-line i18next/no-literal-string */}
+          <span className="material-symbols-outlined mr-2">sync</span>
+          {/* eslint-disable-next-line i18next/no-literal-string */}
+          Flush settings cache
+        </button>
       </div>
     </DetailsLayout>
   );

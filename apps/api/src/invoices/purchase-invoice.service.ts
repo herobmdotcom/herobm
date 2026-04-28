@@ -6,7 +6,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and, inArray } from 'drizzle-orm';
+import { eq, sql, desc, and, inArray, gte, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -29,7 +29,7 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { computeLinePrice, EXPENSE_ROUTING_PRECEDENCE } from '@modbm/shared';
-import { CreatePurchaseBillDto } from './dto';
+import { CreateStandaloneInvoiceDto } from './dto';
 
 @Injectable()
 export class PurchaseInvoiceService {
@@ -64,493 +64,6 @@ export class PurchaseInvoiceService {
   }
 
   /**
-   * Transition a definitively received Purchase Order directly into the natively Invoiced status.
-   * Leverages transactional Outbox pattern to orchestrate async ERPNext AP GL mapping.
-   */
-  async createBill(
-    purchaseOrderId: string,
-    dto: CreatePurchaseBillDto,
-    actor: string,
-  ) {
-    // 1. Validate Order State strictly (must be completely received logically)
-    const orderRows = await this.db
-      .select()
-      .from(purchaseOrders)
-      .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
-      .limit(1);
-
-    if (orderRows.length === 0) {
-      throw new NotFoundException(
-        `Purchase Order '${purchaseOrderId}' not found`,
-      );
-    }
-
-    const order = orderRows[0];
-    if (!['received', 'partially_received'].includes(order.stateCode)) {
-      throw new BadRequestException(
-        `Order ${order.orderNumber} must be in 'received' or 'partially_received' state to generate a supplier bill. Currently: '${order.stateCode}'.`,
-      );
-    }
-
-    // Identify if the Supplier has an ERPNext ID mapped natively already dynamically
-    let erpnextId: string | null = null;
-    let supplierName = 'Unknown Supplier';
-    let supplierApAccountId: string | null = null;
-    let supplierExpenseAccountId: string | null = null;
-    if (order.vendorId) {
-      // Find Party details to bind natively
-      const suppRows = await this.db
-        .select({
-          erpnextId: suppliers.erpnextId,
-          name: suppliers.name,
-          defaultApAccountId: supplierGroups.defaultApAccountId,
-          defaultExpenseAccountId: supplierGroups.defaultExpenseAccountId,
-        })
-        .from(suppliers)
-        .leftJoin(
-          supplierGroups,
-          eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
-        )
-        .where(eq(suppliers.vendorId, order.vendorId))
-        .limit(1);
-
-      if (suppRows.length > 0) {
-        erpnextId = suppRows[0].erpnextId;
-        supplierName = suppRows[0].name;
-        supplierApAccountId = suppRows[0].defaultApAccountId;
-        supplierExpenseAccountId = suppRows[0].defaultExpenseAccountId;
-      }
-    }
-
-    // 2. Load the structural PO Line dimensions to bill explicitly
-    const orderLinesQuery = await this.db
-      .select({
-        line: purchaseOrderLineItems,
-        productExpenseAccountId: productGroups.defaultExpenseAccountId,
-      })
-      .from(purchaseOrderLineItems)
-      .leftJoin(
-        coreProducts,
-        eq(purchaseOrderLineItems.productId, coreProducts.productId),
-      )
-      .leftJoin(
-        productGroups,
-        eq(coreProducts.productGroupId, productGroups.productGroupId),
-      )
-      .where(eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrderId));
-
-    const orderLines = orderLinesQuery.map((row) => ({
-      ...row.line,
-      productExpenseAccountId: row.productExpenseAccountId,
-    }));
-
-    if (orderLines.length === 0) {
-      throw new BadRequestException(
-        'Cannot enter a bill for an empty purchase order.',
-      );
-    }
-
-    const internalBillNumber = await this.generateBillNumber();
-
-    // Fetch previously invoiced lines for this order natively
-    const priorInvoices = await this.db
-      .select({
-        purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
-        quantityInvoiced: purchaseInvoiceLines.quantityInvoiced,
-      })
-      .from(purchaseInvoiceLines)
-      .innerJoin(
-        purchaseInvoices,
-        eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
-      )
-      .where(eq(purchaseInvoices.purchaseOrderId, purchaseOrderId));
-
-    const invoicedQtyByLine = new Map<string, number>();
-    for (const invLine of priorInvoices) {
-      const current = invoicedQtyByLine.get(invLine.purchaseOrderLineId) || 0;
-      invoicedQtyByLine.set(
-        invLine.purchaseOrderLineId,
-        current + parseFloat(invLine.quantityInvoiced),
-      );
-    }
-    // 3. Compute the strictly typed AP payload bounds natively
-    let rawTotal = 0;
-    let rawTax = 0;
-    const invoiceLineValues: any[] = [];
-    const invoiceReceiptValues: any[] = [];
-    const outboxLineDetails: any[] = [];
-
-    // 3-way matching: track previously billed quantities per receipt line
-    const receiptLineBilledMap = new Map<string, number>();
-    const grLineIds = dto.lines
-      ?.map((l) => l.goodsReceivedLineId)
-      .filter(Boolean) as string[];
-
-    if (grLineIds && grLineIds.length > 0) {
-      const priorBilled = await this.db
-        .select({
-          goodsReceivedLineId: purchaseInvoiceReceipts.goodsReceivedLineId,
-          quantityBilled: purchaseInvoiceReceipts.quantityBilled,
-        })
-        .from(purchaseInvoiceReceipts)
-        .where(inArray(purchaseInvoiceReceipts.goodsReceivedLineId, grLineIds));
-
-      for (const pb of priorBilled) {
-        const current = receiptLineBilledMap.get(pb.goodsReceivedLineId) || 0;
-        receiptLineBilledMap.set(
-          pb.goodsReceivedLineId,
-          current + parseFloat(pb.quantityBilled),
-        );
-      }
-    }
-
-    // Fetch receipt line details for validation
-    const grLineDetailsMap = new Map<string, any>();
-    if (grLineIds && grLineIds.length > 0) {
-      const details = await this.db
-        .select()
-        .from(goodsReceivedLines)
-        .where(inArray(goodsReceivedLines.goodsReceivedLineId, grLineIds));
-      for (const d of details) {
-        grLineDetailsMap.set(d.goodsReceivedLineId, d);
-      }
-    }
-
-    // Expense GL Routing tallies
-    const expenseByAccountId = new Map<string, number>();
-    let defaultExpense = 0;
-
-    let totalOrderedQty = 0;
-    let totalInvoicedSoFar = 0;
-    let totalInvoicingNow = 0;
-
-    for (const line of orderLines) {
-      const orderedQty = parseFloat(line.quantity);
-      totalOrderedQty += orderedQty;
-
-      const prevInvoicedQty =
-        invoicedQtyByLine.get(line.purchaseOrderLineId) || 0;
-      totalInvoicedSoFar += prevInvoicedQty;
-
-      const receivedQty = parseFloat((line as any).quantityReceived || '0');
-
-      const reqLine = dto.lines?.find(
-        (l) => l.purchaseOrderLineId === line.purchaseOrderLineId,
-      );
-
-      let qtyToInvoice = 0;
-      let grLineId: string | undefined = undefined;
-
-      if (reqLine) {
-        qtyToInvoice = reqLine.quantityToInvoice;
-        grLineId = reqLine.goodsReceivedLineId;
-      } else {
-        qtyToInvoice = Math.max(0, receivedQty - prevInvoicedQty);
-      }
-
-      if (qtyToInvoice <= 0) {
-        continue;
-      }
-
-      // 3-Way Matching Validation
-      if (grLineId) {
-        const grLine = grLineDetailsMap.get(grLineId);
-        if (!grLine) {
-          throw new BadRequestException(`Receipt line ${grLineId} not found`);
-        }
-        if (grLine.purchaseOrderLineId !== line.purchaseOrderLineId) {
-          throw new BadRequestException(
-            `Receipt line ${grLineId} does not belong to PO line ${line.purchaseOrderLineId}`,
-          );
-        }
-
-        const prevBilledOnThisReceipt = receiptLineBilledMap.get(grLineId) || 0;
-        const totalReceivedOnThisReceipt = parseFloat(grLine.quantityReceived);
-
-        if (
-          prevBilledOnThisReceipt + qtyToInvoice >
-          totalReceivedOnThisReceipt + 0.001
-        ) {
-          throw new BadRequestException(
-            `Cannot bill ${qtyToInvoice} against receipt line ${grLineId}. ` +
-              `Already billed: ${prevBilledOnThisReceipt}, Received: ${totalReceivedOnThisReceipt}`,
-          );
-        }
-      } else if (prevInvoicedQty + qtyToInvoice > receivedQty + 0.001) {
-        // Fallback validation for non-receipt billing
-        throw new BadRequestException(
-          `Cannot invoice more than received quantity for line. Requested: ${qtyToInvoice}, Remaining Received: ${Math.max(0, receivedQty - prevInvoicedQty)}`,
-        );
-      }
-
-      totalInvoicingNow += qtyToInvoice;
-
-      const price = parseFloat(line.pricePerUnit);
-      const disc = parseFloat(line.discountPercentage ?? '0');
-
-      // Resolve GST rate from the line's category
-      let taxRate = 0;
-      if ((line as any).taxCategoryId) {
-        try {
-          const cat = await this.taxService.getById(
-            (line as any).taxCategoryId,
-          );
-          taxRate = parseFloat(cat.rate ?? '0');
-        } catch {
-          // Category not found — fall back to 0% tax
-        }
-      }
-
-      const pricing = computeLinePrice({
-        quantity: qtyToInvoice,
-        pricePerUnit: price,
-        discountPercentage: disc,
-        taxRate: taxRate,
-      });
-
-      rawTotal += pricing.amount;
-      rawTax += pricing.tax;
-
-      const lineExpAcctId =
-        EXPENSE_ROUTING_PRECEDENCE === 'supplier_first'
-          ? supplierExpenseAccountId ||
-            (line as any).productExpenseAccountId ||
-            null
-          : (line as any).productExpenseAccountId ||
-            supplierExpenseAccountId ||
-            null;
-
-      if (lineExpAcctId) {
-        const current = expenseByAccountId.get(lineExpAcctId) || 0;
-        expenseByAccountId.set(lineExpAcctId, current + pricing.amount);
-      } else {
-        defaultExpense += pricing.amount;
-      }
-
-      const tempLineId = randomUUID();
-      invoiceLineValues.push({
-        invoiceLineId: tempLineId,
-        purchaseOrderLineId: line.purchaseOrderLineId,
-        quantityInvoiced: String(qtyToInvoice),
-        pricePerUnit: String(price),
-        amount: String(pricing.amount),
-      });
-
-      if (grLineId) {
-        invoiceReceiptValues.push({
-          invoiceLineId: tempLineId,
-          goodsReceivedLineId: grLineId,
-          quantityBilled: String(qtyToInvoice),
-        });
-      }
-
-      outboxLineDetails.push({
-        purchaseOrderLineId: line.purchaseOrderLineId,
-        productId: line.productId,
-        quantity: qtyToInvoice,
-        amount: pricing.amount,
-        tax: pricing.tax,
-      });
-    }
-
-    if (invoiceLineValues.length === 0) {
-      throw new BadRequestException(
-        'No quantities available to invoice, or invalid quantities provided.',
-      );
-    }
-
-    const totalAmount = rawTotal;
-    const taxAmount = rawTax;
-    const combinedTotal = totalAmount + taxAmount;
-
-    // Check strict transition bound tolerance cleanly using floating point fallback mathematically
-    const isFullyInvoiced =
-      totalInvoicedSoFar + totalInvoicingNow >= totalOrderedQty - 0.001;
-
-    // 4. Begin transactional generation natively
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      // A. Create the AP Bill header natively
-      const [invoice] = await tx
-        .insert(purchaseInvoices)
-        .values({
-          invoiceNumber: internalBillNumber,
-          purchaseOrderId,
-          supplierInvoiceNumber: dto.supplierInvoiceNumber,
-          totalAmount: String(combinedTotal), // AP assumes gross load structurally
-          taxAmount: String(taxAmount),
-          receiptFilename: dto.receiptFilename,
-          currencyCode: order.currencyCode,
-          stateCode: 'invoiced',
-          notes: dto.notes,
-          createdBy: actor,
-        })
-        .returning();
-
-      // B. Structure local Bill Details mapping natively
-      await tx.insert(purchaseInvoiceLines).values(
-        invoiceLineValues.map((l) => ({
-          ...l,
-          invoiceId: invoice.invoiceId,
-        })),
-      );
-
-      // C. Record 3-way matching receipts natively
-      if (invoiceReceiptValues.length > 0) {
-        await tx.insert(purchaseInvoiceReceipts).values(invoiceReceiptValues);
-      }
-
-      // C. Transition originating Order cleanly natively
-      if (isFullyInvoiced && order.stateCode === 'received') {
-        await tx
-          .update(purchaseOrders)
-          .set({ stateCode: 'invoiced', modifiedOn: new Date() })
-          .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId));
-      }
-
-      // D. Generate specific AP Outbox Sync Event asynchronously routing back
-      const outboxPayload = {
-        invoiceId: invoice.invoiceId,
-        invoiceNumber: internalBillNumber,
-        supplierInvoiceNumber: dto.supplierInvoiceNumber,
-        purchaseOrderId,
-        orderNumber: order.orderNumber,
-        supplierId: order.vendorId,
-        supplierName: supplierName,
-        erpnextId: erpnextId,
-        totalExpense: totalAmount,
-        totalTax: taxAmount,
-        totalAccountsPayable: combinedTotal,
-        currency: order.currencyCode,
-        lines: outboxLineDetails,
-      };
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: purchaseOrderId,
-        eventType: EventType.PURCHASE_INVOICED,
-        payload: outboxPayload,
-        actor,
-      });
-
-      return invoice;
-    });
-
-    this.logger.log(
-      `Native Purchase Bill created: ${internalBillNumber} for PO ${order.orderNumber} securely bounding AP sync`,
-    );
-
-    // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
-    try {
-      const settings = await this.glService.getSettings();
-      const effectiveApAccountId =
-        supplierApAccountId || settings?.defaultApAccountId;
-
-      if (effectiveApAccountId) {
-        const distinctAccountIds = new Set<string>();
-        distinctAccountIds.add(effectiveApAccountId);
-        if (settings?.defaultTaxAccountId)
-          distinctAccountIds.add(settings.defaultTaxAccountId);
-        if (settings?.defaultExpenseAccountId)
-          distinctAccountIds.add(settings.defaultExpenseAccountId);
-        for (const acctId of expenseByAccountId.keys()) {
-          distinctAccountIds.add(acctId);
-        }
-
-        const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
-
-        if (settingsIds.length > 0) {
-          const glAcct = glAccounts;
-          const acctRows = await this.db
-            .select({
-              glAccountId: glAcct.glAccountId,
-              accountCode: glAcct.accountCode,
-            })
-            .from(glAcct)
-            .where(
-              sql`${glAcct.glAccountId} IN (${sql.join(
-                settingsIds.map((id) => sql`${id}`),
-                sql`, `,
-              )})`,
-            );
-
-          const idToCode = new Map(
-            acctRows.map((a) => [a.glAccountId, a.accountCode]),
-          );
-
-          const apCode = idToCode.get(effectiveApAccountId);
-          const defaultExpCode = settings.defaultExpenseAccountId
-            ? idToCode.get(settings.defaultExpenseAccountId)
-            : undefined;
-          const taxCode = settings.defaultTaxAccountId
-            ? idToCode.get(settings.defaultTaxAccountId)
-            : null;
-
-          if (apCode) {
-            const glLines: any[] = [];
-
-            if (defaultExpense > 0 && defaultExpCode) {
-              glLines.push({
-                accountCode: defaultExpCode,
-                debit: defaultExpense,
-                credit: 0,
-                memo: `Expense (Default): ${internalBillNumber}`,
-              });
-            }
-
-            for (const [acctId, amount] of expenseByAccountId.entries()) {
-              const code = idToCode.get(acctId);
-              if (code && amount > 0) {
-                glLines.push({
-                  accountCode: code,
-                  debit: amount,
-                  credit: 0,
-                  memo: `Expense: ${internalBillNumber}`,
-                });
-              }
-            }
-
-            if (taxCode && taxAmount > 0) {
-              // GST Paid is an asset (input tax credit)
-              glLines.push({
-                accountCode: taxCode,
-                debit: taxAmount,
-                credit: 0,
-                memo: `GST Paid: ${internalBillNumber}`,
-              });
-            }
-            glLines.push({
-              accountCode: apCode,
-              debit: 0,
-              credit: combinedTotal,
-              memo: `AP: ${internalBillNumber}`,
-              partyType: 'supplier',
-              partyId: order.vendorId,
-            });
-
-            await this.glService.postJournalEntry(glLines, {
-              sourceType: 'purchase_invoice',
-              sourceId: result.invoiceId,
-              memo: `Purchase bill ${internalBillNumber} for PO ${order.orderNumber}`,
-              actor,
-            });
-
-            this.logger.log(
-              `GL journal posted for purchase bill ${internalBillNumber}`,
-            );
-          }
-        }
-      }
-    } catch (glErr) {
-      console.error('GL Error generating AP bill posting:', glErr);
-      this.logger.warn(
-        `GL posting failed for bill ${internalBillNumber}: ${(glErr as Error).message}`,
-      );
-    }
-
-    return result;
-  }
-
-  /**
    * Fetch a specific ModBM AP Bill with natively populated mappings structurally
    */
   async findOne(invoiceId: string) {
@@ -570,20 +83,37 @@ export class PurchaseInvoiceService {
     const lines = await this.db
       .select({
         lineId: purchaseInvoiceLines.invoiceLineId,
+        matchStatus: purchaseInvoiceLines.matchStatus,
+        description: purchaseInvoiceLines.description,
         quantityInvoiced: purchaseInvoiceLines.quantityInvoiced,
         pricePerUnit: purchaseInvoiceLines.pricePerUnit,
         amount: purchaseInvoiceLines.amount,
-        productId: purchaseOrderLineItems.productId,
+        productId: purchaseInvoiceLines.productId,
+        productNumber: coreProducts.productNumber,
+        purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+        purchaseOrderNumber: purchaseOrders.orderNumber,
+        purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
         goodsReceivedLineId: purchaseInvoiceReceipts.goodsReceivedLineId,
         quantityBilled: purchaseInvoiceReceipts.quantityBilled,
       })
       .from(purchaseInvoiceLines)
-      .innerJoin(
+      .leftJoin(
         purchaseOrderLineItems,
         eq(
           purchaseInvoiceLines.purchaseOrderLineId,
           purchaseOrderLineItems.purchaseOrderLineId,
         ),
+      )
+      .leftJoin(
+        purchaseOrders,
+        eq(
+          purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(purchaseInvoiceLines.productId, coreProducts.productId),
       )
       .leftJoin(
         purchaseInvoiceReceipts,
@@ -598,13 +128,39 @@ export class PurchaseInvoiceService {
   }
 
   /**
-   * Fetch all Native ModBM Bills strictly tied to a distinct active purchase order
+   * Fetch all Native ModBM Bills strictly tied to a distinct active purchase order.
+   * Finds any invoice that has lines matched to the purchase order.
    */
   async findByOrder(purchaseOrderId: string) {
+    const linesRows = await this.db
+      .select({
+        invoiceId: purchaseInvoiceLines.invoiceId,
+      })
+      .from(purchaseInvoiceLines)
+      .innerJoin(
+        purchaseOrderLineItems,
+        eq(
+          purchaseInvoiceLines.purchaseOrderLineId,
+          purchaseOrderLineItems.purchaseOrderLineId,
+        ),
+      )
+      .where(eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrderId));
+
+    const matchedInvoiceIds = [
+      ...new Set(linesRows.map((r) => r.invoiceId).filter(Boolean)),
+    ];
+
+    if (matchedInvoiceIds.length === 0) return [];
+
     const invoices = await this.db
       .select()
       .from(purchaseInvoices)
-      .where(eq(purchaseInvoices.purchaseOrderId, purchaseOrderId))
+      .where(
+        sql`${purchaseInvoices.invoiceId} IN (${sql.join(
+          matchedInvoiceIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      )
       .orderBy(desc(purchaseInvoices.createdOn));
 
     if (invoices.length === 0) return [];
@@ -643,5 +199,331 @@ export class PurchaseInvoiceService {
     }
 
     return invoices;
+  }
+  /**
+   * Creates a standalone draft Purchase Invoice.
+   */
+  async createDraftInvoice(
+    dto: CreateStandaloneInvoiceDto,
+    actor: string,
+  ): Promise<any> {
+    const internalBillNumber = await this.generateBillNumber();
+
+    return this.db.transaction(async (tx: DrizzleDB) => {
+      const [invoice] = await tx
+        .insert(purchaseInvoices)
+        .values({
+          invoiceNumber: internalBillNumber,
+          vendorId: dto.vendorId,
+          supplierInvoiceNumber: dto.supplierInvoiceNumber,
+          totalAmount: String(dto.totalAmount),
+          taxAmount: String(dto.taxAmount),
+          receiptFilename: dto.receiptFilename,
+          currencyCode: dto.currencyCode,
+          stateCode: 'draft',
+          notes: dto.notes,
+          purchaseOrderId: dto.purchaseOrderId,
+          createdBy: actor,
+        })
+        .returning();
+
+      if (dto.lines && dto.lines.length > 0) {
+        const linesToInsert = dto.lines.map((l: any) => {
+          const qty = l.quantityInvoiced;
+          const price = l.pricePerUnit;
+          // Simple local math, ignoring complex discount logic for raw standalone lines
+          const amt = qty * price;
+          return {
+            invoiceLineId: randomUUID(),
+            invoiceId: invoice.invoiceId,
+            description: l.description,
+            productId: l.productId,
+            glAccountId: l.glAccountId,
+            quantityInvoiced: String(qty),
+            pricePerUnit: String(price),
+            amount: String(amt),
+            purchaseOrderLineId: l.purchaseOrderLineId,
+            matchStatus: l.purchaseOrderLineId ? 'matched' : 'unmatched',
+          };
+        });
+
+        await tx.insert(purchaseInvoiceLines).values(linesToInsert);
+      }
+
+      return invoice;
+    });
+  }
+
+  /**
+   * Posts a draft invoice, validates totals, and creates the GL entries.
+   */
+  async postInvoice(invoiceId: string, actor: string): Promise<any> {
+    const [invoice] = await this.db
+      .select()
+      .from(purchaseInvoices)
+      .where(eq(purchaseInvoices.invoiceId, invoiceId));
+    if (!invoice) throw new NotFoundException('Invoice not found');
+    if (invoice.stateCode !== 'draft')
+      throw new BadRequestException('Only draft invoices can be posted');
+
+    const lines = await this.db
+      .select()
+      .from(purchaseInvoiceLines)
+      .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
+
+    let lineTotal = 0;
+    const expenseByAccountId = new Map<string, number>();
+    let defaultExpense = 0;
+
+    for (const line of lines) {
+      const amt = parseFloat(line.amount);
+      lineTotal += amt;
+
+      const acctId = line.glAccountId;
+      if (acctId) {
+        const current = expenseByAccountId.get(acctId) || 0;
+        expenseByAccountId.set(acctId, current + amt);
+      } else {
+        defaultExpense += amt;
+      }
+    }
+
+    const headerTotal = parseFloat(invoice.totalAmount || '0');
+    const taxAmount = parseFloat(invoice.taxAmount || '0');
+    const expectedHeader = lineTotal + taxAmount;
+
+    if (Math.abs(expectedHeader - headerTotal) > 0.01) {
+      throw new BadRequestException(
+        `Invoice totals mismatch. Header: ${headerTotal.toFixed(2)}, Lines+Tax: ${expectedHeader.toFixed(2)}`,
+      );
+    }
+
+    // Verify Vendor default AP / Expense Accounts
+    const [supp] = await this.db
+      .select()
+      .from(suppliers)
+      .where(eq(suppliers.vendorId, invoice.vendorId));
+    const supplierApAccountId = (supp as any)?.defaultApAccountId;
+    const supplierExpenseAccountId = (supp as any)?.defaultExpenseAccountId;
+
+    // GL Posting (similar to createBill)
+    try {
+      const settings = await this.glService.getSettings();
+      const effectiveApAccountId =
+        supplierApAccountId || settings?.defaultApAccountId;
+
+      if (effectiveApAccountId) {
+        const distinctAccountIds = new Set<string>();
+        distinctAccountIds.add(effectiveApAccountId);
+        if (settings?.defaultTaxAccountId)
+          distinctAccountIds.add(settings.defaultTaxAccountId);
+        if (settings?.defaultExpenseAccountId)
+          distinctAccountIds.add(settings.defaultExpenseAccountId);
+        if (supplierExpenseAccountId)
+          distinctAccountIds.add(supplierExpenseAccountId);
+        for (const acctId of expenseByAccountId.keys())
+          distinctAccountIds.add(acctId);
+
+        const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
+
+        if (settingsIds.length > 0) {
+          const acctRows = await this.db
+            .select({
+              glAccountId: glAccounts.glAccountId,
+              accountCode: glAccounts.accountCode,
+            })
+            .from(glAccounts)
+            .where(inArray(glAccounts.glAccountId, settingsIds));
+
+          const idToCode = new Map(
+            acctRows.map((a) => [a.glAccountId, a.accountCode]),
+          );
+
+          const apCode = idToCode.get(effectiveApAccountId);
+          // If no specific line expense, fallback to supplier's default expense, or system default
+          const fallbackExpCode =
+            (supplierExpenseAccountId &&
+              idToCode.get(supplierExpenseAccountId)) ||
+            (settings.defaultExpenseAccountId &&
+              idToCode.get(settings.defaultExpenseAccountId));
+
+          const taxCode = settings.defaultTaxAccountId
+            ? idToCode.get(settings.defaultTaxAccountId)
+            : null;
+
+          if (apCode) {
+            const glLines: any[] = [];
+
+            if (defaultExpense > 0 && fallbackExpCode) {
+              glLines.push({
+                accountCode: fallbackExpCode,
+                debit: defaultExpense,
+                credit: 0,
+                memo: `Expense (Default): ${invoice.invoiceNumber}`,
+              });
+            }
+
+            for (const [acctId, amount] of expenseByAccountId.entries()) {
+              const code = idToCode.get(acctId);
+              if (code && amount > 0) {
+                glLines.push({
+                  accountCode: code,
+                  debit: amount,
+                  credit: 0,
+                  memo: `Expense: ${invoice.invoiceNumber}`,
+                });
+              }
+            }
+
+            if (taxCode && taxAmount > 0) {
+              glLines.push({
+                accountCode: taxCode,
+                debit: taxAmount,
+                credit: 0,
+                memo: `Tax: ${invoice.invoiceNumber}`,
+              });
+            }
+
+            // AP Credit
+            const totalDebits = glLines.reduce((sum, l) => sum + l.debit, 0);
+            glLines.push({
+              accountCode: apCode,
+              debit: 0,
+              credit: totalDebits,
+              memo: `Accounts Payable: ${invoice.invoiceNumber}`,
+              partyId: invoice.vendorId,
+              partyType: 'supplier',
+            });
+
+            await this.glService.postJournalEntry(glLines, {
+              sourceType: 'purchase_invoice',
+              sourceId: invoice.invoiceId,
+              memo: `Purchase Invoice ${invoice.invoiceNumber}`,
+              actor,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.error(
+        `Failed to route GL for Invoice ${invoice.invoiceNumber}`,
+        err,
+      );
+    }
+
+    // Mark as invoiced
+    const [updatedInvoice] = await this.db
+      .update(purchaseInvoices)
+      .set({ stateCode: 'invoiced' })
+      .where(eq(purchaseInvoices.invoiceId, invoiceId))
+      .returning();
+
+    return updatedInvoice;
+  }
+
+  /**
+   * Allocates/matches an existing invoice line to a PO line.
+   */
+  async resolveInvoiceLine(
+    invoiceLineId: string,
+    purchaseOrderLineId: string,
+    actor: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const [line] = await tx
+        .select()
+        .from(purchaseInvoiceLines)
+        .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
+      if (!line) throw new NotFoundException('Invoice line not found');
+
+      const [poLine] = await tx
+        .select()
+        .from(purchaseOrderLineItems)
+        .where(
+          eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId),
+        );
+      if (!poLine) throw new NotFoundException('PO line not found');
+
+      await tx
+        .update(purchaseInvoiceLines)
+        .set({
+          purchaseOrderLineId,
+          productId: poLine.productId,
+          matchStatus: 'matched',
+        })
+        .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
+
+      return { success: true };
+    });
+  }
+
+  /**
+   * Un-matches an invoice line.
+   */
+  async unresolveInvoiceLine(invoiceLineId: string, actor: string) {
+    await this.db
+      .update(purchaseInvoiceLines)
+      .set({
+        purchaseOrderLineId: null,
+        matchStatus: 'unmatched',
+      })
+      .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
+    return { success: true };
+  }
+
+  /**
+   * Fetch a flattened, global list of Purchase Invoices spanning multiple orders.
+   * Useful for the "All Invoices" page and Account Detail tabs.
+   */
+  async findActiveInvoices(query: {
+    days?: number;
+    vendorId?: string;
+    invoiceId?: string;
+    limit?: number;
+  }) {
+    const { days = 30, vendorId, invoiceId, limit = 100 } = query;
+
+    const conditions: any[] = [];
+
+    // When filtering by specific invoiceId, skip the date range filter
+    if (invoiceId) {
+      conditions.push(eq(purchaseInvoices.invoiceId, invoiceId));
+    } else if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      conditions.push(gte(purchaseInvoices.createdOn, cutoffDate));
+    }
+
+    if (vendorId) {
+      conditions.push(
+        or(
+          eq(purchaseInvoices.vendorId, vendorId),
+          eq(suppliers.erpnextId, vendorId),
+        ),
+      );
+    }
+
+    const dataQuery = this.db
+      .select({
+        invoiceId: purchaseInvoices.invoiceId,
+        invoiceNumber: purchaseInvoices.invoiceNumber,
+        vendorId: purchaseInvoices.vendorId,
+        vendorName: suppliers.name,
+        supplierInvoiceNumber: purchaseInvoices.supplierInvoiceNumber,
+        totalAmount: purchaseInvoices.totalAmount,
+        taxAmount: purchaseInvoices.taxAmount,
+        currencyCode: purchaseInvoices.currencyCode,
+        stateCode: purchaseInvoices.stateCode,
+        createdOn: purchaseInvoices.createdOn,
+      })
+      .from(purchaseInvoices)
+      .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
+      .where(and(...conditions))
+      .orderBy(desc(purchaseInvoices.createdOn));
+
+    if (limit > 0) {
+      return await dataQuery.limit(limit);
+    }
+    return await dataQuery;
   }
 }

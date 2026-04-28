@@ -4,6 +4,7 @@ import { SalesQuoteService } from './sales-quote.service';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { AppConfigService } from '../settings/app-config.service';
 
 describe('SalesQuoteService', () => {
   let service: SalesQuoteService;
@@ -61,6 +62,10 @@ describe('SalesQuoteService', () => {
                 Promise.resolve([{ taxCategoryId: 'tax-cat-1', rate: '20' }]),
             }),
           },
+        },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
         },
       ],
     }).compile();

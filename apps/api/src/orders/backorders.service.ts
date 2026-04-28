@@ -13,14 +13,16 @@ import {
   products as coreProducts,
   orderEvents,
   suppliers as coreSuppliers,
+  taxCategories,
 } from '../drizzle/modbm-core-schema';
-import { HOME_CURRENCY } from '@modbm/shared';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { calculateInventoryGaps } from '@modbm/shared';
 import type { InventoryGap } from '@modbm/shared';
+
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class BackordersService {
@@ -29,6 +31,7 @@ export class BackordersService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   /**
@@ -167,12 +170,24 @@ export class BackordersService {
    * then generates new consolidated draft POs for the remainder.
    */
   async resolveOpenDemands(actor: string): Promise<void> {
-    this.logger.log('Starting MRP Allocation Engine run');
+    console.log('DEBUG: Starting MRP Allocation Engine run');
     await this.db.transaction(async (tx) => {
       // 1. Fetch all open demands
       const openDemands = await tx
-        .select()
+        .select({
+          backorderId: backorders.backorderId,
+          productId: backorders.productId,
+          quantity: backorders.quantity,
+          salesOrderLineId: backorders.salesOrderLineId,
+          salesOrderId: backorders.salesOrderId,
+          stateCode: backorders.stateCode,
+          orderNumber: salesOrders.orderNumber,
+        })
         .from(backorders)
+        .innerJoin(
+          salesOrders,
+          eq(backorders.salesOrderId, salesOrders.salesOrderId),
+        )
         .where(
           and(
             sql`${backorders.purchaseOrderId} IS NULL`,
@@ -279,7 +294,7 @@ export class BackordersService {
               .returning();
 
             currentDemandId = newDemand.backorderId;
-            demand = newDemand; // For next iteration if there are more lines
+            demand = { ...newDemand, orderNumber: demand.orderNumber }; // For next iteration if there are more lines
           } else {
             // Fully allocated
             await tx
@@ -307,6 +322,22 @@ export class BackordersService {
       }
 
       // 4. Generate new POs for remaining demands
+      const [defaultTaxCat] = await tx
+        .select({ id: taxCategories.taxCategoryId })
+        .from(taxCategories)
+        .where(eq(taxCategories.isDefault, true))
+        .limit(1);
+
+      // If no default marked, just take the first one as an absolute safety fallback
+      let fallbackTaxId = defaultTaxCat?.id;
+      if (!fallbackTaxId) {
+        const [firstCat] = await tx
+          .select({ id: taxCategories.taxCategoryId })
+          .from(taxCategories)
+          .limit(1);
+        fallbackTaxId = firstCat?.id;
+      }
+
       const productIds = unfulfilledDemands.map((g) => g.productId);
       const suppliers = await tx
         .select({
@@ -336,7 +367,7 @@ export class BackordersService {
           preferredSupplierMap.set(sup.productId, {
             vendorId: sup.vendorId,
             costPrice: sup.costPrice,
-            currencyCode: sup.currencyCode || HOME_CURRENCY.code,
+            currencyCode: sup.currencyCode || this.appConfig.homeCurrency(),
           });
         }
       }
@@ -372,9 +403,14 @@ export class BackordersService {
 
         const firstGap = vendorGaps[0];
         const pref = preferredSupplierMap.get(firstGap.productId);
-        const currencyCode = pref?.currencyCode || HOME_CURRENCY.code;
+        const currencyCode =
+          pref?.currencyCode || this.appConfig.homeCurrency();
 
         const orderNumber = await this.generatePurchaseOrderNumber(tx);
+        const uniqueSoNumbers = [
+          ...new Set(vendorGaps.map((g: any) => g.orderNumber)),
+        ];
+
         const [po] = await tx
           .insert(purchaseOrders)
           .values({
@@ -384,7 +420,7 @@ export class BackordersService {
             deliveryLocationId,
             stateCode: 'draft',
             currencyCode,
-            notes: `Auto-generated to fulfill open demands`,
+            notes: `Auto-generated to fulfill open demands: ${uniqueSoNumbers.join(', ')}`,
             createdBy: actor,
           })
           .returning();
@@ -402,6 +438,7 @@ export class BackordersService {
           string,
           {
             productDesc?: string;
+            purchaseTaxCategoryId?: string | null;
             quantity: number;
             price: string;
             gapRefs: typeof unfulfilledDemands;
@@ -411,11 +448,15 @@ export class BackordersService {
           const pref = preferredSupplierMap.get(gap.productId);
           if (!consolidatedLines.has(gap.productId)) {
             const [coreProd] = await tx
-              .select({ name: coreProducts.name })
+              .select({
+                name: coreProducts.name,
+                purchaseTaxCategoryId: coreProducts.purchaseTaxCategoryId,
+              })
               .from(coreProducts)
               .where(eq(coreProducts.productId, gap.productId));
             consolidatedLines.set(gap.productId, {
               productDesc: coreProd?.name,
+              purchaseTaxCategoryId: coreProd?.purchaseTaxCategoryId,
               quantity: 0,
               price: pref?.costPrice || '0',
               gapRefs: [],
@@ -437,6 +478,7 @@ export class BackordersService {
               productDescription: lineInfo.productDesc,
               quantity: lineInfo.quantity.toString(),
               pricePerUnit: lineInfo.price,
+              taxCategoryId: lineInfo.purchaseTaxCategoryId || fallbackTaxId,
             })
             .returning();
 

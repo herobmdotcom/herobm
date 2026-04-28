@@ -207,8 +207,14 @@ describe('InventoryService', () => {
             from: jest.fn().mockReturnValue({
               innerJoin: jest.fn().mockReturnValue({
                 where: jest.fn().mockResolvedValue([
-                  { binId: 'BIN-A', zoneId: 'Z-1', locationId: 'LOC-MAIN' },
-                  { binId: 'BIN-SHIP', zoneId: 'Z-2', locationId: 'LOC-MAIN' },
+                  {
+                    bins: { binId: 'BIN-A', zoneId: 'Z-1' },
+                    zones: { locationId: 'LOC-MAIN', zoneId: 'Z-1' },
+                  },
+                  {
+                    bins: { binId: 'BIN-SHIP', zoneId: 'Z-2' },
+                    zones: { locationId: 'LOC-MAIN', zoneId: 'Z-2' },
+                  },
                 ]),
               }),
             }),

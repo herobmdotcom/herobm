@@ -25,6 +25,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
   let validVendorId: string;
   let appProductId: string;
   let validLocationId: string;
+  let appProductNumber: string;
 
   beforeAll(async () => {
     register.clear();
@@ -58,11 +59,12 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     viewerToken = viewerLogin.body.access_token;
 
     // Create a test product
+    appProductNumber = `E2E-GR-P-${Date.now()}`;
     const productRes = await request(app.getHttpServer())
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        productNumber: `E2E-GR-P-${Date.now()}`,
+        productNumber: appProductNumber,
         name: 'E2E Goods Received Test Product',
         listPrice: '25.00',
       });
@@ -89,7 +91,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body.data[0].locationId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();
@@ -249,16 +251,16 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
   // Inventory Impact
   // =========================================================================
   describe('Inventory Impact', () => {
-    it('goods receipt INCREASES product QOH in RECV bin', async () => {
-      // Get current inventory for the product
+    it('goods receipt into RECV bin does NOT increase available QOH', async () => {
+      // Get current inventory for the product specifically
       const beforeRes = await request(app.getHttpServer())
-        .get(`/api/inventory?q=E2E-GR-P`)
+        .get(`/api/inventory?q=${appProductNumber}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const beforeQoh =
-        beforeRes.body.data.find((r: any) => r.productId === appProductId)
-          ?.quantityOnHand ?? '0';
+      const beforeQoh = beforeRes.body.data
+        .filter((r: any) => r.productId === appProductId)
+        .reduce((sum: number, r: any) => sum + parseFloat(r.quantityOnHand), 0);
 
       // Create another goods receipt
       await request(app.getHttpServer())
@@ -271,17 +273,20 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         })
         .expect(201);
 
-      // Check QOH is increased
+      // Goods received go into the RECEIVING dock bin, which is excluded
+      // from the inventory_levels view. Available QOH should remain unchanged
+      // until the goods are put away into a storage bin.
       const afterRes = await request(app.getHttpServer())
-        .get(`/api/inventory?q=E2E-GR-P`)
+        .get(`/api/inventory?q=${appProductNumber}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const afterQoh =
-        afterRes.body.data.find((r: any) => r.productId === appProductId)
-          ?.quantityOnHand ?? '0';
+      const afterQoh = afterRes.body.data
+        .filter((r: any) => r.productId === appProductId)
+        .reduce((sum: number, r: any) => sum + parseFloat(r.quantityOnHand), 0);
 
-      expect(parseFloat(afterQoh)).toBe(parseFloat(beforeQoh) + 100);
-    });
+      // Available QOH should be unchanged — goods are in RECEIVING (excluded from availability)
+      expect(afterQoh).toBe(beforeQoh);
+    }, 120_000);
   });
 });

@@ -17,6 +17,7 @@ import {
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { JournalLineDto } from './dto';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Controller('gl')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -25,6 +26,7 @@ export class GlController {
   constructor(
     private readonly glService: GlService,
     private readonly coaLoader: CoaLoaderService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -152,6 +154,13 @@ export class GlController {
   @CasbinAction('read')
   async getSettings() {
     return this.glService.getSettings();
+  }
+
+  @Post('settings/reload')
+  @CasbinAction('write')
+  async reloadSettings() {
+    await this.appConfig.reload();
+    return { success: true, message: 'Settings cache reloaded successfully.' };
   }
 
   @Post('seed')

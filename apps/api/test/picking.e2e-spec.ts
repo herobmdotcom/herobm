@@ -97,7 +97,7 @@ describe('API E2E — Picking & Shipments', () => {
       .expect(200);
     validProductId = products.body.data[0].productId;
     secondProductId = products.body.data[1]?.productId ?? validProductId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

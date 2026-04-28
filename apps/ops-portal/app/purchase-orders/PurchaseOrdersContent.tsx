@@ -4,11 +4,12 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface UnifiedPurchaseOrderRow {
   id: string;
@@ -24,6 +25,7 @@ interface UnifiedPurchaseOrderRow {
 }
 
 export default function PurchaseOrdersContent() {
+  const { baseCurrency } = useSettings();
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
@@ -59,7 +61,7 @@ export default function PurchaseOrdersContent() {
       },
       valueFormatter: (params: { value?: number; data?: UnifiedPurchaseOrderRow }) => {
         if (!params.value || params.value === 0) return '—';
-        return formatAmount(params.value, params.data?.currencyCode || HOME_CURRENCY.code);
+        return formatAmount(params.value, params.data?.currencyCode || baseCurrency);
       },
     },
     { field: 'currencyCode', headerName: tCommon('columns.currency'), width: 90, hide: true },

@@ -61,11 +61,12 @@ export class InventoryService {
       .$dynamic();
 
     if (searchTerm) {
+      const term = `%${searchTerm}%`;
       qb = qb.where(
         or(
-          ilike(products.name, searchTerm),
-          ilike(products.productNumber, searchTerm),
-          ilike(locations.code, searchTerm),
+          ilike(products.name, term),
+          ilike(products.productNumber, term),
+          ilike(locations.code, term),
         ),
       );
     }
@@ -562,17 +563,17 @@ export class InventoryService {
     // 1b. Resolve Zone and Location for all bins
     const binIds = [...new Set(params.lines.map((l) => l.binId))];
     const resolvedBins = await tx
-      .select({
-        binId: bins.binId,
-        zoneId: bins.zoneId,
-        locationId: zones.locationId,
-      })
+      .select()
       .from(bins)
       .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
       .where(inArray(bins.binId, binIds));
 
     const binMap = new Map<string, any>(
-      resolvedBins.map((b: any) => [b.binId, b]),
+      resolvedBins.map((row: any) => {
+        const b = row.bins;
+        const z = row.zones;
+        return [b.binId, { ...b, locationId: z.locationId }];
+      }),
     );
 
     // 2. Create Ledger Lines

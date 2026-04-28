@@ -24,7 +24,6 @@ describe('Invoices Controllers', () => {
     };
 
     mockPurchaseService = {
-      createBill: jest.fn().mockResolvedValue({ id: 'pi-1' }),
       findByOrder: jest.fn().mockResolvedValue([{ id: 'pi-1' }]),
       findOne: jest.fn().mockResolvedValue({ id: 'pi-1', total: 200 }),
     };
@@ -92,37 +91,6 @@ describe('Invoices Controllers', () => {
   });
 
   describe('PurchaseInvoiceController', () => {
-    it('should create a purchase bill', async () => {
-      const dto: any = { lines: [] };
-      const req = { user: { username: 'admin' } };
-
-      const result = await purchaseController.createPurchaseBill(
-        'p-order-1',
-        dto,
-        req,
-      );
-
-      expect(result).toEqual({ id: 'pi-1' });
-      expect(mockPurchaseService.createBill).toHaveBeenCalledWith(
-        'p-order-1',
-        dto,
-        'admin',
-      );
-    });
-
-    it('should create a purchase bill with fallback actor if user missing', async () => {
-      const result = await purchaseController.createPurchaseBill(
-        'p-order-1',
-        {} as any,
-        {},
-      );
-      expect(mockPurchaseService.createBill).toHaveBeenCalledWith(
-        'p-order-1',
-        {},
-        'system',
-      );
-    });
-
     it('should get purchase bills by order ID', async () => {
       const result = await purchaseController.getPurchaseBills('p-order-1');
       expect(result).toEqual({ data: [{ id: 'pi-1' }] });

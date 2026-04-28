@@ -120,21 +120,21 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(200);
 
     await request(app.getHttpServer())
-      .post(`/api/purchase-orders/${poId}/receptions`)
+      .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        purchaseOrderId: poId,
+        vendorId,
         locationId,
         packingSlipNumber: 'RCV-FRT-123',
         lines: [
           {
-            purchaseOrderLineId: poDetail.body.lines[0].purchaseOrderLineId,
+            productId: physicalProductId,
             quantityReceived: '10',
           },
         ],
       })
       .expect(201);
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

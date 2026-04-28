@@ -148,6 +148,90 @@
       "when": 1777371159679,
       "tag": "0020_state_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1777387394329,
+      "tag": "0021_pretty_thunderbird",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1777391061409,
+      "tag": "0022_add_invoice_receipts",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1777391061409,
+      "tag": "0023_rename_gst_to_tax",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1777391061410,
+      "tag": "0024_split_product_tax_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1777391061411,
+      "tag": "0025_add_backorder_modified_on",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1777391061411,
+      "tag": "0026_require_tax_on_order_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1777391061412,
+      "tag": "0027_update_po_state_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1777391061412,
+      "tag": "0028_add_performance_indices",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1777391061413,
+      "tag": "0029_inventory_refactor",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1777391061413,
+      "tag": "0030_drizzle_schema_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1777406060187,
+      "tag": "0031_add_vendor_to_purchase_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1777410905523,
+      "tag": "0032_drift_check",
+      "breakpoints": true
     }
   ]
 }

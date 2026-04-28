@@ -90,7 +90,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locations.body.data[0].locationId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

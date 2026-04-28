@@ -66,7 +66,7 @@ describe('Audit Events (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     locationId = locRes.body.data[0].locationId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

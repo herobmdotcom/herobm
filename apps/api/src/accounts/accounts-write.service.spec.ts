@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsWriteService } from './accounts-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { AppConfigService } from '../settings/app-config.service';
 
 describe('AccountsWriteService', () => {
   let service: AccountsWriteService;
@@ -27,7 +28,14 @@ describe('AccountsWriteService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountsWriteService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [
+        AccountsWriteService,
+        { provide: DRIZZLE, useValue: mockDb },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+        },
+      ],
     }).compile();
 
     service = module.get<AccountsWriteService>(AccountsWriteService);

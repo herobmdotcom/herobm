@@ -353,37 +353,8 @@ export class ReturnsWriteService {
           });
         }
 
-        // Update product global QOH
-        const method = this.appConfig.valuationMethod();
-        const strategy = getValuationStrategy(method);
-
-        for (const line of stockLines) {
-          if (!line.productId) continue;
-          const [product] = await tx
-            .select()
-            .from(coreProducts)
-            .where(eq(coreProducts.productId, line.productId));
-
-          if (product) {
-            const updatedProduct = strategy.onReturn(
-              {
-                productId: product.productId,
-                standardCost: product.standardCost || '0',
-                weightedAverageCost: product.weightedAverageCost || '0',
-                quantityOnHand: product.quantityOnHand || '0',
-              },
-              parseFloat(line.quantity),
-            );
-
-            await tx
-              .update(coreProducts)
-              .set({
-                quantityOnHand: updatedProduct.quantityOnHand,
-                modifiedOn: new Date(),
-              })
-              .where(eq(coreProducts.productId, product.productId));
-          }
-        }
+        // Note: WAC is unaffected by sales returns, and quantityOnHand is no longer cached on the products table.
+        // The dynamic inventory_levels view will automatically reflect the stock returned to the dock bin.
       }
 
       const eventType =

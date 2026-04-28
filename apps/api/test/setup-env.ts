@@ -31,3 +31,10 @@ if (fs.existsSync(envPath)) {
     }
   }
 }
+
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'test-secret-value-for-e2e';
+}
+if (!process.env.SETUP_TOKEN) {
+  process.env.SETUP_TOKEN = 'test-setup-token';
+}

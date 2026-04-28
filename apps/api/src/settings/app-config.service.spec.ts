@@ -67,13 +67,27 @@ describe('AppConfigService', () => {
 
       await service.onModuleInit();
 
-      expect(service.homeCurrency()).toBe('EUR'); // fallback
-      expect(service.fiscalYearStartMonth()).toBe(7); // fallback
-      expect(service.revenueRoutingPrecedence()).toBe('product_first');
-      expect(service.expenseRoutingPrecedence()).toBe('product_first');
-      expect(service.defaultFulfillmentLocationId()).toBeNull();
-      expect(service.valuationMethod()).toBe('weighted_average');
-      expect(service.nonStockBillingMode()).toBe('per_shipment');
+      expect(() => service.homeCurrency()).toThrow(
+        'GL Settings not configured',
+      );
+      expect(() => service.fiscalYearStartMonth()).toThrow(
+        'GL Settings not configured',
+      );
+      expect(() => service.revenueRoutingPrecedence()).toThrow(
+        'GL Settings not configured',
+      );
+      expect(() => service.expenseRoutingPrecedence()).toThrow(
+        'GL Settings not configured',
+      );
+      expect(() => service.defaultFulfillmentLocationId()).toThrow(
+        'App Settings not configured',
+      );
+      expect(() => service.valuationMethod()).toThrow(
+        'App Settings not configured',
+      );
+      expect(() => service.nonStockBillingMode()).toThrow(
+        'App Settings not configured',
+      );
       expect(service.isSetupComplete()).toBe(false);
     });
 
@@ -88,9 +102,13 @@ describe('AppConfigService', () => {
 
       await service.onModuleInit();
 
-      // Should not throw, should fall back to defaults
-      expect(service.homeCurrency()).toBe('EUR');
-      expect(service.defaultFulfillmentLocationId()).toBeNull();
+      // Should not throw during init
+      expect(() => service.homeCurrency()).toThrow(
+        'GL Settings not configured',
+      );
+      expect(() => service.defaultFulfillmentLocationId()).toThrow(
+        'App Settings not configured',
+      );
       expect(service.isSetupComplete()).toBe(false);
     });
   });
@@ -101,7 +119,9 @@ describe('AppConfigService', () => {
       mockDb.limit.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
       await service.onModuleInit();
-      expect(service.homeCurrency()).toBe('EUR');
+      expect(() => service.homeCurrency()).toThrow(
+        'GL Settings not configured',
+      );
 
       // Reload after setup: now has data
       mockDb.limit

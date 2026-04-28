@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { GlController } from './gl.controller';
 import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
+import { AppConfigService } from '../settings/app-config.service';
 
 /**
  * Unit tests for the GL Controller.
@@ -43,6 +44,7 @@ describe('GlController', () => {
       providers: [
         { provide: GlService, useValue: glService },
         { provide: CoaLoaderService, useValue: coaLoader },
+        { provide: AppConfigService, useValue: { reload: jest.fn() } },
       ],
     }).compile();
 

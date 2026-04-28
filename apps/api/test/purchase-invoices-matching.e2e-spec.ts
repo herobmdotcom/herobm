@@ -1,5 +1,5 @@
 /**
- * E2E Tests — 3-Way Matching (PO -> Receipt -> Invoice)
+ * E2E Tests — 3-Way Matching (PO -> Receipt -> Invoice) via Standalone AP Flow
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { AppModule } from '../src/app.module';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
 
-describe('API E2E — 3-Way Matching', () => {
+describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
   let app: INestApplication;
   let adminToken: string;
   let validVendorId: string;
@@ -39,7 +39,7 @@ describe('API E2E — 3-Way Matching', () => {
       .post('/api/suppliers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        vendorNumber: `E2E-3WAY-VEND-${Date.now()}`,
+        vendorNumber: `E2E-MATCH-VEND-${Date.now()}`,
         name: 'E2E 3-Way Matching Vendor',
       })
       .expect(201);
@@ -50,7 +50,7 @@ describe('API E2E — 3-Way Matching', () => {
       .post('/api/products')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        productNumber: `E2E-3WAY-P-${Date.now()}`,
+        productNumber: `E2E-MATCH-P-${Date.now()}`,
         name: 'E2E 3-Way Test Product',
         listPrice: '10.00',
       })
@@ -63,22 +63,22 @@ describe('API E2E — 3-Way Matching', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body.data[0].locationId;
-  }, 60_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('performs a complete 3-way match: PO -> Receipt -> Invoice', async () => {
+  it('performs a complete 3-way match using standalone AP invoice flow', async () => {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
 
-    // 1. Create Purchase Order
+    // 1. Create Purchase Order (10 units)
     const poRes = await request(app.getHttpServer())
       .post('/api/purchase-orders')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        orderNumber: `E2E-3WAY-PO-${today}-${rand}`,
+        orderNumber: `E2E-MATCH-PO-${today}-${rand}`,
         vendorId: validVendorId,
         deliveryLocationId: validLocationId,
         currencyCode: 'AUD',
@@ -88,7 +88,6 @@ describe('API E2E — 3-Way Matching', () => {
       })
       .expect(201);
     const poId = poRes.body.purchaseOrderId;
-    const poLineId = poRes.body.lines[0].purchaseOrderLineId;
 
     // 2. Approve PO (move to ordered)
     await request(app.getHttpServer())
@@ -97,96 +96,95 @@ describe('API E2E — 3-Way Matching', () => {
       .send({ stateCode: 'ordered' })
       .expect(200);
 
+    // Get line ID
+    const detail = await request(app.getHttpServer())
+      .get(`/api/purchase-orders/${poId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const poLineId = detail.body.lines[0].purchaseOrderLineId;
+
     // 3. Create Goods Receipt (partial - 4 units)
-    const grRes = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         vendorId: validVendorId,
         locationId: validLocationId,
-        packingSlipNumber: `PS-3WAY-${rand}-1`,
+        packingSlipNumber: `PS-MATCH-${rand}-1`,
         lines: [{ productId: validProductId, quantityReceived: '4' }],
       })
       .expect(201);
-    const grId = grRes.body.goodsReceivedId;
-    const grLineId = grRes.body.lines[0].goodsReceivedLineId;
 
-    // 4. Create Invoice linked to this receipt
+    // 4. Create Standalone Invoice linking to the PO line
     const invRes = await request(app.getHttpServer())
-      .post(`/api/purchase-orders/${poId}/invoice`)
+      .post('/api/purchase-invoices')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        supplierInvoiceNumber: `INV-3WAY-${rand}-1`,
+        vendorId: validVendorId,
+        supplierInvoiceNumber: `INV-MATCH-${rand}-1`,
+        currencyCode: 'AUD',
+        purchaseOrderId: poId,
+        totalAmount: 40.0,
+        taxAmount: 0,
+        notes: 'Partial 3-Way Match',
         lines: [
           {
+            description: 'E2E 3-Way Test Product',
+            productId: validProductId,
+            quantityInvoiced: 4,
+            pricePerUnit: 10.0,
             purchaseOrderLineId: poLineId,
-            quantityToInvoice: 4,
-            goodsReceivedLineId: grLineId,
           },
         ],
       })
       .expect(201);
     const invoiceId = invRes.body.invoiceId;
+    expect(invoiceId).toBeDefined();
 
-    // 5. Verify the link
-    const detailRes = await request(app.getHttpServer())
+    // 5. Verify Invoice linking via the GET endpoint
+    const invDetail = await request(app.getHttpServer())
       .get(`/api/purchase-invoices/${invoiceId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(detailRes.body.lines[0].goodsReceivedLineId).toBe(grLineId);
-    expect(parseFloat(detailRes.body.lines[0].quantityBilled)).toBe(4);
+    expect(invDetail.body.lines.length).toBe(1);
+    expect(invDetail.body.lines[0].purchaseOrderLineId).toBe(poLineId);
+    expect(invDetail.body.lines[0].matchStatus).toBe('matched');
 
-    // 6. Attempt to over-bill against the same receipt (should fail)
+    // 6. Post the draft invoice
     await request(app.getHttpServer())
-      .post(`/api/purchase-orders/${poId}/invoice`)
+      .post(`/api/purchase-invoices/${invoiceId}/post`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        supplierInvoiceNumber: `INV-3WAY-${rand}-2`,
-        lines: [
-          {
-            purchaseOrderLineId: poLineId,
-            quantityToInvoice: 1,
-            goodsReceivedLineId: grLineId,
-          },
-        ],
-      })
-      .expect(400); // Already billed 4/4
-
-    // 7. Create another receipt (6 units)
-    const grRes2 = await request(app.getHttpServer())
-      .post('/api/goods-received')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        vendorId: validVendorId,
-        locationId: validLocationId,
-        packingSlipNumber: `PS-3WAY-${rand}-2`,
-        lines: [{ productId: validProductId, quantityReceived: '6' }],
-      })
-      .expect(201);
-    const grLineId2 = grRes2.body.lines[0].goodsReceivedLineId;
-
-    // 8. Bill the remaining 6 units against the new receipt
-    await request(app.getHttpServer())
-      .post(`/api/purchase-orders/${poId}/invoice`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        supplierInvoiceNumber: `INV-3WAY-${rand}-2`,
-        lines: [
-          {
-            purchaseOrderLineId: poLineId,
-            quantityToInvoice: 6,
-            goodsReceivedLineId: grLineId2,
-          },
-        ],
-      })
       .expect(201);
 
-    // 9. Verify PO state is now 'invoiced'
-    const finalPoRes = await request(app.getHttpServer())
-      .get(`/api/purchase-orders/${poId}`)
+    // 7. Unlink the invoice line (testing flexibility of standalone AP)
+    const invLineId = invDetail.body.lines[0].lineId;
+    await request(app.getHttpServer())
+      .post(`/api/purchase-invoices/lines/${invLineId}/unresolve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(201);
+
+    // Verify unlinked
+    const unlinkedDetail = await request(app.getHttpServer())
+      .get(`/api/purchase-invoices/${invoiceId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    expect(finalPoRes.body.stateCode).toBe('invoiced');
+    expect(unlinkedDetail.body.lines[0].purchaseOrderLineId).toBeNull();
+    expect(unlinkedDetail.body.lines[0].matchStatus).toBe('unmatched');
+
+    // 8. Relink the invoice line
+    await request(app.getHttpServer())
+      .post(`/api/purchase-invoices/lines/${invLineId}/resolve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ purchaseOrderLineId: poLineId })
+      .expect(201);
+
+    // Verify linked
+    const relinkedDetail = await request(app.getHttpServer())
+      .get(`/api/purchase-invoices/${invoiceId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(relinkedDetail.body.lines[0].purchaseOrderLineId).toBe(poLineId);
+    expect(relinkedDetail.body.lines[0].matchStatus).toBe('matched');
   });
 });

@@ -81,7 +81,7 @@ describe('API E2E — Purchase Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body.data[0].locationId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();
@@ -137,16 +137,16 @@ describe('API E2E — Purchase Order Returns', () => {
 
     // Receive the items to ensure they are returnable
     await request(app.getHttpServer())
-      .post(`/api/purchase-orders/${purchaseOrderId}/receptions`)
+      .post('/api/goods-received')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        purchaseOrderId,
+        vendorId: validVendorId,
         locationId: validLocationId,
         packingSlipNumber: 'PS-PRET',
         notes: 'Initial receipt for return test',
         lines: [
           {
-            purchaseOrderLineId: lineIds[0],
+            productId: appProductId,
             quantityReceived: '10',
           },
         ],

@@ -9,10 +9,12 @@ import { apiMutate } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
-import { CURRENCIES, HOME_CURRENCY } from '@/lib/currency';
+import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
+import { useSettings } from '@/components/SettingsProvider';
 
 export default function NewSupplierPage() {
+  const { baseCurrency } = useSettings();
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   useDocumentTitle(t('new.documentTitle'));

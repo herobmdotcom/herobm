@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
@@ -15,6 +15,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { getTaxLabel } from '../[id]/types';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface TaxCategory {
   taxCategoryId: string;
@@ -75,6 +76,7 @@ function generateOrderNumber(): string {
 }
 
 export default function NewPurchaseOrderPage() {
+  const { baseCurrency } = useSettings();
   const t = useTranslations();
   useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
@@ -87,7 +89,7 @@ export default function NewPurchaseOrderPage() {
   }, []);
 
   const [vendorId, setVendorId] = useState('');
-  const [currencyCode, setCurrencyCode] = useState(HOME_CURRENCY.code);
+  const [currencyCode, setCurrencyCode] = useState(baseCurrency);
   const [name, setName] = useState('');
   const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -305,7 +307,7 @@ export default function NewPurchaseOrderPage() {
                 value={vendorId}
                 onChange={(s) => {
                   setVendorId(s?.vendorId || '');
-                  setCurrencyCode(s?.currencyCode || HOME_CURRENCY.code);
+                  setCurrencyCode(s?.currencyCode || baseCurrency);
                 }}
                 placeholder={t('purchaseOrders.placeholders.searchSuppliers')}
                 required
@@ -356,7 +358,7 @@ export default function NewPurchaseOrderPage() {
               <input
                 id="order-currency"
                 className="input"
-                placeholder={HOME_CURRENCY.code}
+                placeholder={baseCurrency}
                 value={currencyCode}
                 onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())}
               />

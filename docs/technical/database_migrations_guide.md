@@ -26,6 +26,21 @@ All custom database logic must be permanently housed in `apps/api/src/drizzle/ex
   - `DROP TRIGGER IF EXISTS trg ON tbl; CREATE TRIGGER trg...`
 - **Data Seeding:** Do not put `INSERT` statements into `extensions.sql`. Temporary inserts or data backfills should be run via Python scripts (`tools/seed.py`).
 
+### Custom SQL Migrations & TTY Errors (ADV-078)
+If you must write custom SQL that executes exactly once (like a complex data migration accompanying a schema drop), **never manually create a file in the `migrations` folder.** Bypassing the Drizzle CLI causes the JSON snapshot ledger (`meta/_journal.json`) to silently detach from the file sequence.
+
+When the ledger is detached, the next time `npx drizzle-kit generate` runs, it will attempt to generate a massive catch-up migration. This leads to:
+1. Fatal `TTY` prompt crashes in CI/CD when Drizzle attempts to interactively ask if columns were renamed or dropped.
+2. Duplicate migration prefix errors (e.g. Drizzle trying to generate `0022_...sql` when `0022_custom.sql` already exists).
+
+**The Correct Workflow:**
+1. Run `npx drizzle-kit generate --custom --name your_migration_name`.
+2. This will securely allocate the next sequential prefix, create an empty `.sql` file, and record it in `meta/_journal.json`.
+3. Open the generated empty file and write your custom SQL.
+
+> [!TIP]
+> The platform infrastructure mathematically protects against this. The `test_drizzle_schema_sync.ps1` structural test automatically runs `drizzle-kit generate` in a sterile environment to ensure the generated output is `No schema changes, nothing to migrate 😴`. Any manual migrations created without matching JSON snapshots will instantly fail this CI guardrail.
+
 ## 3. Squashing Migrations into a Baseline
 
 As the project evolves, the `apps/api/migrations/` folder gets noisy. When it reaches ~20-30 incremental files, the team should execute a squash. A squash eliminates sequential alter-table overhead, resetting the database to a single optimized command script per table.

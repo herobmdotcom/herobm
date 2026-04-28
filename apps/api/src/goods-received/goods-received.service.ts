@@ -18,6 +18,7 @@ import {
   zones,
   bins,
 } from '../drizzle/modbm-core-schema';
+
 import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -37,10 +38,9 @@ export class GoodsReceivedService {
   /**
    * Create a goods receipt from a packing slip.
    *
-   * Records what physically arrived on the dock. Does NOT:
-   * - Update product QOH or WAC
-   * - Write inventory ledger/bin_contents
-   * - Transition PO states
+   * Records what physically arrived on the dock.
+   * - Writes inventory ledger/bin_contents (via InventoryService)
+   * - Transitions PO states (if matched)
    *
    * Auto-matches each line to open PO lines for the same supplier + product.
    */
@@ -109,6 +109,7 @@ export class GoodsReceivedService {
               purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
               quantity: purchaseOrderLineItems.quantity,
               quantityReceived: purchaseOrderLineItems.quantityReceived,
+              pricePerUnit: purchaseOrderLineItems.pricePerUnit,
             })
             .from(purchaseOrderLineItems)
             .innerJoin(
@@ -141,6 +142,8 @@ export class GoodsReceivedService {
             matchStatus = 'unmatched';
           }
 
+          const unitCost = matchedPoLineId ? openPoLines[0].pricePerUnit : null;
+
           lineValues.push({
             goodsReceivedId: receipt.goodsReceivedId,
             productId: line.productId,
@@ -148,10 +151,13 @@ export class GoodsReceivedService {
             matchStatus,
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
-          });
+            unitCost: unitCost, // Use for valuation, filtered out during insert
+          } as any);
         }
 
-        await tx.insert(goodsReceivedLines).values(lineValues);
+        await tx
+          .insert(goodsReceivedLines)
+          .values(lineValues.map(({ unitCost, ...rest }: any) => rest));
 
         // --- 5. Inventory Impact: Place items into RECEIVING bin ---
         // Find or create RECEIVING zone/bin
@@ -232,7 +238,7 @@ export class GoodsReceivedService {
             .where(
               eq(
                 purchaseOrderLineItems.purchaseOrderLineId,
-                ml.purchaseOrderLineId!,
+                ml.purchaseOrderLineId,
               ),
             );
         }

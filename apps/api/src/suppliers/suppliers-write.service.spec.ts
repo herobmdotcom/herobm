@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SuppliersWriteService } from './suppliers-write.service';
+import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
@@ -45,6 +46,10 @@ describe('SuppliersWriteService', () => {
       providers: [
         SuppliersWriteService,
         { provide: DRIZZLE, useValue: mockDb },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+        },
       ],
     }).compile();
 

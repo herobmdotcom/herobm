@@ -5,9 +5,12 @@ import * as schema from '../src/drizzle/modbm-core-schema';
 import { is } from 'drizzle-orm';
 import { PgTable, PgView } from 'drizzle-orm/pg-core';
 
-describe('Schema Parity (e2e)', () => {
-  let app;
-  let db;
+import { INestApplication } from '@nestjs/common';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+
+describe('Database Schema Parity (e2e)', () => {
+  let app: INestApplication;
+  let db: NodePgDatabase<any>;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

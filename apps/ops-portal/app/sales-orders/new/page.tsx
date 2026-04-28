@@ -11,10 +11,11 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface Account {
   accountId: string;
@@ -88,6 +89,7 @@ function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
 }
 
 export default function NewOrderPage() {
+  const { baseCurrency } = useSettings();
   useDocumentTitle('New Sales Order');
   const tSales = useTranslations();
   const router = useRouter();

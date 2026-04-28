@@ -7,7 +7,8 @@ import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories } from '../drizzle/modbm-core-schema';
-import { computeLinePrice, HOME_CURRENCY } from '@modbm/shared';
+import { computeLinePrice } from '@modbm/shared';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class SalesReturnCreditService {
@@ -16,6 +17,7 @@ export class SalesReturnCreditService {
     private readonly ordersWriteService: OrdersWriteService,
     private readonly returnsWriteService: ReturnsWriteService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(SalesReturnCreditService.name);
@@ -117,7 +119,7 @@ export class SalesReturnCreditService {
         orderDate: orderDetail.createdOn
           ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
           : '',
-        currencyCode: orderDetail.currencyCode || HOME_CURRENCY.code,
+        currencyCode: orderDetail.currencyCode || this.appConfig.homeCurrency(),
         name: orderDetail.name || '',
       },
       returnMeta: {

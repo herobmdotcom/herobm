@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 
+import { useTranslations } from 'next-intl';
+
 interface Allocation {
   id: string;
   salesOrderId: string;
@@ -17,6 +19,7 @@ interface Allocation {
 }
 
 export default function AllocationsSection({ orderId }: { orderId: string }) {
+  const tCommon = useTranslations('common');
   const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -89,7 +92,7 @@ export default function AllocationsSection({ orderId }: { orderId: string }) {
                     </Link>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
-                    {alloc.productName || 'Unknown Product'}
+                    {alloc.productName || tCommon('unknownProduct')}
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
                     {alloc.quantity}

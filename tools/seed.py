@@ -1,6 +1,9 @@
 """
 Data seeder for modbm_core tables.
 
+Seeds UNIVERSAL application records AND the Chart of Accounts settings
+(GL, tax categories, trading terms) from au_standard_settings.json.
+
 Seeds UNIVERSAL application records — things needed regardless of whether
 legacy data is imported.  Import-specific anchors (LEGACY-SALES, etc.) live
 in dbt pre_hooks; inventory sync lives in a dbt post_hook.
@@ -17,6 +20,7 @@ import subprocess
 import sys
 import os
 import json
+import uuid
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -210,6 +214,208 @@ def seed_organization(dry_run: bool = False) -> None:
     print("  Seeded default organization (fallback)")
 
 
+# UUID v5 namespace matching the COA loader in apps/api/src/gl/coa-loader.service.ts
+NAMESPACE_COA = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+
+# Correct type mapping: the settings JSON uses 'gst_applies' but the schema
+# was renamed in migration 0023 to 'tax_applies'. We normalise at seed time.
+GST_TYPE_MAP = {'gst_applies': 'tax_applies'}
+
+
+def load_coa_settings() -> dict | None:
+    """Load au_standard_settings.json from the COA charts directory."""
+    path = os.path.join('apps', 'api', 'src', 'gl', 'charts', 'au_standard_settings.json')
+    if not os.path.exists(path):
+        print(f"  WARN: COA settings file not found at {path}")
+        return None
+    with open(path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def seed_coa_settings(dry_run: bool = False) -> None:
+    """Seed GL settings, tax categories, and trading terms from au_standard_settings.json.
+    Uses deterministic UUID v5 IDs identical to the COA loader in the API."""
+    settings = load_coa_settings()
+    if not settings:
+        print("  SKIP: No COA settings file found.")
+        return
+
+    if dry_run:
+        cats = settings.get('gst_categories', [])
+        terms = settings.get('trading_terms', [])
+        print(f"  [DRY RUN] Would seed {len(cats)} tax categories and {len(terms)} trading terms")
+        return
+
+    # --- Tax Categories ---
+    categories = settings.get('gst_categories', [])
+    for cat in categories:
+        det_id = str(uuid.uuid5(NAMESPACE_COA, 'GST_CAT_' + cat['code']))
+        normalised_type = GST_TYPE_MAP.get(cat['type'], cat['type'])
+        is_default = 'true' if cat.get('is_default') else 'false'
+        psql_sql(f"""
+        INSERT INTO modbm_core.tax_categories (tax_category_id, code, title, type, rate, is_default)
+        VALUES ('{det_id}', '{cat['code']}', '{cat['title']}', '{normalised_type}', '{cat['rate']}', {is_default})
+        ON CONFLICT (code) DO UPDATE SET
+            title = EXCLUDED.title,
+            type = EXCLUDED.type,
+            rate = EXCLUDED.rate,
+            is_default = EXCLUDED.is_default;
+        """)
+    print(f"  Seeded {len(categories)} tax categories")
+
+    # --- Trading Terms ---
+    terms = settings.get('trading_terms', [])
+    for term in terms:
+        det_id = str(uuid.uuid5(NAMESPACE_COA, 'TERM_' + term['code']))
+        desc = term['description'].replace("'", "''")
+        psql_sql(f"""
+        INSERT INTO modbm_core.trading_terms (trading_terms_id, code, description, days, type)
+        VALUES ('{det_id}', '{term['code']}', '{desc}', {term['days']}, '{term['type']}')
+        ON CONFLICT (code) DO UPDATE SET
+            description = EXCLUDED.description,
+            days = EXCLUDED.days,
+            type = EXCLUDED.type;
+        """)
+    print(f"  Seeded {len(terms)} trading terms")
+
+    # --- GL Settings (with default account linking) ---
+    base_currency = settings.get('base_currency', 'AUD')
+    fiscal_month = settings.get('fiscal_year_start_month', 7)
+    settings_id = '4e185bce-d31a-4caa-8462-73c261864eff'
+    defaults = settings.get('defaults', {})
+
+    # Build the SET clause for default account IDs, resolving account_code → gl_account_id
+    default_cols = ''
+    default_vals = ''
+    update_set = ''
+    account_mappings = [
+        ('ar_account_code', 'default_ar_account_id'),
+        ('ap_account_code', 'default_ap_account_id'),
+        ('revenue_account_code', 'default_revenue_account_id'),
+        ('cogs_account_code', 'default_cogs_account_id'),
+        ('tax_account_code', 'default_tax_account_id'),
+        ('expense_account_code', 'default_expense_account_id'),
+    ]
+    for json_key, col_name in account_mappings:
+        code = defaults.get(json_key)
+        if code:
+            det_id = str(uuid.uuid5(NAMESPACE_COA, code))
+            default_cols += f', {col_name}'
+            default_vals += f", '{det_id}'"
+            update_set += f", {col_name} = '{det_id}'"
+
+    psql_sql(f"""
+    INSERT INTO modbm_core.gl_settings (settings_id, fiscal_year_start_month, base_currency{default_cols})
+    VALUES ('{settings_id}', {fiscal_month}, '{base_currency}'{default_vals})
+    ON CONFLICT (settings_id) DO UPDATE SET
+        fiscal_year_start_month = EXCLUDED.fiscal_year_start_month,
+        base_currency = EXCLUDED.base_currency
+        {update_set};
+    """)
+    print(f"  Seeded GL settings (base_currency={base_currency}, fiscal_month={fiscal_month})")
+
+
+def seed_app_settings(dry_run: bool = False) -> None:
+    """Seed default application settings if none exist."""
+    if dry_run:
+        print("  [DRY RUN] Would seed default app_settings")
+        return
+
+    exists = psql("SELECT 1 FROM modbm_core.app_settings LIMIT 1;", capture=True)
+    if exists:
+        print("  SKIP: app_settings record already exists.")
+        return
+
+    psql_sql("""
+    INSERT INTO modbm_core.app_settings (settings_id, inventory_valuation_method, non_stock_billing_mode, credit_limit_behavior, setup_completed_at)
+    VALUES (gen_random_uuid(), 'weighted_average', 'per_shipment', 'soft', NOW())
+    ON CONFLICT DO NOTHING;
+    """)
+    print("  Seeded default app_settings")
+
+
+# ERPNext root_type → our account_type, matching the API's COA loader
+ROOT_TYPE_MAP = {
+    'Asset': 'asset',
+    'Liability': 'liability',
+    'Equity': 'equity',
+    'Income': 'revenue',
+    'Expense': 'expense',
+}
+
+
+def seed_coa_accounts(dry_run: bool = False) -> None:
+    """Seed the Chart of Accounts tree from au_standard.json.
+    Uses deterministic UUID v5 IDs identical to the COA loader in the API."""
+    coa_path = os.path.join('apps', 'api', 'src', 'gl', 'charts', 'au_standard.json')
+    if not os.path.exists(coa_path):
+        print(f"  SKIP: COA file not found at {coa_path}")
+        return
+
+    with open(coa_path, 'r', encoding='utf-8') as f:
+        coa = json.load(f)
+
+    if dry_run:
+        print("  [DRY RUN] Would seed Chart of Accounts from au_standard.json")
+        return
+
+    # Check if COA already loaded
+    existing = psql("SELECT count(*) FROM modbm_core.gl_accounts;", capture=True)
+    if existing and int(existing) > 0:
+        print(f"  SKIP: GL accounts already exist ({existing} records)")
+        return
+
+    # Flatten the tree into ordered inserts
+    auto_code = [100]  # mutable counter for unnumbered accounts
+    insert_rows = []
+
+    def walk(nodes: dict, parent_code: str | None, inherited_type: str | None):
+        for name, node in nodes.items():
+            account_type = ROOT_TYPE_MAP.get(node.get('root_type', ''), inherited_type or 'asset')
+            code = node.get('account_number', str(auto_code[0]))
+            if 'account_number' not in node:
+                auto_code[0] += 1
+            is_group = node.get('is_group') == 1 or 'children' in node
+            insert_rows.append({
+                'code': code,
+                'name': name,
+                'account_type': account_type,
+                'parent_code': parent_code,
+                'is_group': is_group,
+            })
+            if 'children' in node:
+                walk(node['children'], code, account_type)
+
+    walk(coa.get('tree', {}), None, None)
+
+    # Insert all accounts (two-pass: insert then link parents)
+    # Pass 1: Insert all accounts
+    for row in insert_rows:
+        det_id = str(uuid.uuid5(NAMESPACE_COA, row['code']))
+        safe_name = row['name'].replace("'", "''")
+        is_group = 'true' if row['is_group'] else 'false'
+        psql_sql(f"""
+        INSERT INTO modbm_core.gl_accounts (gl_account_id, account_code, name, account_type, is_group, is_system, currency_code)
+        VALUES ('{det_id}', '{row['code']}', '{safe_name}', '{row['account_type']}', {is_group}, true, 'AUD')
+        ON CONFLICT (account_code) DO UPDATE SET
+            name = EXCLUDED.name,
+            account_type = EXCLUDED.account_type,
+            is_group = EXCLUDED.is_group;
+        """)
+
+    # Pass 2: Link parent accounts
+    for row in insert_rows:
+        if row['parent_code']:
+            parent_id = str(uuid.uuid5(NAMESPACE_COA, row['parent_code']))
+            psql_sql(f"""
+            UPDATE modbm_core.gl_accounts
+            SET parent_account_id = '{parent_id}'
+            WHERE account_code = '{row['code']}';
+            """)
+
+    print(f"  Seeded {len(insert_rows)} GL accounts from au_standard.json")
+
+
 def load_report_config():
     path = os.path.join('packages', 'shared', 'reports-config.json')
     try:
@@ -333,6 +539,27 @@ def validate_seeds() -> bool:
         print("  [FAIL] UOM 'EA' missing")
         all_passed = False
 
+    # 4b. Tax Categories
+    tax_count = psql("SELECT count(*) FROM modbm_core.tax_categories;", capture=True)
+    if tax_count and int(tax_count) > 0:
+        default_tax = psql("SELECT 1 FROM modbm_core.tax_categories WHERE is_default = true;", capture=True)
+        if default_tax:
+            print(f"  [PASS] {tax_count} tax category(ies) exist (default set)")
+        else:
+            print(f"  [FAIL] {tax_count} tax category(ies) exist but no default")
+            all_passed = False
+    else:
+        print("  [FAIL] No tax categories found")
+        all_passed = False
+
+    # 4c. GL Accounts
+    gl_count = psql("SELECT count(*) FROM modbm_core.gl_accounts;", capture=True)
+    if gl_count and int(gl_count) > 0:
+        print(f"  [PASS] {gl_count} GL account(s) exist")
+    else:
+        print("  [FAIL] No GL accounts found")
+        all_passed = False
+
     # 5. Users
     user_count = psql("SELECT count(*) FROM modbm_core.users;", capture=True)
     if user_count and int(user_count) > 0:
@@ -376,6 +603,14 @@ def validate_seeds() -> bool:
     else:
         print("  [FAIL] SEED VALIDATION FAILED — see failures above")
 
+    # 7. App Settings
+    app_settings_count = psql("SELECT count(*) FROM modbm_core.app_settings;", capture=True)
+    if app_settings_count and int(app_settings_count) > 0:
+        print(f"  [PASS] {app_settings_count} app_settings record(s) exist")
+    else:
+        print("  [FAIL] No app_settings record found")
+        all_passed = False
+
     return all_passed
 
 
@@ -408,6 +643,15 @@ def main() -> None:
     if seed_all:
         print("Seeding organization...")
         seed_organization(dry_run)
+
+        print("Seeding Chart of Accounts...")
+        seed_coa_accounts(dry_run)
+
+        print("Seeding COA settings (tax categories, trading terms, GL)...")
+        seed_coa_settings(dry_run)
+
+        print("Seeding App settings...")
+        seed_app_settings(dry_run)
 
         print("Seeding reports...")
         seed_reports(dry_run)

@@ -481,7 +481,7 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      // The service SHOULD call tx.update to update PO line quantity_received 
+      // The service SHOULD call tx.update to update PO line quantity_received
       // and PO header stateCode.
       expect(mockTx.update).toHaveBeenCalled();
     });

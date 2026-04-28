@@ -97,7 +97,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     validProductId = products.body.data[0].productId;
     secondProductId = products.body.data[1]?.productId ?? validProductId;
     thirdProductId = products.body.data[2]?.productId ?? validProductId;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

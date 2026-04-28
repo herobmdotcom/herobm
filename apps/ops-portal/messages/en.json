@@ -285,7 +285,8 @@
       "reference": "Reference",
       "tryAgain": "Try Again",
       "contactSupport": "If the problem persists, please contact support."
-    }
+    },
+    "unknownProduct": "Unknown Product"
   },
   "accounts": {
     "title": "Accounts",
@@ -454,7 +455,8 @@
       "priceLevel3": "Level 3",
       "priceLevel4": "Level 4",
       "barcode": "Barcode",
-      "taxCategory": "Tax Category",
+      "purchaseTaxCategory": "Purchase Tax Category",
+      "salesTaxCategory": "Sales Tax Category",
       "scNumber": "SC Number",
       "quantityOnHand": "On Hand",
       "uomCode": "UoM Code",
@@ -692,6 +694,8 @@
     "title": "Purchase Orders",
     "demandTitle": "Open Demand",
     "subtitle": "Manage purchase orders",
+    "supplierInvoicesCardHeading": "Supplier Invoices",
+    "lineItems": "Line Items",
     "buttons": {
       "createPO": "+ Create PO",
       "copyOrder": "Copy Order",
@@ -699,7 +703,9 @@
       "enterSupplierBill": "Enter Invoice",
       "submitBill": "Submit Invoice",
       "save": "💾 Save",
-      "customLine": "Custom Line"
+      "customLine": "Custom Line",
+      "resolving": "Resolving...",
+      "resolveDemands": "Resolve Demands"
     },
     "placeholders": {
       "searchOrders": "Search purchase orders…",
@@ -722,6 +728,11 @@
       "lineNumber": "#",
       "product": "Product",
       "description": "Description",
+      "vendor": "Supplier",
+      "date": "Date",
+      "state": "State",
+      "supplierInvoiceNumber": "Supplier Invoice No.",
+      "invoiceNumber": "System Bill No.",
       "qty": "Qty",
       "uom": "UOM",
       "unitPrice": "Unit Price",
@@ -1246,6 +1257,7 @@
       "movements": "Movements",
       "systemLogs": "System Logs",
       "invoices": "Invoices",
+      "purchaseInvoices": "Purchase Invoices",
       "receiving": "Receiving"
     }
   },
@@ -1523,7 +1535,7 @@
         "delete": "Delete",
         "save": "Save",
         "cancel": "Cancel",
-        "create": "+ Create",
+        "create": "Create",
         "actions": "Actions"
       },
       "title": "System Settings",

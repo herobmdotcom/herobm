@@ -11,7 +11,6 @@ import { eq, count } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
-import { HOME_CURRENCY } from '@modbm/shared';
 
 export function resolveChartsDir(dirnameFallback: string): string {
   // 1. Standard flat structure / ts-node
@@ -163,6 +162,18 @@ export class CoaLoaderService {
 
     // Insert in dependency order (parents first) within a transaction
     await this.db.transaction(async (tx: DrizzleDB) => {
+      // Pre-load settings to get base_currency
+      const settingsPath = path.join(
+        resolveChartsDir(__dirname),
+        'au_standard_settings.json',
+      );
+      let baseCurrency = 'EUR';
+      let settings: any = {};
+      if (fs.existsSync(settingsPath)) {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        if (settings.base_currency) baseCurrency = settings.base_currency;
+      }
+
       // First pass: insert all accounts (parentAccountId = null initially)
       const codeToId = new Map<string, string>();
 
@@ -177,7 +188,7 @@ export class CoaLoaderService {
             accountType: row.accountType,
             isGroup: row.isGroup,
             isSystem: row.isSystem,
-            currencyCode: HOME_CURRENCY.code,
+            currencyCode: baseCurrency,
           })
           .onConflictDoUpdate({
             target: [glAccounts.accountCode],
@@ -203,13 +214,7 @@ export class CoaLoaderService {
       }
 
       // Create GL settings with default account mappings
-      const settingsPath = path.join(
-        resolveChartsDir(__dirname),
-        'au_standard_settings.json',
-      );
       if (fs.existsSync(settingsPath)) {
-        const settingsRaw = fs.readFileSync(settingsPath, 'utf-8');
-        const settings = JSON.parse(settingsRaw);
         const defaults = settings.defaults || {};
 
         // Static UUID for environment parity

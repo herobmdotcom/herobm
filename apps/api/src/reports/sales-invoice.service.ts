@@ -12,6 +12,7 @@ import {
   salesInvoiceLines,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class SalesInvoiceService {
@@ -19,6 +20,7 @@ export class SalesInvoiceService {
     private readonly ordersService: OrdersService,
     private readonly ordersWriteService: OrdersWriteService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   private readonly logger = new Logger(SalesInvoiceService.name);
@@ -46,7 +48,11 @@ export class SalesInvoiceService {
     const taxRateMap = await this.buildtaxRateMap();
 
     if (!invoiceId) {
-      return assembleOrderData(orderDetail, taxRateMap);
+      return assembleOrderData(
+        orderDetail,
+        this.appConfig.homeCurrency(),
+        taxRateMap,
+      );
     }
 
     // Fetch the specific invoice and its lines
@@ -92,11 +98,16 @@ export class SalesInvoiceService {
     // Build the invoice-specific report data
     const invoiceData = assembleOrderData(
       { ...orderDetail, lines: filteredLines },
+      this.appConfig.homeCurrency(),
       taxRateMap,
     );
 
     // Compute the full (unfiltered) order total for comparison
-    const fullOrderData = assembleOrderData(orderDetail, taxRateMap);
+    const fullOrderData = assembleOrderData(
+      orderDetail,
+      this.appConfig.homeCurrency(),
+      taxRateMap,
+    );
 
     // Determine this invoice's ordinal position among all invoices for the order
     const allOrderInvoices = await this.db

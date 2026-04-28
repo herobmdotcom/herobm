@@ -29,34 +29,62 @@ export class CreateSalesInvoiceDto {
   lines?: CreateSalesInvoiceLineDto[];
 }
 
-export class CreatePurchaseBillLineDto {
-  @IsUUID()
-  purchaseOrderLineId!: string;
-
-  @IsNumber()
-  quantityToInvoice!: number;
+export class CreateStandaloneInvoiceLineDto {
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsOptional()
   @IsUUID()
-  goodsReceivedLineId?: string;
+  productId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  glAccountId?: string;
+
+  @IsNumber()
+  quantityInvoiced!: number;
+
+  @IsNumber()
+  pricePerUnit!: number;
+
+  @IsOptional()
+  @IsUUID()
+  purchaseOrderLineId?: string;
 }
 
-export class CreatePurchaseBillDto {
-  @IsNotEmpty()
+export class CreateStandaloneInvoiceDto {
+  @IsUUID()
+  vendorId!: string;
+
   @IsString()
+  @IsNotEmpty()
   supplierInvoiceNumber!: string;
 
   @IsOptional()
+  @IsUUID()
+  purchaseOrderId?: string;
+
   @IsString()
-  receiptFilename?: string;
+  currencyCode!: string;
+
+  @IsNumber()
+  totalAmount!: number;
+
+  @IsNumber()
+  taxAmount!: number;
 
   @IsOptional()
   @IsString()
   notes?: string;
 
   @IsOptional()
+  @IsString()
+  receiptFilename?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreatePurchaseBillLineDto)
-  lines?: CreatePurchaseBillLineDto[];
+  @Type(() => CreateStandaloneInvoiceLineDto)
+  lines?: CreateStandaloneInvoiceLineDto[];
 }

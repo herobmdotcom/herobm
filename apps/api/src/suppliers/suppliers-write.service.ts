@@ -22,11 +22,14 @@ import {
   CreateSupplierExpiryDto,
   UpdateSupplierExpiryDto,
 } from './dto';
-import { HOME_CURRENCY } from '@modbm/shared';
+import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
 export class SuppliersWriteService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private appConfig: AppConfigService,
+  ) {}
 
   private readonly logger = new Logger(SuppliersWriteService.name);
 
@@ -40,7 +43,7 @@ export class SuppliersWriteService {
         .insert(coreSuppliers)
         .values({
           ...dto,
-          currencyCode: dto.currencyCode || HOME_CURRENCY.code,
+          currencyCode: dto.currencyCode || this.appConfig.homeCurrency(),
           createdBy: actor,
         })
         .returning();

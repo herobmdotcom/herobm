@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
 import { computeLinePrice } from '@modbm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface InvoicesSectionProps {
     orderId: string;
@@ -27,6 +28,7 @@ export default function InvoicesSection({
     orderId, order, invoices, taxCategories,
     pickingSummary, setError, loadInvoices, loadOrder,
 }: InvoicesSectionProps) {
+  const { baseCurrency } = useSettings();
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
     const tConfirm = useTranslations('confirm');
@@ -211,7 +213,7 @@ export default function InvoicesSection({
                         </div>
                         
                         {inv.lines && inv.lines.length > 0 && (() => {
-                            const cc = order.currencyCode || HOME_CURRENCY.code;
+                            const cc = order.currencyCode || baseCurrency;
                             const sortedLines = [...inv.lines].sort((a, b) => {
                                 const aIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === a.salesOrderLineId);
                                 const bIdx = order.lines.findIndex((ol) => ol.salesOrderLineId === b.salesOrderLineId);

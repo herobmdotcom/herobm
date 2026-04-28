@@ -16,14 +16,24 @@ SELECT
     gen_random_uuid() AS inventory_level_id,
     l.location_id,
     p.product_id,
-    COALESCE(SUM(il.quantity), 0) AS quantity_on_hand,
+    COALESCE((
+        SELECT SUM(bc.actual_quantity)
+        FROM modbm_core.bin_contents bc
+        JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+        JOIN modbm_core.zones z ON z.zone_id = b.zone_id
+        WHERE bc.product_id = p.product_id
+          AND z.location_id = l.location_id
+          AND b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+          AND b.is_unavailable = false
+          AND b.is_bonded = false
+    ), 0) AS quantity_on_hand,
     COALESCE((
         -- Committed: Backorders marked 'received_reserved' AND any confirmed sales orders that haven't been picked.
-        -- We join explicitly targeting fulfillment_location_id securely matching line level tracking algebra
         (SELECT COALESCE(SUM(b.quantity), 0)
          FROM modbm_core.backorders b
          JOIN modbm_core.sales_order_lines sol ON b.sales_order_line_id = sol.sales_order_line_id
-         WHERE sol.fulfillment_location_id = l.location_id
+         WHERE sol.product_id = p.product_id
+         AND sol.fulfillment_location_id = l.location_id
          AND b.state_code = 'received_reserved')
         +
         -- Sum open sales order lines that are confirmed
@@ -46,11 +56,7 @@ SELECT
         AND po.state_code NOT IN ('draft', 'cancelled', 'completed')
     ), 0) AS quantity_on_order
 FROM modbm_core.products p
-CROSS JOIN modbm_core.locations l
-LEFT JOIN modbm_core.inventory_ledger il 
-    ON il.product_id = p.product_id 
-    AND il.location_id = l.location_id
-GROUP BY l.location_id, p.product_id;
+CROSS JOIN modbm_core.locations l;
 
 
 -- ------------------------------------------------------------------------------

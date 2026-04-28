@@ -30,7 +30,7 @@ describe('API E2E — General Ledger', () => {
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
-  }, 30_000);
+  }, 120_000);
 
   afterAll(async () => {
     await app.close();

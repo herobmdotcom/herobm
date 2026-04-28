@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsUUID,
   IsBoolean,
+  IsIn,
 } from 'class-validator';
 
 export class CreateLocationDto {
@@ -58,8 +59,14 @@ export class CreateBinDto {
   binNumber!: string;
 
   @IsOptional()
-  @IsString()
-  binType?: string;
+  @IsIn(['storage', 'pick', 'bulk', 'receiving', 'staging', 'quarantine'])
+  binType?:
+    | 'storage'
+    | 'pick'
+    | 'bulk'
+    | 'receiving'
+    | 'staging'
+    | 'quarantine';
 
   @IsOptional()
   @IsBoolean()

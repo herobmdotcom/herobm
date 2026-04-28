@@ -1,10 +1,6 @@
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { SalesQuoteData } from './sales-quote.service';
-import {
-  computeLinePrice,
-  computeOrderTotals,
-  HOME_CURRENCY,
-} from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
 
 /**
  * Shared helper for resolving order detail and assembling report data.
@@ -64,6 +60,7 @@ export function assembleOrderData(
     name?: string;
     lines: RawOrderLine[];
   },
+  fallbackCurrency: string,
   taxRateMap?: Map<string, number>,
 ): SalesQuoteData {
   const lines = orderDetail.lines.map((l) => {
@@ -124,7 +121,7 @@ export function assembleOrderData(
       orderDate: orderDetail.createdOn
         ? new Date(orderDetail.createdOn).toLocaleDateString('en-IE')
         : '',
-      currencyCode: orderDetail.currencyCode || HOME_CURRENCY.code,
+      currencyCode: orderDetail.currencyCode || fallbackCurrency,
       name: orderDetail.name || '',
     },
     lines,

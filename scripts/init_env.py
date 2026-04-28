@@ -60,6 +60,10 @@ def main():
     pg_user = prompt("POSTGRES_USER", "postgres")
     content = content.replace("POSTGRES_USER=postgres", f"POSTGRES_USER={pg_user}")
 
+    print("\n\033[36m=== Regional Settings ===\033[0m")
+    home_currency = prompt("HOME_CURRENCY (ISO Code)", "AUD")
+    content = content.replace("HOME_CURRENCY=AUD", f"HOME_CURRENCY={home_currency}")
+
     pg_pass = prompt("POSTGRES_PASSWORD", "auto-generate secure sequence")
     if pg_pass != "auto-generate secure sequence":
         content = content.replace("POSTGRES_PASSWORD=<REDACTED>", f"POSTGRES_PASSWORD={pg_pass}")

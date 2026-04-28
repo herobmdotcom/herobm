@@ -43,7 +43,7 @@ export default function SetupWizard() {
     emptyBase: false,
     
     companyName: '',
-    baseCurrency: '',
+    baseCurrency: process.env.NEXT_PUBLIC_HOME_CURRENCY || 'EUR',
     coaPreset: '',
     fiscalStartMonth: '',
     revenueRouting: '',

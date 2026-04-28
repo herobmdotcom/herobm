@@ -13,13 +13,14 @@ import {
 } from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
 import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
+import { useSettings } from '@/components/SettingsProvider';
 
 interface Account {
   accountId: string;
@@ -51,6 +52,7 @@ interface Account {
 }
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
+  const { baseCurrency } = useSettings();
   const t = useTranslations();
   const tSales = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
@@ -92,7 +94,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       width: 120,
       type: 'numericColumn',
       valueGetter: (p: any) => p.data?.totalPrice ? parseFloat(p.data.totalPrice) : null,
-      valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || HOME_CURRENCY.code),
+      valueFormatter: (p: any) => (!p.value || p.value === 0) ? '—' : formatAmount(p.value, p.data?.currencyCode || baseCurrency),
     },
     {
       field: 'createdOn',

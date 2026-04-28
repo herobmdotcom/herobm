@@ -55,26 +55,23 @@ const BY_CODE = new Map<string, CurrencyDef>(CURRENCIES.map((c) => [c.code, c]))
 const BY_ABM = new Map<number, CurrencyDef>(CURRENCIES.map((c) => [c.abmCode, c]));
 
 /** 
- * Home / base currency 
- * @default EUR (overridden by process.env.HOME_CURRENCY)
+ * Default fallback currency if nothing is provided or found.
+ * Used internally to prevent crashes, but UI should always provide explicit currencies.
  */
-export const HOME_CURRENCY = (() => {
-  const envCode = typeof process !== 'undefined' && process.env ? process.env.HOME_CURRENCY : undefined;
-  return BY_CODE.get(envCode ?? 'EUR') ?? BY_CODE.get('EUR')!;
-})();
+const FALLBACK_CURRENCY = BY_CODE.get('EUR')!;
 
 /**
- * Get a CurrencyDef by ISO code. Returns HOME_CURRENCY if not found.
+ * Get a CurrencyDef by ISO code. Returns FALLBACK_CURRENCY if not found.
  */
 export function getCurrency(code: string): CurrencyDef {
-  return BY_CODE.get(code) ?? HOME_CURRENCY;
+  return BY_CODE.get(code) ?? FALLBACK_CURRENCY;
 }
 
 /**
- * Get a CurrencyDef by ABM phone-prefix. Returns HOME_CURRENCY if not found.
+ * Get a CurrencyDef by ABM phone-prefix. Returns FALLBACK_CURRENCY if not found.
  */
 export function getCurrencyByAbmCode(abmCode: number): CurrencyDef {
-  return BY_ABM.get(abmCode) ?? HOME_CURRENCY;
+  return BY_ABM.get(abmCode) ?? FALLBACK_CURRENCY;
 }
 
 /**
@@ -85,7 +82,7 @@ export function getCurrencyByAbmCode(abmCode: number): CurrencyDef {
  */
 export function formatAmount(
   amount: number, 
-  currencyCode: string = HOME_CURRENCY.code,
+  currencyCode: string,
   display: 'symbol' | 'code' = CURRENCY_DISPLAY
 ): string {
   const def = getCurrency(currencyCode);
@@ -125,12 +122,13 @@ export function convertAmount(
   amount: number,
   fromCode: string,
   toCode: string,
+  baseCurrencyCode: string,
   rates: Map<string, number | string>
 ): number {
   if (fromCode === toCode) return amount;
 
   const getRate = (code: string): number => {
-    if (code === HOME_CURRENCY.code) return 1.0;
+    if (code === baseCurrencyCode) return 1.0;
     const rate = rates.get(code);
     if (rate === undefined || rate === null) {
       throw new MissingExchangeRateError(code);

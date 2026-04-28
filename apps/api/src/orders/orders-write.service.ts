@@ -594,6 +594,16 @@ export class OrdersWriteService {
     this.logger.log(
       `Order ${existing.orderNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
     );
+
+    if (
+      newState === 'confirmed' &&
+      generateBackorders === true &&
+      gaps.length > 0
+    ) {
+      console.log(`DEBUG: Calling resolveOpenDemands after transaction`);
+      await this.backordersService.resolveOpenDemands(actor);
+    }
+
     return result;
   }
 

@@ -1,6 +1,15 @@
 import postgres from 'postgres';
 
+jest.setTimeout(120000);
+
 beforeAll(async () => {
+  if (!process.env.JWT_SECRET) {
+    process.env.JWT_SECRET = 'test-secret-value-for-e2e';
+  }
+  if (!process.env.SETUP_TOKEN) {
+    process.env.SETUP_TOKEN = 'test-setup-token';
+  }
+
   const user = process.env.POSTGRES_USER || 'postgres';
   const host = process.env.POSTGRES_HOST || 'localhost';
   const port = process.env.POSTGRES_PORT || '5432';

@@ -17,14 +17,18 @@ import { AggregateType } from '../common/event-types';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { CreateAccountDto, UpdateAccountDto } from './dto';
-import { HOME_CURRENCY } from '@modbm/shared';
 
 const isUuid = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
+import { AppConfigService } from '../settings/app-config.service';
+
 @Injectable()
 export class AccountsWriteService {
-  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
+  ) {}
 
   // Phase 8: [x] Implement strict server-side diffing in `AccountsWriteService`
   private readonly logger = new Logger(AccountsWriteService.name);
@@ -79,7 +83,8 @@ export class AccountsWriteService {
         .insert(coreAccounts)
         .values({
           ...sanitizedDto,
-          currencyCode: sanitizedDto.currencyCode || HOME_CURRENCY.code,
+          currencyCode:
+            sanitizedDto.currencyCode || this.appConfig.homeCurrency(),
           createdBy: actor,
         })
         .returning();

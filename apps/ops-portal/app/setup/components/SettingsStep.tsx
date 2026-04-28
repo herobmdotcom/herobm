@@ -78,15 +78,11 @@ export default function SettingsStep({ config, updateConfig, onNext }: Props) {
         <div>
           <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.baseCurrency')}</label>
           <select
-            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed focus:outline-none"
             value={config.baseCurrency}
-            onChange={(e) => updateConfig({ baseCurrency: e.target.value })}
+            disabled
           >
-            <option value="" disabled>{t('placeholders.selectCurrency')}</option>
-            <option>{t('options.currencies.aud')}</option>
-            <option>{t('options.currencies.usd')}</option>
-            <option>{t('options.currencies.eur')}</option>
-            <option>{t('options.currencies.sgd')}</option>
+            <option value={config.baseCurrency}>{config.baseCurrency} (Configured in .env)</option>
           </select>
         </div>
         <div>

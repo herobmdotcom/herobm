@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
-import { formatAmount, HOME_CURRENCY } from '@/lib/currency';
+import { formatAmount } from '@/lib/currency';
 import { computeLinePrice } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
@@ -15,6 +15,7 @@ import {
 } from '@modbm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
+import { useSettings } from '@/components/SettingsProvider';
 
 function ReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
@@ -50,6 +51,7 @@ export default function ReturnsSection({
     showCreateReturn, setShowCreateReturn,
     setError, loadReturns, loadOrder, pickingSummary, taxCategories, locations,
 }: ReturnsSectionProps) {
+  const { baseCurrency } = useSettings();
     const t = useTranslations();
     const tCommon = useTranslations('common');
     const tSales = useTranslations('salesOrders');
@@ -446,7 +448,7 @@ export default function ReturnsSection({
                                             const disc = parseFloat(origLine?.discountPercentage || '0');
                                             const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
                                             const taxRate = parseFloat(taxCat?.rate || '0');
-                                            const cc = order.currencyCode || HOME_CURRENCY.code;
+                                            const cc = order.currencyCode || baseCurrency;
                                             const pricing = computeLinePrice({
                                                 quantity: parseFloat(rl.quantityReturned || '0'),
                                                 pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
@@ -556,11 +558,11 @@ export default function ReturnsSection({
                                                                 }}
                                                             />
                                                         ) : (
-                                                            formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || HOME_CURRENCY.code)
+                                                            formatAmount(parseFloat(rl.returnFee || '0'), order.currencyCode || baseCurrency)
                                                         )}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {formatAmount(pricing.amount, order.currencyCode || HOME_CURRENCY.code)}
+                                                        {formatAmount(pricing.amount, order.currencyCode || baseCurrency)}
                                                     </td>
                                                     {isRetEditable && (
                                                         <td>
@@ -609,7 +611,7 @@ export default function ReturnsSection({
                                             }, 0);
                                             const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
                                             const totalCredit = totalAmount - totalFees;
-                                            const cc = order.currencyCode || HOME_CURRENCY.code;
+                                            const cc = order.currencyCode || baseCurrency;
                                             return (
                                                 <>
                                                     <tr style={{ borderTop: '2px solid var(--border)' }}>
