@@ -74,8 +74,8 @@ export class GlController {
   @Get('journal-entries')
   @CasbinAction('read')
   async getJournalEntries(
-    @Query('from') fromDate?: string,
-    @Query('to') toDate?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
     @Query('sourceType') sourceType?: string,
     @Query('q') entryNumber?: string,
     @Query('limit') limitStr?: string,
@@ -133,16 +133,19 @@ export class GlController {
   @CasbinAction('read')
   async getGeneralLedger(
     @Query('account') accountCode?: string,
-    @Query('from') fromDate?: string,
-    @Query('to') toDate?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
     @Query('limit') limitStr?: string,
+    @Query('page') pageStr?: string,
   ) {
     const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+    const page = pageStr ? parseInt(pageStr, 10) : undefined;
     return this.glService.getGeneralLedger({
       accountCode,
       fromDate,
       toDate,
       limit,
+      page,
     });
   }
 

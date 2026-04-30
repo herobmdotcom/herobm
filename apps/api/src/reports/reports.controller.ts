@@ -35,6 +35,7 @@ export class ReportsController {
     @Query('context') context: string,
     @Req() req: any,
     @Res() res: Response,
+    @Body() body?: any,
   ) {
     if (!id || !context) {
       throw new UnauthorizedException('Missing id or context parameter');
@@ -45,6 +46,7 @@ export class ReportsController {
       id,
       context,
       req.user,
+      body,
     );
 
     res.set({

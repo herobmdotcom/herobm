@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { apiMutate, apiFetch, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 import type { OrderDetail, TaxCategory } from './types';
 import { computeLinePrice } from '@modbm/shared';
@@ -53,11 +54,11 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Supplier Invoices
                 </h3>
-                {['received', 'partially_received', 'legacy'].includes(order.stateCode) && (
+                {['ordered', 'received', 'partially_received', 'legacy'].includes(order.stateCode) && (
                     <button
                         className="btn btn-secondary btn-sm"
-                        disabled={totalReceived === 0}
-                        onClick={() => router.push(`/purchase-invoices/new?purchaseOrderId=${orderId}`)}
+                        disabled={totalReceived === 0 && order.stateCode !== 'ordered'}
+                        onClick={() => router.push(`/supplier-invoices/new?purchaseOrderId=${orderId}`)}
                     >
                         {tPurchase('buttons.enterSupplierBill')}
                     </button>
@@ -168,11 +169,26 @@ export default function InvoicesSection({
                                     </thead>
                                     <tbody>
                                         {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
-                                                <tr key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}>
+                                                <tr 
+                                                    key={il.invoiceLineId || (il as any).lineId || il.purchaseOrderLineId}
+                                                    style={{ opacity: orderLine ? 1 : 0.7 }}
+                                                >
                                                     <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                                        {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                                                        {orderLine?.productNumber || il.productNumber || il.productId?.substring(0, 8) || '—'}
                                                     </td>
-                                                    <td>{orderLine?.productDescription || '—'}</td>
+                                                    <td>
+                                                        <div>{il.description || '—'}</div>
+                                                        {!orderLine && il.purchaseOrderNumber && (
+                                                            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                                                                From PO: <Link href={`/purchase-orders/${il.purchaseOrderId}`} style={{ color: 'var(--accent)', fontWeight: 500 }}>{il.purchaseOrderNumber}</Link>
+                                                            </div>
+                                                        )}
+                                                        {!orderLine && !il.purchaseOrderNumber && (
+                                                            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                                                                Standalone Item
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td style={{ textAlign: 'right' }}>{il.quantityInvoiced}</td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                                                         {formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}

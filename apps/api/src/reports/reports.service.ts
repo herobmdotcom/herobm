@@ -38,6 +38,7 @@ export class ReportsService {
     recordId: string,
     contextSlug: string,
     user: any,
+    options?: Record<string, any>,
   ): Promise<{ pdfBuffer: Buffer; fileName: string }> {
     const hookStart = Date.now();
 
@@ -65,7 +66,7 @@ export class ReportsService {
     }
 
     // AuthZ and Data Fetching via the contextual resolver
-    const data = await resolver.resolveData(recordId, user);
+    const data = await resolver.resolveData(recordId, user, options);
 
     const pdfBuffer = await this.compileTypst(report.template, data, report.id);
     const fileName = this.formatOutputName(report.outputNamePattern, data);

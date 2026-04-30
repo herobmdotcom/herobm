@@ -139,7 +139,7 @@ export class DashboardService {
             or(
               ilike(corePurchaseOrders.orderNumber, term),
               ilike(corePurchaseOrders.name, term),
-              ilike(corePurchaseOrders.invoiceNumber, term),
+              ilike(corePurchaseOrders.referenceNumber, term),
             ),
           )
           .limit(5),

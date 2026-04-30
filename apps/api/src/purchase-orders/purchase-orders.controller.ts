@@ -53,7 +53,7 @@ export class PurchaseOrdersController {
   @Get('pending-lines')
   @CasbinAction('read')
   async findPendingLines(
-    @Query('productId') productId: string,
+    @Query('productId') productId?: string,
     @Query('vendorId') vendorId?: string,
   ) {
     return this.purchaseOrdersService.findPendingLines(productId, vendorId);

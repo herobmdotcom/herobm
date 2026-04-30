@@ -38,6 +38,15 @@ interface ExchangeRate {
   updatedOn: string;
 }
 
+interface Macro {
+  macroId: string;
+  name: string;
+  macroType: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const TAX_TYPES = (t: any) => [
   { value: 'tax_applies', label: t('admin.settings.taxTypes.tax_applies') },
   { value: 'zero_rated', label: t('admin.settings.taxTypes.zero_rated') },
@@ -75,6 +84,13 @@ export default function SettingsPage() {
   const [rateEditingId, setRateEditingId] = useState<string | null>(null);
   const [rateForm, setRateForm] = useState<any>({});
   const [rateCreating, setRateCreating] = useState(false);
+
+  // ── Macros state ───────────────────────────────────────────────────────────
+  const [macros, setMacros] = useState<Macro[]>([]);
+  const [macroLoading, setMacroLoading] = useState(true);
+  const [macroEditingId, setMacroEditingId] = useState<string | null>(null);
+  const [macroForm, setMacroForm] = useState<any>({});
+  const [macroCreating, setMacroCreating] = useState(false);
 
   // ── Organization state ─────────────────────────────────────────────────────
   const [orgForm, setOrgForm] = useState<any>({});
@@ -293,6 +309,51 @@ export default function SettingsPage() {
     catch (err: any) { toast.error(err.message); }
   };
 
+  // ── Macros data ────────────────────────────────────────────────────────────
+
+  const loadMacros = async () => {
+    try {
+      setMacroLoading(true);
+      const data = await apiFetch<Macro[]>('/api/macros');
+      setMacros(data);
+    } catch (err: any) {
+      toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + err.message);
+    } finally {
+      setMacroLoading(false);
+    }
+  };
+
+  const macroEdit = (m: Macro) => { setMacroEditingId(m.macroId); setMacroForm({ ...m }); setMacroCreating(false); };
+  const macroCreate = () => { setMacroCreating(true); setMacroEditingId(null); setMacroForm({ name: '', macroType: 'text_template', content: '' }); };
+  const macroCancel = () => { setMacroEditingId(null); setMacroCreating(false); };
+
+  const macroSave = async () => {
+    if (!macroForm.name || !macroForm.content) {
+      toast.error(tCommon('errors.typeAndDateRequired')); return;
+    }
+    try {
+      const payload = {
+        name: macroForm.name,
+        macroType: macroForm.macroType || 'text_template',
+        content: macroForm.content,
+      };
+      if (macroEditingId) {
+        await apiMutate(`/api/macros/${macroEditingId}`, 'PATCH', payload);
+        toast.success(tSettings('toasts.macroUpdated'));
+      } else {
+        await apiMutate('/api/macros', 'POST', payload);
+        toast.success(tSettings('toasts.macroCreated'));
+      }
+      macroCancel(); loadMacros();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const macroDelete = async (id: string) => {
+    if (!confirm(tSettings('confirmations.deleteMacro'))) return;
+    try { await apiMutate(`/api/macros/${id}`, 'DELETE'); toast.success(tSettings('toasts.macroDeleted')); loadMacros(); }
+    catch (err: any) { toast.error(err.message); }
+  };
+
   // ── Init ───────────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -301,6 +362,7 @@ export default function SettingsPage() {
     loadUom();
     loadRates();
     loadGl();
+    loadMacros();
   }, []);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -442,6 +504,34 @@ export default function SettingsPage() {
     </tr>
   );
 
+  const renderMacroRow = (isEdit: boolean, data: any, key: string) => (
+    <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+      <td>
+        {isEdit
+          ? <input className="input" value={macroForm.name} onChange={e => setMacroForm({ ...macroForm, name: e.target.value })} placeholder={tSettings('labels.name')} style={{ width: 150 }} />
+          : <span className="font-medium">{data.name}</span>}
+      </td>
+      <td>
+        {isEdit
+          ? <textarea className="input" rows={3} value={macroForm.content} onChange={e => setMacroForm({ ...macroForm, content: e.target.value })} placeholder={tSettings('labels.content')} style={{ width: '100%', resize: 'vertical' }} />
+          : <span className="text-sm whitespace-pre-wrap">{data.content}</span>}
+      </td>
+      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+        {isEdit ? (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={macroCancel}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary btn-xs" onClick={macroSave}>{tSettings('actions.save')}</button>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <button className="btn btn-secondary btn-xs" onClick={() => macroEdit(data)}>{tSettings('actions.edit')}</button>
+            <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => macroDelete(data.macroId)}>{tSettings('actions.delete')}</button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+
   // ── Nav Configuration ─────────────────────────────────────────────────────
 
   const navSections = useMemo(() => [
@@ -451,6 +541,7 @@ export default function SettingsPage() {
     { id: 'tax-section', label: tSettings('sections.tax'), show: true },
     { id: 'rates-section', label: tSettings('sections.rates'), show: true },
     { id: 'uom-section', label: tSettings('sections.uom'), show: true },
+    { id: 'macros-section', label: tSettings('sections.macros'), show: true },
   ], [tSettings]);
 
   const flushCache = async () => {
@@ -928,6 +1019,39 @@ export default function SettingsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* ── Macros ────────────────────────────────────────────────────────────── */}
+      <div id="macros-section" className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="section-heading !mb-0">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">text_snippet</span>
+            {tSettings('sections.macros')}
+          </h3>
+          <button className="btn btn-primary btn-sm" onClick={macroCreate}>+ {tSettings('actions.create')}</button>
+        </div>
+
+        <table className="table-lines w-full">
+          <thead>
+            <tr>
+              <th style={{ width: 200 }}>{tSettings('labels.name')}</th>
+              <th>{tSettings('labels.content')}</th>
+              <th style={{ width: 120, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {macroCreating && renderMacroRow(true, macroForm, 'new-macro')}
+            {!macroLoading && macros.length === 0 && !macroCreating && (
+              <tr><td colSpan={3} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>{t('common.selectNone')}</td></tr>
+            )}
+            {macros.map(m =>
+              macroEditingId === m.macroId
+                ? renderMacroRow(true, m, m.macroId)
+                : renderMacroRow(false, m, m.macroId)
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div className="flex justify-end mt-8">

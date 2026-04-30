@@ -48,7 +48,7 @@ export default function Sidebar() {
         { href: '/purchase-orders/demands', label: t('items.demand'), icon: 'list_alt' },
         { href: '/purchase-orders', label: t('items.purchaseOrders'), icon: 'local_shipping' },
         { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },
-        { href: '/purchase-invoices', label: t('items.purchaseInvoices', { defaultValue: 'Purchase Invoices' }), icon: 'request_quote' },
+        { href: '/supplier-invoices', label: t('items.supplierInvoices', { defaultValue: 'Supplier Invoices' }), icon: 'request_quote' },
       ],
     },
   ];

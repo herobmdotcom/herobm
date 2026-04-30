@@ -67,7 +67,7 @@ export default function ProductDetailPage() {
     priceLevel4: '0',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
-    scNumber: '',
+    alternateProductNumber: '',
     notes: '',
     stateCode: 'active',
     productGroupId: null,
@@ -90,7 +90,7 @@ export default function ProductDetailPage() {
         priceLevel4: formatMoney(data.priceLevel4),
         purchaseTaxCategoryId: data.purchaseTaxCategoryId || '',
         salesTaxCategoryId: data.salesTaxCategoryId || '',
-        scNumber: data.scNumber || '',
+        alternateProductNumber: data.alternateProductNumber || '',
         notes: data.notes || '',
         stateCode: data.stateCode || 'active',
         productGroupId: data.productGroupId || null,
@@ -793,15 +793,15 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.scNumber')}
+                    {t('products.columns.alternateProductNumber')}
                   </label>
                   <input
                     className="input"
                     disabled={!isEditable || saving}
-                    value={dto.scNumber}
-                    onChange={(e) => setDto({ ...dto, scNumber: e.target.value })}
-                    onBlur={(e) => handleBlur('scNumber', e.target.value)}
-                    placeholder={t('products.columns.scNumber')}
+                    value={dto.alternateProductNumber}
+                    onChange={(e) => setDto({ ...dto, alternateProductNumber: e.target.value })}
+                    onBlur={(e) => handleBlur('alternateProductNumber', e.target.value)}
+                    placeholder={t('products.columns.alternateProductNumber')}
                   />
                 </div>
                 <div>

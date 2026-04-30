@@ -17,6 +17,8 @@ import {
   productUoms,
   locations,
   backorders,
+  purchaseInvoices,
+  purchaseInvoiceLines,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
@@ -36,7 +38,7 @@ export interface UnifiedPurchaseOrderRow {
   orderNumber: string;
   name: string;
   vendorName: string;
-  invoiceNumber: string;
+  referenceNumber: string;
   stateCode: string;
 
   createdBy: string;
@@ -108,6 +110,23 @@ export class PurchaseOrdersService {
 
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
+      if (!createDto.deliveryLocationId) {
+        throw new BadRequestException(
+          'Delivery location is mandatory for all purchase orders.',
+        );
+      }
+
+      // Ensure location exists
+      const [loc] = await tx
+        .select()
+        .from(locations)
+        .where(eq(locations.locationId, createDto.deliveryLocationId))
+        .limit(1);
+
+      if (!loc) {
+        throw new BadRequestException('Invalid delivery location ID.');
+      }
+
       // Create PO
       let order;
       try {
@@ -123,6 +142,7 @@ export class PurchaseOrdersService {
             createdBy: userId,
             stateCode: 'draft',
             deliveryLocationId: createDto.deliveryLocationId,
+            referenceNumber: createDto.referenceNumber,
           })
           .returning();
         order = inserted;
@@ -195,7 +215,7 @@ export class PurchaseOrdersService {
         orderNumber: purchaseOrders.orderNumber,
         name: purchaseOrders.name,
         vendorName: coreSuppliers.name,
-        invoiceNumber: purchaseOrders.invoiceNumber,
+        referenceNumber: purchaseOrders.referenceNumber,
         stateCode: purchaseOrders.stateCode,
         source: sql<string>`'app'`.as('source'),
         createdBy: purchaseOrders.createdBy,
@@ -262,7 +282,7 @@ export class PurchaseOrdersService {
         orderNumber: r.orderNumber ?? '',
         name: r.name ?? '',
         vendorName: r.vendorName ?? '',
-        invoiceNumber: r.invoiceNumber ?? '',
+        referenceNumber: r.referenceNumber ?? '',
         stateCode: r.stateCode ?? 'draft',
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
@@ -412,13 +432,36 @@ export class PurchaseOrdersService {
       }
     }
 
+    if (stateCode === 'cancelled') {
+      const anyReceived = existing.lines.some(
+        (l: any) => parseFloat(l.quantityReceived || '0') > 0,
+      );
+      if (anyReceived) {
+        throw new BadRequestException(
+          'Cannot cancel a Purchase Order that has received goods. Use Close Short instead.',
+        );
+      }
+
+      const invoiceLines = await this.db
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.purchaseOrderId, id))
+        .limit(1);
+
+      if (invoiceLines.length > 0) {
+        throw new BadRequestException(
+          'Cannot cancel a Purchase Order that has attached invoices.',
+        );
+      }
+    }
+
     return await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .update(purchaseOrders)
         .set({ stateCode, modifiedOn: new Date() })
         .where(eq(purchaseOrders.purchaseOrderId, id));
 
-      if (stateCode === 'cancelled') {
+      if (stateCode === 'cancelled' || stateCode === 'closed_short') {
         await tx
           .update(backorders)
           .set({
@@ -716,6 +759,7 @@ export class PurchaseOrdersService {
           notes: updateDto.notes,
           stateCode: updateDto.stateCode, // allow transition to 'ordered'
           deliveryLocationId: updateDto.deliveryLocationId,
+          referenceNumber: updateDto.referenceNumber,
           modifiedOn: new Date(),
         })
         .where(eq(purchaseOrders.purchaseOrderId, id))
@@ -784,26 +828,48 @@ export class PurchaseOrdersService {
     });
   }
 
-  async findPendingLines(productId: string, vendorId?: string) {
-    if (!productId) {
+  async findPendingLines(productId?: string, vendorId?: string) {
+    if (!productId && !vendorId) {
       throw new BadRequestException(
-        'productId is required to find pending lines',
+        'Either productId or vendorId is required to find pending lines',
       );
     }
 
     const conditions = [
-      eq(purchaseOrderLineItems.productId, productId),
       inArray(purchaseOrders.stateCode, [
         'ordered',
         'partially_received',
+        'received',
         'legacy',
       ]),
-      sql`COALESCE(CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC), 0) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
     ];
+
+    // When filtering by productId (used from returns/other flows),
+    // keep the quantity filter to only show lines still pending receipt.
+    if (productId) {
+      conditions.push(eq(purchaseOrderLineItems.productId, productId));
+      conditions.push(
+        sql`COALESCE(CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC), 0) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
+      );
+    }
 
     if (vendorId) {
       conditions.push(eq(purchaseOrders.vendorId, vendorId));
     }
+
+    // Subquery: total quantity already invoiced for each PO line
+    const invoicedSubquery = this.db
+      .select({
+        purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
+        totalInvoiced:
+          sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text`.as(
+            'total_invoiced',
+          ),
+      })
+      .from(purchaseInvoiceLines)
+      .where(sql`${purchaseInvoiceLines.purchaseOrderLineId} IS NOT NULL`)
+      .groupBy(purchaseInvoiceLines.purchaseOrderLineId)
+      .as('invoiced_agg');
 
     return await this.db
       .select({
@@ -816,10 +882,16 @@ export class PurchaseOrdersService {
         currencyCode: purchaseOrders.currencyCode,
         purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
         lineNumber: purchaseOrderLineItems.lineNumber,
+        productId: purchaseOrderLineItems.productId,
+        productNumber: products.productNumber,
         productDescription: purchaseOrderLineItems.productDescription,
         quantity: purchaseOrderLineItems.quantity,
         pricePerUnit: purchaseOrderLineItems.pricePerUnit,
         quantityReceived: purchaseOrderLineItems.quantityReceived,
+        quantityInvoiced:
+          sql<string>`COALESCE(${invoicedSubquery.totalInvoiced}, '0')`.as(
+            'quantity_invoiced',
+          ),
       })
       .from(purchaseOrderLineItems)
       .innerJoin(
@@ -833,7 +905,19 @@ export class PurchaseOrdersService {
         coreSuppliers,
         eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
       )
-      .where(and(...conditions));
+      .leftJoin(
+        products,
+        eq(purchaseOrderLineItems.productId, products.productId),
+      )
+      .leftJoin(
+        invoicedSubquery,
+        eq(
+          purchaseOrderLineItems.purchaseOrderLineId,
+          invoicedSubquery.purchaseOrderLineId,
+        ),
+      )
+      .where(and(...conditions))
+      .orderBy(desc(purchaseOrders.createdOn), purchaseOrderLineItems.lineNumber);
   }
 
   async findReturnableLines(productId: string) {

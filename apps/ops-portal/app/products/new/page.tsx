@@ -36,7 +36,7 @@ export default function NewProductPage() {
     priceLevel4: '0.00',
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
-    scNumber: '',
+    alternateProductNumber: '',
     stateCode: 'active',
     productGroupId: null,
     notes: '',
@@ -190,14 +190,14 @@ export default function NewProductPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.scNumber')}
+                    {t('products.columns.alternateProductNumber')}
                   </label>
                   <input
                     type="text"
                     className="input"
-                    value={dto.scNumber}
-                    onChange={(e) => updateField('scNumber', e.target.value)}
-                    placeholder={t('products.columns.scNumber')}
+                    value={dto.alternateProductNumber}
+                    onChange={(e) => updateField('alternateProductNumber', e.target.value)}
+                    placeholder={t('products.columns.alternateProductNumber')}
                     disabled={submitting}
                   />
                 </div>

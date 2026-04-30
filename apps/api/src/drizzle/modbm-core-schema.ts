@@ -112,6 +112,9 @@ export const salesOrders = modbmCore.table(
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
+    discrepanciesAcknowledged: boolean('discrepancies_acknowledged')
+      .notNull()
+      .default(false),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     createdBy: text('created_by'),
@@ -293,10 +296,10 @@ export const purchaseOrders = modbmCore.table(
     orderNumber: text('order_number').unique().notNull(),
     name: text('name'),
     vendorId: uuid('vendor_id').references(() => suppliers.vendorId),
-    deliveryLocationId: uuid('delivery_location_id').references(
-      () => locations.locationId,
-    ),
-    invoiceNumber: text('invoice_number'),
+    deliveryLocationId: uuid('delivery_location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    referenceNumber: text('reference_number'),
     stateCode: text('state_code')
       .$type<PurchaseOrderState>()
       .notNull()
@@ -666,6 +669,18 @@ export const tradingTerms = modbmCore.table('trading_terms', {
 });
 
 // ---------------------------------------------------------------------------
+// macros  (Standard texts and dynamic automations)
+// ---------------------------------------------------------------------------
+export const macros = modbmCore.table('macros', {
+  macroId: uuid('macro_id').primaryKey().defaultRandom(),
+  name: text('name').unique().notNull(),
+  macroType: text('macro_type').notNull().default('text_template'),
+  content: text('content').notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // account_groups  (Administrative grouping and GL routing)
 // ---------------------------------------------------------------------------
 export const accountGroups = modbmCore.table('account_groups', {
@@ -782,7 +797,7 @@ export const products = modbmCore.table('products', {
   salesTaxCategoryId: uuid('sales_tax_category_id').references(
     () => taxCategories.taxCategoryId,
   ),
-  scNumber: text('sc_number'),
+  alternateProductNumber: text('alternate_product_number'),
   stateCode: text('state_code').notNull().default('active'),
   notes: text('notes'),
   sourceId: text('source_id').unique(),

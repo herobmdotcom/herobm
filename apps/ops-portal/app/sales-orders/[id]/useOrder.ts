@@ -63,6 +63,7 @@ export function useOrder(id: string) {
     const [editNotes, setEditNotes] = useState('');
     const [editFulfillmentLocationId, setEditFulfillmentLocationId] = useState('');
     const [headerDirty, setHeaderDirty] = useState(false);
+    const [discrepanciesAcknowledged, setDiscrepanciesAcknowledged] = useState(false);
 
     /* ── GST categories ──────────────────────────────────────────── */
     const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
@@ -106,6 +107,7 @@ export function useOrder(id: string) {
             setEditPO(data?.data?.customerOrderNumber || data?.customerOrderNumber || '');
             setEditNotes(data?.data?.notes || data?.notes || '');
             setEditFulfillmentLocationId(data?.data?.fulfillmentLocationId || data?.fulfillmentLocationId || '');
+            setDiscrepanciesAcknowledged(data?.data?.discrepanciesAcknowledged || data?.discrepanciesAcknowledged || false);
             setHeaderDirty(false);
 
             if (autoTransitions && autoTransitions.length > 0) {
@@ -158,9 +160,10 @@ export function useOrder(id: string) {
         }
     }, [order?.stateCode]);
 
-    // Load inventory when availability tab is selected
+    // Load inventory for highlighting shortages
     useEffect(() => {
-        if (activeTab !== 'availability' || !order || order.lines.length === 0) return;
+        if (!order || order.lines.length === 0) return;
+        if (!['draft', 'quoted'].includes(order.stateCode)) return;
         const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
         if (productIds.length === 0) return;
         setInventoryLoading(true);
@@ -203,9 +206,13 @@ export function useOrder(id: string) {
         }
     };
 
-    const changeState = async (newState: string, generateBackorders?: boolean) => {
+    const changeState = async (newState: string, generateBackorders?: boolean, acknowledged?: boolean) => {
         try {
-            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { stateCode: newState, generateBackorders });
+            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { 
+                stateCode: newState, 
+                generateBackorders,
+                discrepanciesAcknowledged: acknowledged
+            });
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err: any) {
@@ -435,6 +442,7 @@ export function useOrder(id: string) {
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
-        editFulfillmentLocationId, setEditFulfillmentLocationId
+        editFulfillmentLocationId, setEditFulfillmentLocationId,
+        discrepanciesAcknowledged, setDiscrepanciesAcknowledged
     };
 }

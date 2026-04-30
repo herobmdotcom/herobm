@@ -79,7 +79,7 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsString()
-  scNumber?: string;
+  alternateProductNumber?: string;
 
   @IsOptional()
   @IsUUID()
@@ -137,7 +137,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsString()
-  scNumber?: string;
+  alternateProductNumber?: string;
 
   @IsOptional()
   @IsUUID()

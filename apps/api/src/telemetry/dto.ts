@@ -14,6 +14,6 @@ export class ClientErrorDto {
   component?: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   url?: string;
 }

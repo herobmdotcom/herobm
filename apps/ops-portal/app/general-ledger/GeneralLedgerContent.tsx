@@ -1,44 +1,62 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
-
-interface GlRow {
-  journal_entry_id: string;
-  entry_date: string;
-  entry_number: string;
-  account_code: string;
-  account_name: string;
-  entry_memo: string | null;
-  line_memo: string | null;
-  debit: string;
-  credit: string;
-}
+import DataGrid from '@/components/DataGrid';
+import type { ColDef } from 'ag-grid-community';
 
 interface AccountOption {
   accountCode: string;
   name: string;
 }
 
+interface GlEntry {
+  journalEntryId: string;
+  entryNumber: string;
+  entryDate: string;
+  entryMemo: string | null;
+  sourceType: string;
+  sourceId: string | null;
+  accountCode: string;
+  accountName: string;
+  partyType: string | null;
+  partyId: string | null;
+  debit: string;
+  credit: string;
+  lineMemo: string | null;
+  createdBy: string | null;
+  createdOn: string | null;
+}
+
+const PAGE_SIZE = 200;
+
 export default function GeneralLedgerContent() {
   const t = useTranslations('gl.generalLedger');
-  const tGeneral = useTranslations('gl');
   const tCommon = useTranslations('common');
+  const tGrid = useTranslations('common.grid');
 
-  function fmt(v: string | number) {
+  function fmt(v: string | number | null | undefined) {
+    if (!v) return tCommon('na');
     const n = typeof v === 'string' ? parseFloat(v) : v;
     if (!n || n === 0) return tCommon('na');
     return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  const [rows, setRows] = useState<GlRow[]>([]);
+
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
-  const [loading, setLoading] = useState(true);
   const [accountCode, setAccountCode] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+
+  // Manual pagination state (so we control it from the header, not the DataGrid overlay)
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [rows, setRows] = useState<GlEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Load accounts for the filter dropdown
   useEffect(() => {
@@ -50,156 +68,165 @@ export default function GeneralLedgerContent() {
       .catch((err) => reportError(err, 'GeneralLedgerPage'));
   }, []);
 
+  // Reset page to 1 when filters change
+  useEffect(() => { setPage(1); }, [accountCode, fromDate, toDate]);
+
+  // Fetch GL data
   const fetchData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (accountCode) params.set('account', accountCode);
     if (fromDate) params.set('fromDate', fromDate);
     if (toDate) params.set('toDate', toDate);
+    params.set('page', String(page));
+    params.set('limit', String(PAGE_SIZE));
     const qs = params.toString() ? `?${params}` : '';
-    apiFetch<GlRow[]>(`/api/gl/general-ledger${qs}`)
-      .then(setRows)
+    apiFetch<{ data: GlEntry[]; total: number }>(`/api/gl/general-ledger${qs}`)
+      .then((res) => {
+        setRows(res.data);
+        setTotal(res.total);
+      })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));
-  }, [accountCode, fromDate, toDate]);
+  }, [accountCode, fromDate, toDate, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Compute running balance
-  let runningBalance = 0;
-  const rowsWithBalance = rows.map((r) => {
-    runningBalance += parseFloat(r.debit || '0') - parseFloat(r.credit || '0');
-    return { ...r, runningBalance };
-  });
+  const columns = useMemo<ColDef[]>(() => [
+    { 
+      field: 'entryDate', 
+      headerName: t('columns.date'), 
+      width: 120,
+      valueFormatter: (p: any) => p.value ? new Date(p.value).toLocaleDateString() : ''
+    },
+    { 
+      field: 'entryNumber', 
+      headerName: t('columns.entryNumber'), 
+      width: 140, 
+      pinned: 'left',
+      cellStyle: { fontWeight: 'bold', color: 'var(--accent)', cursor: 'pointer' }
+    },
+    {
+      field: 'accountCode',
+      headerName: t('columns.account'),
+      width: 250,
+      cellRenderer: (p: any) => {
+        return (
+          <span>
+            <span className="font-mono text-gray-400 mr-2">{p.value}</span>
+            {p.data.accountName}
+          </span>
+        );
+      }
+    },
+    { 
+      field: 'lineMemo', 
+      headerName: t('columns.memo'), 
+      flex: 1, 
+      minWidth: 200,
+      valueGetter: (p: any) => p.data.lineMemo || p.data.entryMemo || ''
+    },
+    { 
+      field: 'debit', 
+      headerName: t('columns.debit'), 
+      width: 120,
+      cellClass: 'text-right font-mono',
+      valueFormatter: (p: any) => fmt(p.value)
+    },
+    { 
+      field: 'credit', 
+      headerName: t('columns.credit'), 
+      width: 120,
+      cellClass: 'text-right font-mono',
+      valueFormatter: (p: any) => fmt(p.value)
+    }
+  ], [t, tCommon]);
+
+  // We manage data externally, so we feed it directly to DataGrid via fetchAll + a dummy endpoint
+  // Actually, we'll bypass DataGrid's own fetching by providing the data externally.
+  // Since DataGrid always fetches, we'll use its renderHeader but handle data ourselves.
 
   return (
     <>
-      <div className="h-full flex flex-col p-4 lg:p-6">
-        {/* Header + Filters */}
-        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <h2
-            className="text-[1.3rem] font-bold tracking-tight"
-            style={{ color: 'var(--text-primary)', fontFamily: 'Manrope, sans-serif' }}
-          >
-            {t('title')}
-          </h2>
-          <div className="flex items-center gap-3 flex-wrap">
-            <select
-              value={accountCode}
-              onChange={(e) => setAccountCode(e.target.value)}
-              className="text-sm px-3 py-1.5 rounded-lg border"
-              style={{
-                background: 'var(--bg-card)',
-                borderColor: 'var(--border)',
-                color: 'var(--text-primary)',
-                minWidth: 200,
-              }}
-            >
-              <option value="">{t('allAccounts')}</option>
-              {accounts.map((a) => (
-                <option key={a.accountCode} value={a.accountCode}>
-                  {a.accountCode} — {a.name}
-                </option>
-              ))}
-            </select>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('fromDate')}</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="text-sm px-3 py-1.5 rounded-lg border"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{t('toDate')}</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="text-sm px-3 py-1.5 rounded-lg border"
-                style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-              />
-            </div>
-          </div>
-        </div>
+      <div className="h-full flex flex-col relative p-4 lg:p-6">
+        <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+          <DataGrid<GlEntry>
+            endpoint={`/api/gl/general-ledger?account=${accountCode}&fromDate=${fromDate}&toDate=${toDate}`}
+            columns={columns}
+            gridKey="gl-general-ledger"
+            exportFileName="general-ledger"
+            fetchAll={true}
+            onRowClicked={(row) => {
+              setSelectedEntry({
+                journalEntryId: row.journalEntryId,
+                entryNumber: row.entryNumber,
+                entryDate: row.entryDate,
+                memo: row.entryMemo,
+                sourceType: row.sourceType || 'manual',
+                sourceId: row.sourceId || null,
+                createdBy: row.createdBy || null,
+              });
+            }}
+            renderHeader={({ optionsButton, rowCount, loading: gridLoading }) => (
+              <div className="flex items-center px-6 py-4 gap-6 border-b border-gray-100">
+                {/* Title + Row Count */}
+                <div className="flex items-center gap-4 shrink-0">
+                  <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                    {t('title')}
+                  </h2>
+                  <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                    <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      {tCommon('grid.rowCountLabel')}
+                    </span>
+                    <span className="text-[11px] font-bold text-[#006b5c]">
+                      {gridLoading ? '...' : rowCount.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
 
-        {/* Table */}
-        <div
-          className="flex-1 min-h-0 overflow-auto rounded-xl border"
-          style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}
-        >
-          <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.date')}</th>
-                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.entryNumber')}</th>
-                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.account')}</th>
-                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.memo')}</th>
-                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.debit')}</th>
-                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.credit')}</th>
-                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{t('columns.balance')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                    <div className="animate-pulse">{tGeneral('loading')}</div>
-                  </td>
-                </tr>
-              ) : rowsWithBalance.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                    {t('noData')}
-                  </td>
-                </tr>
-              ) : (
-                rowsWithBalance.map((r, i) => (
-                  <tr
-                    key={`${r.entry_number}-${i}`}
-                    className="transition-colors cursor-pointer"
-                    style={{ borderBottom: '1px solid var(--border)' }}
-                    onClick={() => {
-                      setSelectedEntry({
-                        journalEntryId: r.journal_entry_id,
-                        entryNumber: r.entry_number,
-                        entryDate: r.entry_date,
-                        memo: r.entry_memo,
-                        sourceType: (r as any).source_type || 'manual', // from the raw row if missing
-                        sourceId: (r as any).source_id || null,
-                        createdBy: (r as any).created_by || null,
-                      });
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-secondary)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      {new Date(r.entry_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2.5 font-mono text-xs">
-                      <span className="font-semibold" style={{ color: 'var(--accent)' }}>
-                        {r.entry_number}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-primary)' }}>
-                      <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{r.account_code}</span>
-                      {' '}{r.account_name}
-                    </td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {r.line_memo ? r.line_memo : (r.entry_memo || tCommon('na'))}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.debit)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{fmt(r.credit)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: r.runningBalance < 0 ? 'var(--danger)' : 'var(--text-primary)' }}>
-                      {fmt(r.runningBalance)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                {/* Filters */}
+                <select
+                  value={accountCode}
+                  onChange={(e) => setAccountCode(e.target.value)}
+                  className="input text-xs h-9 border-gray-200 w-auto min-w-[200px] bg-white rounded-lg"
+                >
+                  <option value="">{t('allAccounts')}</option>
+                  {accounts.map((a) => (
+                    <option key={a.accountCode} value={a.accountCode}>
+                      {a.accountCode} — {a.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+                    title={t('fromDate')}
+                  />
+                  <span className="text-gray-300 font-bold">→</span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+                    title={t('toDate')}
+                  />
+                </div>
+
+                {/* Spacer */}
+                <div className="flex-1" />
+
+                {/* Options */}
+                <div className="flex items-center gap-3 shrink-0">
+                  {optionsButton}
+                </div>
+              </div>
+            )}
+          />
         </div>
       </div>
 

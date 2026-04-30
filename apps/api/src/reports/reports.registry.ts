@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface ReportContextResolver {
-  resolveData(id: string, user: any): Promise<Record<string, any>>;
+  resolveData(
+    id: string,
+    user: any,
+    options?: Record<string, any>,
+  ): Promise<Record<string, any>>;
   getRandomId?(): Promise<string | undefined>;
 }
 

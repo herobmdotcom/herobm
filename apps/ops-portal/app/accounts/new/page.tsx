@@ -32,7 +32,7 @@ export default function NewAccountPage() {
     address1PostalCode: '',
     address1Country: '',
     accountGroupId: '',
-    TaxCategoryId: '',
+    taxCategoryId: '',
     currencyCode: 'EUR',
     customerDiscount: '0',
     notes: '',
@@ -149,13 +149,13 @@ export default function NewAccountPage() {
                     </label>
                     <select
                       className="input"
-                      value={dto.TaxCategoryId || ''}
-                      onChange={(e) => updateField('TaxCategoryId', e.target.value)}
+                      value={dto.taxCategoryId || ''}
+                      onChange={(e) => updateField('taxCategoryId', e.target.value)}
                       disabled={submitting}
                     >
                       <option value="">{t('common.options.none')}</option>
                       {taxCategories.map((cat) => (
-                        <option key={cat.TaxCategoryId} value={cat.TaxCategoryId}>
+                        <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
                           {cat.title} ({cat.code})
                         </option>
                       ))}

@@ -18,6 +18,7 @@ import PageNav from '@/components/shared/PageNav';
 
 import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
+import QuoteGenerationDialog from './QuoteGenerationDialog';
 import { formatLocationDisplay } from '@/lib/formatters';
 
 import type { TaxCategory } from './types';
@@ -108,6 +109,12 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         (v: { picking: boolean; shipments: boolean }) => setPickingVis(v), [],
     );
 
+    /* ── Quote Dialog ──────────────────────────────────────────────────────── */
+    const [showQuoteDialog, setShowQuoteDialog] = useState(false);
+
+    /* ── Discrepancy Modal ─────────────────────────────────────────────────── */
+    const [showDiscrepancyModal, setShowDiscrepancyModal] = useState(false);
+
     // Scroll to hash fragment (e.g. #invoices-section) after data loads
     useEffect(() => {
         if (o.loading || !o.order) return;
@@ -161,10 +168,33 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         saveHeader, changeState, archiveOrder, unarchiveOrder, copyOrder,
         updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine, addPostConfirmationBlankLine,
         loadOrder, loadReturns, loadInvoices,
+        discrepanciesAcknowledged, setDiscrepanciesAcknowledged
     } = o;
 
     const handleStateClick = async (state: string) => {
-        await changeState(state, true);
+        if (state === 'confirmed' && gaps.length > 0 && !discrepanciesAcknowledged) {
+            setShowDiscrepancyModal(true);
+            return;
+        }
+        await changeState(state, state === 'confirmed', discrepanciesAcknowledged);
+    };
+
+    const handleGenerateQuote = async (text: string) => {
+        try {
+            const { apiFetchBlob } = await import('@/lib/api');
+            const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-quote/run?id=${id}&context=sales-order`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quoteIntroText: text })
+            });
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            loadOrder(); // Reload to show the new timeline event
+        } catch (err) {
+            reportError(err, 'OrderDetailPage:generateQuote');
+            setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
+            throw err;
+        }
     };
 
     /* ── Centralised section visibility rules ──────────────────────── */
@@ -270,17 +300,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 {(order.stateCode === 'draft' || order.stateCode === 'quoted') && (
                                     <button
                                         className="btn btn-secondary btn-sm"
-                                        onClick={async () => {
-                                            try {
-                                                const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-quote/run?id=${id}&context=sales-order`, { method: 'POST' });
-                                                const url = URL.createObjectURL(blob);
-                                                window.open(url, '_blank');
-                                            } catch (err) {
-                                                reportError(err, 'OrderDetailPage:generateQuote');
-                                                setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateQuote'));
-                                            }
-                                        }}
+                                        onClick={() => setShowQuoteDialog(true)}
                                     >
                                         {tSales('buttons.createQuote')}
                                     </button>
@@ -507,6 +527,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     </div>
 
                     {activeTab === 'lines' ? (
+                        <>
                         <table className="table-lines">
                             <thead>
                                 <tr>
@@ -527,7 +548,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     const isEditable = isOrderLinesEditable || (line.isPostConfirmation && isOrderDetailsEditable);
                                     return (
                                     <tr key={line.salesOrderLineId || idx}>
-                                        <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                                        <td style={{ 
+                                            color: 'var(--text-muted)',
+                                            fontWeight: 400,
+                                            position: 'relative'
+                                        }}>
+                                            {line.lineNumber}
+                                        </td>
                                         <td style={{ fontWeight: 600, fontSize: 12 }}>
                                             {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
                                                 <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
@@ -562,13 +589,34 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         </td>
                                         {isEditable ? (
                                             <>
-                                                <td style={{ textAlign: 'right' }}>
+                                                <td style={{ textAlign: 'right', position: 'relative' }}>
+                                                    {gapMap.has(line.salesOrderLineId) && (
+                                                        <span 
+                                                            className="material-symbols-outlined" 
+                                                            style={{ 
+                                                                fontSize: 14, 
+                                                                position: 'absolute',
+                                                                left: -16,
+                                                                top: '50%',
+                                                                transform: 'translateY(-50%)',
+                                                                color: 'var(--danger)',
+                                                                zIndex: 1
+                                                            }}
+                                                            title={tSales('availabilityStatus.shortage')}
+                                                        >
+                                                            warning
+                                                        </span>
+                                                    )}
                                                     <input
                                                         className="input"
                                                         type="number"
                                                         min="0"
                                                         step="1"
-                                                        style={{ width: '100%', textAlign: 'right' }}
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            textAlign: 'right',
+                                                            borderColor: gapMap.has(line.salesOrderLineId) ? 'var(--danger)' : undefined
+                                                        }}
                                                         defaultValue={line.quantity}
                                                         key={`qty-${line.salesOrderLineId}-${line.quantity}`}
                                                         onBlur={(e) => {
@@ -653,7 +701,16 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             </>
                                         ) : (
                                             <>
-                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: gapMap.has(line.salesOrderLineId) ? 'var(--danger)' : undefined, fontWeight: gapMap.has(line.salesOrderLineId) ? 600 : undefined }}>
+                                                    {gapMap.has(line.salesOrderLineId) && (
+                                                        <span 
+                                                            className="material-symbols-outlined" 
+                                                            style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4, color: 'var(--danger)' }}
+                                                            title={tSales('availabilityStatus.shortage')}
+                                                        >
+                                                            warning
+                                                        </span>
+                                                    )}
                                                     {line.quantity}
                                                 </td>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -773,6 +830,8 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 })()}
                             </tbody>
                         </table>
+                        
+                        </>
                     ) : activeTab === 'availability' ? (
                         /* Availability tab */
                         inventoryLoading ? (
@@ -1012,27 +1071,80 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
             </DetailsLayout>
 
+            <QuoteGenerationDialog
+                isOpen={showQuoteDialog}
+                onClose={() => setShowQuoteDialog(false)}
+                onGenerate={handleGenerateQuote}
+            />
+
+            {showDiscrepancyModal && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                            <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
+                            <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 flex flex-col gap-4">
+                            <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.lineNumber')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.product')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{tSales('columns.description')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.ordered')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right">{tSales('columns.available')}</th>
+                                            <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 text-right text-red-600">{tSales('columns.gap')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200 bg-white">
+                                        {order.lines
+                                            .filter(l => gapMap.has(l.salesOrderLineId))
+                                            .map((line: any) => {
+                                                const gap = gapMap.get(line.salesOrderLineId);
+                                                return (
+                                                    <tr key={line.salesOrderLineId} className="hover:bg-gray-50 transition-colors">
+                                                        <td className="px-4 py-3 text-xs text-gray-500 font-medium">{line.lineNumber}</td>
+                                                        <td className="px-4 py-3 text-xs text-gray-900 font-bold">{line.productNumber}</td>
+                                                        <td className="px-4 py-3 text-xs text-gray-600 truncate max-w-[150px]" title={line.productDescription}>{line.productDescription}</td>
+                                                        <td className="px-4 py-3 text-xs text-gray-900 text-right font-medium">{gap?.orderedQuantity}</td>
+                                                        <td className="px-4 py-3 text-xs text-gray-600 text-right">{gap?.availableQuantity}</td>
+                                                        <td className="px-4 py-3 text-xs text-red-600 text-right font-bold">{gap?.shortage}</td>
+                                                    </tr>
+                                                );
+                                            })
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setShowDiscrepancyModal(false)}
+                                >
+                                    {tCommon('cancel')}
+                                </button>
+                                <button 
+                                    className="btn btn-primary" 
+                                    onClick={async () => {
+                                        setDiscrepanciesAcknowledged(true);
+                                        setShowDiscrepancyModal(false);
+                                        await changeState('confirmed', true, true);
+                                    }}
+                                >
+                                    {tCommon('confirm')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style jsx>{`
-                .modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0,0,0,0.4);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                    backdrop-filter: blur(2px);
-                }
-                .modal-content {
-                    background: white;
-                    padding: 2rem;
-                    border-radius: 12px;
-                    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-                    width: 90%;
-                }
                 .table-lines {
                     width: 100%;
                     border-collapse: collapse;

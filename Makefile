@@ -312,6 +312,7 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_hooks_frontend.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_singleton_settings_integrity.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 
@@ -352,6 +353,7 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_singleton_settings_integrity.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform

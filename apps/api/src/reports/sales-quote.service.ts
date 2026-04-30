@@ -3,6 +3,7 @@ import { join } from 'path';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { resolveOrderDetail, assembleOrderData } from './report-data.helper';
+import { emitEvent } from '../common/emit-event';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories } from '../drizzle/modbm-core-schema';
@@ -36,6 +37,7 @@ export interface SalesQuoteData {
     totalAmount: number;
   };
   generatedAt: string;
+  quoteIntroText?: string;
 }
 
 @Injectable()
@@ -60,6 +62,7 @@ export class SalesQuoteService {
   async assembleData(
     orderId: string,
     source?: string,
+    options?: Record<string, any>,
   ): Promise<SalesQuoteData> {
     const orderDetail = await resolveOrderDetail(
       this.ordersWriteService,
@@ -68,10 +71,26 @@ export class SalesQuoteService {
       source,
     );
     const taxRateMap = await this.buildtaxRateMap();
-    return assembleOrderData(
+    const data = assembleOrderData(
       orderDetail,
       this.appConfig.homeCurrency(),
       taxRateMap,
     );
+
+    if (options?.quoteIntroText) {
+      this.logger.log('Macro text received: ' + options.quoteIntroText);
+      data.quoteIntroText = options.quoteIntroText;
+      await this.db.transaction(async (tx) => {
+        await emitEvent(tx, {
+          aggregateType: 'sales_order',
+          aggregateId: orderId,
+          eventType: 'quote_generated',
+          payload: { quoteIntroText: options.quoteIntroText },
+          actor: options.user?.userId,
+        });
+      });
+    }
+
+    return data;
   }
 }

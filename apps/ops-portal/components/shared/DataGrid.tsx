@@ -11,6 +11,7 @@ import {
   type GridReadyEvent,
   type FirstDataRenderedEvent,
   type RowClickedEvent,
+  type SelectionChangedEvent,
   type StateUpdatedEvent,
   type GridState,
   type ScrollState,
@@ -114,6 +115,10 @@ export interface DataGridProps<T> {
   initialSearch?: string;
   /** Property on T to use as a unique row identifier, prevents scrolling jump on data load */
   rowIdField?: keyof T;
+  /** Selection mode for rows */
+  rowSelection?: "single" | "multiple";
+  /** Callback when selection changes */
+  onSelectionChanged?: (selectedRows: T[]) => void;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -144,6 +149,8 @@ export default function DataGrid<T>({
   gridTheme = "ag-theme-alpine-dark",
   initialSearch,
   rowIdField,
+  rowSelection = "single",
+  onSelectionChanged,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -672,7 +679,7 @@ export default function DataGrid<T>({
           columnDefs={enhancedColumns}
           defaultColDef={defaultColDef}
           animateRows
-          rowSelection="single"
+          rowSelection={rowSelection}
           {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField]) } : {})}
           suppressScrollOnNewData={true}
           initialState={savedInitialState}
@@ -681,6 +688,7 @@ export default function DataGrid<T>({
           onStateUpdated={onStateUpdated}
           onModelUpdated={(e) => setDisplayedRowCount(e.api.getDisplayedRowCount())}
           onRowClicked={onRowClicked ? handleRowClicked : undefined}
+          onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged(e.api.getSelectedRows()) : undefined}
           tooltipShowDelay={300}
           {...(fetchAll ? { quickFilterText: search } : {})}
         />

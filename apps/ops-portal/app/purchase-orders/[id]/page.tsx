@@ -81,7 +81,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   // Editable header fields
   const [editName, setEditName] = useState('');
-  const [editPO, setEditPO] = useState('');
+  const [editReferenceNumber, setEditReferenceNumber] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editLocationId, setEditLocationId] = useState<string | null>(null);
   const [headerDirty, setHeaderDirty] = useState(false);
@@ -120,7 +120,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       );
       setOrder(data);
       setEditName(data.name || '');
-      setEditPO(data.customerOrderNumber || '');
+      setEditReferenceNumber(data.referenceNumber || '');
       setEditNotes(data.notes || '');
       setEditLocationId(data.deliveryLocationId || null);
       setHeaderDirty(false);
@@ -166,7 +166,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   // Load returns and invoices when order is received, partially_received, billed or invoiced
   useEffect(() => {
-    if (['received', 'partially_received', 'billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
+    if (['ordered', 'received', 'partially_received', 'billed', 'invoiced', 'legacy', 'archived'].includes(order?.stateCode || '')) {
       loadInvoices();
     }
     if (['billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
@@ -197,11 +197,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     if (!order) return;
     const changed =
       editName !== (order.name || '') ||
-      editPO !== (order.customerOrderNumber || '') ||
+      editReferenceNumber !== (order.referenceNumber || '') ||
       editNotes !== (order.notes || '') ||
       editLocationId !== (order.deliveryLocationId || null);
     setHeaderDirty(changed);
-  }, [editName, editPO, editNotes, order]);
+  }, [editName, editReferenceNumber, editNotes, order]);
 
   // Save header
   const saveHeader = async () => {
@@ -210,7 +210,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     try {
       await apiMutate(`/api/purchase-orders/${id}`, 'PATCH', {
         name: editName || null,
-        customerOrderNumber: editPO || null,
+        referenceNumber: editReferenceNumber || null,
         notes: editNotes || null,
         deliveryLocationId: editLocationId || null,
       });
@@ -403,6 +403,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 )}
                 {[...allowedTransitions]
                   .filter(state => !['received', 'partially_received'].includes(state))
+                  .filter(state => {
+                    const anyReceived = order.lines.some((l: any) => parseFloat(l.quantityReceived || '0') > 0);
+                    if (state === 'cancelled' && anyReceived) return false;
+                    if (state === 'closed_short' && !anyReceived) return false;
+                    return true;
+                  })
                   .sort((a, b) => {
                     const aBack = isBackTransition(order.stateCode, a);
                     const bBack = isBackTransition(order.stateCode, b);
@@ -411,13 +417,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   })
                   .map((state) => {
                     const back = isBackTransition(order.stateCode, state);
+                    const label = state === 'closed_short' ? 'Close Short' : cap(state);
+                    const isDanger = state === 'cancelled' || state === 'closed_short';
+                    const icon = isDanger ? '✕ ' : back ? '← ' : '→ ';
+                    
                     return (
                       <button
                         key={state}
-                        className={`btn btn-sm ${state === 'cancelled' ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
+                        className={`btn btn-sm ${isDanger ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
                         onClick={() => changeState(state)}
                       >
-                        {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
+                        {icon}{label}
                       </button>
                     );
                   })}
@@ -485,15 +495,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {tPurchase('labels.invoiceNumber')}
+                    {tPurchase('labels.referenceNumber')}
                   </label>
                   <input
                     className="input"
-                    value={editPO}
-                    onChange={(e) => setEditPO(e.target.value)}
+                    value={editReferenceNumber}
+                    onChange={(e) => setEditReferenceNumber(e.target.value)}
                     onBlur={saveHeader}
                     disabled={!isHeaderEditable}
-                    placeholder={tPurchase('placeholders.invoiceNumber')}
+                    placeholder={tPurchase('placeholders.referenceNumber')}
                   />
                 </div>
                 <div>

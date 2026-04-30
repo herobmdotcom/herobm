@@ -13,7 +13,7 @@ interface POLine {
 }
 
 interface POLineSearchInputProps {
-  productId: string;
+  productId?: string;
   vendorId?: string;
   onSelect: (poLineId: string) => void;
   placeholder?: string;
@@ -37,12 +37,14 @@ export default function POLineSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!productId) return;
+    if (!productId && !vendorId) return;
     setLoading(true);
-    let url = `/api/purchase-orders/pending-lines?productId=${productId}`;
-    if (vendorId) {
-      url += `&vendorId=${vendorId}`;
-    }
+    let url = `/api/purchase-orders/pending-lines?`;
+    const params = new URLSearchParams();
+    if (productId) params.append('productId', productId);
+    if (vendorId) params.append('vendorId', vendorId);
+    url += params.toString();
+    
     apiFetch<any>(url)
       .then((data) => {
         const lines = Array.isArray(data) ? data : data.data || [];

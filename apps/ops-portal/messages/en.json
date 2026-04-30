@@ -24,8 +24,8 @@
     "select": "Select",
     "selectEllipsis": "Select…",
     "selectNone": "(None)",
+    "none": "None",
     "activityTimeline": "Activity Timeline",
-    "activityCardHeading": "Activity Timeline",
     "noEvents": "No events recorded",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
     "timeline": {
@@ -67,7 +67,6 @@
       "taxWithPct": "Tax ({pct}%)",
       "total": "Total",
       "exempt": "EXEMPT",
-      "discPct": "{disc}% disc",
       "untitledOrder": "Untitled order"
     },
     "placeholders": {
@@ -132,7 +131,6 @@
       "email": "Email",
       "contactName": "Contact Name",
       "contact": "Contact",
-      "contactAddress": "Contact Address",
       "contactEmail": "Contact Email",
       "contactPhone": "Contact Phone",
       "group": "Group",
@@ -154,7 +152,6 @@
       "activityTimeline": "Activity Timeline",
       "createdOn": "Created On",
       "modifiedOn": "Modified On",
-      "customerGroup": "Customer Group",
       "telephone": "Telephone",
       "notes": "Notes",
       "product": "Product",
@@ -193,16 +190,14 @@
       "failedToCreatePO": "Failed to create purchase order",
       "pleaseSelectCustomer": "Please select a customer",
       "pleaseSelectSupplier": "Please select a supplier",
+      "pleaseSelectLocation": "Please select a delivery location",
       "pleaseAddLineItem": "Please add at least one line item",
-      "failedToEnterSupplierBill": "Failed to generate supplier bill",
       "failedToGenerateReport": "Failed to generate report",
       "failedToLoadExpiries": "Failed to load expiries",
       "typeAndDateRequired": "Type and Date are required"
     },
     "taxLabels": {
-      "exempt": "Exempt",
-      "zeroRated": "Zero Rated",
-      "pctTax": "{pct}% Tax"
+      "exempt": "Exempt"
     },
     "eventTypes": {
       "created": "Created",
@@ -218,7 +213,6 @@
       "unarchived": "Unarchived",
       "shipment_created": "Shipment Created",
       "shipment_updated": "Shipment Updated",
-      "shipment_dispatched": "Shipment Dispatched",
       "shipment_status_changed": "Shipment Status Changed",
       "shipment_line_added": "Shipment Line Added",
       "shipment_line_updated": "Shipment Line Updated",
@@ -233,13 +227,9 @@
       "return_line_added": "Return Line Added",
       "return_line_updated": "Return Line Updated",
       "return_line_removed": "Return Line Removed",
-      "goods_received": "Goods Received",
       "price_discrepancy_warning": "Price Discrepancy",
       "over_received_warning": "Over-received Warning",
       "location_discrepancy_warning": "Location Discrepancy"
-    },
-    "reception": {
-      "inventoryMovedTo": "Inventory moved to: {locationName} {zoneName} {binName}"
     },
     "productSearch": {
       "placeholder": "Search product…",
@@ -248,7 +238,6 @@
       "onHandShort": "OH",
       "availableShort": "Avail"
     },
-    "defaultOption": "(Default)",
     "options": {
       "none": "(None)"
     },
@@ -311,7 +300,6 @@
     },
     "financials": "Financials",
     "management": "Account Management",
-    "customerManagement": "Customer Management",
     "overview": "Overview",
     "orders": "Orders",
     "invoices": "Invoices"
@@ -350,10 +338,8 @@
       "email": "Email Address",
       "phone": "Phone Number"
     },
-    "paymentCurrency": "Payment & Currency",
     "management": "Vendor Management",
     "contactLocation": "Contact & Location",
-    "recordDetails": "Record Details",
     "financials": "Financials",
     "paymentTerms": "Payment Terms",
     "supplierGroup": "Supplier Group",
@@ -457,7 +443,7 @@
       "barcode": "Barcode",
       "purchaseTaxCategory": "Purchase Tax Category",
       "salesTaxCategory": "Sales Tax Category",
-      "scNumber": "SC Number",
+      "alternateProductNumber": "Alternate Product Number",
       "quantityOnHand": "On Hand",
       "uomCode": "UoM Code",
       "ratio": "Ratio",
@@ -466,12 +452,8 @@
     "generalInfo": "General Information",
     "pricing": "Pricing & Costs",
     "management": "Product Management",
-    "catalogManagement": "Catalog & Inventory Management",
-    "pricingCostsInfo": "Standard cost is used for margin calculations and inventory valuation. List price is the default selling price before customer discounts.",
-    "productInformation": "Product Information",
     "productName": "Product Name",
     "productGroup": "Product Group",
-    "recordDetails": "Record Details",
     "placeholders": {
       "searchProducts": "Search by name, product number, or barcode…",
       "productNumber": "e.g. PROD-001",
@@ -539,6 +521,7 @@
   "salesOrders": {
     "title": "Sales Orders",
     "subtitle": "Manage customer orders and quotes",
+    "generateQuoteTitle": "Generate Quote PDF",
     "buttons": {
       "createOrder": "+ Create Order",
       "createQuote": "Create Quote",
@@ -557,7 +540,8 @@
       "customLine": "Custom Line",
       "addPostConfirmationLine": "Add Line",
       "proFormaInvoice": "Pro Forma Invoice",
-      "confirmationPdf": "Confirmation PDF"
+      "confirmationPdf": "Confirmation PDF",
+      "generate": "Generate"
     },
     "placeholders": {
       "searchOrders": "Search by order number, customer, or PO…",
@@ -569,7 +553,9 @@
       "reason": "Reason",
       "searchCustomers": "Search customers…",
       "zero": "0",
-      "customDescription": "Custom description..."
+      "customDescription": "Custom description...",
+      "quoteText": "Enter custom text for this quote...",
+      "selectMacro": "Select a macro to insert..."
     },
     "labels": {
       "customer": "Customer",
@@ -577,7 +563,12 @@
       "customerPO": "Customer PO #",
       "created": "Created",
       "notes": "Notes",
-      "fulfillmentLocation": "Fulfillment Location *"
+      "fulfillmentLocation": "Fulfillment Location *",
+      "quoteText": "Quote Text",
+      "quoteMacro": "Insert Template"
+    },
+    "sections": {
+      "quoteText": "Quote Text"
     },
     "columns": {
       "lineNumber": "#",
@@ -596,7 +587,6 @@
       "reserved": "Reserved",
       "available": "Available",
       "status": "Status",
-      "originalQty": "Original Qty",
       "returnQty": "Return Qty",
       "reason": "Reason",
       "fee": "Fee",
@@ -627,14 +617,14 @@
       "ordered": "Ordered",
       "available": "Available",
       "shortage": "Shortage",
-      "ignoreAndConfirm": "Ignore & Confirm State",
-      "cancel": "Cancel",
-      "option1Title": "Option 1: Backorder",
-      "option1Desc": "Split these shortages into a new child Sales Order in Draft status, allowing this order to proceed with available stock.",
-      "option2Title": "Option 2: Manual",
-      "option2Desc": "Confirm the order anyway without creating backorders. You will have to manually manage fulfillment or adjust lines later.",
-      "confirmAnyway": "Confirm Anyway (No Backorder)",
-      "splitAndCreate": "Split & Create Backorder"
+      "cancel": "Cancel"
+    },
+    "discrepancies": {
+      "title": "Part Availability Discrepancies",
+      "shortageOf": "Shortage of {qty} units",
+      "orderedVsAvail": "{ordered} ordered vs {avail} avail",
+      "modalDescription": "The following line items do not have enough inventory on hand. If you confirm this order, it will result in shortages.",
+      "acknowledgeCheckbox": "I acknowledge the part availability issues listed above and wish to proceed with order confirmation."
     },
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
@@ -686,7 +676,17 @@
     "child": "Child",
     "noBackordersFound": "No associated parent or child backorders found.",
     "errors": {
-      "noCurrency": "The selected customer does not have a currency configured."
+      "noCurrency": "The selected customer does not have a currency configured.",
+      "failedToLoadOrder": "Failed to load order",
+      "failedToUpdateOrder": "Failed to update order",
+      "failedToChangeState": "Failed to change state",
+      "failedToArchive": "Failed to archive order",
+      "failedToUnarchive": "Failed to unarchive order",
+      "failedToCopy": "Failed to copy order",
+      "failedToUpdateLine": "Failed to update line",
+      "failedToRemoveLine": "Failed to remove line",
+      "failedToAddLine": "Failed to add line",
+      "acknowledgeShortages": "Please review and acknowledge the part availability shortages before confirming."
     },
     "createTitle": "Create Sales Order"
   },
@@ -709,7 +709,7 @@
     },
     "placeholders": {
       "searchOrders": "Search purchase orders…",
-      "invoiceNumber": "Supplier invoice reference",
+      "referenceNumber": "Supplier quote reference",
       "orderName": "Order name",
       "notes": "Internal notes",
       "searchProduct": "Add product… (search)",
@@ -718,7 +718,7 @@
     },
     "labels": {
       "supplier": "Supplier",
-      "invoiceNumber": "Invoice #",
+      "referenceNumber": "Reference #",
       "orderName": "Order Name",
       "created": "Created",
       "notes": "Notes",
@@ -732,7 +732,8 @@
       "date": "Date",
       "state": "State",
       "supplierInvoiceNumber": "Supplier Invoice No.",
-      "invoiceNumber": "System Bill No.",
+      "invoiceNumber": "Bill #",
+      "referenceNumber": "Ref #",
       "qty": "Qty",
       "uom": "UOM",
       "unitPrice": "Unit Price",
@@ -769,66 +770,6 @@
     "noInventoryData": "No inventory data",
     "newReturn": "New Return",
     "availability": "Availability",
-    "receptions": {
-      "title": "Receiving",
-      "newReception": "Receive Goods",
-      "columns": {
-        "receptionNo": "Reception No.",
-        "purchaseOrderNo": "Purchase Order No.",
-        "packingSlip": "Packing Slip"
-      },
-      "flow": {
-        "title": "Receive Goods",
-        "subtitle": "Scan products to receive against Purchase Orders",
-        "confirmReception": "Confirm Reception",
-        "scanProduct": "Scan Product",
-        "searchPlaceholder": "Search or scan part number...",
-        "loadingPending": "Loading pending lines...",
-        "noOrdersFound": "No active Purchase Orders were found containing this product.",
-        "clear": "Clear",
-        "markQuarantine": "Mark for Quarantine",
-        "selectLineTitle": "Select Purchase Order Line:",
-        "quarantineException": "Quarantine Exception",
-        "quarantineDesc": "Log physically but do not receive in system",
-        "qtyReceived": "Quantity Received",
-        "invoicePrice": "Invoice Price",
-        "confirm": "Confirm",
-        "cancel": "Cancel",
-        "receptionSummary": "Reception Summary",
-        "packingSlipPlaceholder": "Packing slip number",
-        "notesPlaceholder": "Reception notes",
-        "selectLocation": "Select Delivery Location *",
-        "remainingInfo": "{desc} ({qty} remaining)",
-        "orderedInfo": "Ordered: {qty}",
-        "receivedInfo": "Received: {qty}",
-        "poPriceInfo": "PO Price: {price}",
-        "selectOrderLine": "Select Purchase Order Line",
-        "untitledPO": "Untitled PO",
-        "select": "Select",
-        "supplier": "Supplier",
-        "unknownSupplier": "Unknown Supplier"
-      },
-      "toast": {
-        "confirmed": "Receptions confirmed successfully!",
-        "failed": "Failed to commit receptions",
-        "selectLocation": "Please select a receiving location.",
-        "qtyReq": "Quantity must be greater than 0"
-      },
-      "summary": {
-        "noItems": "No items scanned yet.",
-        "overReceive": "⚠️ Over-receiving: Expected {qty}",
-        "discrepancy": "⚠️ Discrepancy (PO: {price})",
-        "quarantineMove": "Move to Quarantine.",
-        "quarantineException": "Quarantine Exception",
-        "quarantineExceptionHeader": "EXCEPTION: QUARANTINE"
-      },
-      "completed": {
-        "title": "Receptions Confirmed",
-        "subtitle": "The stock has been successfully registered.",
-        "backToReceptions": "Back to Receptions",
-        "newReception": "New Reception"
-      }
-    },
     "packingSlip": "Packing Slip",
     "returnsHeading": "Returns",
     "noReturns": "No returns",
@@ -867,48 +808,6 @@
       "remove": "Remove",
       "confirmReturns": "Complete Returns"
     },
-    "receiving": {
-      "title": "Receive Goods",
-      "subtitle": "Scan products to receive against Purchase Orders",
-      "scanProduct": "Scan Product",
-      "placeholder": "Search or scan part number...",
-      "loadingLines": "Loading pending lines...",
-      "noActivePOs": "No active Purchase Orders were found containing this product.",
-      "unknownProduct": "Unknown Product",
-      "noPartNumber": "No part number",
-      "clear": "Clear",
-      "markQuarantine": "Mark for Quarantine",
-      "selectPOLine": "Select Purchase Order Line:",
-      "remaining": "{rem} remaining",
-      "quarantineBtnTitle": "Quarantine Exception",
-      "quarantineBtnSub": "Log physically but do not receive in system",
-      "ordered": "Ordered:",
-      "received": "Received:",
-      "poPrice": "PO Price:",
-      "qtyReceived": "Quantity Received",
-      "qtyToQuarantine": "Qty to Quarantine",
-      "invoicePrice": "Invoice Price",
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "exceptionQuarantine": "Exception: Quarantine",
-      "receptionSummary": "Reception Summary",
-      "noItemsScanned": "No items scanned yet.",
-      "exceptionQuarantineTag": "EXCEPTION: QUARANTINE",
-      "qtyReceivedSummary": "Qty Received",
-      "priceDiscrepancy": "⚠️ Price discrepancy: Invoiced {invoiced}, PO {expected}",
-      "overReceiving": "⚠️ Over-receiving: Expected {expected} remaining, Receiving {receiving}",
-      "moveToQuarantine": "Move to Quarantine Bin. Requires Purchasing review.",
-      "remove": "Remove",
-      "confirmReceptions": "Confirm Receptions",
-      "untitledOrder": "Untitled order",
-      "flow": {
-        "selectPOLine": "Select Purchase Order Line",
-        "untitledPO": "Untitled PO",
-        "select": "Select",
-        "supplier": "Supplier",
-        "unknownSupplier": "Unknown Supplier"
-      }
-    },
     "noBillsGeneratedYet": "No invoices entered yet.",
     "locationWarning": "Delivery was received at a different location than specified on the Purchase Order.",
     "receptionSummary": "Reception Summary",
@@ -918,13 +817,22 @@
     "file": "File:",
     "billSummary": "Bill Summary",
     "createTitle": "Create Purchase Order",
-    "newOrderTitle": "New Purchase Order"
+    "newOrderTitle": "New Purchase Order",
+    "matching": {
+      "panelTitle": "Match to PO Lines",
+      "selectInvoiceLine": "Select an invoice line to match",
+      "noPendingPOs": "No matchable PO lines found for this vendor.",
+      "fullyInvoiced": "Fully invoiced",
+      "remaining": "Remaining",
+      "matchButton": "Match",
+      "autoMatchAll": "Auto-match All",
+      "linesCount": "{count, plural, =1 {# line} other {# lines}}",
+      "matchableCount": "{count} matchable",
+      "matched": "matched"
+    }
   },
   "inventory": {
     "title": "Inventory",
-    "buttons": {
-      "reallocate": "Reallocate"
-    },
     "tabs": {
       "products": "Products",
       "binContents": "Bin Contents",
@@ -965,13 +873,10 @@
         "binNumber": "e.g. A-01-01",
         "binType": "e.g. Picking, Staging"
       },
-      "consignmentShort": "CSG",
-      "bondedShort": "BND",
       "zonesCount": "{count, plural, =1 {# zone} other {# zones}}",
       "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
     },
     "placeholders": {
-      "searchInventory": "Search by product name, number, or location…",
       "searchMovements": "Search by product, reference, or type…",
       "searchLedger": "Search transactions…"
     },
@@ -988,13 +893,11 @@
       "actor": "User",
       "productNumber": "Product #",
       "locationNo": "Location No",
-      "scNumber": "SC Number",
-      "backOrdered": "Back Ordered",
+      "alternateProductNumber": "Alternate Product Number",
       "minQty": "Min Qty",
       "maxQty": "Max Qty",
       "defaultBin": "Default Bin",
       "value": "Value",
-      "lastCost": "Last In Cost",
       "type": "Type",
       "reference": "Ref / Document",
       "stockIn": "Stock In",
@@ -1135,7 +1038,6 @@
       "sourceManual": "Manual",
       "noData": "No journal entries found.",
       "searchPlaceholder": "Search entry number…",
-      "totalEntries": "entries",
       "lines": "Lines",
       "columns": {
         "entryNumber": "Entry #",
@@ -1257,7 +1159,7 @@
       "movements": "Movements",
       "systemLogs": "System Logs",
       "invoices": "Invoices",
-      "purchaseInvoices": "Purchase Invoices",
+      "supplierInvoices": "Supplier Invoices",
       "receiving": "Receiving"
     }
   },
@@ -1380,8 +1282,6 @@
       "refresh": "Refresh",
       "loading": "Loading system logs...",
       "noLogs": "No logs available.",
-      "copyLogs": "Copy Logs",
-      "logsCopied": "Logs copied to clipboard!",
       "autoRefresh": "Auto-refresh (5s)",
       "fields": {
         "service": "Service",
@@ -1428,8 +1328,6 @@
       "defDiscount": "Def. Discount %",
       "defArAccount": "Def. AR Account",
       "defRevAccount": "Def. Revenue Account",
-      "defInventoryAccount": "Def. Inventory Account",
-      "defCogsAccount": "Def. COGS Account",
       "defApAccount": "Def. AP Account",
       "defExpenseAccount": "Def. Expense Account",
       "errors": {
@@ -1555,7 +1453,10 @@
         "uomDeleted": "Unit of measure deleted",
         "rateUpdated": "Exchange rate updated",
         "rateCreated": "Exchange rate created",
-        "rateDeleted": "Exchange rate deleted"
+        "rateDeleted": "Exchange rate deleted",
+        "macroCreated": "Macro created",
+        "macroUpdated": "Macro updated",
+        "macroDeleted": "Macro deleted"
       },
       "sections": {
         "company": "Company Details",
@@ -1563,16 +1464,20 @@
         "tax": "Tax Codes",
         "uom": "Units of Measure",
         "rates": "Exchange Rates",
-        "bank": "Bank Details"
+        "bank": "Bank Details",
+        "macros": "Text Macros"
       },
       "confirmations": {
         "deleteTax": "Are you sure you want to delete this tax code?",
         "deleteUom": "Are you sure you want to delete this unit of measure?",
-        "deleteRate": "Are you sure you want to delete this exchange rate?"
+        "deleteRate": "Are you sure you want to delete this exchange rate?",
+        "deleteMacro": "Are you sure you want to delete this macro?"
       },
       "labels": {
         "code": "Code",
         "title": "Title",
+        "name": "Name",
+        "content": "Content",
         "companyName": "Company Name",
         "email": "Email",
         "phone": "Phone",
@@ -1715,7 +1620,6 @@
       },
       "placeholders": {
         "companyName": "Acme Logistics Corp.",
-        "selectCurrency": "Select base currency...",
         "selectCoa": "Select COA preset...",
         "selectMonth": "Select start month...",
         "selectPrecedence": "Select precedence...",
@@ -1729,24 +1633,14 @@
       "finalize": "Finalize Setup",
       "options": {
         "currencies": {
-          "aud": "AUD - Australian Dollar",
-          "usd": "USD - US Dollar",
-          "eur": "EUR - Euro",
-          "sgd": "SGD - Singapore Dollar"
+          "aud": "AUD - Australian Dollar"
         },
         "months": {
           "january": "January",
-          "february": "February",
-          "march": "March",
           "april": "April",
           "may": "May",
-          "june": "June",
           "july": "July",
-          "august": "August",
-          "september": "September",
-          "october": "October",
-          "november": "November",
-          "december": "December"
+          "october": "October"
         },
         "precedence": {
           "product": "Product Priority",
@@ -1841,24 +1735,19 @@
     "orderUnarchived": "Order has been unarchived",
     "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
     "supplierCreated": "Supplier created successfully",
-    "supplierUpdated": "Supplier updated successfully",
     "accountCreated": "Account created successfully",
     "accountUpdated": "Account updated successfully",
     "productCreated": "Product created successfully",
     "productUpdated": "Product updated successfully",
-    "invoiceGenerated": "Invoice generated successfully!",
-    "supplierBillEntered": "Supplier bill generated successfully!",
-    "supplierBillGenerated": "Supplier bill generated successfully!"
+    "invoiceGenerated": "Invoice generated successfully!"
   },
   "confirm": {
     "archiveOrder": "Are you sure you want to archive this order?",
     "removeLine": "Remove this line item?",
     "removeReturnLine": "Remove this return line?",
     "removeShipmentLine": "Remove this shipment line?",
-    "removeReturnLineItem": "Remove this return line item?",
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
-    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
-    "generateSupplierBill": "Generate supplier bill for selected quantities? This will publish AP ledger entries."
+    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries."
   },
   "goodsReceived": {
     "title": "Goods Received",

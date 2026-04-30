@@ -20,7 +20,17 @@ export interface PurchaseInvoiceLine {
     amount: string;
     goodsReceivedLineId?: string | null;
     quantityBilled?: string;
+    productId?: string;
+    productNumber?: string;
+    description?: string;
+    poLineDescription?: string;
+    purchaseOrderNumber?: string;
+    purchaseOrderId?: string;
+    poLineQuantityOrdered?: string;
+    poLineQuantityReceived?: string;
+    poLinePricePerUnit?: string;
 }
+
 
 export interface PurchaseInvoiceableQty {
     purchaseOrderLineId: string;

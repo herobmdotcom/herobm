@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import DataGrid from '@/components/DataGrid';
+import DraftPOsModal from './DraftPOsModal';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
@@ -13,8 +14,15 @@ interface DemandRow {
   orderNumber: string;
   productId: string;
   productName: string;
-  quantity: string;
+  productDescription?: string;
+  quantity: number;
   createdOn: string;
+  vendorId?: string;
+  vendorName?: string;
+  costPrice?: number;
+  currencyCode?: string;
+  locationId: string;
+  locationName: string;
 }
 
 export default function DemandsContent() {
@@ -22,16 +30,32 @@ export default function DemandsContent() {
   const tPurchase = useTranslations('purchaseOrders');
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedRows, setSelectedRows] = useState<DemandRow[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const columns = useMemo<ColDef<DemandRow>[]>(() => [
     {
       field: 'orderNumber',
       headerName: 'Sales Order',
-      width: 140,
+      width: 160,
       pinned: 'left',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
     },
-    { field: 'productName', headerName: 'Product', flex: 1, minWidth: 200 },
+    { field: 'productName', headerName: 'Product', flex: 1, minWidth: 150 },
+    { field: 'productDescription', headerName: 'Description', flex: 2, minWidth: 200 },
+    {
+      field: 'locationName',
+      headerName: 'Location',
+      flex: 1,
+    },
     { field: 'quantity', headerName: 'Required Qty', width: 140, cellDataType: 'number' },
+    { 
+      field: 'vendorName', 
+      headerName: 'Preferred Supplier', 
+      width: 180,
+      valueFormatter: (params: { value: unknown }) => params.value ? String(params.value) : '—'
+    },
     {
       field: 'createdOn',
       headerName: 'Date Requested',
@@ -43,18 +67,15 @@ export default function DemandsContent() {
     },
   ], []);
 
-  const handleResolveDemands = async () => {
-    setLoading(true);
-    try {
-      await apiFetch('/api/allocations/resolve', { method: 'POST' });
-      toast.success('Demand allocation engine run successfully');
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      reportError(err, 'DemandsContent');
-      toast.error('Failed to resolve demands');
-    } finally {
-      setLoading(false);
-    }
+  const handleDraftPOs = () => {
+    if (selectedRows.length === 0) return;
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    setIsModalOpen(false);
+    setSelectedRows([]);
+    setRefreshKey((k) => k + 1);
   };
 
   return (
@@ -70,6 +91,8 @@ export default function DemandsContent() {
             exportFileName="open-demands"
             fetchAll
             rowIdField="id"
+            rowSelection="multiple"
+            onSelectionChanged={setSelectedRows}
             renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
               <div className="flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-4 flex-1">
@@ -94,11 +117,11 @@ export default function DemandsContent() {
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {optionsButton}
                   <button 
-                    onClick={handleResolveDemands} 
-                    disabled={loading || rowCount === 0}
+                    onClick={handleDraftPOs} 
+                    disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    {loading ? tPurchase('buttons.resolving') : tPurchase('buttons.resolveDemands')}
+                    Draft POs {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
                 </div>
               </div>
@@ -106,6 +129,12 @@ export default function DemandsContent() {
           />
         </div>
       </div>
+      <DraftPOsModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        selectedDemands={selectedRows} 
+        onSuccess={handleModalSuccess} 
+      />
     </div>
   );
 }

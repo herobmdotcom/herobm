@@ -80,11 +80,15 @@ export class OrdersModule implements OnModuleInit {
 
   onModuleInit() {
     this.reportsRegistry.register('sales-order', {
-      resolveData: async (id: string, user: any) => {
-        return (await this.salesQuoteService.assembleData(
-          id,
-          'app',
-        )) as unknown as Record<string, any>;
+      resolveData: async (
+        id: string,
+        user: any,
+        options?: Record<string, any>,
+      ) => {
+        return (await this.salesQuoteService.assembleData(id, 'app', {
+          ...options,
+          user,
+        })) as unknown as Record<string, any>;
       },
       getRandomId: async () => {
         const rows = await this.db

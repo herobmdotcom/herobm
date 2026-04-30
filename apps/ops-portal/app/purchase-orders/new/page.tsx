@@ -47,7 +47,7 @@ interface LineItem {
 
 let lineKey = 0;
 
-function emptyLine(): LineItem {
+function emptyLine(defaultTaxCategoryId = ''): LineItem {
   return {
     key: ++lineKey,
     productId: '',
@@ -57,7 +57,7 @@ function emptyLine(): LineItem {
     pricePerUnit: '0',
     unitOfMeasure: 'EA',
     discountPercentage: '0',
-    taxCategoryId: null,
+    taxCategoryId: defaultTaxCategoryId || null,
   };
 }
 
@@ -81,6 +81,7 @@ export default function NewPurchaseOrderPage() {
   useDocumentTitle(t('purchaseOrders.newOrderTitle'));
   const router = useRouter();
   const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
+  const defaultTaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
 
   useEffect(() => {
     apiFetch<TaxCategory[]>('/api/tax-categories')
@@ -88,11 +89,19 @@ export default function NewPurchaseOrderPage() {
       .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
   }, []);
 
+  // When tax categories load, backfill the default onto lines that have none
+  useEffect(() => {
+    if (!defaultTaxCategoryId) return;
+    setLines((prev) =>
+      prev.map((l) => (l.taxCategoryId ? l : { ...l, taxCategoryId: defaultTaxCategoryId })),
+    );
+  }, [defaultTaxCategoryId]);
+
   const [vendorId, setVendorId] = useState('');
   const [currencyCode, setCurrencyCode] = useState(baseCurrency);
   const [name, setName] = useState('');
   const [deliveryLocationId, setDeliveryLocationId] = useState<string | null>(null);
-  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
 
   const [lines, setLines] = useState<LineItem[]>([]);
@@ -115,7 +124,7 @@ export default function NewPurchaseOrderPage() {
         pricePerUnit: '0.00',
         unitOfMeasure: 'EA',
         discountPercentage: '0',
-        taxCategoryId: null,
+        taxCategoryId: defaultTaxCategoryId || null,
       },
     ]);
   };
@@ -132,7 +141,7 @@ export default function NewPurchaseOrderPage() {
         pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         unitOfMeasure: 'EA',
         discountPercentage: '0',
-        taxCategoryId: null,
+        taxCategoryId: defaultTaxCategoryId || null,
       },
     ]);
   };
@@ -148,7 +157,7 @@ export default function NewPurchaseOrderPage() {
   };
 
   const addLine = () => {
-    setLines((prev) => [...prev, emptyLine()]);
+    setLines((prev) => [...prev, emptyLine(defaultTaxCategoryId)]);
   };
 
   const computeTax = (line: LineItem) => {
@@ -184,6 +193,10 @@ export default function NewPurchaseOrderPage() {
       setError(t('common.errors.pleaseSelectSupplier'));
       return;
     }
+    if (!deliveryLocationId) {
+      setError(t('common.errors.pleaseSelectLocation'));
+      return;
+    }
     if (lines.length === 0 || !lines.some((l) => l.productId)) {
       setError(t('common.errors.pleaseAddLineItem'));
       return;
@@ -199,7 +212,7 @@ export default function NewPurchaseOrderPage() {
         vendorId,
         currencyCode,
         deliveryLocationId: deliveryLocationId || undefined,
-        invoiceNumber: invoiceNumber || undefined,
+        referenceNumber: referenceNumber || undefined,
         notes: notes || undefined,
         lines: lines
           .filter((l) => l.productId)
@@ -316,25 +329,25 @@ export default function NewPurchaseOrderPage() {
 
              <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('purchaseOrders.labels.invoiceNumber')}
+                {t('purchaseOrders.labels.referenceNumber')}
               </label>
               <input
                 id="order-invoice"
                 className="input"
-                placeholder={t('purchaseOrders.placeholders.invoiceNumber')}
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
+                placeholder={t('purchaseOrders.placeholders.referenceNumber')}
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
               />
             </div>
 
             <div>
               <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                {t('common.location')}
+                {t('purchaseOrders.labels.location')} *
               </label>
               <LocationSelect
                 value={deliveryLocationId}
                 onChange={setDeliveryLocationId}
-                placeholder={t('purchaseOrders.receptions.flow.selectLocation').replace(' *', '')}
+                placeholder={t('common.selectEllipsis')}
               />
             </div>
 
@@ -506,7 +519,6 @@ export default function NewPurchaseOrderPage() {
                       value={line.taxCategoryId || ''}
                       onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
                     >
-                      <option value="">{t('common.default')}</option>
                       {taxCategories.map((c) => (
                         <option key={c.taxCategoryId} value={c.taxCategoryId}>
                           {getTaxLabel(c)}

@@ -22,6 +22,8 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
+    as: jest.fn().mockReturnThis(),
+    subquery: jest.fn().mockReturnThis(),
     $dynamic: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue(resolvedValue),
     then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
@@ -431,7 +433,7 @@ describe('PurchaseOrdersService', () => {
   describe('findPendingLines', () => {
     it('should query pending line items for a given productId', async () => {
       mockSelectChain({
-        1: [
+        2: [
           {
             purchaseOrderId: 'po-1',
             orderNumber: 'PO-001',

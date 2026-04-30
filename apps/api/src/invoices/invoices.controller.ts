@@ -2,6 +2,8 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
+  Delete,
   Param,
   Body,
   Request,
@@ -145,6 +147,79 @@ export class InvoiceDetailController {
     return this.purchaseInvoiceService.postInvoice(id, actor);
   }
 
+  @Patch('purchase-invoices/:id/state')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async changeInvoiceState(
+    @Param('id') id: string,
+    @Body('stateCode') stateCode: string,
+    @Body('discrepanciesAcknowledged')
+    discrepanciesAcknowledged: boolean | undefined,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.changePurchaseInvoiceState(
+      id,
+      stateCode,
+      actor,
+      discrepanciesAcknowledged,
+    );
+  }
+
+  @Patch('purchase-invoices/:id')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async updateInvoice(
+    @Param('id') id: string,
+    @Body() dto: any,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.updateInvoice(id, dto, actor);
+  }
+
+  @Patch('purchase-invoices/:id/lines/:lineId')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async updateInvoiceLine(
+    @Param('id') invoiceId: string,
+    @Param('lineId') lineId: string,
+    @Body() dto: any,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.updateLine(
+      invoiceId,
+      lineId,
+      dto,
+      actor,
+    );
+  }
+
+  @Delete('purchase-invoices/:id/lines/:lineId')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async removeInvoiceLine(
+    @Param('id') invoiceId: string,
+    @Param('lineId') lineId: string,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.removeLine(invoiceId, lineId, actor);
+  }
+
+  @Post('purchase-invoices/:id/lines')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async addInvoiceLine(
+    @Param('id') invoiceId: string,
+    @Body() dto: any,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.addLine(invoiceId, dto, actor);
+  }
+
   @Post('purchase-invoices/lines/:lineId/resolve')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
@@ -170,5 +245,21 @@ export class InvoiceDetailController {
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.unresolveInvoiceLine(lineId, actor);
+  }
+
+  @Post('purchase-invoices/:id/auto-match')
+  @CasbinResource('purchase-orders')
+  @CasbinAction('write')
+  async autoMatchPurchaseOrder(
+    @Param('id') invoiceId: string,
+    @Body('purchaseOrderId') purchaseOrderId: string,
+    @Request() req: any,
+  ) {
+    const actor = req.user?.username || 'system';
+    return this.purchaseInvoiceService.autoMatchPurchaseOrder(
+      invoiceId,
+      purchaseOrderId,
+      actor,
+    );
   }
 }

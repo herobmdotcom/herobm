@@ -23,6 +23,7 @@ import { SettingsModule } from './settings/settings.module';
 import { LocationsModule } from './locations/locations.module';
 import { SetupModule } from './setup/setup.module';
 import { GoodsReceivedModule } from './goods-received/goods-received.module';
+import { MacrosModule } from './macros/macros.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { GoodsReceivedModule } from './goods-received/goods-received.module';
     LocationsModule,
     SetupModule,
     GoodsReceivedModule,
+    MacrosModule,
   ],
   providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
 })

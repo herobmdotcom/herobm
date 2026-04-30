@@ -245,7 +245,29 @@ export class CoaLoaderService {
               : undefined,
             baseCurrency: settings.base_currency || 'AUD',
           })
-          .onConflictDoNothing();
+          .onConflictDoUpdate({
+            target: glSettings.settingsId,
+            set: {
+              defaultArAccountId: defaults.ar_account_code
+                ? codeToId.get(defaults.ar_account_code)
+                : undefined,
+              defaultApAccountId: defaults.ap_account_code
+                ? codeToId.get(defaults.ap_account_code)
+                : undefined,
+              defaultRevenueAccountId: defaults.revenue_account_code
+                ? codeToId.get(defaults.revenue_account_code)
+                : undefined,
+              defaultCogsAccountId: defaults.cogs_account_code
+                ? codeToId.get(defaults.cogs_account_code)
+                : undefined,
+              defaultTaxAccountId: defaults.tax_account_code
+                ? codeToId.get(defaults.tax_account_code)
+                : undefined,
+              defaultExpenseAccountId: defaults.expense_account_code
+                ? codeToId.get(defaults.expense_account_code)
+                : undefined,
+            },
+          });
 
         // Seed GST Categories
         if (settings.gst_categories && Array.isArray(settings.gst_categories)) {

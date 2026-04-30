@@ -405,6 +405,7 @@ export class GoodsReceivedService {
           ilike(goodsReceived.receiptNumber, searchTerm),
           ilike(goodsReceived.packingSlipNumber, searchTerm),
           ilike(products.productNumber, searchTerm),
+          ilike(products.alternateProductNumber, searchTerm),
         ),
       );
     }
@@ -546,12 +547,29 @@ export class GoodsReceivedService {
           poId: purchaseOrderLineItems.purchaseOrderId,
           quantity: purchaseOrderLineItems.quantity,
           quantityReceived: purchaseOrderLineItems.quantityReceived,
+          stateCode: purchaseOrders.stateCode,
         })
         .from(purchaseOrderLineItems)
+        .innerJoin(
+          purchaseOrders,
+          eq(
+            purchaseOrderLineItems.purchaseOrderId,
+            purchaseOrders.purchaseOrderId,
+          ),
+        )
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, poLineId))
         .limit(1);
 
       if (!poLine) throw new NotFoundException('PO Line not found');
+      if (
+        ['received', 'invoiced', 'cancelled', 'closed_short'].includes(
+          poLine.stateCode || '',
+        )
+      ) {
+        throw new BadRequestException(
+          `Cannot match to a PO in '${poLine.stateCode}' state.`,
+        );
+      }
 
       // Update GR Line
       await tx

@@ -2,18 +2,21 @@ export {
   // Transition maps
   SALES_ORDER_TRANSITIONS,
   PURCHASE_ORDER_TRANSITIONS,
+  PURCHASE_INVOICE_TRANSITIONS,
   SHIPMENT_TRANSITIONS,
   RETURN_TRANSITIONS,
 
   // Union types
   SalesOrderState,
   PurchaseOrderState,
+  PurchaseInvoiceState,
   ShipmentState,
   ReturnState,
 
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,
+  PURCHASE_INVOICE_LIFECYCLE,
   SHIPMENT_LIFECYCLE,
   RETURN_LIFECYCLE,
 

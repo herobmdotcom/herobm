@@ -327,6 +327,7 @@ export class GlService {
     fromDate?: string;
     toDate?: string;
     limit?: number;
+    page?: number;
   }) {
     const conditions: any[] = [];
 
@@ -345,9 +346,11 @@ export class GlService {
         ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
         : sql``;
 
-    const limit = Math.min(filters.limit || 200, 500);
+    const page = filters.page ?? 1;
+    const limit = Math.min(filters.limit || 50, 200);
+    const offset = (page - 1) * limit;
 
-    const rows = await this.db.execute(sql`
+    const entriesQuery = sql`
       SELECT
         je.journal_entry_id AS journal_entry_id,
         je.entry_number,
@@ -371,10 +374,52 @@ export class GlService {
         ON a.gl_account_id = jl.gl_account_id
       ${whereClause}
       ORDER BY je.entry_date DESC, je.entry_number DESC
-      LIMIT ${limit}
-    `);
+      LIMIT ${limit} OFFSET ${offset}
+    `;
 
-    return (rows as any).rows ?? rows;
+    const countQuery = sql`
+      SELECT count(*)::int as count 
+      FROM modbm_core.gl_journal_lines jl
+      JOIN modbm_core.gl_journal_entries je
+        ON je.journal_entry_id = jl.journal_entry_id
+      JOIN modbm_core.gl_accounts a
+        ON a.gl_account_id = jl.gl_account_id
+      ${whereClause}
+    `;
+
+    const [entriesResult, countResult] = await Promise.all([
+      this.db.execute(entriesQuery),
+      this.db.execute(countQuery),
+    ]);
+
+    const rawRows = (Array.isArray(entriesResult) ? entriesResult : (entriesResult as any).rows || []) as any[];
+    const countRows = (Array.isArray(countResult) ? countResult : (countResult as any).rows || []) as any[];
+
+    // Map raw DB rows to camelCase for the frontend DataGrid
+    const entries = rawRows.map((row) => ({
+      journalEntryId: row.journal_entry_id,
+      entryNumber: row.entry_number,
+      entryDate: row.entry_date,
+      entryMemo: row.entry_memo,
+      sourceType: row.source_type,
+      sourceId: row.source_id,
+      accountCode: row.account_code,
+      accountName: row.account_name,
+      partyType: row.party_type,
+      partyId: row.party_id,
+      debit: row.debit,
+      credit: row.credit,
+      lineMemo: row.line_memo,
+      createdBy: row.created_by,
+      createdOn: row.created_on,
+    }));
+
+    return {
+      data: entries,
+      page,
+      limit,
+      total: countRows[0]?.count ?? 0,
+    };
   }
 
   async getJournalEntries(filters: {

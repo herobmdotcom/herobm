@@ -23,12 +23,17 @@ import {
   glAccounts,
   goodsReceivedLines,
   purchaseInvoiceReceipts,
+  systemEvents,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { computeLinePrice, EXPENSE_ROUTING_PRECEDENCE } from '@modbm/shared';
+import {
+  computeLinePriceForStorage,
+  EXPENSE_ROUTING_PRECEDENCE,
+  PURCHASE_INVOICE_TRANSITIONS,
+} from '@modbm/shared';
 import { CreateStandaloneInvoiceDto } from './dto';
 
 @Injectable()
@@ -68,8 +73,12 @@ export class PurchaseInvoiceService {
    */
   async findOne(invoiceId: string) {
     const rows = await this.db
-      .select()
+      .select({
+        invoice: purchaseInvoices,
+        vendorName: suppliers.name,
+      })
       .from(purchaseInvoices)
+      .leftJoin(suppliers, eq(purchaseInvoices.vendorId, suppliers.vendorId))
       .where(eq(purchaseInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -77,7 +86,8 @@ export class PurchaseInvoiceService {
       throw new NotFoundException(`Bill '${invoiceId}' not found directly.`);
     }
 
-    const invoice = rows[0];
+    const invoiceEntity = rows[0].invoice || rows[0];
+    const invoice = { ...invoiceEntity, vendorName: rows[0].vendorName };
 
     // Hydrate explicitly native ModBM line mapping structurally
     const lines = await this.db
@@ -90,11 +100,15 @@ export class PurchaseInvoiceService {
         amount: purchaseInvoiceLines.amount,
         productId: purchaseInvoiceLines.productId,
         productNumber: coreProducts.productNumber,
+        glAccountId: purchaseInvoiceLines.glAccountId,
         purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
         purchaseOrderNumber: purchaseOrders.orderNumber,
         purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
         goodsReceivedLineId: purchaseInvoiceReceipts.goodsReceivedLineId,
         quantityBilled: purchaseInvoiceReceipts.quantityBilled,
+        poLineQuantityOrdered: purchaseOrderLineItems.quantity,
+        poLineQuantityReceived: purchaseOrderLineItems.quantityReceived,
+        poLinePricePerUnit: purchaseOrderLineItems.pricePerUnit,
       })
       .from(purchaseInvoiceLines)
       .leftJoin(
@@ -175,8 +189,32 @@ export class PurchaseInvoiceService {
           quantityInvoiced: purchaseInvoiceLines.quantityInvoiced,
           pricePerUnit: purchaseInvoiceLines.pricePerUnit,
           amount: purchaseInvoiceLines.amount,
+          productId: purchaseInvoiceLines.productId,
+          productNumber: coreProducts.productNumber,
+          description: purchaseInvoiceLines.description,
+          poLineDescription: purchaseOrderLineItems.productDescription,
+          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrderNumber: purchaseOrders.orderNumber,
         })
         .from(purchaseInvoiceLines)
+        .leftJoin(
+          purchaseOrderLineItems,
+          eq(
+            purchaseInvoiceLines.purchaseOrderLineId,
+            purchaseOrderLineItems.purchaseOrderLineId,
+          ),
+        )
+        .leftJoin(
+          purchaseOrders,
+          eq(
+            purchaseOrderLineItems.purchaseOrderId,
+            purchaseOrders.purchaseOrderId,
+          ),
+        )
+        .leftJoin(
+          coreProducts,
+          eq(purchaseInvoiceLines.productId, coreProducts.productId),
+        )
         .where(
           sql`${purchaseInvoiceLines.invoiceId} IN (${sql.join(
             invoiceIds.map((id) => sql`${id}`),
@@ -229,10 +267,12 @@ export class PurchaseInvoiceService {
 
       if (dto.lines && dto.lines.length > 0) {
         const linesToInsert = dto.lines.map((l: any) => {
-          const qty = l.quantityInvoiced;
-          const price = l.pricePerUnit;
-          // Simple local math, ignoring complex discount logic for raw standalone lines
-          const amt = qty * price;
+          const qty = parseFloat(l.quantityInvoiced || '0');
+          const price = parseFloat(l.pricePerUnit || '0');
+          const pricing = computeLinePriceForStorage({
+            quantity: qty,
+            pricePerUnit: price,
+          });
           return {
             invoiceLineId: randomUUID(),
             invoiceId: invoice.invoiceId,
@@ -241,7 +281,7 @@ export class PurchaseInvoiceService {
             glAccountId: l.glAccountId,
             quantityInvoiced: String(qty),
             pricePerUnit: String(price),
-            amount: String(amt),
+            amount: pricing.amount,
             purchaseOrderLineId: l.purchaseOrderLineId,
             matchStatus: l.purchaseOrderLineId ? 'matched' : 'unmatched',
           };
@@ -251,6 +291,203 @@ export class PurchaseInvoiceService {
       }
 
       return invoice;
+    });
+  }
+
+  private async recalculateInvoiceTotals(invoiceId: string, tx: any) {
+    const lines = await tx
+      .select({ amount: purchaseInvoiceLines.amount })
+      .from(purchaseInvoiceLines)
+      .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
+
+    let lineTotal = 0;
+    for (const line of lines) {
+      lineTotal += parseFloat(line.amount || '0');
+    }
+
+    const [invoice] = await tx
+      .select()
+      .from(purchaseInvoices)
+      .where(eq(purchaseInvoices.invoiceId, invoiceId));
+
+    const taxAmt = parseFloat(invoice.taxAmount || '0');
+    const newTotal = lineTotal + taxAmt;
+
+    await tx
+      .update(purchaseInvoices)
+      .set({ totalAmount: newTotal.toFixed(2) })
+      .where(eq(purchaseInvoices.invoiceId, invoiceId));
+  }
+
+  async updateInvoice(invoiceId: string, dto: any, actor: string) {
+    return this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
+      if (!invoice) throw new NotFoundException('Invoice not found');
+      if (invoice.stateCode !== 'draft')
+        throw new BadRequestException('Only draft invoices can be updated');
+
+      const updateData: any = {};
+      if (dto.supplierInvoiceNumber !== undefined)
+        updateData.supplierInvoiceNumber = dto.supplierInvoiceNumber;
+      if (dto.receiptFilename !== undefined)
+        updateData.receiptFilename = dto.receiptFilename;
+      if (dto.notes !== undefined) updateData.notes = dto.notes;
+      if (dto.taxAmount !== undefined) updateData.taxAmount = dto.taxAmount;
+      if (dto.currencyCode !== undefined)
+        updateData.currencyCode = dto.currencyCode;
+      if (dto.vendorId !== undefined) updateData.vendorId = dto.vendorId;
+
+      if (Object.keys(updateData).length > 0) {
+        await tx
+          .update(purchaseInvoices)
+          .set(updateData)
+          .where(eq(purchaseInvoices.invoiceId, invoiceId));
+
+        if (updateData.taxAmount !== undefined) {
+          await this.recalculateInvoiceTotals(invoiceId, tx);
+        }
+      }
+
+      return this.findOne(invoiceId);
+    });
+  }
+
+  async updateLine(invoiceId: string, lineId: string, dto: any, actor: string) {
+    return this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
+      if (!invoice) throw new NotFoundException('Invoice not found');
+      if (invoice.stateCode !== 'draft')
+        throw new BadRequestException(
+          'Only draft invoice lines can be updated',
+        );
+
+      const [line] = await tx
+        .select()
+        .from(purchaseInvoiceLines)
+        .where(eq(purchaseInvoiceLines.invoiceLineId, lineId));
+      if (!line) throw new NotFoundException('Line not found');
+
+      const updateData: any = {};
+      if (dto.description !== undefined)
+        updateData.description = dto.description;
+      if (dto.glAccountId !== undefined)
+        updateData.glAccountId = dto.glAccountId;
+      if (dto.productId !== undefined) updateData.productId = dto.productId;
+
+      let qty = parseFloat(line.quantityInvoiced);
+      let price = parseFloat(line.pricePerUnit);
+
+      if (dto.quantityInvoiced !== undefined) {
+        updateData.quantityInvoiced = String(dto.quantityInvoiced);
+        qty = parseFloat(dto.quantityInvoiced);
+      }
+      if (dto.pricePerUnit !== undefined) {
+        updateData.pricePerUnit = String(dto.pricePerUnit);
+        price = parseFloat(dto.pricePerUnit);
+      }
+
+      if (
+        dto.quantityInvoiced !== undefined ||
+        dto.pricePerUnit !== undefined
+      ) {
+        const pricing = computeLinePriceForStorage({
+          quantity: qty,
+          pricePerUnit: price,
+        });
+        updateData.amount = pricing.amount;
+      }
+
+      await tx
+        .update(purchaseInvoiceLines)
+        .set(updateData)
+        .where(eq(purchaseInvoiceLines.invoiceLineId, lineId));
+
+      if (updateData.amount !== undefined) {
+        await this.recalculateInvoiceTotals(invoiceId, tx);
+      }
+
+      return { success: true };
+    });
+  }
+
+  async removeLine(invoiceId: string, lineId: string, actor: string) {
+    return this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
+      if (!invoice) throw new NotFoundException('Invoice not found');
+      if (invoice.stateCode !== 'draft')
+        throw new BadRequestException(
+          'Only draft invoice lines can be removed',
+        );
+
+      await tx
+        .delete(purchaseInvoiceLines)
+        .where(eq(purchaseInvoiceLines.invoiceLineId, lineId));
+
+      await this.recalculateInvoiceTotals(invoiceId, tx);
+
+      return { success: true };
+    });
+  }
+
+  async addLine(invoiceId: string, dto: any, actor: string) {
+    return this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
+      if (!invoice) throw new NotFoundException('Invoice not found');
+      if (invoice.stateCode !== 'draft')
+        throw new BadRequestException('Only draft invoice lines can be added');
+
+      const qty = parseFloat(dto.quantityInvoiced || '1');
+      const price = parseFloat(dto.pricePerUnit || '0');
+      const pricing = computeLinePriceForStorage({
+        quantity: qty,
+        pricePerUnit: price,
+      });
+
+      let defaultGlAccountId = dto.glAccountId || null;
+      if (!defaultGlAccountId) {
+        const settings = await this.glService.getSettings();
+        if (settings?.defaultExpenseAccountId) {
+          defaultGlAccountId = settings.defaultExpenseAccountId;
+        } else {
+          // Fallback to the first expense account if no default is configured
+          const fallbackRows = await tx
+            .select({ id: glAccounts.glAccountId })
+            .from(glAccounts)
+            .where(eq(glAccounts.accountType, 'expense'))
+            .limit(1);
+          if (fallbackRows.length > 0) {
+            defaultGlAccountId = fallbackRows[0].id;
+          }
+        }
+      }
+
+      await tx.insert(purchaseInvoiceLines).values({
+        invoiceLineId: randomUUID(),
+        invoiceId,
+        description: dto.description || '',
+        productId: dto.productId || null,
+        glAccountId: defaultGlAccountId,
+        quantityInvoiced: String(qty),
+        pricePerUnit: String(price),
+        amount: pricing.amount,
+        matchStatus: 'unmatched',
+      });
+
+      await this.recalculateInvoiceTotals(invoiceId, tx);
+
+      return { success: true };
     });
   }
 
@@ -276,6 +513,12 @@ export class PurchaseInvoiceService {
     let defaultExpense = 0;
 
     for (const line of lines) {
+      if (line.matchStatus !== 'matched' && !line.glAccountId) {
+        throw new BadRequestException(
+          `Line "${line.description}" is unmatched and must have a GL Account assigned before finalisation.`,
+        );
+      }
+
       const amt = parseFloat(line.amount);
       lineTotal += amt;
 
@@ -422,6 +665,95 @@ export class PurchaseInvoiceService {
   }
 
   /**
+   * Changes the state of a Purchase Invoice.
+   * Handles draft -> cancelled, cancelled -> draft.
+   * draft -> invoiced delegates to postInvoice.
+   */
+  async changePurchaseInvoiceState(
+    invoiceId: string,
+    newState: string,
+    actor: string,
+    discrepanciesAcknowledged?: boolean,
+  ) {
+    const fullInvoice = await this.findOne(invoiceId);
+    if (!fullInvoice) throw new NotFoundException('Invoice not found');
+    const invoice = fullInvoice as any; // Full invoice with lines
+
+    const allowed = PURCHASE_INVOICE_TRANSITIONS[invoice.stateCode] || [];
+    if (!allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition invoice from ${invoice.stateCode} to ${newState}`,
+      );
+    }
+
+    // Check for discrepancies on forward transition
+    if (newState !== 'draft' && newState !== 'cancelled') {
+      const discrepancies: any[] = [];
+      invoice.lines.forEach((line: any, idx: number) => {
+        if (
+          line.matchStatus !== 'matched' &&
+          !line.purchaseOrderLineId &&
+          parseFloat(line.amount || '0') > 0
+        ) {
+          discrepancies.push({
+            type: 'unplanned_line',
+            message: `Line ${idx + 1} is unplanned.`,
+          });
+        }
+        if (line.matchStatus === 'matched' && line.purchaseOrderLineId) {
+          const billedQty = parseFloat(line.quantityInvoiced || '0');
+          const poReceived = parseFloat(line.poLineQuantityReceived || '0');
+          const billedPrice = parseFloat(line.pricePerUnit || '0');
+          const poPrice = parseFloat(line.poLinePricePerUnit || '0');
+
+          if (Math.abs(billedPrice - poPrice) > 0.001) {
+            discrepancies.push({
+              type: 'price_variance',
+              message: `Line ${idx + 1} price variance.`,
+            });
+          }
+          if (billedQty > poReceived) {
+            discrepancies.push({
+              type: 'quantity_variance',
+              message: `Line ${idx + 1} quantity variance.`,
+            });
+          }
+        }
+      });
+
+      if (discrepancies.length > 0) {
+        if (!discrepanciesAcknowledged) {
+          throw new BadRequestException('Unacknowledged discrepancies exist.');
+        }
+
+        // Log the approval of discrepancies
+        await this.db.insert(systemEvents).values({
+          eventType: 'invoice_discrepancy_approved',
+          aggregateType: 'purchase_invoice',
+          aggregateId: invoiceId,
+          actor,
+          payload: {
+            discrepancies,
+            purchaseOrderId: invoice.lines[0]?.purchaseOrderId,
+          },
+        });
+      }
+    }
+
+    if (newState === 'invoiced') {
+      return this.postInvoice(invoiceId, actor);
+    }
+
+    const [updatedInvoice] = await this.db
+      .update(purchaseInvoices)
+      .set({ stateCode: newState })
+      .where(eq(purchaseInvoices.invoiceId, invoiceId))
+      .returning();
+
+    return updatedInvoice;
+  }
+
+  /**
    * Allocates/matches an existing invoice line to a PO line.
    */
   async resolveInvoiceLine(
@@ -454,6 +786,87 @@ export class PurchaseInvoiceService {
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
       return { success: true };
+    });
+  }
+
+  /**
+   * Auto-matches unbilled lines from a given PO to this invoice.
+   */
+  async autoMatchPurchaseOrder(
+    invoiceId: string,
+    purchaseOrderId: string,
+    actor: string,
+  ) {
+    return this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .select()
+        .from(purchaseInvoices)
+        .where(eq(purchaseInvoices.invoiceId, invoiceId));
+      if (!invoice) throw new NotFoundException('Invoice not found');
+      if (invoice.stateCode !== 'draft')
+        throw new BadRequestException(
+          'Only draft invoices can be auto-matched',
+        );
+
+      // 1. Fetch PO Lines
+      const poLines = await tx
+        .select()
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrderId));
+
+      // 2. Fetch existing unmatched invoice lines
+      const invLines = await tx
+        .select()
+        .from(purchaseInvoiceLines)
+        .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
+
+      let matchedCount = 0;
+      let addedCount = 0;
+
+      for (const poLine of poLines) {
+        // Find if we already have an unmatched invoice line for this product
+        const match = invLines.find(
+          (l) =>
+            l.matchStatus === 'unmatched' && l.productId === poLine.productId,
+        );
+
+        if (match) {
+          await tx
+            .update(purchaseInvoiceLines)
+            .set({
+              purchaseOrderLineId: poLine.purchaseOrderLineId,
+              matchStatus: 'matched',
+            })
+            .where(eq(purchaseInvoiceLines.invoiceLineId, match.invoiceLineId));
+          match.matchStatus = 'matched'; // Prevent mapping to this line again
+          matchedCount++;
+        } else {
+          // Add it as a new matched line
+          const qty = parseFloat(poLine.quantity || '0');
+          const price = parseFloat(poLine.pricePerUnit || '0');
+          const pricing = computeLinePriceForStorage({
+            quantity: qty,
+            pricePerUnit: price,
+          });
+
+          await tx.insert(purchaseInvoiceLines).values({
+            invoiceLineId: randomUUID(),
+            invoiceId,
+            description: poLine.productDescription || '',
+            productId: poLine.productId,
+            glAccountId: null,
+            quantityInvoiced: String(qty),
+            pricePerUnit: String(price),
+            amount: pricing.amount,
+            purchaseOrderLineId: poLine.purchaseOrderLineId,
+            matchStatus: 'matched',
+          });
+          addedCount++;
+        }
+      }
+
+      await this.recalculateInvoiceTotals(invoiceId, tx);
+      return { success: true, matchedCount, addedCount };
     });
   }
 

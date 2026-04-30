@@ -1,0 +1,2 @@
+ALTER TABLE "modbm_core"."purchase_invoice_lines" ADD CONSTRAINT "purchase_invoice_lines_product_id_products_product_id_fk" FOREIGN KEY ("product_id") REFERENCES "modbm_core"."products"("product_id");
+ALTER TABLE "modbm_core"."purchase_invoice_lines" ADD CONSTRAINT "purchase_invoice_lines_gl_account_id_gl_accounts_gl_account_id_fk" FOREIGN KEY ("gl_account_id") REFERENCES "modbm_core"."gl_accounts"("gl_account_id");

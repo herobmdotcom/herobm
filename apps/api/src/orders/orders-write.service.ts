@@ -491,6 +491,7 @@ export class OrdersWriteService {
     newState: string,
     actor: string,
     generateBackorders?: boolean,
+    discrepanciesAcknowledged?: boolean,
   ) {
     if (!VALID_STATES.includes(newState)) {
       throw new BadRequestException(`Invalid state: '${newState}'`);
@@ -544,7 +545,11 @@ export class OrdersWriteService {
     if (newState === 'confirmed') {
       gaps = await this.backordersService.evaluateGaps(id);
 
-      if (gaps.length > 0 && generateBackorders === undefined) {
+      if (
+        gaps.length > 0 &&
+        !discrepanciesAcknowledged &&
+        generateBackorders === undefined
+      ) {
         throw new HttpException(
           {
             statusCode: HttpStatus.CONFLICT,
@@ -573,7 +578,14 @@ export class OrdersWriteService {
 
       const [updated] = await tx
         .update(salesOrders)
-        .set({ stateCode: newState, modifiedOn: new Date() })
+        .set({
+          stateCode: newState,
+          discrepanciesAcknowledged:
+            discrepanciesAcknowledged !== undefined
+              ? discrepanciesAcknowledged
+              : undefined,
+          modifiedOn: new Date(),
+        })
         .where(eq(salesOrders.salesOrderId, id))
         .returning();
 
@@ -584,6 +596,7 @@ export class OrdersWriteService {
         payload: {
           from: existing.stateCode,
           to: newState,
+          discrepanciesAcknowledged,
         },
         actor,
       });

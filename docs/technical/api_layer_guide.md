@@ -23,21 +23,150 @@ The API connects to Postgres using individual connection parameters (`host`, `us
 3. **Query** — Services use Drizzle ORM to run typed `SELECT` queries against the marts tables. All list endpoints support pagination (`page`, `limit`) and search (`search`).
 4. **Observe** — A global `MetricsInterceptor` logs every request (method, URL, status code, duration) and records Prometheus metrics.
 
-## Endpoint inventory
+## Endpoint Inventory & Surface Area
 
-| Method | Path | Guard | Mart table | Features |
-|--------|------|-------|------------|----------|
-| `POST` | `/api/auth/login` | None | — | JWT issuance |
-| `GET` | `/api/accounts` | JWT + Casbin | `mart_accounts` | Pagination, search (name, account number, email) |
-| `GET` | `/api/accounts/:id` | JWT + Casbin | `mart_accounts` | Single record by `account_id` |
-| `GET` | `/api/products` | JWT + Casbin | `mart_products` | Pagination, search (name, product number, barcode) |
-| `GET` | `/api/products/:id` | JWT + Casbin | `mart_products` | Single record by `product_id` |
-| `GET` | `/api/inventory` | JWT + Casbin | `mart_inventory` | Pagination, search (product, location), filter by `locationNo` |
-| `GET` | `/api/inventory/bins` | JWT + Casbin | `mart_bin_contents` | Pagination, search (product, bin number), filter by `locationNo` |
-| `GET` | `/api/orders` | JWT + Casbin | `mart_sales_order_lines` | Pagination, search (order number, customer, product) |
-| `GET` | `/api/orders/:id` | JWT + Casbin | `mart_sales_order_lines` | Single record by `sales_order_line_id` |
-| `GET` | `/api/dashboard/summary` | JWT + Casbin | All marts | Aggregate entity counts |
-| `GET` | `/metrics` | None | — | Prometheus metrics |
+The API surface area follows a rigorous RESTful design pattern, aligning with the directives in `CONSTITUTION.md`. Below is a comprehensive map of the frontend-to-backend API endpoints, grouped by domain. Note that **all endpoints** (except `/api/auth/login` and `/metrics`) strictly require a valid JWT and evaluate Casbin RBAC rules.
+
+### 1. Sales & Fulfillment
+Handles the lifecycle of sales orders, picking, shipments, and customer returns.
+
+* **Sales Orders:**
+  * `GET /api/sales-orders`
+  * `GET /api/sales-orders/{id}`
+  * `PATCH /api/sales-orders/{id}/state` (State machine transitions)
+  * `POST /api/sales-orders/{id}/archive` / `unarchive` (Soft deletes)
+  * `POST /api/sales-orders/{id}/invoice`
+* **Sales Order Lines:**
+  * `PATCH /api/sales-orders/{id}/lines/{id}`
+  * `GET /api/sales-orders/{id}/post-confirmation-lines`
+* **Picking:**
+  * `GET /api/sales-orders/{id}/picking`
+  * `PATCH /api/sales-orders/{id}/picking/lines/{id}`
+  * `PATCH /api/sales-orders/{id}/picking/lines/{id}/location`
+  * `POST /api/sales-orders/{id}/picking/lines/{id}/pick-all`
+  * `POST /api/sales-orders/{id}/picking/pick-all`
+* **Shipments:**
+  * `GET /api/sales-orders/{id}/shipments`
+  * `GET /api/sales-orders/{id}/shipments/{id}`
+  * `PATCH /api/sales-orders/{id}/shipments/{id}/state`
+* **Returns:**
+  * `GET /api/sales-orders/{id}/returns`
+  * `PATCH /api/sales-orders/{id}/returns/{id}/state`
+  * `PATCH /api/sales-orders/{id}/returns/{id}/lines/{id}`
+
+### 2. Purchasing & Procurement
+Handles the inbound lifecycle from supplier purchase orders to invoicing.
+
+* **Purchase Orders:**
+  * `GET /api/purchase-orders`
+  * `GET /api/purchase-orders/{id}`
+  * `PATCH /api/purchase-orders/{id}/state`
+  * `GET /api/purchase-orders/{id}/lines`
+  * `GET /api/purchase-orders/pending-lines?vendorId={id}`
+  * `GET /api/purchase-orders/returnable-lines?productId={id}`
+* **Receptions (Goods Received):**
+  * `GET /api/purchase-orders/{id}/receptions?limit=50`
+  * `GET /api/purchase-orders/{id}/receptions/{id}`
+  * `GET /api/goods-received`
+  * `GET /api/goods-received/lines?purchaseOrderId={id}`
+  * `POST /api/goods-received/lines/{id}/resolve` / `unresolve`
+* **Invoices & Matching:**
+  * `GET /api/purchase-invoices`
+  * `GET /api/purchase-invoices/{id}`
+  * `PATCH /api/purchase-invoices/{id}/state`
+  * `GET /api/purchase-invoices/{id}/lines`
+  * `POST /api/purchase-invoices/lines/{id}/resolve` / `unresolve`
+  * `POST /api/purchase-invoices/{id}/auto-match`
+  * `GET /api/purchase-orders/{id}/invoices`
+
+### 3. Inventory & Products
+Manages catalog data, warehouse topology, and stock levels.
+
+* **Products:**
+  * `GET /api/products` (supports `?q={id}&limit=10`)
+  * `GET /api/products/{id}`
+  * `POST /api/products/{id}/archive` / `unarchive`
+  * `GET|POST /api/products/{id}/suppliers`
+  * `GET|POST /api/products/{id}/uoms`
+  * `GET|POST /api/products/{id}/default-bins`
+* **Inventory & Topology:**
+  * `GET /api/inventory/by-products?productIds={ids}`
+  * `GET /api/inventory/locations`
+  * `GET /api/inventory/locations/{id}`
+  * `GET /api/inventory/zones/{id}`
+  * `GET /api/inventory/bins/{id}`
+  * `GET /api/inventory/entries/{id}`
+* **Classifications:**
+  * `GET /api/product-groups`
+
+### 4. General Ledger & Financials
+Chart of accounts, journals, and financial settings.
+
+* **Ledger / Journals:**
+  * `GET /api/gl/general-ledger`
+  * `GET /api/gl/journal-entries`
+  * `GET /api/gl/journal-entries/{id}`
+  * `GET /api/gl/trial-balance`
+* **Accounts & Configuration:**
+  * `GET /api/gl/accounts` (supports `?format=flat`)
+  * `GET /api/gl/settings`
+  * `POST /api/gl/settings/reload`
+  * `GET /api/tax-categories`
+
+### 5. CRM (Accounts & Suppliers)
+* **Customer Accounts:**
+  * `GET /api/accounts`
+  * `GET /api/accounts/{id}`
+  * `POST /api/accounts/{id}/archive` / `unarchive`
+  * `GET /api/account-groups`
+* **Suppliers:**
+  * `GET /api/suppliers`
+  * `GET /api/suppliers/{id}`
+  * `POST /api/suppliers/{id}/archive` / `unarchive`
+  * `GET|POST|PATCH|DELETE /api/suppliers/{id}/expiries`
+  * `GET /api/supplier-groups`
+
+### 6. System, Settings, & Observability
+* **Global Configuration:**
+  * `GET /api/settings/organization`
+  * `GET /api/settings/exchange-rates`
+  * `GET /api/settings/trading-terms`
+  * `GET /api/settings/uom-dictionary`
+  * `GET /api/macros`
+* **Reports & Hooks (Typst Generation):**
+  * `GET /api/reports`
+  * `GET /api/reports/hooks`
+  * `GET /api/reports/hook-assignments`
+  * `POST /api/reports/preview`
+  * `POST /api/reports/hooks/{hookName}/run?id={id}&context={context}` (Binary Blobs)
+* **Observability & Integrations:**
+  * `GET /api/dashboard/search?q={id}`
+  * `GET /api/dashboard/timeline?{id}`
+  * `GET /api/admin/system-logs?service={id}&lines={id}`
+  * `GET /api/settings/erpnext-sync`
+  * `GET /api/settings/erpnext-sync/events?type={id}&status={status}`
+
+### 7. Setup & Seeding Pipelines
+* `GET /api/setup/status`
+* `GET /api/setup/progress/{id}`
+* `POST /api/setup/initialize`
+* `POST /api/setup/test-abm`
+* `POST /api/setup/resume-state`
+
+## API Consistency Patterns
+
+### Strengths & Established Paradigms
+1. **Strict Pluralization & Resource Orientation:** Almost exclusively, all root-level endpoints use pluralized resource names (`/api/sales-orders`, `/api/products`). This provides high predictability for frontend integrations.
+2. **Standardized Sub-Resource Nesting:** Child entities are perfectly nested under their parent aggregate roots (e.g. `/api/sales-orders/{id}/lines/{lineId}`).
+3. **State Machine Mutations (`/{id}/state`):** Instead of sending arbitrary `PATCH` bodies to change statuses, the API strictly enforces a state-machine pattern by utilizing dedicated `/state` endpoints. This guarantees business logic transitions occur safely.
+4. **Soft Deletion Paradigm:** The API uses explicit RPC-style action routes: `POST /{resource}/{id}/archive` and `POST /{resource}/{id}/unarchive` instead of `DELETE` to prevent orphaned historical ledger records.
+5. **Pagination & Query Contracts:** Endpoints consistently utilize `?limit=10` and `?q={searchTerm}` schemas, indicating a shared Pagination/Search DTO across controllers.
+
+### Anomalies & RPC Hybrids
+While predominantly RESTful, certain domains shift into RPC-style routes to handle complex operational commands:
+1. **Bulk Operations:** Endpoints like `POST /api/sales-orders/{id}/picking/pick-all` effectively capture large transaction boundaries without forcing the frontend to construct massive payloads.
+2. **Line Resolution Links:** The cross-system nature of the platform shows up in "linking" endpoints like `POST /api/purchase-invoices/lines/{id}/resolve`.
+3. **Report Generation:** Report hooks utilize query parameters to dictate generation behavior: `POST /api/reports/hooks/{hook}/run?id={id}&context=...` to seamlessly output binary blob PDFs.
 
 ## Module structure
 

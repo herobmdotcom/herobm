@@ -66,6 +66,7 @@ export class InventoryService {
         or(
           ilike(products.name, term),
           ilike(products.productNumber, term),
+          ilike(products.alternateProductNumber, term),
           ilike(locations.code, term),
         ),
       );
@@ -85,7 +86,7 @@ export class InventoryService {
         r.quantityCommitted,
         r.quantityReserved,
       ),
-      scNumber: null,
+      alternateProductNumber: null,
       defaultBinNumber: null,
     }));
 
@@ -174,7 +175,7 @@ export class InventoryService {
           r.quantityReserved,
         ),
         binBalances,
-        scNumber: null,
+        alternateProductNumber: null,
         defaultBinNumber: null,
       };
     });
@@ -210,6 +211,7 @@ export class InventoryService {
         or(
           ilike(products.name, searchTerm),
           ilike(products.productNumber, searchTerm),
+          ilike(products.alternateProductNumber, searchTerm),
           ilike(bins.binNumber, searchTerm),
         ),
       );
@@ -328,13 +330,18 @@ export class InventoryService {
         SUM(CASE WHEN l.quantity::numeric > 0 THEN l.quantity::numeric ELSE 0 END) AS "stockIn",
         SUM(CASE WHEN l.quantity::numeric < 0 THEN ABS(l.quantity::numeric) ELSE 0 END) AS "stockOut",
         SUM(l.quantity::numeric) AS "netChange",
-        MAX(p.quantity_on_hand::numeric) AS "onHand"
+        COALESCE(inv.qty, 0) AS "onHand"
       FROM modbm_core.inventory_ledger l
       JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
       JOIN modbm_core.products p ON p.product_id = l.product_id
+      LEFT JOIN (
+        SELECT product_id, SUM(quantity_on_hand) as qty
+        FROM modbm_core.inventory_levels
+        GROUP BY product_id
+      ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
         AND e.source_type != 'INITIAL_IMPORT'
-      GROUP BY p.product_id, p.product_number, p.name
+      GROUP BY p.product_id, p.product_number, p.name, inv.qty
       HAVING SUM(ABS(l.quantity::numeric)) > 0
       ORDER BY p.name ASC
     `;
@@ -358,11 +365,16 @@ export class InventoryService {
         p.product_number AS "productNumber",
         p.name AS "productName",
         l.quantity::numeric AS "change",
-        p.quantity_on_hand::numeric AS "onHand",
+        COALESCE(inv.qty, 0) AS "onHand",
         e.created_by AS "actor"
       FROM modbm_core.inventory_ledger l
       JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
       JOIN modbm_core.products p ON p.product_id = l.product_id
+      LEFT JOIN (
+        SELECT product_id, SUM(quantity_on_hand) as qty
+        FROM modbm_core.inventory_levels
+        GROUP BY product_id
+      ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
         AND e.source_type != 'INITIAL_IMPORT'
       ORDER BY e.entry_date DESC, l.ledger_id DESC

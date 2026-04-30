@@ -42,7 +42,7 @@ export interface OrderDetail {
   name: string | null;
   vendorId: string | null;
   vendorName?: string | null;
-  customerOrderNumber: string | null;
+  referenceNumber: string | null;
   stateCode: string;
   currencyCode: string;
   taxCategoryId: string | null;

@@ -29,6 +29,8 @@ function createMockQueryBuilder(resolvedValue: any = []) {
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     groupBy: jest.fn().mockReturnThis(),
+    as: jest.fn().mockReturnThis(),
+    subquery: jest.fn().mockReturnThis(),
     returning: jest.fn().mockResolvedValue(resolvedValue),
     then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
   };

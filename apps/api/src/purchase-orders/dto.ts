@@ -92,6 +92,10 @@ export class CreatePurchaseOrderDto {
   notes?: string;
 
   @IsOptional()
+  @IsString()
+  referenceNumber?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseOrderLineDto)
@@ -117,7 +121,7 @@ export class UpdatePurchaseOrderDto {
 
   @IsOptional()
   @IsString()
-  invoiceNumber?: string;
+  referenceNumber?: string;
 
   @IsOptional()
   @IsString()

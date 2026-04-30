@@ -43,6 +43,7 @@ export class ProductsService {
           ilike(coreProducts.name, searchTerm),
           ilike(coreProducts.productNumber, searchTerm),
           ilike(coreProducts.barcode, searchTerm),
+          ilike(coreProducts.alternateProductNumber, searchTerm),
         ),
       );
     }

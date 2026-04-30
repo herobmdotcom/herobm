@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."purchase_orders" RENAME COLUMN "invoice_number" TO "reference_number";

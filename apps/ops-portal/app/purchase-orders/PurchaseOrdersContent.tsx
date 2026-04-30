@@ -16,7 +16,7 @@ interface UnifiedPurchaseOrderRow {
   orderNumber: string;
   name: string;
   vendorName: string;
-  invoiceNumber: string;
+  referenceNumber: string;
   stateCode: string;
   createdBy: string;
   createdOn: string | null;
@@ -49,7 +49,7 @@ export default function PurchaseOrdersContent() {
         return <StateBadge state={params.value as ValidState} />;
       },
     },
-    { field: 'invoiceNumber', headerName: tCommon('columns.invoiceNumber'), width: 140 },
+    { field: 'referenceNumber', headerName: tPurchase('columns.referenceNumber'), width: 140 },
     {
       field: 'totalPrice',
       headerName: tCommon('columns.totalPrice'),

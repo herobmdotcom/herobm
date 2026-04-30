@@ -53,6 +53,7 @@ export interface OrderDetail {
     stateCode: string;
     currencyCode: string;
     notes: string | null;
+    discrepanciesAcknowledged?: boolean;
     createdBy: string | null;
     createdOn: string;
     modifiedOn: string;

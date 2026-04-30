@@ -16,6 +16,7 @@ interface SupplierSelectProps {
   className?: string;
   placeholder?: string;
   required?: boolean;
+  initialSearchTerm?: string;
 }
 
 function useDebounce(fn: (...args: any[]) => void, delay: number) {
@@ -33,9 +34,10 @@ export default function SupplierSelect({
   className,
   placeholder,
   required,
+  initialSearchTerm,
 }: SupplierSelectProps) {
   const t = useTranslations('common');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredSuppliers, setFilteredSuppliers] = useState<Supplier[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -46,8 +48,10 @@ export default function SupplierSelect({
   useEffect(() => {
     if (!value) {
       setSearchTerm('');
+    } else if (initialSearchTerm && !searchTerm) {
+      setSearchTerm(initialSearchTerm);
     }
-  }, [value]);
+  }, [value, initialSearchTerm]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

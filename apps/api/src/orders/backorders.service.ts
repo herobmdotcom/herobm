@@ -321,6 +321,14 @@ export class BackordersService {
         return;
       }
 
+      // [USER REQUEST]: Stop auto-creating draft POs. We will leave them as 'pending_supply'
+      // in the backorders table, and they can be linked manually or via future consolidated workflows.
+      this.logger.log(
+        `Leaving ${unfulfilledDemands.length} demands as open Requisitions (no auto-PO creation).`,
+      );
+      return;
+
+      /*
       // 4. Generate new POs for remaining demands
       const [defaultTaxCat] = await tx
         .select({ id: taxCategories.taxCategoryId })
@@ -491,6 +499,129 @@ export class BackordersService {
                 stateCode: 'awaiting_receipt',
               })
               .where(eq(backorders.backorderId, gap.backorderId));
+          }
+        }
+      }
+      */
+    });
+  }
+
+  async generatePOsFromDemands(payload: any, actor: string) {
+    this.logger.log(
+      `Manual PO Generation triggered by ${actor} for ${payload.pos?.length || 0} POs`,
+    );
+
+    if (!payload || !payload.pos || !Array.isArray(payload.pos)) {
+      throw new HttpException(
+        'Invalid payload structure',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    await this.db.transaction(async (tx) => {
+      // 1. Get fallback tax category
+      const [defaultTaxCat] = await tx
+        .select({ id: taxCategories.taxCategoryId })
+        .from(taxCategories)
+        .where(eq(taxCategories.isDefault, true))
+        .limit(1);
+
+      let fallbackTaxId = defaultTaxCat?.id;
+      if (!fallbackTaxId) {
+        const [firstCat] = await tx
+          .select({ id: taxCategories.taxCategoryId })
+          .from(taxCategories)
+          .limit(1);
+        fallbackTaxId = firstCat?.id;
+      }
+
+      for (const poPayload of payload.pos) {
+        if (!poPayload.vendorId) {
+          throw new HttpException(
+            'Cannot generate a PO without a vendorId',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        const currencyCode =
+          poPayload.currencyCode || this.appConfig.homeCurrency();
+        const orderNumber = await this.generatePurchaseOrderNumber(tx);
+
+        const soNotes =
+          poPayload.soNumbers && poPayload.soNumbers.length > 0
+            ? `to fulfill open demands from: ${poPayload.soNumbers.join(', ')}`
+            : 'to fulfill open demands';
+
+        let deliveryLocationId = poPayload.deliveryLocationId || this.appConfig.defaultFulfillmentLocationId();
+        if (!deliveryLocationId) {
+          const locs = await tx.execute(
+            sql`SELECT location_id FROM modbm_core.locations LIMIT 1`,
+          );
+          deliveryLocationId = (locs as any)[0]?.location_id;
+        }
+        if (!deliveryLocationId) {
+          throw new HttpException(
+            'No locations configured',
+            HttpStatus.INTERNAL_SERVER_ERROR,
+          );
+        }
+
+        const [po] = await tx
+          .insert(purchaseOrders)
+          .values({
+            orderNumber,
+            name: `Requisition PO ${orderNumber}`,
+            vendorId: poPayload.vendorId,
+            deliveryLocationId: deliveryLocationId,
+            stateCode: 'draft',
+            currencyCode,
+            notes: `Generated ${soNotes}`,
+            createdBy: actor,
+          })
+          .returning();
+
+        await emitEvent(tx, {
+          aggregateType: AggregateType.PURCHASE_ORDER,
+          aggregateId: po.purchaseOrderId,
+          eventType: EventType.CREATED,
+          actor,
+          payload: { reason: 'manual_requisition' },
+        });
+
+        let openLineNumber = 1;
+        for (const line of poPayload.lines) {
+          const [coreProd] = await tx
+            .select({
+              name: coreProducts.name,
+              purchaseTaxCategoryId: coreProducts.purchaseTaxCategoryId,
+            })
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, line.productId));
+
+          const [poLine] = await tx
+            .insert(purchaseOrderLineItems)
+            .values({
+              purchaseOrderId: po.purchaseOrderId,
+              lineNumber: openLineNumber++,
+              productId: line.productId,
+              productDescription: coreProd?.name,
+              quantity: line.quantity.toString(),
+              pricePerUnit: line.pricePerUnit.toString(),
+              taxCategoryId: coreProd?.purchaseTaxCategoryId || fallbackTaxId,
+            })
+            .returning();
+
+          if (line.backorderIds && line.backorderIds.length > 0) {
+            for (const backorderId of line.backorderIds) {
+              await tx
+                .update(backorders)
+                .set({
+                  purchaseOrderId: po.purchaseOrderId,
+                  purchaseOrderLineId: poLine.purchaseOrderLineId,
+                  stateCode: 'awaiting_receipt',
+                })
+                .where(eq(backorders.backorderId, backorderId));
+            }
           }
         }
       }

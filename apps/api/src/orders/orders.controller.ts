@@ -88,12 +88,14 @@ export class OrdersController {
     @Body('stateCode') stateCode: string,
     @AuthUser() user: JwtUser,
     @Body('generateBackorders') generateBackorders?: boolean,
+    @Body('discrepanciesAcknowledged') discrepanciesAcknowledged?: boolean,
   ) {
     return this.ordersWriteService.changeState(
       id,
       stateCode,
       user.username,
       generateBackorders,
+      discrepanciesAcknowledged,
     );
   }
 

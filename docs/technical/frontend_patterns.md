@@ -65,6 +65,7 @@ Almost all detail and module pages must utilize the `<EntityHeader>` component (
 ## 5. Styling Ecosystem
 - **CSS Architecture**: Use utility classes (TailwindCSS patterns) combined with specific CSS variables defined in `/theme.css` and `/globals.css`.
 - **Theme Variables**: Always prioritize our mapped variables (e.g., `var(--text-primary)`, `var(--bg-card)`, `var(--border)`, `var(--accent)`) to ensure the application automatically adheres to dark-mode capabilities and aesthetic redesigns securely.
+- **AI Agent Enforcement**: The exact UI implementation specifics (such as density constraints, tailwind arbitrary variable injection, and specific styling patterns) are rigorously documented and mechanically enforced via the [UI Design System Agent Rule](../../.agents/rules/ui_design_system.md).
 - **Internationalization**: Texts, especially for standard UI elements like grid options, save buttons, and error messages, must be driven through `next-intl` (e.g., `const t = useTranslations('common')`). Do not hardcode literal textual values into the React components where possible. See [messages/README.md](../../apps/ops-portal/messages/README.md) for the full namespace structure, key naming conventions, and rules for adding new translation keys.
 
 ## 6. Internationalization (i18n)
