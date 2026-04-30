@@ -25,7 +25,7 @@ import { AggregateType, EventType } from '../common/event-types';
 import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
-
+import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 @Injectable()
 export class GoodsReceivedService {
   private readonly logger = new Logger(GoodsReceivedService.name);
@@ -123,8 +123,10 @@ export class GoodsReceivedService {
               and(
                 eq(purchaseOrders.vendorId, createDto.vendorId),
                 eq(purchaseOrderLineItems.productId, line.productId),
+                eq(purchaseOrders.deliveryLocationId, createDto.locationId),
                 sql`${purchaseOrders.stateCode} IN ('ordered', 'partially_received')`,
                 sql`CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
+                sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`
               ),
             );
 
@@ -250,26 +252,15 @@ export class GoodsReceivedService {
           ),
         ];
         for (const poId of updatedPoIds) {
-          const poLines = await tx
-            .select({
-              quantity: purchaseOrderLineItems.quantity,
-              quantityReceived: purchaseOrderLineItems.quantityReceived,
-            })
-            .from(purchaseOrderLineItems)
-            .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
-
-          const allFullyReceived = poLines.every(
-            (l) =>
-              parseFloat(l.quantityReceived || '0') >=
-              parseFloat(l.quantity || '0'),
-          );
-
-          await tx
-            .update(purchaseOrders)
-            .set({
-              stateCode: allFullyReceived ? 'received' : 'partially_received',
-            })
-            .where(eq(purchaseOrders.purchaseOrderId, poId));
+          // Trigger the lifecycle engine instead of hardcoded updates
+          try {
+            await evaluatePOLifecycleRules(tx as any, poId, {
+              entity: 'goods_receipt',
+              action: 'created',
+            }, 'system');
+          } catch (err) {
+            this.logger.error(`Failed to evaluate PO lifecycle rules for PO ${poId} after goods receipt:`, err);
+          }
         }
       }
 
@@ -394,10 +385,14 @@ export class GoodsReceivedService {
    * List all goods receipt lines with pagination and optional filtering.
    * This provides a flattened "Receipt Lines" view.
    */
-  async findAllLines(params: PaginationQuery) {
+  async findAllLines(params: PaginationQuery, purchaseOrderId?: string) {
     const { page, limit, offset, searchTerm, days } = parsePagination(params);
 
     const conditions = [];
+
+    if (purchaseOrderId) {
+      conditions.push(eq(goodsReceivedLines.purchaseOrderId, purchaseOrderId));
+    }
 
     if (searchTerm) {
       conditions.push(
@@ -426,6 +421,7 @@ export class GoodsReceivedService {
         vendorId: suppliers.vendorId,
         vendorName: suppliers.name,
         createdOn: goodsReceived.createdOn,
+        locationId: goodsReceived.locationId,
         productNumber: products.productNumber,
         productName: products.name,
         orderNumber: purchaseOrders.orderNumber,
@@ -464,6 +460,7 @@ export class GoodsReceivedService {
         vendorId: d.vendorId,
         vendorName: d.vendorName,
         createdOn: d.createdOn,
+        locationId: d.locationId,
         productNumber: d.productNumber,
         productName: d.productName,
         orderNumber: d.orderNumber,
@@ -529,6 +526,7 @@ export class GoodsReceivedService {
     goodsReceivedLineId: string,
     poLineId: string,
     userId: string,
+    allocatedQuantity?: string,
   ) {
     return await this.db.transaction(async (tx) => {
       const [grLine] = await tx
@@ -571,6 +569,15 @@ export class GoodsReceivedService {
         );
       }
 
+      const originalQuantity = parseFloat(grLine.quantityReceived);
+      const targetQuantity = allocatedQuantity
+        ? parseFloat(allocatedQuantity)
+        : originalQuantity;
+
+      if (targetQuantity <= 0 || targetQuantity > originalQuantity) {
+        throw new BadRequestException('Invalid allocated quantity');
+      }
+
       // Update GR Line
       await tx
         .update(goodsReceivedLines)
@@ -578,14 +585,28 @@ export class GoodsReceivedService {
           matchStatus: 'matched',
           purchaseOrderLineId: poLine.poLineId,
           purchaseOrderId: poLine.poId,
+          quantityReceived: targetQuantity.toString(),
         })
         .where(eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId));
+
+      // Handle partial allocation splits
+      let splitLine = null;
+      if (targetQuantity < originalQuantity) {
+        const remainder = originalQuantity - targetQuantity;
+        const [inserted] = await tx.insert(goodsReceivedLines).values({
+          goodsReceivedId: grLine.goodsReceivedId,
+          productId: grLine.productId,
+          quantityReceived: remainder.toString(),
+          matchStatus: 'ambiguous',
+        }).returning();
+        splitLine = inserted;
+      }
 
       // Update PO Line
       await tx
         .update(purchaseOrderLineItems)
         .set({
-          quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${grLine.quantityReceived} AS NUMERIC)`,
+          quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${targetQuantity} AS NUMERIC)`,
         })
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, poLine.poLineId));
 
@@ -615,16 +636,17 @@ export class GoodsReceivedService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SYSTEM,
         aggregateId: grLine.goodsReceivedId,
-        eventType: EventType.ALLOCATION_RESOLVED,
+        eventType: EventType.RECEIPT_MATCHED,
         payload: {
           goodsReceivedLineId,
           purchaseOrderLineId: poLine.poLineId,
           purchaseOrderId: poLine.poId,
+          allocatedQuantity: targetQuantity,
         },
         actor: userId,
       });
 
-      return { success: true };
+      return { success: true, splitLine };
     });
   }
 
@@ -662,15 +684,53 @@ export class GoodsReceivedService {
 
       if (!poLine) throw new NotFoundException('Linked PO Line not found');
 
-      // 1. Update GR Line back to ambiguous
-      await tx
-        .update(goodsReceivedLines)
-        .set({
-          matchStatus: 'ambiguous',
-          purchaseOrderLineId: null,
-          purchaseOrderId: null,
-        })
-        .where(eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId));
+      // 1. Attempt Reunification or fall back to making it ambiguous
+      const [existingUnmatched] = await tx
+        .select()
+        .from(goodsReceivedLines)
+        .where(
+          and(
+            eq(goodsReceivedLines.goodsReceivedId, grLine.goodsReceivedId),
+            eq(goodsReceivedLines.productId, grLine.productId),
+            sql`${goodsReceivedLines.matchStatus} != 'matched'`,
+            sql`${goodsReceivedLines.goodsReceivedLineId} != ${grLine.goodsReceivedLineId}`,
+          ),
+        )
+        .limit(1);
+
+      if (existingUnmatched) {
+        // Reunify into the existing unmatched line
+        await tx
+          .update(goodsReceivedLines)
+          .set({
+            quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${grLine.quantityReceived} AS NUMERIC)`,
+          })
+          .where(
+            eq(
+              goodsReceivedLines.goodsReceivedLineId,
+              existingUnmatched.goodsReceivedLineId,
+            ),
+          );
+
+        // Delete this fragmented line
+        await tx
+          .delete(goodsReceivedLines)
+          .where(
+            eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId),
+          );
+      } else {
+        // Just unresolve it normally
+        await tx
+          .update(goodsReceivedLines)
+          .set({
+            matchStatus: 'ambiguous',
+            purchaseOrderLineId: null,
+            purchaseOrderId: null,
+          })
+          .where(
+            eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId),
+          );
+      }
 
       // 2. Deduct quantity from PO Line
       await tx
@@ -714,7 +774,7 @@ export class GoodsReceivedService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SYSTEM,
         aggregateId: grLine.goodsReceivedId,
-        eventType: 'allocation_unresolved',
+        eventType: EventType.RECEIPT_UNMATCHED,
         payload: {
           goodsReceivedLineId,
           previousPurchaseOrderLineId: poLine.poLineId,

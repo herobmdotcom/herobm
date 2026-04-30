@@ -46,6 +46,7 @@ export default function NewPurchaseInvoicePage() {
   const initialPurchaseOrderId = searchParams.get('purchaseOrderId');
 
   const [vendorId, setVendorId] = useState('');
+  const [initialVendorSearchTerm, setInitialVendorSearchTerm] = useState('');
   const [currencyCode, setCurrencyCode] = useState(baseCurrency || '');
   const [supplierInvoiceNumber, setSupplierInvoiceNumber] = useState('');
   const [receiptFilename, setReceiptFilename] = useState('');
@@ -62,12 +63,16 @@ export default function NewPurchaseInvoicePage() {
     if (initialPurchaseOrderId) {
       Promise.all([
         apiFetch<OrderDetail>(`/api/purchase-orders/${initialPurchaseOrderId}`),
-        apiFetch<PurchaseInvoice[]>(`/api/purchase-orders/${initialPurchaseOrderId}/invoices`),
-      ]).then(([order, invoices]) => {
+        apiFetch<{ data: PurchaseInvoice[] }>(`/api/purchase-orders/${initialPurchaseOrderId}/invoices`),
+      ]).then(([order, invoicesRes]) => {
         setVendorId(order.vendorId || '');
+        if (order.vendorName) {
+          setInitialVendorSearchTerm(order.vendorName);
+        }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
-        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines, invoices || []);
+        const invoices = invoicesRes.data || [];
+        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines, invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {
           const poLine = order.lines.find(l => l.purchaseOrderLineId === lti.purchaseOrderLineId);
@@ -229,6 +234,7 @@ export default function NewPurchaseInvoicePage() {
                   }}
                   placeholder={t('placeholders.searchSuppliers')}
                   required
+                  initialSearchTerm={initialVendorSearchTerm}
                 />
               </div>
 

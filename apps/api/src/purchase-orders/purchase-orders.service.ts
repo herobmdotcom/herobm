@@ -455,6 +455,32 @@ export class PurchaseOrdersService {
       }
     }
 
+    if (stateCode === 'closed_short') {
+      for (const line of existing.lines) {
+        const received = parseFloat(line.quantityReceived || '0');
+        if (received > 0) {
+          const [{ totalInvoiced }] = await this.db
+            .select({
+              totalInvoiced: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+            })
+            .from(purchaseInvoiceLines)
+            .innerJoin(purchaseInvoices, eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId))
+            .where(
+              and(
+                eq(purchaseInvoiceLines.purchaseOrderLineId, line.purchaseOrderLineId),
+                eq(purchaseInvoices.stateCode, 'invoiced')
+              )
+            );
+          const invoiced = parseFloat(totalInvoiced || '0');
+          if (received > invoiced + 0.001) {
+            throw new BadRequestException(
+              `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`
+            );
+          }
+        }
+      }
+    }
+
     return await this.db.transaction(async (tx: DrizzleDB) => {
       await tx
         .update(purchaseOrders)
@@ -879,6 +905,8 @@ export class PurchaseOrdersService {
         vendorName: coreSuppliers.name,
         stateCode: purchaseOrders.stateCode,
         vendorId: purchaseOrders.vendorId,
+        deliveryLocationId: purchaseOrders.deliveryLocationId,
+        locationName: locations.name,
         currencyCode: purchaseOrders.currencyCode,
         purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
         lineNumber: purchaseOrderLineItems.lineNumber,
@@ -915,6 +943,10 @@ export class PurchaseOrdersService {
           purchaseOrderLineItems.purchaseOrderLineId,
           invoicedSubquery.purchaseOrderLineId,
         ),
+      )
+      .leftJoin(
+        locations,
+        eq(purchaseOrders.deliveryLocationId, locations.locationId),
       )
       .where(and(...conditions))
       .orderBy(desc(purchaseOrders.createdOn), purchaseOrderLineItems.lineNumber);

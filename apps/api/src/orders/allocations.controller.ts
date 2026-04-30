@@ -6,6 +6,7 @@ import {
   UseGuards,
   Req,
   Body,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -107,6 +108,22 @@ export class AllocationsController {
       .leftJoin(products, eq(backorders.productId, products.productId))
       .where(eq(backorders.purchaseOrderId, poId));
     return { data: allocations };
+  }
+
+  @Get('available-po-lines')
+  @CasbinAction('read')
+  async getAvailablePoLines(@Query('productId') productId: string) {
+    const lines = await this.backordersService.getAvailablePoLines(productId);
+    return { data: lines };
+  }
+
+  @Post('link-po')
+  @CasbinAction('write')
+  async linkDemandToPo(@Body() payload: any, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'system';
+    const { demandId, purchaseOrderLineId, quantity } = payload;
+    await this.backordersService.linkDemandToPo(demandId, purchaseOrderLineId, quantity, actor);
+    return { success: true };
   }
 
   @Post('resolve')

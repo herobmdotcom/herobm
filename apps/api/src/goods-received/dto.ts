@@ -44,4 +44,8 @@ export class ResolveAllocationDto {
   @IsString()
   @IsNotEmpty()
   purchaseOrderLineId!: string;
+
+  @IsOptional()
+  @IsNumberString()
+  allocatedQuantity?: string;
 }

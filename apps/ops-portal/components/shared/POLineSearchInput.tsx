@@ -15,7 +15,7 @@ interface POLine {
 interface POLineSearchInputProps {
   productId?: string;
   vendorId?: string;
-  onSelect: (poLineId: string) => void;
+  onSelect: (poLineId: string, line?: any) => void;
   placeholder?: string;
   style?: React.CSSProperties;
 }
@@ -104,7 +104,7 @@ export default function POLineSearchInput({
   const handleSelect = (line: POLine) => {
     setShowDropdown(false);
     setSearch(line.orderNumber);
-    onSelect(line.purchaseOrderLineId);
+    onSelect(line.purchaseOrderLineId, line);
   };
 
   const dropdownContent = showDropdown ? (

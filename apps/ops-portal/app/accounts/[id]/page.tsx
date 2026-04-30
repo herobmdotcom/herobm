@@ -1,16 +1,10 @@
 'use client';
 
-import { useState, useEffect, use, useCallback, useMemo } from 'react';
+import { useState, use, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import {
-  apiFetch,
-  apiMutate,
-  reportError,
-} from '@/lib/api';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
@@ -21,35 +15,7 @@ import { ValidState } from '@/types/states';
 import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { useSettings } from '@/components/SettingsProvider';
-
-interface Account {
-  accountId: string;
-  accountNumber: string;
-  name: string;
-  emailAddress1: string | null;
-  telephone1: string | null;
-  fax: string | null;
-  address1Line1: string | null;
-  address1Line2: string | null;
-  address1City: string | null;
-  address1StateOrProvince: string | null;
-  address1PostalCode: string | null;
-  address1Country: string | null;
-  primaryContactName: string | null;
-  primaryContactEmail: string | null;
-  primaryContactPhone: string | null;
-  accountGroupId: string | null;
-  taxCategoryId: string | null;
-  currencyCode: string;
-  customerDiscount: string | null;
-  stateCode: ValidState;
-  notes: string | null;
-
-  createdOn: string | null;
-  createdBy: string | null;
-  modifiedOn: string | null;
-  events?: any[];
-}
+import { useAccount } from './useAccount';
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
   const { baseCurrency } = useSettings();
@@ -58,14 +24,16 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const tCommon = useTranslations('common');
   const params = use(paramsPromise);
   const router = useRouter();
-  const [account, setAccount] = useState<Account | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  const {
+    account, loading, saving, dto, isDirty, isEditable, taxCategories,
+    updateField, saveField, handleSave,
+    archiveAccount, unarchiveAccount,
+  } = useAccount(params.id);
 
   useDocumentTitle(account ? (account.accountNumber ? `${account.accountNumber} - ${account.name}` : account.name) : null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [dto, setDto] = useState<Partial<Account>>({});
-  const [taxCategories, setTaxCategories] = useState<any[]>([]);
+
+  // Tab state is purely UI, kept local to the page
   const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
 
   const handleOrderRowClicked = useCallback((order: any) => {
@@ -121,96 +89,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       },
   ], [tSales]);
 
-
-
-  useEffect(() => {
-    apiFetch<Account>(`/api/accounts/${params.id}`)
-      .then((data) => {
-        setAccount(data);
-        setDto(data);
-      })
-      .catch((err) => reportError(err, 'AccountDetailPage'))
-      .finally(() => setLoading(false));
-      
-    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
-  }, [params.id]);
-
-  // Auto-save effect
-  useEffect(() => {
-    if (!isDirty || saving) return;
-
-    const handler = setTimeout(() => {
-      handleSave();
-    }, 1000);
-
-    return () => clearTimeout(handler);
-  }, [dto]);
-
-  const updateField = (field: keyof Account, value: any) => {
-    setDto((prev) => ({ ...prev, [field]: value }));
-    setIsDirty(true);
-  };
-
-  const handleSave = async () => {
-    if (!isDirty || saving) return;
-    setSaving(true);
-
-    try {
-      const updated = await apiMutate<Account>(
-        `/api/accounts/${params.id}`,
-        'PATCH',
-        dto,
-      );
-      setAccount({ ...updated, events: account?.events });
-      setDto({ ...updated, events: account?.events });
-      setIsDirty(false);
-      toast.success(t('toast.accountUpdated'));
-      // Refresh to get updated events
-      const refreshed = await apiFetch<Account>(`/api/accounts/${params.id}`);
-      setAccount(refreshed);
-      setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const archiveAccount = async () => {
-    if (!confirm(t('confirm.archiveOrder'))) return;
-    setSaving(true);
-    try {
-      await apiMutate(`/api/accounts/${params.id}/archive`, 'POST');
-      toast.success(t('toast.orderArchived'));
-      const refreshed = await apiFetch<Account>(`/api/accounts/${params.id}`);
-      setAccount(refreshed);
-      setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const unarchiveAccount = async () => {
-    setSaving(true);
-    try {
-      await apiMutate(`/api/accounts/${params.id}/unarchive`, 'POST');
-      toast.success(t('toast.orderUnarchived'));
-      const refreshed = await apiFetch<Account>(`/api/accounts/${params.id}`);
-      setAccount(refreshed);
-      setDto(refreshed);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) return <><div className="p-8">{t('common.loading')}</div></>;
   if (!account) return <><div className="p-8">{t('common.noMatchingResults')}</div></>;
 
-  const isEditable = account.stateCode !== 'archived';
 
   const visibleSections = [
     {
@@ -378,6 +259,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.name || ''}
                     onChange={(e) => updateField('name', e.target.value)}
+                    onBlur={(e) => saveField('name', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -399,7 +281,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   <GroupSelect
                     type="account"
                     value={dto.accountGroupId || null}
-                    onChange={(val) => updateField('accountGroupId', val)}
+                    onChange={(val) => { updateField('accountGroupId', val); saveField('accountGroupId', val); }}
                     disabled={!isEditable || saving}
                     placeholder={t('accounts.placeholders.noAccountGroup')}
                   />
@@ -412,7 +294,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     disabled={!isEditable || saving}
                     value={dto.taxCategoryId || ''}
-                    onChange={(e) => updateField('taxCategoryId', e.target.value)}
+                    onChange={(e) => { updateField('taxCategoryId', e.target.value); saveField('taxCategoryId', e.target.value); }}
                   >
                     <option value="">{t('common.options.none')}</option>
                     {taxCategories.map((cat) => (
@@ -431,6 +313,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input w-full"
                     value={dto.notes || ''}
                     onChange={(e) => updateField('notes', e.target.value)}
+                    onBlur={(e) => saveField('notes', e.target.value)}
                     placeholder={t('common.notesCardPlaceholder')}
                     disabled={!isEditable || saving}
                   />
@@ -453,7 +336,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 <select
                   className="input"
                   value={dto.currencyCode}
-                  onChange={(e) => updateField('currencyCode', e.target.value)}
+                  onChange={(e) => { updateField('currencyCode', e.target.value); saveField('currencyCode', e.target.value); }}
                   disabled={!isEditable || saving}
                 >
                   <option value="EUR">EUR</option>
@@ -473,6 +356,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   className="input"
                   value={dto.customerDiscount || '0'}
                   onChange={(e) => updateField('customerDiscount', e.target.value)}
+                  onBlur={(e) => saveField('customerDiscount', e.target.value)}
                   disabled={!isEditable || saving}
                 />
               </div>
@@ -485,7 +369,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
                   onClick={() => {
                     if (!isEditable || saving) return;
-                    updateField('stateCode', dto.stateCode === 'active' ? 'inactive' : 'active');
+                    const newState = dto.stateCode === 'active' ? 'inactive' : 'active';
+                    updateField('stateCode', newState);
+                    saveField('stateCode', newState);
                   }}
                 >
                   <div
@@ -537,6 +423,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.emailAddress1 || ''}
                     onChange={(e) => updateField('emailAddress1', e.target.value)}
+                    onBlur={(e) => saveField('emailAddress1', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -549,6 +436,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.telephone1 || ''}
                     onChange={(e) => updateField('telephone1', e.target.value)}
+                    onBlur={(e) => saveField('telephone1', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -561,6 +449,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.address1Line1 || ''}
                     onChange={(e) => updateField('address1Line1', e.target.value)}
+                    onBlur={(e) => saveField('address1Line1', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -573,6 +462,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.address1City || ''}
                     onChange={(e) => updateField('address1City', e.target.value)}
+                    onBlur={(e) => saveField('address1City', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -585,6 +475,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.address1StateOrProvince || ''}
                     onChange={(e) => updateField('address1StateOrProvince', e.target.value)}
+                    onBlur={(e) => saveField('address1StateOrProvince', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -597,6 +488,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.address1PostalCode || ''}
                     onChange={(e) => updateField('address1PostalCode', e.target.value)}
+                    onBlur={(e) => saveField('address1PostalCode', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -609,6 +501,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.address1Country || ''}
                     onChange={(e) => updateField('address1Country', e.target.value)}
+                    onBlur={(e) => saveField('address1Country', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -633,6 +526,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.primaryContactName || ''}
                     onChange={(e) => updateField('primaryContactName', e.target.value)}
+                    onBlur={(e) => saveField('primaryContactName', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -645,6 +539,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.primaryContactEmail || ''}
                     onChange={(e) => updateField('primaryContactEmail', e.target.value)}
+                    onBlur={(e) => saveField('primaryContactEmail', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>
@@ -657,6 +552,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     className="input"
                     value={dto.primaryContactPhone || ''}
                     onChange={(e) => updateField('primaryContactPhone', e.target.value)}
+                    onBlur={(e) => saveField('primaryContactPhone', e.target.value)}
                     disabled={!isEditable || saving}
                   />
                 </div>

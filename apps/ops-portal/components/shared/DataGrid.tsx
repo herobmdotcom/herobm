@@ -119,6 +119,8 @@ export interface DataGridProps<T> {
   rowSelection?: "single" | "multiple";
   /** Callback when selection changes */
   onSelectionChanged?: (selectedRows: T[]) => void;
+  /** Number to trigger a refresh without unmounting the grid */
+  refreshTrigger?: number;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -151,6 +153,7 @@ export default function DataGrid<T>({
   rowIdField,
   rowSelection = "single",
   onSelectionChanged,
+  refreshTrigger = 0,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -257,7 +260,7 @@ export default function DataGrid<T>({
       })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
-  }, [endpoint, search, includeArchived, page, apiFetch, onError]);
+  }, [endpoint, search, includeArchived, page, apiFetch, onError, refreshTrigger]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(

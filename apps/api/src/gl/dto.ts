@@ -6,6 +6,7 @@ import {
   IsNumber,
 } from 'class-validator';
 
+export * from './dto/reconciliation.dto';
 export class JournalLineDto {
   /** Account code (e.g. "1100") — resolved to gl_account_id internally */
   @IsString()

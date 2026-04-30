@@ -118,23 +118,18 @@ export default function SettingsPage() {
     }
   };
 
-  // Auto-save effect for organization
-  useEffect(() => {
-    if (!isOrgDirty || orgSaving || !orgForm.name) return;
-
-    const handler = setTimeout(() => {
-      orgSave();
-    }, 2000); // 2s debounce for platform settings
-
-    return () => clearTimeout(handler);
-  }, [orgForm, isOrgDirty, orgSaving]);
-
   const updateOrgField = (field: string, value: any) => {
     setOrgForm((prev: any) => {
       if (prev[field] === value) return prev;
       setIsOrgDirty(true);
       return { ...prev, [field]: value };
     });
+  };
+
+  /** Persist org settings on blur (replaces timer-based auto-save). */
+  const saveOrgField = async () => {
+    if (orgSaving || !orgForm.name) return;
+    orgSave();
   };
 
   const orgSave = async () => {
@@ -590,6 +585,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.name || ''}
                   onChange={(e) => updateOrgField('name', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.companyName')}
                 />
               </div>
@@ -602,6 +598,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.email || ''}
                     onChange={(e) => updateOrgField('email', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.email')}
                   />
                 </div>
@@ -613,6 +610,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.phone || ''}
                     onChange={(e) => updateOrgField('phone', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.phone')}
                   />
                 </div>
@@ -625,6 +623,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.website || ''}
                   onChange={(e) => updateOrgField('website', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.website')}
                 />
               </div>
@@ -637,6 +636,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.companyNumber || ''}
                     onChange={(e) => updateOrgField('companyNumber', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.companyNumber')}
                   />
                 </div>
@@ -648,6 +648,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.taxNumber || ''}
                     onChange={(e) => updateOrgField('taxNumber', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.taxNumber')}
                   />
                 </div>
@@ -660,6 +661,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.logoUrl || ''}
                   onChange={(e) => updateOrgField('logoUrl', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.logoUrl')}
                 />
               </div>
@@ -674,6 +676,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.addressLine1 || ''}
                   onChange={(e) => updateOrgField('addressLine1', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.address1')}
                 />
               </div>
@@ -685,6 +688,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.addressLine2 || ''}
                   onChange={(e) => updateOrgField('addressLine2', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.address2')}
                 />
               </div>
@@ -697,6 +701,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.city || ''}
                     onChange={(e) => updateOrgField('city', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.city')}
                   />
                 </div>
@@ -708,6 +713,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.state || ''}
                     onChange={(e) => updateOrgField('state', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.state')}
                   />
                 </div>
@@ -721,6 +727,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.postCode || ''}
                     onChange={(e) => updateOrgField('postCode', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.postCode')}
                   />
                 </div>
@@ -732,6 +739,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.country || ''}
                     onChange={(e) => updateOrgField('country', e.target.value)}
+                    onBlur={saveOrgField}
                     placeholder={tSettings('placeholders.country')}
                   />
                 </div>
@@ -760,6 +768,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.bankName || ''}
                   onChange={(e) => updateOrgField('bankName', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.bankName')}
                 />
               </div>
@@ -771,6 +780,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.bankAccountName || ''}
                   onChange={(e) => updateOrgField('bankAccountName', e.target.value)}
+                  onBlur={saveOrgField}
                   placeholder={tSettings('placeholders.accountName')}
                 />
               </div>
@@ -785,6 +795,7 @@ export default function SettingsPage() {
                   className="input"
                   value={orgForm.bankAccountNumber || ''}
                   onChange={(e) => updateOrgField('bankAccountNumber', e.target.value)}
+                  onBlur={saveOrgField}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -796,6 +807,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.bankIban || ''}
                     onChange={(e) => updateOrgField('bankIban', e.target.value)}
+                    onBlur={saveOrgField}
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -806,6 +818,7 @@ export default function SettingsPage() {
                     className="input"
                     value={orgForm.bankSwiftBic || ''}
                     onChange={(e) => updateOrgField('bankSwiftBic', e.target.value)}
+                    onBlur={saveOrgField}
                   />
                 </div>
               </div>

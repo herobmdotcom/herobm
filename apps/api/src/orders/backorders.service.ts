@@ -14,13 +14,15 @@ import {
   orderEvents,
   suppliers as coreSuppliers,
   taxCategories,
+  locations,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { eq, inArray, and, sql } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
 import { calculateInventoryGaps } from '@modbm/shared';
-import type { InventoryGap } from '@modbm/shared';
+import { OPEN_PURCHASE_ORDER_STATES } from '@modbm/shared';
+import type { InventoryGap, PurchaseOrderState } from '@modbm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
 
@@ -142,22 +144,27 @@ export class BackordersService {
    */
   async unlinkDemand(backorderId: string, actor: string): Promise<void> {
     await this.db.transaction(async (tx) => {
-      const [updated] = await tx
+      // Fetch current state before unlinking to get the PO ID
+      const [current] = await tx
+        .select({ purchaseOrderId: backorders.purchaseOrderId })
+        .from(backorders)
+        .where(eq(backorders.backorderId, backorderId));
+
+      await tx
         .update(backorders)
         .set({
           purchaseOrderId: null,
           purchaseOrderLineId: null,
           stateCode: 'pending_supply',
         })
-        .where(eq(backorders.backorderId, backorderId))
-        .returning();
+        .where(eq(backorders.backorderId, backorderId));
 
-      if (updated && updated.purchaseOrderId) {
-        // Emit event on PO side
+      if (current && current.purchaseOrderId) {
+        // Emit event on PO side using the old PO ID
         await emitEvent(tx, {
           aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: updated.purchaseOrderId,
-          eventType: 'demand_unlinked',
+          aggregateId: current.purchaseOrderId,
+          eventType: EventType.DEMAND_UNALLOCATED,
           actor,
           payload: { backorderId },
         });
@@ -221,7 +228,7 @@ export class BackordersService {
           ),
         )
         .where(
-          inArray(purchaseOrders.stateCode, ['draft', 'issued', 'confirmed']),
+          inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES),
         ); // Open POs
 
       const existingAllocations = await tx
@@ -625,6 +632,159 @@ export class BackordersService {
           }
         }
       }
+    });
+  }
+
+  /**
+   * Returns open PO lines for a given product, calculating their available unallocated capacity.
+   */
+  async getAvailablePoLines(productId: string) {
+    if (!productId) return [];
+
+    const openPoLines = await this.db
+      .select({
+        purchaseOrderId: purchaseOrders.purchaseOrderId,
+        purchaseOrderLineId: purchaseOrderLineItems.purchaseOrderLineId,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: purchaseOrders.stateCode,
+        quantity: purchaseOrderLineItems.quantity,
+        vendorId: purchaseOrders.vendorId,
+        vendorName: coreSuppliers.name,
+        deliveryLocationId: purchaseOrders.deliveryLocationId,
+        locationName: locations.name,
+      })
+      .from(purchaseOrderLineItems)
+      .innerJoin(purchaseOrders, eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrders.purchaseOrderId))
+      .leftJoin(coreSuppliers, eq(purchaseOrders.vendorId, coreSuppliers.vendorId))
+      .leftJoin(locations, eq(purchaseOrders.deliveryLocationId, locations.locationId))
+      .where(
+        and(
+          eq(purchaseOrderLineItems.productId, productId),
+          inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES)
+        )
+      );
+
+    if (openPoLines.length === 0) return [];
+
+    const poLineIds = openPoLines.map(l => l.purchaseOrderLineId);
+    
+    // Get existing allocations
+    const existingAllocations = await this.db
+      .select({
+        purchaseOrderLineId: backorders.purchaseOrderLineId,
+        allocatedQty: sql<number>`SUM(${backorders.quantity}::numeric)`,
+      })
+      .from(backorders)
+      .where(inArray(backorders.purchaseOrderLineId, poLineIds))
+      .groupBy(backorders.purchaseOrderLineId);
+
+    const allocationMap = new Map<string, number>();
+    for (const a of existingAllocations) {
+      if (a.purchaseOrderLineId) {
+        allocationMap.set(a.purchaseOrderLineId, Number(a.allocatedQty));
+      }
+    }
+
+    const availableLines = openPoLines.map(line => {
+      const allocated = allocationMap.get(line.purchaseOrderLineId) || 0;
+      return {
+        ...line,
+        availableQty: Number(line.quantity) - allocated,
+      };
+    }).filter(line => line.availableQty > 0);
+
+    return availableLines;
+  }
+
+  /**
+   * Manually links an open demand to a specific PO line. Splits the demand if necessary.
+   */
+  async linkDemandToPo(demandId: string, purchaseOrderLineId: string, quantityToLink: number, actor: string) {
+    await this.db.transaction(async (tx) => {
+      // 1. Get the demand
+      const [demand] = await tx
+        .select()
+        .from(backorders)
+        .where(eq(backorders.backorderId, demandId));
+
+      if (!demand) throw new HttpException('Demand not found', HttpStatus.NOT_FOUND);
+      if (demand.purchaseOrderId) throw new HttpException('Demand is already linked', HttpStatus.BAD_REQUEST);
+
+      const demandQty = Number(demand.quantity);
+      if (quantityToLink <= 0 || quantityToLink > demandQty) {
+        throw new HttpException('Invalid quantity', HttpStatus.BAD_REQUEST);
+      }
+
+      // 2. Get the target PO line
+      const [poLine] = await tx
+        .select({
+          purchaseOrderId: purchaseOrderLineItems.purchaseOrderId,
+          quantity: purchaseOrderLineItems.quantity,
+          productId: purchaseOrderLineItems.productId,
+        })
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId));
+
+      if (!poLine) throw new HttpException('PO line not found', HttpStatus.NOT_FOUND);
+      if (poLine.productId !== demand.productId) throw new HttpException('Product mismatch', HttpStatus.BAD_REQUEST);
+
+      // Verify capacity
+      const [existingAlloc] = await tx
+        .select({ allocated: sql<number>`SUM(${backorders.quantity}::numeric)` })
+        .from(backorders)
+        .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));
+
+      const allocated = Number(existingAlloc?.allocated || 0);
+      const available = Number(poLine.quantity) - allocated;
+
+      if (quantityToLink > available) {
+        throw new HttpException(`Insufficient capacity on PO line. Available: ${available}`, HttpStatus.BAD_REQUEST);
+      }
+
+      // 3. Link (and split if needed)
+      if (quantityToLink < demandQty) {
+        // Update current row to the allocated quantity
+        await tx
+          .update(backorders)
+          .set({
+            purchaseOrderId: poLine.purchaseOrderId,
+            purchaseOrderLineId: purchaseOrderLineId,
+            quantity: quantityToLink.toString(),
+            stateCode: 'awaiting_receipt',
+          })
+          .where(eq(backorders.backorderId, demandId));
+
+        // Create remaining demand
+        const remainingQty = demandQty - quantityToLink;
+        await tx
+          .insert(backorders)
+          .values({
+            salesOrderId: demand.salesOrderId,
+            salesOrderLineId: demand.salesOrderLineId,
+            productId: demand.productId,
+            quantity: remainingQty.toString(),
+            stateCode: 'pending_supply',
+          });
+      } else {
+        // Fully allocate
+        await tx
+          .update(backorders)
+          .set({
+            purchaseOrderId: poLine.purchaseOrderId,
+            purchaseOrderLineId: purchaseOrderLineId,
+            stateCode: 'awaiting_receipt',
+          })
+          .where(eq(backorders.backorderId, demandId));
+      }
+
+      // Optional: Emit event
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: poLine.purchaseOrderId as string,
+        eventType: EventType.DEMAND_ALLOCATED,
+        actor,
+        payload: { backorderId: demandId, quantity: quantityToLink },
+      });
     });
   }
 }

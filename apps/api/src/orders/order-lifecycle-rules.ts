@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrders, salesOrderLineItems } from '../drizzle/modbm-core-schema';
+import { salesOrders, salesOrderLineItems, salesInvoices, salesInvoiceLines } from '../drizzle/modbm-core-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 
 export interface LifecycleTrigger {
-  entity: 'shipment';
+  entity: 'shipment' | 'sales_invoice';
   id: string;
   action: string;
 }
@@ -168,6 +168,86 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
   },
 };
 
+export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
+  name: 'auto-invoice-when-fully-invoiced',
+  description:
+    'Transitions an order to invoiced when all lines have been fully billed',
+  enabled: true,
+  evaluate: async (db, salesOrderId, trigger, actor) => {
+    // 1. Only applies if triggered by an invoice creation
+    if (trigger.entity !== 'sales_invoice' || trigger.action !== 'created')
+      return null;
+
+    const order = await findOrder(db, salesOrderId);
+    if (order.stateCode === 'invoiced' || order.stateCode === 'cancelled')
+      return null;
+
+    // 2. Get all lines and ordered quantities
+    const lines = await db
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        quantity: salesOrderLineItems.quantity,
+      })
+      .from(salesOrderLineItems)
+      .where(eq(salesOrderLineItems.salesOrderId, salesOrderId));
+
+    if (lines.length === 0) return null;
+
+    // 3. Get invoiced quantities
+    const { sql } = await import('drizzle-orm');
+    
+    let isFullyInvoiced = true;
+    for (const line of lines) {
+      const [{ totalInvoiced }] = await db
+        .select({
+          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+        })
+        .from(salesInvoiceLines)
+        .innerJoin(salesInvoices, eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId))
+        .where(
+          eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId)
+        );
+
+      const invoiced = parseFloat(totalInvoiced || '0');
+      const ordered = parseFloat(line.quantity || '0');
+      
+      if (invoiced < ordered - 0.001) {
+        isFullyInvoiced = false;
+        break;
+      }
+    }
+
+    if (!isFullyInvoiced) return null;
+
+    // 4. Execute transition
+    await db
+      .update(salesOrders)
+      .set({ stateCode: 'invoiced', modifiedOn: new Date() })
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: salesOrderId,
+      eventType: 'auto_status_changed',
+      payload: {
+        rule: 'auto-invoice-when-fully-invoiced',
+        trigger,
+        from: order.stateCode,
+        to: 'invoiced',
+        reason: 'All lines fully invoiced',
+      },
+      actor,
+    });
+
+    return {
+      ruleName: 'auto-invoice-when-fully-invoiced',
+      from: order.stateCode,
+      to: 'invoiced',
+      reason: 'All lines fully invoiced',
+    };
+  },
+};
+
 // ============================================================================
 // Registry & Engine
 // ============================================================================
@@ -175,6 +255,7 @@ export const revertToPickingOnShipmentCancel: LifecycleRule = {
 const LIFECYCLE_RULES: LifecycleRule[] = [
   autoShipWhenFullyShipped,
   revertToPickingOnShipmentCancel,
+  autoInvoiceWhenFullyInvoiced,
 ];
 
 /**

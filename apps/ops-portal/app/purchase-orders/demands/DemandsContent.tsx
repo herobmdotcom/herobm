@@ -3,6 +3,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import DataGrid from '@/components/DataGrid';
 import DraftPOsModal from './DraftPOsModal';
+import LinkToPOSlideOver from './LinkToPOSlideOver';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
@@ -32,6 +33,7 @@ export default function DemandsContent() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedRows, setSelectedRows] = useState<DemandRow[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLinkSlideOverOpen, setIsLinkSlideOverOpen] = useState(false);
 
   const columns = useMemo<ColDef<DemandRow>[]>(() => [
     {
@@ -74,6 +76,7 @@ export default function DemandsContent() {
 
   const handleModalSuccess = () => {
     setIsModalOpen(false);
+    setIsLinkSlideOverOpen(false);
     setSelectedRows([]);
     setRefreshKey((k) => k + 1);
   };
@@ -83,8 +86,8 @@ export default function DemandsContent() {
       <div className="relative h-full flex flex-col">
         <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
           <DataGrid<DemandRow>
-            // We use refreshKey to force a refetch after resolving
-            endpoint={`/api/allocations/open?refresh=${refreshKey}`}
+            refreshTrigger={refreshKey}
+            endpoint={`/api/allocations/open`}
             columns={columns}
             gridKey="open-demands"
             searchPlaceholder="Search demands..."
@@ -117,6 +120,13 @@ export default function DemandsContent() {
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {optionsButton}
                   <button 
+                    onClick={() => setIsLinkSlideOverOpen(true)} 
+                    disabled={selectedRows.length === 0}
+                    className="btn btn-secondary px-4 py-2 text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    Link to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                  </button>
+                  <button 
                     onClick={handleDraftPOs} 
                     disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
@@ -134,6 +144,12 @@ export default function DemandsContent() {
         onClose={() => setIsModalOpen(false)} 
         selectedDemands={selectedRows} 
         onSuccess={handleModalSuccess} 
+      />
+      <LinkToPOSlideOver
+        isOpen={isLinkSlideOverOpen}
+        onClose={() => setIsLinkSlideOverOpen(false)}
+        demands={selectedRows}
+        onRefresh={handleModalSuccess}
       />
     </div>
   );

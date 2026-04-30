@@ -16,7 +16,7 @@ import type { ProductUom } from '@modbm/shared';
 
 import type {
   TaxCategory, OrderLine, OrderDetail,
-  InventoryLevel, OrderReturn, OrderEvent,
+  InventoryLevel, OrderReturn, OrderEvent, Allocation
 } from './types';
 import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -58,7 +58,7 @@ export function usePurchaseOrder(id: string) {
   const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
 
   /* ── Tab state for line items / availability ────────────────── */
-  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
+  const [activeTab, setActiveTab] = useState<'lines' | 'availability' | 'status'>('lines');
   const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
   const [inventoryLoading, setInventoryLoading] = useState(false);
 
@@ -79,6 +79,10 @@ export function usePurchaseOrder(id: string) {
   /* ── Invoices state ─────────────────────────────────────────── */
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [invoicing, setInvoicing] = useState(false);
+
+  /* ── Allocations state ──────────────────────────────────────── */
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [allocationsLoading, setAllocationsLoading] = useState(false);
 
   /* ── Derived flags ──────────────────────────────────────────── */
   const isHeaderEditable = order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
@@ -174,6 +178,18 @@ export function usePurchaseOrder(id: string) {
     }
   };
 
+  const loadAllocations = async () => {
+    setAllocationsLoading(true);
+    try {
+      const { data } = await apiFetch<{ data: Allocation[] }>(`/api/allocations/by-po/${encodeURIComponent(id)}`);
+      setAllocations(data || []);
+    } catch {
+      setAllocations([]);
+    } finally {
+      setAllocationsLoading(false);
+    }
+  };
+
   /* ── Effects ────────────────────────────────────────────────── */
 
   // Initial load
@@ -188,6 +204,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     if (['ordered', 'received', 'partially_received', 'billed', 'invoiced', 'legacy', 'archived'].includes(order?.stateCode || '')) {
       loadInvoices();
+      loadAllocations();
     }
     if (['billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
       loadReturns();
@@ -400,6 +417,10 @@ export function usePurchaseOrder(id: string) {
     invoices,
     invoicing, setInvoicing,
 
+    // Allocations
+    allocations,
+    allocationsLoading,
+
     // Actions
     setError,
     clearError,
@@ -414,6 +435,7 @@ export function usePurchaseOrder(id: string) {
     loadOrder,
     loadInvoices,
     loadReturns,
+    loadAllocations,
   };
 }
 

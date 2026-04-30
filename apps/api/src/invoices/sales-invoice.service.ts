@@ -26,6 +26,7 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { getCommittedPerLine } from '../orders/shipment-helpers';
+import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { computeLinePrice } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { CreateSalesInvoiceDto } from './dto';
@@ -344,12 +345,8 @@ export class SalesInvoiceService {
       await tx.insert(salesInvoiceLines).values(preparedLines);
 
       // C. Transition originating Order cleanly
-      if (isFullyInvoiced) {
-        await tx
-          .update(salesOrders)
-          .set({ stateCode: 'invoiced', modifiedOn: new Date() })
-          .where(eq(salesOrders.salesOrderId, salesOrderId));
-      }
+      // Handled by evaluateLifecycleRules after the transaction
+
 
       // D. Generate specific Outbox Sync Event asynchronously routing back
       const outboxPayload = {
@@ -381,6 +378,17 @@ export class SalesInvoiceService {
     this.logger.log(
       `Native Sales Invoice created: ${invoiceNumber} for order ${order.orderNumber} strictly mapping AR boundary`,
     );
+
+    // Evaluate lifecycle rules to auto-transition the Sales Order if needed
+    try {
+      await evaluateLifecycleRules(this.db, salesOrderId, {
+        entity: 'sales_invoice',
+        action: 'created',
+        id: result.invoiceId,
+      }, actor);
+    } catch (err) {
+      this.logger.error(`Failed to evaluate lifecycle rules for SO ${salesOrderId} after invoice creation:`, err);
+    }
 
     // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
     try {

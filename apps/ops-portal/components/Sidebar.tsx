@@ -66,6 +66,7 @@ export default function Sidebar() {
             { href: '/general-ledger', label: t('items.generalLedger') },
             { href: '/general-ledger/trial-balance', label: t('items.trialBalance') },
             { href: '/general-ledger/journal-entries', label: t('items.journalEntries') },
+            { href: '/general-ledger/reconciliations', label: 'Bank Reconciliations' },
           ]
         },
       ],

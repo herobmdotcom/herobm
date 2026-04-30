@@ -19,6 +19,17 @@ export interface OrderLine {
   productUoms?: ProductUom[];
 }
 
+export interface Allocation {
+  id: string;
+  salesOrderId: string;
+  orderNumber: string | null;
+  productId: string;
+  productName: string | null;
+  quantity: string;
+  createdOn: string;
+  purchaseOrderLineId: string | null;
+}
+
 export interface TaxCategory {
   taxCategoryId: string;
   code: string;

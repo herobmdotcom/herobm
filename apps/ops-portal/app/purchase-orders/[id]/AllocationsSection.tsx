@@ -6,47 +6,24 @@ import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 import { useTranslations } from 'next-intl';
+import type { Allocation } from './types';
 
-interface Allocation {
-  id: string;
-  salesOrderId: string;
-  orderNumber: string | null;
-  productId: string;
-  productName: string | null;
-  quantity: string;
-  createdOn: string;
-  purchaseOrderLineId: string | null;
+interface AllocationsSectionProps {
+  orderId: string;
+  allocations: Allocation[];
+  loading: boolean;
+  onAllocationsChanged: () => void;
 }
 
-export default function AllocationsSection({ orderId }: { orderId: string }) {
+export default function AllocationsSection({ orderId, allocations, loading, onAllocationsChanged }: AllocationsSectionProps) {
   const tCommon = useTranslations('common');
-  const [allocations, setAllocations] = useState<Allocation[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const loadAllocations = async () => {
-    setLoading(true);
-    try {
-      const { data } = await apiFetch<{ data: Allocation[] }>(`/api/allocations/by-po/${orderId}`);
-      setAllocations(data || []);
-    } catch (err) {
-      reportError(err, 'AllocationsSection');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (orderId) {
-      loadAllocations();
-    }
-  }, [orderId]);
 
   const handleUnlink = async (id: string) => {
     if (!confirm('Are you sure you want to unlink this demand? It will be placed back into the Open Demands pool.')) return;
     try {
       await apiFetch(`/api/allocations/${id}/unlink`, { method: 'POST' });
       toast.success('Demand unlinked successfully');
-      loadAllocations();
+      onAllocationsChanged();
     } catch (err) {
       reportError(err, 'AllocationsSection');
       toast.error('Failed to unlink demand');

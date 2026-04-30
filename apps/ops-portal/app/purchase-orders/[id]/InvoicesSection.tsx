@@ -65,47 +65,6 @@ export default function InvoicesSection({
                 )}
             </div>
 
-            <div style={{ marginBottom: 24, marginTop: 16 }}>
-                <h4 style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 12, letterSpacing: '0.05em' }}>{tPurchase('billSummary')}</h4>
-                <table className="table-lines">
-                    <thead>
-                        <tr>
-                            <th>{tPurchase('columns.product')}</th>
-                            <th>{tPurchase('columns.description')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(order.lines || []).map(line => {
-                            const ordered = parseFloat(line.quantity || '0');
-                            const received = parseFloat(line.quantityReceived || '0');
-                            const billed = Invoices.reduce((sum, inv) => {
-                                const invLine = inv.lines?.find(il => il.purchaseOrderLineId === line.purchaseOrderLineId);
-                                return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
-                            }, 0);
-                            const remaining = Math.max(0, ordered - billed);
-                            return (
-                                <tr key={line.purchaseOrderLineId}>
-                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                        {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                    </td>
-                                    <td>{line.productDescription || '—'}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: billed >= received && received > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: billed >= received && received > 0 ? 600 : 400 }}>{billed}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            </div>
-
-
-
             <div className="space-y-3">
                 {Invoices.map(inv => (
                     <div key={inv.invoiceId} style={{ marginBottom: 12, padding: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-card, #fff)' }}>

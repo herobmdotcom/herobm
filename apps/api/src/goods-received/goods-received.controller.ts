@@ -42,8 +42,8 @@ export class GoodsReceivedController {
 
   @Get('lines')
   @CasbinAction('read')
-  async findAllLines(@Query() query: PaginationQuery) {
-    return this.goodsReceivedService.findAllLines(query);
+  async findAllLines(@Query() query: PaginationQuery, @Query('purchaseOrderId') purchaseOrderId?: string) {
+    return this.goodsReceivedService.findAllLines(query, purchaseOrderId);
   }
 
   @Get(':id')
@@ -63,6 +63,7 @@ export class GoodsReceivedController {
       lineId,
       resolveDto.purchaseOrderLineId,
       user.username,
+      resolveDto.allocatedQuantity,
     );
   }
 

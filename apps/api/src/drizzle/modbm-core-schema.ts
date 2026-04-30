@@ -1224,6 +1224,22 @@ export const glJournalEntries = modbmCore.table('gl_journal_entries', {
 });
 
 // ---------------------------------------------------------------------------
+// gl_reconciliations (Bank Reconciliation header)
+// ---------------------------------------------------------------------------
+export const glReconciliations = modbmCore.table('gl_reconciliations', {
+  reconciliationId: uuid('reconciliation_id').primaryKey().defaultRandom(),
+  glAccountId: uuid('gl_account_id')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  statementDate: date('statement_date').notNull(),
+  statementBalance: numeric('statement_balance').notNull(),
+  status: text('status').notNull().default('draft'), // 'draft' | 'posted'
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  postedOn: timestamp('posted_on', { withTimezone: true }),
+});
+
+// ---------------------------------------------------------------------------
 // gl_journal_lines  (Debits and Credits — the core of double-entry)
 // ---------------------------------------------------------------------------
 export const glJournalLines = modbmCore.table('gl_journal_lines', {
@@ -1239,6 +1255,8 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
   debit: numeric('debit').notNull().default('0'),
   credit: numeric('credit').notNull().default('0'),
   memo: text('memo'),
+  isReconciled: boolean('is_reconciled').notNull().default(false),
+  reconciliationId: uuid('reconciliation_id').references(() => glReconciliations.reconciliationId),
 });
 
 // ---------------------------------------------------------------------------

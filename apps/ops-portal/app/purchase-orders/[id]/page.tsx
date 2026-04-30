@@ -1,16 +1,13 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { calculateAvailableQuantity } from '@modbm/shared';
-import OrderTotalsCard from '@/components/shared/OrderTotalsCard';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import type { Product } from '@/components/shared/ProductSearchInput';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
-import { computeLinePrice, calculateUomPriceAdjustment } from '@modbm/shared';
+import { calculateUomPriceAdjustment } from '@modbm/shared';
 import type { ProductUom } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -19,43 +16,21 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import LocationSelect from '@/components/shared/LocationSelect';
 
-import type { TaxCategory, OrderLine, OrderDetail, InventoryLevel, OrderReturn, ReturnLine, OrderEvent } from './types';
-import type { PurchaseInvoice } from '@/lib/purchase-order-utils';
+import type { TaxCategory } from './types';
 import { getTaxLabel } from './types';
 import InvoicesSection from './InvoicesSection';
 import AllocationsSection from './AllocationsSection';
-
+import ReceptionsSection from './ReceptionsSection';
 import ReturnsSection from './ReturnsSection';
+import { usePurchaseOrder } from './usePurchaseOrder';
+
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
 
 function TaxLabel({ category }: { category: TaxCategory }) {
   if (!category) return null;
   return <>{getTaxLabel(category)}</>;
 }
-
-import {
-  RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
-  PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
-  PURCHASE_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
-  RETURN_LIFECYCLE,
-  isBackTransition as sharedIsBackTransition,
-  cap,
-} from '@modbm/shared';
-import StateBadge, { StateName } from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
-
-function isBackTransition(
-  from: string, to: string,
-  lifecycle: Record<string, number> = ORDER_LIFECYCLE,
-): boolean {
-  return sharedIsBackTransition(lifecycle, from, to);
-}
-
-function ReturnStateBadge({ state }: { state: ValidState }) {
-  const t = useTranslations('common.states');
-  return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
-}
-
-
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -63,284 +38,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
   const tToast = useTranslations('toast');
-  const tConfirm = useTranslations('confirm');
 
-  const [order, setOrder] = useState<OrderDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const o = usePurchaseOrder(id);
+
+
+  const { order, loading, error, saving, copying, latestAutoTransition,
+    isHeaderEditable, isLinesEditable, visibleTransitions, subtotal, totalTax,
+    editName, setEditName, editReferenceNumber, setEditReferenceNumber,
+    editNotes, setEditNotes, editLocationId, setEditLocationId, headerDirty,
+    taxCategories, activeTab, setActiveTab, inventoryData, inventoryLoading,
+    invoices, setInvoicing,
+    clearError, setError, saveHeader, changeState, copyOrder,
+    updateLine, updateLineFields, removeLine, addLineFromProduct, addBlankLine,
+    loadOrder, loadInvoices, loadAllocations, allocations, allocationsLoading,
+  } = o;
 
   useDocumentTitle(order ? (order.name ? `${order.orderNumber} - ${order.name}` : order.orderNumber) : null);
-  const [saving, setSaving] = useState(false);
-  const [copying, setCopying] = useState(false);
-  const [latestAutoTransition, setLatestAutoTransition] = useState<{
-    ruleName: string;
-    from: string;
-    to: string;
-    reason: string;
-  } | null>(null);
-
-  // Editable header fields
-  const [editName, setEditName] = useState('');
-  const [editReferenceNumber, setEditReferenceNumber] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-  const [editLocationId, setEditLocationId] = useState<string | null>(null);
-  const [headerDirty, setHeaderDirty] = useState(false);
-
-  // Add-line product search is handled by shared ProductSearchInput
-
-  // GST categories
-  const [taxCategories, setTaxCategories] = useState<TaxCategory[]>([]);
-
-  // Tab state for line items / availability
-  const [activeTab, setActiveTab] = useState<'lines' | 'availability'>('lines');
-  const [inventoryData, setInventoryData] = useState<InventoryLevel[]>([]);
-  const [inventoryLoading, setInventoryLoading] = useState(false);
-
-  // Returns state
-  const [returns, setReturns] = useState<OrderReturn[]>([]);
-  const [returnsLoading, setReturnsLoading] = useState(false);
-  const [showCreateReturn, setShowCreateReturn] = useState(false);
-  const [newReturnNotes, setNewReturnNotes] = useState('');
-  const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
-  const [invoicing, setInvoicing] = useState(false);
-  const [newReturnLines, setNewReturnLines] = useState<Array<{
-    purchaseOrderLineId: string;
-    quantityReturned: string;
-    reason: string;
-    returnFee: string;
-    feeMode: 'absolute' | 'percentage';
-    originalAmount: number;
-  }>>([])
-
-  const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
-    if (showSpinner) setLoading(true);
-    try {
-      const data = await apiFetch<OrderDetail>(
-        `/api/purchase-orders/${encodeURIComponent(id)}`,
-      );
-      setOrder(data);
-      setEditName(data.name || '');
-      setEditReferenceNumber(data.referenceNumber || '');
-      setEditNotes(data.notes || '');
-      setEditLocationId(data.deliveryLocationId || null);
-      setHeaderDirty(false);
-
-      if (autoTransitions && autoTransitions.length > 0) {
-        setLatestAutoTransition(autoTransitions[0]);
-        setTimeout(() => setLatestAutoTransition(null), 5000);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tPurchase('orderNotFound'));
-    } finally {
-      if (showSpinner) setLoading(false);
-    }
-  };
-
-  const loadReturns = async () => {
-    setReturnsLoading(true);
-    try {
-      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/returns`);
-      setReturns(data?.data || data || []);
-    } catch (err) {
-      // Returns might not exist yet, that's fine
-      setReturns([]);
-    } finally {
-      setReturnsLoading(false);
-    }
-  };
-
-  const loadInvoices = async () => {
-    try {
-      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/invoices`);
-      setInvoices(data?.data || data || []);
-    } catch (err) {
-      setInvoices([]);
-    }
-  };
-
-  useEffect(() => {
-    loadOrder();
-    // Load GST categories
-    apiFetch<TaxCategory[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'OrderDetailPage'));
-  }, [id]);
-
-  // Load returns and invoices when order is received, partially_received, billed or invoiced
-  useEffect(() => {
-    if (['ordered', 'received', 'partially_received', 'billed', 'invoiced', 'legacy', 'archived'].includes(order?.stateCode || '')) {
-      loadInvoices();
-    }
-    if (['billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
-      loadReturns();
-    }
-  }, [order?.stateCode]);
-
-  // Load inventory when availability tab is selected
-  useEffect(() => {
-    if (activeTab !== 'availability' || !order || order.lines.length === 0) return;
-    const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
-    if (productIds.length === 0) return;
-    setInventoryLoading(true);
-    apiFetch<{ data: InventoryLevel[] }>(
-      `/api/inventory/by-products?productIds=${productIds.join(',')}`,
-    )
-      .then((res) => setInventoryData(res.data))
-      .catch((err) => reportError(err, 'OrderDetailPage'))
-      .finally(() => setInventoryLoading(false));
-  }, [activeTab, order]);
-
-  const isHeaderEditable = order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
-  // Lines editable only in draft
-  const isLinesEditable = order?.stateCode === 'draft';
-
-  // Track header changes
-  useEffect(() => {
-    if (!order) return;
-    const changed =
-      editName !== (order.name || '') ||
-      editReferenceNumber !== (order.referenceNumber || '') ||
-      editNotes !== (order.notes || '') ||
-      editLocationId !== (order.deliveryLocationId || null);
-    setHeaderDirty(changed);
-  }, [editName, editReferenceNumber, editNotes, order]);
-
-  // Save header
-  const saveHeader = async () => {
-    if (!headerDirty) return;
-    setSaving(true);
-    try {
-      await apiMutate(`/api/purchase-orders/${id}`, 'PATCH', {
-        name: editName || null,
-        referenceNumber: editReferenceNumber || null,
-        notes: editNotes || null,
-        deliveryLocationId: editLocationId || null,
-      });
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // State transitions
-  const changeState = async (newState: string) => {
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/state`, 'PATCH', { stateCode: newState });
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
-    }
-  };
-
-  // Copy order → create new draft with same lines
-  const copyOrder = async () => {
-    if (!order) return;
-    setCopying(true);
-    try {
-      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const newOrder = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
-        orderNumber: `PO-${today}-${rand}`,
-        name: order.name ? `Copy of ${order.name}` : undefined,
-        vendorId: order.vendorId || undefined,
-        deliveryLocationId: order.deliveryLocationId || undefined,
-        currencyCode: order.currencyCode || 'EUR',
-        notes: order.notes || undefined,
-        lines: order.lines.map((l) => ({
-          productId: l.productId,
-          productDescription: l.productDescription,
-          quantity: l.quantity,
-          pricePerUnit: l.pricePerUnit,
-          discountPercentage: l.discountPercentage || '0',
-          taxCategoryId: l.taxCategoryId || null,
-          unitOfMeasure: l.unitOfMeasure || 'EA',
-        })),
-      });
-      router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
-    } finally {
-      setCopying(false);
-    }
-  };
-
-  // Line editing
-  const updateLine = async (lineId: string, field: string, value: string) => {
-    setSaving(true);
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
-    setSaving(true);
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', payload);
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const removeLine = async (lineId: string) => {
-    if (!confirm(tConfirm('removeLine'))) return;
-    setSaving(true);
-    setError('');
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'DELETE');
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addLineFromProduct = async (p: Product) => {
-    setSaving(true);
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
-        productId: p.productId,
-        productDescription: p.name,
-        quantity: '1',
-        pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
-        discountPercentage: '0',
-        unitOfMeasure: 'EA',
-      });
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const addBlankLine = async () => {
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
-    setSaving(true);
-    try {
-      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
-        productId: CUSTOM_LINE_ID,
-        productDescription: '',
-        quantity: '1',
-        pricePerUnit: '0.00',
-        discountPercentage: '0',
-        unitOfMeasure: 'EA',
-      });
-      await loadOrder(undefined, false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -367,21 +80,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  const allowedTransitions = STATE_TRANSITIONS[order.stateCode] || [];
-  const subtotal = order.lines.reduce(
-    (sum, l) => sum + parseFloat(l.amount || '0'), 0,
-  );
-  const totalTax = order.lines.reduce(
-    (sum, l) => sum + parseFloat(l.tax || '0'), 0,
-  );
-
   const sections = {
     details: { id: 'details-section', label: 'Details', show: true },
     allocations: { id: 'allocations-section', label: 'Allocations', show: true },
+    receptions: { id: 'receptions-section', label: 'Receptions', show: true },
     invoices: { id: 'Invoices-section', label: 'Invoices', show: true },
     activity: { id: 'activity-section', label: 'Activity', show: true },
   };
   const visibleSections = Object.values(sections).filter(s => s.show);
+
 
   return (
     <>
@@ -401,36 +108,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     {tPurchase('buttons.save')}
                   </button>
                 )}
-                {[...allowedTransitions]
-                  .filter(state => !['received', 'partially_received'].includes(state))
-                  .filter(state => {
-                    const anyReceived = order.lines.some((l: any) => parseFloat(l.quantityReceived || '0') > 0);
-                    if (state === 'cancelled' && anyReceived) return false;
-                    if (state === 'closed_short' && !anyReceived) return false;
-                    return true;
-                  })
-                  .sort((a, b) => {
-                    const aBack = isBackTransition(order.stateCode, a);
-                    const bBack = isBackTransition(order.stateCode, b);
-                    if (aBack !== bBack) return aBack ? -1 : 1;
-                    return 0;
-                  })
-                  .map((state) => {
-                    const back = isBackTransition(order.stateCode, state);
-                    const label = state === 'closed_short' ? 'Close Short' : cap(state);
-                    const isDanger = state === 'cancelled' || state === 'closed_short';
-                    const icon = isDanger ? '✕ ' : back ? '← ' : '→ ';
-                    
-                    return (
-                      <button
-                        key={state}
-                        className={`btn btn-sm ${isDanger ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
-                        onClick={() => changeState(state)}
-                      >
-                        {icon}{label}
-                      </button>
-                    );
-                  })}
+                {visibleTransitions.map((t) => (
+                  <button
+                    key={t.state}
+                    className={`btn btn-sm ${t.isDanger ? 'btn-danger' : t.isBack ? 'btn-secondary' : 'btn-primary'}`}
+                    onClick={() => changeState(t.state)}
+                  >
+                    {t.icon}{t.label}
+                  </button>
+                ))}
               </>
             }
           />
@@ -448,7 +134,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           }}
         >
           {error}
-          <button className="ml-3 text-xs underline" onClick={() => setError('')}>{tCommon('dismiss')}</button>
+          <button className="ml-3 text-xs underline" onClick={clearError}>{tCommon('dismiss')}</button>
         </div>
       )}
 
@@ -580,7 +266,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {tPurchase('lineItems')}
               </button>
               <button
-                className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
+                className={`text-xs font-medium px-3 py-1.5 ${order.stateCode !== 'draft' ? '' : 'rounded-r-lg'}`}
                 style={{
                   color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
                   background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
@@ -593,6 +279,22 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               >
                 {tPurchase('availability')}
               </button>
+              {order.stateCode !== 'draft' && (
+                <button
+                  className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
+                  style={{
+                    color: activeTab === 'status' ? 'var(--accent)' : 'var(--text-muted)',
+                    background: activeTab === 'status' ? 'rgba(59,130,246,0.1)' : 'transparent',
+                    border: '1px solid',
+                    borderColor: activeTab === 'status' ? 'rgba(59,130,246,0.3)' : 'var(--border)',
+                    borderLeft: activeTab === 'status' ? '1px solid rgba(59,130,246,0.3)' : 'none',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => setActiveTab('status')}
+                >
+                  Status
+                </button>
+              )}
             </div>
             {isLinesEditable && activeTab === 'lines' && (
               <>
@@ -866,7 +568,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 })()}
               </tbody>
             </table>
-          ) : (
+          ) : activeTab === 'availability' ? (
             /* Availability tab */
             inventoryLoading ? (
               <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tPurchase('loadingInventory')}</p>
@@ -991,10 +693,70 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </tbody>
               </table>
             )
-          )}
+          ) : activeTab === 'status' ? (
+            /* Status / Bill Summary tab */
+            <div className="overflow-x-auto">
+                <table className="table-lines">
+                    <thead>
+                        <tr>
+                            <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
+                            <th>{tPurchase('columns.product')}</th>
+                            <th>{tPurchase('columns.description')}</th>
+                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
+                            <th style={{ textAlign: 'right' }}>Allocated</th>
+                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
+                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
+                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {(order.lines || []).map(line => {
+                            const ordered = parseFloat(line.quantity || '0');
+                            const received = parseFloat(line.quantityReceived || '0');
+                            const allocated = allocations.reduce((sum, alloc) => {
+                                return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
+                            }, 0);
+                            const billed = invoices.reduce((sum, inv) => {
+                                const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
+                                return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
+                            }, 0);
+                            const remaining = Math.max(0, ordered - billed);
+                            return (
+                                <tr key={line.purchaseOrderLineId}>
+                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                        {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                    </td>
+                                    <td>{line.productDescription || '—'}</td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: allocated > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: allocated > 0 ? 600 : 400 }}>{allocated}</td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: billed >= received && received > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: billed >= received && received > 0 ? 600 : 400 }}>{billed}</td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
+                                </tr>
+                            );
+                        })}
+                        {order.lines.length === 0 && (
+                          <tr>
+                            <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                              {tPurchase('noLineItemsShort')}
+                            </td>
+                          </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+          ) : null}
         </div>
 
-        <AllocationsSection orderId={id} />
+        <AllocationsSection 
+          orderId={id} 
+          allocations={allocations} 
+          loading={allocationsLoading} 
+          onAllocationsChanged={loadAllocations} 
+        />
+
+        <ReceptionsSection orderId={id} />
 
         <ReturnsSection
           orderId={id}

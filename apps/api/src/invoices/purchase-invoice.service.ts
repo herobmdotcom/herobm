@@ -28,6 +28,7 @@ import {
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
+import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import {
   computeLinePriceForStorage,
@@ -661,6 +662,23 @@ export class PurchaseInvoiceService {
       .where(eq(purchaseInvoices.invoiceId, invoiceId))
       .returning();
 
+    // Trigger lifecycle rules for affected POs
+    const affectedPoIds = [...new Set(
+      ((invoice as any).lines || []).map((l: any) => l.purchaseOrderId).filter(Boolean)
+    )] as string[];
+
+    for (const poId of affectedPoIds) {
+      try {
+        await evaluatePOLifecycleRules(this.db, poId, {
+          entity: 'purchase_invoice',
+          action: 'posted',
+          id: invoiceId,
+        }, actor);
+      } catch (err) {
+        this.logger.error(`Failed to evaluate PO lifecycle rules for PO ${poId} after invoice posting:`, err);
+      }
+    }
+
     return updatedInvoice;
   }
 
@@ -785,6 +803,18 @@ export class PurchaseInvoiceService {
         })
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
+      await emitEvent(tx, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: poLine.purchaseOrderId,
+        eventType: EventType.INVOICE_MATCHED,
+        actor,
+        payload: {
+          invoiceLineId,
+          purchaseOrderLineId,
+          invoiceId: line.invoiceId,
+        },
+      });
+
       return { success: true };
     });
   }
@@ -866,6 +896,21 @@ export class PurchaseInvoiceService {
       }
 
       await this.recalculateInvoiceTotals(invoiceId, tx);
+
+      if (matchedCount > 0 || addedCount > 0) {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.PURCHASE_ORDER,
+          aggregateId: purchaseOrderId,
+          eventType: EventType.INVOICE_MATCHED,
+          actor,
+          payload: {
+            invoiceId,
+            matchedCount,
+            addedCount,
+          },
+        });
+      }
+
       return { success: true, matchedCount, addedCount };
     });
   }
@@ -874,14 +919,49 @@ export class PurchaseInvoiceService {
    * Un-matches an invoice line.
    */
   async unresolveInvoiceLine(invoiceLineId: string, actor: string) {
-    await this.db
-      .update(purchaseInvoiceLines)
-      .set({
-        purchaseOrderLineId: null,
-        matchStatus: 'unmatched',
-      })
-      .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
-    return { success: true };
+    return this.db.transaction(async (tx) => {
+      const [line] = await tx
+        .select({
+          invoiceId: purchaseInvoiceLines.invoiceId,
+          purchaseOrderLineId: purchaseInvoiceLines.purchaseOrderLineId,
+        })
+        .from(purchaseInvoiceLines)
+        .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
+
+      if (!line) throw new NotFoundException('Invoice line not found');
+
+      let poId: string | null = null;
+      if (line.purchaseOrderLineId) {
+        const [poLine] = await tx
+          .select({ purchaseOrderId: purchaseOrderLineItems.purchaseOrderId })
+          .from(purchaseOrderLineItems)
+          .where(eq(purchaseOrderLineItems.purchaseOrderLineId, line.purchaseOrderLineId));
+        if (poLine) poId = poLine.purchaseOrderId;
+      }
+
+      await tx
+        .update(purchaseInvoiceLines)
+        .set({
+          purchaseOrderLineId: null,
+          matchStatus: 'unmatched',
+        })
+        .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
+
+      if (poId) {
+        await emitEvent(tx, {
+          aggregateType: AggregateType.PURCHASE_ORDER,
+          aggregateId: poId,
+          eventType: EventType.INVOICE_UNMATCHED,
+          actor,
+          payload: {
+            invoiceLineId,
+            invoiceId: line.invoiceId,
+          },
+        });
+      }
+
+      return { success: true };
+    });
   }
 
   /**

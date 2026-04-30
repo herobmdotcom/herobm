@@ -81,6 +81,9 @@ export const PURCHASE_ORDER_LIFECYCLE: Record<string, number> = {
   cancelled: 0, closed_short: 0, draft: 1, ordered: 2, partially_received: 3, received: 4, invoiced: 5, legacy: 6, archived: 7,
 };
 
+export const OPEN_PURCHASE_ORDER_STATES: PurchaseOrderState[] = ['draft', 'ordered', 'partially_received'];
+
+
 export const PURCHASE_INVOICE_LIFECYCLE: Record<string, number> = {
   cancelled: 0, draft: 1, invoiced: 2, legacy: 3, archived: 4,
 };
