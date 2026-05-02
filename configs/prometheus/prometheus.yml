@@ -46,9 +46,7 @@ scrape_configs:
     static_configs:
       - targets: ['redis-exporter:9121']
 
-  # EXCEPTION: erpnext-* containers (Backend/Frontend/Worker) — Frappe does not expose a /metrics
-  # endpoint natively on its standard ports. Scraping requires installing a custom Frappe Prometheus app.
-  # Tracked for future implementation.
+
   
   # EXCEPTION: ops-portal — Next.js frontend application. Does not expose a /metrics route natively.
   # Telemetry relies on OpenTelemetry traces rather than daemon-style metric scraping.

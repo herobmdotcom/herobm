@@ -149,7 +149,7 @@ describe('ReportsService', () => {
 
       expect(result.fileName).toBe('ORD-123.pdf');
       expect(result.pdfBuffer).toBeDefined();
-      expect(mockResolver.resolveData).toHaveBeenCalledWith('1', {});
+      expect(mockResolver.resolveData).toHaveBeenCalledWith('1', {}, undefined);
       expect(child_process.exec).toHaveBeenCalled();
     });
 

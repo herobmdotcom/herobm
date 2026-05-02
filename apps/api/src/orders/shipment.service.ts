@@ -3,8 +3,9 @@ import {
   Inject,
   BadRequestException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, desc, and } from 'drizzle-orm';
+import { eq, sql, desc, and, gte } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -16,6 +17,10 @@ import {
   bins,
   inventoryEntries,
   inventoryLedger,
+  accounts as coreAccounts,
+  backorders,
+  purchaseOrders,
+  systemEvents,
 } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -705,7 +710,35 @@ export class ShipmentService {
   // -------------------------------------------------------------------------
 
   async findOne(shipmentId: string) {
-    const shipment = await findShipment(this.db, shipmentId);
+    const rows = await this.db
+      .select({
+        shipmentId: salesOrderShipments.shipmentId,
+        shipmentNumber: salesOrderShipments.shipmentNumber,
+        salesOrderId: salesOrderShipments.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        customerId: salesOrders.customerId,
+        customerName: coreAccounts.name,
+        stateCode: salesOrderShipments.stateCode,
+        notes: salesOrderShipments.notes,
+        trackingNumber: salesOrderShipments.trackingNumber,
+        createdBy: salesOrderShipments.createdBy,
+        createdOn: salesOrderShipments.createdOn,
+        modifiedOn: salesOrderShipments.modifiedOn,
+      })
+      .from(salesOrderShipments)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderShipments.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
+      .where(eq(salesOrderShipments.shipmentId, shipmentId))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException(`Shipment '${shipmentId}' not found`);
+    }
+
+    const shipment = rows[0];
 
     const lines = await this.db
       .select({
@@ -714,6 +747,8 @@ export class ShipmentService {
         quantityShipped: salesOrderShipmentLines.quantityShipped,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
+        productDescription: salesOrderLineItems.productDescription,
+        orderNumber: salesOrders.orderNumber,
       })
       .from(salesOrderShipmentLines)
       .innerJoin(
@@ -723,13 +758,31 @@ export class ShipmentService {
           salesOrderLineItems.salesOrderLineId,
         ),
       )
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderLineItems.salesOrderId, salesOrders.salesOrderId),
+      )
       .leftJoin(
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .where(eq(salesOrderShipmentLines.shipmentId, shipmentId));
 
-    return { ...shipment, lines };
+    const events = await this.db
+      .select({
+        eventId: systemEvents.eventId,
+        aggregateType: systemEvents.aggregateType,
+        aggregateId: systemEvents.aggregateId,
+        eventType: systemEvents.eventType,
+        payload: systemEvents.payload,
+        actor: systemEvents.actor,
+        createdOn: systemEvents.createdOn,
+      })
+      .from(systemEvents)
+      .where(eq(systemEvents.aggregateId, shipmentId))
+      .orderBy(desc(systemEvents.createdOn));
+
+    return { ...shipment, lines, events };
   }
 
   async findByOrder(salesOrderId: string) {
@@ -766,5 +819,87 @@ export class ShipmentService {
     }
 
     return result;
+  }
+
+  /**
+   * Fetch a flattened, global list of Sales Order Shipments.
+   * Useful for the "All Shipments" page.
+   */
+  async findAll(query: { days?: number; salesOrderId?: string; limit?: number }) {
+    const { days = 30, salesOrderId, limit = 100 } = query;
+    const conditions: any[] = [];
+
+    if (days > 0) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      conditions.push(gte(salesOrderShipments.createdOn, cutoffDate));
+    }
+
+    if (salesOrderId) {
+      conditions.push(eq(salesOrderShipments.salesOrderId, salesOrderId));
+    }
+
+    const data = await this.db
+      .select({
+        shipmentId: salesOrderShipments.shipmentId,
+        shipmentNumber: salesOrderShipments.shipmentNumber,
+        salesOrderId: salesOrderShipments.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        customerId: salesOrders.customerId,
+        customerName: coreAccounts.name,
+        stateCode: salesOrderShipments.stateCode,
+        createdOn: salesOrderShipments.createdOn,
+        notes: salesOrderShipments.notes,
+        trackingNumber: salesOrderShipments.trackingNumber,
+      })
+      .from(salesOrderShipments)
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderShipments.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
+      .where(and(...conditions))
+      .orderBy(desc(salesOrderShipments.createdOn))
+      .limit(limit > 0 ? limit : 100);
+
+    if (data.length === 0) return [];
+
+    const shipmentIds = data.map((s) => s.shipmentId);
+
+    // Fetch PO mappings for these shipments via backorder allocations
+    const poLinks = await this.db
+      .select({
+        shipmentId: salesOrderShipmentLines.shipmentId,
+        poNumber: purchaseOrders.orderNumber,
+      })
+      .from(salesOrderShipmentLines)
+      .innerJoin(
+        backorders,
+        eq(
+          salesOrderShipmentLines.salesOrderLineId,
+          backorders.salesOrderLineId,
+        ),
+      )
+      .innerJoin(
+        purchaseOrders,
+        eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .where(
+        sql`${salesOrderShipmentLines.shipmentId} IN (${sql.join(
+          shipmentIds.map((id) => sql`${id}`),
+          sql`, `,
+        )})`,
+      );
+
+    const poMap = new Map<string, Set<string>>();
+    for (const link of poLinks) {
+      if (!poMap.has(link.shipmentId)) poMap.set(link.shipmentId, new Set());
+      if (link.poNumber) poMap.get(link.shipmentId)!.add(link.poNumber);
+    }
+
+    return data.map((s) => ({
+      ...s,
+      purchaseOrders: Array.from(poMap.get(s.shipmentId) || []),
+    }));
   }
 }

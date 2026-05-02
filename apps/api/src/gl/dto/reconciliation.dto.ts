@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, IsNumber, IsBoolean, IsDateString, IsOptional, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateReconciliationDto {
   @IsString()
@@ -21,6 +29,10 @@ export class CreateReconciliationDto {
 export class ToggleLineDto {
   @IsBoolean()
   isCleared: boolean;
+
+  @IsNumber()
+  @IsOptional()
+  amount?: number;
 }
 
 export class CreateAdjustmentDto {

@@ -43,12 +43,12 @@ describe('relay.service', () => {
   });
 
   describe('processEvent', () => {
-    let mockErpClient: any;
+    let mockExtClient: any;
     let mockDb: any;
 
     beforeEach(() => {
-      mockErpClient = {
-        createResource: vi.fn().mockResolvedValue({ name: 'PARTY-0001' })
+      mockExtClient = {
+        syncInvoice: vi.fn().mockResolvedValue({ externalId: 'PARTY-0001' })
       };
       mockDb = {
         update: vi.fn().mockReturnThis(),
@@ -70,10 +70,10 @@ describe('relay.service', () => {
         invoiceNumber: 'INV-1'
       });
 
-      await processEvent(job, mockErpClient, mockDb);
+      await processEvent(job, mockExtClient, mockDb);
 
-      expect(mockErpClient.createResource).toHaveBeenCalledTimes(1);
-      expect(mockErpClient.createResource).toHaveBeenCalledWith('Customer', {
+      expect(mockExtClient.syncInvoice).toHaveBeenCalledTimes(1);
+      expect(mockExtClient.syncInvoice).toHaveBeenCalledWith({
         customer_name: 'Acme Corp',
         customer_type: 'Company',
         customer_group: 'Commercial',
@@ -84,13 +84,13 @@ describe('relay.service', () => {
       expect(mockDb.set).toHaveBeenCalledWith({ processedAt: expect.any(Date), lockedUntil: null });
     });
 
-    it('should skip customer sync if erpnextId exists', async () => {
+    it('should skip customer sync if externalId exists', async () => {
       const job = createJob('sales_invoiced', {
-        erpnextId: 'EXISTING-CUST',
+        externalId: 'EXISTING-CUST',
         customerId: 'CUST-1',
       });
-      await processEvent(job, mockErpClient, mockDb);
-      expect(mockErpClient.createResource).not.toHaveBeenCalled();
+      await processEvent(job, mockExtClient, mockDb);
+      expect(mockExtClient.syncInvoice).not.toHaveBeenCalled();
     });
 
     it('should JIT sync supplier for purchase_invoiced', async () => {
@@ -99,9 +99,9 @@ describe('relay.service', () => {
         supplierName: 'Global Dist',
       });
 
-      await processEvent(job, mockErpClient, mockDb);
+      await processEvent(job, mockExtClient, mockDb);
 
-      expect(mockErpClient.createResource).toHaveBeenCalledWith('Supplier', expect.anything());
+      expect(mockExtClient.syncInvoice).toHaveBeenCalledWith(expect.anything());
       expect(mockDb.update).toHaveBeenCalledTimes(2);
     });
 
@@ -111,9 +111,9 @@ describe('relay.service', () => {
          customerName: 'Fail Corp'
       });
 
-      mockErpClient.createResource.mockRejectedValue(new Error('Network Error'));
+      mockExtClient.syncInvoice.mockRejectedValue(new Error('Network Error'));
 
-      await expect(processEvent(job, mockErpClient, mockDb)).rejects.toThrow('Network Error');
+      await expect(processEvent(job, mockExtClient, mockDb)).rejects.toThrow('Network Error');
       
       expect(mockDb.set).toHaveBeenCalledWith({
          lastError: 'Network Error',

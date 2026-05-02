@@ -1,0 +1,192 @@
+'use client';
+
+import { use, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
+import EntityHeader from '@/components/shared/EntityHeader';
+import DetailsLayout from '@/components/shared/DetailsLayout';
+import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
+import Link from 'next/link';
+
+interface ShipmentLine {
+  shipmentLineId: string;
+  salesOrderLineId: string;
+  quantityShipped: string;
+  productId: string;
+  productNumber: string;
+  productDescription: string;
+  orderNumber: string;
+}
+
+interface ShipmentDetail {
+  shipmentId: string;
+  shipmentNumber: string;
+  salesOrderId: string;
+  orderNumber: string;
+  customerId: string;
+  customerName: string;
+  stateCode: string;
+  notes: string | null;
+  trackingNumber: string | null;
+  createdOn: string;
+  createdBy: string | null;
+  lines: ShipmentLine[];
+  events: TimelineEvent[];
+}
+
+export default function ShipmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const t = useTranslations('shipments');
+  const tCommon = useTranslations('common');
+  const router = useRouter();
+  const [shipment, setShipment] = useState<ShipmentDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch<ShipmentDetail>(`/api/shipments/${id}`)
+      .then((res) => {
+        setShipment(res);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('Failed to load shipment:', err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center flex-1">
+        <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+      </div>
+    );
+  }
+
+  if (!shipment) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
+        <p className="mb-4">Shipment not found</p>
+        <button className="btn btn-primary" onClick={() => router.push('/shipments')}>
+          {t('backToShipments')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <DetailsLayout
+      header={
+        <EntityHeader
+          title={shipment.shipmentNumber}
+          subtitle={`${t('shipmentDetails')} • ${new Date(shipment.createdOn).toLocaleDateString()}`}
+          onBack={() => router.push('/shipments')}
+          badges={<StateBadge state={shipment.stateCode as ValidState} />}
+        />
+      }
+    >
+      <div className="flex flex-col gap-3">
+        {/* Shipment Details Card */}
+        <div id="details-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">local_shipping</span>
+              {t('shipmentDetails')}
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.customer')}
+              </label>
+              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                {shipment.customerName || '—'}
+              </p>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.tracking')}
+              </label>
+              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                {shipment.trackingNumber || '—'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {t('columns.date')}
+              </label>
+              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || 'System'}
+              </p>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('notesCardHeading')}
+              </label>
+              <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                {shipment.notes || '—'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Line Items Card */}
+        <div id="lines-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading">
+              <span className="material-symbols-outlined">list_alt</span>
+              {t('lineItems')}
+            </h3>
+          </div>
+          
+          <table className="table-lines">
+            <thead>
+              <tr>
+                <th style={{ width: 120 }}>{t('columns.orderNumber')}</th>
+                <th>{t('columns.product')}</th>
+                <th>{t('columns.description')}</th>
+                <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qty')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {shipment.lines.map((line) => (
+                <tr key={line.shipmentLineId}>
+                  <td style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                    {line.orderNumber}
+                  </td>
+                  <td style={{ fontWeight: 600, fontSize: 12 }}>
+                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                      {line.productNumber || '—'}
+                    </Link>
+                  </td>
+                  <td>{line.productDescription || '—'}</td>
+                  <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {line.quantityShipped}
+                  </td>
+                </tr>
+              ))}
+              {shipment.lines.length === 0 && (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
+                    {tCommon('orderReadView.noLineItems')}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Activity Timeline Card */}
+        <div id="activity-section" className="card">
+          <ActivityTimeline events={shipment.events} />
+        </div>
+      </div>
+    </DetailsLayout>
+  );
+}

@@ -32,7 +32,7 @@ export default function POAllocationCell({ data }: POAllocationCellProps) {
   return (
     <div className="flex items-center justify-start w-full h-full">
       {/* eslint-disable-next-line i18next/no-literal-string */}
-      <span className="text-[var(--text-muted)] text-xs">Unallocated</span>
+      <span className="text-[var(--text-muted)] text-xs">Unmatched</span>
     </div>
   );
 }

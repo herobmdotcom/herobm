@@ -122,7 +122,12 @@ export class AllocationsController {
   async linkDemandToPo(@Body() payload: any, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     const { demandId, purchaseOrderLineId, quantity } = payload;
-    await this.backordersService.linkDemandToPo(demandId, purchaseOrderLineId, quantity, actor);
+    await this.backordersService.linkDemandToPo(
+      demandId,
+      purchaseOrderLineId,
+      quantity,
+      actor,
+    );
     return { success: true };
   }
 

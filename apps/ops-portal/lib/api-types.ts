@@ -1140,7 +1140,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/erpnext-sync": {
+    "/api/settings/external-sync": {
         parameters: {
             query?: never;
             header?: never;
@@ -1156,7 +1156,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/erpnext-sync/events": {
+    "/api/settings/external-sync/events": {
         parameters: {
             query?: never;
             header?: never;

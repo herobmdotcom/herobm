@@ -190,14 +190,14 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
       markAllocated(grLine.goodsReceivedLineId, splitLine);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Failed to resolve allocation');
+      alert(err.message || 'Failed to match receipt');
     }
   }, [onRefresh, markAllocated]);
 
   if (!isOpen || unmatchedLines.length === 0) return null;
 
   return (
-    <SlideOver isOpen={isOpen} onClose={onClose} title={`Allocate Received Goods (${unmatchedLines.length} line${unmatchedLines.length > 1 ? 's' : ''})`} width="max-w-4xl">
+    <SlideOver isOpen={isOpen} onClose={onClose} title={`Match Received Goods (${unmatchedLines.length} line${unmatchedLines.length > 1 ? 's' : ''})`} width="max-w-4xl">
       <div className="flex flex-col gap-6">
 
         {/* Summary Table */}
@@ -276,6 +276,12 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                 <span className="font-bold text-[var(--accent)]">{grLine.productNumber}</span>
                 <span className="text-[var(--text-muted)]">—</span>
                 <span className="text-sm text-[var(--text-primary)]">{grLine.productName}</span>
+                
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="text-xs ml-4 text-[var(--text-secondary)]">
+                  Received at: <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || 'Unknown'}</span>
+                </span>
+
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
                   Qty: {originalQuantity}
                 </span>
@@ -310,9 +316,14 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                               {group.orderNumber}
                             </span>
                           </div>
-                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                            Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
+                              <span className="badge badge-warning text-[10px] px-1.5 py-0.5">Location Mismatch</span>
+                            )}
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                              {/* eslint-disable-next-line i18next/no-literal-string */}
+                              Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                            </div>
                           </div>
                         </button>
 
@@ -392,7 +403,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            {isAllocating ? '...' : 'Allocate'}
+            {isAllocating ? '...' : 'Match'}
           </button>
         </div>
       </td>

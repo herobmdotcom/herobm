@@ -1,0 +1,188 @@
+﻿
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit sales-invoices.e2e-spec.ts
+
+  console.log
+    ORDER LINES: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","lineNumber":1,"productId":"ee203519-3fb4-4e8d-ac2f-fd294eb40dc5","quantity":"4","pricePerUnit":"10.00","discountPercentage":"0","taxCategoryId":"76ef6967-32f2-5e02-82d2-9bac3b0c18b4","productType":"inventory","productRevenueAccountId":null},{"salesOrderLineId":"b45d7940-8e97-425b-97c2-37823ac20037","lineNumber":2,"productId":"f16866cd-f644-4cb9-a2fb-76a5398e24b2","quantity":"2","pricePerUnit":"15.00","discountPercentage":"0","taxCategoryId":"76ef6967-32f2-5e02-82d2-9bac3b0c18b4","productType":"inventory","productRevenueAccountId":null}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:158:13)
+
+  console.log
+    Checking dto.lines for 45702089-882c-4e54-bd22-c17494826fd9. DTO lines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityToInvoice":2}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:231:17)
+
+  console.log
+    Processing line 45702089-882c-4e54-bd22-c17494826fd9: qtyToInvoice=2, shippedQty=4, prevInvoicedQty=0
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:246:15)
+
+  console.log
+    Pushed to invoiceLineValues: {
+      salesOrderLineId: '45702089-882c-4e54-bd22-c17494826fd9',
+      quantityInvoiced: '2',
+      pricePerUnit: '10',
+      amount: '20'
+    }
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:303:15)
+
+  console.log
+    Checking dto.lines for b45d7940-8e97-425b-97c2-37823ac20037. DTO lines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityToInvoice":2}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:231:17)
+
+  console.log
+    Skipping line b45d7940-8e97-425b-97c2-37823ac20037 because qtyToInvoice is 0
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:242:17)
+
+  console.log
+    Inserting into salesInvoiceLines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityInvoiced":"2","pricePerUnit":"10","amount":"20","invoiceId":"9c4c5eed-124c-4213-9efe-ec97822c9057"}]
+
+      at ../src/invoices/sales-invoice.service.ts:350:15
+
+node.exe : [31m[Nest] 22508  - [39m05/02/2026, 10:13:11 AM [31m  ERROR[39m [38;5;3m[SalesInvoiceService] 
+[39m[31mFailed to evaluate lifecycle rules for SO 5706ef50-42e7-4045-a667-01d1f6113bf7 after invoice creation:[39m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31m[Nest] 225... creation:[39m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31m[Nest] 22508  - [39m05/02/2026, 10:13:11 AM [31m  ERROR[39m [38;5;3m[SalesInvoiceService] [39mTypeError: A 
+dynamic import callback was invoked without --experimental-vm-modules
+[90m    at importModuleDynamicallyCallback (node:internal/modules/esm/utils:277:11)[39m
+    at Object.evaluate 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\order-lifecycle-rules.ts:202:21[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at evaluateLifecycleRules 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\order-lifecycle-rules.ts:290:20[90m)[39m
+    at SalesInvoiceService.createInvoice 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\invoices\sales-invoice.service.ts:389:7[90m)[39m {
+  code: [32m'ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG'[39m
+}
+  console.log
+    ORDER LINES: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","lineNumber":1,"productId":"ee203519-3fb4-4e8d-ac2f-fd294eb40dc5","quantity":"4","pricePerUnit":"10.00","discountPercentage":"0","taxCategoryId":"76ef6967-32f2-5e02-82d2-9bac3b0c18b4","productType":"inventory","productRevenueAccountId":null},{"salesOrderLineId":"b45d7940-8e97-425b-97c2-37823ac20037","lineNumber":2,"productId":"f16866cd-f644-4cb9-a2fb-76a5398e24b2","quantity":"2","pricePerUnit":"15.00","discountPercentage":"0","taxCategoryId":"76ef6967-32f2-5e02-82d2-9bac3b0c18b4","productType":"inventory","productRevenueAccountId":null}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:158:13)
+
+  console.log
+    Checking dto.lines for 45702089-882c-4e54-bd22-c17494826fd9. DTO lines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityToInvoice":2},{"salesOrderLineId":"b45d7940-8e97-425b-97c2-37823ac20037","quantityToInvoice":2}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:231:17)
+
+  console.log
+    Processing line 45702089-882c-4e54-bd22-c17494826fd9: qtyToInvoice=2, shippedQty=4, prevInvoicedQty=2
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:246:15)
+
+  console.log
+    Pushed to invoiceLineValues: {
+      salesOrderLineId: '45702089-882c-4e54-bd22-c17494826fd9',
+      quantityInvoiced: '2',
+      pricePerUnit: '10',
+      amount: '20'
+    }
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:303:15)
+
+  console.log
+    Checking dto.lines for b45d7940-8e97-425b-97c2-37823ac20037. DTO lines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityToInvoice":2},{"salesOrderLineId":"b45d7940-8e97-425b-97c2-37823ac20037","quantityToInvoice":2}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:231:17)
+
+  console.log
+    Processing line b45d7940-8e97-425b-97c2-37823ac20037: qtyToInvoice=2, shippedQty=2, prevInvoicedQty=0
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:246:15)
+
+  console.log
+    Pushed to invoiceLineValues: {
+      salesOrderLineId: 'b45d7940-8e97-425b-97c2-37823ac20037',
+      quantityInvoiced: '2',
+      pricePerUnit: '15',
+      amount: '30'
+    }
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:303:15)
+
+  console.log
+    Inserting into salesInvoiceLines: [{"salesOrderLineId":"45702089-882c-4e54-bd22-c17494826fd9","quantityInvoiced":"2","pricePerUnit":"10","amount":"20","invoiceId":"6e00e54c-b556-45a9-820b-d3704cd21921"},{"salesOrderLineId":"b45d7940-8e97-425b-97c2-37823ac20037","quantityInvoiced":"2","pricePerUnit":"15","amount":"30","invoiceId":"6e00e54c-b556-45a9-820b-d3704cd21921"}]
+
+      at ../src/invoices/sales-invoice.service.ts:350:15
+
+[31m[Nest] 22508  - [39m05/02/2026, 10:13:11 AM [31m  ERROR[39m [38;5;3m[SalesInvoiceService] [39m[31mFailed to 
+evaluate lifecycle rules for SO 5706ef50-42e7-4045-a667-01d1f6113bf7 after invoice creation:[39m
+[31m[Nest] 22508  - [39m05/02/2026, 10:13:11 AM [31m  ERROR[39m [38;5;3m[SalesInvoiceService] [39mTypeError: A 
+dynamic import callback was invoked without --experimental-vm-modules
+[90m    at importModuleDynamicallyCallback (node:internal/modules/esm/utils:277:11)[39m
+    at Object.evaluate 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\order-lifecycle-rules.ts:202:21[90m)[39m
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at evaluateLifecycleRules 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\order-lifecycle-rules.ts:290:20[90m)[39m
+    at SalesInvoiceService.createInvoice 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\invoices\sales-invoice.service.ts:389:7[90m)[39m {
+  code: [32m'ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG'[39m
+}
+  console.log
+    ORDER LINES: [{"salesOrderLineId":"369f0262-6715-4fc7-8eac-965b7ba27eab","lineNumber":1,"productId":"ee203519-3fb4-4e8d-ac2f-fd294eb40dc5","quantity":"4","pricePerUnit":"10.00","discountPercentage":"0","taxCategoryId":"76ef6967-32f2-5e02-82d2-9bac3b0c18b4","productType":"inventory","productRevenueAccountId":null}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:158:13)
+
+  console.log
+    Checking dto.lines for 369f0262-6715-4fc7-8eac-965b7ba27eab. DTO lines: [{"salesOrderLineId":"369f0262-6715-4fc7-8eac-965b7ba27eab","quantityToInvoice":2}]
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:231:17)
+
+  console.log
+    Processing line 369f0262-6715-4fc7-8eac-965b7ba27eab: qtyToInvoice=2, shippedQty=0, prevInvoicedQty=0
+
+      at SalesInvoiceService.createInvoice (../src/invoices/sales-invoice.service.ts:246:15)
+
+FAIL test/sales-invoices.e2e-spec.ts
+  API E2E ΓÇö Sales Invoices
+    Invoice Fetching
+      ├ù creates a multi-line order and partially invoices it (660 ms)
+      ΓêÜ rejects invoicing more than the shipped quantity (demonstrably impossible) (246 ms)
+      ΓêÜ GET /api/sales-invoices ΓÇö retrieves the global invoice list (8 ms)
+      ΓêÜ GET /api/sales-invoices?accountId=... ΓÇö filters by account strictly (7 ms)
+      ΓêÜ GET /api/sales-invoices?accountId=BOGUS ΓÇö returns empty (7 ms)
+      ΓêÜ GL Integration ΓÇö posted a journal entry for the invoice (17 ms)
+
+  ΓùÅ API E2E ΓÇö Sales Invoices ΓÇ║ Invoice Fetching ΓÇ║ creates a multi-line order and partially invoices it
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "invoiced"
+    Received: "shipped"
+
+    [0m [90m 157 |[39m         [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer 
+${adminToken}`[39m)
+     [90m 158 |[39m         [33m.[39mexpect([35m200[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 159 |[39m       
+expect(checkState2[33m.[39mbody[33m.[39mstateCode)[33m.[39mtoBe([32m'invoiced'[39m)[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 160 |[39m     })[33m;[39m
+     [90m 161 |[39m
+     [90m 162 |[39m     it([32m'rejects invoicing more than the shipped quantity (demonstrably 
+impossible)'[39m[33m,[39m [36masync[39m () [33m=>[39m {[0m
+
+      at Object.<anonymous> (sales-invoices.e2e-spec.ts:159:42)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 5 passed, 6 total
+Snapshots:   0 total
+Time:        2.531 s, estimated 3 s
+Ran all test suites matching sales-invoices.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after 
+all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit 
+sales-invoices.e2e-spec.ts

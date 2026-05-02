@@ -66,7 +66,7 @@ export class SalesInvoiceService {
 
   /**
    * Transition a fully dispatched Sales Order directly into the natively Invoiced status.
-   * Leverages transactional Outbox pattern to orchestrate async ERPNext GL mapping.
+   * Leverages transactional Outbox pattern to orchestrate async external GL mapping.
    */
   async createInvoice(
     salesOrderId: string,
@@ -91,8 +91,8 @@ export class SalesInvoiceService {
       );
     }
 
-    // Identify if the Customer has an ERPNext ID mapped natively already dynamically
-    let erpnextId: string | null = null;
+    // Identify if the Customer has an external ID mapped natively already dynamically
+    let externalId: string | null = null;
     let customerName = 'Unknown Customer';
     let customerArAccountId: string | null = null;
     let customerRevenueAccountId: string | null = null;
@@ -106,7 +106,7 @@ export class SalesInvoiceService {
 
       const custRows = await this.db
         .select({
-          erpnextId: accounts.erpnextId,
+          externalId: accounts.externalId,
           name: accounts.name,
           defaultArAccountId: accountGroups.defaultArAccountId,
           defaultRevenueAccountId: accountGroups.defaultRevenueAccountId,
@@ -119,12 +119,12 @@ export class SalesInvoiceService {
         .where(
           isUuid
             ? eq(accounts.accountId, order.customerId)
-            : eq(accounts.erpnextId, order.customerId),
+            : eq(accounts.externalId, order.customerId),
         )
         .limit(1);
 
       if (custRows.length > 0) {
-        erpnextId = custRows[0].erpnextId;
+        externalId = custRows[0].externalId;
         customerName = custRows[0].name;
         customerArAccountId = custRows[0].defaultArAccountId;
         customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
@@ -347,7 +347,6 @@ export class SalesInvoiceService {
       // C. Transition originating Order cleanly
       // Handled by evaluateLifecycleRules after the transaction
 
-
       // D. Generate specific Outbox Sync Event asynchronously routing back
       const outboxPayload = {
         invoiceId: invoice.invoiceId,
@@ -356,7 +355,7 @@ export class SalesInvoiceService {
         orderNumber: order.orderNumber,
         customerId: order.customerId,
         customerName: customerName,
-        erpnextId: erpnextId,
+        externalId: externalId,
         totalRevenue: totalAmount,
         totalTax: taxAmount,
         totalAccountsReceivable: combinedTotal,
@@ -381,13 +380,21 @@ export class SalesInvoiceService {
 
     // Evaluate lifecycle rules to auto-transition the Sales Order if needed
     try {
-      await evaluateLifecycleRules(this.db, salesOrderId, {
-        entity: 'sales_invoice',
-        action: 'created',
-        id: result.invoiceId,
-      }, actor);
+      await evaluateLifecycleRules(
+        this.db,
+        salesOrderId,
+        {
+          entity: 'sales_invoice',
+          action: 'created',
+          id: result.invoiceId,
+        },
+        actor,
+      );
     } catch (err) {
-      this.logger.error(`Failed to evaluate lifecycle rules for SO ${salesOrderId} after invoice creation:`, err);
+      this.logger.error(
+        `Failed to evaluate lifecycle rules for SO ${salesOrderId} after invoice creation:`,
+        err,
+      );
     }
 
     // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
@@ -625,7 +632,7 @@ export class SalesInvoiceService {
       conditions.push(
         or(
           eq(salesOrders.customerId, accountId),
-          eq(accounts.erpnextId, accountId),
+          eq(accounts.externalId, accountId),
         ),
       );
     }

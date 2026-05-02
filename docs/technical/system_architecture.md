@@ -3,13 +3,10 @@
 This doc expands on system_overview.md to give more details about technical choices.
 
 ## 1. Architectural Strategy: The Composable ERP
-The goal is to transition from a monolithic legacy system (ABM) to a modern, decoupled architecture. We are adopting a strict boundary based on domain capabilities:
+The goal is to transition from a monolithic legacy system (ABM) to a modern, decoupled architecture. 
 
-- Adopt (Commodity): We will use ERPNext strictly as a "headless" financial engine (General Ledger, AP/AR, Tax, Chart of Accounts). Double-entry accounting is a highly regulated, commoditized domain; building it from scratch yields zero competitive advantage and carries immense risk.
-
-- Build (Competitive Edge): We will custom-build the Order Management (OMS), Warehouse Management (WMS), complex Pricing, and CRM on a modern stack. Distribution businesses live and die by operational efficiency; this is where you own your proprietary workflows.
-
-By decoupling these two "brains," your warehouse and sales teams are never bottlenecked by complex financial database locks, and your accounting team gets a standardized, compliant ledger.
+- **Consolidated Native Core:** We custom-build the Order Management (OMS), Warehouse Management (WMS), complex Pricing, CRM, and the **General Ledger (GL)** directly into the ModBM ecosystem. By housing the GL natively within the Postgres `modbm_core` database, we guarantee ACID compliance and referential integrity between operational data (invoices, shipments) and financial data (journal entries).
+- **Asynchronous Extensibility:** While the core is self-sufficient, we use a Transactional Outbox pattern to safely and asynchronously synchronize data to external downstream systems (such as legacy ERPs, BI tools, or specialized tax engines) without bottlenecking operational workflows.
 
 ## 2. High-Level System Architecture
 The system transitions from ABM's traditional client-server model to a Decoupled, Event-Driven Architecture.
@@ -32,16 +29,15 @@ flowchart TD
         OMS_API[Order Management API]
         WMS_API[Inventory & WMS API]
         CRM_API[Trading Partners API]
+        GL_API[Native General Ledger]
     end
 
-    subgraph "Financial Core (Off-the-shelf)"
-        Queue -- "Async API Sync \n (Journals, Invoices)" --> ERPNextAPI[ERPNext REST API]
-        ERPNextAPI --> ERPNextCore[ERPNext General Ledger]
+    subgraph "External Systems (Optional)"
+        Queue -- "Async API Sync" --> ExternalAPI[External REST API]
     end
 
     %% Databases
-    DB_Custom[(Custom DB \n PostgreSQL)]
-    DB_ERP[(ERP DB \n PostgreSQL/MariaDB)]
+    DB_Custom[(modbm_core DB \n PostgreSQL)]
 
     %% Integration
     Broker{{Event Broker / Queue \n Redis + BullMQ}}
@@ -50,27 +46,28 @@ flowchart TD
     %% Relationships
     Warehouse --> WMS_UI
     Sales --> OMS_UI
-    Finance --> ERP
+    Finance --> OMS_UI
 
     WMS_UI <--> WMS_API
     OMS_UI <--> OMS_API
     OMS_UI <--> CRM_API
+    OMS_UI <--> GL_API
 
-    WMS_API & OMS_API & CRM_API --> DB_Custom
-    GL --> DB_ERP
+    WMS_API & OMS_API & CRM_API & GL_API --> DB_Custom
 
     %% Event Flow
     OMS_API -- "Publish: InvoiceFinalized" --> Broker
     WMS_API -- "Publish: StockReceived" --> Broker
+    GL_API -- "Publish: GL_Posted" --> Broker
     Broker --> Worker
-    Worker -- "REST API: Post Journal Entry" --> GL
+    Worker -- "REST API" --> ExternalAPI
     
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:1px;
     classDef custom fill:#e1f5fe,stroke:#0288d1;
-    classDef erp fill:#e8f5e9,stroke:#388e3c;
+    classDef external fill:#e8f5e9,stroke:#388e3c;
     
     class CustomBackend,DB_Custom custom;
-    class ERP,DB_ERP erp;
+    class ExternalAPI external;
 ```
 
 ## 3. Technology Stack Selection
@@ -82,7 +79,7 @@ We are standardizing on a JavaScript/TypeScript and PostgreSQL ecosystem for the
 | **Backend API** | **Node.js + NestJS (TypeScript)** | NestJS provides a heavily structured, enterprise-ready architecture (Modules, Dependency Injection) for Node.js. It forces a clean Model-Controller-Service pattern, preventing "spaghetti code." |
 | **ORM / Data Access** | **Drizzle ORM** | Provides strictly typed database queries. This is a massive upgrade over ABM's historical reliance on opaque stored procedures and implicit linking. |
 | **Frontend UI** | **Next.js (React) + Tailwind** | Next.js handles fast back-office portals and highly optimized Web Apps (PWAs) for warehouse scanners from the same codebase. Component libraries (like ag-Grid) will allow us to build the dense, complex data grids required for rapid order entry. |
-| **Integration** | **Redis + BullMQ** | We must avoid tightly coupling the Custom App to ERPNext. If ERPNext goes down for maintenance, the warehouse must keep scanning. Queues ensure guaranteed, asynchronous delivery of financial data. |
+| **Integration** | **Redis + BullMQ** | We must avoid tightly coupling the core App to external downstream systems. If an external system goes down for maintenance, the warehouse must keep scanning. Queues ensure guaranteed, asynchronous delivery of data. |
 
 > [!NOTE]
 > For specific UI implementation constraints, component usage (e.g., AG Grid wrappers, layouts), and frontend state management patterns (Next.js, Tailwind, Next-Intl), refer to the [Frontend Patterns](./frontend_patterns.md) guide.
@@ -108,7 +105,7 @@ erDiagram
     CUSTOMERS {
         uuid id PK
         string name
-        string erpnext_customer_id "Foreign System Link"
+        string external_id "Foreign System Link"
     }
 
     PRODUCTS {
@@ -139,18 +136,18 @@ erDiagram
 ### 4.3. Eliminating "Flat Polymorphism"
 In ABM, linking columns (like AccountID or ContactID) could point to entirely different core entities depending on a secondary context flag. We will enforce strict typing: an order belongs to a customer_id which explicitly maps to a customers table with a DB-level constraint.
 
-## 5. Integration Architecture: Order-to-Cash Workflow
-A critical failure point in hybrid ERP builds is distributed transactions—what happens if the Custom App ships an order, but ERPNext's API is temporarily offline?
+## 5. Integration Architecture: Data Synchronization
+A critical failure point in hybrid builds is distributed transactions—what happens if the Custom App ships an order, but a downstream integration API is temporarily offline?
 
 To guarantee absolute consistency without slowing down operations, we will implement the Transactional Outbox Pattern:
 
-- Local Transaction: When a warehouse worker ships an order, the Node.js API updates physical stock and marks the order "Shipped" in the Postgres DB. In the exact same database transaction, it writes an event payload to an outbox table.
+- Local Transaction: When a warehouse worker ships an order, the Node.js API updates physical stock and marks the order "Shipped" in the Postgres DB. In the exact same database transaction, it posts the GL Journal Entry natively, and writes an event payload to an outbox table.
 
-- Instant UI: The operation is instantly completed for the user. They are never blocked waiting for accounting ledgers to calculate.
+- Instant UI: The operation is instantly completed for the user. They are never blocked waiting for external APIs.
 
 - Message Relay: A background process reads the outbox and pushes the event to the Message Broker.
 
-- ERPNext Ingestion: The Integration Worker picks up the message and pushes a "Sales Invoice" API call to ERPNext. If ERPNext is down, the queue safely retries until successful.
+- External Ingestion: The Integration Worker picks up the message and pushes an API call to the downstream system. If the system is down, the queue safely retries until successful.
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +156,7 @@ sequenceDiagram
     participant API as Custom API (Node.js)
     participant DB as Ops DB (Postgres)
     participant Broker as Message Broker
-    participant ERP as ERPNext (Finance)
+    participant Ext as External System
 
     UI->>API: POST /api/shipments (Dispatch Order)
     
@@ -172,21 +169,19 @@ sequenceDiagram
     
     API-->>UI: 200 OK (Instant UI Response)
     
-    Note over DB, ERP: Background Asynchronous Processing
+    Note over DB, Ext: Background Asynchronous Processing
     DB->>Broker: Relay Outbox Event
-    Broker->>ERP: API POST /api/resource/Sales Invoice
-    ERP-->>Broker: 201 Created (ID: SINV-0001)
-    Broker->>DB: Update Order with ERP_Invoice_ID
+    Broker->>Ext: API POST /api/external
+    Ext-->>Broker: 201 Created
+    Broker->>DB: Update Entity with External_ID
 ```
 
 ## 6. Domain Master Data Boundaries
-To prevent "split-brain" scenarios, domains must have a single source of truth:
+To prevent "split-brain" scenarios, the native ModBM system is the single source of truth:
 
-- Custom App Owns (Operations): Products/SKUs, Multi-location Inventory, Bins, Sales Orders, Purchase Orders, and Customer CRM data.
+- ModBM Core Owns: Products/SKUs, Multi-location Inventory, Bins, Sales Orders, Purchase Orders, CRM data, Chart of Accounts, Tax Rates, General Ledger Journals, AR/AP Balances.
 
-- ERPNext Owns (Finance): Chart of Accounts, Tax Rates, General Ledger Journals, AR/AP Balances.
-
-- The Bridge: When a Customer is created in the Custom App and makes their first purchase, the Integration Worker automatically creates a lightweight "Debtor" profile in ERPNext purely so an invoice can be attached to them. ERPNext does not need to know the customer's CRM history, only their financial balance.
+- External System Synchronization: If synchronising with a downstream BI tool or external CRM, the Integration Worker automatically provisions lightweight mapping profiles (using `external_id`) purely so data can be attached correctly downstream.
 
 ## 7. Security & Identity (IAM)
 
@@ -199,7 +194,7 @@ We will set up authorization using **Casbin**, which will serve as our centraliz
 **Interaction with the DAS:**
 - **API Gateway / Middleware**: Every incoming request to our Custom Node.js APIs must pass through an authorization middleware. This middleware extracts the user identity and requested resource, then queries the DAS (Casbin enforcer) to verify access.
 - **Frontend UI (Next.js)**: The UI will query the API for the current user's permissions derived from the DAS to gracefully hide or disable forbidden actions. However, the UI never makes authoritative access decisions.
-- **Background Workers**: Integration workers interacting with ERPNext or outbox queues must operate under defined service roles, validated similarly via the DAS.
+- **Background Workers**: Integration workers interacting with external APIs or outbox queues must operate under defined service roles, validated similarly via the DAS.
 
 ## 8. Infrastructure & Observability
 
@@ -215,6 +210,6 @@ To maintain the required "Always Output Observability" mandate, we will use the 
 ## Areas for your review before V2:
 Pricing Complexity: ABM is known for having incredibly complex, customer-specific pricing matrices (PRICEDETAILS, PSUBMATRIX). Do you want to replicate this exact logic in the custom app, or use this replatforming as an opportunity to simplify your pricing model?
 
-Inventory Valuation: Does your current ABM setup use Standard Costing, FIFO, or Average Costing? This deeply affects the mathematical logic required when we map stock movement events to ERPNext's General Ledger.
+Inventory Valuation: Does your current ABM setup use Standard Costing, FIFO, or Average Costing? This deeply affects the mathematical logic required when we map stock movement events to the General Ledger.
 
 Multi-Branching: How deeply did you use ABM's BranchID functionality? Will the new PostgreSQL database require strict Row-Level Security to prevent different branches/warehouses from seeing each other's data, or is application-level filtering sufficient?

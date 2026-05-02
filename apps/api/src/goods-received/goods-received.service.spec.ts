@@ -4,6 +4,10 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 
+jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
+  evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

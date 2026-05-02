@@ -57,6 +57,17 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .expect(201);
     validProductId = productRes.body.productId;
 
+    await request(app.getHttpServer())
+      .post(`/api/products/${validProductId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId: validVendorId,
+        isPreferred: true,
+        costPrice: '10.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
+
     // Fetch a location
     const locationsRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')

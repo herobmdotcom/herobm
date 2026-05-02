@@ -164,10 +164,9 @@ describe('InventoryService', () => {
     it('should apply both search and locationNo for bins', async () => {
       mockQb.then = jest.fn().mockImplementation((cb) => cb(mockBinRows));
       await service.findBins({ q: 'A-01', locationNo: 'LOC02' });
-      // 1. searchTerm
-      // 2. locationNo
-      // 3. UOMs query
-      expect(mockQb.where).toHaveBeenCalledTimes(3);
+      // 1. combined and(searchTerm, locationNo)
+      // 2. UOMs query
+      expect(mockQb.where).toHaveBeenCalledTimes(2);
     });
   });
 

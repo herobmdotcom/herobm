@@ -90,6 +90,17 @@ describe('Archive E2E — Full Round-Trip', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locations.body.data[0].locationId;
+
+    // Ensure the product is mapped to the vendor
+    await request(app.getHttpServer())
+      .post(`/api/products/${validProductId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId: validVendorId,
+        isPreferred: true,
+        costPrice: '10.00',
+        minOrderQty: 1,
+      });
   }, 120_000);
 
   afterAll(async () => {

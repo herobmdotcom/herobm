@@ -7,6 +7,10 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { AppConfigService } from '../settings/app-config.service';
 
+jest.mock('../orders/order-lifecycle-rules', () => ({
+  evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
+}));
+
 let mockRevenuePrecedence = 'product_first';
 const mockAppConfigService = {
   revenueRoutingPrecedence: jest

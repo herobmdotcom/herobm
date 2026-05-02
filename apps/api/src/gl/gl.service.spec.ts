@@ -1255,14 +1255,14 @@ describe('GlService', () => {
         ],
       });
       const result = await service.getGeneralLedger({ accountCode: '1100' });
-      expect(result).toHaveLength(1);
+      expect(result.data).toHaveLength(1);
     });
 
     it('should default limit to 200 and cap at 500', async () => {
       mock.onExecute({ rows: [] });
       // limit: 999 -> capped to 500
       await service.getGeneralLedger({ limit: 999 });
-      expect(mock.db.execute).toHaveBeenCalledTimes(1);
+      expect(mock.db.execute).toHaveBeenCalledTimes(2);
     });
 
     it('should handle no filters', async () => {

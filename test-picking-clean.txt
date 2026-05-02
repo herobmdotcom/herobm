@@ -1,0 +1,1805 @@
+﻿
+> api@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json --forceExit picking.e2e-spec.ts
+
+node.exe : [31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31m[Nest] 199..." = $1 limit $2:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+[31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+[31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+[31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+[31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+[31m[Nest] 19976  - [39m05/02/2026, 10:15:52 AM [31m  ERROR[39m [38;5;3m[ExceptionsHandler] 
+[39mDrizzleQueryError: Failed query: select "modbm_core"."accounts"."account_id", 
+"modbm_core"."accounts"."account_number", "modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", 
+"modbm_core"."accounts"."address1_line2", "modbm_core"."accounts"."address1_city", 
+"modbm_core"."accounts"."address1_state_or_province", "modbm_core"."accounts"."address1_postal_code", 
+"modbm_core"."accounts"."address1_country", "modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", 
+"modbm_core"."accounts"."email_address1", "modbm_core"."accounts"."primary_contact_name", 
+"modbm_core"."accounts"."primary_contact_email", "modbm_core"."accounts"."primary_contact_phone", 
+"modbm_core"."accounts"."account_group_id", "modbm_core"."accounts"."state_code", 
+"modbm_core"."accounts"."tax_category_id", "modbm_core"."accounts"."currency_code", 
+"modbm_core"."accounts"."trading_terms_id", "modbm_core"."accounts"."credit_limit", 
+"modbm_core"."accounts"."is_on_credit_hold", "modbm_core"."accounts"."customer_discount", 
+"modbm_core"."accounts"."erpnext_id", "modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", 
+"modbm_core"."accounts"."price_tier", "modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", 
+"modbm_core"."accounts"."created_on", "modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2
+params: ,1
+    at PostgresJsPreparedQuery.queryWithCache 
+(C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\pg-core\session.ts:73:11)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4msrc[24m\postgres-js\session.ts:58:17
+    at AccountsService.findOne 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\accounts\accounts.service.ts:87:18[90m)[39m
+    at OrdersWriteService.resolveCustomer 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:194:23[90m)[39m
+    at OrdersWriteService.create 
+[90m(C:\Users\Marcel\volz\modbm\modbm\apps\api\[39msrc\orders\orders-write.service.ts:324:22[90m)[39m {
+  query: [32m'select "modbm_core"."accounts"."account_id", "modbm_core"."accounts"."account_number", 
+"modbm_core"."accounts"."name", "modbm_core"."accounts"."address1_line1", "modbm_core"."accounts"."address1_line2", 
+"modbm_core"."accounts"."address1_city", "modbm_core"."accounts"."address1_state_or_province", 
+"modbm_core"."accounts"."address1_postal_code", "modbm_core"."accounts"."address1_country", 
+"modbm_core"."accounts"."telephone1", "modbm_core"."accounts"."fax", "modbm_core"."accounts"."email_address1", 
+"modbm_core"."accounts"."primary_contact_name", "modbm_core"."accounts"."primary_contact_email", 
+"modbm_core"."accounts"."primary_contact_phone", "modbm_core"."accounts"."account_group_id", 
+"modbm_core"."accounts"."state_code", "modbm_core"."accounts"."tax_category_id", 
+"modbm_core"."accounts"."currency_code", "modbm_core"."accounts"."trading_terms_id", 
+"modbm_core"."accounts"."credit_limit", "modbm_core"."accounts"."is_on_credit_hold", 
+"modbm_core"."accounts"."customer_discount", "modbm_core"."accounts"."erpnext_id", 
+"modbm_core"."accounts"."source_id", "modbm_core"."accounts"."source", "modbm_core"."accounts"."price_tier", 
+"modbm_core"."accounts"."notes", "modbm_core"."accounts"."created_by", "modbm_core"."accounts"."created_on", 
+"modbm_core"."accounts"."modified_on", "modbm_core"."account_groups"."name", 
+"modbm_core"."account_groups"."group_code", "modbm_core"."account_groups"."default_discount_percentage", 
+"modbm_core"."account_groups"."trading_terms_id", "modbm_core"."account_groups"."credit_limit", 
+"modbm_core"."account_groups"."is_on_credit_hold", "modbm_core"."tax_categories"."code" from "modbm_core"."accounts" 
+left join "modbm_core"."account_groups" on "modbm_core"."accounts"."account_group_id" = 
+"modbm_core"."account_groups"."account_group_id" left join "modbm_core"."tax_categories" on 
+"modbm_core"."accounts"."tax_category_id" = "modbm_core"."tax_categories"."tax_category_id" where 
+"modbm_core"."accounts"."source_id" = $1 limit $2'[39m,
+  params: [
+    [90mundefined[39m,
+    [33m1[39m
+  ],
+  cause: Error: UNDEFINED_VALUE: Undefined values are not allowed
+      at handleValue (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\types.js:83:20)
+      at C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:38
+      at Array.forEach (<anonymous>)
+      at build (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:230:25)
+      at Object.execute (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\connection.js:172:7)
+      at go (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:345:14)
+      at Query.handler (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\index.js:334:14)
+      at Query.handle (C:\Users\Marcel\volz\modbm\modbm\node_modules\[4mpostgres[24m\cjs\src\query.js:140:65)
+  [90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m {
+    code: [32m'UNDEFINED_VALUE'[39m
+  }
+}
+  console.error
+    Order creation failed: { statusCode: 500, message: 'Internal server error' }
+
+    [0m [90m 139 |[39m       [33m.[39mexpect((res[33m:[39m any) [33m=>[39m {
+     [90m 140 |[39m         [36mif[39m (res[33m.[39mstatus [33m!==[39m [35m201[39m) {
+    [31m[1m>[22m[39m[90m 141 |[39m           console[33m.[39merror([32m'Order creation failed:'[39m[33m,[39m res[33m.[39mbody)[33m;[39m
+     [90m     |[39m                   [31m[1m^[22m[39m
+     [90m 142 |[39m         }
+     [90m 143 |[39m       })
+     [90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m[0m
+
+      at picking.e2e-spec.ts:141:19
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+FAIL test/picking.e2e-spec.ts
+  API E2E ΓÇö Picking & Shipments
+    Full picking lifecycle
+      ├ù GET /api/sales-orders/:id/picking ΓÇö shows unpicked summary (1 ms)
+      ├ù PATCH picking/lines/:lineId ΓÇö partial pick
+      ├ù picking ΓåÆ shipped BLOCKED when lines incomplete
+      ├ù POST picking/lines/:lineId/pick-all ΓÇö pick remaining for line 1
+      ├ù pick line 2 fully
+      ├ù verifies ledger stock movement created for picking
+      ├ù picking ΓåÆ shipped ALLOWED when all lines picked and shipped
+      ├ù shipped ΓåÆ invoiced completes lifecycle
+    Pick All Order (creates shipment)
+      ├ù POST picking/pick-all ΓÇö picks all lines and creates shipment
+      ├ù can now transition to shipped
+    Pick All Order (with prior partial shipment)
+      ├ù should ship only unshipped quantities when prior shipment exists (1 ms)
+    Shipment document lifecycle
+      ├ù POST /shipments ΓÇö creates a shipment with lines
+      ├ù GET /shipments/:id ΓÇö returns shipment with lines
+      ├ù PATCH /shipments/:id ΓÇö updates notes on draft
+      ├ù POST /shipments/:id/lines ΓÇö adds a line
+      ├ù PATCH /shipments/:id/lines/:lid ΓÇö updates line quantity
+      ├ù PATCH /shipments/:id/state ΓåÆ dispatched
+      ├ù rejects mutations on dispatched shipment
+    Cancelled shipment
+      ├ù can cancel a draft shipment
+      ├ù cannot transition dispatched ΓåÆ cancelled
+    State machine guards
+      ├ù picking endpoints rejected when order not in picking state
+      ├ù rejects quantity exceeding ordered
+      ├ù rejects negative quantity
+      ├ù rejects shipping more than picked
+    RBAC ΓÇö viewer cannot pick or ship
+      ├ù viewer cannot pick a line (403)
+      ├ù viewer cannot pick-all (403)
+      ├ù viewer cannot create shipment (403)
+      ├ù viewer CAN read picking summary (200)
+      ├ù viewer CAN read shipments (200)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ GET /api/sales-orders/:id/picking ΓÇö shows 
+unpicked summary
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ GET /api/sales-orders/:id/picking ΓÇö shows 
+unpicked summary
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ PATCH picking/lines/:lineId ΓÇö partial pick
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ PATCH picking/lines/:lineId ΓÇö partial pick
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped BLOCKED when lines incomplete
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped BLOCKED when lines incomplete
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ POST picking/lines/:lineId/pick-all ΓÇö pick 
+remaining for line 1
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ POST picking/lines/:lineId/pick-all ΓÇö pick 
+remaining for line 1
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ pick line 2 fully
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ pick line 2 fully
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ verifies ledger stock movement created for picking
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ verifies ledger stock movement created for picking
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped ALLOWED when all lines picked 
+and shipped
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ picking ΓåÆ shipped ALLOWED when all lines picked 
+and shipped
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ shipped ΓåÆ invoiced completes lifecycle
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Full picking lifecycle ΓÇ║ shipped ΓåÆ invoiced completes lifecycle
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:182:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ POST picking/pick-all ΓÇö picks all 
+lines and creates shipment
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ POST picking/pick-all ΓÇö picks all 
+lines and creates shipment
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:329:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ can now transition to shipped
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (creates shipment) ΓÇ║ can now transition to shipped
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:329:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (with prior partial shipment) ΓÇ║ should ship only unshipped 
+quantities when prior shipment exists
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Pick All Order (with prior partial shipment) ΓÇ║ should ship only unshipped 
+quantities when prior shipment exists
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:379:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments ΓÇö creates a shipment with 
+lines
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments ΓÇö creates a shipment with 
+lines
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ GET /shipments/:id ΓÇö returns shipment with 
+lines
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ GET /shipments/:id ΓÇö returns shipment with 
+lines
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id ΓÇö updates notes on 
+draft
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id ΓÇö updates notes on 
+draft
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments/:id/lines ΓÇö adds a line
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ POST /shipments/:id/lines ΓÇö adds a line
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/lines/:lid ΓÇö updates 
+line quantity
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/lines/:lid ΓÇö updates 
+line quantity
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/state ΓåÆ dispatched
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ PATCH /shipments/:id/state ΓåÆ dispatched
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ rejects mutations on dispatched shipment
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Shipment document lifecycle ΓÇ║ rejects mutations on dispatched shipment
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:461:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ can cancel a draft shipment
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ can cancel a draft shipment
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:587:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ cannot transition dispatched ΓåÆ cancelled
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ Cancelled shipment ΓÇ║ cannot transition dispatched ΓåÆ cancelled
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:587:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ picking endpoints rejected when order not in 
+picking state
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects quantity exceeding ordered
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects negative quantity
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ State machine guards ΓÇ║ rejects shipping more than picked
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick a line (403)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick a line (403)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:773:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick-all (403)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot pick-all (403)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:773:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot create shipment (403)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer cannot create shipment (403)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:773:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read picking summary (200)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read picking summary (200)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:773:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read shipments (200)
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 82 |[39m         password[33m:[39m process[33m.[39menv[33m.[39m[33mDEV_VIEWER_PASSWORD[39m 
+[33m||[39m [32m'password'[39m[33m,[39m
+     [90m 83 |[39m       })
+    [31m[1m>[22m[39m[90m 84 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 85 |[39m     viewerToken [33m=[39m viewerLogin[33m.[39mbody[33m.[39maccess_token[33m;[39m
+     [90m 86 |[39m
+     [90m 87 |[39m     [90m// Fetch real IDs from mart data[39m[0m
+
+      at Object.<anonymous> (picking.e2e-spec.ts:84:8)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+  ΓùÅ API E2E ΓÇö Picking & Shipments ΓÇ║ RBAC ΓÇö viewer cannot pick or ship ΓÇ║ viewer CAN read shipments (200)
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 142 |[39m         }
+     [90m 143 |[39m       })
+    [31m[1m>[22m[39m[90m 144 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 145 |[39m
+     [90m 146 |[39m     [36mconst[39m orderId [33m=[39m res[33m.[39mbody[33m.[39msalesOrderId[33m;[39m
+     [90m 147 |[39m[0m
+
+      at createPickingOrder (picking.e2e-spec.ts:144:8)
+      at Object.<anonymous> (picking.e2e-spec.ts:773:28)
+      ----
+      at Test._assertStatus (../../../node_modules/supertest/lib/test.js:309:14)
+      at ../../../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../../../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../../../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../../../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../../../node_modules/supertest/lib/test.js:152:11)
+
+Test Suites: 1 failed, 1 total
+Tests:       29 failed, 29 total
+Snapshots:   0 total
+Time:        1.564 s, estimated 2 s
+Ran all test suites matching picking.e2e-spec.ts.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after 
+all tests finished?
+npm error Lifecycle script `test:e2e` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c jest --config ./test/jest-e2e.json --forceExit 
+picking.e2e-spec.ts

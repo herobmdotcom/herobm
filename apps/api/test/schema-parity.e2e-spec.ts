@@ -43,7 +43,9 @@ describe('Database Schema Parity (e2e)', () => {
         await db.select().from(entity).limit(1);
       } catch (err: any) {
         // Collect errors instead of failing immediately to provide a comprehensive report
-        errors.push(`[${key}] ${err.message}`);
+        errors.push(
+          `[${key}] ${err.stack || err.message} CAUSE: ${err.cause ? err.cause.stack || err.cause.message : 'no cause'}`,
+        );
       }
     }
 

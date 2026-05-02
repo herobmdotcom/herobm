@@ -42,8 +42,13 @@ export class GoodsReceivedController {
 
   @Get('lines')
   @CasbinAction('read')
-  async findAllLines(@Query() query: PaginationQuery, @Query('purchaseOrderId') purchaseOrderId?: string) {
-    return this.goodsReceivedService.findAllLines(query, purchaseOrderId);
+  async findAllLines(
+    @Query() query: PaginationQuery,
+    @Query('purchaseOrderId') purchaseOrderId?: string,
+    @Query('putawayStatus') putawayStatus?: string,
+    @Query('locationId') locationId?: string,
+  ) {
+    return this.goodsReceivedService.findAllLines(query, purchaseOrderId, putawayStatus, locationId);
   }
 
   @Get(':id')
@@ -74,5 +79,23 @@ export class GoodsReceivedController {
     @AuthUser() user: JwtUser,
   ) {
     return this.goodsReceivedService.unresolveAllocation(lineId, user.username);
+  }
+
+  @Post('putaway')
+  @CasbinAction('write')
+  async putaway(
+    @Body() dto: import('./dto').PutawayBulkDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.goodsReceivedService.putaway(dto, user.username);
+  }
+
+  @Post('lines/:lineId/quarantine')
+  @CasbinAction('write')
+  async toggleQuarantine(
+    @Param('lineId') lineId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.goodsReceivedService.toggleQuarantine(lineId, user.username);
   }
 }

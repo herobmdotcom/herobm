@@ -20,6 +20,7 @@ import {
   purchaseOrders,
   suppliers,
   productUoms,
+  productDefaultBins,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -206,8 +207,10 @@ export class InventoryService {
       .innerJoin(products, eq(binContents.productId, products.productId))
       .$dynamic();
 
+    const filters = [];
+
     if (searchTerm) {
-      qb = qb.where(
+      filters.push(
         or(
           ilike(products.name, searchTerm),
           ilike(products.productNumber, searchTerm),
@@ -218,7 +221,11 @@ export class InventoryService {
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(locations.code, query.locationNo));
+      filters.push(eq(locations.code, query.locationNo));
+    }
+
+    if (filters.length > 0) {
+      qb = qb.where(and(...filters));
     }
 
     const rows = await qb
@@ -242,6 +249,69 @@ export class InventoryService {
     }));
 
     return { data: rowsWithUoms, page, limit };
+  }
+
+  async getPutawayContext(productId: string, locationId: string) {
+    // 1. Get all available bins in the location
+    const locationBins = await this.db
+      .select({
+        binId: bins.binId,
+        binNumber: bins.binNumber,
+        binType: bins.binType,
+      })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(zones.locationId, locationId),
+          sql`${bins.binType} NOT IN ('receiving', 'quarantine')`,
+        ),
+      );
+
+    // 2. Find primary bin
+    const [defaultBin] = await this.db
+      .select({
+        binId: productDefaultBins.binId,
+        binNumber: bins.binNumber,
+      })
+      .from(productDefaultBins)
+      .innerJoin(bins, eq(productDefaultBins.binId, bins.binId))
+      .where(
+        and(
+          eq(productDefaultBins.productId, productId),
+          eq(productDefaultBins.locationId, locationId),
+          eq(productDefaultBins.isPrimaryPerLocation, true),
+        ),
+      )
+      .limit(1);
+
+    const primaryBinId = defaultBin?.binId;
+
+    // 3. Fetch current quantity in primary bin (if exists)
+    let currentQuantity = 0;
+    if (primaryBinId) {
+      const [content] = await this.db
+        .select({ actualQuantity: binContents.actualQuantity })
+        .from(binContents)
+        .where(
+          and(
+            eq(binContents.productId, productId),
+            eq(binContents.binId, primaryBinId),
+          ),
+        )
+        .limit(1);
+
+      if (content) {
+        currentQuantity = parseFloat(content.actualQuantity);
+      }
+    }
+
+    return {
+      primaryBinId: primaryBinId || null,
+      primaryBinNumber: defaultBin?.binNumber || null,
+      currentQuantity,
+      availableBins: locationBins,
+    };
   }
 
   /**
@@ -335,9 +405,13 @@ export class InventoryService {
       JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
       JOIN modbm_core.products p ON p.product_id = l.product_id
       LEFT JOIN (
-        SELECT product_id, SUM(quantity_on_hand) as qty
-        FROM modbm_core.inventory_levels
-        GROUP BY product_id
+        SELECT bc.product_id, SUM(bc.actual_quantity) as qty
+        FROM modbm_core.bin_contents bc
+        JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+        WHERE b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+          AND b.is_unavailable = false
+          AND b.is_bonded = false
+        GROUP BY bc.product_id
       ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
         AND e.source_type != 'INITIAL_IMPORT'
@@ -371,13 +445,18 @@ export class InventoryService {
       JOIN modbm_core.inventory_entries e ON e.entry_id = l.entry_id
       JOIN modbm_core.products p ON p.product_id = l.product_id
       LEFT JOIN (
-        SELECT product_id, SUM(quantity_on_hand) as qty
-        FROM modbm_core.inventory_levels
-        GROUP BY product_id
+        SELECT bc.product_id, SUM(bc.actual_quantity) as qty
+        FROM modbm_core.bin_contents bc
+        JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+        WHERE b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+          AND b.is_unavailable = false
+          AND b.is_bonded = false
+        GROUP BY bc.product_id
       ) inv ON inv.product_id = p.product_id
       WHERE e.entry_date >= ${cutoffIso}
         AND e.source_type != 'INITIAL_IMPORT'
       ORDER BY e.entry_date DESC, l.ledger_id DESC
+      LIMIT 10000
     `;
 
     const result = await this.db.execute(query);

@@ -175,14 +175,14 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
       markAllocated(demand.id, splitDemand);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Failed to link demand');
+      alert(err.message || 'Failed to allocate demand');
     }
   }, [onRefresh, markAllocated]);
 
   if (!isOpen || unmatchedDemands.length === 0) return null;
 
   return (
-    <SlideOver isOpen={isOpen} onClose={onClose} title={`Link Demand to PO (${unmatchedDemands.length} line${unmatchedDemands.length > 1 ? 's' : ''})`} width="max-w-4xl">
+    <SlideOver isOpen={isOpen} onClose={onClose} title={`Allocate Demand to PO (${unmatchedDemands.length} line${unmatchedDemands.length > 1 ? 's' : ''})`} width="max-w-4xl">
       <div className="flex flex-col gap-6">
 
         {/* Summary Table */}
@@ -261,6 +261,12 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                 <span className="font-bold text-[var(--accent)]">{demand.productName}</span>
                 <span className="text-[var(--text-muted)]">—</span>
                 <span className="text-sm text-[var(--text-primary)]">{demand.orderNumber}</span>
+                
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="text-xs ml-4 text-[var(--text-secondary)]">
+                  Required at: <span className="font-medium text-[var(--text-primary)]">{demand.locationName || 'Unknown'}</span>
+                </span>
+
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
                   Qty Required: {originalQuantity}
                 </span>
@@ -296,10 +302,15 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                             </span>
                             <span className="badge">{group.stateCode}</span>
                           </div>
-                          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                            <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>
-                            {' • '}
-                            Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            {demand.locationName && group.locationName && demand.locationName !== group.locationName && (
+                              <span className="badge badge-warning text-[10px] px-1.5 py-0.5">Location Mismatch</span>
+                            )}
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+                              <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>
+                              {' • '}
+                              Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                            </div>
                           </div>
                         </button>
 
@@ -376,7 +387,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            {isAllocating ? '...' : 'Link'}
+            {isAllocating ? '...' : 'Allocate'}
           </button>
         </div>
       </td>

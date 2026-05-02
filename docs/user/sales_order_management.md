@@ -295,7 +295,7 @@ stateDiagram-v2
 | **Cancelled** | Return was cancelled. | Nothing. |
 
 > [!IMPORTANT]
-> **"Processed" is purely operational.** It means the returned goods have been received. The financial credit note is generated asynchronously by ERPNext via the outbox, not by the order system.
+> **"Processed" is purely operational.** It means the returned goods have been received. The financial credit note is generated via the General Ledger or asynchronously synced via the outbox, not by the operational order system.
 
 ### Validation Rules
 

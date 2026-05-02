@@ -18,9 +18,9 @@ describe('Worker E2E - Outbox Integration', () => {
   let queue: Queue;
   let worker: Worker;
   
-  // Mock the ERP client
-  const mockErpClient = {
-    createResource: vi.fn().mockResolvedValue({ name: 'ERP-CUST-123' })
+  // Mock the External client
+  const mockExtClient = {
+    syncInvoice: vi.fn().mockResolvedValue({ externalId: 'EXT-CUST-123' })
   };
 
   beforeAll(async () => {
@@ -37,11 +37,11 @@ describe('Worker E2E - Outbox Integration', () => {
     const redisPassword = process.env.REDIS_PASSWORD;
     const connection = { host: redisHost, port: 6379, password: redisPassword };
 
-    queue = new Queue('erpnext-sync-test-2', { connection });
+    queue = new Queue('external-sync-test-2', { connection });
     
     // Explicitly pass db to processEvent! (Solves ADV-062)
-    worker = new Worker('erpnext-sync-test-2', async (job) => {
-      await processEvent(job, mockErpClient, db);
+    worker = new Worker('external-sync-test-2', async (job) => {
+      await processEvent(job, mockExtClient, db);
     }, { connection });
     
     await worker.waitUntilReady();
@@ -62,7 +62,8 @@ describe('Worker E2E - Outbox Integration', () => {
       accountId: testCustomerId,
       accountNumber: `E2E-${randomUUID().substring(0,8)}`,
       name: 'E2E Corp',
-      erpnextId: null,
+      currencyCode: 'AUD',
+      externalId: null,
     });
     
     await db.insert(outbox).values({
@@ -87,7 +88,7 @@ describe('Worker E2E - Outbox Integration', () => {
 
     expect(jobId).toBe(testEventId); 
 
-    expect(mockErpClient.createResource).toHaveBeenCalledWith('Customer', {
+    expect(mockExtClient.syncInvoice).toHaveBeenCalledWith({
        customer_name: 'E2E Corp',
        customer_type: 'Company',
        customer_group: 'Commercial',
@@ -96,7 +97,7 @@ describe('Worker E2E - Outbox Integration', () => {
 
     // Check that DB was actually updated!
     const accountCheck = await db.select().from(accounts).where(eq(accounts.accountId, testCustomerId));
-    expect(accountCheck[0].erpnextId).toBe('ERP-CUST-123');
+    expect(accountCheck[0].externalId).toBe('EXT-CUST-123');
 
     const dbCheck = await db.select().from(outbox).where(eq(outbox.outboxId, testEventId));
     expect(dbCheck[0].processedAt).not.toBeNull();

@@ -392,8 +392,14 @@ export class GlService {
       this.db.execute(countQuery),
     ]);
 
-    const rawRows = (Array.isArray(entriesResult) ? entriesResult : (entriesResult as any).rows || []) as any[];
-    const countRows = (Array.isArray(countResult) ? countResult : (countResult as any).rows || []) as any[];
+    const rawRows = (
+      Array.isArray(entriesResult)
+        ? entriesResult
+        : (entriesResult as any).rows || []
+    ) as any[];
+    const countRows = (
+      Array.isArray(countResult) ? countResult : (countResult as any).rows || []
+    ) as any[];
 
     // Map raw DB rows to camelCase for the frontend DataGrid
     const entries = rawRows.map((row) => ({

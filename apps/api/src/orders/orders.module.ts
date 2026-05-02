@@ -20,6 +20,7 @@ import { OrdersController } from './orders.controller';
 import { OrderReturnsController } from './order-returns.controller';
 import { OrderPickingController } from './order-picking.controller';
 import { OrderShipmentsController } from './order-shipments.controller';
+import { GlobalShipmentsController } from './global-shipments.controller';
 import { OrdersService } from './orders.service';
 import { OrdersWriteService } from './orders-write.service';
 import { BackordersService } from './backorders.service';
@@ -52,6 +53,7 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
     OrderReturnsController,
     OrderPickingController,
     OrderShipmentsController,
+    GlobalShipmentsController,
     AllocationsController,
   ],
   providers: [

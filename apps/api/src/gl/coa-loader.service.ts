@@ -41,7 +41,7 @@ export function resolveChartsDir(dirnameFallback: string): string {
 const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 
 /**
- * ERPNext-compatible COA JSON format:
+ * Legacy-compatible COA JSON format:
  *
  * {
  *   "tree": {
@@ -73,7 +73,7 @@ interface CoaFile {
   default_accounts?: Record<string, string>;
 }
 
-// Map ERPNext root_type to our account_type
+// Map Legacy root_type to our account_type
 const ROOT_TYPE_MAP: Record<string, string> = {
   Asset: 'asset',
   Liability: 'liability',

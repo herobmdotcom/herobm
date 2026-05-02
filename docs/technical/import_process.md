@@ -65,7 +65,7 @@ When an import model targets a Drizzle-managed table (via `alias`), dbt's merge 
 dbt's merge generates `UPDATE SET col = source.col` for **every column** in the target table. If the source SELECT omits a column, the merge fails:
 
 ```
-column dbt_internal_source.erpnext_id does not exist
+column dbt_internal_source.external_id does not exist
 ```
 
 **Fix:** Output typed NULLs for columns with no ABM equivalent:

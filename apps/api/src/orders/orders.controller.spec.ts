@@ -131,6 +131,7 @@ describe('OrdersController', () => {
         'quoted',
         'admin',
         undefined,
+        undefined,
       );
     });
   });

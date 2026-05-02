@@ -1,6 +1,11 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { salesOrders, salesOrderLineItems, salesInvoices, salesInvoiceLines } from '../drizzle/modbm-core-schema';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  salesInvoices,
+  salesInvoiceLines,
+} from '../drizzle/modbm-core-schema';
 import { findOrder, getCommittedPerLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
@@ -193,24 +198,23 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
 
     if (lines.length === 0) return null;
 
-    // 3. Get invoiced quantities
-    const { sql } = await import('drizzle-orm');
-    
     let isFullyInvoiced = true;
     for (const line of lines) {
       const [{ totalInvoiced }] = await db
         .select({
-          totalInvoiced: sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+          totalInvoiced:
+            sql<string>`COALESCE(SUM(CAST(${salesInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
         })
         .from(salesInvoiceLines)
-        .innerJoin(salesInvoices, eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId))
-        .where(
-          eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId)
-        );
+        .innerJoin(
+          salesInvoices,
+          eq(salesInvoiceLines.invoiceId, salesInvoices.invoiceId),
+        )
+        .where(eq(salesInvoiceLines.salesOrderLineId, line.salesOrderLineId));
 
       const invoiced = parseFloat(totalInvoiced || '0');
       const ordered = parseFloat(line.quantity || '0');
-      
+
       if (invoiced < ordered - 0.001) {
         isFullyInvoiced = false;
         break;

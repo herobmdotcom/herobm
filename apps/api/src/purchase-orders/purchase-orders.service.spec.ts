@@ -71,18 +71,35 @@ describe('PurchaseOrdersService', () => {
     orderResult: any,
     linesResult: any[] = [],
     eventsResult: any[] = [],
+    isCreate: boolean = false,
   ) {
     const mockTx = createMockTx();
 
-    // Setup select chain inside tx (mocking findOne calls: order -> lines -> events)
     let txSelectCall = 0;
     mockTx.select = jest.fn().mockReturnValue({
       from: jest.fn().mockImplementation(() => {
         txSelectCall++;
-        const cycle = txSelectCall % 3;
-        if (cycle === 1) return createMockQueryBuilder([orderResult]);
-        if (cycle === 2) return createMockQueryBuilder(linesResult);
-        if (cycle === 0) return createMockQueryBuilder(eventsResult);
+        if (isCreate) {
+          const cycle = (txSelectCall - 1) % 5;
+          if (cycle === 0)
+            return createMockQueryBuilder([{ locationId: 'loc-1' }]);
+          if (cycle === 1) return createMockQueryBuilder([orderResult]);
+          if (cycle === 2) return createMockQueryBuilder(linesResult);
+          if (cycle === 3)
+            return createMockQueryBuilder([
+              { productId: 'p1', uomCode: 'EA', divisor: 1 },
+            ]);
+          if (cycle === 4) return createMockQueryBuilder(eventsResult);
+        } else {
+          const cycle = (txSelectCall - 1) % 4;
+          if (cycle === 0) return createMockQueryBuilder([orderResult]);
+          if (cycle === 1) return createMockQueryBuilder(linesResult);
+          if (cycle === 2)
+            return createMockQueryBuilder([
+              { productId: 'p1', uomCode: 'EA', divisor: 1 },
+            ]);
+          if (cycle === 3) return createMockQueryBuilder(eventsResult);
+        }
         return createMockQueryBuilder([]);
       }),
     });
@@ -168,6 +185,7 @@ describe('PurchaseOrdersService', () => {
       orderNumber: 'PO-001',
       name: 'Office Supplies',
       vendorId: 'v-001',
+      deliveryLocationId: 'loc-1',
       currencyCode: 'EUR',
       lines: [
         {
@@ -185,7 +203,7 @@ describe('PurchaseOrdersService', () => {
         stateCode: 'draft',
         orderNumber: 'PO-001',
       };
-      const tx = mockTransaction(dbOrder);
+      const tx = mockTransaction(dbOrder, [], [], true);
 
       const result = await service.create(validDto, 'admin');
 
@@ -204,7 +222,7 @@ describe('PurchaseOrdersService', () => {
         stateCode: 'draft',
         orderNumber: 'PO-002',
       };
-      const tx = mockTransaction(dbOrder);
+      const tx = mockTransaction(dbOrder, [], [], true);
 
       await service.create({ ...validDto, lines: [] }, 'admin');
       // Only purchaseOrders and events inserts

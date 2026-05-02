@@ -1,12 +1,12 @@
 # API Layer Guide
 
-The NestJS API layer (`apps/api/`) provides a typed, authenticated HTTP interface over the dbt marts. All data endpoints require JWT authentication and Casbin RBAC authorisation. The API reads from the `public_marts` schema via Drizzle ORM and never writes to the database (Phase 2 is read-only).
+The NestJS API layer (`apps/api/`) provides a typed, authenticated HTTP interface for the ops-portal. All data endpoints require JWT authentication and Casbin RBAC authorisation. The API reads and writes exclusively to the `modbm_core` schema via Drizzle ORM.
 
 ## Architecture
 
 ```
-public_marts schema (Postgres)
-  │  Drizzle ORM (typed select)
+modbm_core schema (Postgres)
+  │  Drizzle ORM (typed select, insert, update)
   ▼
 NestJS API (apps/api/, port 3001)
   │  JWT + Casbin guard on every endpoint
@@ -175,7 +175,7 @@ apps/api/src/
 ├── main.ts                        # Bootstrap, Prometheus /metrics endpoint
 ├── app.module.ts                  # Root module, global MetricsInterceptor
 ├── drizzle/
-│   ├── schema.ts                  # Typed schema for 5 mart tables
+│   ├── modbm-core-schema.ts       # Typed schema for the core application database
 │   └── drizzle.module.ts          # Global DI provider (DRIZZLE token)
 ├── auth/
 │   ├── auth.module.ts             # JWT + Passport + Casbin wiring

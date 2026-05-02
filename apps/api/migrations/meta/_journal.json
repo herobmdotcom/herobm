@@ -267,6 +267,20 @@
       "when": 1777535924915,
       "tag": "0037_rename_sc_number",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1777719716858,
+      "tag": "0039_add_putaway_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1777730389488,
+      "tag": "0039_rename_erpnext_to_external",
+      "breakpoints": true
     }
   ]
 }

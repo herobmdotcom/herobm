@@ -1,6 +1,6 @@
 # Outbox Relay Guide
 
-The outbox relay (`apps/worker/`) is a standalone Node.js process that bridges ModBM operational events to ERPNext Journal Entries. It implements the [Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html): the API writes events atomically alongside business data, and the worker asynchronously relays them to ERPNext via BullMQ.
+The outbox relay (`apps/worker/`) is a standalone Node.js process that bridges ModBM operational events to external systems (such as legacy ERPs or external General Ledgers). It implements the [Transactional Outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html): the API writes events atomically alongside business data, and the worker asynchronously relays them to downstream consumers via BullMQ.
 
 ## Architecture
 
@@ -15,16 +15,16 @@ Outbox Relay Worker (apps/worker/, port 9091)
   │  Enqueue into BullMQ (Redis)
   ▼
 BullMQ Worker (concurrency: 5)
-  │  Maps event → ERPNext Journal Entry
+  │  Maps event → External System Payload
   ▼
-ERPNext (Frappe REST API)
+External System (e.g. ERPNext, external BI)
 ```
 
 ## What the outbox relay does
 
 1. **Poll** — Every 5 seconds, queries `modbm_core.outbox` for unprocessed events of handled types. Batch size: 50.
-2. **Enqueue** — Adds each event to BullMQ queue `erpnext-sync` with job-ID deduplication. Marks the outbox row as `processed_at = NOW()`.
-3. **Process** — BullMQ workers pick up jobs and map each event type to an ERPNext Journal Entry via the `processEvent` function.
+2. **Enqueue** — Adds each event to BullMQ queue `external-sync` with job-ID deduplication. Marks the outbox row as `processed_at = NOW()`.
+3. **Process** — BullMQ workers pick up jobs and map each event type to a payload for the external system via the `processEvent` function.
 4. **Observe** — Exposes Prometheus counters on `:9091/metrics` and structured JSON logs via pino.
 
 ## Outbox table schema
@@ -43,7 +43,7 @@ The outbox table lives in the `modbm_core` Postgres schema and is written to by 
 
 ### Outbox write guard
 
-Not every event is outbox-eligible. The `writeEvent()` helpers in the API write **all** event types to entity audit tables (`sales_order_events`, `purchase_order_events`) but only enqueue events with active ERPNext mappers to the outbox:
+Not every event is outbox-eligible. The `writeEvent()` helpers in the API write **all** event types to entity audit tables (`sales_order_events`, `purchase_order_events`) but only enqueue events with active external system mappers to the outbox:
 
 ```typescript
 const OUTBOX_EVENT_TYPES = new Set([
@@ -59,25 +59,22 @@ const OUTBOX_EVENT_TYPES = new Set([
 
 Events like `created`, `status_changed`, `line_added`, `archived`, etc. are written to audit tables only — they never enter the outbox.
 
-## Event types & Journal Entry mappers
+## Event types & Mappers
 
-| Event Type | Trigger | Journal Entry | Debit | Credit |
-|-----------|---------|---------------|-------|--------|
-| `goods_received` | Goods receipt recorded | Goods Receipt JE | Inventory (Asset) | GRNI (Liability) |
-| `goods_dispatched` | Shipment dispatched | Shipment COGS JE | Cost of Goods Sold | Inventory |
-| `sales_invoiced` | Sales invoice created | AR Journal | Debtors (party: Customer) | Sales + Duties/Taxes |
-| `purchase_invoiced` | Purchase bill created | AP Journal | Cost of Goods Sold + Duties/Taxes | Creditors (party: Supplier) |
+| Event Type | Trigger | Example External System Impact |
+|-----------|---------|---------------|
+| `goods_received` | Goods receipt recorded | Inventory Asset / GRNI Liability sync |
+| `goods_dispatched` | Shipment dispatched | COGS / Inventory Asset sync |
+| `sales_invoiced` | Sales invoice created | AR sync (Debtors: Customer) |
+| `purchase_invoiced` | Purchase bill created | AP sync (Creditors: Supplier) |
 
 ### JIT master data sync
 
-For `sales_invoiced` and `purchase_invoiced`, the worker performs just-in-time (JIT) master data synchronisation: if the customer/supplier does not yet have an `erpnext_id`, the worker creates the corresponding ERPNext Customer/Supplier doctype and writes the resulting ID back to the ModBM `accounts` or `suppliers` table.
+For `sales_invoiced` and `purchase_invoiced`, the worker may perform just-in-time (JIT) master data synchronisation: if the customer/supplier does not yet have an external ID, the worker creates the corresponding entity in the external system and writes the resulting ID back to the ModBM `accounts` or `suppliers` table as `external_id`.
 
 ### Purchase price variance
 
-The `goods_received` mapper handles standard cost variance. If `purchasePriceVariance` is non-zero, an additional pair of JE lines is posted:
-
-- **Positive variance** (actual > standard): Debit COGS, Credit GRNI
-- **Negative variance** (actual < standard): Debit GRNI, Credit COGS
+The `goods_received` mapper handles standard cost variance. If `purchasePriceVariance` is non-zero, additional financial sync logic may be posted.
 
 ## Module structure
 
@@ -124,9 +121,9 @@ All configuration is via environment variables (no hardcoded secrets per Constit
 | `POSTGRES_DB` | No | `custom_app` | Postgres database name |
 | `REDIS_HOST` | No | `localhost` | Redis hostname |
 | `REDIS_PASSWORD` | Yes | — | Redis password |
-| `ERPNEXT_URL` | No | `http://127.0.0.1:8000` | ERPNext base URL |
-| `ERPNEXT_API_KEY` | Yes | — | ERPNext API key |
-| `ERPNEXT_API_SECRET` | Yes | — | ERPNext API secret |
+| `EXTERNAL_API_URL` | No | — | External system base URL |
+| `EXTERNAL_API_KEY` | Yes | — | External API key |
+| `EXTERNAL_API_SECRET` | Yes | — | External API secret |
 
 ## Observability
 
@@ -135,11 +132,11 @@ All configuration is via environment variables (no hardcoded secrets per Constit
 The worker uses [pino](https://getpino.io/) with two named loggers:
 
 - `relay` — Polling lifecycle, enqueue outcomes, errors
-- `processing` — Per-event processing, JE creation, JIT sync
+- `processing` — Per-event processing, payload creation, JIT sync
 
 Example log output:
 ```json
-{"level":"info","name":"processing","eventId":"abc-123","eventType":"sales_invoiced","msg":"Created AR Journal Entry"}
+{"level":"info","name":"processing","eventId":"abc-123","eventType":"sales_invoiced","msg":"Created External Sync Payload"}
 ```
 
 ### Prometheus metrics
@@ -150,20 +147,20 @@ Exposed on `:9091/metrics`, scraped by the platform Prometheus instance.
 |--------|------|--------|-------------|
 | `outbox_events_processed_total` | Counter | `event_type` | Events successfully enqueued |
 | `outbox_events_failed_total` | Counter | `event_type` | Event processing failures |
-| `journal_entries_created_total` | Counter | `event_type` | ERPNext JEs created |
+| `external_sync_success_total` | Counter | `event_type` | Successful payloads sent |
 | `process_*`, `nodejs_*` | Gauge | — | Default Node.js metrics |
 
 ## Sync dashboard
 
-The ops portal includes a monitoring dashboard at **Settings → ERPNext Sync** (`/settings/erpnext-sync`).
+The ops portal includes a monitoring dashboard at **Settings → External Sync** (`/settings/external-sync`).
 
 ### Dashboard API endpoints
 
 | Method | Path | Action | Description |
 |--------|------|--------|-------------|
-| `GET` | `/api/settings/erpnext-sync` | `read` | Summary counts + per-type breakdown + recent events |
-| `GET` | `/api/settings/erpnext-sync/events?type=X` | `read` | List pending events by type |
-| `DELETE` | `/api/settings/erpnext-sync/events?type=X` | `write` | Clear pending events by type |
+| `GET` | `/api/settings/external-sync` | `read` | Summary counts + per-type breakdown + recent events |
+| `GET` | `/api/settings/external-sync/events?type=X` | `read` | List pending events by type |
+| `DELETE` | `/api/settings/external-sync/events?type=X` | `write` | Clear pending events by type |
 
 ### Dashboard features
 
@@ -177,8 +174,8 @@ The ops portal includes a monitoring dashboard at **Settings → ERPNext Sync** 
 ## How to run
 
 ```bash
-# Docker (with ERPNext stack)
-make up-erpnext          # Builds worker image, starts with erpnext profile
+# Docker (with external stack if configured)
+make up-worker          # Builds worker image and starts the relay
 
 # Local development
 cd apps/worker && npx tsx src/outbox-relay.ts   # Needs .env with all vars
@@ -191,9 +188,9 @@ cd apps/worker && npx tsx src/outbox-relay.ts   # Needs .env with all vars
    - `apps/api/src/purchase-orders/purchase-orders.service.ts` (for PO-domain events)
    - Or the relevant service's `writeEvent()` function
 
-2. **Emit the event** — In the service that triggers the business action, call `writeEvent()` with the new type and a payload containing all data the JE mapper will need.
+2. **Emit the event** — In the service that triggers the business action, call `writeEvent()` with the new type and a payload containing all data the mapper will need.
 
-3. **Add a mapper** — In `apps/worker/src/relay.service.ts`, add an `else if (type === 'your_new_type')` branch to `processEvent()` that constructs a `JournalEntry` and calls `erpClient.createJournalEntry(je)`.
+3. **Add a mapper** — In `apps/worker/src/relay.service.ts`, add an `else if (type === 'your_new_type')` branch to `processEvent()` that constructs the external payload and sends it.
 
 4. **Update the constant** — Add the new type to `HANDLED_EVENT_TYPES` in `relay.service.ts`.
 
@@ -202,4 +199,4 @@ cd apps/worker && npx tsx src/outbox-relay.ts   # Needs .env with all vars
    npx tsx --env-file=.env scripts/simulate_transactions.ts --mode=batch --count=5
    ```
 
-6. **Monitor** — Check the ERPNext Sync dashboard for successful processing.
+6. **Monitor** — Check the External Sync dashboard for successful processing.

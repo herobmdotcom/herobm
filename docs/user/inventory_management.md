@@ -190,7 +190,7 @@ All inventory mutations run **inside the same database transaction** as the stat
 - **Atomicity** — if the state change fails, no ledger entries are created.
 - **Consistency** — the ledger always reflects complete business events.
 - **Auditability** — every movement is traceable to a source document via `source_type` and `source_id`.
-- **No eventual consistency gaps** — unlike the outbox pattern used for ERPNext, inventory updates are synchronous.
+- **No eventual consistency gaps** — unlike the outbox pattern used for external integrations, inventory updates are synchronous.
 
 ---
 

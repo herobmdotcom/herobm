@@ -19,14 +19,14 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
   const tCommon = useTranslations('common');
 
   const handleUnlink = async (id: string) => {
-    if (!confirm('Are you sure you want to unlink this demand? It will be placed back into the Open Demands pool.')) return;
+    if (!confirm('Are you sure you want to unallocate this demand? It will be placed back into the Open Demands pool.')) return;
     try {
       await apiFetch(`/api/allocations/${id}/unlink`, { method: 'POST' });
-      toast.success('Demand unlinked successfully');
+      toast.success('Demand unallocated successfully');
       onAllocationsChanged();
     } catch (err) {
       reportError(err, 'AllocationsSection');
-      toast.error('Failed to unlink demand');
+      toast.error('Failed to unallocate demand');
     }
   };
 
@@ -81,9 +81,9 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     <button 
                       onClick={() => handleUnlink(alloc.id)}
                       className="btn btn-secondary btn-sm"
-                      title="Unlink demand from this PO"
+                      title="Unallocate demand from this PO"
                     >
-                      Unlink
+                      Unallocate
                     </button>
                   </td>
                 </tr>

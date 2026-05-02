@@ -122,9 +122,9 @@ export default function DemandsContent() {
                   <button 
                     onClick={() => setIsLinkSlideOverOpen(true)} 
                     disabled={selectedRows.length === 0}
-                    className="btn btn-secondary px-4 py-2 text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
-                    Link to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                    Allocate to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
                   <button 
                     onClick={handleDraftPOs} 

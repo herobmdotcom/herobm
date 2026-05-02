@@ -151,7 +151,7 @@ describe('Backorders Workflow (e2e)', () => {
       })
       .expect(200);
 
-    // 7. Verify backorder and PO got generated
+    // 7. Verify NO PO got generated (since auto-PO creation is disabled per USER REQUEST)
     // Best way in black-box integration is just querying the recently generated POs
     const posRes = await request(server)
       .get(`/api/purchase-orders?limit=10`)
@@ -174,14 +174,6 @@ describe('Backorders Workflow (e2e)', () => {
       }
     }
 
-    expect(generatedPo).not.toBeNull();
-    expect(generatedPo.stateCode).toBe('draft');
-    expect(generatedPo.vendorId).toBe(vendorId);
-
-    // Verify the PO line shortage mapped correctly
-    expect(generatedPo.lines).toBeDefined();
-    const line = generatedPo.lines.find((l: any) => l.productId === productId);
-    expect(line).toBeDefined();
-    expect(parseFloat(line.quantity)).toBe(50);
+    expect(generatedPo).toBeNull();
   });
 });

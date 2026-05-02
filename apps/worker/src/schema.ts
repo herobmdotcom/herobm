@@ -18,12 +18,13 @@ export const accounts = modbmCore.table('accounts', {
   accountId: uuid('account_id').primaryKey(),
   accountNumber: text('account_number').notNull(),
   name: text('name').notNull(),
-  erpnextId: text('erpnext_id'),
+  currencyCode: text('currency_code').notNull(),
+  externalId: text('external_id'),
 });
 
 export const suppliers = modbmCore.table('suppliers', {
   vendorId: uuid('vendor_id').primaryKey(),
-  erpnextId: text('erpnext_id'),
+  externalId: text('external_id'),
 });
 
 

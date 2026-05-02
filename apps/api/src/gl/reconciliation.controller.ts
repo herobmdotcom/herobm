@@ -1,6 +1,18 @@
-import { Controller, Get, Post, Param, Body, UseGuards, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  Delete,
+} from '@nestjs/common';
 import { ReconciliationService } from './reconciliation.service';
-import { CreateReconciliationDto, ToggleLineDto, CreateAdjustmentDto } from './dto';
+import {
+  CreateReconciliationDto,
+  ToggleLineDto,
+  CreateAdjustmentDto,
+} from './dto';
 import { CasbinAction, CasbinResource } from '../auth/casbin.guard';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -41,9 +53,9 @@ export class ReconciliationController {
   async toggleLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
-    @Body() dto: ToggleLineDto
+    @Body() dto: ToggleLineDto,
   ) {
-    return this.service.toggleLine(id, lineId, dto.isCleared);
+    return this.service.toggleLine(id, lineId, dto.isCleared, dto.amount);
   }
 
   @Post(':id/post')
@@ -62,10 +74,10 @@ export class ReconciliationController {
   @CasbinAction('write')
   async createAdjustment(
     @Param('id') id: string,
-    @Body() dto: CreateAdjustmentDto
+    @Body() dto: CreateAdjustmentDto,
   ) {
     // In a real application, you'd extract the actor from the JWT token
-    const actor = 'system'; 
+    const actor = 'system';
     return this.service.createAdjustment(id, dto, actor);
   }
 }

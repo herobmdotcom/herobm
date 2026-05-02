@@ -131,8 +131,6 @@ services:
     image: localhost/outbox-worker:latest
     container_name: outbox-worker
     restart: unless-stopped
-    profiles:
-      - erpnext
     env_file: .env
     environment:
       POSTGRES_HOST: postgres-custom
@@ -142,9 +140,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-custom_app}
       REDIS_HOST: redis-broker
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      ERPNEXT_URL: http://erpnext-backend:8000
-      ERPNEXT_API_KEY: ${ERPNEXT_API_KEY}
-      ERPNEXT_API_SECRET: ${ERPNEXT_API_SECRET}
     ports:
       - "127.0.0.1:9091:9091"
     volumes:
@@ -154,11 +149,8 @@ services:
         condition: service_healthy
       redis-broker:
         condition: service_healthy
-      erpnext-backend:
-        condition: service_started
     networks:
       - app-net
-      - erpnext-net
       - monitoring-net
     logging:
       driver: "json-file"
@@ -292,202 +284,7 @@ services:
       - app-net
       - monitoring-net
 
-  # ==========================================================================
-  # ERPNext Financial Core (Phase 4 — Headless General Ledger)
-  # ==========================================================================
-  # ERPNext requires MariaDB (not Postgres) and its own Redis instances.
-  # These are completely independent — the two systems communicate only
-  # via the REST API boundary, per Constitution §3 (Ruthless Decoupling).
-  # ==========================================================================
 
-  erpnext-db:
-    image: mariadb:10.11
-    container_name: erpnext-db
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    environment:
-      MYSQL_ROOT_PASSWORD: ${ERPNEXT_DB_ROOT_PASSWORD}
-      MYSQL_ROOT_HOST: "%"
-      MYSQL_DATABASE: erpnext
-      MYSQL_USER: erpnext
-      MYSQL_PASSWORD: ${ERPNEXT_DB_PASSWORD}
-    ports:
-      - "127.0.0.1:3306:3306"
-    volumes:
-      - erpnext_db_data:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --skip-character-set-client-handshake
-      - --skip-innodb-read-only-compressed
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - erpnext-net
-
-  erpnext-redis-cache:
-    image: redis:7-alpine
-    container_name: erpnext-redis-cache
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    networks:
-      - erpnext-net
-
-  erpnext-redis-queue:
-    image: redis:7-alpine
-    container_name: erpnext-redis-queue
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    networks:
-      - erpnext-net
-
-  # One-shot configurator — writes bench config then exits
-  erpnext-configurator:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-configurator
-    platform: linux/amd64
-    restart: on-failure
-    profiles:
-      - erpnext
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        ls -1 apps > sites/apps.txt;
-        bench set-config -g db_host erpnext-db;
-        bench set-config -gp db_port 3306;
-        bench set-config -g redis_cache "redis://erpnext-redis-cache:6379";
-        bench set-config -g redis_queue "redis://erpnext-redis-queue:6379";
-        bench set-config -g redis_socketio "redis://erpnext-redis-queue:6379";
-        bench set-config -gp socketio_port 9000;
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      erpnext-db:
-        condition: service_healthy
-    networks:
-      - erpnext-net
-
-  erpnext-backend:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-backend
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    ports:
-      - "127.0.0.1:8000:8000"
-    depends_on:
-      erpnext-configurator:
-        condition: service_completed_successfully
-    networks:
-      - erpnext-net
-      - app-net
-
-  erpnext-queue-short:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-queue-short
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    command: bench worker --queue short,default
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      erpnext-configurator:
-        condition: service_completed_successfully
-    networks:
-      - erpnext-net
-
-  erpnext-queue-long:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-queue-long
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    command: bench worker --queue long,default,short
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      erpnext-configurator:
-        condition: service_completed_successfully
-    networks:
-      - erpnext-net
-
-  erpnext-scheduler:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-scheduler
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - erpnext
-    command: bench schedule
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      erpnext-configurator:
-        condition: service_completed_successfully
-    networks:
-      - erpnext-net
-
-  # ERPNext web UI — only for the finance team (GL reports, bank rec)
-  # Start with: podman compose --profile erpnext --profile finance up
-  erpnext-frontend:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-frontend
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - finance
-    command:
-      - nginx-entrypoint.sh
-    environment:
-      BACKEND: erpnext-backend:8000
-      SOCKETIO: erpnext-websocket:9000
-      FRAPPE_SITE_NAME_HEADER: $$host
-      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-      PROXY_READ_TIMEOUT: "120"
-      CLIENT_MAX_BODY_SIZE: 50m
-    ports:
-      - "127.0.0.1:8080:8080"
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      - erpnext-backend
-      - erpnext-websocket
-    networks:
-      - erpnext-net
-
-  erpnext-websocket:
-    image: frappe/erpnext:${ERPNEXT_VERSION:-v16}
-    container_name: erpnext-websocket
-    platform: linux/amd64
-    restart: unless-stopped
-    profiles:
-      - finance
-    command:
-      - node
-      - /home/frappe/frappe-bench/apps/frappe/socketio.js
-    volumes:
-      - erpnext_sites:/home/frappe/frappe-bench/sites
-    depends_on:
-      erpnext-configurator:
-        condition: service_completed_successfully
-    networks:
-      - erpnext-net
 
   # --- ELT Pipeline (on-demand, not started by 'podman compose up') ---
   abm-extract:
@@ -524,13 +321,10 @@ volumes:
   prometheus_data:
   loki_data:
   grafana_data:
-  erpnext_db_data:
-  erpnext_sites:
+
 
 networks:
   app-net:
     driver: bridge
   monitoring-net:
-    driver: bridge
-  erpnext-net:
     driver: bridge

@@ -1,8 +1,0 @@
-﻿[96mcomponents/shared/POMatchingPanel.tsx[0m:[93m92[0m:[93m47[0m - [91merror[0m[90m TS2345: [0mArgument of type 'unknown' is not assignable to parameter of type 'SetStateAction<string | null>'.
-
-[7m92[0m         if (poIds.length === 1) setExpandedPO(poIds[0]);
-[7m  [0m [91m                                              ~~~~~~~~[0m
-
-
-Found 1 error in components/shared/POMatchingPanel.tsx[90m:92[0m
-

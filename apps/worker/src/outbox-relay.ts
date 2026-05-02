@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { Queue, Worker, Job } from 'bullmq';
-import { ERPNextClient, JournalEntry } from '@modbm/erpnext-client';
+import { MockExternalClient } from './mock-external.client';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { outbox, modbmCore } from './schema';
@@ -36,12 +36,8 @@ const PORT = 9091;
 const pgClient = postgres(`postgres://${PG_USER}:${PG_PASS}@${PG_HOST}:${PG_PORT}/${PG_DB}`);
 const db = drizzle(pgClient, { schema: { modbmCore, outbox } });
 
-// Setup ERPNext Client
-const erpClient = new ERPNextClient({
-  baseUrl: process.env.ERPNEXT_URL || 'http://127.0.0.1:8000',
-  apiKey: requireEnv('ERPNEXT_API_KEY'),
-  apiSecret: requireEnv('ERPNEXT_API_SECRET'),
-});
+// Setup Mock Client
+const extClient = new MockExternalClient();
 
 // Setup BullMQ
 const connection = {
@@ -50,7 +46,7 @@ const connection = {
   password: REDIS_PASSWORD,
 };
 
-const syncQueue = new Queue('erpnext-sync', { connection });
+const syncQueue = new Queue('external-sync', { connection });
 
 // Setup Metrics
 const register = new Registry();
@@ -58,7 +54,7 @@ collectDefaultMetrics({ register });
 
 const eventsProcessedCounter = new Counter({
   name: 'outbox_events_processed_total',
-  help: 'Total outbox events successfully enqueued for ERPNext sync',
+  help: 'Total outbox events successfully enqueued for external sync',
   labelNames: ['event_type'],
   registers: [register],
 });
@@ -72,7 +68,7 @@ const eventsFailedCounter = new Counter({
 
 const journalEntriesCounter = new Counter({
   name: 'journal_entries_created_total',
-  help: 'Total ERPNext Journal Entries successfully created',
+  help: 'Total Journal Entries successfully created',
   labelNames: ['event_type'],
   registers: [register],
 });
@@ -83,7 +79,7 @@ export { eventsProcessedCounter, eventsFailedCounter, journalEntriesCounter };
 import { pollOutbox, processEvent } from './relay.service';
 
 // Start Worker
-const worker = new Worker('erpnext-sync', (job) => processEvent(job, erpClient, db), { connection, concurrency: 5 });
+const worker = new Worker('external-sync', (job) => processEvent(job, extClient, db), { connection, concurrency: 5 });
 
 worker.on('failed', (job, err) => {
   logger.error({ jobId: job?.id, err: err.message }, 'BullMQ job failed');

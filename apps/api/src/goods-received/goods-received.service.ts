@@ -17,6 +17,7 @@ import {
   purchaseOrderLineItems,
   zones,
   bins,
+  binContents,
 } from '../drizzle/modbm-core-schema';
 
 import { InventoryService } from '../inventory/inventory.service';
@@ -126,7 +127,7 @@ export class GoodsReceivedService {
                 eq(purchaseOrders.deliveryLocationId, createDto.locationId),
                 sql`${purchaseOrders.stateCode} IN ('ordered', 'partially_received')`,
                 sql`CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
-                sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`
+                sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`,
               ),
             );
 
@@ -254,12 +255,20 @@ export class GoodsReceivedService {
         for (const poId of updatedPoIds) {
           // Trigger the lifecycle engine instead of hardcoded updates
           try {
-            await evaluatePOLifecycleRules(tx as any, poId, {
-              entity: 'goods_receipt',
-              action: 'created',
-            }, 'system');
+            await evaluatePOLifecycleRules(
+              tx as any,
+              poId,
+              {
+                entity: 'goods_receipt',
+                action: 'created',
+              },
+              'system',
+            );
           } catch (err) {
-            this.logger.error(`Failed to evaluate PO lifecycle rules for PO ${poId} after goods receipt:`, err);
+            this.logger.error(
+              `Failed to evaluate PO lifecycle rules for PO ${poId} after goods receipt:`,
+              err,
+            );
           }
         }
       }
@@ -385,13 +394,26 @@ export class GoodsReceivedService {
    * List all goods receipt lines with pagination and optional filtering.
    * This provides a flattened "Receipt Lines" view.
    */
-  async findAllLines(params: PaginationQuery, purchaseOrderId?: string) {
+  async findAllLines(
+    params: PaginationQuery,
+    purchaseOrderId?: string,
+    putawayStatus?: string,
+    locationId?: string,
+  ) {
     const { page, limit, offset, searchTerm, days } = parsePagination(params);
 
     const conditions = [];
 
     if (purchaseOrderId) {
       conditions.push(eq(goodsReceivedLines.purchaseOrderId, purchaseOrderId));
+    }
+
+    if (putawayStatus) {
+      conditions.push(eq(goodsReceivedLines.putawayStatus, putawayStatus as any));
+    }
+
+    if (locationId) {
+      conditions.push(eq(goodsReceived.locationId, locationId));
     }
 
     if (searchTerm) {
@@ -422,6 +444,7 @@ export class GoodsReceivedService {
         vendorName: suppliers.name,
         createdOn: goodsReceived.createdOn,
         locationId: goodsReceived.locationId,
+        locationName: locations.name,
         productNumber: products.productNumber,
         productName: products.name,
         orderNumber: purchaseOrders.orderNumber,
@@ -437,6 +460,7 @@ export class GoodsReceivedService {
         purchaseOrders,
         eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
       )
+      .leftJoin(locations, eq(goodsReceived.locationId, locations.locationId))
       .where(whereClause)
       .limit(limit)
       .offset(offset)
@@ -461,6 +485,7 @@ export class GoodsReceivedService {
         vendorName: d.vendorName,
         createdOn: d.createdOn,
         locationId: d.locationId,
+        locationName: d.locationName,
         productNumber: d.productNumber,
         productName: d.productName,
         orderNumber: d.orderNumber,
@@ -497,6 +522,7 @@ export class GoodsReceivedService {
         productId: goodsReceivedLines.productId,
         quantityReceived: goodsReceivedLines.quantityReceived,
         matchStatus: goodsReceivedLines.matchStatus,
+        putawayStatus: goodsReceivedLines.putawayStatus,
         purchaseOrderLineId: goodsReceivedLines.purchaseOrderLineId,
         purchaseOrderId: goodsReceivedLines.purchaseOrderId,
         productNumber: products.productNumber,
@@ -593,12 +619,15 @@ export class GoodsReceivedService {
       let splitLine = null;
       if (targetQuantity < originalQuantity) {
         const remainder = originalQuantity - targetQuantity;
-        const [inserted] = await tx.insert(goodsReceivedLines).values({
-          goodsReceivedId: grLine.goodsReceivedId,
-          productId: grLine.productId,
-          quantityReceived: remainder.toString(),
-          matchStatus: 'ambiguous',
-        }).returning();
+        const [inserted] = await tx
+          .insert(goodsReceivedLines)
+          .values({
+            goodsReceivedId: grLine.goodsReceivedId,
+            productId: grLine.productId,
+            quantityReceived: remainder.toString(),
+            matchStatus: 'ambiguous',
+          })
+          .returning();
         splitLine = inserted;
       }
 
@@ -782,6 +811,258 @@ export class GoodsReceivedService {
         },
         actor: userId,
       });
+
+      return { success: true };
+    });
+  }
+
+  async toggleQuarantine(goodsReceivedLineId: string, userId: string) {
+    return await this.db.transaction(async (tx) => {
+      const [grLine] = await tx
+        .select({
+          line: goodsReceivedLines,
+          locationId: goodsReceived.locationId,
+          receiptNumber: goodsReceived.receiptNumber,
+        })
+        .from(goodsReceivedLines)
+        .innerJoin(
+          goodsReceived,
+          eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+        )
+        .where(eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId))
+        .limit(1);
+
+      if (!grLine) throw new NotFoundException('Line not found');
+
+      const currentStatus = grLine.line.putawayStatus;
+      if (currentStatus === 'completed') {
+        throw new BadRequestException(
+          'Cannot quarantine an already putaway line',
+        );
+      }
+
+      const newStatus =
+        currentStatus === 'quarantined' ? 'pending_putaway' : 'quarantined';
+      const targetBinCode =
+        newStatus === 'quarantined' ? 'QUARANTINE' : 'RECEIVING';
+      const currentBinCode =
+        currentStatus === 'quarantined' ? 'QUARANTINE' : 'RECEIVING';
+
+      // Find the zones/bins
+      const [sourceBin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(zones.locationId, grLine.locationId),
+            eq(bins.binNumber, currentBinCode),
+          ),
+        )
+        .limit(1);
+
+      let targetBin = await tx
+        .select({ binId: bins.binId, zoneId: bins.zoneId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(zones.locationId, grLine.locationId),
+            eq(bins.binNumber, targetBinCode),
+          ),
+        )
+        .limit(1)
+        .then((res) => res[0]);
+
+      if (!targetBin) {
+        // Find or create zone
+        let targetZone = await tx
+          .select({ zoneId: zones.zoneId })
+          .from(zones)
+          .where(
+            and(
+              eq(zones.locationId, grLine.locationId),
+              eq(zones.code, targetBinCode === 'QUARANTINE' ? 'QUAR' : 'RECV'),
+            ),
+          )
+          .limit(1)
+          .then((res) => res[0]);
+
+        if (!targetZone) {
+          const [newZone] = await tx
+            .insert(zones)
+            .values({
+              locationId: grLine.locationId,
+              code: targetBinCode === 'QUARANTINE' ? 'QUAR' : 'RECV',
+              name:
+                targetBinCode === 'QUARANTINE'
+                  ? 'Quarantine Zone'
+                  : 'Receiving Dock',
+              createdBy: userId,
+            })
+            .returning();
+          targetZone = newZone;
+        }
+
+        const [newBin] = await tx
+          .insert(bins)
+          .values({
+            zoneId: targetZone.zoneId,
+            binNumber: targetBinCode,
+            binType:
+              targetBinCode === 'QUARANTINE' ? 'quarantine' : 'receiving',
+            createdBy: userId,
+          })
+          .returning();
+        targetBin = newBin;
+      }
+
+      if (sourceBin && targetBin) {
+        await this.inventoryService.recordInventoryMovement(tx, {
+          entryNumber: `QRN-${grLine.receiptNumber}-${grLine.line.goodsReceivedLineId.substring(0, 4)}`,
+          sourceType: 'PO_RECEIPT',
+          sourceId: grLine.line.goodsReceivedId,
+          memo: `Status changed to ${newStatus}`,
+          userId,
+          lines: [
+            {
+              productId: grLine.line.productId,
+              binId: sourceBin.binId,
+              quantity: -parseFloat(grLine.line.quantityReceived),
+            },
+            {
+              productId: grLine.line.productId,
+              binId: targetBin.binId,
+              quantity: parseFloat(grLine.line.quantityReceived),
+            },
+          ],
+        });
+      }
+
+      await tx
+        .update(goodsReceivedLines)
+        .set({ putawayStatus: newStatus })
+        .where(eq(goodsReceivedLines.goodsReceivedLineId, goodsReceivedLineId));
+
+      return { success: true, putawayStatus: newStatus };
+    });
+  }
+
+  async putaway(dto: import('./dto').PutawayBulkDto, userId: string) {
+    return await this.db.transaction(async (tx) => {
+      for (const lineDto of dto.putaways) {
+        const [grLine] = await tx
+          .select({
+            line: goodsReceivedLines,
+            locationId: goodsReceived.locationId,
+            receiptNumber: goodsReceived.receiptNumber,
+          })
+          .from(goodsReceivedLines)
+          .innerJoin(
+            goodsReceived,
+            eq(
+              goodsReceivedLines.goodsReceivedId,
+              goodsReceived.goodsReceivedId,
+            ),
+          )
+          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId))
+          .limit(1);
+
+        if (!grLine)
+          throw new NotFoundException(`Line ${lineDto.lineId} not found`);
+        if (grLine.line.matchStatus !== 'matched') {
+          throw new BadRequestException(
+            `Cannot putaway unmatched line: ${lineDto.lineId}`,
+          );
+        }
+        if (grLine.line.putawayStatus === 'completed') {
+          throw new BadRequestException(
+            `Line ${lineDto.lineId} is already putaway`,
+          );
+        }
+
+        const sourceBinCode =
+          grLine.line.putawayStatus === 'quarantined'
+            ? 'QUARANTINE'
+            : 'RECEIVING';
+
+        const [sourceBin] = await tx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(zones.locationId, grLine.locationId),
+              eq(bins.binNumber, sourceBinCode),
+            ),
+          )
+          .limit(1);
+
+        if (!sourceBin) {
+          throw new BadRequestException(
+            `Source bin ${sourceBinCode} not found for line ${lineDto.lineId}`,
+          );
+        }
+
+        const qty = parseFloat(lineDto.quantity);
+
+        const movements: any[] = [
+          {
+            productId: grLine.line.productId,
+            binId: sourceBin.binId,
+            quantity: -qty,
+          },
+          {
+            productId: grLine.line.productId,
+            binId: lineDto.destinationBinId,
+            quantity: qty,
+          },
+        ];
+
+        // Handle discrepancies if newTotalQuantity is provided
+        if (lineDto.newTotalQuantity !== undefined) {
+          const newTotal = parseFloat(lineDto.newTotalQuantity);
+          
+          const [destBinContent] = await tx
+            .select({ actualQuantity: binContents.actualQuantity })
+            .from(binContents)
+            .where(
+              and(
+                eq(binContents.productId, grLine.line.productId),
+                eq(binContents.binId, lineDto.destinationBinId)
+              )
+            )
+            .limit(1);
+
+          const currentDbQty = destBinContent ? parseFloat(destBinContent.actualQuantity) : 0;
+          const expectedTotal = currentDbQty + qty;
+          
+          const discrepancy = newTotal - expectedTotal;
+
+          if (Math.abs(discrepancy) > 0.001) {
+            movements.push({
+              productId: grLine.line.productId,
+              binId: lineDto.destinationBinId,
+              quantity: discrepancy,
+            });
+            this.logger.warn(`Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`);
+          }
+        }
+
+        await this.inventoryService.recordInventoryMovement(tx, {
+          entryNumber: `PUT-${grLine.receiptNumber}-${grLine.line.goodsReceivedLineId.substring(0, 4)}`,
+          sourceType: 'PO_RECEIPT',
+          sourceId: grLine.line.goodsReceivedId,
+          memo: `Putaway to ${lineDto.destinationBinId}`,
+          userId,
+          lines: movements,
+        });
+
+        await tx
+          .update(goodsReceivedLines)
+          .set({ putawayStatus: 'completed' })
+          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
+      }
 
       return { success: true };
     });

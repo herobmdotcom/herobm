@@ -52,10 +52,10 @@ stateDiagram-v2
 * **`confirmed` → `picking`**: Warehouse staff begin fulfilling the order. Generates picking slip.
 * **`picking` → `shipped`**: **Critical Event**. 
   * Decrements physical `inventory_levels`.
-  * Generates a `goods_dispatched` event in the Outbox Relay (triggers COGS Journal Entry in ERPNext).
+  * Generates a `goods_dispatched` event in the Outbox Relay (triggers COGS sync in external systems).
   * Creates a formal `shipment` record.
 * **`shipped` → `invoiced`**: **Critical Event**.
-  * Generates a `sales_invoiced` event in the Outbox Relay (triggers AR Journal in ERPNext).
+  * Generates a `sales_invoiced` event in the Outbox Relay (triggers AR sync in external systems).
 
 ---
 
@@ -88,7 +88,7 @@ stateDiagram-v2
 * **`ordered` → `received` (or `partially_received`)**: **Critical Event**.
   * Triggered by the creation of a Goods Received (GR) record.
   * Increments physical `inventory_levels` and writes to the `inventory_ledger`.
-  * Generates a `goods_received` event in the Outbox Relay (triggers Asset/GRNI Journal in ERPNext).
+  * Generates a `goods_received` event in the Outbox Relay (triggers Asset/GRNI sync in external systems).
 * **`*` → `closed_short`**: Manually terminates a partially fulfilled or unfulfilled PO when the supplier cannot deliver the remaining balance. This releases any pending backorder allocations and cleanly closes the PO without requiring a full receipt.
 * **`received` → `invoiced`**: Occurs via the 3-way matching process when a Supplier Invoice is reconciled against the PO lines.
 
@@ -96,7 +96,7 @@ stateDiagram-v2
 
 ## 4. Invoice Lifecycles (Sales & Purchase)
 
-Invoices are financial documents mapped directly to ERPNext.
+Invoices are financial documents mapped directly to the native GL or external systems.
 
 ```mermaid
 stateDiagram-v2
@@ -108,7 +108,7 @@ stateDiagram-v2
 ```
 
 ### Key Transitions & Side Effects
-* **`draft` → `invoiced`**: Finalizes the document. For Purchase Invoices, this triggers the `purchase_invoiced` Outbox event to clear the GRNI liability and establish AP in ERPNext.
+* **`draft` → `invoiced`**: Finalizes the document. For Purchase Invoices, this triggers the `purchase_invoiced` Outbox event to clear the GRNI liability and establish AP in the GL/External System.
 
 ---
 

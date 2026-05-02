@@ -88,6 +88,17 @@ describe('Inventory Cycle (e2e)', () => {
       })
       .expect(201);
     productId = productRes.body.productId;
+
+    await request(app.getHttpServer())
+      .post(`/api/products/${productId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId,
+        isPreferred: true,
+        costPrice: '15.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
   }, 120_000);
 
   afterAll(async () => {

@@ -59,7 +59,7 @@ export default function EventQueueDashboard() {
 
   const loadData = async () => {
     try {
-      const res = await apiFetch<SyncData>('/api/settings/erpnext-sync?limit=100');
+      const res = await apiFetch<SyncData>('/api/settings/external-sync?limit=100');
       setData(res);
       setError('');
     } catch (err: any) {
@@ -90,7 +90,7 @@ export default function EventQueueDashboard() {
     setDrawerExpandedId(null);
     try {
       const res = await apiFetch<{ events: OutboxEvent[] }>(
-        `/api/settings/erpnext-sync/events?type=${encodeURIComponent(eventType)}&status=failed&limit=50`,
+        `/api/settings/external-sync/events?type=${encodeURIComponent(eventType)}&status=failed&limit=50`,
       );
       setDrawerEvents(res.events);
     } catch (err) {
@@ -106,7 +106,7 @@ export default function EventQueueDashboard() {
     setClearing(eventType);
     try {
       await apiMutate(
-        `/api/settings/erpnext-sync/events?type=${encodeURIComponent(eventType)}`,
+        `/api/settings/external-sync/events?type=${encodeURIComponent(eventType)}`,
         'DELETE',
       );
       // Close drawer if viewing that type

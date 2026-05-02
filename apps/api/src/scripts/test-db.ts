@@ -9,7 +9,8 @@ const sql = postgres({
   database: process.env.POSTGRES_DB ?? 'custom_app',
 });
 async function main() {
-  const result = await sql`SELECT template FROM reports WHERE slug = 'sales-order-quote'`;
+  const result =
+    await sql`SELECT template FROM reports WHERE slug = 'sales-order-quote'`;
   console.log('Exists?', result[0].template.includes('quoteIntroText'));
   process.exit(0);
 }

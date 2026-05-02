@@ -1,5 +1,5 @@
 import { Job, Queue } from 'bullmq';
-import { ERPNextClient, JournalEntry } from '@modbm/erpnext-client';
+import { MockExternalClient } from './mock-external.client';
 import { outbox, accounts, suppliers } from './schema';
 import { eq, isNull, inArray, and, or, lt } from 'drizzle-orm';
 import { relayLogger, processingLogger } from './logger';
@@ -11,7 +11,7 @@ const HANDLED_EVENT_TYPES = [
 ] as const;
 
 /**
- * Polls the outbox table for unprocessed events and enqueues them for ERPNext sync.
+ * Polls the outbox table for unprocessed events and enqueues them for external sync.
  */
 export async function pollOutbox(db: any, syncQueue: Queue) {
   try {
@@ -49,9 +49,9 @@ export async function pollOutbox(db: any, syncQueue: Queue) {
 }
 
 /**
- * Maps outbox events to ERPNext Journal Entries and posts them.
+ * Maps outbox events to external payloads and posts them.
  */
-export async function processEvent(job: Job, erpClient: any, db: any) {
+export async function processEvent(job: Job, extClient: any, db: any) {
   const { eventId, type, payload } = job.data;
   processingLogger.info({ eventId, eventType: type }, 'Processing event');
 
@@ -62,19 +62,19 @@ export async function processEvent(job: Job, erpClient: any, db: any) {
 
   try {
     if (type === 'sales_invoiced') {
-      let erpId = payload.erpnextId;
-    if (!erpId && payload.customerId) {
+      let extId = payload.externalId;
+    if (!extId && payload.customerId) {
         try {
-            processingLogger.info({ eventId, customerName: payload.customerName }, 'JIT Syncing Customer to ERPNext');
-            const res = await (erpClient as any).createResource('Customer', {
+            processingLogger.info({ eventId, customerName: payload.customerName }, 'JIT Syncing Customer to External System');
+            const res = await (extClient as any).syncInvoice({
                 customer_name: payload.customerName,
                 customer_type: 'Company',
                 customer_group: 'Commercial',
                 territory: 'All Territories'
             });
-            erpId = res.name;
+            extId = res.externalId;
             await db.update(accounts)
-              .set({ erpnextId: erpId })
+              .set({ externalId: extId })
               .where(eq(accounts.accountId, payload.customerId));
         } catch (err: any) {
             processingLogger.error({ eventId, customerName: payload.customerName, err: err.message }, 'Failed JIT Sync Customer');
@@ -82,18 +82,18 @@ export async function processEvent(job: Job, erpClient: any, db: any) {
         }
     }
   } else if (type === 'purchase_invoiced') {
-    let erpId = payload.erpnextId;
-    if (!erpId && payload.supplierId) {
+    let extId = payload.externalId;
+    if (!extId && payload.supplierId) {
         try {
-            processingLogger.info({ eventId, supplierName: payload.supplierName }, 'JIT Syncing Supplier to ERPNext');
-            const res = await (erpClient as any).createResource('Supplier', {
+            processingLogger.info({ eventId, supplierName: payload.supplierName }, 'JIT Syncing Supplier to External System');
+            const res = await (extClient as any).syncInvoice({
                 supplier_name: payload.supplierName,
                 supplier_type: 'Distributor',
                 supplier_group: 'Local'
             });
-            erpId = res.name;
+            extId = res.externalId;
             await db.update(suppliers)
-              .set({ erpnextId: erpId })
+              .set({ externalId: extId })
               .where(eq(suppliers.vendorId, payload.supplierId));
         } catch (err: any) {
              processingLogger.error({ eventId, supplierName: payload.supplierName, err: err.message }, 'Failed JIT Sync Supplier');

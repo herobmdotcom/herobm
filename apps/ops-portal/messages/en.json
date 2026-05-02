@@ -690,6 +690,29 @@
     },
     "createTitle": "Create Sales Order"
   },
+  "shipments": {
+    "title": "Shipments",
+    "subtitle": "Track Sales Order shipments and deliveries",
+    "columns": {
+      "shipmentNumber": "Shipment #",
+      "date": "Date",
+      "customer": "Customer",
+      "orderNumber": "Order #",
+      "purchaseOrders": "Linked POs",
+      "status": "Status",
+      "notes": "Notes",
+      "tracking": "Tracking",
+      "product": "Product",
+      "description": "Description",
+      "qty": "Qty"
+    },
+    "placeholders": {
+      "searchShipments": "Search by shipment number, customer, or PO…"
+    },
+    "shipmentDetails": "Shipment Details",
+    "lineItems": "Line Items",
+    "backToShipments": "← Back to Shipments"
+  },
   "purchaseOrders": {
     "title": "Purchase Orders",
     "demandTitle": "Open Demand",
@@ -1149,6 +1172,7 @@
       "accounts": "Accounts",
       "salesOrders": "Sales Orders",
       "salesInvoices": "Sales Invoices",
+      "shipments": "Shipments",
       "suppliers": "Suppliers",
       "demand": "Demand",
       "purchaseOrders": "Purchase Orders",

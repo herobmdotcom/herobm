@@ -17,10 +17,10 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/modbm-core-schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
-@Controller('settings/erpnext-sync')
+@Controller('settings/external-sync')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
-export class OutboxSyncController {
+export class ExternalSyncController {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   /**

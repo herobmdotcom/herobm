@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."goods_received_lines" ADD COLUMN "putaway_status" text DEFAULT 'pending_putaway' NOT NULL;

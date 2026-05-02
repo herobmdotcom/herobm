@@ -75,6 +75,17 @@ describe('API E2E — Purchase Order Returns', () => {
       .expect(200);
     validVendorId = suppliers.body.data[0].vendorId;
 
+    await request(app.getHttpServer())
+      .post(`/api/products/${appProductId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId: validVendorId,
+        isPreferred: true,
+        costPrice: '15.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
+
     // Fetch a base delivery location
     const locationsRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')

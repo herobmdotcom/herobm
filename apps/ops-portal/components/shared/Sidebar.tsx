@@ -68,13 +68,19 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
               const isActive =
                 item.href === '/'
                   ? pathname === '/'
-                  : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
-                    !allItems.some(
-                      (other) =>
-                        other.href !== item.href &&
-                        other.href.length > item.href.length &&
-                        (pathname === other.href || pathname.startsWith(other.href + '/')),
-                    );
+                  : item.subItems
+                    ? item.subItems.some(
+                        (sub) =>
+                          pathname === sub.href ||
+                          pathname.startsWith(sub.href + '/'),
+                      )
+                    : (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+                      !allItems.some(
+                        (other) =>
+                          other.href !== item.href &&
+                          other.href.length > item.href.length &&
+                          (pathname === other.href || pathname.startsWith(other.href + '/')),
+                      );
 
               return (
                 <div key={item.href} className="mb-0.5">

@@ -8,9 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "paths": {
-      "@modbm/erpnext-client": ["../../packages/erpnext-client/src/index.ts"]
-    }
+    "paths": {}
   },
   "include": ["src/**/*", "test/**/*"]
 }

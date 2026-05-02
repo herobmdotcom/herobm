@@ -334,7 +334,7 @@ def seed_app_settings(dry_run: bool = False) -> None:
     print("  Seeded default app_settings")
 
 
-# ERPNext root_type → our account_type, matching the API's COA loader
+# Legacy root_type → our account_type, matching the API's COA loader
 ROOT_TYPE_MAP = {
     'Asset': 'asset',
     'Liability': 'liability',

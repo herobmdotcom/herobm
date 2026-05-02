@@ -57,6 +57,17 @@ describe('API E2E — Purchase Invoices', () => {
       .expect(201);
     validProductId = productRes.body.productId;
 
+    await request(app.getHttpServer())
+      .post(`/api/products/${validProductId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId: validVendorId,
+        isPreferred: true,
+        costPrice: '10.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
+
     // Fetch a base delivery location
     const locationsRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')
@@ -94,8 +105,11 @@ describe('API E2E — Purchase Invoices', () => {
               pricePerUnit: '12.00',
             },
           ],
-        })
-        .expect(201);
+        });
+      if (createRes.status !== 201) {
+        console.error('PO CREATION ERROR:', createRes.body);
+      }
+      expect(createRes.status).toBe(201);
 
       orderId = createRes.body.purchaseOrderId;
 
@@ -186,7 +200,7 @@ describe('API E2E — Purchase Invoices', () => {
 
       // Verify outbox event
       const dbRes = await request(app.getHttpServer())
-        .get('/api/settings/erpnext-sync/events?type=gl_posted')
+        .get('/api/settings/external-sync/events?type=gl_posted')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 

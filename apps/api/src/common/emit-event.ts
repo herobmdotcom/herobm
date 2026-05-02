@@ -31,6 +31,7 @@ const EVENT_TABLE_MAP: Record<string, { table: any; fkField: string | null }> =
       table: productSupplierEvents,
       fkField: 'productSupplierId',
     },
+    shipment: { table: systemEvents, fkField: null },
     system: { table: systemEvents, fkField: null },
   };
 

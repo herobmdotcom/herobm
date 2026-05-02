@@ -227,9 +227,7 @@ export class BackordersService {
             purchaseOrders.purchaseOrderId,
           ),
         )
-        .where(
-          inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES),
-        ); // Open POs
+        .where(inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES)); // Open POs
 
       const existingAllocations = await tx
         .select({
@@ -559,7 +557,9 @@ export class BackordersService {
             ? `to fulfill open demands from: ${poPayload.soNumbers.join(', ')}`
             : 'to fulfill open demands';
 
-        let deliveryLocationId = poPayload.deliveryLocationId || this.appConfig.defaultFulfillmentLocationId();
+        let deliveryLocationId =
+          poPayload.deliveryLocationId ||
+          this.appConfig.defaultFulfillmentLocationId();
         if (!deliveryLocationId) {
           const locs = await tx.execute(
             sql`SELECT location_id FROM modbm_core.locations LIMIT 1`,
@@ -654,20 +654,32 @@ export class BackordersService {
         locationName: locations.name,
       })
       .from(purchaseOrderLineItems)
-      .innerJoin(purchaseOrders, eq(purchaseOrderLineItems.purchaseOrderId, purchaseOrders.purchaseOrderId))
-      .leftJoin(coreSuppliers, eq(purchaseOrders.vendorId, coreSuppliers.vendorId))
-      .leftJoin(locations, eq(purchaseOrders.deliveryLocationId, locations.locationId))
+      .innerJoin(
+        purchaseOrders,
+        eq(
+          purchaseOrderLineItems.purchaseOrderId,
+          purchaseOrders.purchaseOrderId,
+        ),
+      )
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
+      .leftJoin(
+        locations,
+        eq(purchaseOrders.deliveryLocationId, locations.locationId),
+      )
       .where(
         and(
           eq(purchaseOrderLineItems.productId, productId),
-          inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES)
-        )
+          inArray(purchaseOrders.stateCode, OPEN_PURCHASE_ORDER_STATES),
+        ),
       );
 
     if (openPoLines.length === 0) return [];
 
-    const poLineIds = openPoLines.map(l => l.purchaseOrderLineId);
-    
+    const poLineIds = openPoLines.map((l) => l.purchaseOrderLineId);
+
     // Get existing allocations
     const existingAllocations = await this.db
       .select({
@@ -685,13 +697,15 @@ export class BackordersService {
       }
     }
 
-    const availableLines = openPoLines.map(line => {
-      const allocated = allocationMap.get(line.purchaseOrderLineId) || 0;
-      return {
-        ...line,
-        availableQty: Number(line.quantity) - allocated,
-      };
-    }).filter(line => line.availableQty > 0);
+    const availableLines = openPoLines
+      .map((line) => {
+        const allocated = allocationMap.get(line.purchaseOrderLineId) || 0;
+        return {
+          ...line,
+          availableQty: Number(line.quantity) - allocated,
+        };
+      })
+      .filter((line) => line.availableQty > 0);
 
     return availableLines;
   }
@@ -699,7 +713,12 @@ export class BackordersService {
   /**
    * Manually links an open demand to a specific PO line. Splits the demand if necessary.
    */
-  async linkDemandToPo(demandId: string, purchaseOrderLineId: string, quantityToLink: number, actor: string) {
+  async linkDemandToPo(
+    demandId: string,
+    purchaseOrderLineId: string,
+    quantityToLink: number,
+    actor: string,
+  ) {
     await this.db.transaction(async (tx) => {
       // 1. Get the demand
       const [demand] = await tx
@@ -707,8 +726,13 @@ export class BackordersService {
         .from(backorders)
         .where(eq(backorders.backorderId, demandId));
 
-      if (!demand) throw new HttpException('Demand not found', HttpStatus.NOT_FOUND);
-      if (demand.purchaseOrderId) throw new HttpException('Demand is already linked', HttpStatus.BAD_REQUEST);
+      if (!demand)
+        throw new HttpException('Demand not found', HttpStatus.NOT_FOUND);
+      if (demand.purchaseOrderId)
+        throw new HttpException(
+          'Demand is already linked',
+          HttpStatus.BAD_REQUEST,
+        );
 
       const demandQty = Number(demand.quantity);
       if (quantityToLink <= 0 || quantityToLink > demandQty) {
@@ -723,14 +747,20 @@ export class BackordersService {
           productId: purchaseOrderLineItems.productId,
         })
         .from(purchaseOrderLineItems)
-        .where(eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId));
+        .where(
+          eq(purchaseOrderLineItems.purchaseOrderLineId, purchaseOrderLineId),
+        );
 
-      if (!poLine) throw new HttpException('PO line not found', HttpStatus.NOT_FOUND);
-      if (poLine.productId !== demand.productId) throw new HttpException('Product mismatch', HttpStatus.BAD_REQUEST);
+      if (!poLine)
+        throw new HttpException('PO line not found', HttpStatus.NOT_FOUND);
+      if (poLine.productId !== demand.productId)
+        throw new HttpException('Product mismatch', HttpStatus.BAD_REQUEST);
 
       // Verify capacity
       const [existingAlloc] = await tx
-        .select({ allocated: sql<number>`SUM(${backorders.quantity}::numeric)` })
+        .select({
+          allocated: sql<number>`SUM(${backorders.quantity}::numeric)`,
+        })
         .from(backorders)
         .where(eq(backorders.purchaseOrderLineId, purchaseOrderLineId));
 
@@ -738,7 +768,10 @@ export class BackordersService {
       const available = Number(poLine.quantity) - allocated;
 
       if (quantityToLink > available) {
-        throw new HttpException(`Insufficient capacity on PO line. Available: ${available}`, HttpStatus.BAD_REQUEST);
+        throw new HttpException(
+          `Insufficient capacity on PO line. Available: ${available}`,
+          HttpStatus.BAD_REQUEST,
+        );
       }
 
       // 3. Link (and split if needed)
@@ -756,15 +789,13 @@ export class BackordersService {
 
         // Create remaining demand
         const remainingQty = demandQty - quantityToLink;
-        await tx
-          .insert(backorders)
-          .values({
-            salesOrderId: demand.salesOrderId,
-            salesOrderLineId: demand.salesOrderLineId,
-            productId: demand.productId,
-            quantity: remainingQty.toString(),
-            stateCode: 'pending_supply',
-          });
+        await tx.insert(backorders).values({
+          salesOrderId: demand.salesOrderId,
+          salesOrderLineId: demand.salesOrderLineId,
+          productId: demand.productId,
+          quantity: remainingQty.toString(),
+          stateCode: 'pending_supply',
+        });
       } else {
         // Fully allocate
         await tx
@@ -780,7 +811,7 @@ export class BackordersService {
       // Optional: Emit event
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: poLine.purchaseOrderId as string,
+        aggregateId: poLine.purchaseOrderId,
         eventType: EventType.DEMAND_ALLOCATED,
         actor,
         payload: { backorderId: demandId, quantity: quantityToLink },

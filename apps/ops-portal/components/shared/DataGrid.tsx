@@ -121,6 +121,10 @@ export interface DataGridProps<T> {
   onSelectionChanged?: (selectedRows: T[]) => void;
   /** Number to trigger a refresh without unmounting the grid */
   refreshTrigger?: number;
+  /** Context object passed directly into AgGridReact context to be available to cell renderers */
+  context?: any;
+  /** Callback to determine if a row is selectable */
+  isRowSelectable?: (node: import('ag-grid-community').IRowNode<T>) => boolean;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -154,6 +158,8 @@ export default function DataGrid<T>({
   rowSelection = "single",
   onSelectionChanged,
   refreshTrigger = 0,
+  context,
+  isRowSelectable,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -683,6 +689,8 @@ export default function DataGrid<T>({
           defaultColDef={defaultColDef}
           animateRows
           rowSelection={rowSelection}
+          isRowSelectable={isRowSelectable}
+          context={context}
           {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField]) } : {})}
           suppressScrollOnNewData={true}
           initialState={savedInitialState}

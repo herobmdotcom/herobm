@@ -73,6 +73,17 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .expect(201);
     physicalProductId = productRes.body.productId;
 
+    await request(app.getHttpServer())
+      .post(`/api/products/${physicalProductId}/suppliers`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        vendorId,
+        isPreferred: true,
+        costPrice: '50.00',
+        minOrderQty: 1,
+      })
+      .expect(201);
+
     // Create a freight (non-stock) product
     const freightRes = await request(app.getHttpServer())
       .post('/api/products')

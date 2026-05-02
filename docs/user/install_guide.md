@@ -60,7 +60,7 @@ During installation, the script will interactively prompt you to choose your **I
 1. **Local Native (FE + API)**: Runs the databases in containers, but assumes you will run the UI and API locally via Node.js. (Best for developers).
 2. **Full Containerization**: Runs everything, including the UI and API, inside containers. (Best for ops/evaluation).
 
-It will also ask if you want to explicitly enable the **PLG Stack** (Observability) or the **ERPNext Integration** (Financial core). Based on your choices, it generates a custom **Windows Startup shortcut** or **Linux systemd user service** to automatically start your chosen configuration whenever you boot!
+It will also ask if you want to explicitly enable the **PLG Stack** (Observability) or the **External Integration** (External Sync core). Based on your choices, it generates a custom **Windows Startup shortcut** or **Linux systemd user service** to automatically start your chosen configuration whenever you boot!
 
 ### Permissions
 
@@ -126,16 +126,16 @@ make up-db
 
 ### Optional Modules
 
-If you want to run the optional modules (like PLG or ERPNext) independently, or add them on top of your base layer, you can stack commands!
+If you want to run the optional modules (like PLG or External Sync) independently, or add them on top of your base layer, you can stack commands!
 
-For example, to run the Local DB layer + PLG observability + ERPNext integration:
-```shell
-make up-db up-plg up-erpnext
+For example, to run the Local DB layer + PLG observability + External Integration:
+```bash
+make up-db up-plg up-external
 ```
 
-To run Full Containerization + ERPNext:
-```shell
-make up-fe-api up-erpnext
+To run Full Containerization + External Integration:
+```bash
+make up-fe-api up-external
 ```
 
 Check that everything is running:

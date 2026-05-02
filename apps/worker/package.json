@@ -9,7 +9,6 @@
     "test:e2e": "vitest run test/"
   },
   "dependencies": {
-    "@modbm/erpnext-client": "file:../../packages/erpnext-client",
     "bullmq": "^4.14.0",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.0",

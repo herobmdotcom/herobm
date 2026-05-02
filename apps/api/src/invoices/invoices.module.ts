@@ -6,7 +6,7 @@ import {
   PurchaseInvoiceController,
   InvoiceDetailController,
 } from './invoices.controller';
-import { OutboxSyncController } from './outbox-sync.controller';
+import { ExternalSyncController } from './external-sync.controller';
 import { GlModule } from '../gl/gl.module';
 import { TaxModule } from '../tax/tax.module';
 
@@ -16,7 +16,7 @@ import { TaxModule } from '../tax/tax.module';
     SalesInvoiceController,
     PurchaseInvoiceController,
     InvoiceDetailController,
-    OutboxSyncController,
+    ExternalSyncController,
   ],
   providers: [SalesInvoiceService, PurchaseInvoiceService],
   exports: [SalesInvoiceService, PurchaseInvoiceService],

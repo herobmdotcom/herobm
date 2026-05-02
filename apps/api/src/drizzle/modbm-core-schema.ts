@@ -627,7 +627,7 @@ export const productDefaultBins = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-// outbox  (Transactional outbox for async BullMQ/ERPNext sync)
+// outbox  (Transactional outbox for async BullMQ/External sync)
 // ---------------------------------------------------------------------------
 export const outbox = modbmCore.table('outbox', {
   outboxId: uuid('outbox_id').primaryKey().defaultRandom(),
@@ -888,7 +888,7 @@ export const accounts = modbmCore.table(
     creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
     isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false), // Manual override per account
     customerDiscount: numeric('customer_discount').default('0'),
-    erpnextId: text('erpnext_id'),
+    externalId: text('external_id'),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     priceTier: text('price_tier'),
@@ -961,7 +961,7 @@ export const suppliers = modbmCore.table(
     blockNotes: text('block_notes'),
     currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('active'),
-    erpnextId: text('erpnext_id'),
+    externalId: text('external_id'),
     notes: text('notes'),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
@@ -1256,7 +1256,9 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
   credit: numeric('credit').notNull().default('0'),
   memo: text('memo'),
   isReconciled: boolean('is_reconciled').notNull().default(false),
-  reconciliationId: uuid('reconciliation_id').references(() => glReconciliations.reconciliationId),
+  reconciliationId: uuid('reconciliation_id').references(
+    () => glReconciliations.reconciliationId,
+  ),
 });
 
 // ---------------------------------------------------------------------------
@@ -1427,6 +1429,11 @@ export const goodsReceivedLines = modbmCore.table('goods_received_lines', {
     .references(() => products.productId),
   quantityReceived: numeric('quantity_received').notNull(),
   matchStatus: text('match_status').notNull().default('unmatched'), // matched | unmatched | ambiguous
+  putawayStatus: text('putaway_status', {
+    enum: ['pending_putaway', 'quarantined', 'completed'],
+  })
+    .notNull()
+    .default('pending_putaway'),
   purchaseOrderLineId: uuid('purchase_order_line_id').references(
     () => purchaseOrderLineItems.purchaseOrderLineId,
   ),

@@ -52,6 +52,7 @@ describe('ReportsController', () => {
         '123',
         'sales',
         {},
+        undefined,
       );
       expect(mockRes.set).toHaveBeenCalledWith(
         expect.objectContaining({

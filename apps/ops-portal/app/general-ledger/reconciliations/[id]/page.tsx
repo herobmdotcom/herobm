@@ -6,9 +6,45 @@ import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import QuickAdjustmentModal from './QuickAdjustmentModal';
+import SplitEntryModal from './SplitEntryModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { apiFetch } from '@/lib/api';
 import toast from 'react-hot-toast';
+
+const ToggleCell = (p: any) => {
+  const data = p.data;
+  const context = p.context;
+  
+  if (!data || !context) return null;
+  const { handleToggle, isPosted } = context;
+
+  const handleToggleClick = () => {
+    handleToggle(data.journalLineId, !data.isCleared);
+  };
+
+  return (
+    <div className="flex items-center gap-3 mt-1">
+      <button
+        type="button"
+        disabled={isPosted}
+        onClick={handleToggleClick}
+        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+          data.isCleared ? 'bg-[var(--accent)]' : 'bg-gray-300'
+        } ${isPosted ? 'opacity-50 cursor-not-allowed' : ''}`}
+        aria-checked={data.isCleared}
+        role="switch"
+        title={data.isCleared ? "Click to unclear" : "Click to clear"}
+      >
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            data.isCleared ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </div>
+  );
+};
 
 export default function ReconciliationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -20,6 +56,8 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const [posting, setPosting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAdjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
+  const [isSplitModalOpen, setSplitModalOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<any>(null);
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -36,16 +74,20 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     fetchDetails();
   }, [fetchDetails]);
 
-  const handleToggle = async (lineId: string, isCleared: boolean) => {
+  const handleToggle = async (lineId: string, isCleared: boolean, amount?: number) => {
     try {
       await apiFetch(`/api/gl/reconciliations/${id}/lines/${lineId}/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isCleared })
+        body: JSON.stringify({ isCleared, amount })
       });
       // Refresh details to update variance and lines
       fetchDetails();
       setRefreshKey(k => k + 1);
+      
+      if (selectedRow && selectedRow.journalLineId === lineId) {
+        setSelectedRow({ ...selectedRow, isCleared });
+      }
     } catch (err) {
       console.error(err);
       toast.error('Failed to toggle line');
@@ -92,23 +134,37 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     
     return [
       { 
-        field: 'isCleared', 
-        headerName: 'Cleared', 
-        width: 100,
-        cellRenderer: (p: any) => {
-          if (!p.data) return null;
-          return (
-            <input 
-              type="checkbox" 
-              checked={!!p.value} 
-              disabled={isPosted}
-              onChange={(e) => handleToggle(p.data.journalLineId, e.target.checked)}
-              className="mt-2 w-4 h-4 text-[var(--accent)] border-gray-300 rounded focus:ring-[var(--accent)]"
-            />
-          );
+        field: 'entryDate', 
+        headerName: 'Date', 
+        width: 140,
+        comparator: (valueA, valueB, nodeA, nodeB, isDescending) => {
+          if (valueA === valueB) {
+            // If dates are identical, fallback to a strict logic:
+            // 1. Keep children after their parents by comparing sourceId
+            if (nodeA.data?.sourceId === nodeB.data?.journalLineId) return isDescending ? -1 : 1;
+            if (nodeB.data?.sourceId === nodeA.data?.journalLineId) return isDescending ? 1 : -1;
+            
+            // 2. If they are siblings (same sourceId), sort by Memo (Reversal, Split A, Split B)
+            if (nodeA.data?.sourceId && nodeA.data?.sourceId === nodeB.data?.sourceId) {
+              const memoA = nodeA.data.memo || '';
+              const memoB = nodeB.data.memo || '';
+              
+              const getRank = (m: string) => {
+                if (m.startsWith('Reversal')) return 1;
+                if (m.startsWith('Split A')) return 2;
+                if (m.startsWith('Split B')) return 3;
+                return 4;
+              };
+              
+              return getRank(memoA) - getRank(memoB);
+            }
+            
+            // 3. Fallback to createdAt or entryNumber
+            return (nodeA.data?.entryNumber || '').localeCompare(nodeB.data?.entryNumber || '');
+          }
+          return (valueA || '').localeCompare(valueB || '');
         }
       },
-      { field: 'entryDate', headerName: 'Date', width: 140 },
       { field: 'entryNumber', headerName: 'Entry No.', width: 150 },
       { 
         field: 'partyName', 
@@ -128,6 +184,14 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         headerName: 'Credit', 
         width: 120,
         valueFormatter: (p) => p.value ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(p.value) : ''
+      },
+      {
+        headerName: 'Cleared?',
+        cellRenderer: ToggleCell,
+        width: 100,
+        suppressSizeToFit: true,
+        sortable: false,
+        filter: false,
       }
     ];
   }, [reconciliation?.status]);
@@ -147,6 +211,9 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           columns={columns}
           rowIdField="journalLineId"
           fetchAll={true}
+          rowSelection="single"
+          onSelectionChanged={(rows) => setSelectedRow(rows[0] || null)}
+          context={{ handleToggle, isPosted }}
           renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
             <div className="flex flex-col bg-white border-b border-gray-200">
               <div className="flex flex-col px-6 py-4 gap-4">
@@ -237,13 +304,24 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                     {searchInput}
                   </div>
                   {!isPosted && (
-                    <button
-                      onClick={() => setAdjustmentModalOpen(true)}
-                      className="btn btn-secondary btn-sm flex items-center gap-2"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">add</span>
-                      Quick Adjustment
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setAdjustmentModalOpen(true)}
+                        className="btn btn-secondary btn-sm flex items-center gap-2"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        Quick Adjustment
+                      </button>
+                      <button
+                        onClick={() => setSplitModalOpen(true)}
+                        disabled={!selectedRow || selectedRow.isCleared}
+                        className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!selectedRow ? "Select a row to split" : selectedRow.isCleared ? "Cannot split an already cleared row" : ""}
+                      >
+                        <span className="material-symbols-outlined text-[18px]">call_split</span>
+                        Split Entry
+                      </button>
+                    </>
                   )}
                   {optionsButton}
                 </div>
@@ -259,6 +337,17 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         onSuccess={() => {
           fetchDetails();
           setRefreshKey(k => k + 1);
+        }}
+      />
+      <SplitEntryModal
+        isOpen={isSplitModalOpen}
+        onClose={() => setSplitModalOpen(false)}
+        reconciliationId={id}
+        selectedLine={selectedRow}
+        onSuccess={() => {
+          fetchDetails();
+          setRefreshKey(k => k + 1);
+          setSelectedRow(null); // Clear selection after split
         }}
       />
     </div>

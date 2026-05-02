@@ -663,19 +663,31 @@ export class PurchaseInvoiceService {
       .returning();
 
     // Trigger lifecycle rules for affected POs
-    const affectedPoIds = [...new Set(
-      ((invoice as any).lines || []).map((l: any) => l.purchaseOrderId).filter(Boolean)
-    )] as string[];
+    const affectedPoIds = [
+      ...new Set(
+        ((invoice as any).lines || [])
+          .map((l: any) => l.purchaseOrderId)
+          .filter(Boolean),
+      ),
+    ] as string[];
 
     for (const poId of affectedPoIds) {
       try {
-        await evaluatePOLifecycleRules(this.db, poId, {
-          entity: 'purchase_invoice',
-          action: 'posted',
-          id: invoiceId,
-        }, actor);
+        await evaluatePOLifecycleRules(
+          this.db,
+          poId,
+          {
+            entity: 'purchase_invoice',
+            action: 'posted',
+            id: invoiceId,
+          },
+          actor,
+        );
       } catch (err) {
-        this.logger.error(`Failed to evaluate PO lifecycle rules for PO ${poId} after invoice posting:`, err);
+        this.logger.error(
+          `Failed to evaluate PO lifecycle rules for PO ${poId} after invoice posting:`,
+          err,
+        );
       }
     }
 
@@ -935,7 +947,12 @@ export class PurchaseInvoiceService {
         const [poLine] = await tx
           .select({ purchaseOrderId: purchaseOrderLineItems.purchaseOrderId })
           .from(purchaseOrderLineItems)
-          .where(eq(purchaseOrderLineItems.purchaseOrderLineId, line.purchaseOrderLineId));
+          .where(
+            eq(
+              purchaseOrderLineItems.purchaseOrderLineId,
+              line.purchaseOrderLineId,
+            ),
+          );
         if (poLine) poId = poLine.purchaseOrderId;
       }
 
@@ -991,7 +1008,7 @@ export class PurchaseInvoiceService {
       conditions.push(
         or(
           eq(purchaseInvoices.vendorId, vendorId),
-          eq(suppliers.erpnextId, vendorId),
+          eq(suppliers.externalId, vendorId),
         ),
       );
     }

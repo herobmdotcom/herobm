@@ -1,6 +1,11 @@
 import { eq, inArray, and } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
-import { purchaseOrders, purchaseOrderLineItems, purchaseInvoices, purchaseInvoiceLines } from '../drizzle/modbm-core-schema';
+import {
+  purchaseOrders,
+  purchaseOrderLineItems,
+  purchaseInvoices,
+  purchaseInvoiceLines,
+} from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 
@@ -47,7 +52,11 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    if (!order || !['ordered', 'partially_received', 'draft'].includes(order.stateCode)) return null;
+    if (
+      !order ||
+      !['ordered', 'partially_received', 'draft'].includes(order.stateCode)
+    )
+      return null;
 
     const lines = await db
       .select({
@@ -130,7 +139,9 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
 
     if (isFullyReceived) return null; // handled by autoReceiveWhenFullyReceived
 
-    const isPartiallyReceived = lines.some((line) => parseFloat(line.quantityReceived || '0') > 0);
+    const isPartiallyReceived = lines.some(
+      (line) => parseFloat(line.quantityReceived || '0') > 0,
+    );
 
     if (!isPartiallyReceived) return null;
 
@@ -178,7 +189,10 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    if (!order || ['invoiced', 'cancelled', 'closed_short'].includes(order.stateCode))
+    if (
+      !order ||
+      ['invoiced', 'cancelled', 'closed_short'].includes(order.stateCode)
+    )
       return null;
 
     // 2. Get all lines, ordered, and received quantities
@@ -203,28 +217,32 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
 
     // 3. Get invoiced quantities
     const { sql } = await import('drizzle-orm');
-    
+
     let isFullyInvoiced = true;
     for (const line of lines) {
       // We only sum invoiced quantities from 'invoiced' AP bills
       // If an invoice is posted, it's 'invoiced'. We only count posted invoices.
-      
+
       const [{ totalPostedInvoiced }] = await db
         .select({
-          totalPostedInvoiced: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+          totalPostedInvoiced:
+            sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
         })
         .from(purchaseInvoiceLines)
-        .innerJoin(purchaseInvoices, eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId))
+        .innerJoin(
+          purchaseInvoices,
+          eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
+        )
         .where(
           and(
             eq(purchaseInvoiceLines.purchaseOrderLineId, line.poLineId),
-            eq(purchaseInvoices.stateCode, 'invoiced')
-          )
+            eq(purchaseInvoices.stateCode, 'invoiced'),
+          ),
         );
 
       const invoiced = parseFloat(totalPostedInvoiced || '0');
       const ordered = parseFloat(line.quantity || '0');
-      
+
       if (invoiced < ordered - 0.001) {
         isFullyInvoiced = false;
         break;

@@ -461,20 +461,27 @@ export class PurchaseOrdersService {
         if (received > 0) {
           const [{ totalInvoiced }] = await this.db
             .select({
-              totalInvoiced: sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
+              totalInvoiced:
+                sql<string>`COALESCE(SUM(CAST(${purchaseInvoiceLines.quantityInvoiced} AS NUMERIC)), 0)::text` as any,
             })
             .from(purchaseInvoiceLines)
-            .innerJoin(purchaseInvoices, eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId))
+            .innerJoin(
+              purchaseInvoices,
+              eq(purchaseInvoiceLines.invoiceId, purchaseInvoices.invoiceId),
+            )
             .where(
               and(
-                eq(purchaseInvoiceLines.purchaseOrderLineId, line.purchaseOrderLineId),
-                eq(purchaseInvoices.stateCode, 'invoiced')
-              )
+                eq(
+                  purchaseInvoiceLines.purchaseOrderLineId,
+                  line.purchaseOrderLineId,
+                ),
+                eq(purchaseInvoices.stateCode, 'invoiced'),
+              ),
             );
           const invoiced = parseFloat(totalInvoiced || '0');
           if (received > invoiced + 0.001) {
             throw new BadRequestException(
-              `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`
+              `Cannot close short: Received quantities for product ${line.productNumber} must be fully invoiced first. Received: ${received}, Invoiced: ${invoiced}`,
             );
           }
         }
@@ -949,7 +956,10 @@ export class PurchaseOrdersService {
         eq(purchaseOrders.deliveryLocationId, locations.locationId),
       )
       .where(and(...conditions))
-      .orderBy(desc(purchaseOrders.createdOn), purchaseOrderLineItems.lineNumber);
+      .orderBy(
+        desc(purchaseOrders.createdOn),
+        purchaseOrderLineItems.lineNumber,
+      );
   }
 
   async findReturnableLines(productId: string) {

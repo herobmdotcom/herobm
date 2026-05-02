@@ -54,6 +54,18 @@ export class InventoryController {
     return this.inventoryService.findBins({ ...query, locationNo });
   }
 
+  @Get('putaway-context')
+  @CasbinAction('read')
+  async getPutawayContext(
+    @Query('productId') productId: string,
+    @Query('locationId') locationId: string,
+  ) {
+    if (!productId || !locationId) {
+      throw new NotFoundException('productId and locationId are required');
+    }
+    return this.inventoryService.getPutawayContext(productId, locationId);
+  }
+
   @Get('locations')
   @CasbinAction('read')
   findAllLocations() {
