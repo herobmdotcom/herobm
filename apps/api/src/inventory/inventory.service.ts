@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ilike, or, eq, inArray, sql, and, isNull, desc } from 'drizzle-orm';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -27,6 +32,9 @@ import { AggregateType, EventType } from '../common/event-types';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { calculateAvailableQuantity } from '@modbm/shared';
 import { UomService } from './uom.service';
+import { GlService } from '../gl/gl.service';
+import { getValuationStrategy } from './valuation';
+import { getAccountingStrategy } from './inventory-accounting';
 
 @Injectable()
 export class InventoryService {
@@ -34,6 +42,7 @@ export class InventoryService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private appConfig: AppConfigService,
     private uomService: UomService,
+    private glService: GlService,
   ) {}
 
   // =========================================================================
@@ -701,11 +710,89 @@ export class InventoryService {
         });
     }
 
+    // --- Financial Integration: Post Shrinkage Journal Entry via Accounting Strategy ---
+    if (params.sourceType === 'MANUAL_ADJUST') {
+      const productIds = [...new Set(processedLines.map((l) => l.productId))];
+      if (productIds.length > 0) {
+        const productRows = await tx
+          .select({
+            productId: products.productId,
+            standardCost: products.standardCost,
+            weightedAverageCost: products.weightedAverageCost,
+          })
+          .from(products)
+          .where(inArray(products.productId, productIds));
+
+        const productMap = new Map<
+          string,
+          {
+            productId: string;
+            standardCost: string | null;
+            weightedAverageCost: string | null;
+          }
+        >(productRows.map((p: any) => [p.productId, p]));
+        const valuationStrategy = getValuationStrategy(this.appConfig.valuationMethod());
+
+        let totalShrinkageValue = 0; // Positive means we lost inventory (expense), Negative means we gained inventory (income)
+
+        for (const line of processedLines) {
+          const p = productMap.get(line.productId);
+          if (p) {
+            const cost = valuationStrategy.getCogs(
+              {
+                productId: p.productId,
+                standardCost: p.standardCost || '0',
+                weightedAverageCost: p.weightedAverageCost || '0',
+              },
+              Math.abs(line.absoluteQuantity),
+            );
+
+            if (line.absoluteQuantity > 0) {
+              totalShrinkageValue -= parseFloat(cost); // Gained inventory
+            } else if (line.absoluteQuantity < 0) {
+              totalShrinkageValue += parseFloat(cost); // Lost inventory
+            }
+          }
+        }
+
+        if (Math.abs(totalShrinkageValue) > 0.001) {
+          const accountingStrategy = getAccountingStrategy(
+            this.appConfig.inventoryAccountingMode(),
+            {
+              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+              grniAccountId: this.appConfig.defaultGrniAccountId(),
+              cogsAccountId: this.appConfig.defaultCogsAccountId(),
+              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+            },
+          );
+
+          const direction = totalShrinkageValue > 0 ? 'loss' : 'gain';
+          const adjustmentGl = accountingStrategy.onManualAdjustment(
+            {
+              amount: Number(Math.abs(totalShrinkageValue).toFixed(2)),
+              memo: `Manual Adjustment ${params.entryNumber}`,
+            },
+            direction as 'loss' | 'gain',
+          );
+
+          if (adjustmentGl) {
+            await this.glService.postJournalEntry(adjustmentGl.lines as any, {
+              actor: params.userId || 'system',
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: adjustmentGl.sourceType,
+              sourceId: entry.entryId,
+              memo: params.memo || `Inventory Adjustment ${params.entryNumber}`,
+            });
+          }
+        }
+      }
+    }
+
     // 4. Emit event for ERP sync (and system events audit)
     await emitEvent(tx, {
       aggregateType: AggregateType.SYSTEM,
       aggregateId: entry.entryId,
-      eventType: EventType.INVENTORY_ENTRY_CREATED,
+      eventType: EventType.STOCK_ADJUSTED,
       payload: { header: params, lines: ledgerPayload },
     });
   }

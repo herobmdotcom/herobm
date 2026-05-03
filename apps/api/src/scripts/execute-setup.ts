@@ -41,8 +41,17 @@ async function bootstrap() {
     console.log('Inventory Valuation:');
     console.log('  1. weighted_average');
     console.log('  2. fifo');
+    console.log('  3. standard');
     const valChoice = (await rl.question('Choose method [1]: ')) || '1';
-    const valuation = valChoice === '2' ? 'fifo' : 'weighted_average';
+    let valuation = 'weighted_average';
+    if (valChoice === '2') valuation = 'fifo';
+    if (valChoice === '3') valuation = 'standard';
+
+    console.log('\nInventory Accounting Mode:');
+    console.log('  1. periodic (Current ModBM Approach)');
+    console.log('  2. perpetual (ERP Standard with GL Postings)');
+    const modeChoice = (await rl.question('Choose mode [1]: ')) || '1';
+    const accountingMode = modeChoice === '2' ? 'perpetual' : 'periodic';
 
     console.log('\nNon-Stock Billing:');
     console.log('  1. per_shipment (Invoice as you ship)');
@@ -69,6 +78,7 @@ async function bootstrap() {
       baseCurrency: process.env.HOME_CURRENCY || 'EUR',
       fiscalYearStartMonth: Number(fiscalMonth),
       inventoryValuationMethod: valuation,
+      inventoryAccountingMode: accountingMode,
       nonStockBillingMode: billing,
       revenueRoutingPrecedence: 'product_first',
       expenseRoutingPrecedence: 'product_first',

@@ -91,6 +91,31 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validLocationId = locationsRes.body.data[0].locationId;
+
+    // Create an open PO for the test product to enable auto-matching
+    const poRes = await request(app.getHttpServer())
+      .post('/api/purchase-orders')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        orderNumber: `PO-E2E-${Date.now()}`,
+        vendorId: validVendorId,
+        deliveryLocationId: validLocationId,
+        currencyCode: 'EUR',
+        lines: [
+          {
+            productId: appProductId,
+            quantity: '1000',
+            pricePerUnit: '10.00',
+          },
+        ],
+      })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/api/purchase-orders/${poRes.body.purchaseOrderId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ stateCode: 'ordered' })
+      .expect(200);
   }, 120_000);
 
   afterAll(async () => {
@@ -287,6 +312,171 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
       // Available QOH should be unchanged — goods are in RECEIVING (excluded from availability)
       expect(afterQoh).toBe(beforeQoh);
-    }, 120_000);
+    });
+  });
+
+  // =========================================================================
+  // Putaway Lifecycle
+  // =========================================================================
+  describe('Putaway Lifecycle', () => {
+    let putawayGoodsReceivedLineId: string;
+    let destinationBinId: string;
+
+    it('fetches pending putaway lines', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body.data.length).toBeGreaterThan(0);
+
+      // Find the line created in the previous 'Inventory Impact' test (which received 100 units)
+      const targetLine = res.body.data.find(
+        (l: any) =>
+          l.productId === appProductId &&
+          parseFloat(l.quantityReceived) === 100,
+      );
+      expect(targetLine).toBeDefined();
+      // Verify it was auto-matched to the PO we created in beforeAll
+      expect(targetLine.matchStatus).toBe('matched');
+      putawayGoodsReceivedLineId = targetLine.goodsReceivedLineId;
+    });
+
+    it('fetches putaway context', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          `/api/inventory/putaway-context?locationId=${validLocationId}&productId=${appProductId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('currentQuantity');
+      expect(res.body).toHaveProperty('availableBins');
+      expect(res.body.availableBins.length).toBeGreaterThan(0);
+
+      // Pick a valid storage bin (must be visible to inventory_levels, e.g. storage, bulk, pick)
+      const validBin = res.body.availableBins.find((b: any) =>
+        ['storage', 'pick', 'bulk'].includes(b.binType),
+      );
+
+      if (!validBin) {
+        throw new Error('No valid storage bin found for putaway test');
+      }
+      destinationBinId = validBin.binId;
+    });
+
+    it('executes putaway without discrepancy', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/goods-received/putaway')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          putaways: [
+            {
+              lineId: putawayGoodsReceivedLineId,
+              destinationBinId: destinationBinId,
+              quantity: '100',
+              newTotalQuantity: '100',
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+    });
+
+    it('goods are now available in inventory', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          `/api/inventory/by-products?productIds=${appProductId}&locationId=${validLocationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const productStock = res.body.data.find(
+        (p: any) => p.productId === appProductId,
+      );
+      expect(productStock).toBeDefined();
+      expect(parseFloat(productStock.quantityOnHand)).toBeGreaterThanOrEqual(
+        100,
+      );
+    });
+
+    it('line is removed from pending putaway list', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const targetLine = res.body.data.find(
+        (l: any) => l.goodsReceivedLineId === putawayGoodsReceivedLineId,
+      );
+      expect(targetLine).toBeUndefined();
+    });
+
+    it('executes putaway WITH count discrepancy', async () => {
+      // Create another receipt for 50 units (should also be auto-matched)
+      const grRes = await request(app.getHttpServer())
+        .post('/api/goods-received')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          vendorId: validVendorId,
+          locationId: validLocationId,
+          lines: [{ productId: appProductId, quantityReceived: '50' }],
+        })
+        .expect(201);
+
+      // Find the new pending line
+      const linesRes = await request(app.getHttpServer())
+        .get(
+          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const targetLine = linesRes.body.data.find(
+        (l: any) => l.goodsReceivedId === grRes.body.goodsReceivedId,
+      );
+      expect(targetLine).toBeDefined();
+      expect(targetLine.matchStatus).toBe('matched');
+
+      const putawayRes = await request(app.getHttpServer())
+        .post('/api/goods-received/putaway')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          putaways: [
+            {
+              lineId: targetLine.goodsReceivedLineId,
+              destinationBinId: destinationBinId,
+              quantity: '50',
+              newTotalQuantity: '140',
+            },
+          ],
+        })
+        .expect(201);
+
+      expect(putawayRes.body.success).toBe(true);
+
+      const finalRes = await request(app.getHttpServer())
+        .get(
+          `/api/inventory/by-products?productIds=${appProductId}&locationId=${validLocationId}`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      const productStock = finalRes.body.data.find(
+        (p: any) => p.productId === appProductId,
+      );
+      expect(productStock).toBeDefined();
+
+      const binBalance = productStock.binBalances.find(
+        (b: any) => b.binId === destinationBinId,
+      );
+      expect(binBalance).toBeDefined();
+      expect(binBalance.quantityOnHand).toBe(140);
+    });
   });
 });

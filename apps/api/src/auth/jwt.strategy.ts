@@ -1,6 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { eq } from 'drizzle-orm';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { users } from '../drizzle/modbm-core-schema';
 
 export interface JwtPayload {
   sub: string;
@@ -10,7 +14,7 @@ export interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(@Inject(DRIZZLE) private db: DrizzleDB) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -25,14 +29,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  /**
+   * Per-request validation: after JWT signature check, verify the user
+   * still exists and is active in the database. Returns DB-fresh role
+   * so role changes take effect immediately without re-login.
+   *
+   * Resolves ADV-079: disabled/demoted users are blocked immediately
+   * instead of retaining access until JWT expiry.
+   */
   async validate(payload: JwtPayload) {
     if (!payload.sub) {
       throw new UnauthorizedException();
     }
+
+    const [user] = await this.db
+      .select({
+        userId: users.userId,
+        username: users.username,
+        role: users.role,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(eq(users.userId, payload.sub))
+      .limit(1);
+
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Account disabled or not found');
+    }
+
     return {
-      userId: payload.sub,
-      username: payload.username,
-      role: payload.role,
+      userId: user.userId,
+      username: user.username,
+      role: user.role, // DB-fresh role, not JWT-cached
     };
   }
 }

@@ -66,6 +66,7 @@ export default function ExecutingStep({ config }: Props) {
           defaultLocationCode: config.primaryLocation !== 'none' ? config.primaryLocation : undefined,
 
           inventoryValuationMethod: config.inventoryValuation || 'weighted_average',
+          inventoryAccountingMode: config.inventoryAccountingMode || 'periodic',
           nonStockBillingMode: config.nonStockBilling || 'per_shipment',
           revenueRoutingPrecedence: config.revenueRouting.includes('Product') ? 'product_first' : 'customer_first',
           expenseRoutingPrecedence: config.expenseRouting.includes('Product') ? 'product_first' : 'supplier_first'

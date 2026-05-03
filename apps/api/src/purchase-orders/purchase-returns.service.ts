@@ -24,6 +24,8 @@ import { InventoryService } from '../inventory/inventory.service';
 import { CreatePurchaseReturnDto } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import { GlService } from '../gl/gl.service';
 
 @Injectable()
 export class PurchaseReturnsService {
@@ -31,6 +33,7 @@ export class PurchaseReturnsService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
     private readonly appConfig: AppConfigService,
+    private readonly glService: GlService,
   ) {}
 
   private readonly logger = new Logger(PurchaseReturnsService.name);
@@ -252,7 +255,8 @@ export class PurchaseReturnsService {
       }
 
       const method = this.appConfig.valuationMethod();
-      const strategy = getValuationStrategy(method);
+      const valuationStrategy = getValuationStrategy(method);
+      let totalReturnCost = 0;
 
       for (const line of stockLines) {
         if (!line.productId) continue;
@@ -262,9 +266,44 @@ export class PurchaseReturnsService {
           .where(eq(coreProducts.productId, line.productId));
 
         if (product) {
-          // Note: Returning removes qty from stock, which is handled automatically by the inventory service above.
-          // WAC does not change during dispatch/returns, and quantityOnHand is no longer cached on the products table.
+          const cost = valuationStrategy.getCogs(
+            {
+              productId: product.productId,
+              standardCost: product.standardCost || '0',
+              weightedAverageCost: product.weightedAverageCost || '0',
+            },
+            Math.abs(parseFloat(line.quantity)),
+          );
+          totalReturnCost += parseFloat(cost);
         }
+      }
+
+      // --- Financial Integration: Post Supplier Return GL via Accounting Strategy ---
+      const accountingStrategy = getAccountingStrategy(
+        this.appConfig.inventoryAccountingMode(),
+        {
+          inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+          grniAccountId: this.appConfig.defaultGrniAccountId(),
+          cogsAccountId: this.appConfig.defaultCogsAccountId(),
+          shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+        },
+      );
+
+      const supplierReturnGl = accountingStrategy.onSupplierReturn({
+        amount: Number(totalReturnCost.toFixed(2)),
+        memo: `Supplier Return ${ret.returnNumber}`,
+        partyType: 'supplier',
+        partyId: po.vendorId || undefined,
+      });
+
+      if (supplierReturnGl) {
+        await this.glService.postJournalEntry(supplierReturnGl.lines as any, {
+          actor,
+          entryDate: new Date().toISOString().slice(0, 10),
+          sourceType: supplierReturnGl.sourceType,
+          sourceId: returnId,
+          memo: `Supplier Return ${ret.returnNumber}`,
+        });
       }
 
       await tx.insert(purchaseOrderEvents).values({

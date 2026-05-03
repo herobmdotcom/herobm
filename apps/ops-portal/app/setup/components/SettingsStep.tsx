@@ -51,6 +51,7 @@ export default function SettingsStep({ config, updateConfig, onNext }: Props) {
                       config.revenueRouting !== '' &&
                       config.expenseRouting !== '' &&
                       config.inventoryValuation !== '' &&
+                      config.inventoryAccountingMode !== '' &&
                       config.nonStockBilling !== '' &&
                       config.primaryLocation !== '';
 
@@ -155,21 +156,36 @@ export default function SettingsStep({ config, updateConfig, onNext }: Props) {
             <option value="" disabled>{t('placeholders.selectValuation')}</option>
             <option value="weighted_average">{t('options.valuation.weightedAverage')}</option>
             <option value="fifo">{t('options.valuation.fifo')}</option>
+            <option value="standard">{t('options.valuation.standard')}</option>
           </select>
         </div>
       </div>
 
-      <div className="mb-8">
-        <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.nonStockBilling')}</label>
-        <select
-          className="w-full max-w-[calc(50%-12px)] px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
-          value={config.nonStockBilling}
-          onChange={(e) => updateConfig({ nonStockBilling: e.target.value })}
-        >
-          <option value="" disabled>{t('placeholders.selectBilling')}</option>
-          <option value="per_shipment">{t('options.billing.perShipment')}</option>
-          <option value="final_invoice">{t('options.billing.finalInvoice')}</option>
-        </select>
+      <div className="grid grid-cols-2 gap-6 mb-8">
+        <div>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">Inventory Accounting Mode</label>
+          <select
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+            value={config.inventoryAccountingMode}
+            onChange={(e) => updateConfig({ inventoryAccountingMode: e.target.value })}
+          >
+            <option value="" disabled>Select Accounting Mode...</option>
+            <option value="periodic">Periodic Tracking (Simplified)</option>
+            <option value="perpetual">Perpetual Tracking (ERP Standard)</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-slate-500 mb-2 tracking-wide uppercase">{t('fields.nonStockBilling')}</label>
+          <select
+            className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+            value={config.nonStockBilling}
+            onChange={(e) => updateConfig({ nonStockBilling: e.target.value })}
+          >
+            <option value="" disabled>{t('placeholders.selectBilling')}</option>
+            <option value="per_shipment">{t('options.billing.perShipment')}</option>
+            <option value="final_invoice">{t('options.billing.finalInvoice')}</option>
+          </select>
+        </div>
       </div>
       <hr className="border-slate-100 mb-6" />
 

@@ -229,7 +229,8 @@
       "return_line_removed": "Return Line Removed",
       "price_discrepancy_warning": "Price Discrepancy",
       "over_received_warning": "Over-received Warning",
-      "location_discrepancy_warning": "Location Discrepancy"
+      "location_discrepancy_warning": "Location Discrepancy",
+      "deleted": "Deleted"
     },
     "productSearch": {
       "placeholder": "Search product…",
@@ -1184,7 +1185,8 @@
       "systemLogs": "System Logs",
       "invoices": "Invoices",
       "supplierInvoices": "Supplier Invoices",
-      "receiving": "Receiving"
+      "receiving": "Receiving",
+      "users": "Users"
     }
   },
   "admin": {
@@ -1575,6 +1577,56 @@
       "uom": {
         "empty": "No units of measure defined. Create one to get started."
       }
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Manage portal user accounts and access roles",
+      "columns": {
+        "username": "Username",
+        "displayName": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status",
+        "createdAt": "Created"
+      },
+      "buttons": {
+        "createUser": "+ Create User"
+      },
+      "labels": {
+        "username": "Username",
+        "displayName": "Full Name",
+        "email": "Email Address",
+        "password": "Password",
+        "role": "Role"
+      },
+      "placeholders": {
+        "username": "e.g. jsmith",
+        "displayName": "e.g. John Smith",
+        "email": "john@example.com",
+        "password": "Min 6 characters",
+        "passwordUnchanged": "Leave blank to keep current"
+      },
+      "roles": {
+        "admin": "Admin",
+        "viewer": "Viewer",
+        "sales": "Sales",
+        "warehouse": "Warehouse",
+        "procurement": "Procurement",
+        "finance": "Finance"
+      },
+      "status": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "toasts": {
+        "created": "User created",
+        "updated": "User updated",
+        "deleted": "User deleted",
+        "toggled": "User status updated",
+        "loadFailed": "Failed to load users"
+      },
+      "confirmDelete": "Are you sure you want to delete user \"{username}\"? This action is permanent.",
+      "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires."
     }
   },
   "setup": {
@@ -1674,7 +1726,8 @@
         },
         "valuation": {
           "weightedAverage": "Weighted Average",
-          "fifo": "FIFO"
+          "fifo": "FIFO",
+          "standard": "Standard Costing"
         },
         "billing": {
           "perShipment": "Per Shipment",

@@ -63,8 +63,12 @@ export class ExecuteSetupDto {
   fiscalYearStartMonth: number;
 
   /** Inventory valuation method */
-  @IsIn(['weighted_average', 'fifo'])
+  @IsIn(['weighted_average', 'fifo', 'standard'])
   inventoryValuationMethod: string;
+
+  /** Inventory accounting mode */
+  @IsIn(['periodic', 'perpetual'])
+  inventoryAccountingMode: string;
 
   /** Non-stock billing mode */
   @IsIn(['per_shipment', 'final_invoice'])

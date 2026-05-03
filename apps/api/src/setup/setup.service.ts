@@ -334,6 +334,7 @@ export class SetupService {
     const data = {
       defaultFulfillmentLocationId: locationId || null,
       inventoryValuationMethod: dto.inventoryValuationMethod,
+      inventoryAccountingMode: dto.inventoryAccountingMode,
       nonStockBillingMode: dto.nonStockBillingMode,
       setupCompletedAt: new Date(),
     };

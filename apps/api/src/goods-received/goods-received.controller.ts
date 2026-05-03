@@ -48,7 +48,12 @@ export class GoodsReceivedController {
     @Query('putawayStatus') putawayStatus?: string,
     @Query('locationId') locationId?: string,
   ) {
-    return this.goodsReceivedService.findAllLines(query, purchaseOrderId, putawayStatus, locationId);
+    return this.goodsReceivedService.findAllLines(
+      query,
+      purchaseOrderId,
+      putawayStatus,
+      locationId,
+    );
   }
 
   @Get(':id')

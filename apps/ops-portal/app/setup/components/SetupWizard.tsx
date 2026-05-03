@@ -26,6 +26,7 @@ export type ConfigState = {
   expenseRouting: string;
   primaryLocation: string;
   inventoryValuation: string;
+  inventoryAccountingMode: string;
   nonStockBilling: string;
 };
 
@@ -50,6 +51,7 @@ export default function SetupWizard() {
     expenseRouting: '',
     primaryLocation: '',
     inventoryValuation: '',
+    inventoryAccountingMode: '',
     nonStockBilling: '',
   });
 

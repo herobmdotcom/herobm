@@ -33,6 +33,7 @@ import { InventoryModule } from '../inventory/inventory.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { ProductsModule } from '../products/products.module';
 import { GlModule } from '../gl/gl.module';
+import { SettingsModule } from '../settings/settings.module';
 import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
 import { SalesQuoteService } from '../reports/sales-quote.service';
@@ -46,6 +47,7 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
     AccountsModule,
     ProductsModule,
     GlModule,
+    SettingsModule,
     ReportsModule,
   ],
   controllers: [

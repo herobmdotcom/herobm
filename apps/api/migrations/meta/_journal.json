@@ -13,35 +13,35 @@
       "idx": 1,
       "version": "7",
       "when": 1774968931247,
-      "tag": "0001_medical_wild_pack",
+      "tag": "0001_drop_erpnext_journal_id",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
       "when": 1774971220314,
-      "tag": "0002_cynical_quicksilver",
+      "tag": "0002_add_context_slug_to_report_hook",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
       "when": 1774984925511,
-      "tag": "0003_melodic_carnage",
+      "tag": "0003_drop_default_discount_percentage",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "7",
       "when": 1775056404025,
-      "tag": "0004_black_nextwave",
+      "tag": "0004_require_context_slug",
       "breakpoints": true
     },
     {
       "idx": 5,
       "version": "7",
       "when": 1775060290561,
-      "tag": "0005_wonderful_misty_knight",
+      "tag": "0005_drop_gl_settings_defaults",
       "breakpoints": true
     },
     {
@@ -55,14 +55,14 @@
       "idx": 7,
       "version": "7",
       "when": 1775124515254,
-      "tag": "0007_nosy_richard_fisk",
+      "tag": "0007_create_trading_terms",
       "breakpoints": true
     },
     {
       "idx": 8,
       "version": "7",
       "when": 1775150513147,
-      "tag": "0008_gigantic_namora",
+      "tag": "0008_create_supplier_expiries",
       "breakpoints": true
     },
     {
@@ -76,21 +76,21 @@
       "idx": 10,
       "version": "7",
       "when": 1775549897105,
-      "tag": "0010_ambiguous_captain_cross",
+      "tag": "0010_set_gl_accounts_currency_default",
       "breakpoints": true
     },
     {
       "idx": 11,
       "version": "7",
       "when": 1775676585363,
-      "tag": "0011_charming_titanium_man",
+      "tag": "0011_add_receipt_filename_and_gst_category",
       "breakpoints": true
     },
     {
       "idx": 12,
       "version": "7",
       "when": 1775751595116,
-      "tag": "0012_petite_mystique",
+      "tag": "0012_create_purchase_order_return_lines",
       "breakpoints": true
     },
     {
@@ -104,35 +104,35 @@
       "idx": 14,
       "version": "7",
       "when": 1775814104999,
-      "tag": "0014_many_pyro",
+      "tag": "0014_create_system_events",
       "breakpoints": true
     },
     {
       "idx": 15,
       "version": "7",
       "when": 1775822486653,
-      "tag": "0015_glamorous_nocturne",
+      "tag": "0015_create_product_default_bins",
       "breakpoints": true
     },
     {
       "idx": 16,
       "version": "7",
       "when": 1775824173140,
-      "tag": "0016_cool_lily_hollister",
+      "tag": "0016_drop_is_primary_from_product_default_bins",
       "breakpoints": true
     },
     {
       "idx": 17,
       "version": "7",
       "when": 1775824183774,
-      "tag": "0017_sloppy_vulcan",
+      "tag": "0017_add_is_primary_per_loc_to_product_default_bins",
       "breakpoints": true
     },
     {
       "idx": 18,
       "version": "7",
       "when": 1776186208242,
-      "tag": "0018_quiet_moondragon",
+      "tag": "0018_drop_currency_defaults",
       "breakpoints": true
     },
     {
@@ -251,7 +251,7 @@
       "idx": 35,
       "version": "7",
       "when": 1777475819742,
-      "tag": "0035_freezing_george_stacy",
+      "tag": "0035_create_macros",
       "breakpoints": true
     },
     {
@@ -280,6 +280,13 @@
       "version": "7",
       "when": 1777730389488,
       "tag": "0039_rename_erpnext_to_external",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1777808408618,
+      "tag": "0040_create_user_events",
       "breakpoints": true
     }
   ]

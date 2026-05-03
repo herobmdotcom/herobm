@@ -1,12 +1,10 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { CasbinGuard, CasbinResource, CasbinAction } from '../auth/casbin.guard';
+import {
+  CasbinGuard,
+  CasbinResource,
+  CasbinAction,
+} from '../auth/casbin.guard';
 import { ShipmentService } from './shipment.service';
 
 @Controller('shipments')

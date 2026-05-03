@@ -294,7 +294,7 @@ describe('InventoryService', () => {
       expect(emitEvent).toHaveBeenCalledWith(mockTx, {
         aggregateType: AggregateType.SYSTEM,
         aggregateId: 'entry-uuid-001',
-        eventType: EventType.INVENTORY_ENTRY_CREATED,
+        eventType: EventType.STOCK_ADJUSTED,
         payload: {
           header: baseLedgerParams,
           lines: ledgerPayload,

@@ -87,7 +87,7 @@ describe('emitEvent', () => {
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: 'po-001',
-        eventType: EventType.GOODS_RECEIVED,
+        eventType: EventType.STOCK_RECEIVED,
         payload: { receptionId: 'r-001' },
         actor: 'warehouse',
       });
@@ -181,7 +181,7 @@ describe('emitEvent', () => {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: 'so-001',
-        eventType: EventType.GOODS_DISPATCHED,
+        eventType: EventType.STOCK_DISPATCHED,
         payload: { shipmentId: 'sh-001' },
         actor: 'warehouse',
       });
@@ -193,7 +193,7 @@ describe('emitEvent', () => {
       expect(calls[1].values).toEqual({
         aggregateType: 'sales_order',
         aggregateId: 'so-001',
-        eventType: 'goods_dispatched',
+        eventType: 'stock_dispatched',
         payload: { shipmentId: 'sh-001' },
       });
     });
@@ -247,7 +247,7 @@ describe('emitEvent', () => {
         emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: 'so-001',
-          eventType: EventType.GOODS_DISPATCHED, // in OUTBOX_EVENT_TYPES
+          eventType: EventType.STOCK_DISPATCHED, // in OUTBOX_EVENT_TYPES
           payload: {},
           actor: 'admin',
         }),

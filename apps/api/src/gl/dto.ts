@@ -9,9 +9,14 @@ import {
 export * from './dto/reconciliation.dto';
 export class JournalLineDto {
   /** Account code (e.g. "1100") — resolved to gl_account_id internally */
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  accountCode!: string;
+  accountCode?: string;
+
+  /** Or pass the account UUID directly */
+  @IsOptional()
+  @IsString()
+  accountId?: string;
 
   @IsOptional()
   @IsEnum(['customer', 'supplier'])

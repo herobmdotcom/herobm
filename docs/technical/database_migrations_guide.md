@@ -7,7 +7,8 @@ The `modbm_core` database uses [Drizzle ORM](https://orm.drizzle.team/) as its s
 Drizzle handles data definition (DDL) using a strictly ordered ledger. When you run `npx drizzle-kit generate`, it compares your TypeScript schema (`apps/api/src/drizzle/*-schema.ts`) against an internal JSON snapshot in `apps/api/migrations/meta/` and emits the differences into a numerically prefixed `.sql` file (e.g., `0021_add_status.sql`).
 
 **Golden Rules of DDL Migrations:**
-1. **Never rename the generated `.sql` files.** `tools/migrate.py` applies files in alphabetical order.
+1. **Meaningful Naming is Mandatory.** By default, Drizzle auto-generates gibberish names (e.g., `0001_medical_wild_pack.sql`). You **must** provide a descriptive name using the `--name` flag (e.g., `npx drizzle-kit generate --name create_users_table`).
+2. **Never manually rename generated `.sql` files.** Drizzle stores the filename in `meta/_journal.json`. If you rename the `.sql` file without updating the journal and the database tracking table (`schema_migrations`), the ledger will detach and migrations will fail. Always get the name right during the `generate` command.
 2. **Never modify the generated DDL.** If Drizzle generates a `CREATE TABLE` statement, do not manually wrap it in a `DO $$` or add `IF NOT EXISTS`. Drizzle strictly assumes its generated code applies exactly once to any fresh database. If you manually tweak Drizzle's output to make it "idempotent," you mask deeper sequencing errors.
 3. **Never allow duplicate prefixes.** If a branch merge results in two files with the same prefix (e.g., `0007_feature_a.sql` and `0007_feature_b.sql`), the Drizzle snapshot ledger is instantly corrupted. You must consolidate these files manually or request a team squash. Our infrastructure suite (`make test-structural-local`) actively prevents duplicate prefixes from entering `main`.
 

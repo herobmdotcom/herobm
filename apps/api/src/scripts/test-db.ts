@@ -14,4 +14,7 @@ async function main() {
   console.log('Exists?', result[0].template.includes('quoteIntroText'));
   process.exit(0);
 }
-main();
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

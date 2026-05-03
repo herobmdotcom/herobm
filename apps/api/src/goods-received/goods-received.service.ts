@@ -27,6 +27,11 @@ import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
+import { AppConfigService } from '../settings/app-config.service';
+import { GlService } from '../gl/gl.service';
+import { getValuationStrategy } from '../inventory/valuation';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
+
 @Injectable()
 export class GoodsReceivedService {
   private readonly logger = new Logger(GoodsReceivedService.name);
@@ -34,6 +39,8 @@ export class GoodsReceivedService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
+    private readonly appConfig: AppConfigService,
+    private readonly glService: GlService,
   ) {}
 
   /**
@@ -228,6 +235,93 @@ export class GoodsReceivedService {
           })),
         });
 
+        // --- 5.1 Financial Integration & Valuation Updates ---
+        const valuationMethodCode = this.appConfig.valuationMethod();
+        const valuationStrategy = getValuationStrategy(valuationMethodCode);
+
+        // Fetch products to update their WAC and get standard costs
+        const productIds = [...new Set(lineValues.map((l) => l.productId))];
+        const productRows = await tx
+          .select({
+            productId: products.productId,
+            standardCost: products.standardCost,
+            weightedAverageCost: products.weightedAverageCost,
+            qoh: sql`COALESCE((SELECT SUM(actual_quantity) FROM modbm_core.bin_contents WHERE product_id = ${products.productId}), 0)`.mapWith(
+              Number,
+            ),
+          })
+          .from(products)
+          .where(
+            sql`${products.productId} IN (${sql.join(
+              productIds.map((p) => sql`${p}`),
+              sql`, `,
+            )})`,
+          );
+
+        const productMap = new Map(productRows.map((p) => [p.productId, p]));
+        let totalInventoryValueAdded = 0;
+
+        for (const lv of lineValues) {
+          const product = productMap.get(lv.productId);
+          if (!product) continue;
+
+          const qty = parseFloat(lv.quantityReceived);
+          const unitCost = lv.unitCost ? String(lv.unitCost) : '0';
+
+          const productData = {
+            ...product,
+            standardCost: product.standardCost || '0',
+            weightedAverageCost: product.weightedAverageCost || '0',
+          };
+
+          const valuation = valuationStrategy.onGoodsReceipt(
+            productData,
+            product.qoh,
+            qty,
+            unitCost,
+          );
+
+          totalInventoryValueAdded += parseFloat(valuation.inventoryValueAdded);
+
+          // Update product WAC
+          await tx
+            .update(products)
+            .set({ weightedAverageCost: valuation.newWeightedAverageCost })
+            .where(eq(products.productId, product.productId));
+
+          // Update local QOH to ensure subsequent lines calculate correctly
+          product.qoh += qty;
+          product.weightedAverageCost = valuation.newWeightedAverageCost;
+        }
+
+        // Post Journal Entry via Accounting Strategy
+        const accountingStrategy = getAccountingStrategy(
+          this.appConfig.inventoryAccountingMode(),
+          {
+            inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+            grniAccountId: this.appConfig.defaultGrniAccountId(),
+            cogsAccountId: this.appConfig.defaultCogsAccountId(),
+            shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+          },
+        );
+
+        const glResult = accountingStrategy.onGoodsReceipt({
+          amount: Number(totalInventoryValueAdded.toFixed(2)),
+          memo: `Goods Receipt ${receipt.receiptNumber}`,
+          partyType: 'supplier',
+          partyId: vendor.vendorId,
+        });
+
+        if (glResult) {
+          await this.glService.postJournalEntry(glResult.lines as any, {
+            actor: userId,
+            entryDate: new Date().toISOString().slice(0, 10),
+            sourceType: glResult.sourceType,
+            sourceId: receipt.goodsReceivedId,
+            memo: `Goods Receipt ${receipt.receiptNumber} (${vendor.name})`,
+          });
+        }
+
         // --- 6. PO Update: Update matched PO lines ---
         const matchedLines = lineValues.filter(
           (l) => l.matchStatus === 'matched',
@@ -277,7 +371,7 @@ export class GoodsReceivedService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SYSTEM,
         aggregateId: receipt.goodsReceivedId,
-        eventType: EventType.GOODS_RECEIVED,
+        eventType: EventType.STOCK_RECEIVED,
         payload: {
           goodsReceivedId: receipt.goodsReceivedId,
           receiptNumber: receipt.receiptNumber,
@@ -409,7 +503,9 @@ export class GoodsReceivedService {
     }
 
     if (putawayStatus) {
-      conditions.push(eq(goodsReceivedLines.putawayStatus, putawayStatus as any));
+      conditions.push(
+        eq(goodsReceivedLines.putawayStatus, putawayStatus as any),
+      );
     }
 
     if (locationId) {
@@ -1022,21 +1118,23 @@ export class GoodsReceivedService {
         // Handle discrepancies if newTotalQuantity is provided
         if (lineDto.newTotalQuantity !== undefined) {
           const newTotal = parseFloat(lineDto.newTotalQuantity);
-          
+
           const [destBinContent] = await tx
             .select({ actualQuantity: binContents.actualQuantity })
             .from(binContents)
             .where(
               and(
                 eq(binContents.productId, grLine.line.productId),
-                eq(binContents.binId, lineDto.destinationBinId)
-              )
+                eq(binContents.binId, lineDto.destinationBinId),
+              ),
             )
             .limit(1);
 
-          const currentDbQty = destBinContent ? parseFloat(destBinContent.actualQuantity) : 0;
+          const currentDbQty = destBinContent
+            ? parseFloat(destBinContent.actualQuantity)
+            : 0;
           const expectedTotal = currentDbQty + qty;
-          
+
           const discrepancy = newTotal - expectedTotal;
 
           if (Math.abs(discrepancy) > 0.001) {
@@ -1045,7 +1143,9 @@ export class GoodsReceivedService {
               binId: lineDto.destinationBinId,
               quantity: discrepancy,
             });
-            this.logger.warn(`Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`);
+            this.logger.warn(
+              `Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`,
+            );
           }
         }
 

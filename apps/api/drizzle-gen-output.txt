@@ -1,0 +1,4 @@
+﻿No config path provided, using default 'drizzle.config.ts'
+Reading config file 'C:\Users\Marcel\volz\modbm\modbm\apps\api\drizzle.config.ts'
+Prepared empty file for your custom SQL migration!
+[Γ£ô] Your SQL migration file Γ₧£ migrations\0040_create_user_events.sql ≡ƒÜÇ

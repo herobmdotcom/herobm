@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql, isNull, and } from 'drizzle-orm';
+import { eq, sql, isNull, and, or } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -35,7 +35,10 @@ export class JournalMeta {
     | 'purchase_invoice'
     | 'sales_credit_note'
     | 'manual'
-    | 'adjustment';
+    | 'adjustment'
+    | 'inventory_receipt'
+    | 'inventory_dispatch'
+    | 'inventory_adjustment';
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
@@ -79,8 +82,38 @@ export class GlService {
       );
     }
 
-    // 2. Resolve account codes to IDs and validate
-    const accountCodes = [...new Set(lines.map((l) => l.accountCode))];
+    // 2. Resolve account codes/IDs and validate
+    const accountCodes = [
+      ...new Set(lines.map((l) => l.accountCode).filter(Boolean)),
+    ];
+    const accountIds = [
+      ...new Set(lines.map((l) => l.accountId).filter(Boolean)),
+    ];
+
+    const conditions = [];
+    if (accountCodes.length > 0) {
+      conditions.push(
+        sql`${glAccounts.accountCode} IN (${sql.join(
+          accountCodes.map((c) => sql`${c}`),
+          sql`, `,
+        )})`,
+      );
+    }
+    if (accountIds.length > 0) {
+      conditions.push(
+        sql`${glAccounts.glAccountId} IN (${sql.join(
+          accountIds.map((c) => sql`${c}`),
+          sql`, `,
+        )})`,
+      );
+    }
+
+    if (conditions.length === 0) {
+      throw new BadRequestException(
+        'All journal lines must specify either accountCode or accountId.',
+      );
+    }
+
     const accountRows = await this.db
       .select({
         glAccountId: glAccounts.glAccountId,
@@ -90,30 +123,32 @@ export class GlService {
         name: glAccounts.name,
       })
       .from(glAccounts)
-      .where(
-        sql`${glAccounts.accountCode} IN (${sql.join(
-          accountCodes.map((c) => sql`${c}`),
-          sql`, `,
-        )})`,
-      );
+      .where(or(...conditions));
 
-    const accountMap = new Map(accountRows.map((a) => [a.accountCode, a]));
+    const codeMap = new Map(accountRows.map((a) => [a.accountCode, a]));
+    const idMap = new Map(accountRows.map((a) => [a.glAccountId, a]));
 
-    for (const code of accountCodes) {
-      const acct = accountMap.get(code);
+    for (const line of lines) {
+      const acct = line.accountId
+        ? idMap.get(line.accountId)
+        : codeMap.get(line.accountCode!);
+      const ref = line.accountId || line.accountCode;
+
       if (!acct) {
-        throw new BadRequestException(`Account code '${code}' does not exist.`);
+        throw new BadRequestException(`Account '${ref}' does not exist.`);
       }
       if (acct.isGroup) {
         throw new BadRequestException(
-          `Account '${code} - ${acct.name}' is a group account and cannot receive postings.`,
+          `Account '${acct.accountCode} - ${acct.name}' is a group account and cannot receive postings.`,
         );
       }
       if (!acct.isActive) {
         throw new BadRequestException(
-          `Account '${code} - ${acct.name}' is inactive.`,
+          `Account '${acct.accountCode} - ${acct.name}' is inactive.`,
         );
       }
+      // Attach the resolved UUID to the line for the insert step
+      line.accountId = acct.glAccountId;
     }
 
     // 3. Generate entry number
@@ -136,7 +171,7 @@ export class GlService {
 
       const lineValues = lines.map((l) => ({
         journalEntryId: entry.journalEntryId,
-        glAccountId: accountMap.get(l.accountCode)!.glAccountId,
+        glAccountId: l.accountId!,
         partyType: l.partyType || null,
         partyId: l.partyId || null,
         debit: String(l.debit),

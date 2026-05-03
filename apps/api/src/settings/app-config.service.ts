@@ -113,6 +113,26 @@ export class AppConfigService implements OnModuleInit {
     return this.getGl().defaultTaxAccountId;
   }
 
+  /** Default Inventory Asset account UUID. */
+  defaultInventoryAccountId(): string | null {
+    return this.getGl().defaultInventoryAccountId;
+  }
+
+  /** Default GRNI (Goods Received Not Invoiced) liability account UUID. */
+  defaultGrniAccountId(): string | null {
+    return this.getGl().defaultGrniAccountId;
+  }
+
+  /** Default Inventory Shrinkage (Expense) account UUID. */
+  defaultShrinkageAccountId(): string | null {
+    return this.getGl().defaultShrinkageAccountId;
+  }
+
+  /** Default Cost of Goods Sold (COGS) expense account UUID. */
+  defaultCogsAccountId(): string | null {
+    return this.getGl().defaultCogsAccountId;
+  }
+
   // ---------------------------------------------------------------------------
   // App Settings Getters
   // ---------------------------------------------------------------------------
@@ -122,9 +142,14 @@ export class AppConfigService implements OnModuleInit {
     return this.getApp().defaultFulfillmentLocationId;
   }
 
-  /** Inventory valuation method: 'weighted_average' or 'fifo'. */
+  /** Inventory valuation method: 'weighted_average' or 'fifo' or 'standard'. */
   valuationMethod(): string {
     return this.getApp().inventoryValuationMethod;
+  }
+
+  /** Inventory accounting mode: 'periodic' or 'perpetual'. */
+  inventoryAccountingMode(): string {
+    return this.getApp().inventoryAccountingMode;
   }
 
   /** Non-stock billing mode: 'per_shipment' or 'final_invoice'. */

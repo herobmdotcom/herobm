@@ -1,0 +1,19 @@
+﻿node.exe : PASS src/auth/auth.service.spec.ts
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS src/auth/auth.service.spec.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  AuthService
+    login
+      ΓêÜ should return a JWT token for valid credentials (50 ms)
+      ΓêÜ should throw UnauthorizedException for unknown user (6 ms)
+      ΓêÜ should throw UnauthorizedException for wrong password (41 ms)
+      ΓêÜ should throw UnauthorizedException for inactive user (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        0.748 s, estimated 1 s
+Ran all test suites matching auth.service.spec.

@@ -1067,11 +1067,27 @@ export const users = modbmCore.table('users', {
   userId: uuid('user_id').primaryKey().defaultRandom(),
   username: text('username').unique().notNull(),
   passwordHash: text('password_hash').notNull(),
+  displayName: text('display_name'),
+  email: text('email'),
   role: text('role').notNull(), // admin | sales | warehouse | procurement
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
+});
+
+// ---------------------------------------------------------------------------
+// user_events  (Audit log for user management actions)
+// ---------------------------------------------------------------------------
+export const userEvents = modbmCore.table('user_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.userId, { onDelete: 'cascade' }),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
 // ---------------------------------------------------------------------------
@@ -1310,6 +1326,15 @@ export const glSettings = modbmCore.table('gl_settings', {
   defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
   ),
+  defaultInventoryAccountId: uuid('default_inventory_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultGrniAccountId: uuid('default_grni_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
+  defaultShrinkageAccountId: uuid('default_shrinkage_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
   baseCurrency: text('base_currency').notNull(),
   revenueRoutingPrecedence: text('revenue_routing_precedence')
     .notNull()
@@ -1329,7 +1354,10 @@ export const appSettings = modbmCore.table('app_settings', {
   ).references(() => locations.locationId),
   inventoryValuationMethod: text('inventory_valuation_method')
     .notNull()
-    .default('weighted_average'), // 'weighted_average' | 'fifo'
+    .default('weighted_average'), // 'weighted_average' | 'fifo' | 'standard'
+  inventoryAccountingMode: text('inventory_accounting_mode')
+    .notNull()
+    .default('periodic'), // 'periodic' | 'perpetual'
   nonStockBillingMode: text('non_stock_billing_mode')
     .notNull()
     .default('per_shipment'), // 'per_shipment' | 'final_invoice'

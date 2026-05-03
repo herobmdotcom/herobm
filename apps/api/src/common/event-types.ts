@@ -39,14 +39,14 @@ export const EventType = {
 
   // ── Sales domain ────────────────────────────────────────────────────
   SALES_INVOICED: 'sales_invoiced',
-  GOODS_DISPATCHED: 'goods_dispatched',
-  GOODS_DISPATCH_REVERTED: 'goods_dispatch_reverted',
+  STOCK_DISPATCHED: 'stock_dispatched',
+  STOCK_DISPATCH_REVERTED: 'stock_dispatch_reverted',
   BACKORDERS_ALLOCATED: 'backorders_allocated',
   CREDIT_NOTE_POSTED: 'credit_note_posted',
 
   // ── Procurement domain ──────────────────────────────────────────────
   PURCHASE_INVOICED: 'purchase_invoiced',
-  GOODS_RECEIVED: 'goods_received',
+  STOCK_RECEIVED: 'stock_received',
   DEMAND_ALLOCATED: 'demand_allocated',
   DEMAND_UNALLOCATED: 'demand_unallocated',
   RECEIPT_MATCHED: 'receipt_matched',
@@ -72,7 +72,7 @@ export const EventType = {
 
   // ── System domain ───────────────────────────────────────────────────
   GL_POSTED: 'gl_posted',
-  INVENTORY_ENTRY_CREATED: 'INVENTORY_ENTRY_CREATED',
+  STOCK_ADJUSTED: 'stock_adjusted',
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
@@ -82,11 +82,11 @@ export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
  * Only events in this set produce an outbox row in addition to the audit row.
  */
 export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
-  EventType.GOODS_RECEIVED,
-  EventType.GOODS_DISPATCHED,
+  EventType.STOCK_RECEIVED,
+  EventType.STOCK_DISPATCHED,
   EventType.SALES_INVOICED,
   EventType.PURCHASE_INVOICED,
   EventType.GL_POSTED,
-  EventType.INVENTORY_ENTRY_CREATED,
+  EventType.STOCK_ADJUSTED,
   EventType.CREDIT_NOTE_POSTED,
 ]);

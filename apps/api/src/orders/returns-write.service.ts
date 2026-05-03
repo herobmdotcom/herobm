@@ -38,6 +38,7 @@ import {
   getValidStates,
 } from '@modbm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { validateReturnQuantity } from './returns-math.utils';
 import {
   CreateReturnDto,
@@ -355,6 +356,55 @@ export class ReturnsWriteService {
 
         // Note: WAC is unaffected by sales returns, and quantityOnHand is no longer cached on the products table.
         // The dynamic inventory_levels view will automatically reflect the stock returned to the dock bin.
+
+        // --- Financial Integration: Post Inventory/COGS reversal via Accounting Strategy ---
+        const valuationStrategy = getValuationStrategy(this.appConfig.valuationMethod());
+        let totalReturnCost = 0;
+
+        for (const line of stockLines) {
+          if (!line.productId) continue;
+          const [product] = await tx
+            .select()
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, line.productId));
+
+          if (product) {
+            const cost = valuationStrategy.getCogs(
+              {
+                productId: product.productId,
+                standardCost: product.standardCost || '0',
+                weightedAverageCost: product.weightedAverageCost || '0',
+              },
+              parseFloat(line.quantity),
+            );
+            totalReturnCost += parseFloat(cost);
+          }
+        }
+
+        const accountingStrategy = getAccountingStrategy(
+          this.appConfig.inventoryAccountingMode(),
+          {
+            inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+            grniAccountId: this.appConfig.defaultGrniAccountId(),
+            cogsAccountId: this.appConfig.defaultCogsAccountId(),
+            shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+          },
+        );
+
+        const returnGl = accountingStrategy.onSalesReturn({
+          amount: Number(totalReturnCost.toFixed(2)),
+          memo: `Sales Return ${existing.returnNumber}`,
+        });
+
+        if (returnGl) {
+          await this.glService.postJournalEntry(returnGl.lines as any, {
+            actor,
+            entryDate: new Date().toISOString().slice(0, 10),
+            sourceType: returnGl.sourceType,
+            sourceId: returnId,
+            memo: `Sales Return ${existing.returnNumber}`,
+          });
+        }
       }
 
       const eventType =

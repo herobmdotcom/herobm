@@ -24,6 +24,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
+import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import {
   findOrder,
   findOrderLine,
@@ -34,9 +35,10 @@ import {
   getCommittedPerLine,
 } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
 import { InventoryService } from '../inventory/inventory.service';
+import { GlService } from '../gl/gl.service';
 import {
   CreateShipmentDto,
   UpdateShipmentDto,
@@ -65,8 +67,9 @@ const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 export class ShipmentService {
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
+    private readonly appConfig: AppConfigService,
     private readonly inventoryService: InventoryService,
-    private appConfig: AppConfigService,
+    private readonly glService: GlService,
   ) {}
 
   private readonly logger = new Logger(ShipmentService.name);
@@ -385,10 +388,41 @@ export class ShipmentService {
           }
         }
 
+        // --- Financial Integration: Post COGS Journal Entry via Accounting Strategy ---
+        const totalCogs = cogsDetails.reduce(
+          (sum, detail) => sum + parseFloat(detail.cogsAmount),
+          0,
+        );
+
+        const accountingStrategy = getAccountingStrategy(
+          this.appConfig.inventoryAccountingMode(),
+          {
+            inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+            grniAccountId: this.appConfig.defaultGrniAccountId(),
+            cogsAccountId: this.appConfig.defaultCogsAccountId(),
+            shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+          },
+        );
+
+        const dispatchGl = accountingStrategy.onGoodsDispatch({
+          amount: Number(totalCogs.toFixed(2)),
+          memo: `Dispatch ${shipment.shipmentNumber}`,
+        });
+
+        if (dispatchGl) {
+          await this.glService.postJournalEntry(dispatchGl.lines as any, {
+            actor,
+            entryDate: new Date().toISOString().slice(0, 10),
+            sourceType: dispatchGl.sourceType,
+            sourceId: shipmentId,
+            memo: `Dispatch ${shipment.shipmentNumber}`,
+          });
+        }
+
         await emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: shipment.salesOrderId,
-          eventType: 'goods_dispatched',
+          eventType: EventType.STOCK_DISPATCHED,
           payload: {
             shipmentId,
             shipmentNumber: shipment.shipmentNumber,
@@ -483,11 +517,71 @@ export class ShipmentService {
           });
         }
 
+        // --- Financial Integration: Post COGS Reversal Entry via Accounting Strategy ---
+        if (returnLines.length > 0) {
+          let totalCogsReversed = 0;
+          const strategy = getValuationStrategy(
+            this.appConfig.valuationMethod(),
+          );
+
+          for (const line of returnLines) {
+            const isUuid =
+              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                line.productId,
+              );
+            const [product] = await tx
+              .select()
+              .from(coreProducts)
+              .where(
+                isUuid
+                  ? eq(coreProducts.productId, line.productId)
+                  : eq(coreProducts.productNumber, line.productId),
+              );
+
+            if (product) {
+              const cogsAmount = strategy.getCogs(
+                {
+                  productId: product.productId,
+                  standardCost: product.standardCost || '0',
+                  weightedAverageCost: product.weightedAverageCost || '0',
+                },
+                parseFloat(line.quantity as any),
+              );
+              totalCogsReversed += parseFloat(cogsAmount);
+            }
+          }
+
+          const reversalStrategy = getAccountingStrategy(
+            this.appConfig.inventoryAccountingMode(),
+            {
+              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+              grniAccountId: this.appConfig.defaultGrniAccountId(),
+              cogsAccountId: this.appConfig.defaultCogsAccountId(),
+              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+            },
+          );
+
+          const reversalGl = reversalStrategy.onDispatchReversal({
+            amount: Number(totalCogsReversed.toFixed(2)),
+            memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
+          });
+
+          if (reversalGl) {
+            await this.glService.postJournalEntry(reversalGl.lines as any, {
+              actor,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: reversalGl.sourceType,
+              sourceId: shipmentId,
+              memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
+            });
+          }
+        }
+
         // Record reversal outbox event to mathematically restore COGS dynamically
         await emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: shipment.salesOrderId,
-          eventType: 'goods_dispatch_reverted',
+          eventType: EventType.STOCK_DISPATCH_REVERTED,
           payload: {
             shipmentId,
             shipmentNumber: shipment.shipmentNumber,
@@ -730,7 +824,10 @@ export class ShipmentService {
         salesOrders,
         eq(salesOrderShipments.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
 
@@ -825,7 +922,11 @@ export class ShipmentService {
    * Fetch a flattened, global list of Sales Order Shipments.
    * Useful for the "All Shipments" page.
    */
-  async findAll(query: { days?: number; salesOrderId?: string; limit?: number }) {
+  async findAll(query: {
+    days?: number;
+    salesOrderId?: string;
+    limit?: number;
+  }) {
     const { days = 30, salesOrderId, limit = 100 } = query;
     const conditions: any[] = [];
 
@@ -857,7 +958,10 @@ export class ShipmentService {
         salesOrders,
         eq(salesOrderShipments.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(coreAccounts, eq(salesOrders.customerId, coreAccounts.accountId))
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
       .where(and(...conditions))
       .orderBy(desc(salesOrderShipments.createdOn))
       .limit(limit > 0 ? limit : 100);

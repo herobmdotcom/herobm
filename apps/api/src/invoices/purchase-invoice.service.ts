@@ -30,6 +30,7 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { AppConfigService } from '../settings/app-config.service';
 import {
   computeLinePriceForStorage,
   EXPENSE_ROUTING_PRECEDENCE,
@@ -45,6 +46,7 @@ export class PurchaseInvoiceService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
     private readonly taxService: TaxCategoriesService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   /**
@@ -505,15 +507,26 @@ export class PurchaseInvoiceService {
       throw new BadRequestException('Only draft invoices can be posted');
 
     const lines = await this.db
-      .select()
+      .select({
+        line: purchaseInvoiceLines,
+        poProductId: purchaseOrderLineItems.productId,
+      })
       .from(purchaseInvoiceLines)
+      .leftJoin(
+        purchaseOrderLineItems,
+        eq(
+          purchaseInvoiceLines.purchaseOrderLineId,
+          purchaseOrderLineItems.purchaseOrderLineId,
+        ),
+      )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
     let lineTotal = 0;
     const expenseByAccountId = new Map<string, number>();
     let defaultExpense = 0;
+    let grniExpense = 0;
 
-    for (const line of lines) {
+    for (const { line, poProductId } of lines) {
       if (line.matchStatus !== 'matched' && !line.glAccountId) {
         throw new BadRequestException(
           `Line "${line.description}" is unmatched and must have a GL Account assigned before finalisation.`,
@@ -527,6 +540,8 @@ export class PurchaseInvoiceService {
       if (acctId) {
         const current = expenseByAccountId.get(acctId) || 0;
         expenseByAccountId.set(acctId, current + amt);
+      } else if (line.matchStatus === 'matched' && poProductId) {
+        grniExpense += amt;
       } else {
         defaultExpense += amt;
       }
@@ -563,6 +578,8 @@ export class PurchaseInvoiceService {
           distinctAccountIds.add(settings.defaultTaxAccountId);
         if (settings?.defaultExpenseAccountId)
           distinctAccountIds.add(settings.defaultExpenseAccountId);
+        if (settings?.defaultGrniAccountId)
+          distinctAccountIds.add(settings.defaultGrniAccountId);
         if (supplierExpenseAccountId)
           distinctAccountIds.add(supplierExpenseAccountId);
         for (const acctId of expenseByAccountId.keys())
@@ -591,6 +608,14 @@ export class PurchaseInvoiceService {
             (settings.defaultExpenseAccountId &&
               idToCode.get(settings.defaultExpenseAccountId));
 
+          // In perpetual mode, matched inventory lines clear the GRNI liability.
+          // In periodic mode, matched lines are treated as direct expenses.
+          const isPerpetual = this.appConfig.inventoryAccountingMode() === 'perpetual';
+          const grniCode =
+            isPerpetual && settings.defaultGrniAccountId
+              ? idToCode.get(settings.defaultGrniAccountId)
+              : fallbackExpCode; // Periodic: route through expense
+
           const taxCode = settings.defaultTaxAccountId
             ? idToCode.get(settings.defaultTaxAccountId)
             : null;
@@ -604,6 +629,17 @@ export class PurchaseInvoiceService {
                 debit: defaultExpense,
                 credit: 0,
                 memo: `Expense (Default): ${invoice.invoiceNumber}`,
+              });
+            }
+
+            if (grniExpense > 0 && grniCode) {
+              glLines.push({
+                accountCode: grniCode,
+                debit: grniExpense,
+                credit: 0,
+                memo: `GRNI Clearance: ${invoice.invoiceNumber}`,
+                partyId: invoice.vendorId,
+                partyType: 'supplier',
               });
             }
 

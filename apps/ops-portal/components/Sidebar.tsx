@@ -109,6 +109,7 @@ export default function Sidebar() {
           ]
         },
         { href: '/admin/settings', label: 'Settings', icon: 'settings' },
+        { href: '/admin/users', label: t('items.users'), icon: 'group' },
       ],
     });
   }
