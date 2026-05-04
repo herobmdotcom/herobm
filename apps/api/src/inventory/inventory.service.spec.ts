@@ -4,6 +4,7 @@ import { InventoryService } from './inventory.service';
 import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { emitEvent } from '../common/emit-event';
+import { GlService } from '../gl/gl.service';
 import { AggregateType, EventType } from '../common/event-types';
 
 jest.mock('../common/emit-event', () => ({
@@ -100,6 +101,13 @@ describe('InventoryService', () => {
                   0,
                 );
               }),
+          },
+        },
+        {
+          provide: GlService,
+          useValue: {
+            getSettings: jest.fn().mockResolvedValue(null),
+            postJournalEntry: jest.fn(),
           },
         },
       ],

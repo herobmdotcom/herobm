@@ -18,9 +18,11 @@ import {
   inventoryEntries,
   inventoryLedger,
   accounts as coreAccounts,
+  accountGroups,
   backorders,
   purchaseOrders,
   systemEvents,
+  salesOrderPicks,
 } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
@@ -351,6 +353,51 @@ export class ShipmentService {
           });
         }
 
+        // Transition sales_order_picks to shipped
+        for (const sl of shipmentLines) {
+          let remainingToShip = parseFloat(sl.quantityShipped);
+          const linePicks = await tx
+            .select()
+            .from(salesOrderPicks)
+            .where(
+              and(
+                eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
+                eq(salesOrderPicks.stateCode, 'picked'),
+              ),
+            );
+
+          for (const pick of linePicks) {
+            if (remainingToShip <= 0) break;
+            const pickQty = parseFloat(pick.quantity);
+            const take = Math.min(remainingToShip, pickQty);
+            if (take === pickQty) {
+              await tx
+                .update(salesOrderPicks)
+                .set({ stateCode: 'shipped', modifiedOn: new Date() })
+                .where(eq(salesOrderPicks.pickId, pick.pickId));
+            } else {
+              // Partial pick shipped - split the pick
+              await tx
+                .update(salesOrderPicks)
+                .set({
+                  quantity: String(pickQty - take),
+                  modifiedOn: new Date(),
+                })
+                .where(eq(salesOrderPicks.pickId, pick.pickId));
+              await tx.insert(salesOrderPicks).values({
+                salesOrderId: pick.salesOrderId,
+                salesOrderLineId: pick.salesOrderLineId,
+                productId: pick.productId,
+                binId: pick.binId,
+                quantity: String(take),
+                stateCode: 'shipped',
+                createdBy: pick.createdBy,
+              });
+            }
+            remainingToShip -= take;
+          }
+        }
+
         // Calculate COGS and record outbox event for GL mapping
         const cogsDetails = [];
         for (const line of physicalStockLines) {
@@ -404,19 +451,49 @@ export class ShipmentService {
           },
         );
 
+        // Resolve customer account group dimensions for COGS posting
+        let customerCostCenterId: string | undefined;
+        let customerActivityId: string | undefined;
+        const [order] = await tx
+          .select({
+            customerId: salesOrders.customerId,
+            costCenterId: accountGroups.defaultCostCenterId,
+            activityId: accountGroups.defaultActivityId,
+          })
+          .from(salesOrders)
+          .leftJoin(
+            coreAccounts,
+            eq(salesOrders.customerId, coreAccounts.accountId),
+          )
+          .leftJoin(
+            accountGroups,
+            eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+          )
+          .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
+        if (order) {
+          customerCostCenterId = order.costCenterId || undefined;
+          customerActivityId = order.activityId || undefined;
+        }
+
         const dispatchGl = accountingStrategy.onGoodsDispatch({
           amount: Number(totalCogs.toFixed(2)),
           memo: `Dispatch ${shipment.shipmentNumber}`,
+          costCenterId: customerCostCenterId,
+          activityId: customerActivityId,
         });
 
         if (dispatchGl) {
-          await this.glService.postJournalEntry(dispatchGl.lines as any, {
-            actor,
-            entryDate: new Date().toISOString().slice(0, 10),
-            sourceType: dispatchGl.sourceType,
-            sourceId: shipmentId,
-            memo: `Dispatch ${shipment.shipmentNumber}`,
-          });
+          await this.glService.postJournalEntry(
+            dispatchGl.lines as any,
+            {
+              actor,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: dispatchGl.sourceType,
+              sourceId: shipmentId,
+              memo: `Dispatch ${shipment.shipmentNumber}`,
+            },
+            tx,
+          );
         }
 
         await emitEvent(tx, {
@@ -561,19 +638,48 @@ export class ShipmentService {
             },
           );
 
+          // Resolve customer account group dimensions for reversal posting
+          let revCostCenterId: string | undefined;
+          let revActivityId: string | undefined;
+          const [revOrder] = await tx
+            .select({
+              costCenterId: accountGroups.defaultCostCenterId,
+              activityId: accountGroups.defaultActivityId,
+            })
+            .from(salesOrders)
+            .leftJoin(
+              coreAccounts,
+              eq(salesOrders.customerId, coreAccounts.accountId),
+            )
+            .leftJoin(
+              accountGroups,
+              eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+            )
+            .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
+          if (revOrder) {
+            revCostCenterId = revOrder.costCenterId || undefined;
+            revActivityId = revOrder.activityId || undefined;
+          }
+
           const reversalGl = reversalStrategy.onDispatchReversal({
             amount: Number(totalCogsReversed.toFixed(2)),
             memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
+            costCenterId: revCostCenterId,
+            activityId: revActivityId,
           });
 
           if (reversalGl) {
-            await this.glService.postJournalEntry(reversalGl.lines as any, {
-              actor,
-              entryDate: new Date().toISOString().slice(0, 10),
-              sourceType: reversalGl.sourceType,
-              sourceId: shipmentId,
-              memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
-            });
+            await this.glService.postJournalEntry(
+              reversalGl.lines as any,
+              {
+                actor,
+                entryDate: new Date().toISOString().slice(0, 10),
+                sourceType: reversalGl.sourceType,
+                sourceId: shipmentId,
+                memo: `Dispatch Reversal ${shipment.shipmentNumber}`,
+              },
+              tx,
+            );
           }
         }
 

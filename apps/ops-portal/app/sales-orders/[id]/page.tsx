@@ -13,7 +13,6 @@ import { useTranslations } from 'next-intl';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 
-import PickingSection from '@/components/shared/PickingSection';
 import PageNav from '@/components/shared/PageNav';
 
 import InvoicesSection from './InvoicesSection';
@@ -102,12 +101,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
     /* ── Post-Confirmation Line UI State ───────────────────────────── */
     const [isPostConfirmationAddingEnabled, setIsPostConfirmationAddingEnabled] = useState(false);
-
-    /* ── Picking/Shipments visibility (driven by PickingSection's internal state) ── */
-    const [pickingVis, setPickingVis] = useState({ picking: false, shipments: false });
-    const onPickingVisibilityChange = useCallback(
-        (v: { picking: boolean; shipments: boolean }) => setPickingVis(v), [],
-    );
 
     /* ── Quote Dialog ──────────────────────────────────────────────────────── */
     const [showQuoteDialog, setShowQuoteDialog] = useState(false);
@@ -202,8 +195,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     const sections = {
         details:   { id: 'details-section',   label: 'Details',   show: true },
         lines:     { id: 'lines-section',     label: 'Lines',     show: true },
-        picking:   { id: 'picking-section',   label: 'Picking',   show: pickingVis.picking },
-        shipments: { id: 'shipments-section', label: 'Shipments', show: pickingVis.shipments },
         invoices:  { id: 'invoices-section',  label: 'Invoices',  show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         returns:   { id: 'returns-section',   label: 'Returns',   show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         activity:  { id: 'activity-section',  label: 'Activity',  show: true },
@@ -1024,15 +1015,6 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
                     )}
                 </div>
-
-                {/* Tracking / Picking / Activity sections */}
-                <PickingSection 
-                    orderId={id}
-                    orderState={order.stateCode}
-                    orderLines={order.lines}
-                    onOrderUpdated={(auto) => loadOrder(auto as any[], false)}
-                    onVisibilityChange={onPickingVisibilityChange} 
-                />
 
                 {sections.invoices.show && (
                     <InvoicesSection 

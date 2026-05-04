@@ -8,6 +8,10 @@ import { OrganizationController } from './organization.controller';
 import { AppConfigService } from './app-config.service';
 import { TradingTermsService } from './trading-terms.service';
 import { TradingTermsController } from './trading-terms.controller';
+import { CostCentersService } from './cost-centers.service';
+import { CostCentersController } from './cost-centers.controller';
+import { ActivitiesService } from './activities.service';
+import { ActivitiesController } from './activities.controller';
 
 @Global()
 @Module({
@@ -16,6 +20,8 @@ import { TradingTermsController } from './trading-terms.controller';
     ExchangeRatesController,
     OrganizationController,
     TradingTermsController,
+    CostCentersController,
+    ActivitiesController,
   ],
   providers: [
     UomDictionaryService,
@@ -23,6 +29,8 @@ import { TradingTermsController } from './trading-terms.controller';
     OrganizationService,
     AppConfigService,
     TradingTermsService,
+    CostCentersService,
+    ActivitiesService,
   ],
   exports: [
     UomDictionaryService,
@@ -30,6 +38,8 @@ import { TradingTermsController } from './trading-terms.controller';
     OrganizationService,
     AppConfigService,
     TradingTermsService,
+    CostCentersService,
+    ActivitiesService,
   ],
 })
 export class SettingsModule {}

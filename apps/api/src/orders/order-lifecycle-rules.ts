@@ -11,7 +11,7 @@ import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 
 export interface LifecycleTrigger {
-  entity: 'shipment' | 'sales_invoice';
+  entity: 'shipment' | 'sales_invoice' | 'picking';
   id: string;
   action: string;
 }
@@ -252,6 +252,50 @@ export const autoInvoiceWhenFullyInvoiced: LifecycleRule = {
   },
 };
 
+export const startPickingOnFirstPick: LifecycleRule = {
+  name: 'start-picking-on-first-pick',
+  description:
+    'Transitions an order from confirmed to picking when the first line is picked',
+  enabled: true,
+  evaluate: async (db, salesOrderId, trigger, actor) => {
+    // 1. Only applies if triggered by picking activity
+    if (trigger.entity !== 'picking' || trigger.action !== 'line_picked') {
+      return null;
+    }
+
+    // 2. Order must be in 'confirmed'
+    const order = await findOrder(db, salesOrderId);
+    if (order.stateCode !== 'confirmed') return null;
+
+    // 3. Execute transition
+    await db
+      .update(salesOrders)
+      .set({ stateCode: 'picking', modifiedOn: new Date() })
+      .where(eq(salesOrders.salesOrderId, salesOrderId));
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: salesOrderId,
+      eventType: 'auto_status_changed',
+      payload: {
+        rule: 'start-picking-on-first-pick',
+        trigger,
+        from: 'confirmed',
+        to: 'picking',
+        reason: 'First pick recorded on confirmed order',
+      },
+      actor,
+    });
+
+    return {
+      ruleName: 'start-picking-on-first-pick',
+      from: 'confirmed',
+      to: 'picking',
+      reason: 'First pick recorded on confirmed order',
+    };
+  },
+};
+
 // ============================================================================
 // Registry & Engine
 // ============================================================================
@@ -260,6 +304,7 @@ const LIFECYCLE_RULES: LifecycleRule[] = [
   autoShipWhenFullyShipped,
   revertToPickingOnShipmentCancel,
   autoInvoiceWhenFullyInvoiced,
+  startPickingOnFirstPick,
 ];
 
 /**

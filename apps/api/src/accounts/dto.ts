@@ -183,6 +183,14 @@ export class CreateAccountGroupDto {
   @IsOptional()
   @IsUUID()
   defaultRevenueAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }
 
 export class UpdateAccountGroupDto {
@@ -205,4 +213,12 @@ export class UpdateAccountGroupDto {
   @IsOptional()
   @IsUUID()
   defaultRevenueAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }

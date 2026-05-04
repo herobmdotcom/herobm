@@ -23,10 +23,12 @@ import {
   PURCHASE_ORDER_TRANSITIONS,
   SHIPMENT_TRANSITIONS,
   RETURN_TRANSITIONS,
+  SALES_ORDER_PICK_TRANSITIONS,
   SalesOrderState,
   PurchaseOrderState,
   ShipmentState,
   ReturnState,
+  SalesOrderPickState,
 } from '@modbm/shared';
 
 const validCurrencyCheck = (
@@ -167,6 +169,46 @@ export const salesOrderLineItems = modbmCore.table(
     productLocationIdx: index('idx_sales_order_lines_product_location').on(
       t.productId,
       t.fulfillmentLocationId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// sales_order_picks  (Pick allocations against sales orders)
+// ---------------------------------------------------------------------------
+export const salesOrderPicks = modbmCore.table(
+  'sales_order_picks',
+  {
+    pickId: uuid('pick_id').primaryKey().defaultRandom(),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    salesOrderLineId: uuid('sales_order_line_id')
+      .notNull()
+      .references(() => salesOrderLineItems.salesOrderLineId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id').references(() => bins.binId),
+    quantity: numeric('quantity').notNull(),
+    stateCode: text('state_code')
+      .$type<SalesOrderPickState>()
+      .notNull()
+      .default('picked'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    orderIdx: index('idx_sales_order_picks_order').on(t.salesOrderId),
+    lineIdx: index('idx_sales_order_picks_line').on(t.salesOrderLineId),
+    stateCheck: check(
+      'sales_order_pick_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(SALES_ORDER_PICK_TRANSITIONS)
+          .map((s) => `'${s}'`)
+          .join(', ')})`,
+      ),
     ),
   }),
 );
@@ -699,6 +741,12 @@ export const accountGroups = modbmCore.table('account_groups', {
   tradingTermsId: uuid('trading_terms_id').references(
     () => tradingTerms.tradingTermsId,
   ),
+  defaultCostCenterId: uuid('default_cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  defaultActivityId: uuid('default_activity_id').references(
+    () => activities.activityId,
+  ),
   creditLimit: numeric('credit_limit').default('0'), // 0 = cash only/no limit policy
   isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false),
 });
@@ -715,6 +763,12 @@ export const supplierGroups = modbmCore.table('supplier_groups', {
   ),
   defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
+  ),
+  defaultCostCenterId: uuid('default_cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  defaultActivityId: uuid('default_activity_id').references(
+    () => activities.activityId,
   ),
   tradingTermsId: uuid('trading_terms_id').references(
     () => tradingTerms.tradingTermsId,
@@ -752,6 +806,12 @@ export const productGroups = modbmCore.table('product_groups', {
   ),
   defaultExpenseAccountId: uuid('default_expense_account_id').references(
     () => glAccounts.glAccountId,
+  ),
+  defaultCostCenterId: uuid('default_cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  defaultActivityId: uuid('default_activity_id').references(
+    () => activities.activityId,
   ),
 });
 
@@ -1102,6 +1162,7 @@ export const salesInvoices = modbmCore.table(
       .notNull()
       .references(() => salesOrders.salesOrderId),
     totalAmount: numeric('total_amount').notNull(),
+    outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('draft'),
@@ -1148,6 +1209,7 @@ export const purchaseInvoices = modbmCore.table(
     supplierInvoiceNumber: text('supplier_invoice_number'),
     receiptFilename: text('receipt_filename'),
     totalAmount: numeric('total_amount').notNull(),
+    outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
     stateCode: text('state_code').notNull().default('draft'),
@@ -1197,6 +1259,71 @@ export const purchaseInvoiceReceipts = modbmCore.table(
     quantityBilled: numeric('quantity_billed').notNull(),
   },
 );
+
+// ---------------------------------------------------------------------------
+// payment_entries  (Cash flow records)
+// ---------------------------------------------------------------------------
+export const paymentEntries = modbmCore.table('payment_entries', {
+  paymentId: uuid('payment_id').primaryKey().defaultRandom(),
+  paymentNumber: text('payment_number').unique().notNull(),
+  paymentType: text('payment_type').notNull(), // 'receive' | 'pay'
+  partyType: text('party_type').notNull(), // 'customer' | 'supplier'
+  partyId: uuid('party_id').notNull(), // Logic enforces reference to customers/suppliers
+  paymentDate: timestamp('payment_date', { withTimezone: true }).notNull(),
+  modeOfPayment: text('mode_of_payment').notNull(), // 'Cash', 'Wire', 'Credit Card'
+  totalAmount: numeric('total_amount').notNull(),
+  unallocatedAmount: numeric('unallocated_amount').notNull(),
+  glAccountBank: uuid('gl_account_bank')
+    .notNull()
+    .references(() => glAccounts.glAccountId),
+  referenceNumber: text('reference_number'),
+  stateCode: text('state_code').notNull().default('draft'),
+  currencyCode: text('currency_code').notNull(),
+  createdBy: text('created_by'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// payment_allocations  (Linking cash to subledgers)
+// ---------------------------------------------------------------------------
+export const paymentAllocations = modbmCore.table('payment_allocations', {
+  allocationId: uuid('allocation_id').primaryKey().defaultRandom(),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => paymentEntries.paymentId),
+  referenceType: text('reference_type').notNull(), // 'sales_invoice' | 'purchase_invoice'
+  referenceId: uuid('reference_id').notNull(),
+  allocatedAmount: numeric('allocated_amount').notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// cost_centers  (Financial dimensions for expense allocation)
+// ---------------------------------------------------------------------------
+export const costCenters = modbmCore.table('cost_centers', {
+  costCenterId: uuid('cost_center_id').primaryKey().defaultRandom(),
+  code: text('code').unique().notNull(), // e.g. "00"
+  name: text('name').notNull(),
+  isSystem: boolean('is_system').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// activities  (Financial dimensions for expense allocation)
+// ---------------------------------------------------------------------------
+export const activities = modbmCore.table('activities', {
+  activityId: uuid('activity_id').primaryKey().defaultRandom(),
+  code: text('code').unique().notNull(), // e.g. "00"
+  name: text('name').notNull(),
+  isSystem: boolean('is_system').notNull().default(false),
+  isActive: boolean('is_active').notNull().default(true),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
 // ===========================================================================
 // GENERAL LEDGER (Native Double-Entry Accounting)
 // ===========================================================================
@@ -1275,6 +1402,10 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
   reconciliationId: uuid('reconciliation_id').references(
     () => glReconciliations.reconciliationId,
   ),
+  costCenterId: uuid('cost_center_id').references(
+    () => costCenters.costCenterId,
+  ),
+  activityId: uuid('activity_id').references(() => activities.activityId),
 });
 
 // ---------------------------------------------------------------------------

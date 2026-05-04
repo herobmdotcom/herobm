@@ -267,7 +267,7 @@ migrate-dry:
 	"$(VENV_PYTHON)" tools/migrate.py --dry-run
 
 seed:
-	"$(VENV_PYTHON)" tools/seed.py
+	npm run seed
 
 init: init-db migrate seed elt
 

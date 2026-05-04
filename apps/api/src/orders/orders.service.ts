@@ -36,6 +36,7 @@ export class OrdersService {
       includeArchived,
       accountId,
       days,
+      states,
     } = parsePagination(query);
 
     const conditions = [];
@@ -68,6 +69,14 @@ export class OrdersService {
       conditions.push(
         sql`${salesOrders.createdOn} >= NOW() - INTERVAL '1 day' * ${days}`,
       );
+    }
+
+    if (states && states.length > 0) {
+      if (states.length === 1) {
+        conditions.push(eq(salesOrders.stateCode, states[0]));
+      } else {
+        conditions.push(inArray(salesOrders.stateCode, states));
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

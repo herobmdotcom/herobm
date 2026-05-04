@@ -1,9 +1,8 @@
 /**
- * E2E Tests — Picking & Shipments API
+ * E2E Tests — Picking & Shipments API (Sub-Ledger Architecture)
  *
- * These tests exercise picking and shipment endpoints against a real
- * Postgres database. They verify the full picking lifecycle, shipment
- * documents, state gates, and RBAC.
+ * Exercises the new picking model where each pick is recorded in the
+ * `sales_order_picks` sub-ledger with explicit bin-level tracking.
  *
  * Run with: npm run test:e2e -- --testPathPatterns picking
  * Requires: Docker stack running with Postgres + populated marts.
@@ -18,12 +17,11 @@ import { sql } from 'drizzle-orm';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
 
-describe('API E2E — Picking & Shipments', () => {
+describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
   let app: INestApplication;
   let adminToken: string;
-  let locationId: string;
   let viewerToken: string;
-
+  let locationId: string;
   let validCustomerId: string;
   let validProductId: string;
   let secondProductId: string;
@@ -41,40 +39,38 @@ describe('API E2E — Picking & Shipments', () => {
     await app.init();
 
     db = app.get(DRIZZLE);
+
+    // Clean up prior E2E data
     await db.execute(sql`
       DO $$ 
-      DECLARE
-          r RECORD;
+      DECLARE r RECORD;
       BEGIN
-          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
-          LOOP
-              DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
-          END LOOP;
+        FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
+        LOOP
+          DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
+          DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
+          DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
+        END LOOP;
       END $$;
     `);
 
-    // Login
+    // Login as admin
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
       .expect(201);
     adminToken = adminLogin.body.access_token;
-    const locRes = await request(app.getHttpServer())
-      .get('/api/inventory/locations')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    locationId = locRes.body.data[0].locationId;
 
+    // Login as viewer
     const viewerLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
       .send({
@@ -83,6 +79,13 @@ describe('API E2E — Picking & Shipments', () => {
       })
       .expect(201);
     viewerToken = viewerLogin.body.access_token;
+
+    // Fetch location
+    const locRes = await request(app.getHttpServer())
+      .get('/api/inventory/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    locationId = locRes.body.data[0].locationId;
 
     // Fetch real IDs from mart data
     const accounts = await request(app.getHttpServer())
@@ -103,11 +106,12 @@ describe('API E2E — Picking & Shipments', () => {
     await app.close();
   });
 
-  /**
-   * Helper: Create a fresh order and advance to picking state.
-   * Returns orderId and line IDs.
-   */
-  async function createPickingOrder(opts?: {
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
+
+  /** Create a fresh order in 'confirmed' state. */
+  async function createConfirmedOrder(opts?: {
     lineQtys?: string[];
   }): Promise<{ orderId: string; lineIds: string[] }> {
     const qty1 = opts?.lineQtys?.[0] ?? '10';
@@ -118,7 +122,6 @@ describe('API E2E — Picking & Shipments', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         fulfillmentLocationId: locationId,
-
         customerId: validCustomerId,
         name: 'E2E Picking Test Order',
         lines: [
@@ -136,55 +139,84 @@ describe('API E2E — Picking & Shipments', () => {
           },
         ],
       })
-      .expect((res: any) => {
-        if (res.status !== 201) {
-          console.error('Order creation failed:', res.body);
-        }
+      .expect((r: any) => {
+        if (r.status !== 201) console.error('Order creation failed:', r.body);
       })
       .expect(201);
 
     const orderId = res.body.salesOrderId;
 
-    // Advance: draft → quoted → confirmed → picking
-    for (const state of ['quoted', 'confirmed', 'picking']) {
+    // Advance: draft → quoted → confirmed
+    for (const state of ['quoted', 'confirmed']) {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: state, generateBackorders: false })
-        .expect((res: any) => {
-          if (res.status !== 200) {
-            console.error(`Status change to ${state} failed:`, res.body);
-          }
+        .expect((r: any) => {
+          if (r.status !== 200)
+            console.error(`State change to ${state} failed:`, r.body);
         })
         .expect(200);
     }
 
-    // Get line IDs
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     const lineIds = detail.body.lines.map((l: any) => l.salesOrderLineId);
-
     return { orderId, lineIds };
   }
 
+  /** Resolve a bin ID for the first available bin at the default location. */
+  async function getFirstBinId(): Promise<string> {
+    const summary = await request(app.getHttpServer())
+      .get('/api/inventory/bins')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    return summary.body.data[0].binId;
+  }
+
+  /** Pick a line via the new POST endpoint. */
+  async function pickLine(
+    orderId: string,
+    lineId: string,
+    binId: string,
+    quantity: string,
+    expectStatus = 201,
+  ) {
+    return request(app.getHttpServer())
+      .post(`/api/sales-orders/${orderId}/picking/lines/${lineId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ binId, quantity })
+      .expect((r: any) => {
+        if (r.status !== expectStatus) {
+          console.error(
+            `pickLine expected ${expectStatus}, got ${r.status}:`,
+            r.body,
+          );
+        }
+      })
+      .expect(expectStatus);
+  }
+
   // =========================================================================
-  // Full picking lifecycle
+  // Full picking lifecycle via sub-ledger
   // =========================================================================
 
   describe('Full picking lifecycle', () => {
     let orderId: string;
     let lineIds: string[];
+    let binId: string;
 
     beforeAll(async () => {
-      const result = await createPickingOrder();
+      const result = await createConfirmedOrder();
       orderId = result.orderId;
       lineIds = result.lineIds;
+      binId = await getFirstBinId();
     });
 
-    it('GET /api/sales-orders/:id/picking — shows unpicked summary', async () => {
+    it('GET /picking — shows unpicked summary on confirmed order', async () => {
       const res = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/picking`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -196,63 +228,54 @@ describe('API E2E — Picking & Shipments', () => {
       expect(res.body.lines[0].remaining).toBe('10');
     });
 
-    it('PATCH picking/lines/:lineId — partial pick', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '7' });
+    it('POST picking/lines/:lineId — partial pick creates sub-ledger record', async () => {
+      const res = await pickLine(orderId, lineIds[0], binId, '7');
 
-      if (res.status === 400) {
-        console.error('DIAGNOSTIC ERROR LOG:', res.body);
-      }
-      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('pickId');
+      expect(res.body.quantity).toBe('7');
 
-      expect(res.body.quantityPicked).toBe('7');
-
-      // Verify summary
+      // Verify summary updated
       const summary = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/picking`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
       expect(summary.body.fullyPickedLines).toBe(0);
-      expect(summary.body.lines[0].remaining).toBe('3');
+      const line1 = summary.body.lines.find(
+        (l: any) => l.salesOrderLineId === lineIds[0],
+      );
+      expect(line1.remaining).toBe('3');
+      expect(line1.quantityPicked).toBe('7');
     });
 
-    it('picking → shipped BLOCKED when lines incomplete', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/state`)
+    it('auto-transitions order from confirmed to picking on first pick', async () => {
+      const detail = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'shipped' })
-        .expect(400);
+        .expect(200);
 
-      expect(res.body.message).toContain('not fully shipped');
+      expect(detail.body.stateCode).toBe('picking');
     });
 
-    it('POST picking/lines/:lineId/pick-all — pick remaining for line 1', async () => {
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+    it('second pick on same line accumulates in sub-ledger', async () => {
+      await pickLine(orderId, lineIds[0], binId, '3');
 
-      // Verify line 1 is fully picked
       const summary = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/picking`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
+      const line1 = summary.body.lines.find(
+        (l: any) => l.salesOrderLineId === lineIds[0],
+      );
+      expect(line1.quantityPicked).toBe('10');
+      expect(line1.remaining).toBe('0');
+      expect(line1.isFullyPicked).toBe(true);
       expect(summary.body.fullyPickedLines).toBe(1);
-      expect(summary.body.lines[0].isFullyPicked).toBe(true);
     });
 
     it('pick line 2 fully', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[1]}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '5' })
-        .expect(200);
+      await pickLine(orderId, lineIds[1], binId, '5');
 
       const summary = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}/picking`)
@@ -260,10 +283,22 @@ describe('API E2E — Picking & Shipments', () => {
         .expect(200);
 
       expect(summary.body.isFullyPicked).toBe(true);
+      expect(summary.body.fullyPickedLines).toBe(2);
     });
 
-    it('verifies ledger stock movement created for picking', async () => {
-      // Direct DB assertion to verify the InventoryLedger entry was created
+    it('picks are recorded in the sales_order_picks sub-ledger', async () => {
+      const picks = await db.execute(sql`
+        SELECT * FROM modbm_core.sales_order_picks 
+        WHERE sales_order_id = ${orderId}
+        ORDER BY created_on
+      `);
+
+      // 3 picks total: 7 + 3 for line 1, 5 for line 2
+      expect(picks.length).toBe(3);
+      expect(picks.every((p: any) => p.state_code === 'picked')).toBe(true);
+    });
+
+    it('inventory ledger entries created for each pick', async () => {
       const entries = await db.execute(sql`
         SELECT * FROM modbm_core.inventory_entries 
         WHERE source_id = ${orderId} AND source_type = 'SO_PICK'
@@ -273,8 +308,17 @@ describe('API E2E — Picking & Shipments', () => {
       expect(entries[0].memo).toContain('Sales Order Pick');
     });
 
-    it('picking → shipped ALLOWED when all lines picked and shipped', async () => {
-      // Create shipments covering all quantities
+    it('shipped BLOCKED when not all lines shipped', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'shipped' })
+        .expect(400);
+
+      expect(res.body.message).toContain('not fully shipped');
+    });
+
+    it('create shipment, dispatch, and complete lifecycle', async () => {
       const shipRes = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -283,23 +327,20 @@ describe('API E2E — Picking & Shipments', () => {
             { salesOrderLineId: lineIds[0], quantityShipped: '10' },
             { salesOrderLineId: lineIds[1], quantityShipped: '5' },
           ],
-        });
+        })
+        .expect(201);
 
-      expect(shipRes.status).toBe(201);
       expect(shipRes.body).toHaveProperty('shipmentId');
 
-      // Dispatch the shipment — this may auto-transition the order to
-      // 'shipped' via evaluateLifecycleRules if all lines are fully shipped.
-      const dispatchRes = await request(app.getHttpServer())
+      // Dispatch — should auto-transition order to shipped
+      await request(app.getHttpServer())
         .patch(
           `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'dispatched' });
+        .send({ stateCode: 'dispatched' })
+        .expect(200);
 
-      expect(dispatchRes.status).toBe(200);
-
-      // Verify the order is now in 'shipped' state (auto-transitioned)
       const detail = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -307,148 +348,124 @@ describe('API E2E — Picking & Shipments', () => {
 
       expect(detail.body.stateCode).toBe('shipped');
     });
-
-    it('shipped → invoiced completes lifecycle', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/state`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'invoiced' })
-        .expect(200);
-    });
   });
 
   // =========================================================================
-  // Pick All Order
+  // Validation guards
   // =========================================================================
 
-  describe('Pick All Order (creates shipment)', () => {
-    let orderId: string;
-    let lineIds: string[];
+  describe('Validation guards', () => {
+    let binId: string;
 
     beforeAll(async () => {
-      const result = await createPickingOrder();
-      orderId = result.orderId;
-      lineIds = result.lineIds;
+      binId = await getFirstBinId();
     });
 
-    it('POST picking/pick-all — picks all lines and creates shipment', async () => {
+    it('rejects pick on draft order', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-
-      expect(res.body).toHaveProperty('shipmentId');
-      expect(res.body).toHaveProperty('shipmentNumber');
-
-      // Verify all lines picked
-      const summary = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}/picking`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      expect(summary.body.isFullyPicked).toBe(true);
-
-      // Verify shipment was created
-      const shipments = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}/shipments`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      expect(shipments.body).toHaveLength(1);
-      expect(shipments.body[0].lines).toHaveLength(2);
-    });
-
-    it('can now transition to shipped', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/state`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'shipped' })
-        .expect(200);
-    });
-  });
-
-  // =========================================================================
-  // Pick All Order — with existing shipments
-  // =========================================================================
-
-  describe('Pick All Order (with prior partial shipment)', () => {
-    let orderId: string;
-    let lineIds: string[];
-
-    beforeAll(async () => {
-      const result = await createPickingOrder();
-      orderId = result.orderId;
-      lineIds = result.lineIds;
-    });
-
-    it('should ship only unshipped quantities when prior shipment exists', async () => {
-      // Pick all lines first
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[1]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-
-      // Create a partial shipment: 3 of line 1 only
-      const firstShip = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments`)
+        .post('/api/sales-orders')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          notes: 'Partial batch',
+          fulfillmentLocationId: locationId,
+          customerId: validCustomerId,
+          name: 'E2E Draft Guard',
           lines: [
             {
-              salesOrderLineId: lineIds[0],
-              quantityShipped: '3',
+              productId: validProductId,
+              quantity: '10',
+              pricePerUnit: '25.00',
             },
           ],
         })
         .expect(201);
 
-      expect(firstShip.body).toHaveProperty('shipmentId');
-
-      // Now pick-all-and-ship — should create shipment with remaining quantities
-      const res = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-
-      expect(res.body).toHaveProperty('shipmentId');
-
-      // Fetch the new shipment and verify quantities
-      const newShipment = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}/shipments/${res.body.shipmentId}`)
+      const orderId = res.body.salesOrderId;
+      const detail = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      // Line 1: ordered 10, already shipped 3 → should ship 7
-      // Line 2: ordered 5, already shipped 0 → should ship 5
-      const shipLines = newShipment.body.lines;
-      expect(shipLines).toHaveLength(2);
+      const lineId = detail.body.lines[0].salesOrderLineId;
 
-      const line1 = shipLines.find(
-        (l: any) => l.salesOrderLineId === lineIds[0],
-      );
-      const line2 = shipLines.find(
-        (l: any) => l.salesOrderLineId === lineIds[1],
-      );
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/picking/lines/${lineId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: '5' })
+        .expect(400);
+    });
 
-      expect(line1).toBeDefined();
-      expect(parseFloat(line1.quantityShipped)).toBe(7);
+    it('rejects quantity exceeding ordered', async () => {
+      const { orderId, lineIds } = await createConfirmedOrder({
+        lineQtys: ['3', '2'],
+      });
 
-      expect(line2).toBeDefined();
-      expect(parseFloat(line2.quantityShipped)).toBe(5);
+      await pickLine(orderId, lineIds[0], binId, '5', 400);
+    });
+
+    it('rejects negative quantity', async () => {
+      const { orderId, lineIds } = await createConfirmedOrder();
+
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: '-1' })
+        .expect(400);
+    });
+
+    it('rejects zero quantity', async () => {
+      const { orderId, lineIds } = await createConfirmedOrder();
+
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: '0' })
+        .expect(400);
+    });
+
+    it('rejects cumulative picks exceeding ordered quantity', async () => {
+      const { orderId, lineIds } = await createConfirmedOrder({
+        lineQtys: ['10', '5'],
+      });
+
+      // First pick: 7 of 10 — OK
+      await pickLine(orderId, lineIds[0], binId, '7');
+
+      // Second pick: 5 more — total would be 12 > 10 — should fail
+      await pickLine(orderId, lineIds[0], binId, '5', 400);
+    });
+
+    it('rejects shipping more than picked', async () => {
+      const { orderId, lineIds } = await createConfirmedOrder({
+        lineQtys: ['10', '5'],
+      });
+
+      // Pick only 3
+      await pickLine(orderId, lineIds[0], binId, '3');
+
+      // Try to ship 5 — should fail
+      const failRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/shipments`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '5' }],
+        })
+        .expect(400);
+
+      expect(failRes.body.message).toContain('only 3 available');
+
+      // Ship 3 — should succeed
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/shipments`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '3' }],
+        })
+        .expect(201);
     });
   });
 
   // =========================================================================
-  // Shipment lifecycle
+  // Shipment document lifecycle
   // =========================================================================
 
   describe('Shipment document lifecycle', () => {
@@ -458,23 +475,14 @@ describe('API E2E — Picking & Shipments', () => {
     let shipmentLineId: string;
 
     beforeAll(async () => {
-      const result = await createPickingOrder();
+      const result = await createConfirmedOrder();
       orderId = result.orderId;
       lineIds = result.lineIds;
+      const binId = await getFirstBinId();
 
-      // Pick lines first — shipments are constrained by picked qty
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[1]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+      // Pick all lines fully
+      await pickLine(orderId, lineIds[0], binId, '10');
+      await pickLine(orderId, lineIds[1], binId, '5');
     });
 
     it('POST /shipments — creates a shipment with lines', async () => {
@@ -483,12 +491,7 @@ describe('API E2E — Picking & Shipments', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           notes: 'First batch delivery',
-          lines: [
-            {
-              salesOrderLineId: lineIds[0],
-              quantityShipped: '5',
-            },
-          ],
+          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '5' }],
         })
         .expect(201);
 
@@ -522,10 +525,7 @@ describe('API E2E — Picking & Shipments', () => {
       const res = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/lines`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          salesOrderLineId: lineIds[1],
-          quantityShipped: '3',
-        })
+        .send({ salesOrderLineId: lineIds[1], quantityShipped: '3' })
         .expect(201);
 
       expect(res.body).toHaveProperty('shipmentLineId');
@@ -584,23 +584,13 @@ describe('API E2E — Picking & Shipments', () => {
     let lineIds: string[];
 
     beforeAll(async () => {
-      const result = await createPickingOrder();
+      const result = await createConfirmedOrder();
       orderId = result.orderId;
       lineIds = result.lineIds;
+      const binId = await getFirstBinId();
 
-      // Pick lines first — shipments are constrained by picked qty
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
-      await request(app.getHttpServer())
-        .post(
-          `/api/sales-orders/${orderId}/picking/lines/${lineIds[1]}/pick-all`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(201);
+      await pickLine(orderId, lineIds[0], binId, '10');
+      await pickLine(orderId, lineIds[1], binId, '5');
     });
 
     it('can cancel a draft shipment', async () => {
@@ -651,117 +641,6 @@ describe('API E2E — Picking & Shipments', () => {
   });
 
   // =========================================================================
-  // State machine guards
-  // =========================================================================
-
-  describe('State machine guards', () => {
-    it('picking endpoints rejected when order not in picking state', async () => {
-      // Create order but leave in draft
-      const res = await request(app.getHttpServer())
-        .post('/api/sales-orders')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          fulfillmentLocationId: locationId,
-
-          customerId: validCustomerId,
-          lines: [
-            {
-              productId: validProductId,
-              quantity: '10',
-              pricePerUnit: '25.00',
-            },
-          ],
-        })
-        .expect(201);
-
-      const orderId = res.body.salesOrderId;
-      const detail = await request(app.getHttpServer())
-        .get(`/api/sales-orders/${orderId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200);
-
-      const lineId = detail.body.lines[0].salesOrderLineId;
-
-      // Try to pick on a draft order
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '5' })
-        .expect(400);
-
-      // Try to create shipment
-      await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          lines: [{ salesOrderLineId: lineId, quantityShipped: '5' }],
-        })
-        .expect(400);
-
-      // Try pick-all order
-      await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(400);
-    });
-
-    it('rejects quantity exceeding ordered', async () => {
-      const { orderId, lineIds } = await createPickingOrder({
-        lineQtys: ['3', '2'],
-      });
-
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '5' })
-        .expect(400);
-    });
-
-    it('rejects negative quantity', async () => {
-      const { orderId, lineIds } = await createPickingOrder();
-
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '-1' })
-        .expect(400);
-    });
-
-    it('rejects shipping more than picked', async () => {
-      const { orderId, lineIds } = await createPickingOrder({
-        lineQtys: ['10', '5'],
-      });
-
-      // Pick only 3 of line 1
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '3' })
-        .expect(200);
-
-      // Try to ship 5 — should fail (only 3 picked)
-      const failRes = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '5' }],
-        })
-        .expect(400);
-
-      expect(failRes.body.message).toContain('only 3 available');
-
-      // Ship 3 — should succeed
-      await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '3' }],
-        })
-        .expect(201);
-    });
-  });
-
-  // =========================================================================
   // RBAC
   // =========================================================================
 
@@ -770,23 +649,17 @@ describe('API E2E — Picking & Shipments', () => {
     let lineIds: string[];
 
     beforeAll(async () => {
-      const result = await createPickingOrder();
+      const result = await createConfirmedOrder();
       orderId = result.orderId;
       lineIds = result.lineIds;
     });
 
     it('viewer cannot pick a line (403)', async () => {
+      const binId = await getFirstBinId();
       await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
+        .post(`/api/sales-orders/${orderId}/picking/lines/${lineIds[0]}`)
         .set('Authorization', `Bearer ${viewerToken}`)
-        .send({ quantityPicked: '5' })
-        .expect(403);
-    });
-
-    it('viewer cannot pick-all (403)', async () => {
-      await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-        .set('Authorization', `Bearer ${viewerToken}`)
+        .send({ binId, quantity: '5' })
         .expect(403);
     });
 

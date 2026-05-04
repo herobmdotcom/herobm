@@ -33,6 +33,7 @@ export default function Sidebar() {
         },
         { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },
         { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },
+        { href: '/inventory/picking', label: t('items.picking', { defaultValue: 'Picking' }), icon: 'inventory' },
       ],
     },
     {
@@ -71,6 +72,7 @@ export default function Sidebar() {
             { href: '/general-ledger/reconciliations', label: 'Bank Reconciliations' },
           ]
         },
+        { href: '/payments', label: 'Payments', icon: 'account_balance_wallet' },
       ],
     });
   }
@@ -108,7 +110,15 @@ export default function Sidebar() {
             { href: '/admin/system-logs', label: t('items.systemLogs') },
           ]
         },
-        { href: '/admin/settings', label: 'Settings', icon: 'settings' },
+        { 
+          href: '/admin/settings/system', 
+          label: t('items.settings'), 
+          icon: 'settings',
+          subItems: [
+            { href: '/admin/settings/system', label: t('items.system') },
+            { href: '/admin/settings/financial', label: t('items.financial') },
+          ]
+        },
         { href: '/admin/users', label: t('items.users'), icon: 'group' },
       ],
     });

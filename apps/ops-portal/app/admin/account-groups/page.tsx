@@ -14,6 +14,8 @@ export default function AccountGroupsAdmin() {
   const tGlobalCommon = useTranslations('common');
   const [groups, setGroups] = useState<any[]>([]);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [costCenters, setCostCenters] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -26,18 +28,28 @@ export default function AccountGroupsAdmin() {
     return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
   };
 
+  const renderDimensionLabel = (id: string | null | undefined, list: any[], codeField: string) => {
+    if (!id) return <span className="text-muted text-xs italic">{tCommon('notConfigured')}</span>;
+    const dim = list.find((d: any) => d.id === id || d.costCenterId === id || d.activityId === id);
+    return dim ? <span className="font-mono text-xs">{dim[codeField]} - {dim.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, accounts] = await Promise.all([
+      const [data, accounts, cc, act] = await Promise.all([
         apiFetch<any[]>('/api/account-groups'),
-        apiFetch<any[]>('/api/gl/accounts')
+        apiFetch<any[]>('/api/gl/accounts'),
+        apiFetch<any[]>('/api/settings/cost-centers'),
+        apiFetch<any[]>('/api/settings/activities')
       ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
       setGlAccounts(accounts || []);
+      setCostCenters(cc || []);
+      setActivities(act || []);
     } catch(err: any) {
       toast.error('Failed to load groups: ' + err.message);
     } finally {
@@ -62,6 +74,8 @@ export default function AccountGroupsAdmin() {
       defaultDiscountPercentage: '0',
       defaultArAccountId: '',
       defaultRevenueAccountId: '',
+      defaultCostCenterId: '',
+      defaultActivityId: '',
     });
   };
 
@@ -125,12 +139,14 @@ export default function AccountGroupsAdmin() {
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 120 }}>{tCommon('code')}</th>
+              <th style={{ width: 100 }}>{tCommon('code')}</th>
               <th>{tCommon('name')}</th>
-              <th style={{ width: 150 }}>{tCommon('defDiscount')}</th>
-              <th style={{ width: 180 }}>{tCommon('defArAccount')}</th>
-              <th style={{ width: 180 }}>{tCommon('defRevAccount')}</th>
-              <th style={{ width: 150, textAlign: 'right' }}>{tCommon('actions')}</th>
+              <th style={{ width: 120 }}>{tCommon('defDiscount')}</th>
+              <th style={{ width: 140 }}>{tCommon('defArAccount')}</th>
+              <th style={{ width: 140 }}>{tCommon('defRevAccount')}</th>
+              <th style={{ width: 140 }}>{tCommon('defCostCenter')}</th>
+              <th style={{ width: 140 }}>{tCommon('defActivity')}</th>
+              <th style={{ width: 120, textAlign: 'right' }}>{tCommon('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -161,6 +177,22 @@ export default function AccountGroupsAdmin() {
                     ))}
                   </select>
                 </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
+                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
+                    {costCenters.map((c: any) => (
+                      <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
+                    <option value="">-- {tGlobalCommon('selectNone')} --</option>
+                    {activities.map((a: any) => (
+                      <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
+                    ))}
+                  </select>
+                </td>
                 <td style={{ textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
                     <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
@@ -172,7 +204,7 @@ export default function AccountGroupsAdmin() {
             
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
                   {t('noGroups')}
                 </td>
               </tr>
@@ -206,6 +238,22 @@ export default function AccountGroupsAdmin() {
                       ))}
                     </select>
                   </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
+                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
+                      {costCenters.map((c: any) => (
+                        <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
+                      <option value="">-- {tGlobalCommon('selectNone')} --</option>
+                      {activities.map((a: any) => (
+                        <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={handleCancel}>{tGlobalCommon('cancel')}</button>
@@ -220,6 +268,8 @@ export default function AccountGroupsAdmin() {
                   <td>{parseFloat(g.defaultDiscountPercentage || '0').toFixed(2)}%</td>
                   <td>{renderGlAccountLabel(g.defaultArAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
+                  <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>
+                  <td>{renderDimensionLabel(g.defaultActivityId, activities, 'code')}</td>
                   <td style={{ textAlign: 'right' }}>
                     <div className="flex justify-end gap-2">
                       <button className="btn btn-secondary btn-xs" onClick={() => handleEdit(g)}>{tGlobalCommon('edit')}</button>

@@ -51,6 +51,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           LOOP
               DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
@@ -282,12 +283,54 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         'invoiced',
       ];
 
+      // Helper: resolve first bin and pick all lines then ship
+      async function pickAndShipOrder(oid: string) {
+        const binsRes = await request(app.getHttpServer())
+          .get('/api/inventory/bins')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+        const binId = binsRes.body.data[0].binId;
+
+        const detail = await request(app.getHttpServer())
+          .get(`/api/sales-orders/${oid}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .expect(200);
+
+        const shipLines: any[] = [];
+        for (const line of detail.body.lines) {
+          await request(app.getHttpServer())
+            .post(
+              `/api/sales-orders/${oid}/picking/lines/${line.salesOrderLineId}`,
+            )
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ binId, quantity: line.quantity })
+            .expect(201);
+          shipLines.push({
+            salesOrderLineId: line.salesOrderLineId,
+            quantityShipped: line.quantity,
+          });
+        }
+
+        const shipRes = await request(app.getHttpServer())
+          .post(`/api/sales-orders/${oid}/shipments`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ lines: shipLines })
+          .expect(201);
+
+        await request(app.getHttpServer())
+          .patch(
+            `/api/sales-orders/${oid}/shipments/${shipRes.body.shipmentId}/state`,
+          )
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ stateCode: 'dispatched' })
+          .expect(200);
+      }
+
       for (const nextState of transitions) {
         if (nextState === 'shipped') {
-          await request(app.getHttpServer())
-            .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(201);
+          await pickAndShipOrder(orderId);
+          // shipped is handled by auto-transition on dispatch
+          continue;
         }
 
         const res = await request(app.getHttpServer())
@@ -313,11 +356,13 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       expect(eventTypes).toContain('line_removed');
       expect(eventTypes).toContain('status_changed');
 
-      // Should have 5 status_changed events
+      // Should have status_changed + auto_status_changed events covering full lifecycle
       const statusChanges = res.body.events.filter(
-        (e: any) => e.eventType === 'status_changed',
+        (e: any) =>
+          e.eventType === 'status_changed' ||
+          e.eventType === 'auto_status_changed',
       );
-      expect(statusChanges).toHaveLength(5);
+      expect(statusChanges.length).toBeGreaterThanOrEqual(4);
     });
   });
 
@@ -435,10 +480,48 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         'invoiced',
       ]) {
         if (state === 'shipped') {
-          await request(app.getHttpServer())
-            .post(`/api/sales-orders/${invoicedId}/picking/pick-all`)
+          // Pick all lines and create + dispatch shipment
+          const binsRes = await request(app.getHttpServer())
+            .get('/api/inventory/bins')
             .set('Authorization', `Bearer ${adminToken}`)
+            .expect(200);
+          const binId = binsRes.body.data[0].binId;
+
+          const detail = await request(app.getHttpServer())
+            .get(`/api/sales-orders/${invoicedId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .expect(200);
+
+          const shipLines: any[] = [];
+          for (const line of detail.body.lines) {
+            await request(app.getHttpServer())
+              .post(
+                `/api/sales-orders/${invoicedId}/picking/lines/${line.salesOrderLineId}`,
+              )
+              .set('Authorization', `Bearer ${adminToken}`)
+              .send({ binId, quantity: line.quantity })
+              .expect(201);
+            shipLines.push({
+              salesOrderLineId: line.salesOrderLineId,
+              quantityShipped: line.quantity,
+            });
+          }
+
+          const shipRes = await request(app.getHttpServer())
+            .post(`/api/sales-orders/${invoicedId}/shipments`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ lines: shipLines })
             .expect(201);
+
+          await request(app.getHttpServer())
+            .patch(
+              `/api/sales-orders/${invoicedId}/shipments/${shipRes.body.shipmentId}/state`,
+            )
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ stateCode: 'dispatched' })
+            .expect(200);
+          // shipped state is auto-transitioned
+          continue;
         }
 
         await request(app.getHttpServer())

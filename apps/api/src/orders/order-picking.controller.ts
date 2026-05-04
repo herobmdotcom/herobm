@@ -6,6 +6,7 @@ import {
   Param,
   Body,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PickingService } from './picking.service';
@@ -23,60 +24,33 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 export class OrderPickingController {
   constructor(private readonly pickingService: PickingService) {}
 
+  @Get('picking-queue')
+  @CasbinAction('read')
+  getPickingQueue(@Query('locationId') locationId?: string) {
+    return this.pickingService.getPickingQueue(locationId);
+  }
+
   @Get(':id/picking')
   @CasbinAction('read')
   getPickingSummary(@Param('id') id: string) {
     return this.pickingService.getPickingSummary(id);
   }
 
-  @Patch(':id/picking/lines/:lineId')
+  @Post(':id/picking/lines/:lineId')
   @CasbinAction('write')
   pickLine(
-    @Param('id') id: string,
+    @Param('id') orderId: string,
     @Param('lineId') lineId: string,
-    @Body('quantityPicked') quantityPicked: string,
+    @Body('binId') binId: string,
+    @Body('quantity') quantity: string,
     @AuthUser() user: JwtUser,
   ) {
     return this.pickingService.pickLine(
-      id,
+      orderId,
       lineId,
-      quantityPicked,
-      user.username,
+      binId,
+      quantity,
+      user.userId,
     );
-  }
-
-  @Patch(':id/picking/lines/:lineId/location')
-  @CasbinAction('write')
-  updateLineLocation(
-    @Param('id') id: string,
-    @Param('lineId') lineId: string,
-    @Body('fulfillmentLocationId') locationId: string,
-    @AuthUser() user: JwtUser,
-  ) {
-    if (!locationId) {
-      throw new Error('Fulfillment location must be provided');
-    }
-    return this.pickingService.updateLineLocation(
-      id,
-      lineId,
-      locationId,
-      user.username,
-    );
-  }
-
-  @Post(':id/picking/lines/:lineId/pick-all')
-  @CasbinAction('write')
-  pickAllForLine(
-    @Param('id') id: string,
-    @Param('lineId') lineId: string,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.pickingService.pickAllForLine(id, lineId, user.username);
-  }
-
-  @Post(':id/picking/pick-all')
-  @CasbinAction('write')
-  pickAllOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
-    return this.pickingService.pickAllOrder(id, user.username);
   }
 }

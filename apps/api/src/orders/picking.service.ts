@@ -15,6 +15,10 @@ import {
   zones,
   binContents,
   locations,
+  salesOrderPicks,
+  backorders,
+  inventoryLevels,
+  accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -26,6 +30,8 @@ import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
+import { evaluateLifecycleRules } from './order-lifecycle-rules';
+import { filterPickableBins, calculatePickableOnHand } from '../inventory/inventory-math.utils';
 
 @Injectable()
 export class PickingService {
@@ -36,380 +42,6 @@ export class PickingService {
   ) {}
 
   private readonly logger = new Logger(PickingService.name);
-
-  // -------------------------------------------------------------------------
-  // Picking operations
-  // -------------------------------------------------------------------------
-
-  private async allocatePickDelta(
-    tx: DrizzleDB,
-    orderId: string,
-    lineNumber: number,
-    productId: string,
-    delta: number,
-    actor: string,
-  ) {
-    if (delta === 0) return;
-
-    const shippingBinCache = new Map<string, string>();
-    const getShippingBin = async (locId: string) => {
-      if (shippingBinCache.has(locId)) return shippingBinCache.get(locId)!;
-      const [bin] = await tx
-        .select({ binId: bins.binId })
-        .from(bins)
-        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-        .where(and(eq(bins.binNumber, 'SHIPPING'), eq(zones.locationId, locId)))
-        .limit(1);
-      if (!bin)
-        throw new BadRequestException(
-          `No SHIPPING staging bin found for location ${locId}.`,
-        );
-      shippingBinCache.set(locId, bin.binId);
-      return bin.binId;
-    };
-
-    const availableBins =
-      delta > 0
-        ? await tx
-            .select({
-              binId: binContents.binId,
-              actualQuantity: binContents.actualQuantity,
-              locationId: zones.locationId,
-            })
-            .from(binContents)
-            .innerJoin(bins, eq(binContents.binId, bins.binId))
-            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-            .where(
-              and(
-                eq(binContents.productId, productId),
-                sql`${binContents.actualQuantity} > 0`,
-                sql`${bins.binType} IS DISTINCT FROM 'staging'`,
-              ),
-            )
-            .orderBy(desc(binContents.actualQuantity))
-        : [];
-
-    const [fallbackBin] = await tx
-      .select({ binId: bins.binId, locationId: zones.locationId })
-      .from(bins)
-      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-      .where(sql`${bins.binType} IS DISTINCT FROM 'staging'`)
-      .limit(1);
-
-    const mappedAvailableBins = availableBins.map((b) => ({
-      ...b,
-      actualQuantity: parseFloat(b.actualQuantity),
-    }));
-
-    const allocations = calculatePickAllocations(
-      delta,
-      mappedAvailableBins,
-      fallbackBin || null,
-    );
-
-    const ledgerLines = [];
-    for (const alloc of allocations) {
-      const shippingBinId = await getShippingBin(alloc.locationId);
-
-      ledgerLines.push({
-        productId,
-        binId: alloc.sourceBinId,
-        quantity: -alloc.takeQuantity,
-      });
-      ledgerLines.push({
-        productId,
-        binId: shippingBinId,
-        quantity: alloc.takeQuantity,
-      });
-    }
-
-    await this.inventoryService.recordInventoryMovement(tx, {
-      entryNumber: `PCK-${orderId.substring(0, 8)}-${lineNumber}-${Date.now().toString().slice(-4)}`,
-      sourceType: 'SO_PICK',
-      sourceId: orderId,
-      memo: `Sales Order Pick ${delta > 0 ? 'Allocation' : 'Reversion'}`,
-      userId: actor,
-      lines: ledgerLines,
-    });
-  }
-
-  /**
-   * Set the picked quantity for a single order line.
-   */
-  async pickLine(
-    orderId: string,
-    lineId: string,
-    quantityPicked: string,
-    actor: string,
-  ) {
-    const order = await findOrder(this.db, orderId);
-    if (order.stateCode !== 'picking') {
-      throw new BadRequestException(
-        `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'picking'.`,
-      );
-    }
-
-    const line = await findOrderLine(this.db, lineId, orderId);
-    const qty = parseFloat(quantityPicked);
-    const ordered = parseFloat(line.quantity);
-
-    if (isNaN(qty) || qty < 0) {
-      throw new BadRequestException('Picked quantity must be >= 0');
-    }
-    if (qty > ordered) {
-      throw new BadRequestException(
-        `Cannot pick ${qty} — only ${ordered} ordered on this line`,
-      );
-    }
-
-    // Ensure picked qty doesn't drop below what's already been shipped
-    const committedMap = await getCommittedPerLine(this.db, orderId);
-    const committed = committedMap.get(lineId) || 0;
-    if (qty < committed) {
-      throw new BadRequestException(
-        `Cannot reduce picked to ${qty} — ${committed} already committed to shipments on this line`,
-      );
-    }
-
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const delta = qty - parseFloat(line.quantityPicked ?? '0');
-      if (delta !== 0) {
-        await this.allocatePickDelta(
-          tx,
-          orderId,
-          line.lineNumber,
-          line.productId!,
-          delta,
-          actor,
-        );
-      }
-
-      const [updated] = await tx
-        .update(salesOrderLineItems)
-        .set({ quantityPicked })
-        .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
-        .returning();
-
-      await tx
-        .update(salesOrders)
-        .set({ modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, orderId));
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
-        eventType: 'picking_line_updated',
-        payload: {
-          lineId,
-          quantityPicked,
-          previousQuantityPicked: line.quantityPicked,
-        },
-        actor,
-      });
-
-      return updated;
-    });
-
-    return result;
-  }
-
-  /**
-   * Pick all for a single line: set quantity_picked = quantity.
-   */
-  async pickAllForLine(orderId: string, lineId: string, actor: string) {
-    const order = await findOrder(this.db, orderId);
-    if (order.stateCode !== 'picking') {
-      throw new BadRequestException(
-        `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'picking'.`,
-      );
-    }
-
-    const line = await findOrderLine(this.db, lineId, orderId);
-
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const delta =
-        parseFloat(line.quantity) - parseFloat(line.quantityPicked ?? '0');
-      if (delta !== 0) {
-        await this.allocatePickDelta(
-          tx,
-          orderId,
-          line.lineNumber,
-          line.productId!,
-          delta,
-          actor,
-        );
-      }
-
-      const [updated] = await tx
-        .update(salesOrderLineItems)
-        .set({ quantityPicked: line.quantity })
-        .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
-        .returning();
-
-      await tx
-        .update(salesOrders)
-        .set({ modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, orderId));
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
-        eventType: 'picking_line_picked_all',
-        payload: {
-          lineId,
-          quantityPicked: line.quantity,
-          previousQuantityPicked: line.quantityPicked,
-        },
-        actor,
-      });
-
-      return updated;
-    });
-
-    return result;
-  }
-
-  /**
-   * Update the fulfillment location for a single line during picking.
-   */
-  async updateLineLocation(
-    orderId: string,
-    lineId: string,
-    locationId: string,
-    actor: string,
-  ) {
-    const order = await findOrder(this.db, orderId);
-    if (!['picking', 'draft', 'quoted'].includes(order.stateCode)) {
-      throw new BadRequestException(
-        `Cannot change line location on order in state '${order.stateCode}'.`,
-      );
-    }
-
-    const line = await findOrderLine(this.db, lineId, orderId);
-    if (parseFloat(line.quantityPicked || '0') > 0) {
-      throw new BadRequestException(
-        `Cannot change fulfillment location. You must unpick the line (set picked quantity to 0) first.`,
-      );
-    }
-
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(salesOrderLineItems)
-        .set({ fulfillmentLocationId: locationId })
-        .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
-        .returning();
-
-      await tx
-        .update(salesOrders)
-        .set({ modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, orderId));
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
-        eventType: 'line_updated',
-        payload: {
-          lineId,
-          changes: { fulfillmentLocationId: locationId },
-          previousValues: { fulfillmentLocationId: line.fulfillmentLocationId },
-        },
-        actor,
-      });
-
-      return updated;
-    });
-
-    return result;
-  }
-
-  /**
-   * Pick all for the entire order: set all quantity_picked = quantity
-   * AND create a shipment with the UNSHIPPED quantities.
-   */
-  async pickAllOrder(orderId: string, actor: string) {
-    const order = await findOrder(this.db, orderId);
-    if (order.stateCode !== 'picking') {
-      throw new BadRequestException(
-        `Cannot pick on order in state '${order.stateCode}'. Order must be in 'picking'.`,
-      );
-    }
-
-    const lines = await this.db
-      .select()
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.salesOrderId, orderId))
-      .orderBy(salesOrderLineItems.lineNumber);
-
-    if (lines.length === 0) {
-      throw new BadRequestException('Order has no lines to pick');
-    }
-
-    // First, set all lines as fully picked
-    await this.db.transaction(async (tx: DrizzleDB) => {
-      for (const line of lines) {
-        const delta =
-          parseFloat(line.quantity) - parseFloat(line.quantityPicked ?? '0');
-        if (delta !== 0) {
-          await this.allocatePickDelta(
-            tx,
-            orderId,
-            line.lineNumber,
-            line.productId!,
-            delta,
-            actor,
-          );
-        }
-
-        await tx
-          .update(salesOrderLineItems)
-          .set({ quantityPicked: line.quantity })
-          .where(
-            eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId),
-          );
-      }
-
-      await tx
-        .update(salesOrders)
-        .set({ modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, orderId));
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: orderId,
-        eventType: 'picking_order_picked_all',
-        payload: {
-          lineCount: lines.length,
-        },
-        actor,
-      });
-    });
-
-    // Now create the shipment with unshipped quantities, using the ShipmentService
-    // (which will re-read the picked state and compute availability correctly)
-    const committedMap = await getCommittedPerLine(this.db, orderId);
-    const shipmentLines = lines
-      .map((line) => {
-        const alreadyCommitted = committedMap.get(line.salesOrderLineId) ?? 0;
-        const toShip = parseFloat(line.quantity) - alreadyCommitted;
-        if (toShip <= 0) return null;
-        return {
-          salesOrderLineId: line.salesOrderLineId,
-          quantityShipped: String(toShip),
-        };
-      })
-      .filter((v): v is NonNullable<typeof v> => v !== null);
-
-    if (shipmentLines.length > 0) {
-      return this.shipmentService.createShipment(
-        orderId,
-        { lines: shipmentLines },
-        actor,
-      );
-    }
-
-    // Everything was already shipped — return a marker
-    return { message: 'All lines already shipped; no new shipment created.' };
-  }
 
   // -------------------------------------------------------------------------
   // Summary
@@ -428,7 +60,6 @@ export class PickingService {
         productId: salesOrderLineItems.productId,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
-        quantityPicked: salesOrderLineItems.quantityPicked,
         productNumber: coreProducts.productNumber,
         productType: coreProducts.productType,
         locationName: locations.name,
@@ -451,30 +82,65 @@ export class PickingService {
     const productIds = Array.from(
       new Set(lines.map((l) => l.productId).filter(Boolean) as string[]),
     );
-    const onHandData =
+    const binStock =
       productIds.length > 0
         ? await this.db
             .select({
               productId: binContents.productId,
               locationId: zones.locationId,
-              onHand: sql<string>`CAST(SUM(${binContents.actualQuantity}) AS VARCHAR)`,
+              zoneCode: zones.code,
+              binId: bins.binId,
+              binNumber: bins.binNumber,
+              binType: bins.binType,
+              isUnavailable: bins.isUnavailable,
+              onHand: binContents.actualQuantity,
             })
             .from(binContents)
             .innerJoin(bins, eq(binContents.binId, bins.binId))
             .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
             .where(inArray(binContents.productId, productIds))
-            .groupBy(binContents.productId, zones.locationId)
         : [];
+
+    const picks = await this.db
+      .select()
+      .from(salesOrderPicks)
+      .where(eq(salesOrderPicks.salesOrderId, orderId));
+
+    const pickedMap = new Map<string, number>();
+    for (const pick of picks) {
+      if (pick.stateCode !== 'cancelled') {
+        const current = pickedMap.get(pick.salesOrderLineId) || 0;
+        pickedMap.set(
+          pick.salesOrderLineId,
+          current + parseFloat(pick.quantity),
+        );
+      }
+    }
 
     const summary = lines.map((line) => {
       const ordered = parseFloat(line.quantity);
       const isPhysical = !line.productType || line.productType === 'inventory';
       const picked = isPhysical
-        ? parseFloat(line.quantityPicked ?? '0')
+        ? (pickedMap.get(line.salesOrderLineId) ?? 0)
         : ordered;
       const committed = isPhysical
         ? (committedMap.get(line.salesOrderLineId) ?? 0)
         : ordered;
+        
+      const productLocationBins = binStock.filter(
+        (s) =>
+          s.productId === line.productId &&
+          s.locationId === line.fulfillmentLocationId
+      );
+
+      const availableBins = filterPickableBins(productLocationBins as any[])
+        .sort((a, b) => parseFloat(String(b.onHand || 0)) - parseFloat(String(a.onHand || 0)))
+        .map((b: any) => ({
+          binId: b.binId,
+          binName: `${b.zoneCode}.${b.binNumber}`,
+          onHand: String(b.onHand || 0),
+        }));
+
       return {
         salesOrderLineId: line.salesOrderLineId,
         lineNumber: line.lineNumber,
@@ -484,19 +150,13 @@ export class PickingService {
         productDescription: line.productDescription,
         locationName: line.locationName || 'System Default',
         quantity: line.quantity,
-        quantityPicked: isPhysical
-          ? (line.quantityPicked ?? '0')
-          : String(ordered),
+        quantityPicked: isPhysical ? String(picked) : String(ordered),
         quantityShipped: String(committed),
         remaining: String(ordered - picked),
         isFullyPicked: picked >= ordered,
         isPhysical,
-        onHand:
-          onHandData.find(
-            (o) =>
-              o.productId === line.productId &&
-              o.locationId === line.fulfillmentLocationId,
-          )?.onHand || '0',
+        onHand: String(calculatePickableOnHand(productLocationBins as any[])),
+        availableBins,
       };
     });
 
@@ -508,7 +168,141 @@ export class PickingService {
       fullyPickedLines,
       isFullyPicked: totalLines > 0 && fullyPickedLines === totalLines,
       lines: summary,
+      picks, // Include raw picks for UI
     };
+  }
+
+  // -------------------------------------------------------------------------
+  // Pick Line
+  // -------------------------------------------------------------------------
+
+  async pickLine(
+    orderId: string,
+    lineId: string,
+    binId: string,
+    quantity: string,
+    actor: string,
+  ) {
+    const order = await findOrder(this.db, orderId);
+    if (order.stateCode !== 'picking' && order.stateCode !== 'confirmed') {
+      throw new BadRequestException(
+        `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'confirmed' or 'picking'.`,
+      );
+    }
+
+    const line = await findOrderLine(this.db, lineId, orderId);
+    const qty = parseFloat(quantity);
+    const ordered = parseFloat(line.quantity);
+
+    if (isNaN(qty) || qty <= 0) {
+      throw new BadRequestException('Picked quantity must be > 0');
+    }
+
+    // Get current picked amount
+    const [currentPickSum] = await this.db
+      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)` })
+      .from(salesOrderPicks)
+      .where(
+        and(
+          eq(salesOrderPicks.salesOrderLineId, lineId),
+          sql`state_code != 'cancelled'`,
+        ),
+      );
+
+    const currentlyPicked = parseFloat(String(currentPickSum?.sum ?? 0));
+
+    if (currentlyPicked + qty > ordered) {
+      throw new BadRequestException(
+        `Cannot pick ${qty} — only ${ordered - currentlyPicked} remaining on this line`,
+      );
+    }
+
+    // Resolve SHIPPING bin for physical stock movement
+    const [shippingBin] = await this.db
+      .select({ binId: bins.binId })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(bins.binNumber, 'SHIPPING'),
+          eq(zones.locationId, line.fulfillmentLocationId),
+        ),
+      )
+      .limit(1);
+
+    if (!shippingBin) {
+      throw new BadRequestException(
+        `No SHIPPING staging bin found for location ${line.fulfillmentLocationId}.`,
+      );
+    }
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // 1. Record physical inventory movement
+      await this.inventoryService.recordInventoryMovement(tx, {
+        entryNumber: `PCK-${orderId.substring(0, 8)}-${line.lineNumber}-${Date.now()
+          .toString()
+          .slice(-4)}`,
+        sourceType: 'SO_PICK',
+        sourceId: orderId,
+        memo: `Sales Order Pick`,
+        userId: actor,
+        lines: [
+          {
+            productId: line.productId!,
+            binId: binId,
+            quantity: -qty,
+          },
+          {
+            productId: line.productId!,
+            binId: shippingBin.binId,
+            quantity: qty,
+          },
+        ],
+      });
+
+      // 2. Insert into sales_order_picks
+      const [newPick] = await tx
+        .insert(salesOrderPicks)
+        .values({
+          salesOrderId: orderId,
+          salesOrderLineId: lineId,
+          productId: line.productId!,
+          binId: binId,
+          quantity: quantity,
+          createdBy: actor,
+        })
+        .returning();
+
+      // 3. Update order modifiedOn
+      await tx
+        .update(salesOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, orderId));
+
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: orderId,
+        eventType: 'picking_line_picked',
+        payload: {
+          lineId,
+          pickId: newPick.pickId,
+          quantityPicked: quantity,
+          binId,
+        },
+        actor,
+      });
+
+      await evaluateLifecycleRules(
+        tx,
+        orderId,
+        { entity: 'picking', id: lineId, action: 'line_picked' },
+        actor,
+      );
+
+      return newPick;
+    });
+
+    return result;
   }
 
   // -------------------------------------------------------------------------
@@ -534,7 +328,7 @@ export class PickingService {
           `line ${l.lineNumber}: picked ${l.quantityPicked ?? '0'} of ${l.quantity}`,
       );
       throw new BadRequestException(
-        `Cannot transition to 'shipped' — ${unpicked.length} line(s) not fully picked: ${details.join('; ')}`,
+        `Cannot transition to 'shipped' - ${unpicked.length} line(s) not fully picked: ${details.join('; ')}`,
       );
     }
   }
@@ -558,8 +352,137 @@ export class PickingService {
           `line ${l.lineNumber}: shipped ${l.quantityShipped ?? '0'} of ${l.quantity}`,
       );
       throw new BadRequestException(
-        `Cannot transition to 'shipped' — ${unshipped.length} line(s) not fully shipped: ${details.join('; ')}`,
+        `Cannot transition to 'shipped' - ${unshipped.length} line(s) not fully shipped: ${details.join('; ')}`,
       );
     }
+  }
+
+  // -------------------------------------------------------------------------
+  // Picking Queue
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns a queue of orders pending picking, enriched with pickability status.
+   * Pickability uses a hybrid heuristic relying on actual backorder state and physical stock.
+   */
+  async getPickingQueue(locationId?: string) {
+    const rawLines = await this.db
+      .select({
+        id: salesOrders.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        name: salesOrders.name,
+        customerName: coreAccounts.name,
+        customerOrderNumber: salesOrders.customerOrderNumber,
+        stateCode: salesOrders.stateCode,
+        createdOn: salesOrders.createdOn,
+        createdBy: salesOrders.createdBy,
+        currencyCode: salesOrders.currencyCode,
+        lineId: salesOrderLineItems.salesOrderLineId,
+        lineQuantity: salesOrderLineItems.quantity,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
+        onHand: sql<number>`COALESCE((
+          SELECT sum(bc.actual_quantity)
+          FROM modbm_core.bin_contents bc
+          JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+          JOIN modbm_core.zones z ON z.zone_id = b.zone_id
+          WHERE bc.product_id = ${salesOrderLineItems.productId}
+            AND z.location_id = ${salesOrderLineItems.fulfillmentLocationId}
+            AND b.bin_type IN ('storage', 'pick', 'bulk')
+            AND b.is_unavailable = false
+            AND b.is_bonded = false
+        ), 0)`,
+        backorderQty: sql<number>`COALESCE(SUM(CASE WHEN ${backorders.stateCode} != 'received_reserved' THEN ${backorders.quantity} ELSE 0 END), 0)`,
+      })
+      .from(salesOrders)
+      .innerJoin(
+        salesOrderLineItems,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .leftJoin(
+        backorders,
+        eq(salesOrderLineItems.salesOrderLineId, backorders.salesOrderLineId),
+      )
+      .where(
+        and(
+          inArray(salesOrders.stateCode, ['confirmed', 'picking']),
+          locationId
+            ? eq(salesOrders.fulfillmentLocationId, locationId)
+            : undefined,
+        ),
+      )
+      .groupBy(
+        salesOrders.salesOrderId,
+        salesOrderLineItems.salesOrderLineId,
+        coreProducts.productType,
+        coreAccounts.name,
+      )
+      .orderBy(salesOrders.createdOn);
+
+    const orderMap = new Map<string, any>();
+
+    for (const row of rawLines) {
+      if (!orderMap.has(row.id)) {
+        orderMap.set(row.id, {
+          id: row.id,
+          orderNumber: row.orderNumber,
+          name: row.name,
+          customerName: row.customerName,
+          customerOrderNumber: row.customerOrderNumber,
+          stateCode: row.stateCode,
+          createdOn: row.createdOn,
+          createdBy: row.createdBy,
+          totalPrice: null,
+          currencyCode: row.currencyCode,
+          _linesTotal: 0,
+          _linesFullyPickable: 0,
+          _linesBlocked: 0,
+        });
+      }
+
+      const order = orderMap.get(row.id);
+      if (row.isPhysical) {
+        order._linesTotal += 1;
+        const required = parseFloat(row.lineQuantity ?? '0');
+        const backordered = parseFloat(row.backorderQty?.toString() ?? '0');
+        const onHand = parseFloat(row.onHand?.toString() ?? '0');
+
+        const expectedPickable = required - backordered;
+        const truePickable = Math.min(expectedPickable, onHand);
+
+        if (truePickable >= required) {
+          order._linesFullyPickable += 1;
+        } else if (truePickable <= 0) {
+          order._linesBlocked += 1;
+        }
+      }
+    }
+
+    const queue = Array.from(orderMap.values()).map((order) => {
+      let pickabilityStatus = 'partial';
+      if (order._linesTotal === 0 || order._linesFullyPickable === order._linesTotal) {
+        pickabilityStatus = 'ready';
+      } else if (order._linesBlocked === order._linesTotal) {
+        pickabilityStatus = 'blocked';
+      }
+
+      delete order._linesTotal;
+      delete order._linesFullyPickable;
+      delete order._linesBlocked;
+
+      return {
+        ...order,
+        pickabilityStatus,
+      };
+    });
+
+    return queue;
   }
 }

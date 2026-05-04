@@ -68,14 +68,17 @@ Any attempt to modify a posted journal line (even by an admin executing a raw SQ
 
 Other modules (like Invoices) interact with the GL by injecting the `GlService`.
 
-### Non-Fatal Posting Strategy
-When a subledger (e.g., Sales Invoice) attempts to post to the GL:
+### Atomic Transactional Posting (Strict Boundaries)
+When a subledger (e.g., Sales Invoice, Goods Receipt) attempts to post to the GL:
 1. It looks up the necessary system accounts (e.g., Accounts Receivable, Revenue). 
 2. It tags specific lines with `partyType: 'customer' | 'supplier'` and `partyId` (the supplier or customer UUID) for subledger reporting.
 3. It constructs the balanced journal lines array.
-4. It calls `glService.postJournalEntry()`.
+4. It calls `glService.postJournalEntry(lines, meta, tx)`.
 
-Crucially, this call is wrapped in a `try/catch` block within the subledger. If the GL rejects the entry (e.g., due to a missing account), the error is caught, logged, and the invoice is still permitted to save its primary state. This prevents obscure GL configuration issues from paralyzing business operations.
+**Crucially, all GL interactions MUST be completely atomic with their parent business operations.** 
+To ensure this, `postJournalEntry` must be passed the ambient transaction object (`tx`) from the caller's `.transaction()` block. If the GL rejects the entry (e.g., due to an unbalanced journal or missing account configuration), an exception is thrown, and the entire transaction—including the invoice or inventory movement—is rolled back.
+
+The system favors hard failure (consistency) over partial success (resilience with ledger gaps). The platform will not permit a business state to advance if the financial ledger cannot accurately record it.
 
 ### Outbox Integration
 The system maintains the Outbox pattern. When an invoice succeeds, it emits an integration event. The event type has been updated from `invoice_created` to the more generic `gl_posted` to indicate that a financial transaction has occurred and is ready for downstream synchronization if required.

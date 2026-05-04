@@ -25,6 +25,7 @@ import { SetupModule } from './setup/setup.module';
 import { GoodsReceivedModule } from './goods-received/goods-received.module';
 import { MacrosModule } from './macros/macros.module';
 import { UsersModule } from './users/users.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { UsersModule } from './users/users.module';
     InventoryModule,
     OrdersModule,
     InvoicesModule,
+    PaymentsModule,
     DashboardModule,
     TaxModule,
     TelemetryModule,

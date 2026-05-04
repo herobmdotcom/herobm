@@ -18,6 +18,16 @@ export class JournalLineDto {
   @IsString()
   accountId?: string;
 
+  /** Financial dimension: Cost Center */
+  @IsOptional()
+  @IsString()
+  costCenterId?: string;
+
+  /** Financial dimension: Activity */
+  @IsOptional()
+  @IsString()
+  activityId?: string;
+
   @IsOptional()
   @IsEnum(['customer', 'supplier'])
   partyType?: 'customer' | 'supplier' | null;

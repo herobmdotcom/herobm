@@ -23,8 +23,8 @@ export default function GlobalInvoicesPage() {
     const [days, setDays] = useState('90');
 
     const handleRowClicked = useCallback((row: any) => {
-        if (row.salesOrderId) {
-            router.push(`/sales-orders/${row.salesOrderId}?source=app#invoices-section`);
+        if (row.invoiceId) {
+            router.push(`/sales-invoices/${row.invoiceId}`);
         }
     }, [router]);
 

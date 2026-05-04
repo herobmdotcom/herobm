@@ -13,6 +13,7 @@ export const AggregateType = {
   ACCOUNT: 'account',
   SUPPLIER: 'supplier',
   PRODUCT_SUPPLIER: 'product_supplier',
+  PAYMENT: 'payment',
   SYSTEM: 'system',
 } as const;
 
@@ -73,6 +74,11 @@ export const EventType = {
   // ── System domain ───────────────────────────────────────────────────
   GL_POSTED: 'gl_posted',
   STOCK_ADJUSTED: 'stock_adjusted',
+
+  // ── Payment domain ──────────────────────────────────────────────────
+  PAYMENT_SUBMITTED: 'payment_submitted',
+  PAYMENT_ALLOCATED: 'payment_allocated',
+  PAYMENT_CANCELLED: 'payment_cancelled',
 } as const;
 
 export type EventTypeValue = (typeof EventType)[keyof typeof EventType];
@@ -89,4 +95,7 @@ export const OUTBOX_EVENT_TYPES: ReadonlySet<string> = new Set([
   EventType.GL_POSTED,
   EventType.STOCK_ADJUSTED,
   EventType.CREDIT_NOTE_POSTED,
+  EventType.PAYMENT_SUBMITTED,
+  EventType.PAYMENT_ALLOCATED,
+  EventType.PAYMENT_CANCELLED,
 ]);

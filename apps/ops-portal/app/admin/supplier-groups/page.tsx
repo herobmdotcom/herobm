@@ -16,6 +16,8 @@ export default function SupplierGroupsAdmin() {
   
   const [groups, setGroups] = useState<any[]>([]);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [costCenters, setCostCenters] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -28,18 +30,28 @@ export default function SupplierGroupsAdmin() {
     return acct ? <span className="font-mono text-xs">{acct.accountCode} - {acct.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
   };
 
+  const renderDimensionLabel = (id: string | null | undefined, list: any[], codeField: string) => {
+    if (!id) return <span className="text-muted text-xs italic">{tc('notConfigured')}</span>;
+    const dim = list.find((d: any) => d.id === id || d.costCenterId === id || d.activityId === id);
+    return dim ? <span className="font-mono text-xs">{dim[codeField]} - {dim.name}</span> : <span className="text-muted text-xs font-mono">{id}</span>;
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, accounts] = await Promise.all([
+      const [data, accounts, cc, act] = await Promise.all([
         apiFetch<any[]>('/api/supplier-groups'),
-        apiFetch<any[]>('/api/gl/accounts')
+        apiFetch<any[]>('/api/gl/accounts'),
+        apiFetch<any[]>('/api/settings/cost-centers'),
+        apiFetch<any[]>('/api/settings/activities')
       ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
       setGlAccounts(accounts || []);
+      setCostCenters(cc || []);
+      setActivities(act || []);
     } catch(err: any) {
       toast.error(t('toasts.loadFailed') + ': ' + err.message);
       reportError(err, 'SupplierGroupsAdmin_loadData');
@@ -64,6 +76,8 @@ export default function SupplierGroupsAdmin() {
       name: '',
       defaultApAccountId: '',
       defaultExpenseAccountId: '',
+      defaultCostCenterId: '',
+      defaultActivityId: '',
       isPurchasingBlocked: false,
       isPaymentBlocked: false,
     });
@@ -131,13 +145,15 @@ export default function SupplierGroupsAdmin() {
         <table className="table-lines w-full">
           <thead>
             <tr>
-              <th style={{ width: 120 }}>{tc('code')}</th>
+              <th style={{ width: 100 }}>{tc('code')}</th>
               <th>{tc('name')}</th>
-              <th style={{ width: 180 }}>{tc('defApAccount')}</th>
-              <th style={{ width: 180 }}>{tc('defExpenseAccount')}</th>
-              <th style={{ width: 120, textAlign: 'center' }}>{t('purchasing')}</th>
-              <th style={{ width: 120, textAlign: 'center' }}>{t('payment')}</th>
-              <th style={{ width: 150, textAlign: 'right' }}>{tc('actions')}</th>
+              <th style={{ width: 140 }}>{tc('defApAccount')}</th>
+              <th style={{ width: 140 }}>{tc('defExpenseAccount')}</th>
+              <th style={{ width: 140 }}>{tc('defCostCenter')}</th>
+              <th style={{ width: 140 }}>{tc('defActivity')}</th>
+              <th style={{ width: 80, textAlign: 'center' }}>{t('purchasing')}</th>
+              <th style={{ width: 80, textAlign: 'center' }}>{t('payment')}</th>
+              <th style={{ width: 120, textAlign: 'right' }}>{tc('actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -165,6 +181,22 @@ export default function SupplierGroupsAdmin() {
                     ))}
                   </select>
                 </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
+                    <option value="">{t_gen('selectNone')}</option>
+                    {costCenters.map((c: any) => (
+                      <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
+                    <option value="">{t_gen('selectNone')}</option>
+                    {activities.map((a: any) => (
+                      <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
+                    ))}
+                  </select>
+                </td>
                 <td style={{ textAlign: 'center' }}>
                   <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                     <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
@@ -188,7 +220,7 @@ export default function SupplierGroupsAdmin() {
             
             {!loading && groups.length === 0 && !isCreating && (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
                   {t('noGroups')}
                 </td>
               </tr>
@@ -219,6 +251,22 @@ export default function SupplierGroupsAdmin() {
                       ))}
                     </select>
                   </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultCostCenterId || ''} onChange={e => setEditForm({...editForm, defaultCostCenterId: e.target.value || null})}>
+                      <option value="">{t_gen('selectNone')}</option>
+                      {costCenters.map((c: any) => (
+                        <option key={c.costCenterId} value={c.costCenterId}>{c.code} - {c.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select className="input font-mono text-xs" value={editForm.defaultActivityId || ''} onChange={e => setEditForm({...editForm, defaultActivityId: e.target.value || null})}>
+                      <option value="">{t_gen('selectNone')}</option>
+                      {activities.map((a: any) => (
+                        <option key={a.activityId} value={a.activityId}>{a.code} - {a.name}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td style={{ textAlign: 'center' }}>
                     <label className="switch" title={editForm.isPurchasingBlocked ? t('currentlyBlocked') : t('currentlyActive')}>
                       <input type="checkbox" checked={!editForm.isPurchasingBlocked} onChange={e => setEditForm({...editForm, isPurchasingBlocked: !e.target.checked})} />
@@ -244,6 +292,8 @@ export default function SupplierGroupsAdmin() {
                   <td className="font-medium">{g.name}</td>
                   <td>{renderGlAccountLabel(g.defaultApAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
+                  <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>
+                  <td>{renderDimensionLabel(g.defaultActivityId, activities, 'code')}</td>
                   <td style={{ textAlign: 'center' }}>
                     <span style={{ color: g.isPurchasingBlocked ? 'var(--danger, #ef4444)' : 'var(--success, #22c55e)', fontWeight: 'bold', fontSize: '0.75rem' }}>
                       {g.isPurchasingBlocked ? t('blocked') : t('active')}

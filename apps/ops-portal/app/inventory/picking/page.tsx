@@ -1,0 +1,535 @@
+'use client';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
+
+import { apiFetch, apiMutate } from '@/lib/api';
+import { useSettings } from '@/components/SettingsProvider';
+
+interface UnifiedOrder {
+    id: string;
+    orderNumber: string;
+    name: string;
+    customerName: string;
+    customerOrderNumber: string;
+    stateCode: string;
+    createdBy: string;
+    createdOn: string | null;
+    totalPrice: string | null;
+    currencyCode: string | null;
+    pickabilityStatus: 'ready' | 'partial' | 'blocked';
+}
+
+interface PickAllocation {
+    pickId: string;
+    salesOrderId: string;
+    salesOrderLineId: string;
+    productId: string;
+    binId: string;
+    quantity: string;
+    stateCode: string;
+}
+
+interface PickingLine {
+    salesOrderLineId: string;
+    lineNumber: number;
+    productId: string;
+    productNumber: string;
+    productType: string;
+    productDescription: string;
+    locationName: string;
+    availableBins: { binId: string; binName: string; onHand: string }[];
+    quantity: string;
+    quantityPicked: string;
+    quantityShipped: string;
+    remaining: string;
+    isFullyPicked: boolean;
+    isPhysical: boolean;
+    onHand: string;
+}
+
+interface PickingSummary {
+    totalLines: number;
+    fullyPickedLines: number;
+    isFullyPicked: boolean;
+    lines: PickingLine[];
+    picks: PickAllocation[];
+}
+
+export default function PickingPage() {
+    const t = useTranslations('inventory');
+    useDocumentTitle('Picking');
+    const { app } = useSettings();
+
+    const [locations, setLocations] = useState<any[]>([]);
+    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+    const [pendingOrders, setPendingOrders] = useState<UnifiedOrder[]>([]);
+    const [selectedOrder, setSelectedOrder] = useState<UnifiedOrder | null>(null);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [activeTab, setActiveTab] = useState<'ready' | 'partial' | 'blocked'>('ready');
+    
+    // Picking Context
+    const [pickingSummary, setPickingSummary] = useState<PickingSummary | null>(null);
+    const [loadingSummary, setLoadingSummary] = useState(false);
+    
+    // Action State
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [pickInputs, setPickInputs] = useState<Record<string, { quantity: string, binId: string }>>({});
+
+    // Fetch Locations
+    useEffect(() => {
+        apiFetch<any>('/api/inventory/locations')
+            .then(response => {
+                const locs = response.data || [];
+                setLocations(locs);
+                if (locs.length > 0) {
+                    const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
+                    setSelectedLocationId(defaultLocId);
+                }
+            })
+            .catch(err => console.error('Failed to load locations', err));
+    }, [app?.defaultFulfillmentLocationId]);
+
+    // Fetch Pending Orders
+    const loadOrders = useCallback(() => {
+        setLoadingOrders(true);
+        const endpoint = selectedLocationId
+            ? `/api/sales-orders/picking-queue?locationId=${selectedLocationId}`
+            : '/api/sales-orders/picking-queue';
+            
+        apiFetch<UnifiedOrder[]>(endpoint)
+            .then(data => {
+                setPendingOrders(data || []);
+            })
+            .catch(err => console.error('Failed to load pending orders', err))
+            .finally(() => setLoadingOrders(false));
+    }, [selectedLocationId]);
+
+    useEffect(() => {
+        loadOrders();
+    }, [loadOrders]);
+
+    const filteredOrders = useMemo(() => {
+        return pendingOrders.filter(o => o.pickabilityStatus === activeTab);
+    }, [pendingOrders, activeTab]);
+
+    // Fetch Summary for Selected Order
+    const loadSummary = useCallback(() => {
+        if (!selectedOrder) {
+            setPickingSummary(null);
+            return;
+        }
+
+        setLoadingSummary(true);
+        setError(null);
+        apiFetch<PickingSummary>(`/api/sales-orders/${selectedOrder.id}/picking`)
+            .then((data) => {
+                setPickingSummary(data);
+                
+                // Initialize default quantities (what's remaining and fits in a bin)
+                const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
+                data.lines.forEach(line => {
+                    if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
+                        const bestBin = line.availableBins[0];
+                        if (bestBin) {
+                            const remaining = parseFloat(line.remaining);
+                            const onHand = parseFloat(bestBin.onHand);
+                            const take = Math.min(remaining, onHand);
+                            if (take > 0) {
+                                defaultInputs[line.salesOrderLineId] = {
+                                    quantity: String(take),
+                                    binId: bestBin.binId
+                                };
+                            }
+                        }
+                    }
+                });
+                setPickInputs(defaultInputs);
+            })
+            .catch(err => setError(err.message))
+            .finally(() => setLoadingSummary(false));
+    }, [selectedOrder]);
+
+    useEffect(() => {
+        loadSummary();
+    }, [loadSummary]);
+
+    const handlePickLine = async (lineId: string) => {
+        if (!selectedOrder) return;
+        
+        const input = pickInputs[lineId];
+        if (!input || !input.quantity || !input.binId) return;
+
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            await apiMutate(`/api/sales-orders/${selectedOrder.id}/picking/lines/${lineId}`, 'POST', {
+                quantity: input.quantity,
+                binId: input.binId
+            });
+            await loadSummary();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const { itemsToPick, unavailableItems, pickedItems, shippedItems } = useMemo(() => {
+        if (!pickingSummary) return { itemsToPick: [], unavailableItems: [], pickedItems: [], shippedItems: [] };
+        
+        const toPick = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) > 0 && l.isPhysical);
+        const unavailable = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) <= 0 && l.isPhysical);
+        
+        const picked = pickingSummary.picks.filter(p => p.stateCode === 'picked').map(p => {
+            const line = pickingSummary.lines.find(l => l.salesOrderLineId === p.salesOrderLineId);
+            return { ...p, line };
+        });
+        
+        const shipped = pickingSummary.picks.filter(p => p.stateCode === 'shipped').map(p => {
+            const line = pickingSummary.lines.find(l => l.salesOrderLineId === p.salesOrderLineId);
+            return { ...p, line };
+        });
+
+        return { itemsToPick: toPick, unavailableItems: unavailable, pickedItems: picked, shippedItems: shipped };
+    }, [pickingSummary]);
+
+    return (
+        <div className="h-full flex flex-col p-4 lg:p-6 bg-[var(--bg-primary)]">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+                <div className="flex items-center gap-4">
+                    <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        Picking
+                    </h1>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-[var(--text-muted)]">Location:</span>
+                    <select
+                        value={selectedLocationId}
+                        onChange={e => setSelectedLocationId(e.target.value)}
+                        className="px-3 py-1.5 border border-[var(--border)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] text-sm font-medium"
+                    >
+                        {locations.map(loc => (
+                            <option key={loc.locationId} value={loc.locationId}>
+                                {loc.code} - {loc.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+
+            <div className="flex-1 min-h-0 flex gap-6">
+                {/* Left Pane: Order List */}
+                <div className="w-1/3 lg:w-1/4 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
+                    <div className="flex border-b border-[var(--border)] bg-[var(--bg-secondary)] text-xs font-bold pt-1 px-1 gap-1">
+                        <button 
+                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => setActiveTab('ready')}
+                        >
+                            Ready <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'ready').length})</span>
+                        </button>
+                        <button 
+                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => setActiveTab('partial')}
+                        >
+                            Partial <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'partial').length})</span>
+                        </button>
+                        <button 
+                            className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'blocked' ? 'border-[var(--danger)] text-[var(--danger)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
+                            onClick={() => setActiveTab('blocked')}
+                        >
+                            Blocked <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'blocked').length})</span>
+                        </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-2">
+                        {loadingOrders ? (
+                            <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                                Loading...
+                            </div>
+                        ) : filteredOrders.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
+                                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
+                                No {activeTab} orders pending.
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                {filteredOrders.map(order => (
+                                    <div 
+                                        key={order.id}
+                                        onClick={() => setSelectedOrder(order)}
+                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedOrder?.id === order.id ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                                    >
+                                        <div className="flex justify-between items-start mb-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${order.pickabilityStatus === 'ready' ? 'bg-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'bg-[var(--warning)]' : 'bg-[var(--danger)]'}`} />
+                                                <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
+                                            </div>
+                                            <StateBadge state={order.stateCode as ValidState} />
+                                        </div>
+                                        <div className="text-xs font-bold text-[var(--text-secondary)] mb-1 pl-4.5">{order.customerName}</div>
+                                        <div className="text-xs text-[var(--text-muted)] truncate pl-4.5">{order.name || order.customerOrderNumber}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Right Pane: Action Form */}
+                <div className="flex-1 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
+                    {!selectedOrder ? (
+                        <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
+                            <span className="material-symbols-outlined text-4xl mb-2 opacity-50">pallet</span>
+                            Select an order from the list to pick items.
+                        </div>
+                    ) : loadingSummary ? (
+                        <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
+                            Loading order context...
+                        </div>
+                    ) : pickingSummary ? (
+                        <>
+                            {/* Card Header with Order Info */}
+                            <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">
+                                <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
+                                    <span className="font-bold shrink-0">{selectedOrder.orderNumber}</span>
+                                    <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
+                                    <span className="truncate">{selectedOrder.name || 'No Name'}</span>
+                                    <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
+                                    <span className="truncate">{selectedOrder.customerName}</span>
+                                </h2>
+                                <div className="flex items-center shrink-0">
+                                    <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6">
+                                <div className="flex flex-col h-full w-full">
+                                    {error && (
+                                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
+                                            <span className="material-symbols-outlined text-sm">error</span>
+                                            {error}
+                                        </div>
+                                    )}
+
+                                <div className="space-y-8">
+                                    {/* To Pick Table */}
+                                    <div>
+                                        <h4 className="section-heading !mb-4">To Pick</h4>
+                                        <table className="table-lines">
+                                            <thead>
+                                                <tr>
+                                                    <th>Product</th>
+                                                    <th>Bin Location</th>
+                                                    <th style={{ textAlign: 'right' }}>Remaining</th>
+                                                    <th style={{ textAlign: 'right' }}>On Hand</th>
+                                                    <th style={{ textAlign: 'right' }}>Pick Qty</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {itemsToPick.map(line => (
+                                                    <tr key={line.salesOrderLineId}>
+                                                        <td>
+                                                            <div className="font-bold">{line.productNumber}</div>
+                                                            <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
+                                                        </td>
+                                                        <td>
+                                                            <select
+                                                                className="input text-sm py-1 px-2 w-48"
+                                                                value={pickInputs[line.salesOrderLineId]?.binId || ''}
+                                                                onChange={e => setPickInputs(prev => ({
+                                                                    ...prev,
+                                                                    [line.salesOrderLineId]: {
+                                                                        ...prev[line.salesOrderLineId],
+                                                                        binId: e.target.value
+                                                                    }
+                                                                }))}
+                                                            >
+                                                                <option value="" disabled>Select Bin...</option>
+                                                                {line.availableBins.map(b => (
+                                                                    <option key={b.binId} value={b.binId}>{b.binName} (qty: {parseFloat(b.onHand)})</option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div>{parseFloat(line.remaining).toLocaleString()}</div>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div>
+                                                                {parseFloat(line.onHand).toLocaleString()}
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div className="flex justify-end">
+                                                                <input
+                                                                    type="number"
+                                                                    min="0.01"
+                                                                    step="0.01"
+                                                                    max={Math.min(parseFloat(line.remaining), parseFloat(line.onHand))}
+                                                                    value={pickInputs[line.salesOrderLineId]?.quantity || ''}
+                                                                    onChange={(e) => setPickInputs(prev => ({
+                                                                        ...prev,
+                                                                        [line.salesOrderLineId]: {
+                                                                            ...prev[line.salesOrderLineId],
+                                                                            quantity: e.target.value
+                                                                        }
+                                                                    }))}
+                                                                    className="input"
+                                                                    style={{ width: '80px', textAlign: 'right', padding: '2px 6px', fontSize: '13px' }}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePickLine(line.salesOrderLineId)}
+                                                                disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
+                                                                className="btn btn-secondary btn-sm"
+                                                            >
+                                                                Pick
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {itemsToPick.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
+                                                            No items available to pick.
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Unavailable Table */}
+                                    {unavailableItems.length > 0 && (
+                                        <div>
+                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">Unavailable</h4>
+                                            <table className="table-lines opacity-70">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Product</th>
+                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
+                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
+                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {unavailableItems.map(line => (
+                                                        <tr key={line.salesOrderLineId}>
+                                                            <td>
+                                                                <div className="font-bold">{line.productNumber}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div>{parseFloat(line.quantity).toLocaleString()}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div className="text-[var(--danger)]">
+                                                                    {parseFloat(line.onHand).toLocaleString()}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div className="text-[var(--text-muted)] text-sm">{parseFloat(line.remaining).toLocaleString()}</div>
+                                                            </td>
+                                                            <td>
+                                                                <span className="text-xs italic text-[var(--text-muted)]">Out of Stock</span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    {/* Picked Table */}
+                                    {pickedItems.length > 0 && (
+                                        <div>
+                                            <h4 className="section-heading !mb-4">Picked</h4>
+                                            <table className="table-lines">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Product</th>
+                                                        <th style={{ textAlign: 'right' }}>Picked Qty</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {pickedItems.map(pick => (
+                                                        <tr key={pick.pickId}>
+                                                            <td>
+                                                                <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div className="font-semibold text-[var(--success)]">{parseFloat(pick.quantity).toLocaleString()}</div>
+                                                            </td>
+                                                            <td>
+                                                                <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
+                                                                    <span className="material-symbols-outlined text-[14px] mr-1">inventory</span>
+                                                                    Staged
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                    {/* Shipped Table */}
+                                    {shippedItems.length > 0 && (
+                                        <div>
+                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">Shipped</h4>
+                                            <table className="table-lines opacity-70">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Product</th>
+                                                        <th style={{ textAlign: 'right' }}>Shipped Qty</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {shippedItems.map(pick => (
+                                                        <tr key={pick.pickId}>
+                                                            <td>
+                                                                <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
+                                                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div className="font-semibold">{parseFloat(pick.quantity).toLocaleString()}</div>
+                                                            </td>
+                                                            <td>
+                                                                <span className="ml-2 text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
+                                                                    <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
+                                                                    Dispatched
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : null}
+                </div>
+            </div>
+        </div>
+    );
+}

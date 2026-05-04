@@ -11,6 +11,7 @@ import {
   goodsReceived,
   goodsReceivedLines,
   suppliers,
+  supplierGroups,
   locations,
   products,
   purchaseOrders,
@@ -54,10 +55,19 @@ export class GoodsReceivedService {
    */
   async create(createDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
-      // 1. Validate vendor
+      // 1. Validate vendor and fetch group dimensions
       const [vendor] = await tx
-        .select({ vendorId: suppliers.vendorId, name: suppliers.name })
+        .select({
+          vendorId: suppliers.vendorId,
+          name: suppliers.name,
+          costCenterId: supplierGroups.defaultCostCenterId,
+          activityId: supplierGroups.defaultActivityId,
+        })
         .from(suppliers)
+        .leftJoin(
+          supplierGroups,
+          eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+        )
         .where(eq(suppliers.vendorId, createDto.vendorId))
         .limit(1);
 
@@ -310,16 +320,22 @@ export class GoodsReceivedService {
           memo: `Goods Receipt ${receipt.receiptNumber}`,
           partyType: 'supplier',
           partyId: vendor.vendorId,
+          costCenterId: vendor.costCenterId || undefined,
+          activityId: vendor.activityId || undefined,
         });
 
         if (glResult) {
-          await this.glService.postJournalEntry(glResult.lines as any, {
-            actor: userId,
-            entryDate: new Date().toISOString().slice(0, 10),
-            sourceType: glResult.sourceType,
-            sourceId: receipt.goodsReceivedId,
-            memo: `Goods Receipt ${receipt.receiptNumber} (${vendor.name})`,
-          });
+          await this.glService.postJournalEntry(
+            glResult.lines as any,
+            {
+              actor: userId,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: glResult.sourceType,
+              sourceId: receipt.goodsReceivedId,
+              memo: `Goods Receipt ${receipt.receiptNumber} (${vendor.name})`,
+            },
+            tx,
+          );
         }
 
         // --- 6. PO Update: Update matched PO lines ---

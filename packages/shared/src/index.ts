@@ -5,6 +5,7 @@ export {
   PURCHASE_INVOICE_TRANSITIONS,
   SHIPMENT_TRANSITIONS,
   RETURN_TRANSITIONS,
+  SALES_ORDER_PICK_TRANSITIONS,
 
   // Union types
   SalesOrderState,
@@ -12,6 +13,7 @@ export {
   PurchaseInvoiceState,
   ShipmentState,
   ReturnState,
+  SalesOrderPickState,
 
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
@@ -20,6 +22,7 @@ export {
   PURCHASE_INVOICE_LIFECYCLE,
   SHIPMENT_LIFECYCLE,
   RETURN_LIFECYCLE,
+  SALES_ORDER_PICK_LIFECYCLE,
 
   // Helpers
   getAllowedTransitions,

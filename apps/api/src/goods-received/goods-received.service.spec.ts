@@ -1,104 +1,44 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { GoodsReceivedService } from './goods-received.service';
-import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
+import { setupTestModule } from '../../test/utils/test-module';
+import { MockDrizzle } from '../../test/utils/mock-drizzle';
+import { DRIZZLE } from '../drizzle/drizzle.module';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),
 }));
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function createMockQueryBuilder(resolvedValue: any = []) {
-  const qb: any = {
-    values: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    innerJoin: jest.fn().mockReturnThis(),
-    leftJoin: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    groupBy: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue(resolvedValue),
-    then: jest.fn().mockImplementation((cb: any) => cb(resolvedValue)),
-  };
-  return qb;
-}
-
-/**
- * Build a mock transaction where `tx.select()` returns results from a queue.
- * Each call to `tx.select()` pops the next entry from `selectResults`.
- */
-function buildMockTx(selectResults: any[][]) {
-  const resultQueue = [...selectResults];
-
-  const tx: any = {
-    select: jest.fn().mockImplementation(() => {
-      const result = resultQueue.shift() || [];
-      const qb = createMockQueryBuilder(result);
-      qb.from = jest.fn().mockReturnValue(qb);
-      qb.where = jest.fn().mockReturnValue(qb);
-      qb.limit = jest.fn().mockReturnValue(qb);
-      qb.innerJoin = jest.fn().mockReturnValue(qb);
-      qb.leftJoin = jest.fn().mockReturnValue(qb);
-      return qb;
-    }),
-    insert: jest.fn().mockReturnValue(createMockQueryBuilder([{}])),
-    update: jest.fn().mockReturnValue(createMockQueryBuilder([{}])),
-  };
-
-  return tx;
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 describe('GoodsReceivedService', () => {
   let service: GoodsReceivedService;
-  let mockDb: any;
-  let mockTx: any;
+  let mockDb: MockDrizzle;
   let mockInventoryService: any;
 
   beforeEach(async () => {
-    mockTx = buildMockTx([]);
-
-    mockDb = {
-      transaction: jest.fn().mockImplementation(async (cb) => cb(mockTx)),
-      select: jest.fn(),
-      $count: jest.fn().mockReturnValue(0),
-    };
+    mockDb = new MockDrizzle();
+    (mockDb as any).$count = jest.fn().mockReturnValue(0);
 
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GoodsReceivedService,
-        { provide: DRIZZLE, useValue: mockDb },
-        { provide: InventoryService, useValue: mockInventoryService },
-      ],
-    }).compile();
+    const module = await setupTestModule([
+      GoodsReceivedService,
+      { provide: DRIZZLE, useValue: mockDb },
+      { provide: InventoryService, useValue: mockInventoryService },
+    ]).compile();
 
     service = module.get<GoodsReceivedService>(GoodsReceivedService);
   });
 
-  // =======================================================================
-  // create()
-  // =======================================================================
+  afterEach(() => {
+    mockDb.clearMocks();
+    jest.clearAllMocks();
+  });
 
   describe('create', () => {
     it('should throw NotFoundException when supplier does not exist', async () => {
-      mockTx = buildMockTx([
-        [], // 1. vendor lookup → empty = not found
-      ]);
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      mockDb.onTable('suppliers', []);
 
       await expect(
         service.create(
@@ -113,11 +53,8 @@ describe('GoodsReceivedService', () => {
     });
 
     it('should throw NotFoundException when location does not exist', async () => {
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor found
-        [], // 2. location → not found
-      ]);
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', []);
 
       await expect(
         service.create(
@@ -132,19 +69,9 @@ describe('GoodsReceivedService', () => {
     });
 
     it('should throw BadRequestException when product does not exist', async () => {
-      // Prepare the insert mock to return a goods received header
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
-      ]);
-
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor
-        [{ locationId: 'loc-1' }], // 2. location
-        // product lookup is the next select after insert — handled below
-        [], // 3. product → not found
-      ]);
-      mockTx.insert = jest.fn().mockReturnValue(headerInsertQb);
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', []);
 
       await expect(
         service.create(
@@ -159,59 +86,33 @@ describe('GoodsReceivedService', () => {
     });
 
     it('should set match_status to "matched" when exactly one open PO line exists', async () => {
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-1',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
       ]);
-      const linesInsertQb = createMockQueryBuilder([{}]);
-
-      // The service calls findOne at the end, which also uses tx.select().
-      // We provide mock results for that too.
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }], // 1. vendor
-        [{ locationId: 'loc-1' }], // 2. location
-        [{ productId: 'p-1' }], // 3. product validation
-        [
-          // 4. open PO lines → exactly 1
-          {
-            purchaseOrderLineId: 'pol-1',
-            purchaseOrderId: 'po-1',
-            quantity: '20',
-            quantityReceived: '0',
-          },
-        ],
-        [{ zoneId: 'z1' }], // 5. Find zone
-        [{ binId: 'b1' }], // 6. Find bin
-        [{ quantity: '20', quantityReceived: '5' }], // 7. Recompute PO state
-        // findOne selects:
-        [
-          {
-            receipt: { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
-            vendorName: 'ACME',
-            vendorNumber: 'V001',
-          },
-        ],
-        [], // findOne lines
+      mockDb.onTable('purchase_order_lines', [
+        {
+          purchaseOrderLineId: 'pol-1',
+          purchaseOrderId: 'po-1',
+          quantity: '20',
+          quantityReceived: '0',
+        },
       ]);
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' } },
+      ]);
+      mockDb.onTable('goods_received_lines', []);
 
-      // Track what insert().values() receives
-      const capturedLineValues: any[] = [];
-      const lineInsertMock = {
-        values: jest.fn().mockImplementation((vals: any) => {
-          capturedLineValues.push(vals);
-          return linesInsertQb;
-        }),
-        returning: jest.fn().mockResolvedValue([{}]),
-      };
-
-      let insertCallCount = 0;
-      mockTx.insert = jest.fn().mockImplementation(() => {
-        insertCallCount++;
-        if (insertCallCount === 1) return headerInsertQb; // goods_received header
-        if (insertCallCount === 2) return lineInsertMock; // goods_received_lines
-        return createMockQueryBuilder([{}]); // event emit
-      });
-
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      // Spy on the insert method
+      const insertSpy = jest.spyOn(mockDb, 'insert');
 
       await service.create(
         {
@@ -222,70 +123,50 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      expect(capturedLineValues.length).toBe(1);
-      const lineArr = capturedLineValues[0];
-      expect(Array.isArray(lineArr)).toBe(true);
-      expect(lineArr[0].matchStatus).toBe('matched');
-      expect(lineArr[0].purchaseOrderLineId).toBe('pol-1');
-      expect(lineArr[0].purchaseOrderId).toBe('po-1');
+      // The second call to insert is for lines (1st is header, 2nd is lines)
+      const linesInsertQb = insertSpy.mock.results[1].value;
+      // Extract the values passed to `values()`
+      const capturedLines = linesInsertQb.values.mock.calls[0][0];
+
+      expect(capturedLines.length).toBe(1);
+      expect(capturedLines[0].matchStatus).toBe('matched');
+      expect(capturedLines[0].purchaseOrderLineId).toBe('pol-1');
+      expect(capturedLines[0].purchaseOrderId).toBe('po-1');
     });
 
     it('should set match_status to "ambiguous" when multiple open PO lines exist', async () => {
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-1',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
       ]);
-      const linesInsertQb = createMockQueryBuilder([{}]);
-
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],
-        [{ locationId: 'loc-1' }],
-        [{ productId: 'p-1' }],
-        [
-          // multiple open PO lines
-          {
-            purchaseOrderLineId: 'pol-1',
-            purchaseOrderId: 'po-1',
-            quantity: '20',
-            quantityReceived: '0',
-          },
-          {
-            purchaseOrderLineId: 'pol-2',
-            purchaseOrderId: 'po-2',
-            quantity: '10',
-            quantityReceived: '0',
-          },
-        ],
-        [{ zoneId: 'z1' }], // 5. Find zone
-        [{ binId: 'b1' }], // 6. Find bin
-        // (No PO update for ambiguous matches)
-        [
-          {
-            receipt: { goodsReceivedId: 'gr-1' },
-            vendorName: 'ACME',
-            vendorNumber: 'V001',
-          },
-        ],
-        [],
+      mockDb.onTable('purchase_order_lines', [
+        {
+          purchaseOrderLineId: 'pol-1',
+          purchaseOrderId: 'po-1',
+          quantity: '20',
+          quantityReceived: '0',
+        },
+        {
+          purchaseOrderLineId: 'pol-2',
+          purchaseOrderId: 'po-2',
+          quantity: '10',
+          quantityReceived: '0',
+        },
       ]);
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1' } },
+      ]);
+      mockDb.onTable('goods_received_lines', []);
 
-      const capturedLineValues: any[] = [];
-      const lineInsertMock = {
-        values: jest.fn().mockImplementation((vals: any) => {
-          capturedLineValues.push(vals);
-          return linesInsertQb;
-        }),
-        returning: jest.fn().mockResolvedValue([{}]),
-      };
-
-      let insertCallCount = 0;
-      mockTx.insert = jest.fn().mockImplementation(() => {
-        insertCallCount++;
-        if (insertCallCount === 1) return headerInsertQb;
-        if (insertCallCount === 2) return lineInsertMock;
-        return createMockQueryBuilder([{}]);
-      });
-
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      const insertSpy = jest.spyOn(mockDb, 'insert');
 
       await service.create(
         {
@@ -296,52 +177,34 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      expect(capturedLineValues[0][0].matchStatus).toBe('ambiguous');
-      expect(capturedLineValues[0][0].purchaseOrderLineId).toBeNull();
-      expect(capturedLineValues[0][0].purchaseOrderId).toBeNull();
+      const capturedLines =
+        insertSpy.mock.results[1].value.values.mock.calls[0][0];
+
+      expect(capturedLines[0].matchStatus).toBe('ambiguous');
+      expect(capturedLines[0].purchaseOrderLineId).toBeNull();
+      expect(capturedLines[0].purchaseOrderId).toBeNull();
     });
 
     it('should set match_status to "unmatched" when no open PO lines exist', async () => {
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-ABCD1234' },
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-1',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
       ]);
-      const linesInsertQb = createMockQueryBuilder([{}]);
-
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],
-        [{ locationId: 'loc-1' }],
-        [{ productId: 'p-1' }],
-        [], // no open PO lines
-        [{ zoneId: 'z1' }], // 5. Find zone
-        [{ binId: 'b1' }], // 6. Find bin
-        [
-          {
-            receipt: { goodsReceivedId: 'gr-1' },
-            vendorName: 'ACME',
-            vendorNumber: 'V001',
-          },
-        ],
-        [],
+      mockDb.onTable('purchase_order_lines', []);
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1' } },
       ]);
+      mockDb.onTable('goods_received_lines', []);
 
-      const capturedLineValues: any[] = [];
-      const lineInsertMock = {
-        values: jest.fn().mockImplementation((vals: any) => {
-          capturedLineValues.push(vals);
-          return linesInsertQb;
-        }),
-        returning: jest.fn().mockResolvedValue([{}]),
-      };
-
-      let insertCallCount = 0;
-      mockTx.insert = jest.fn().mockImplementation(() => {
-        insertCallCount++;
-        if (insertCallCount === 1) return headerInsertQb;
-        if (insertCallCount === 2) return lineInsertMock;
-        return createMockQueryBuilder([{}]);
-      });
-
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      const insertSpy = jest.spyOn(mockDb, 'insert');
 
       await service.create(
         {
@@ -352,65 +215,57 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      expect(capturedLineValues[0][0].matchStatus).toBe('unmatched');
-      expect(capturedLineValues[0][0].purchaseOrderLineId).toBeNull();
-      expect(capturedLineValues[0][0].purchaseOrderId).toBeNull();
+      const capturedLines =
+        insertSpy.mock.results[1].value.values.mock.calls[0][0];
+
+      expect(capturedLines[0].matchStatus).toBe('unmatched');
+      expect(capturedLines[0].purchaseOrderLineId).toBeNull();
+      expect(capturedLines[0].purchaseOrderId).toBeNull();
     });
 
     it('should handle multiple lines with different match outcomes', async () => {
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-MULTI' },
-      ]);
-      const linesInsertQb = createMockQueryBuilder([{}]);
-
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],
-        [{ locationId: 'loc-1' }],
-        // Line 1: product A
-        [{ productId: 'p-A' }],
-        [
-          {
-            purchaseOrderLineId: 'pol-A',
-            purchaseOrderId: 'po-A',
-            quantity: '10',
-            quantityReceived: '0',
-          },
-        ], // matched
-        // Line 2: product B
-        [{ productId: 'p-B' }],
-        [], // unmatched
-        [{ zoneId: 'z1' }], // 7. Find zone
-        [{ binId: 'b1' }], // 8. Find bin
-        [{ quantity: '10', quantityReceived: '3' }], // 9. Recompute PO state (for po-A)
-        // findOne
-        [
-          {
-            receipt: { goodsReceivedId: 'gr-1' },
-            vendorName: 'ACME',
-            vendorNumber: 'V001',
-          },
-        ],
-        [],
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-A',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
+        {
+          productId: 'p-B',
+          standardCost: '20',
+          weightedAverageCost: '20',
+          qoh: 50,
+        },
       ]);
 
-      const capturedLineValues: any[] = [];
-      const lineInsertMock = {
-        values: jest.fn().mockImplementation((vals: any) => {
-          capturedLineValues.push(vals);
-          return linesInsertQb;
-        }),
-        returning: jest.fn().mockResolvedValue([{}]),
-      };
-
-      let insertCallCount = 0;
-      mockTx.insert = jest.fn().mockImplementation(() => {
-        insertCallCount++;
-        if (insertCallCount === 1) return headerInsertQb;
-        if (insertCallCount === 2) return lineInsertMock;
-        return createMockQueryBuilder([{}]);
+      // Dynamic mock for purchase_order_lines since the service loops
+      let calls = 0;
+      mockDb.onTable('purchase_order_lines', () => {
+        calls++;
+        if (calls === 1)
+          return [
+            {
+              purchaseOrderLineId: 'pol-A',
+              purchaseOrderId: 'po-A',
+              quantity: '10',
+              quantityReceived: '0',
+            },
+          ]; // match for A
+        if (calls === 2) return []; // unmatch for B
+        return [{ quantity: '10', quantityReceived: '3' }]; // recompute PO
       });
 
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1' } },
+      ]);
+      mockDb.onTable('goods_received_lines', []);
+
+      const insertSpy = jest.spyOn(mockDb, 'insert');
 
       await service.create(
         {
@@ -424,57 +279,49 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const lines = capturedLineValues[0];
-      expect(lines).toHaveLength(2);
-      expect(lines[0].matchStatus).toBe('matched');
-      expect(lines[1].matchStatus).toBe('unmatched');
+      const capturedLines =
+        insertSpy.mock.results[1].value.values.mock.calls[0][0];
+
+      expect(capturedLines).toHaveLength(2);
+      expect(capturedLines[0].matchStatus).toBe('matched');
+      expect(capturedLines[1].matchStatus).toBe('unmatched');
     });
 
-    it('should not update inventory, QOH, or PO state', async () => {
-      const headerInsertQb = createMockQueryBuilder([
-        { goodsReceivedId: 'gr-1', receiptNumber: 'GR-NOINV' },
+    it('should update PO state when fully received', async () => {
+      mockDb.onTable('suppliers', [{ vendorId: 'v1', name: 'ACME' }]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-1',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
       ]);
 
-      mockTx = buildMockTx([
-        [{ vendorId: 'v1', name: 'ACME' }],
-        [{ locationId: 'loc-1' }],
-        [{ productId: 'p-1' }],
-        [
-          {
-            purchaseOrderLineId: 'pol-1',
-            purchaseOrderId: 'po-1',
-            quantity: '10',
-            quantityReceived: '0',
-          },
-        ],
-        [{ zoneId: 'z1' }], // 5. Find zone
-        [{ binId: 'b1' }], // 6. Find bin
-        [{ quantity: '10', quantityReceived: '10' }], // 7. Recompute PO state
-        [
-          {
-            receipt: { goodsReceivedId: 'gr-1' },
-            vendorName: 'ACME',
-            vendorNumber: 'V001',
-          },
-        ],
-        [],
-      ]);
-
-      const linesInsertQb = createMockQueryBuilder([{}]);
-      let insertCallCount = 0;
-      mockTx.insert = jest.fn().mockImplementation(() => {
-        insertCallCount++;
-        if (insertCallCount === 1) return headerInsertQb;
-        if (insertCallCount === 2) {
-          return {
-            values: jest.fn().mockReturnValue(linesInsertQb),
-            returning: jest.fn().mockResolvedValue([{}]),
-          };
-        }
-        return createMockQueryBuilder([{}]);
+      let calls = 0;
+      mockDb.onTable('purchase_order_lines', () => {
+        calls++;
+        if (calls === 1)
+          return [
+            {
+              purchaseOrderLineId: 'pol-1',
+              purchaseOrderId: 'po-1',
+              quantity: '10',
+              quantityReceived: '0',
+            },
+          ];
+        return [{ quantity: '10', quantityReceived: '10' }]; // recompute state = fully received
       });
 
-      mockDb.transaction.mockImplementation(async (cb: any) => cb(mockTx));
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1' } },
+      ]);
+      mockDb.onTable('goods_received_lines', []);
+
+      const updateSpy = jest.spyOn(mockDb, 'update');
 
       await service.create(
         {
@@ -485,33 +332,71 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      // The service SHOULD call tx.update to update PO line quantity_received
-      // and PO header stateCode.
-      expect(mockTx.update).toHaveBeenCalled();
+      expect(updateSpy).toHaveBeenCalled();
+    });
+
+    it('should route dimensions from supplier group to GL posting', async () => {
+      mockDb.onTable('suppliers', [
+        {
+          vendorId: 'v1',
+          name: 'ACME',
+          costCenterId: 'cc-recv',
+          activityId: 'act-recv',
+        },
+      ]);
+      mockDb.onTable('locations', [{ locationId: 'loc-1' }]);
+      mockDb.onTable('products', [
+        {
+          productId: 'p-1',
+          standardCost: '10',
+          weightedAverageCost: '10',
+          qoh: 100,
+        },
+      ]);
+      mockDb.onTable('purchase_order_lines', [
+        {
+          purchaseOrderLineId: 'pol-1',
+          purchaseOrderId: 'po-1',
+          quantity: '10',
+          quantityReceived: '0',
+          pricePerUnit: '10.00',
+        },
+      ]);
+      mockDb.onTable('zones', [{ zoneId: 'z1' }]);
+      mockDb.onTable('bins', [{ binId: 'b1' }]);
+      mockDb.onTable('goods_received', [
+        { receipt: { goodsReceivedId: 'gr-1', receiptNumber: 'GR-1' } },
+      ]);
+      mockDb.onTable('goods_received_lines', []);
+
+      const glService = (service as any).glService;
+      const postSpy = jest.spyOn(glService, 'postJournalEntry');
+
+      await service.create(
+        {
+          vendorId: 'v1',
+          locationId: 'loc-1',
+          lines: [{ productId: 'p-1', quantityReceived: '5' }],
+        },
+        'admin',
+      );
+
+      expect(postSpy).toHaveBeenCalled();
+      const glLines = postSpy.mock.calls[0][0] as any[];
+      glLines.forEach((l: any) => {
+        expect(l.costCenterId).toBe('cc-recv');
+        expect(l.activityId).toBe('act-recv');
+      });
     });
   });
 
-  // =======================================================================
-  // findOne()
-  // =======================================================================
-
   describe('findOne', () => {
     it('should throw NotFoundException when receipt does not exist', async () => {
-      // findOne calls .then(res => res[0]) — return empty array so res[0] is undefined
-      const selectQb = createMockQueryBuilder([]);
-      selectQb.from = jest.fn().mockReturnValue(selectQb);
-      selectQb.leftJoin = jest.fn().mockReturnValue(selectQb);
-      selectQb.where = jest.fn().mockReturnValue(selectQb);
-      selectQb.limit = jest.fn().mockReturnValue(selectQb);
-      selectQb.then = jest.fn().mockImplementation((cb: any) => cb([]));
+      mockDb.onTable('goods_received', []);
 
-      const dbForFindOne: any = {
-        select: jest.fn().mockReturnValue(selectQb),
-      };
-
-      await expect(
-        service.findOne('nonexistent-id', dbForFindOne),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

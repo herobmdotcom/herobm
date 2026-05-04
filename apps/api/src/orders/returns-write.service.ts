@@ -20,6 +20,8 @@ import {
   bins,
   zones,
   products as coreProducts,
+  accounts as coreAccounts,
+  accountGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
@@ -358,7 +360,9 @@ export class ReturnsWriteService {
         // The dynamic inventory_levels view will automatically reflect the stock returned to the dock bin.
 
         // --- Financial Integration: Post Inventory/COGS reversal via Accounting Strategy ---
-        const valuationStrategy = getValuationStrategy(this.appConfig.valuationMethod());
+        const valuationStrategy = getValuationStrategy(
+          this.appConfig.valuationMethod(),
+        );
         let totalReturnCost = 0;
 
         for (const line of stockLines) {
@@ -394,16 +398,51 @@ export class ReturnsWriteService {
         const returnGl = accountingStrategy.onSalesReturn({
           amount: Number(totalReturnCost.toFixed(2)),
           memo: `Sales Return ${existing.returnNumber}`,
+          costCenterId: (() => {
+            // Will be resolved below
+            return undefined;
+          })(),
         });
 
-        if (returnGl) {
-          await this.glService.postJournalEntry(returnGl.lines as any, {
-            actor,
-            entryDate: new Date().toISOString().slice(0, 10),
-            sourceType: returnGl.sourceType,
-            sourceId: returnId,
-            memo: `Sales Return ${existing.returnNumber}`,
-          });
+        // Resolve customer account group dimensions for return posting
+        const [retOrder] = await tx
+          .select({
+            costCenterId: accountGroups.defaultCostCenterId,
+            activityId: accountGroups.defaultActivityId,
+          })
+          .from(salesOrders)
+          .leftJoin(
+            coreAccounts,
+            eq(salesOrders.customerId, coreAccounts.accountId),
+          )
+          .leftJoin(
+            accountGroups,
+            eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+          )
+          .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
+
+        const retCostCenterId = retOrder?.costCenterId || undefined;
+        const retActivityId = retOrder?.activityId || undefined;
+
+        const returnGlWithDims = accountingStrategy.onSalesReturn({
+          amount: Number(totalReturnCost.toFixed(2)),
+          memo: `Sales Return ${existing.returnNumber}`,
+          costCenterId: retCostCenterId,
+          activityId: retActivityId,
+        });
+
+        if (returnGlWithDims) {
+          await this.glService.postJournalEntry(
+            returnGlWithDims.lines as any,
+            {
+              actor,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: returnGlWithDims.sourceType,
+              sourceId: returnId,
+              memo: `Sales Return ${existing.returnNumber}`,
+            },
+            tx,
+          );
         }
       }
 
@@ -423,24 +462,17 @@ export class ReturnsWriteService {
         actor,
       });
 
+      // GL Credit Note: post journal entry when return is processed (atomic)
+      if (newState === 'processed') {
+        await this.postCreditNoteGl(returnId, existing, actor, tx);
+      }
+
       return updated;
     });
 
     this.logger.log(
       `Return ${existing.returnNumber} state: ${existing.stateCode} → ${newState} by ${actor}`,
     );
-
-    // ── GL Credit Note: post journal entry when return is processed ──
-    if (newState === 'processed') {
-      try {
-        await this.postCreditNoteGl(returnId, existing, actor);
-      } catch (glErr) {
-        // GL posting is non-fatal — log and continue
-        this.logger.error(
-          `GL credit note failed for return ${existing.returnNumber}: ${glErr}`,
-        );
-      }
-    }
 
     return result;
   }
@@ -736,7 +768,9 @@ export class ReturnsWriteService {
     returnId: string,
     existing: { returnNumber: string; salesOrderId: string },
     actor: string,
+    tx?: DrizzleDB,
   ) {
+    const queryDb = tx || this.db;
     const settings = await this.glService.getSettings();
     if (!settings?.defaultArAccountId || !settings?.defaultRevenueAccountId) {
       this.logger.warn(
@@ -752,7 +786,7 @@ export class ReturnsWriteService {
       settings.defaultTaxAccountId,
     ].filter(Boolean);
 
-    const acctRows = await this.db
+    const acctRows = await queryDb
       .select({
         glAccountId: glAccounts.glAccountId,
         accountCode: glAccounts.accountCode,
@@ -787,10 +821,38 @@ export class ReturnsWriteService {
     const feeAccountCode = '4900';
 
     // Fetch order for customer info
-    const order = await sharedFindOrder(this.db, existing.salesOrderId);
+    const order = await sharedFindOrder(queryDb, existing.salesOrderId);
+
+    let customerCostCenterId: string | undefined;
+    let customerActivityId: string | undefined;
+
+    if (order.customerId) {
+      const [custInfo] = await queryDb
+        .select({
+          costCenterId: accountGroups.defaultCostCenterId,
+          activityId: accountGroups.defaultActivityId,
+        })
+        .from(coreAccounts)
+        .leftJoin(
+          accountGroups,
+          eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+        )
+        .where(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            order.customerId,
+          )
+            ? eq(coreAccounts.accountId, order.customerId)
+            : eq(coreAccounts.externalId, order.customerId),
+        );
+
+      if (custInfo) {
+        customerCostCenterId = custInfo.costCenterId || undefined;
+        customerActivityId = custInfo.activityId || undefined;
+      }
+    }
 
     // Fetch return lines + join to order lines for pricing + GST
-    const returnLines = await this.db
+    const returnLines = await queryDb
       .select()
       .from(salesOrderReturnLines)
       .where(eq(salesOrderReturnLines.returnId, returnId));
@@ -801,7 +863,7 @@ export class ReturnsWriteService {
     const outboxLineDetails: any[] = [];
 
     for (const rl of returnLines) {
-      const orderLine = await this.db
+      const orderLine = await queryDb
         .select()
         .from(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
@@ -856,9 +918,8 @@ export class ReturnsWriteService {
     const netArCredit = totalCreditAmount + totalTaxAmount - totalFees;
 
     // Build balanced journal lines (reverse of sales invoice):
-    //   Debit Revenue (return the revenue)
-    //   Debit GST Payable (reverse the collected tax)
-    //   Credit AR (reduce customer receivable, net of fees)
+    //   Debit Revenue
+    //   Credit AR
     //   Credit Other Revenue (restocking fee income, if any)
     const glLines: any[] = [
       {
@@ -866,6 +927,8 @@ export class ReturnsWriteService {
         debit: totalCreditAmount,
         credit: 0,
         memo: `Sales return: ${existing.returnNumber}`,
+        costCenterId: customerCostCenterId,
+        activityId: customerActivityId,
       },
       {
         accountCode: arCode,
@@ -874,6 +937,8 @@ export class ReturnsWriteService {
         memo: `Credit note: ${existing.returnNumber}`,
         partyType: 'customer',
         partyId: order.customerId,
+        costCenterId: customerCostCenterId,
+        activityId: customerActivityId,
       },
     ];
 
@@ -883,6 +948,8 @@ export class ReturnsWriteService {
         debit: totalTaxAmount,
         credit: 0,
         memo: `GST reversal: ${existing.returnNumber}`,
+        costCenterId: customerCostCenterId,
+        activityId: customerActivityId,
       });
     }
 
@@ -892,18 +959,24 @@ export class ReturnsWriteService {
         debit: 0,
         credit: totalFees,
         memo: `Restocking fee: ${existing.returnNumber}`,
+        costCenterId: customerCostCenterId,
+        activityId: customerActivityId,
       });
     }
 
-    await this.glService.postJournalEntry(glLines, {
-      sourceType: 'sales_credit_note',
-      sourceId: returnId,
-      memo: `Credit note for return ${existing.returnNumber} on order ${order.orderNumber}`,
-      actor,
-    });
+    await this.glService.postJournalEntry(
+      glLines,
+      {
+        sourceType: 'sales_credit_note',
+        sourceId: returnId,
+        memo: `Credit note for return ${existing.returnNumber} on order ${order.orderNumber}`,
+        actor,
+      },
+      tx,
+    );
 
     // Write outbox event for downstream consumers (mirrors sales_invoiced pattern)
-    await emitEvent(this.db as any, {
+    await emitEvent(queryDb as any, {
       aggregateType: AggregateType.SALES_ORDER,
       aggregateId: existing.salesOrderId,
       eventType: 'credit_note_posted',

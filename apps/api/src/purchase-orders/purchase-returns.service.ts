@@ -17,6 +17,8 @@ import {
   bins,
   zones,
   products as coreProducts,
+  suppliers,
+  supplierGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
@@ -289,21 +291,48 @@ export class PurchaseReturnsService {
         },
       );
 
+      // Resolve supplier group dimensions for return posting
+      let suppCostCenterId: string | undefined;
+      let suppActivityId: string | undefined;
+      if (po.vendorId) {
+        const [supp] = await tx
+          .select({
+            costCenterId: supplierGroups.defaultCostCenterId,
+            activityId: supplierGroups.defaultActivityId,
+          })
+          .from(suppliers)
+          .leftJoin(
+            supplierGroups,
+            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+          )
+          .where(eq(suppliers.vendorId, po.vendorId));
+        if (supp) {
+          suppCostCenterId = supp.costCenterId || undefined;
+          suppActivityId = supp.activityId || undefined;
+        }
+      }
+
       const supplierReturnGl = accountingStrategy.onSupplierReturn({
         amount: Number(totalReturnCost.toFixed(2)),
         memo: `Supplier Return ${ret.returnNumber}`,
         partyType: 'supplier',
         partyId: po.vendorId || undefined,
+        costCenterId: suppCostCenterId,
+        activityId: suppActivityId,
       });
 
       if (supplierReturnGl) {
-        await this.glService.postJournalEntry(supplierReturnGl.lines as any, {
-          actor,
-          entryDate: new Date().toISOString().slice(0, 10),
-          sourceType: supplierReturnGl.sourceType,
-          sourceId: returnId,
-          memo: `Supplier Return ${ret.returnNumber}`,
-        });
+        await this.glService.postJournalEntry(
+          supplierReturnGl.lines as any,
+          {
+            actor,
+            entryDate: new Date().toISOString().slice(0, 10),
+            sourceType: supplierReturnGl.sourceType,
+            sourceId: returnId,
+            memo: `Supplier Return ${ret.returnNumber}`,
+          },
+          tx,
+        );
       }
 
       await tx.insert(purchaseOrderEvents).values({

@@ -180,6 +180,14 @@ export class CreateProductGroupDto {
   @IsOptional()
   @IsUUID()
   defaultExpenseAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }
 
 export class UpdateProductGroupDto {
@@ -198,6 +206,14 @@ export class UpdateProductGroupDto {
   @IsOptional()
   @IsUUID()
   defaultExpenseAccountId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }
 
 export class LinkBinDto {

@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsIn,
 } from 'class-validator';
+import { binTypeEnum } from '../drizzle/modbm-core-schema';
 
 export class CreateLocationDto {
   @IsString()
@@ -59,14 +60,8 @@ export class CreateBinDto {
   binNumber!: string;
 
   @IsOptional()
-  @IsIn(['storage', 'pick', 'bulk', 'receiving', 'staging', 'quarantine'])
-  binType?:
-    | 'storage'
-    | 'pick'
-    | 'bulk'
-    | 'receiving'
-    | 'staging'
-    | 'quarantine';
+  @IsIn(binTypeEnum.enumValues)
+  binType?: typeof binTypeEnum.enumValues[number];
 
   @IsOptional()
   @IsBoolean()

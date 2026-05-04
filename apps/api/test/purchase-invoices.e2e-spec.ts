@@ -34,6 +34,26 @@ describe('API E2E — Purchase Invoices', () => {
       .expect(201);
     adminToken = adminLogin.body.access_token;
 
+    // Fetch GL accounts to use for AP and Expense
+    const accountsRes = await request(app.getHttpServer())
+      .get('/api/gl/accounts')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const leaves: any[] = [];
+    const walk = (nodes: any[]) => {
+      for (const node of nodes) {
+        if (!node.isGroup) leaves.push(node);
+        if (node.children) walk(node.children);
+      }
+    };
+    walk(accountsRes.body);
+
+    // Pick two accounts
+    const apAccount = leaves.find((l) => l.accountCode === '2100') || leaves[0];
+    const expAccount =
+      leaves.find((l) => l.accountCode === '5100') || leaves[1];
+
     // Create an app vendor (core UUID) to guarantee valid UUID vendorId
     const vendorRes = await request(app.getHttpServer())
       .post('/api/suppliers')
@@ -41,6 +61,8 @@ describe('API E2E — Purchase Invoices', () => {
       .send({
         vendorNumber: `E2E-VEND-${Date.now()}`,
         name: 'E2E Test Vendor for Invoices',
+        defaultApAccountId: apAccount.glAccountId,
+        defaultExpenseAccountId: expAccount.glAccountId,
       })
       .expect(201);
     validVendorId = vendorRes.body.vendorId;
@@ -193,7 +215,10 @@ describe('API E2E — Purchase Invoices', () => {
       const lines = detailRes.body.lines;
       expect(lines.length).toBeGreaterThanOrEqual(2);
 
-      const apLine = lines.find((l: any) => l.partyId === validVendorId);
+      // AP Line should be the credit line for the supplier
+      const apLine = lines.find(
+        (l: any) => l.partyId === validVendorId && parseFloat(l.credit) > 0,
+      );
       expect(apLine).toBeDefined();
       expect(apLine.partyType).toBe('supplier');
       expect(parseFloat(apLine.credit)).toBeGreaterThan(59.0);

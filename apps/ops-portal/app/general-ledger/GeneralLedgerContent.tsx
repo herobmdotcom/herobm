@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
+import CodesModal from './CodesModal';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 
@@ -34,6 +35,7 @@ const PAGE_SIZE = 200;
 
 export default function GeneralLedgerContent() {
   const t = useTranslations('gl.generalLedger');
+  const tCodes = useTranslations('gl.codes');
   const tCommon = useTranslations('common');
   const tGrid = useTranslations('common.grid');
 
@@ -55,6 +57,7 @@ export default function GeneralLedgerContent() {
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState<GlEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCodesOpen, setIsCodesOpen] = useState(false);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -222,6 +225,13 @@ export default function GeneralLedgerContent() {
 
                 {/* Options */}
                 <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => setIsCodesOpen(true)}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    <span className="material-symbols-outlined text-sm">visibility</span>
+                    {tCodes('button')}
+                  </button>
                   {optionsButton}
                 </div>
               </div>
@@ -233,6 +243,11 @@ export default function GeneralLedgerContent() {
       <JournalEntrySlideOver
         entry={selectedEntry}
         onClose={() => setSelectedEntry(null)}
+      />
+
+      <CodesModal 
+        isOpen={isCodesOpen}
+        onClose={() => setIsCodesOpen(false)}
       />
     </>
   );

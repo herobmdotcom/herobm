@@ -27,6 +27,10 @@ export interface GlPostingContext {
   /** Supplier or customer party reference for sub-ledger tagging. */
   partyType?: 'supplier' | 'customer';
   partyId?: string;
+  /** Financial dimension: Cost Center (resolved from groups at posting time). */
+  costCenterId?: string;
+  /** Financial dimension: Activity (resolved from groups at posting time). */
+  activityId?: string;
 }
 
 /**
@@ -39,6 +43,8 @@ export interface InventoryGlLine {
   memo: string;
   partyType?: 'supplier' | 'customer';
   partyId?: string;
+  costCenterId?: string;
+  activityId?: string;
 }
 
 /**
@@ -136,12 +142,22 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
 
   onGoodsReceipt(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
     const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
     return {
       sourceType: 'inventory_receipt',
       lines: [
-        { accountId: inv, debit: ctx.amount, credit: 0, memo: ctx.memo },
+        {
+          accountId: inv,
+          debit: ctx.amount,
+          credit: 0,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
         {
           accountId: grni,
           debit: 0,
@@ -149,6 +165,8 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           memo: ctx.memo,
           partyType: ctx.partyType,
           partyId: ctx.partyId,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
         },
       ],
     };
@@ -157,25 +175,59 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
   onGoodsDispatch(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
     const cogs = this.requireAccount(this.accts.cogsAccountId, 'COGS');
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
     return {
       sourceType: 'inventory_dispatch',
       lines: [
-        { accountId: cogs, debit: ctx.amount, credit: 0, memo: ctx.memo },
-        { accountId: inv, debit: 0, credit: ctx.amount, memo: ctx.memo },
+        {
+          accountId: cogs,
+          debit: ctx.amount,
+          credit: 0,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
+        {
+          accountId: inv,
+          debit: 0,
+          credit: ctx.amount,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
       ],
     };
   }
 
   onDispatchReversal(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
     const cogs = this.requireAccount(this.accts.cogsAccountId, 'COGS');
     return {
       sourceType: 'inventory_dispatch',
       lines: [
-        { accountId: inv, debit: ctx.amount, credit: 0, memo: ctx.memo },
-        { accountId: cogs, debit: 0, credit: ctx.amount, memo: ctx.memo },
+        {
+          accountId: inv,
+          debit: ctx.amount,
+          credit: 0,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
+        {
+          accountId: cogs,
+          debit: 0,
+          credit: ctx.amount,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
       ],
     };
   }
@@ -185,16 +237,36 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
     direction: 'loss' | 'gain',
   ): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
-    const shrink = this.requireAccount(this.accts.shrinkageAccountId, 'Shrinkage');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
+    const shrink = this.requireAccount(
+      this.accts.shrinkageAccountId,
+      'Shrinkage',
+    );
 
     if (direction === 'loss') {
       // Stock decreased: DR Shrinkage Expense, CR Inventory Asset
       return {
         sourceType: 'inventory_adjustment',
         lines: [
-          { accountId: shrink, debit: ctx.amount, credit: 0, memo: ctx.memo },
-          { accountId: inv, debit: 0, credit: ctx.amount, memo: ctx.memo },
+          {
+            accountId: shrink,
+            debit: ctx.amount,
+            credit: 0,
+            memo: ctx.memo,
+            costCenterId: ctx.costCenterId,
+            activityId: ctx.activityId,
+          },
+          {
+            accountId: inv,
+            debit: 0,
+            credit: ctx.amount,
+            memo: ctx.memo,
+            costCenterId: ctx.costCenterId,
+            activityId: ctx.activityId,
+          },
         ],
       };
     } else {
@@ -202,8 +274,22 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
       return {
         sourceType: 'inventory_adjustment',
         lines: [
-          { accountId: inv, debit: ctx.amount, credit: 0, memo: ctx.memo },
-          { accountId: shrink, debit: 0, credit: ctx.amount, memo: ctx.memo },
+          {
+            accountId: inv,
+            debit: ctx.amount,
+            credit: 0,
+            memo: ctx.memo,
+            costCenterId: ctx.costCenterId,
+            activityId: ctx.activityId,
+          },
+          {
+            accountId: shrink,
+            debit: 0,
+            credit: ctx.amount,
+            memo: ctx.memo,
+            costCenterId: ctx.costCenterId,
+            activityId: ctx.activityId,
+          },
         ],
       };
     }
@@ -211,14 +297,31 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
 
   onSalesReturn(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
     const cogs = this.requireAccount(this.accts.cogsAccountId, 'COGS');
     // Customer returned goods: DR Inventory Asset, CR COGS (cost reversal)
     return {
       sourceType: 'inventory_adjustment',
       lines: [
-        { accountId: inv, debit: ctx.amount, credit: 0, memo: ctx.memo },
-        { accountId: cogs, debit: 0, credit: ctx.amount, memo: ctx.memo },
+        {
+          accountId: inv,
+          debit: ctx.amount,
+          credit: 0,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
+        {
+          accountId: cogs,
+          debit: 0,
+          credit: ctx.amount,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
       ],
     };
   }
@@ -226,7 +329,10 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
   onSupplierReturn(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
     const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
-    const inv = this.requireAccount(this.accts.inventoryAccountId, 'Inventory Asset');
+    const inv = this.requireAccount(
+      this.accts.inventoryAccountId,
+      'Inventory Asset',
+    );
     // Returning goods to supplier: DR GRNI, CR Inventory Asset
     return {
       sourceType: 'inventory_receipt',
@@ -238,8 +344,17 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           memo: ctx.memo,
           partyType: ctx.partyType,
           partyId: ctx.partyId,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
         },
-        { accountId: inv, debit: 0, credit: ctx.amount, memo: ctx.memo },
+        {
+          accountId: inv,
+          debit: 0,
+          credit: ctx.amount,
+          memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
       ],
     };
   }

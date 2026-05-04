@@ -35,6 +35,7 @@ import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
 import { getAccountingStrategy } from './inventory-accounting';
+import { filterPickableBins, calculatePickableOnHand } from './inventory-math.utils';
 
 @Injectable()
 export class InventoryService {
@@ -101,6 +102,59 @@ export class InventoryService {
     }));
 
     return { data: mappedRows, page, limit };
+  }
+
+  /**
+   * Domain API: Retrieves the specific bins containing pickable stock for a given product.
+   * Abstracts away the positive whitelist rules.
+   */
+  async getPickableBins(productId: string, locationId?: string, txClient?: any) {
+    const client = txClient || this.db;
+    
+    let qb = client
+      .select({
+        binId: bins.binId,
+        binNumber: bins.binNumber,
+        binType: bins.binType,
+        isUnavailable: bins.isUnavailable,
+        onHand: binContents.actualQuantity,
+      })
+      .from(binContents)
+      .innerJoin(bins, eq(binContents.binId, bins.binId))
+      .$dynamic();
+      
+    if (locationId) {
+      qb = qb
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(binContents.productId, productId),
+            eq(zones.locationId, locationId),
+            sql`${binContents.actualQuantity}::numeric > 0`
+          )
+        );
+    } else {
+      qb = qb.where(
+        and(
+          eq(binContents.productId, productId),
+          sql`${binContents.actualQuantity}::numeric > 0`
+        )
+      );
+    }
+    
+    const rawBins = await qb;
+    return filterPickableBins(rawBins);
+  }
+
+  /**
+   * Domain API: Retrieves aggregate pickable inventory metrics for a single product.
+   */
+  async getAvailableInventory(productId: string, locationId?: string) {
+    const { data } = await this.findByProductIds([productId], locationId);
+    if (!data || data.length === 0) {
+      return { quantityOnHand: 0, quantityCommitted: 0, quantityAvailable: 0 };
+    }
+    return data[0];
   }
 
   /**
@@ -273,7 +327,7 @@ export class InventoryService {
       .where(
         and(
           eq(zones.locationId, locationId),
-          sql`${bins.binType} NOT IN ('receiving', 'quarantine')`,
+          sql`${bins.binType} IN ('storage', 'pick', 'bulk')`,
         ),
       );
 
@@ -417,7 +471,7 @@ export class InventoryService {
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
         FROM modbm_core.bin_contents bc
         JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-        WHERE b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+        WHERE b.bin_type IN ('storage', 'pick', 'bulk')
           AND b.is_unavailable = false
           AND b.is_bonded = false
         GROUP BY bc.product_id
@@ -457,7 +511,7 @@ export class InventoryService {
         SELECT bc.product_id, SUM(bc.actual_quantity) as qty
         FROM modbm_core.bin_contents bc
         JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
-        WHERE b.bin_type NOT IN ('receiving', 'staging', 'quarantine')
+        WHERE b.bin_type IN ('storage', 'pick', 'bulk')
           AND b.is_unavailable = false
           AND b.is_bonded = false
         GROUP BY bc.product_id
@@ -731,7 +785,9 @@ export class InventoryService {
             weightedAverageCost: string | null;
           }
         >(productRows.map((p: any) => [p.productId, p]));
-        const valuationStrategy = getValuationStrategy(this.appConfig.valuationMethod());
+        const valuationStrategy = getValuationStrategy(
+          this.appConfig.valuationMethod(),
+        );
 
         let totalShrinkageValue = 0; // Positive means we lost inventory (expense), Negative means we gained inventory (income)
 
@@ -772,17 +828,22 @@ export class InventoryService {
               amount: Number(Math.abs(totalShrinkageValue).toFixed(2)),
               memo: `Manual Adjustment ${params.entryNumber}`,
             },
-            direction as 'loss' | 'gain',
+            direction,
           );
 
           if (adjustmentGl) {
-            await this.glService.postJournalEntry(adjustmentGl.lines as any, {
-              actor: params.userId || 'system',
-              entryDate: new Date().toISOString().slice(0, 10),
-              sourceType: adjustmentGl.sourceType,
-              sourceId: entry.entryId,
-              memo: params.memo || `Inventory Adjustment ${params.entryNumber}`,
-            });
+            await this.glService.postJournalEntry(
+              adjustmentGl.lines as any,
+              {
+                actor: params.userId || 'system',
+                entryDate: new Date().toISOString().slice(0, 10),
+                sourceType: adjustmentGl.sourceType,
+                sourceId: entry.entryId,
+                memo:
+                  params.memo || `Inventory Adjustment ${params.entryNumber}`,
+              },
+              tx,
+            );
           }
         }
       }

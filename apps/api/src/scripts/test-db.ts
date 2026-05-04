@@ -9,12 +9,11 @@ const sql = postgres({
   database: process.env.POSTGRES_DB ?? 'custom_app',
 });
 async function main() {
-  const result =
-    await sql`SELECT template FROM reports WHERE slug = 'sales-order-quote'`;
-  console.log('Exists?', result[0].template.includes('quoteIntroText'));
+  const result = await sql`SELECT * FROM modbm_core.payment_entries`;
+  console.log('Result:', result);
   process.exit(0);
 }
-main().catch((err) => {
+void main().catch((err) => {
   console.error(err);
   process.exit(1);
 });

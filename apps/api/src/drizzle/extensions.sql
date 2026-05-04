@@ -37,7 +37,10 @@ SELECT
          AND b.state_code = 'received_reserved')
         +
         -- Sum open sales order lines that are confirmed
-        (SELECT COALESCE(SUM(sol.quantity - COALESCE(sol.quantity_picked, 0)), 0)
+        (SELECT COALESCE(SUM(sol.quantity - COALESCE(
+            (SELECT SUM(sop.quantity) 
+             FROM modbm_core.sales_order_picks sop 
+             WHERE sop.sales_order_line_id = sol.sales_order_line_id), 0)), 0)
          FROM modbm_core.sales_order_lines sol
          JOIN modbm_core.sales_orders so ON so.sales_order_id = sol.sales_order_id
          WHERE sol.product_id = p.product_id

@@ -15,6 +15,8 @@ import {
   glSettings,
   accounts,
   suppliers,
+  costCenters,
+  activities,
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
@@ -38,7 +40,8 @@ export class JournalMeta {
     | 'adjustment'
     | 'inventory_receipt'
     | 'inventory_dispatch'
-    | 'inventory_adjustment';
+    | 'inventory_adjustment'
+    | 'payment_entry';
   sourceId?: string;
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
@@ -60,11 +63,61 @@ export class GlService {
     private readonly appConfig: AppConfigService,
   ) {}
 
+  private defaultCostCenterId: string | null = null;
+  private defaultActivityId: string | null = null;
+
+  private async getDefaults(db: DrizzleDB) {
+    if (this.defaultCostCenterId && this.defaultActivityId) {
+      return {
+        costCenterId: this.defaultCostCenterId,
+        activityId: this.defaultActivityId,
+      };
+    }
+
+    const [cc] = await db
+      .select({ id: costCenters.costCenterId })
+      .from(costCenters)
+      .where(eq(costCenters.code, '00'))
+      .limit(1);
+    const [act] = await db
+      .select({ id: activities.activityId })
+      .from(activities)
+      .where(eq(activities.code, '00'))
+      .limit(1);
+
+    if (!cc || !act) {
+      this.logger.warn(
+        'System default dimensions (code 00) not found. Please run migrations.',
+      );
+    }
+
+    this.defaultCostCenterId = cc?.id || null;
+    this.defaultActivityId = act?.id || null;
+
+    return {
+      costCenterId: this.defaultCostCenterId || undefined,
+      activityId: this.defaultActivityId || undefined,
+    };
+  }
+
   // -------------------------------------------------------------------------
   // Core: Post a balanced journal entry
+  //
+  // When `tx` is provided, all queries and inserts run on the caller's
+  // transaction — no nested transaction is opened. This is the REQUIRED
+  // calling convention when the GL posting must be atomic with a parent
+  // business operation (e.g. goods receipt, shipment, invoice).
+  //
+  // When `tx` is omitted, a self-contained transaction is opened internally.
+  // This path is used only for standalone operations (manual journal entries,
+  // reconciliation adjustments) that have no parent transaction.
   // -------------------------------------------------------------------------
 
-  async postJournalEntry(lines: JournalLineDto[], meta: JournalMeta) {
+  async postJournalEntry(
+    lines: JournalLineDto[],
+    meta: JournalMeta,
+    tx?: DrizzleDB,
+  ) {
     if (!lines || lines.length < 2) {
       throw new BadRequestException(
         'A journal entry requires at least 2 lines.',
@@ -81,6 +134,9 @@ export class GlService {
         `Journal entry is unbalanced: debit=${totalDebit.toFixed(2)}, credit=${totalCredit.toFixed(2)}`,
       );
     }
+
+    // Use provided transaction or fall back to the root connection
+    const queryDb = tx || this.db;
 
     // 2. Resolve account codes/IDs and validate
     const accountCodes = [
@@ -114,7 +170,7 @@ export class GlService {
       );
     }
 
-    const accountRows = await this.db
+    const accountRows = await queryDb
       .select({
         glAccountId: glAccounts.glAccountId,
         accountCode: glAccounts.accountCode,
@@ -152,12 +208,12 @@ export class GlService {
     }
 
     // 3. Generate entry number
-    const entryNumber = await this.generateEntryNumber();
+    const entryNumber = await this.generateEntryNumber(queryDb);
     const entryDate = meta.entryDate || new Date().toISOString().slice(0, 10);
 
-    // 4. Insert in a single transaction
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [entry] = await tx
+    // 4. Insert — either directly on the caller's tx, or in a self-contained transaction
+    const doInsert = async (db: DrizzleDB) => {
+      const [entry] = await db
         .insert(glJournalEntries)
         .values({
           entryNumber,
@@ -169,9 +225,13 @@ export class GlService {
         })
         .returning();
 
+      const defaults = await this.getDefaults(db);
+
       const lineValues = lines.map((l) => ({
         journalEntryId: entry.journalEntryId,
         glAccountId: l.accountId!,
+        costCenterId: l.costCenterId || defaults.costCenterId,
+        activityId: l.activityId || defaults.activityId,
         partyType: l.partyType || null,
         partyId: l.partyId || null,
         debit: String(l.debit),
@@ -179,10 +239,10 @@ export class GlService {
         memo: l.memo,
       }));
 
-      await tx.insert(glJournalLines).values(lineValues);
+      await db.insert(glJournalLines).values(lineValues);
 
       // Write 'gl_posted' event for sync routing + audit trail
-      await emitEvent(tx, {
+      await emitEvent(db, {
         aggregateType: AggregateType.SYSTEM,
         aggregateId: entry.journalEntryId,
         eventType: EventType.GL_POSTED,
@@ -196,7 +256,11 @@ export class GlService {
       });
 
       return entry;
-    });
+    };
+
+    const result = tx
+      ? await doInsert(tx)
+      : await this.db.transaction(doInsert);
 
     this.logger.log(
       `Journal entry ${entryNumber} posted: ${lines.length} lines, ${meta.sourceType}`,
@@ -209,11 +273,13 @@ export class GlService {
   // Entry number generation: JE-YYYYMMDD-NNNN
   // -------------------------------------------------------------------------
 
-  private async generateEntryNumber(): Promise<string> {
+  private async generateEntryNumber(
+    queryDb: DrizzleDB = this.db,
+  ): Promise<string> {
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `JE-${today}-`;
 
-    const result = await this.db
+    const result = await queryDb
       .select({ entryNumber: glJournalEntries.entryNumber })
       .from(glJournalEntries)
       .where(sql`${glJournalEntries.entryNumber} LIKE ${prefix + '%'}`)
@@ -592,6 +658,10 @@ export class GlService {
         supplierName: suppliers.name,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
+        costCenterId: glJournalLines.costCenterId,
+        costCenterCode: costCenters.code,
+        activityId: glJournalLines.activityId,
+        activityCode: activities.code,
       })
       .from(glJournalLines)
       .innerJoin(
@@ -611,6 +681,14 @@ export class GlService {
           sql`${glJournalLines.partyId}::uuid = ${suppliers.vendorId}`,
           eq(glJournalLines.partyType, 'supplier'),
         ),
+      )
+      .leftJoin(
+        costCenters,
+        eq(glJournalLines.costCenterId, costCenters.costCenterId),
+      )
+      .leftJoin(
+        activities,
+        eq(glJournalLines.activityId, activities.activityId),
       )
       .where(eq(glJournalLines.journalEntryId, journalEntryId));
 

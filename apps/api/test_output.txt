@@ -1,0 +1,15 @@
+﻿node.exe : PASS src/gl/gl-transaction-boundary.spec.ts
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS src/gl/gl-...oundary.spec.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  GL Transaction Boundary (structural)
+    ΓêÜ every postJournalEntry call in service files must pass tx (8 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        0.352 s, estimated 1 s
+Ran all test suites matching gl-transaction-boundary.

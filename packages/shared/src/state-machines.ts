@@ -40,7 +40,19 @@ export const PURCHASE_ORDER_TRANSITIONS: Record<string, string[]> = {
 
 export const PURCHASE_INVOICE_TRANSITIONS: Record<string, string[]> = {
   draft: ['invoiced', 'cancelled'],
-  invoiced: [],
+  invoiced: ['partially_paid', 'paid'],
+  partially_paid: ['invoiced', 'paid'],
+  paid: ['partially_paid', 'invoiced'],
+  cancelled: ['draft'],
+  legacy: [],
+  archived: [],
+};
+
+export const SALES_INVOICE_TRANSITIONS: Record<string, string[]> = {
+  draft: ['invoiced', 'cancelled'],
+  invoiced: ['partially_paid', 'paid'],
+  partially_paid: ['invoiced', 'paid'],
+  paid: ['partially_paid', 'invoiced'],
   cancelled: ['draft'],
   legacy: [],
   archived: [],
@@ -49,6 +61,12 @@ export const PURCHASE_INVOICE_TRANSITIONS: Record<string, string[]> = {
 export const SHIPMENT_TRANSITIONS: Record<string, string[]> = {
   draft: ['dispatched', 'cancelled'],
   dispatched: ['draft'],
+  cancelled: [],
+};
+
+export const SALES_ORDER_PICK_TRANSITIONS: Record<string, string[]> = {
+  picked: ['shipped', 'cancelled'],
+  shipped: [],
   cancelled: [],
 };
 
@@ -62,8 +80,10 @@ export const RETURN_TRANSITIONS: Record<string, string[]> = {
 export type SalesOrderState = keyof typeof SALES_ORDER_TRANSITIONS;
 export type PurchaseOrderState = keyof typeof PURCHASE_ORDER_TRANSITIONS;
 export type PurchaseInvoiceState = keyof typeof PURCHASE_INVOICE_TRANSITIONS;
+export type SalesInvoiceState = keyof typeof SALES_INVOICE_TRANSITIONS;
 export type ShipmentState = keyof typeof SHIPMENT_TRANSITIONS;
 export type ReturnState = keyof typeof RETURN_TRANSITIONS;
+export type SalesOrderPickState = keyof typeof SALES_ORDER_PICK_TRANSITIONS;
 
 // ============================================================================
 // Lifecycle ordinals  (higher = further along the happy path)
@@ -85,7 +105,11 @@ export const OPEN_PURCHASE_ORDER_STATES: PurchaseOrderState[] = ['draft', 'order
 
 
 export const PURCHASE_INVOICE_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, invoiced: 2, legacy: 3, archived: 4,
+  cancelled: 0, draft: 1, invoiced: 2, partially_paid: 3, paid: 4, legacy: 5, archived: 6,
+};
+
+export const SALES_INVOICE_LIFECYCLE: Record<string, number> = {
+  cancelled: 0, draft: 1, invoiced: 2, partially_paid: 3, paid: 4, legacy: 5, archived: 6,
 };
 
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {
@@ -94,6 +118,10 @@ export const SHIPMENT_LIFECYCLE: Record<string, number> = {
 
 export const RETURN_LIFECYCLE: Record<string, number> = {
   cancelled: 0, draft: 1, confirmed: 2, processed: 3,
+};
+
+export const SALES_ORDER_PICK_LIFECYCLE: Record<string, number> = {
+  cancelled: 0, picked: 1, shipped: 2,
 };
 
 // ============================================================================

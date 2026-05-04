@@ -144,36 +144,6 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   {tCommon('save', { defaultValue: 'Save' })}
                 </button>
               )}
-              {invoice.purchaseOrderId ? (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => router.push(`/purchase-orders/${invoice.purchaseOrderId}`)}
-                >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  View Purchase Order
-                </button>
-              ) : null}
-              {[...allowedTransitions]
-                .sort((a, b) => {
-                  const aBack = isBack(invoice.stateCode, a);
-                  const bBack = isBack(invoice.stateCode, b);
-                  if (aBack !== bBack) return aBack ? -1 : 1;
-                  return 0;
-                })
-                .map((state) => {
-                  const back = isBack(invoice.stateCode, state);
-                  return (
-                    <button
-                      key={state}
-                      className={`btn btn-sm ${state === 'cancelled' ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'}`}
-                      onClick={() => changeState(state)}
-                      disabled={saving}
-                    >
-                      {/* eslint-disable-next-line i18next/no-literal-string */}
-                      {state === 'cancelled' ? `✕ ${cap(state)}` : back ? `← ${cap(state)}` : `→ ${cap(state)}`}
-                    </button>
-                  );
-                })}
             </>
           }
         />
@@ -597,6 +567,15 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         </div>
       )}
       </div>
+
+      {/* Payment Allocations Card */}
+      <div className="card mt-4 p-5">
+        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Payment Allocations</h2>
+        <p className="text-sm text-gray-500">
+          When payments are allocated to this invoice from the Payment Manager, they will appear here.
+        </p>
+      </div>
+
       </div>
     </DetailsLayout>
   );

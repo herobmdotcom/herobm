@@ -51,9 +51,9 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
     ReportsModule,
   ],
   controllers: [
+    OrderPickingController,
     OrdersController,
     OrderReturnsController,
-    OrderPickingController,
     OrderShipmentsController,
     GlobalShipmentsController,
     AllocationsController,

@@ -6,6 +6,7 @@ import {
   IsDateString,
   IsEmail,
   IsUrl,
+  IsBoolean,
 } from 'class-validator';
 
 export class CreateUomDto {
@@ -134,4 +135,52 @@ export class UpdateOrganizationDto {
   @IsOptional()
   @IsString()
   bankIban?: string;
+}
+
+export class CreateCostCenterDto {
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class UpdateCostCenterDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class CreateActivityDto {
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+export class UpdateActivityDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

@@ -30,6 +30,7 @@ describe('Inventory Cycle (e2e)', () => {
   let app: INestApplication;
   let adminToken: string;
   let productId: string;
+  let productNumber: string;
   let accountId: string;
   let vendorId: string;
   let locationId: string;
@@ -88,6 +89,7 @@ describe('Inventory Cycle (e2e)', () => {
       })
       .expect(201);
     productId = productRes.body.productId;
+    productNumber = productRes.body.productNumber;
 
     await request(app.getHttpServer())
       .post(`/api/products/${productId}/suppliers`)
@@ -221,19 +223,42 @@ describe('Inventory Cycle (e2e)', () => {
       .send({ stateCode: 'picking' })
       .expect(200);
 
-    // Pick all and create shipment
-    await request(app.getHttpServer())
-      .post(`/api/sales-orders/${soId}/picking/pick-all`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(201);
-
-    const shipmentsRes = await request(app.getHttpServer())
-      .get(`/api/sales-orders/${soId}/shipments`)
+    // Get bins for our specific product to ensure we pick from the correct RECEIVING bin
+    const binsRes = await request(app.getHttpServer())
+      .get(`/api/inventory/bins?q=${productNumber}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
+    const binData = binsRes.body.data.find(
+      (b: any) => b.productId === productId,
+    );
+    const binId = binData?.binId;
 
-    expect(shipmentsRes.body.length).toBeGreaterThan(0);
-    const shipmentId = shipmentsRes.body[0].shipmentId;
+    if (!binId) {
+      throw new Error(`Could not find bin containing product ${productId}`);
+    }
+
+    const soDetail = await request(app.getHttpServer())
+      .get(`/api/sales-orders/${soId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const soLineId = soDetail.body.lines[0].salesOrderLineId;
+
+    await request(app.getHttpServer())
+      .post(`/api/sales-orders/${soId}/picking/lines/${soLineId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ binId, quantity: '4' })
+      .expect(201);
+
+    // Create shipment manually
+    const shipCreateRes = await request(app.getHttpServer())
+      .post(`/api/sales-orders/${soId}/shipments`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        lines: [{ salesOrderLineId: soLineId, quantityShipped: '4' }],
+      })
+      .expect(201);
+
+    const shipmentId = shipCreateRes.body.shipmentId;
 
     // Dispatching the shipment auto-transitions the order to 'shipped'
     await request(app.getHttpServer())

@@ -97,20 +97,51 @@ describe('API E2E — Sales Invoices', () => {
       orderLineId1 = linesRes.body.lines[0].salesOrderLineId;
       orderLineId2 = linesRes.body.lines[1].salesOrderLineId;
 
-      // 2. Transition to shipped
-      for (const state of ['quoted', 'confirmed', 'picking', 'shipped']) {
-        if (state === 'shipped') {
-          await request(app.getHttpServer())
-            .post(`/api/sales-orders/${orderId}/picking/pick-all`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .expect(201);
-        }
+      // 2. Transition to picking state
+      for (const state of ['quoted', 'confirmed', 'picking']) {
         await request(app.getHttpServer())
           .patch(`/api/sales-orders/${orderId}/state`)
           .set('Authorization', `Bearer ${adminToken}`)
           .send({ stateCode: state, generateBackorders: false })
           .expect(200);
       }
+
+      // Pick all lines and create + dispatch shipment
+      const binsRes = await request(app.getHttpServer())
+        .get('/api/inventory/bins')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      const binId = binsRes.body.data[0].binId;
+
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/picking/lines/${orderLineId1}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: '4' })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/picking/lines/${orderLineId2}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId, quantity: '2' })
+        .expect(201);
+
+      const shipRes = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/shipments`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          lines: [
+            { salesOrderLineId: orderLineId1, quantityShipped: '4' },
+            { salesOrderLineId: orderLineId2, quantityShipped: '2' },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .patch(
+          `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'dispatched' })
+        .expect(200);
 
       // 3. Generate Partial Invoice #1
       const partialInvoiceRes = await request(app.getHttpServer())
@@ -194,12 +225,17 @@ describe('API E2E — Sales Invoices', () => {
           .expect(200);
       }
 
-      // 3. Pick it fully natively (but NO SHIPMENT created!)
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${testOrderId}/picking/lines/${testLineId}`)
+      // 3. Pick it fully via the new sub-ledger endpoint (but NO SHIPMENT created!)
+      const binsRes2 = await request(app.getHttpServer())
+        .get('/api/inventory/bins')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityPicked: '4' })
         .expect(200);
+
+      await request(app.getHttpServer())
+        .post(`/api/sales-orders/${testOrderId}/picking/lines/${testLineId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ binId: binsRes2.body.data[0].binId, quantity: '4' })
+        .expect(201);
 
       // 4. Try to invoice it - this should FAIL securely because 0 shipped
       const badInvoiceRes = await request(app.getHttpServer())

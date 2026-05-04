@@ -14,6 +14,8 @@ import {
   salesOrderShipmentLines,
   salesInvoices,
   salesInvoiceLines,
+  salesOrderPicks,
+  products,
 } from '../drizzle/modbm-core-schema';
 
 // ============================================================================
@@ -108,7 +110,36 @@ export async function assertShipmentQtyAvailable(
   excludeShipmentLineId?: string,
 ): Promise<void> {
   const orderLine = await findOrderLine(db, salesOrderLineId, salesOrderId);
-  const picked = parseFloat(orderLine.quantityPicked ?? '0');
+
+  // Check if the line is for a non-stock product (e.g. freight, service).
+  // Non-stock products don't require physical picks — treat ordered qty as available.
+  const [productRow] = await db
+    .select({ productType: products.productType })
+    .from(products)
+    .where(eq(products.productId, orderLine.productId!))
+    .limit(1);
+
+  const isPhysical =
+    !productRow?.productType || productRow.productType === 'inventory';
+
+  let picked: number;
+  if (isPhysical) {
+    // Derive picked qty from the sub-ledger (replaces legacy quantityPicked column)
+    const [pickSum] = await db
+      .select({ sum: sql<number>`COALESCE(SUM(quantity), 0)` })
+      .from(salesOrderPicks)
+      .where(
+        and(
+          eq(salesOrderPicks.salesOrderLineId, salesOrderLineId),
+          sql`state_code != 'cancelled'`,
+        ),
+      );
+    picked = parseFloat(String(pickSum?.sum ?? 0));
+  } else {
+    // Non-stock: treat ordered quantity as fully available
+    picked = parseFloat(orderLine.quantity);
+  }
+
   const committedMap = await getCommittedPerLine(db, salesOrderId);
   let alreadyCommitted = committedMap.get(salesOrderLineId) ?? 0;
 

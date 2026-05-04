@@ -4,8 +4,8 @@ import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
 
 describe('Print DB', () => {
-  let app;
-  let db;
+  let app: any;
+  let db: any;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

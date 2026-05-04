@@ -38,8 +38,22 @@ AR line carries `partyType: 'customer'` and `partyId`.
 
 **Journal pattern**: Debit Expense (net), Debit GST Receivable (input tax), Credit AP (gross).
 
+## Financial Dimensions
+ 
+ModBM supports tracking expenses and revenues across two primary dimensions: **Cost Centers** and **Activities**.
+ 
+| Dimension | Default Code | System ID (v5 UUID) | Description |
+|---|---|---|---|
+| Cost Center | 00 | `226e322a-fbac-503b-90a6-fd29d8daf69e` | System default (not deletable) |
+| Activity | 00 | `ca55a8d2-11f3-5514-b030-830ce0ad4a90` | System default (not deletable) |
+ 
+Every journal line posted by the system defaults to `00.00` if no specific dimension is provided. These records are automatically seeded during installation via `tools/seed.py`.
+ 
 ## Future Improvements
-
+ 
+- [x] Implement Cost Centers and Activities (Financial Dimensions)
+- [ ] Support dimension-level P&L reporting in dbt/Grafana
+- [ ] Support dimension overrides at the Sales Order/Invoice level
 - [ ] Make restocking fee account configurable via GL Settings
 - [ ] Add per-product revenue account overrides
 - [ ] Add per-product COGS account mapping

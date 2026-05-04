@@ -75,30 +75,33 @@ function createMockDb(): {
   const updateQueue: any[][] = [];
   const executeQueue: any[] = [];
 
+  const selectMock = jest.fn().mockImplementation(() => {
+    const val = selectQueue.shift() || [];
+    return createChainProxy(val);
+  });
+  const insertMock = jest.fn().mockImplementation(() => {
+    const val = insertQueue.shift() || [];
+    return createChainProxy(val);
+  });
+  const updateMock = jest.fn().mockImplementation(() => {
+    const val = updateQueue.shift() || [];
+    return createChainProxy(val);
+  });
+  const executeMock = jest.fn().mockImplementation(() => {
+    const val = executeQueue.shift() || { rows: [] };
+    return Promise.resolve(val);
+  });
+
   const db: MockDb = {
-    select: jest.fn().mockImplementation(() => {
-      const val = selectQueue.shift() || [];
-      return createChainProxy(val);
-    }),
-    insert: jest.fn().mockImplementation(() => {
-      const val = insertQueue.shift() || [];
-      return createChainProxy(val);
-    }),
-    update: jest.fn().mockImplementation(() => {
-      const val = updateQueue.shift() || [];
-      return createChainProxy(val);
-    }),
-    execute: jest.fn().mockImplementation(() => {
-      const val = executeQueue.shift() || { rows: [] };
-      return Promise.resolve(val);
-    }),
+    select: selectMock,
+    insert: insertMock,
+    update: updateMock,
+    execute: executeMock,
     transaction: jest.fn().mockImplementation(async (fn: any) => {
-      // By default, create a mini tx with the same pattern
       const tx: any = {
-        insert: jest.fn().mockImplementation(() => {
-          const val = insertQueue.shift() || [];
-          return createChainProxy(val);
-        }),
+        insert: insertMock,
+        select: selectMock,
+        execute: executeMock,
       };
       return fn(tx);
     }),
@@ -448,7 +451,8 @@ describe('GlService', () => {
 
       const txInsertCalls: any[] = [];
       mock.onTransaction(async (fn: any) => {
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             const call: any = {};
             txInsertCalls.push(call);
@@ -546,7 +550,8 @@ describe('GlService', () => {
       let headerValues: any;
       mock.onTransaction(async (fn: any) => {
         let insertCount = 0;
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             insertCount++;
             return {
@@ -607,7 +612,8 @@ describe('GlService', () => {
       let headerValues: any;
       mock.onTransaction(async (fn: any) => {
         let insertCount = 0;
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             insertCount++;
             return {
@@ -658,7 +664,8 @@ describe('GlService', () => {
 
       mock.onTransaction(async (fn: any) => {
         let insertCount = 0;
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             insertCount++;
             return {
@@ -718,7 +725,8 @@ describe('GlService', () => {
       let capturedNumber: string;
       mock.onTransaction(async (fn: any) => {
         let insertCount = 0;
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             insertCount++;
             return {
@@ -780,7 +788,8 @@ describe('GlService', () => {
       let capturedNumber: string;
       mock.onTransaction(async (fn: any) => {
         let insertCount = 0;
-        const tx = {
+        const tx: any = {
+          select: mock.db.select,
           insert: jest.fn().mockImplementation(() => {
             insertCount++;
             return {
@@ -1314,6 +1323,61 @@ describe('GlService', () => {
       await service.getJournalEntries({ limit: 999 });
       // Code uses Math.min(limit, 200) — we verify it doesn't crash
       expect(mock.db.execute).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // =========================================================================
+  // postJournalEntry — dimension resolution
+  // =========================================================================
+
+  describe('postJournalEntry — dimension resolution', () => {
+    const GL_ACCT = {
+      glAccountId: 'acct-1',
+      accountCode: '1000',
+      isActive: true,
+      isGroup: false,
+      name: 'Test',
+    };
+
+    beforeEach(() => {
+      // 1. Account lookup
+      mock.onSelect([GL_ACCT]);
+      // 2. generateEntryNumber (select from glJournalEntries)
+      mock.onSelect([]);
+      // 3. Insert Entry
+      mock.onInsert([{ journalEntryId: 'je-1' }]);
+    });
+
+    it('should resolve missing dimensions from system defaults (code 00)', async () => {
+      // 4. getDefaults (Cost Center select then Activity select)
+      mock.onSelect([{ id: 'cc-default-uuid' }], [{ id: 'act-default-uuid' }]);
+      // 5. Insert Entry (already in beforeEach) — wait, no, beforeEach only has 3 items in queues.
+      // queue: [GL_ACCT], [todayEntries], [je-1]
+      // postJournalEntry calls:
+      // 1. select accounts -> [GL_ACCT]
+      // 2. select today entries -> [todayEntries]
+      // 3. insert entry -> [je-1]
+      // 4. select defaults cc -> ?
+      // 5. select defaults act -> ?
+      // 6. insert lines -> ?
+
+      // So I need to add 3 more items to the queues
+      mock.onInsert([]); // for the lines
+
+      const lines = [
+        { accountCode: '1000', debit: 100, credit: 0, memo: 'm' },
+        { accountCode: '1000', debit: 0, credit: 100, memo: 'm' },
+      ];
+
+      await service.postJournalEntry(lines, {
+        sourceType: 'manual',
+        actor: 'test',
+      });
+
+      // Total insert calls: 1 (entry) + 1 (lines) + 2 (audit/outbox) = 4
+      expect(mock.db.insert).toHaveBeenCalledTimes(4);
+      // Total select calls: 1 (accounts) + 1 (entry num) + 2 (defaults) = 4
+      expect(mock.db.select).toHaveBeenCalledTimes(4);
     });
   });
 });

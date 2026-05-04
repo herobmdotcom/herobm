@@ -96,6 +96,8 @@ export class SalesInvoiceService {
     let customerName = 'Unknown Customer';
     let customerArAccountId: string | null = null;
     let customerRevenueAccountId: string | null = null;
+    let customerCostCenterId: string | null = null;
+    let customerActivityId: string | null = null;
 
     if (order.customerId) {
       // Find Party details to bind
@@ -110,6 +112,8 @@ export class SalesInvoiceService {
           name: accounts.name,
           defaultArAccountId: accountGroups.defaultArAccountId,
           defaultRevenueAccountId: accountGroups.defaultRevenueAccountId,
+          defaultCostCenterId: accountGroups.defaultCostCenterId,
+          defaultActivityId: accountGroups.defaultActivityId,
         })
         .from(accounts)
         .leftJoin(
@@ -128,6 +132,8 @@ export class SalesInvoiceService {
         customerName = custRows[0].name;
         customerArAccountId = custRows[0].defaultArAccountId;
         customerRevenueAccountId = custRows[0].defaultRevenueAccountId;
+        customerCostCenterId = custRows[0].defaultCostCenterId;
+        customerActivityId = custRows[0].defaultActivityId;
       }
     }
 
@@ -143,6 +149,8 @@ export class SalesInvoiceService {
         taxCategoryId: salesOrderLineItems.taxCategoryId,
         productType: coreProducts.productType,
         productRevenueAccountId: productGroups.defaultRevenueAccountId,
+        productCostCenterId: productGroups.defaultCostCenterId,
+        productActivityId: productGroups.defaultActivityId,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -192,9 +200,19 @@ export class SalesInvoiceService {
     const invoiceLineValues: any[] = [];
     const outboxLineDetails: any[] = [];
 
-    // Revenue GL Routing tallies
-    const revenueByAccountId = new Map<string, number>();
+    // Revenue GL Routing tallies — keyed by composite (accountId|costCenterId|activityId)
+    const revenueGroups = new Map<
+      string,
+      {
+        accountId: string;
+        amount: number;
+        costCenterId: string | null;
+        activityId: string | null;
+      }
+    >();
     let defaultRevenue = 0;
+    let defaultRevenueCostCenterId: string | null = null;
+    let defaultRevenueActivityId: string | null = null;
 
     let totalOrderedQty = 0;
     let totalInvoicedSoFar = 0;
@@ -281,13 +299,35 @@ export class SalesInvoiceService {
         this.appConfig.revenueRoutingPrecedence() === 'customer_first'
           ? customerRevenueAccountId || line.productRevenueAccountId || null
           : line.productRevenueAccountId || customerRevenueAccountId || null;
+
+      // Resolve cost center / activity using same routing precedence
+      const lineCostCenterId =
+        this.appConfig.revenueRoutingPrecedence() === 'customer_first'
+          ? customerCostCenterId || line.productCostCenterId || null
+          : line.productCostCenterId || customerCostCenterId || null;
+      const lineActivityId =
+        this.appConfig.revenueRoutingPrecedence() === 'customer_first'
+          ? customerActivityId || line.productActivityId || null
+          : line.productActivityId || customerActivityId || null;
       if (lineRevAcctId) {
-        revenueByAccountId.set(
-          lineRevAcctId,
-          (revenueByAccountId.get(lineRevAcctId) || 0) + pricing.amount,
-        );
+        const compositeKey = `${lineRevAcctId}|${lineCostCenterId || ''}|${lineActivityId || ''}`;
+        const existing = revenueGroups.get(compositeKey);
+        if (existing) {
+          existing.amount += pricing.amount;
+        } else {
+          revenueGroups.set(compositeKey, {
+            accountId: lineRevAcctId,
+            amount: pricing.amount,
+            costCenterId: lineCostCenterId,
+            activityId: lineActivityId,
+          });
+        }
       } else {
         defaultRevenue += pricing.amount;
+        // Keep track of last resolved dimension for the default fallback bucket
+        defaultRevenueCostCenterId =
+          defaultRevenueCostCenterId || lineCostCenterId;
+        defaultRevenueActivityId = defaultRevenueActivityId || lineActivityId;
       }
 
       invoiceLineValues.push({
@@ -320,7 +360,7 @@ export class SalesInvoiceService {
     const isFullyInvoiced =
       totalInvoicedSoFar + totalInvoicingNow >= totalOrderedQty - 0.001;
 
-    // 4. Begin transactional generation
+    // 4. Begin transactional generation (invoice + GL posting are atomic)
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       // A. Create the Invoice header natively
       const [invoice] = await tx
@@ -329,6 +369,7 @@ export class SalesInvoiceService {
           invoiceNumber,
           salesOrderId,
           totalAmount: String(combinedTotal), // AR takes the whole amount dynamically
+          outstandingAmount: String(combinedTotal),
           taxAmount: String(taxAmount),
           currencyCode: order.currencyCode,
           stateCode: 'invoiced',
@@ -371,34 +412,7 @@ export class SalesInvoiceService {
         actor,
       });
 
-      return invoice;
-    });
-
-    this.logger.log(
-      `Native Sales Invoice created: ${invoiceNumber} for order ${order.orderNumber} strictly mapping AR boundary`,
-    );
-
-    // Evaluate lifecycle rules to auto-transition the Sales Order if needed
-    try {
-      await evaluateLifecycleRules(
-        this.db,
-        salesOrderId,
-        {
-          entity: 'sales_invoice',
-          action: 'created',
-          id: result.invoiceId,
-        },
-        actor,
-      );
-    } catch (err) {
-      this.logger.error(
-        `Failed to evaluate lifecycle rules for SO ${salesOrderId} after invoice creation:`,
-        err,
-      );
-    }
-
-    // 5. Post GL journal entry (outside the transaction — GL service has its own tx)
-    try {
+      // E. Post GL journal entry (atomic with invoice creation)
       const settings = await this.glService.getSettings();
       const effectiveArAccountId =
         customerArAccountId || settings?.defaultArAccountId;
@@ -411,15 +425,15 @@ export class SalesInvoiceService {
           distinctAccountIds.add(settings.defaultTaxAccountId);
         if (settings?.defaultRevenueAccountId)
           distinctAccountIds.add(settings.defaultRevenueAccountId);
-        for (const acctId of revenueByAccountId.keys()) {
-          distinctAccountIds.add(acctId);
+        for (const group of revenueGroups.values()) {
+          distinctAccountIds.add(group.accountId);
         }
 
         const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
 
         if (settingsIds.length > 0) {
           const glAcct = glAccounts;
-          const acctRows = await this.db
+          const acctRows = await tx
             .select({
               glAccountId: glAcct.glAccountId,
               accountCode: glAcct.accountCode,
@@ -450,18 +464,22 @@ export class SalesInvoiceService {
                 memo: `AR: ${invoiceNumber}`,
                 partyType: 'customer',
                 partyId: order.customerId,
+                costCenterId: customerCostCenterId || undefined,
+                activityId: customerActivityId || undefined,
               },
             ];
 
-            // 1. Map explicitly dynamic revenue lines
-            for (const [acctId, revAmt] of revenueByAccountId.entries()) {
-              const code = idToCode.get(acctId);
-              if (code && revAmt > 0) {
+            // 1. Map explicitly dynamic revenue lines (grouped by account + dimensions)
+            for (const group of revenueGroups.values()) {
+              const code = idToCode.get(group.accountId);
+              if (code && group.amount > 0) {
                 glLines.push({
                   accountCode: code,
                   debit: 0,
-                  credit: revAmt,
+                  credit: group.amount,
                   memo: `Revenue: ${invoiceNumber}`,
+                  costCenterId: group.costCenterId || undefined,
+                  activityId: group.activityId || undefined,
                 });
               }
             }
@@ -478,6 +496,8 @@ export class SalesInvoiceService {
                   debit: 0,
                   credit: defaultRevenue,
                   memo: `Revenue: ${invoiceNumber} (Default)`,
+                  costCenterId: defaultRevenueCostCenterId || undefined,
+                  activityId: defaultRevenueActivityId || undefined,
                 });
               } else {
                 this.logger.warn(
@@ -495,12 +515,16 @@ export class SalesInvoiceService {
               });
             }
 
-            await this.glService.postJournalEntry(glLines, {
-              sourceType: 'sales_invoice',
-              sourceId: result.invoiceId,
-              memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
-              actor,
-            });
+            await this.glService.postJournalEntry(
+              glLines,
+              {
+                sourceType: 'sales_invoice',
+                sourceId: invoice.invoiceId,
+                memo: `Sales invoice ${invoiceNumber} for order ${order.orderNumber}`,
+                actor,
+              },
+              tx,
+            );
 
             this.logger.log(
               `GL journal posted for sales invoice ${invoiceNumber}`,
@@ -508,10 +532,30 @@ export class SalesInvoiceService {
           }
         }
       }
-    } catch (glErr) {
-      // GL posting is non-fatal — log and continue (outbox handles external sync)
-      this.logger.warn(
-        `GL posting failed for invoice ${invoiceNumber}: ${(glErr as Error).message}`,
+
+      return invoice;
+    });
+
+    this.logger.log(
+      `Native Sales Invoice created: ${invoiceNumber} for order ${order.orderNumber} strictly mapping AR boundary`,
+    );
+
+    // Evaluate lifecycle rules to auto-transition the Sales Order if needed
+    try {
+      await evaluateLifecycleRules(
+        this.db,
+        salesOrderId,
+        {
+          entity: 'sales_invoice',
+          action: 'created',
+          id: result.invoiceId,
+        },
+        actor,
+      );
+    } catch (err) {
+      this.logger.error(
+        `Failed to evaluate lifecycle rules for SO ${salesOrderId} after invoice creation:`,
+        err,
       );
     }
 
@@ -523,8 +567,27 @@ export class SalesInvoiceService {
    */
   async findOne(invoiceId: string) {
     const rows = await this.db
-      .select()
+      .select({
+        invoiceId: salesInvoices.invoiceId,
+        invoiceNumber: salesInvoices.invoiceNumber,
+        salesOrderId: salesInvoices.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        customerId: salesOrders.customerId,
+        customerName: accounts.name,
+        totalAmount: salesInvoices.totalAmount,
+        taxAmount: salesInvoices.taxAmount,
+        outstandingAmount: salesInvoices.outstandingAmount,
+        currencyCode: salesInvoices.currencyCode,
+        stateCode: salesInvoices.stateCode,
+        createdOn: salesInvoices.createdOn,
+        notes: salesOrders.notes, // Or if salesInvoices has its own notes
+      })
       .from(salesInvoices)
+      .innerJoin(
+        salesOrders,
+        eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
+      )
+      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
       .where(eq(salesInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -542,6 +605,8 @@ export class SalesInvoiceService {
         pricePerUnit: salesInvoiceLines.pricePerUnit,
         amount: salesInvoiceLines.amount,
         productId: salesOrderLineItems.productId,
+        productNumber: coreProducts.productNumber,
+        description: coreProducts.name, // Use product name as default description
       })
       .from(salesInvoiceLines)
       .innerJoin(
@@ -550,6 +615,10 @@ export class SalesInvoiceService {
           salesInvoiceLines.salesOrderLineId,
           salesOrderLineItems.salesOrderLineId,
         ),
+      )
+      .innerJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
       )
       .where(eq(salesInvoiceLines.invoiceId, invoiceId));
 

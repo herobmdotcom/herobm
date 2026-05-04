@@ -82,6 +82,7 @@ const ORDER_LINE = {
   quantityPicked: '0',
   pricePerUnit: '50.00',
   amount: '500.00',
+  fulfillmentLocationId: 'MAIN',
 };
 
 describe('PickingService', () => {
@@ -158,12 +159,30 @@ describe('PickingService', () => {
       mockSelectChain({
         1: [{ ...PICKING_ORDER, stateCode: orderState }],
         2: [ORDER_LINE],
+        3: [{ sum: 0 }], // currentPickSum query
+        4: [{ binId: 'ship-bin' }], // SHIPPING bin lookup
+        5: [{ ...PICKING_ORDER, stateCode: orderState }], // findOrder in evaluateLifecycleRules
+        6: [], // findOrderLine inside rules (or any other queries in rules)
       });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '5' }, [
-        [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '10' }], // Available bin
-        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
-        [{ binId: 'ship-bin' }], // SHIPPING bin
-      ]);
+      // The transaction callback calls tx.insert().values().returning()
+      // which needs to return a pick record with pickId
+      const mockTx = createMockTx([[{ ...PICKING_ORDER, stateCode: orderState }]]);
+      const pickRecord = {
+        pickId: 'new-pick-001',
+        salesOrderId: 'order-001',
+        salesOrderLineId: 'line-001',
+        productId: 'PROD-001',
+        binId: 'bin-1',
+        quantity: '5',
+        stateCode: 'picked',
+      };
+      mockTx.insert = jest
+        .fn()
+        .mockReturnValue(createMockQueryBuilder([pickRecord]));
+      mockTx.update = jest.fn().mockReturnValue(createMockQueryBuilder([]));
+      mockDb.transaction = jest
+        .fn()
+        .mockImplementation(async (cb: any) => cb(mockTx));
     }
 
     it('should update quantity_picked on a picking order', async () => {
@@ -171,89 +190,41 @@ describe('PickingService', () => {
       const result = await service.pickLine(
         'order-001',
         'line-001',
+        'bin-1',
         '5',
         'admin',
       );
-      expect(result).toHaveProperty('quantityPicked', '5');
+      expect(result).toHaveProperty('pickId', 'new-pick-001');
+      expect(result).toHaveProperty('quantity', '5');
       expect(mockDb.transaction).toHaveBeenCalledTimes(1);
     });
 
     it('should reject pick on non-picking state order', async () => {
       setupPickLine('draft');
       await expect(
-        service.pickLine('order-001', 'line-001', '5', 'admin'),
+        service.pickLine('order-001', 'line-001', 'bin-1', '5', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject negative quantity', async () => {
       setupPickLine('picking');
       await expect(
-        service.pickLine('order-001', 'line-001', '-1', 'admin'),
+        service.pickLine('order-001', 'line-001', 'bin-1', '-1', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject quantity exceeding ordered', async () => {
       setupPickLine('picking');
       await expect(
-        service.pickLine('order-001', 'line-001', '15', 'admin'),
+        service.pickLine('order-001', 'line-001', 'bin-1', '15', 'admin'),
       ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should allow setting quantity to 0 (unpick)', async () => {
-      mockSelectChain({
-        1: [PICKING_ORDER],
-        2: [{ ...ORDER_LINE, quantityPicked: '5' }],
-      });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '0' }, [
-        [{ binId: 'main-bin', locationId: 'MAIN' }], // MAIN bin (since delta < 0, it asks for fallback bin)
-        [{ binId: 'ship-bin' }], // SHIPPING bin
-      ]);
-      const result = await service.pickLine(
-        'order-001',
-        'line-001',
-        '0',
-        'admin',
-      );
-      expect(result).toBeDefined();
     });
 
     it('should throw NotFoundException for unknown order', async () => {
       mockSelectChain({ 1: [] });
       await expect(
-        service.pickLine('NONEXISTENT', 'line-001', '5', 'admin'),
+        service.pickLine('NONEXISTENT', 'line-001', 'bin-1', '5', 'admin'),
       ).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  // =========================================================================
-  // pickAllForLine
-  // =========================================================================
-
-  describe('pickAllForLine', () => {
-    it('should set quantity_picked = quantity', async () => {
-      mockSelectChain({
-        1: [PICKING_ORDER],
-        2: [ORDER_LINE],
-      });
-      mockTransaction({ ...ORDER_LINE, quantityPicked: '10' }, [
-        [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }], // Available bin
-        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
-        [{ binId: 'ship-bin' }], // SHIPPING bin
-      ]);
-      const result = await service.pickAllForLine(
-        'order-001',
-        'line-001',
-        'admin',
-      );
-      expect(result).toBeDefined();
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
-    });
-
-    it('should reject on non-picking order', async () => {
-      mockSelectChain({ 1: [DRAFT_ORDER] });
-      await expect(
-        service.pickAllForLine('order-002', 'line-001', 'admin'),
-      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -267,17 +238,25 @@ describe('PickingService', () => {
         1: [PICKING_ORDER],
         2: [
           {
+            salesOrderLineId: 'line-1',
             lineNumber: 1,
             quantity: '10',
             quantityPicked: '10',
             productId: 'p1',
           },
           {
+            salesOrderLineId: 'line-2',
             lineNumber: 2,
             quantity: '5',
             quantityPicked: '5',
             productId: 'p2',
           },
+        ],
+        3: [],
+        4: [],
+        5: [
+          { salesOrderLineId: 'line-1', quantity: '10', stateCode: 'picked' },
+          { salesOrderLineId: 'line-2', quantity: '5', stateCode: 'picked' },
         ],
       });
       await expect(
@@ -290,17 +269,25 @@ describe('PickingService', () => {
         1: [PICKING_ORDER],
         2: [
           {
+            salesOrderLineId: 'line-1',
             lineNumber: 1,
             quantity: '10',
             quantityPicked: '10',
             productId: 'p1',
           },
           {
+            salesOrderLineId: 'line-2',
             lineNumber: 2,
             quantity: '5',
             quantityPicked: '3',
             productId: 'p2',
           },
+        ],
+        3: [],
+        4: [],
+        5: [
+          { salesOrderLineId: 'line-1', quantity: '10', stateCode: 'picked' },
+          { salesOrderLineId: 'line-2', quantity: '3', stateCode: 'picked' },
         ],
       });
       await expect(service.assertFullyPicked('order-001')).rejects.toThrow(
@@ -313,12 +300,16 @@ describe('PickingService', () => {
         1: [PICKING_ORDER],
         2: [
           {
+            salesOrderLineId: 'line-1',
             lineNumber: 1,
             quantity: '10',
             quantityPicked: '7',
             productId: 'p1',
           },
         ],
+        3: [],
+        4: [],
+        5: [{ salesOrderLineId: 'line-1', quantity: '7', stateCode: 'picked' }],
       });
       try {
         await service.assertFullyPicked('order-001');
@@ -327,127 +318,6 @@ describe('PickingService', () => {
         expect(e.message).toContain('line 1');
         expect(e.message).toContain('picked 7 of 10');
       }
-    });
-  });
-
-  // =========================================================================
-  // pickAllOrder
-  // =========================================================================
-
-  describe('pickAllOrder', () => {
-    it('should pick all lines and create a shipment', async () => {
-      mockSelectChain({
-        1: [PICKING_ORDER],
-        // lines query
-        2: [
-          {
-            salesOrderLineId: 'line-1',
-            quantity: '10',
-            quantityPicked: '0',
-            lineNumber: 1,
-          },
-          {
-            salesOrderLineId: 'line-2',
-            quantity: '5',
-            quantityPicked: '0',
-            lineNumber: 2,
-          },
-        ],
-        // getCommittedPerLine queries:
-        // shipments query
-        3: [],
-      });
-
-      mockTransaction({}, [
-        // For line-1
-        [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }],
-        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
-        [{ binId: 'ship-bin' }],
-        // For line-2
-        [{ binId: 'bin-1', locationId: 'MAIN', actualQuantity: '20' }],
-        [{ binId: 'fallback-bin', locationId: 'MAIN' }], // Fallback bin
-        // shipping bin is cached, no extra query
-        [{ binId: 'ship-bin' }],
-      ]);
-
-      const result = await service.pickAllOrder('order-001', 'admin');
-
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
-      const mockShipmentService: any = service['shipmentService'];
-      expect(mockShipmentService.createShipment).toHaveBeenCalledWith(
-        'order-001',
-        {
-          lines: [
-            { salesOrderLineId: 'line-1', quantityShipped: '10' },
-            { salesOrderLineId: 'line-2', quantityShipped: '5' },
-          ],
-        },
-        'admin',
-      );
-      expect(result).toHaveProperty('shipmentNumber', 'SHP-20260316-0001');
-    });
-
-    it('should return a marker message if everything is already shipped', async () => {
-      mockSelectChain({
-        1: [PICKING_ORDER],
-        // lines query
-        2: [
-          {
-            salesOrderLineId: 'line-1',
-            quantity: '10',
-            quantityPicked: '10',
-            lineNumber: 1,
-          },
-        ],
-        // shipments query -> returns 1 shipment
-        3: [
-          {
-            shipmentId: 'ship-001',
-            salesOrderId: 'order-001',
-            stateCode: 'dispatched',
-          },
-        ],
-        // lines query for shipment 1 -> all 10 shipped
-        4: [
-          {
-            shipmentLineId: 'shipline-1',
-            shipmentId: 'ship-001',
-            salesOrderLineId: 'line-1',
-            quantityShipped: '10',
-          },
-        ],
-      });
-
-      mockTransaction({}, []);
-
-      const mockShipmentService: any = service['shipmentService'];
-      mockShipmentService.createShipment.mockClear();
-
-      const result = await service.pickAllOrder('order-001', 'admin');
-
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
-      expect(mockShipmentService.createShipment).not.toHaveBeenCalled();
-      expect(result).toHaveProperty(
-        'message',
-        'All lines already shipped; no new shipment created.',
-      );
-    });
-
-    it('should reject if order is not in picking state', async () => {
-      mockSelectChain({ 1: [DRAFT_ORDER] });
-      await expect(service.pickAllOrder('order-002', 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
-    it('should reject if order has no lines', async () => {
-      mockSelectChain({
-        1: [PICKING_ORDER],
-        2: [],
-      });
-      await expect(service.pickAllOrder('order-001', 'admin')).rejects.toThrow(
-        BadRequestException,
-      );
     });
   });
 
@@ -496,6 +366,23 @@ describe('PickingService', () => {
             quantityShipped: '5',
           },
         ],
+        // bins joined with inventoryLevels
+        5: [],
+        // salesOrderPicks
+        6: [
+          {
+            pickId: 'pick-1',
+            salesOrderLineId: 'line-1',
+            quantity: '10',
+            stateCode: 'picked',
+          },
+          {
+            pickId: 'pick-2',
+            salesOrderLineId: 'line-2',
+            quantity: '2',
+            stateCode: 'picked',
+          },
+        ],
       });
 
       const summary = await service.getPickingSummary('order-001');
@@ -516,128 +403,6 @@ describe('PickingService', () => {
       expect(line2.remaining).toBe('3');
       expect(line2.quantityShipped).toBe('0');
       expect(line2.isFullyPicked).toBe(false);
-    });
-  });
-
-  // =========================================================================
-  // allocatePickDelta
-  // =========================================================================
-
-  describe('allocatePickDelta', () => {
-    beforeEach(() => {
-      mockInventoryService.recordInventoryMovement.mockClear();
-    });
-
-    it('should ignore zero delta', async () => {
-      const tx = createMockTx();
-      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 0, 'admin');
-      expect(tx.select).not.toHaveBeenCalled();
-      expect(
-        mockInventoryService.recordInventoryMovement,
-      ).not.toHaveBeenCalled();
-    });
-
-    it('should throw if no SHIPPING bin is configured', async () => {
-      const tx = createMockTx([
-        [], // No Available bins
-        [{ binId: 'fallback-bin', locationId: 'loc-1' }], // Fallback bin
-        [], // No SHIPPING bin
-      ]);
-      await expect(
-        service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin'),
-      ).rejects.toThrow('No SHIPPING staging bin found for location loc-1.');
-    });
-
-    it('should pick from highest-stock non-staging bins first', async () => {
-      const tx = createMockTx([
-        [
-          // Available bins for P1
-          { binId: 'bin-b1', locationId: 'loc-1', actualQuantity: '10' },
-          { binId: 'bin-b2', locationId: 'loc-1', actualQuantity: '5' },
-        ],
-        [{ binId: 'fallback-bin', locationId: 'loc-1' }], // Fallback bin
-        [{ binId: 'bin-shipping' }], // SHIPPING bin
-      ]);
-
-      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 12, 'admin');
-
-      expect(
-        mockInventoryService.recordInventoryMovement,
-      ).toHaveBeenCalledTimes(1);
-      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
-      const params = args[1];
-
-      expect(params.lines).toHaveLength(4); // 2 lines per bin taken from
-      expect(params.lines[0]).toMatchObject({ binId: 'bin-b1', quantity: -10 });
-      expect(params.lines[1]).toMatchObject({
-        binId: 'bin-shipping',
-        quantity: 10,
-      });
-      expect(params.lines[2]).toMatchObject({ binId: 'bin-b2', quantity: -2 });
-      expect(params.lines[3]).toMatchObject({
-        binId: 'bin-shipping',
-        quantity: 2,
-      });
-    });
-
-    it('should use fallback bin if available bins run dry', async () => {
-      const tx = createMockTx([
-        [{ binId: 'bin-b1', locationId: 'loc-1', actualQuantity: '2' }], // Available bins
-        [{ binId: 'bin-fallback', locationId: 'loc-1' }], // Fallback bin
-        [{ binId: 'bin-shipping', locationId: 'loc-1' }], // SHIPPING bin for loc-1
-        [{ binId: 'bin-shipping', locationId: 'loc-1' }], // SHIPPING bin for fallback
-      ]);
-
-      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin');
-
-      expect(
-        mockInventoryService.recordInventoryMovement,
-      ).toHaveBeenCalledTimes(1);
-      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
-      const params = args[1];
-
-      expect(params.lines).toHaveLength(4);
-      expect(params.lines[0]).toMatchObject({ binId: 'bin-b1', quantity: -2 });
-      expect(params.lines[2]).toMatchObject({
-        binId: 'bin-fallback',
-        quantity: -3,
-      });
-    });
-
-    it('should throw if fallback bin is missing when running out of stock', async () => {
-      const tx = createMockTx([
-        [], // No Available bins
-        [], // No fallback bin
-      ]);
-
-      await expect(
-        service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', 5, 'admin'),
-      ).rejects.toThrow('No storage bins defined in the system.');
-    });
-
-    it('should revert stock from SHIPPING to fallback bin on negative delta', async () => {
-      const tx = createMockTx([
-        [{ binId: 'bin-fallback', locationId: 'loc-1' }], // Fallback bin
-        [{ binId: 'bin-shipping' }], // SHIPPING bin
-      ]);
-
-      await service['allocatePickDelta'](tx, 'ord-100', 1, 'P1', -4, 'admin');
-
-      expect(
-        mockInventoryService.recordInventoryMovement,
-      ).toHaveBeenCalledTimes(1);
-      const args = mockInventoryService.recordInventoryMovement.mock.calls[0];
-      const params = args[1];
-
-      expect(params.lines).toHaveLength(2);
-      expect(params.lines[0]).toMatchObject({
-        binId: 'bin-fallback',
-        quantity: 4,
-      });
-      expect(params.lines[1]).toMatchObject({
-        binId: 'bin-shipping',
-        quantity: -4,
-      });
     });
   });
 });

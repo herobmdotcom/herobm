@@ -268,6 +268,8 @@ export class ReconciliationService {
         memo: glJournalLines.memo,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
+        costCenterId: glJournalLines.costCenterId,
+        activityId: glJournalLines.activityId,
         entryDate: glJournalEntries.entryDate,
       })
       .from(glJournalLines)
@@ -289,66 +291,79 @@ export class ReconciliationService {
     const isDebit = Number(targetLine.debit || 0) > 0;
 
     if (isCleared && amount !== undefined && amount < lineTotal) {
-      // PERFORM SPLIT
+      // PERFORM SPLIT — GL entry + line linking are atomic
       const remainingAmount = lineTotal - amount;
 
       const baseMemo = targetLine.memo ? targetLine.memo : '';
-      // 1. Generate Split Journal Entry
-      const splitLines = [
-        // Reversal Line
-        {
-          accountCode: targetLine.accountCode,
-          debit: isDebit ? 0 : lineTotal,
-          credit: isDebit ? lineTotal : 0,
-          memo: `Reversal: ${baseMemo}`.trim(),
-          partyType: targetLine.partyType as 'customer' | 'supplier' | null,
-          partyId: targetLine.partyId,
-        },
-        // Cleared Portion (Split A)
-        {
-          accountCode: targetLine.accountCode,
-          debit: isDebit ? amount : 0,
-          credit: isDebit ? 0 : amount,
-          memo: `Split A: ${baseMemo}`.trim(),
-          partyType: targetLine.partyType as 'customer' | 'supplier' | null,
-          partyId: targetLine.partyId,
-        },
-        // Remaining Portion (Split B)
-        {
-          accountCode: targetLine.accountCode,
-          debit: isDebit ? remainingAmount : 0,
-          credit: isDebit ? 0 : remainingAmount,
-          memo: `Split B: ${baseMemo}`.trim(),
-          partyType: targetLine.partyType as 'customer' | 'supplier' | null,
-          partyId: targetLine.partyId,
-        },
-      ];
-
-      const meta = {
-        entryDate:
-          targetLine.entryDate || new Date().toISOString().split('T')[0],
-        memo: `Split of line ${journalLineId}`,
-        sourceId: journalLineId,
-        sourceType: 'adjustment' as const,
-        actor: 'system',
-      };
-      const result = await this.glService.postJournalEntry(splitLines, meta);
-
-      // 2. Fetch the newly created lines to link them appropriately
-      const newLines = await this.db
-        .select()
-        .from(glJournalLines)
-        .where(eq(glJournalLines.journalEntryId, result.journalEntryId));
-
-      const reversalLine = newLines.find((l) =>
-        l.memo?.startsWith('Reversal:'),
-      );
-      const clearedLine = newLines.find((l) => l.memo?.startsWith('Split A:'));
-      const remainingLine = newLines.find((l) =>
-        l.memo?.startsWith('Split B:'),
-      );
 
       await this.db.transaction(async (tx) => {
+        // 1. Generate Split Journal Entry
+        const splitLines = [
+          // Reversal Line
+          {
+            accountCode: targetLine.accountCode,
+            debit: isDebit ? 0 : lineTotal,
+            credit: isDebit ? lineTotal : 0,
+            memo: `Reversal: ${baseMemo}`.trim(),
+            partyType: targetLine.partyType as 'customer' | 'supplier' | null,
+            partyId: targetLine.partyId,
+            costCenterId: targetLine.costCenterId ?? undefined,
+            activityId: targetLine.activityId ?? undefined,
+          },
+          // Cleared Portion (Split A)
+          {
+            accountCode: targetLine.accountCode,
+            debit: isDebit ? amount : 0,
+            credit: isDebit ? 0 : amount,
+            memo: `Split A: ${baseMemo}`.trim(),
+            partyType: targetLine.partyType as 'customer' | 'supplier' | null,
+            partyId: targetLine.partyId,
+            costCenterId: targetLine.costCenterId ?? undefined,
+            activityId: targetLine.activityId ?? undefined,
+          },
+          // Remaining Portion (Split B)
+          {
+            accountCode: targetLine.accountCode,
+            debit: isDebit ? remainingAmount : 0,
+            credit: isDebit ? 0 : remainingAmount,
+            memo: `Split B: ${baseMemo}`.trim(),
+            partyType: targetLine.partyType as 'customer' | 'supplier' | null,
+            partyId: targetLine.partyId,
+            costCenterId: targetLine.costCenterId ?? undefined,
+            activityId: targetLine.activityId ?? undefined,
+          },
+        ];
+
+        const meta = {
+          entryDate:
+            targetLine.entryDate || new Date().toISOString().split('T')[0],
+          memo: `Split of line ${journalLineId}`,
+          sourceId: journalLineId,
+          sourceType: 'adjustment' as const,
+          actor: 'system',
+        };
+        const result = await this.glService.postJournalEntry(
+          splitLines,
+          meta,
+          tx,
+        );
+
+        // 2. Fetch the newly created lines to link them appropriately
+        const newLines = await tx
+          .select()
+          .from(glJournalLines)
+          .where(eq(glJournalLines.journalEntryId, result.journalEntryId));
+
+        const reversalLine = newLines.find((l) =>
+          l.memo?.startsWith('Reversal:'),
+        );
+        const clearedLine = newLines.find((l) =>
+          l.memo?.startsWith('Split A:'),
+        );
+        const remainingLine = newLines.find((l) =>
+          l.memo?.startsWith('Split B:'),
+        );
+
         // Link the original line and the reversal line to perfectly offset each other
         await tx
           .update(glJournalLines)
@@ -495,28 +510,37 @@ export class ReconciliationService {
       actor: actor,
     };
 
-    const newJournalId = await this.glService.postJournalEntry(
-      [primaryLine, offsetLine],
-      meta,
-    );
+    // GL entry + auto-clearing are atomic
+    const result = await this.db.transaction(async (tx) => {
+      const newJournalId = await this.glService.postJournalEntry(
+        [primaryLine, offsetLine],
+        meta,
+        tx,
+      );
 
-    // After creating the journal entry, we want to auto-clear the line for the primary account
-    // We just find the line belonging to primaryAccountCode in this new journal entry
-    const newLines = await this.db
-      .select({ journalLineId: glJournalLines.journalLineId })
-      .from(glJournalLines)
-      .where(
-        and(
-          eq(glJournalLines.journalEntryId, newJournalId.journalEntryId),
-          eq(glJournalLines.glAccountId, rec.glAccountId),
-        ),
-      )
-      .limit(1);
+      // After creating the journal entry, auto-clear the line for the primary account
+      const newLines = await tx
+        .select({ journalLineId: glJournalLines.journalLineId })
+        .from(glJournalLines)
+        .where(
+          and(
+            eq(glJournalLines.journalEntryId, newJournalId.journalEntryId),
+            eq(glJournalLines.glAccountId, rec.glAccountId),
+          ),
+        )
+        .limit(1);
 
-    if (newLines.length) {
-      await this.toggleLine(id, newLines[0].journalLineId, true);
-    }
+      if (newLines.length) {
+        // Simple clear — just set the reconciliationId directly
+        await tx
+          .update(glJournalLines)
+          .set({ reconciliationId: id })
+          .where(eq(glJournalLines.journalLineId, newLines[0].journalLineId));
+      }
 
-    return { success: true, journalEntryId: newJournalId.journalEntryId };
+      return newJournalId;
+    });
+
+    return { success: true, journalEntryId: result.journalEntryId };
   }
 }

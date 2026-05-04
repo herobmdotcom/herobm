@@ -211,23 +211,49 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     expect(freightLine.isFullyPicked).toBe(true);
   });
 
-  it('Step 3: Pick-all dispatches shipment with physical item', async () => {
-    await request(app.getHttpServer())
-      .post(`/api/sales-orders/${soId}/picking/pick-all`)
+  it('Step 3: Pick physical line and dispatch shipment', async () => {
+    // Get bins
+    const binsRes = await request(app.getHttpServer())
+      .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
-      .expect(201);
+      .expect(200);
+    const binId = binsRes.body.data[0].binId;
 
-    const shipmentsRes = await request(app.getHttpServer())
-      .get(`/api/sales-orders/${soId}/shipments`)
+    // Get order lines
+    const detail = await request(app.getHttpServer())
+      .get(`/api/sales-orders/${soId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(shipmentsRes.body.length).toBeGreaterThan(0);
-    const shipmentId = shipmentsRes.body[0].shipmentId;
-
-    // Dispatching the shipment
+    // Pick only the physical line
+    const physicalLine = detail.body.lines.find(
+      (l: any) => l.productId === physicalProductId,
+    );
     await request(app.getHttpServer())
-      .patch(`/api/sales-orders/${soId}/shipments/${shipmentId}/state`)
+      .post(
+        `/api/sales-orders/${soId}/picking/lines/${physicalLine.salesOrderLineId}`,
+      )
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ binId, quantity: physicalLine.quantity })
+      .expect(201);
+
+    // Create shipment with all lines (physical + freight)
+    const shipLines = detail.body.lines.map((l: any) => ({
+      salesOrderLineId: l.salesOrderLineId,
+      quantityShipped: l.quantity,
+    }));
+
+    const shipRes = await request(app.getHttpServer())
+      .post(`/api/sales-orders/${soId}/shipments`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ lines: shipLines })
+      .expect(201);
+
+    // Dispatch the shipment
+    await request(app.getHttpServer())
+      .patch(
+        `/api/sales-orders/${soId}/shipments/${shipRes.body.shipmentId}/state`,
+      )
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ stateCode: 'dispatched' })
       .expect(200);

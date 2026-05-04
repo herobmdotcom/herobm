@@ -79,6 +79,9 @@ export function parsePagination(query?: PaginationQuery) {
   const accountId = query?.accountId;
   const days = query?.days;
   const purchaseOrderId = query?.purchaseOrderId;
+  const states = query?.state
+    ? query.state.split(',').map((s) => s.trim())
+    : null;
   return {
     page,
     limit,
@@ -88,6 +91,7 @@ export function parsePagination(query?: PaginationQuery) {
     accountId,
     days,
     purchaseOrderId,
+    states,
   };
 }
 

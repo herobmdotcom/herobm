@@ -258,6 +258,7 @@ export class PurchaseInvoiceService {
           vendorId: dto.vendorId,
           supplierInvoiceNumber: dto.supplierInvoiceNumber,
           totalAmount: String(dto.totalAmount),
+          outstandingAmount: String(dto.totalAmount),
           taxAmount: String(dto.taxAmount),
           receiptFilename: dto.receiptFilename,
           currencyCode: dto.currencyCode,
@@ -318,7 +319,10 @@ export class PurchaseInvoiceService {
 
     await tx
       .update(purchaseInvoices)
-      .set({ totalAmount: newTotal.toFixed(2) })
+      .set({
+        totalAmount: newTotal.toFixed(2),
+        outstandingAmount: newTotal.toFixed(2),
+      })
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
   }
 
@@ -557,16 +561,28 @@ export class PurchaseInvoiceService {
       );
     }
 
-    // Verify Vendor default AP / Expense Accounts
+    // Verify Vendor default AP / Expense Accounts + Dimensions
     const [supp] = await this.db
-      .select()
+      .select({
+        vendorId: suppliers.vendorId,
+        defaultApAccountId: supplierGroups.defaultApAccountId,
+        defaultExpenseAccountId: supplierGroups.defaultExpenseAccountId,
+        supplierCostCenterId: supplierGroups.defaultCostCenterId,
+        supplierActivityId: supplierGroups.defaultActivityId,
+      })
       .from(suppliers)
+      .leftJoin(
+        supplierGroups,
+        eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+      )
       .where(eq(suppliers.vendorId, invoice.vendorId));
-    const supplierApAccountId = (supp as any)?.defaultApAccountId;
-    const supplierExpenseAccountId = (supp as any)?.defaultExpenseAccountId;
+    const supplierApAccountId = supp?.defaultApAccountId;
+    const supplierExpenseAccountId = supp?.defaultExpenseAccountId;
+    const supplierCostCenterId = supp?.supplierCostCenterId || null;
+    const supplierActivityId = supp?.supplierActivityId || null;
 
-    // GL Posting (similar to createBill)
-    try {
+    // GL Posting + State Update (atomic transaction)
+    const updatedInvoice = await this.db.transaction(async (tx: DrizzleDB) => {
       const settings = await this.glService.getSettings();
       const effectiveApAccountId =
         supplierApAccountId || settings?.defaultApAccountId;
@@ -588,7 +604,7 @@ export class PurchaseInvoiceService {
         const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
 
         if (settingsIds.length > 0) {
-          const acctRows = await this.db
+          const acctRows = await tx
             .select({
               glAccountId: glAccounts.glAccountId,
               accountCode: glAccounts.accountCode,
@@ -610,7 +626,8 @@ export class PurchaseInvoiceService {
 
           // In perpetual mode, matched inventory lines clear the GRNI liability.
           // In periodic mode, matched lines are treated as direct expenses.
-          const isPerpetual = this.appConfig.inventoryAccountingMode() === 'perpetual';
+          const isPerpetual =
+            this.appConfig.inventoryAccountingMode() === 'perpetual';
           const grniCode =
             isPerpetual && settings.defaultGrniAccountId
               ? idToCode.get(settings.defaultGrniAccountId)
@@ -629,6 +646,8 @@ export class PurchaseInvoiceService {
                 debit: defaultExpense,
                 credit: 0,
                 memo: `Expense (Default): ${invoice.invoiceNumber}`,
+                costCenterId: supplierCostCenterId || undefined,
+                activityId: supplierActivityId || undefined,
               });
             }
 
@@ -640,6 +659,8 @@ export class PurchaseInvoiceService {
                 memo: `GRNI Clearance: ${invoice.invoiceNumber}`,
                 partyId: invoice.vendorId,
                 partyType: 'supplier',
+                costCenterId: supplierCostCenterId || undefined,
+                activityId: supplierActivityId || undefined,
               });
             }
 
@@ -651,6 +672,8 @@ export class PurchaseInvoiceService {
                   debit: amount,
                   credit: 0,
                   memo: `Expense: ${invoice.invoiceNumber}`,
+                  costCenterId: supplierCostCenterId || undefined,
+                  activityId: supplierActivityId || undefined,
                 });
               }
             }
@@ -673,32 +696,35 @@ export class PurchaseInvoiceService {
               memo: `Accounts Payable: ${invoice.invoiceNumber}`,
               partyId: invoice.vendorId,
               partyType: 'supplier',
+              costCenterId: supplierCostCenterId || undefined,
+              activityId: supplierActivityId || undefined,
             });
 
-            await this.glService.postJournalEntry(glLines, {
-              sourceType: 'purchase_invoice',
-              sourceId: invoice.invoiceId,
-              memo: `Purchase Invoice ${invoice.invoiceNumber}`,
-              actor,
-            });
+            await this.glService.postJournalEntry(
+              glLines,
+              {
+                sourceType: 'purchase_invoice',
+                sourceId: invoice.invoiceId,
+                memo: `Purchase Invoice ${invoice.invoiceNumber}`,
+                actor,
+              },
+              tx,
+            );
           }
         }
       }
-    } catch (err) {
-      this.logger.error(
-        `Failed to route GL for Invoice ${invoice.invoiceNumber}`,
-        err,
-      );
-    }
 
-    // Mark as invoiced
-    const [updatedInvoice] = await this.db
-      .update(purchaseInvoices)
-      .set({ stateCode: 'invoiced' })
-      .where(eq(purchaseInvoices.invoiceId, invoiceId))
-      .returning();
+      // Mark as invoiced (atomic with GL posting)
+      const [updated] = await tx
+        .update(purchaseInvoices)
+        .set({ stateCode: 'invoiced' })
+        .where(eq(purchaseInvoices.invoiceId, invoiceId))
+        .returning();
 
-    // Trigger lifecycle rules for affected POs
+      return updated;
+    });
+
+    // Trigger lifecycle rules for affected POs (non-fatal side effect)
     const affectedPoIds = [
       ...new Set(
         ((invoice as any).lines || [])

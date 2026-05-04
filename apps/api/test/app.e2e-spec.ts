@@ -244,7 +244,7 @@ describe('API E2E — Data Pipeline Verification', () => {
   // Bin Contents  (data from mart_bin_contents → Drizzle → API)
   // =========================================================================
 
-  describe.skip('Bin Contents — mart_bin_contents data pipeline', () => {
+  describe('Bin Contents — Drizzle data pipeline', () => {
     it('GET /api/inventory/bins — returns paginated bin stock', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/inventory/bins')

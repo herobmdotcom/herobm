@@ -282,6 +282,14 @@ export class CreateSupplierGroupDto {
   @IsOptional()
   @IsString()
   blockNotes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }
 
 export class UpdateSupplierGroupDto {
@@ -347,6 +355,14 @@ export class UpdateSupplierGroupDto {
   @IsOptional()
   @IsString()
   blockNotes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultCostCenterId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  defaultActivityId?: string;
 }
 
 export class CreateSupplierExpiryDto {

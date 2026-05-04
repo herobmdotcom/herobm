@@ -6,7 +6,7 @@
       "idx": 0,
       "version": "7",
       "when": 1774888404394,
-      "tag": "0000_sticky_kulan_gath",
+      "tag": "0000_baseline",
       "breakpoints": true
     },
     {
@@ -287,6 +287,27 @@
       "version": "7",
       "when": 1777808408618,
       "tag": "0040_create_user_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1777808408619,
+      "tag": "0041_add_user_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1777808408620,
+      "tag": "0042_add_inventory_accounting_mode",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1777808408621,
+      "tag": "0043_add_cost_centers_and_activities",
       "breakpoints": true
     }
   ]

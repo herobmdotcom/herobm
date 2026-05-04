@@ -1,4 +1,4 @@
-import { eq, inArray, and } from 'drizzle-orm';
+import { eq, inArray, and, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   purchaseOrders,
@@ -216,7 +216,6 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
     if (!isFullyReceived) return null; // Cannot be invoiced if not fully received
 
     // 3. Get invoiced quantities
-    const { sql } = await import('drizzle-orm');
 
     let isFullyInvoiced = true;
     for (const line of lines) {

@@ -24,7 +24,7 @@
     "select": "Select",
     "selectEllipsis": "Select…",
     "selectNone": "(None)",
-    "none": "None",
+    "none": "(None)",
     "activityTimeline": "Activity Timeline",
     "noEvents": "No events recorded",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
@@ -257,7 +257,6 @@
       "cancel": "Cancel",
       "save": "Save"
     },
-    "none": "(None)",
     "default": "(Default)",
     "tabs": {
       "overview": "Overview",
@@ -389,6 +388,7 @@
       "noNotes": "No notes"
     },
     "statusBadges": {
+      "status": "Status",
       "active": "Active",
       "inactive": "Inactive",
       "paymentBlocked": "Payment Blocked",
@@ -719,7 +719,7 @@
     "demandTitle": "Open Demand",
     "subtitle": "Manage purchase orders",
     "supplierInvoicesCardHeading": "Supplier Invoices",
-    "lineItems": "Line Items",
+    "lineItems": "Line items",
     "buttons": {
       "createPO": "+ Create PO",
       "copyOrder": "Copy Order",
@@ -787,7 +787,6 @@
     "untitledOrder": "Untitled order",
     "unnamedCustomer": "Unnamed customer",
     "orderDetails": "Order Details",
-    "lineItems": "Line items",
     "noLineItems": "No line items — use the search above to add products",
     "noLineItemsShort": "No line items",
     "loadingInventory": "Loading inventory data…",
@@ -1035,6 +1034,17 @@
         "expense": "Expense"
       }
     },
+    "codes": {
+      "button": "Codes",
+      "title": "Accounting Codes Cheat Sheet",
+      "subtitle": "Quick reference for accounts, cost centers, and activities",
+      "search": "Search codes...",
+      "columns": {
+        "chartOfAccounts": "Chart of Accounts",
+        "costCenters": "Cost Centers",
+        "activities": "Activities"
+      }
+    },
     "generalLedger": {
       "title": "General Ledger",
       "allAccounts": "All Accounts",
@@ -1159,7 +1169,7 @@
     "subtitle": "Your business, your data",
     "footer": "Phase 3 • modbm",
     "groups": {
-      "inventory": "Inventory",
+      "inventory": "Warehouse",
       "sales": "Sales",
       "purchasing": "Purchasing",
       "finance": "Finance",
@@ -1186,7 +1196,11 @@
       "invoices": "Invoices",
       "supplierInvoices": "Supplier Invoices",
       "receiving": "Receiving",
-      "users": "Users"
+      "picking": "Picking",
+      "users": "Users",
+      "settings": "Settings",
+      "system": "System",
+      "financial": "Financial"
     }
   },
   "admin": {
@@ -1356,9 +1370,13 @@
       "defRevAccount": "Def. Revenue Account",
       "defApAccount": "Def. AP Account",
       "defExpenseAccount": "Def. Expense Account",
+      "defCostCenter": "Def. Cost Center",
+      "defActivity": "Def. Activity",
       "errors": {
         "typeAndDateRequired": "Type and effective date are required"
-      }
+      },
+      "system": "System",
+      "financial": "Financial"
     },
     "reporting": {
       "form": {
@@ -1482,7 +1500,13 @@
         "rateDeleted": "Exchange rate deleted",
         "macroCreated": "Macro created",
         "macroUpdated": "Macro updated",
-        "macroDeleted": "Macro deleted"
+        "macroDeleted": "Macro deleted",
+        "ccUpdated": "Cost Center updated",
+        "ccCreated": "Cost Center created",
+        "ccDeleted": "Cost Center deleted",
+        "activityUpdated": "Activity updated",
+        "activityCreated": "Activity created",
+        "activityDeleted": "Activity deleted"
       },
       "sections": {
         "company": "Company Details",
@@ -1491,13 +1515,17 @@
         "uom": "Units of Measure",
         "rates": "Exchange Rates",
         "bank": "Bank Details",
-        "macros": "Text Macros"
+        "macros": "Text Macros",
+        "costCenters": "Cost Centers",
+        "activities": "Activities"
       },
       "confirmations": {
         "deleteTax": "Are you sure you want to delete this tax code?",
         "deleteUom": "Are you sure you want to delete this unit of measure?",
         "deleteRate": "Are you sure you want to delete this exchange rate?",
-        "deleteMacro": "Are you sure you want to delete this macro?"
+        "deleteMacro": "Are you sure you want to delete this macro?",
+        "deleteCc": "Are you sure you want to delete this cost center?",
+        "deleteActivity": "Are you sure you want to delete this activity?"
       },
       "labels": {
         "code": "Code",
@@ -1538,7 +1566,10 @@
         "buyRate": "Buy Rate",
         "sellRate": "Sell Rate",
         "effectiveDate": "Effective Date",
-        "description": "Description"
+        "description": "Description",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
       },
       "placeholders": {
         "uomCode": "e.g. EA",
@@ -1559,7 +1590,11 @@
         "postCode": "Post code",
         "country": "Country",
         "bankName": "Bank name",
-        "accountName": "Account name"
+        "accountName": "Account name",
+        "ccCode": "e.g. 100",
+        "ccName": "e.g. Sales Victoria",
+        "activityCode": "e.g. DIR",
+        "activityName": "e.g. Direct Sales"
       },
       "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
       "gl": {
@@ -1576,6 +1611,12 @@
       },
       "uom": {
         "empty": "No units of measure defined. Create one to get started."
+      },
+      "costCenters": {
+        "empty": "No cost centers defined. Create one to get started."
+      },
+      "activities": {
+        "empty": "No activities defined. Create one to get started."
       }
     },
     "users": {
