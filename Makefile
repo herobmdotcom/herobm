@@ -240,15 +240,25 @@ rebuild-portal:
 	$(COMPOSE_CMD) up -d --no-build --no-deps ops-portal
 	$(COMPOSE_CMD) ps
 
+USE_PGLITE ?= true
+
+ifeq ($(USE_PGLITE),true)
+  TEST_API_TARGET = test:pglite
+  TEST_E2E_TARGET = test:e2e:fast
+else
+  TEST_API_TARGET = test
+  TEST_E2E_TARGET = test:e2e
+endif
+
 test-api:
-	npm run test -w apps/api
+	npm run $(TEST_API_TARGET) -w apps/api
 
 test-api-cov:
 	npm run test:cov -w apps/api
 
 test-api-e2e:
-	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) DEFAULT_FULFILLMENT_LOCATION_CODE=$(DEFAULT_FULFILLMENT_LOCATION_CODE)"
-	npm run test:e2e -w apps/api
+	@echo "[e2e-preflight] ENV_FILE=$(ENV_FILE) EFFECTIVE_PROFILE=$(EFFECTIVE_PROFILE) POSTGRES_DB=$(POSTGRES_DB) USE_PGLITE=$(USE_PGLITE)"
+	npm run $(TEST_E2E_TARGET) -w apps/api
 
 # --- Portal (unified, containerised) ---
 

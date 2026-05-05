@@ -33,7 +33,9 @@ describe('BackordersService', () => {
     db = mem.db;
 
     // Seed infrastructure
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -161,7 +163,10 @@ describe('BackordersService', () => {
 
       await service.generateDemand(ORDER_ID, gaps, 'test-user', db);
 
-      const res = await db.select().from(backorders).where(eq(backorders.salesOrderLineId, LINE_ID));
+      const res = await db
+        .select()
+        .from(backorders)
+        .where(eq(backorders.salesOrderLineId, LINE_ID));
       expect(res).toHaveLength(1);
       expect(res[0].quantity).toBe('10');
     });

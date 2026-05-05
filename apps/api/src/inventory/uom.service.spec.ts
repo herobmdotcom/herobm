@@ -3,7 +3,11 @@ import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { createMemoryDb } from '../../test/utils/memory-db';
-import { products, productUoms, uomDictionary } from '../drizzle/modbm-core-schema';
+import {
+  products,
+  productUoms,
+  uomDictionary,
+} from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
@@ -45,7 +49,10 @@ describe('UomService', () => {
 
   describe('calculateAbsoluteBaseQuantity', () => {
     it('returns 0 if lines are empty', async () => {
-      const result = await service.calculateAbsoluteBaseQuantity(PRODUCT_ID, []);
+      const result = await service.calculateAbsoluteBaseQuantity(
+        PRODUCT_ID,
+        [],
+      );
       expect(result).toBe(0);
     });
 
@@ -92,11 +99,12 @@ describe('UomService', () => {
       });
 
       await expect(
-        service.calculateAbsoluteBaseQuantity(
-          PRODUCT_ID,
-          [{ uomCode: 'UNKNOWN', quantity: 1 }],
-        ),
-      ).rejects.toThrow(`UOM 'UNKNOWN' is not configured for product ${PRODUCT_ID}.`);
+        service.calculateAbsoluteBaseQuantity(PRODUCT_ID, [
+          { uomCode: 'UNKNOWN', quantity: 1 },
+        ]),
+      ).rejects.toThrow(
+        `UOM 'UNKNOWN' is not configured for product ${PRODUCT_ID}.`,
+      );
     });
   });
 });

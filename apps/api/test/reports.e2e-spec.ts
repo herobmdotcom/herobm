@@ -12,7 +12,9 @@ describe('Dynamic Reports Engine (e2e)', () => {
   let locationId: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

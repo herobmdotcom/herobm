@@ -15,7 +15,9 @@ describe('Backorders Workflow (e2e)', () => {
   let vendorId: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

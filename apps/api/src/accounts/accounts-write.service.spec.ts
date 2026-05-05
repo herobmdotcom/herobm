@@ -43,31 +43,52 @@ describe('AccountsWriteService', () => {
       );
 
       expect(result.accountNumber).toBe('TEST001');
-      
-      const rows = await db.select().from(accounts).where(eq(accounts.accountNumber, 'TEST001'));
+
+      const rows = await db
+        .select()
+        .from(accounts)
+        .where(eq(accounts.accountNumber, 'TEST001'));
       expect(rows).toHaveLength(1);
     });
 
     it('should throw BadRequestException if accountNumber exists', async () => {
-      await db.insert(accounts).values({ accountNumber: 'TEST001', name: 'Existing', currencyCode: 'EUR' });
+      await db.insert(accounts).values({
+        accountNumber: 'TEST001',
+        name: 'Existing',
+        currencyCode: 'EUR',
+      });
 
       await expect(
-        service.create({ accountNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' }, 'actor'),
+        service.create(
+          { accountNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
+          'actor',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('update', () => {
     it('should update an existing account', async () => {
-      const [acc] = await db.insert(accounts).values({ accountNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' }).returning();
-      
-      const result = await service.update(acc.accountId, { name: 'New' }, 'actor');
+      const [acc] = await db
+        .insert(accounts)
+        .values({ accountNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' })
+        .returning();
+
+      const result = await service.update(
+        acc.accountId,
+        { name: 'New' },
+        'actor',
+      );
       expect(result.name).toBe('New');
     });
 
     it('should throw NotFoundException if account does not exist', async () => {
       await expect(
-        service.update('00000000-0000-0000-0000-000000000999', { name: 'Updated' }, 'actor'),
+        service.update(
+          '00000000-0000-0000-0000-000000000999',
+          { name: 'Updated' },
+          'actor',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
   });

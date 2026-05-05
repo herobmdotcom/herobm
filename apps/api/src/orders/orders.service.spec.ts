@@ -29,8 +29,10 @@ describe('OrdersService', () => {
     db = mem.db;
 
     // Seed data
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
-    
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
+
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -108,7 +110,7 @@ describe('OrdersService', () => {
     it('should apply search filter', async () => {
       const result = await service.findAll({ q: 'acme' });
       expect(result.total).toBe(1);
-      
+
       const noResult = await service.findAll({ q: 'nonexistent' });
       expect(noResult.total).toBe(0);
     });

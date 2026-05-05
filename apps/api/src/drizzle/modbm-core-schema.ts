@@ -129,7 +129,9 @@ export const salesOrders = modbmCore.table(
     stateCheck: check(
       'sales_order_state_check',
       sql.raw(
-        `state_code IN (${getValidStates(SALES_ORDER_TRANSITIONS).map((s: string) => `'${s}'`).join(', ')})`,
+        `state_code IN (${getValidStates(SALES_ORDER_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
       ),
     ),
   }),
@@ -250,7 +252,9 @@ export const salesOrderReturns = modbmCore.table(
     stateCheck: check(
       'return_state_check',
       sql.raw(
-        `state_code IN (${getValidStates(RETURN_TRANSITIONS).map((s: string) => `'${s}'`).join(', ')})`,
+        `state_code IN (${getValidStates(RETURN_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
       ),
     ),
   }),
@@ -300,7 +304,9 @@ export const salesOrderShipments = modbmCore.table(
     stateCheck: check(
       'shipment_state_check',
       sql.raw(
-        `state_code IN (${getValidStates(SHIPMENT_TRANSITIONS).map((s: string) => `'${s}'`).join(', ')})`,
+        `state_code IN (${getValidStates(SHIPMENT_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
       ),
     ),
   }),
@@ -353,7 +359,9 @@ export const purchaseOrders = modbmCore.table(
     stateCheck: check(
       'purchase_order_state_check',
       sql.raw(
-        `state_code IN (${getValidStates(PURCHASE_ORDER_TRANSITIONS).map((s: string) => `'${s}'`).join(', ')})`,
+        `state_code IN (${getValidStates(PURCHASE_ORDER_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
       ),
     ),
     deliveryLocIdx: index('idx_purchase_orders_delivery_location').on(

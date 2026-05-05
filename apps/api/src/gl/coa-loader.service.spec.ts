@@ -34,7 +34,7 @@ describe('CoaLoaderService', () => {
         isActive: true,
         currencyCode: 'AUD',
       });
-      
+
       const result = await service.loadFromFile('au_standard.json');
       expect(result.skipped).toBe(false);
       expect(result.created).toBeGreaterThan(0);
@@ -89,12 +89,15 @@ describe('CoaLoaderService', () => {
 
       expect(result.created).toBe(4); // Assets, Cash, Revenue, Sales
 
-      const accounts = await db.select().from(glAccounts).orderBy(glAccounts.accountCode);
-      
-      const assets = accounts.find(a => a.name === 'Assets');
-      const cash = accounts.find(a => a.name === 'Cash');
-      const revenue = accounts.find(a => a.name === 'Revenue');
-      
+      const accounts = await db
+        .select()
+        .from(glAccounts)
+        .orderBy(glAccounts.accountCode);
+
+      const assets = accounts.find((a) => a.name === 'Assets');
+      const cash = accounts.find((a) => a.name === 'Cash');
+      const revenue = accounts.find((a) => a.name === 'Revenue');
+
       expect(assets).toMatchObject({ isGroup: true, accountType: 'asset' });
       expect(cash).toMatchObject({ accountCode: '1010', accountType: 'asset' });
       expect(revenue).toMatchObject({ accountType: 'revenue' });
@@ -122,8 +125,11 @@ describe('CoaLoaderService', () => {
       const [settings] = await db.select().from(glSettings);
       expect(settings).toBeDefined();
       expect(settings.baseCurrency).toBe('AUD');
-      
-      const [ar] = await db.select().from(glAccounts).where(eq(glAccounts.accountCode, '1100'));
+
+      const [ar] = await db
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.accountCode, '1100'));
       expect(settings.defaultArAccountId).toBe(ar.glAccountId);
     });
   });
@@ -132,7 +138,7 @@ describe('CoaLoaderService', () => {
     it('should successfully parse the real AU COA file', async () => {
       const result = await service.loadFromFile('au_standard.json');
       expect(result.created).toBeGreaterThan(25);
-      
+
       const [accCount] = await db.select({ val: count() }).from(glAccounts);
       expect(accCount.val).toBe(result.created);
     });

@@ -39,7 +39,9 @@ describe('PickingSlipService', () => {
     db = mem.db;
 
     // Seed UOM
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
 
     // Seed Tax Category
     await db.insert(taxCategories).values({
@@ -81,9 +83,24 @@ describe('PickingSlipService', () => {
 
     // Seed Products
     await db.insert(coreProducts).values([
-      { productId: PROD_A_ID, productNumber: 'PROD-A', name: 'Widget Alpha', baseUom: 'EA' },
-      { productId: PROD_B_ID, productNumber: 'PROD-B', name: 'Gadget Beta', baseUom: 'EA' },
-      { productId: PROD_C_ID, productNumber: 'PROD-C', name: 'Gizmo Gamma', baseUom: 'EA' },
+      {
+        productId: PROD_A_ID,
+        productNumber: 'PROD-A',
+        name: 'Widget Alpha',
+        baseUom: 'EA',
+      },
+      {
+        productId: PROD_B_ID,
+        productNumber: 'PROD-B',
+        name: 'Gadget Beta',
+        baseUom: 'EA',
+      },
+      {
+        productId: PROD_C_ID,
+        productNumber: 'PROD-C',
+        name: 'Gizmo Gamma',
+        baseUom: 'EA',
+      },
     ]);
 
     // Seed Order
@@ -153,9 +170,9 @@ describe('PickingSlipService', () => {
 
   describe('assembleData', () => {
     it('should throw NotFoundException for unknown order', async () => {
-      await expect(service.assembleData('00000000-0000-0000-0000-ffffffffffff')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.assembleData('00000000-0000-0000-0000-ffffffffffff'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should assemble correct header data', async () => {
@@ -168,14 +185,21 @@ describe('PickingSlipService', () => {
     it('should only include lines with qty to pick > 0 in picking lines', async () => {
       const data = await service.assembleData(ORDER_ID);
       expect(data.pickingLines).toHaveLength(2);
-      expect(data.pickingLines.find(l => l.productCode === 'PROD-A')?.qtyToPick).toBe(7);
-      expect(data.pickingLines.find(l => l.productCode === 'PROD-C')?.qtyToPick).toBe(20);
+      expect(
+        data.pickingLines.find((l) => l.productCode === 'PROD-A')?.qtyToPick,
+      ).toBe(7);
+      expect(
+        data.pickingLines.find((l) => l.productCode === 'PROD-C')?.qtyToPick,
+      ).toBe(20);
     });
 
     it('should identify back-order lines where ordered > on-hand', async () => {
       const data = await service.assembleData(ORDER_ID);
       expect(data.backOrderLines).toHaveLength(1);
-      expect(data.backOrderLines[0].productCode === 'PROD-C' || data.backOrderLines[0].productCode === PROD_C_ID).toBe(true);
+      expect(
+        data.backOrderLines[0].productCode === 'PROD-C' ||
+          data.backOrderLines[0].productCode === PROD_C_ID,
+      ).toBe(true);
       expect(data.backOrderLines[0].qtyToOrder).toBe(15);
     });
   });

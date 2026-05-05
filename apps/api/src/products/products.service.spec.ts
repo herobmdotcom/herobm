@@ -3,7 +3,11 @@ import { ProductsService } from './products.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
 import { createMemoryDb } from '../../test/utils/memory-db';
-import { products, productEvents, uomDictionary } from '../drizzle/modbm-core-schema';
+import {
+  products,
+  productEvents,
+  uomDictionary,
+} from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
@@ -16,10 +20,13 @@ describe('ProductsService', () => {
     db = mem.db;
 
     // Seed required UOM
-    await db.insert(uomDictionary).values({
-      uomCode: 'EA',
-      description: 'Each',
-    }).onConflictDoNothing();
+    await db
+      .insert(uomDictionary)
+      .values({
+        uomCode: 'EA',
+        description: 'Each',
+      })
+      .onConflictDoNothing();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ProductsService, { provide: DRIZZLE, useValue: db }],

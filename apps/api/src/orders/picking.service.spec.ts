@@ -42,7 +42,9 @@ describe('PickingService', () => {
     db = mem.db;
 
     // Seed infrastructure
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -62,8 +64,18 @@ describe('PickingService', () => {
       name: 'Zone 1',
     });
     await db.insert(bins).values([
-      { binId: STORAGE_BIN_ID, zoneId: ZONE_ID, binNumber: 'STORAGE-1', binType: 'storage' },
-      { binId: SHIPPING_BIN_ID, zoneId: ZONE_ID, binNumber: 'SHIPPING', binType: 'storage' },
+      {
+        binId: STORAGE_BIN_ID,
+        zoneId: ZONE_ID,
+        binNumber: 'STORAGE-1',
+        binType: 'storage',
+      },
+      {
+        binId: SHIPPING_BIN_ID,
+        zoneId: ZONE_ID,
+        binNumber: 'SHIPPING',
+        binType: 'storage',
+      },
     ]);
     await db.insert(accounts).values({
       accountId: CUSTOMER_ID,
@@ -126,7 +138,7 @@ describe('PickingService', () => {
   describe('pickLine', () => {
     it('should create a pick record and verify DB state', async () => {
       await seedOrder('picking');
-      
+
       const result = await service.pickLine(
         ORDER_ID,
         LINE_ID,
@@ -139,7 +151,10 @@ describe('PickingService', () => {
       expect(result.quantity).toBe('5');
 
       // Verify picks table instead of line.quantityPicked (which isn't updated by pickLine)
-      const picks = await db.select().from(salesOrderPicks).where(eq(salesOrderPicks.salesOrderLineId, LINE_ID));
+      const picks = await db
+        .select()
+        .from(salesOrderPicks)
+        .where(eq(salesOrderPicks.salesOrderLineId, LINE_ID));
       expect(picks).toHaveLength(1);
       expect(picks[0].quantity).toBe('5');
     });
@@ -172,7 +187,7 @@ describe('PickingService', () => {
       });
 
       const summary = await service.getPickingSummary(ORDER_ID);
-      const line = summary.lines.find(l => l.salesOrderLineId === LINE_ID);
+      const line = summary.lines.find((l) => l.salesOrderLineId === LINE_ID);
       expect(line?.quantityPicked).toBe('4');
       expect(line?.remaining).toBe('6');
       expect(line?.isFullyPicked).toBe(false);
@@ -191,7 +206,9 @@ describe('PickingService', () => {
         stateCode: 'picked',
       });
 
-      await expect(service.assertFullyPicked(ORDER_ID)).resolves.toBeUndefined();
+      await expect(
+        service.assertFullyPicked(ORDER_ID),
+      ).resolves.toBeUndefined();
     });
 
     it('should throw when lines not fully picked', async () => {
@@ -205,7 +222,9 @@ describe('PickingService', () => {
         stateCode: 'picked',
       });
 
-      await expect(service.assertFullyPicked(ORDER_ID)).rejects.toThrow(BadRequestException);
+      await expect(service.assertFullyPicked(ORDER_ID)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

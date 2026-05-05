@@ -58,7 +58,7 @@ describe('TaxCategoriesService', () => {
     it('should return all tax categories', async () => {
       const result = await service.findAll();
       expect(result).toHaveLength(3);
-      expect(result.map(c => c.code).sort()).toEqual(['EXE', 'GST', 'ZRO']);
+      expect(result.map((c) => c.code).sort()).toEqual(['EXE', 'GST', 'ZRO']);
     });
   });
 
@@ -71,7 +71,9 @@ describe('TaxCategoriesService', () => {
 
     it('should throw NotFoundException for unknown ID', async () => {
       const unknownId = '550e8400-e29b-41d4-a716-446655440999';
-      await expect(service.getById(unknownId)).rejects.toThrow(NotFoundException);
+      await expect(service.getById(unknownId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -95,7 +97,9 @@ describe('TaxCategoriesService', () => {
     });
 
     it('should throw NotFoundException for unknown code', async () => {
-      await expect(service.getByCode('INVALID')).rejects.toThrow(NotFoundException);
+      await expect(service.getByCode('INVALID')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

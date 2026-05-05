@@ -11,7 +11,9 @@ describe('Supplier Groups (e2e)', () => {
   let adminToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

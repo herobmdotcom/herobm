@@ -31,7 +31,9 @@ const sqlClient = process.env.DATABASE_URL
 
 async function run() {
   console.log(`\n=== Fix Stale Backorders ===`);
-  console.log(`Mode: ${DRY_RUN ? 'DRY RUN (pass --apply to execute)' : 'APPLYING CHANGES'}\n`);
+  console.log(
+    `Mode: ${DRY_RUN ? 'DRY RUN (pass --apply to execute)' : 'APPLYING CHANGES'}\n`,
+  );
 
   // Find backorders stuck in awaiting_receipt where the PO line is fully received
   const staleRows = await sqlClient`
@@ -68,7 +70,7 @@ async function run() {
       'PO State': r.po_state,
       'BO Qty': r.bo_qty,
       'PO Line Received': r.po_line_received,
-      'Action': 'awaiting_receipt → received_reserved',
+      Action: 'awaiting_receipt → received_reserved',
     })),
   );
 
@@ -89,7 +91,9 @@ async function run() {
       AND state_code = 'awaiting_receipt'
   `;
 
-  console.log(`\n✅ Updated ${result.count} backorder(s) to 'received_reserved'.`);
+  console.log(
+    `\n✅ Updated ${result.count} backorder(s) to 'received_reserved'.`,
+  );
   await sqlClient.end();
 }
 

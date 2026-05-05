@@ -41,8 +41,11 @@ describe('SuppliersWriteService', () => {
       const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
       const result = await service.create(dto, 'test-actor');
       expect(result.vendorNumber).toBe('V-001');
-      
-      const rows = await db.select().from(suppliers).where(eq(suppliers.vendorNumber, 'V-001'));
+
+      const rows = await db
+        .select()
+        .from(suppliers)
+        .where(eq(suppliers.vendorNumber, 'V-001'));
       expect(rows).toHaveLength(1);
     });
 
@@ -62,19 +65,29 @@ describe('SuppliersWriteService', () => {
     let existingId: string;
 
     beforeEach(async () => {
-      const [s] = await db.insert(suppliers).values({
-        vendorNumber: 'V-EX',
-        name: 'Old Name',
-        currencyCode: 'EUR',
-      }).returning();
+      const [s] = await db
+        .insert(suppliers)
+        .values({
+          vendorNumber: 'V-EX',
+          name: 'Old Name',
+          currencyCode: 'EUR',
+        })
+        .returning();
       existingId = s.vendorId;
     });
 
     it('should update an existing supplier', async () => {
-      const result = await service.update(existingId, { name: 'New Name' }, 'test-actor');
+      const result = await service.update(
+        existingId,
+        { name: 'New Name' },
+        'test-actor',
+      );
       expect(result.name).toBe('New Name');
-      
-      const [row] = await db.select().from(suppliers).where(eq(suppliers.vendorId, existingId));
+
+      const [row] = await db
+        .select()
+        .from(suppliers)
+        .where(eq(suppliers.vendorId, existingId));
       expect(row.name).toBe('New Name');
     });
 

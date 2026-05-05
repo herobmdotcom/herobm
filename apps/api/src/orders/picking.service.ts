@@ -88,8 +88,7 @@ export class PickingService {
         ? await this.db
             .select({
               salesOrderLineId: backorders.salesOrderLineId,
-              allocatedQty:
-                sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`,
+              allocatedQty: sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`,
             })
             .from(backorders)
             .where(
@@ -517,7 +516,10 @@ export class PickingService {
         pickabilityStatus = 'ready';
       } else if (order._linesFullyPickable === order._linesUnfulfilled) {
         pickabilityStatus = 'ready';
-      } else if (order._linesFullyPickable > 0 || order._linesPartiallyPickable > 0) {
+      } else if (
+        order._linesFullyPickable > 0 ||
+        order._linesPartiallyPickable > 0
+      ) {
         pickabilityStatus = 'partial';
       } else {
         pickabilityStatus = 'blocked';

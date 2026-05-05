@@ -20,10 +20,12 @@ function resolveCasbinAsset(filename: string): string {
   const dirPath = path.join(__dirname, 'casbin', filename);
   if (fs.existsSync(dirPath)) return dirPath;
 
-  // 2. If tsc inferred root differently and compiled to dist/src/auth
+  // 2. If tsc inferred root differently and compiled to dist/apps/api/src/auth
   // but nest-cli assets copied to dist/auth
   const distAuthPath = path.join(
     __dirname,
+    '..',
+    '..',
     '..',
     '..',
     'auth',

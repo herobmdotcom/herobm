@@ -78,7 +78,9 @@ describe('PurchaseInvoiceService', () => {
         defaultGrniAccountId: 'gl-grni',
         defaultExpenseAccountId: 'gl-expense',
       }),
-      postJournalEntry: jest.fn().mockResolvedValue({ journalEntryId: 'je-001' }),
+      postJournalEntry: jest
+        .fn()
+        .mockResolvedValue({ journalEntryId: 'je-001' }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -135,7 +137,9 @@ describe('PurchaseInvoiceService', () => {
 
   describe('findOne', () => {
     it('should throw NotFoundException for unknown bill', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000888')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000888'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

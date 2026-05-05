@@ -20,7 +20,9 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
   beforeAll(async () => {
     register.clear();
 
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

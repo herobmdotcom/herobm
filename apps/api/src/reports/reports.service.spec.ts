@@ -21,13 +21,17 @@ jest.mock('fs', () => {
     mkdirSync: jest.fn(),
     writeFileSync: jest.fn(),
     readFileSync: jest.fn().mockImplementation((p, opts) => {
-        if (p.toString().endsWith('.pdf')) return Buffer.from('fake-pdf-content');
-        return actualFs.readFileSync(p, opts);
+      if (p.toString().endsWith('.pdf')) return Buffer.from('fake-pdf-content');
+      return actualFs.readFileSync(p, opts);
     }),
     unlinkSync: jest.fn(),
     existsSync: jest.fn().mockImplementation((p) => {
-        if (p.toString().includes('au_standard') || p.toString().includes('migrations')) return actualFs.existsSync(p);
-        return true;
+      if (
+        p.toString().includes('au_standard') ||
+        p.toString().includes('migrations')
+      )
+        return actualFs.existsSync(p);
+      return true;
     }),
   };
 });
@@ -90,7 +94,7 @@ describe('ReportsService', () => {
         contextSlug: 'sales_order',
       });
       await db.execute(sql`SET session_replication_role = 'origin'`);
-      
+
       await expect(
         service.runHook('print_invoice', '1', 'sales_order', {}),
       ).rejects.toThrow(NotFoundException);
@@ -166,7 +170,9 @@ describe('ReportsService', () => {
         name: 'R1',
         template: '',
       });
-      const res = await service.updateReport(TEST_REPORT_ID, { name: 'New Name' });
+      const res = await service.updateReport(TEST_REPORT_ID, {
+        name: 'New Name',
+      });
       expect(res.name).toBe('New Name');
     });
   });

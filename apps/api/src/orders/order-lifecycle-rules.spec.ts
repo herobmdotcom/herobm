@@ -92,7 +92,7 @@ describe('Order Lifecycle Rules', () => {
 
     it('should transition order to shipped when all lines are fully shipped', async () => {
       await seedOrder('picking');
-      
+
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
@@ -101,8 +101,16 @@ describe('Order Lifecycle Rules', () => {
         stateCode: 'dispatched',
       });
       await db.insert(salesOrderShipmentLines).values([
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_1_ID, quantityShipped: '10' },
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_2_ID, quantityShipped: '5' },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_1_ID,
+          quantityShipped: '10',
+        },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_2_ID,
+          quantityShipped: '5',
+        },
       ]);
 
       const result = await autoShipWhenFullyShipped.evaluate(
@@ -113,13 +121,16 @@ describe('Order Lifecycle Rules', () => {
       );
 
       expect(result?.to).toBe('shipped');
-      const [order] = await db.select().from(salesOrders).where(eq(salesOrders.salesOrderId, ORDER_ID));
+      const [order] = await db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, ORDER_ID));
       expect(order.stateCode).toBe('shipped');
     });
 
     it('should do nothing if an order line is only partially shipped', async () => {
       await seedOrder('picking');
-      
+
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
@@ -128,8 +139,16 @@ describe('Order Lifecycle Rules', () => {
         stateCode: 'dispatched',
       });
       await db.insert(salesOrderShipmentLines).values([
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_1_ID, quantityShipped: '10' },
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_2_ID, quantityShipped: '2' },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_1_ID,
+          quantityShipped: '10',
+        },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_2_ID,
+          quantityShipped: '2',
+        },
       ]);
 
       const result = await autoShipWhenFullyShipped.evaluate(
@@ -152,7 +171,7 @@ describe('Order Lifecycle Rules', () => {
 
     it('should transition order to picking when lines are no longer fully shipped', async () => {
       await seedOrder('shipped');
-      
+
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
@@ -175,7 +194,7 @@ describe('Order Lifecycle Rules', () => {
   describe('evaluateLifecycleRules', () => {
     it('should run rules and return transitions', async () => {
       await seedOrder('picking');
-      
+
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
@@ -184,8 +203,16 @@ describe('Order Lifecycle Rules', () => {
         stateCode: 'dispatched',
       });
       await db.insert(salesOrderShipmentLines).values([
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_1_ID, quantityShipped: '10' },
-        { shipmentId: SHIP_ID, salesOrderLineId: LINE_2_ID, quantityShipped: '5' },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_1_ID,
+          quantityShipped: '10',
+        },
+        {
+          shipmentId: SHIP_ID,
+          salesOrderLineId: LINE_2_ID,
+          quantityShipped: '5',
+        },
       ]);
 
       const transitions = await evaluateLifecycleRules(

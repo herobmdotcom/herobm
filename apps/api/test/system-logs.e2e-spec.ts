@@ -12,7 +12,9 @@ describe('System Logs E2E Verification', () => {
   let authToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     // Use the real FileLoggerService so NestJS startup writes to logs/api.log
     // (exactly as main.ts does in production)

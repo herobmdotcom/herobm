@@ -15,8 +15,16 @@ import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { PGlite } from '@electric-sql/pglite';
 import { createMemoryDb } from '../../test/utils/memory-db';
 import { eq, sql } from 'drizzle-orm';
-import { createTestCustomer, createTestProduct, createTestSalesOrder } from '../../test/fixtures';
-import { salesOrders, salesOrderLineItems, products as coreProducts } from '../drizzle/modbm-core-schema';
+import {
+  createTestCustomer,
+  createTestProduct,
+  createTestSalesOrder,
+} from '../../test/fixtures';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  products as coreProducts,
+} from '../drizzle/modbm-core-schema';
 
 import { taxCategories } from '../drizzle/modbm-core-schema';
 
@@ -54,7 +62,7 @@ describe('OrdersWriteService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     await client.exec(`
       TRUNCATE modbm_core.sales_order_lines CASCADE;
       TRUNCATE modbm_core.sales_orders CASCADE;
@@ -123,7 +131,9 @@ describe('OrdersWriteService', () => {
         {
           provide: AppConfigService,
           useValue: {
-            defaultFulfillmentLocationId: jest.fn().mockReturnValue('10000000-0000-0000-0000-000000000001'),
+            defaultFulfillmentLocationId: jest
+              .fn()
+              .mockReturnValue('10000000-0000-0000-0000-000000000001'),
             creditLimitBehavior: jest.fn().mockReturnValue('soft'),
           },
         },
@@ -239,7 +249,13 @@ describe('OrdersWriteService', () => {
         product,
         validDto: {
           customerId: customer.accountId,
-          lines: [{ productId: product.productId, quantity: '10', pricePerUnit: '5.00' }],
+          lines: [
+            {
+              productId: product.productId,
+              quantity: '10',
+              pricePerUnit: '5.00',
+            },
+          ],
         },
       };
     }
@@ -249,15 +265,21 @@ describe('OrdersWriteService', () => {
       const result = await service.create(validDto, 'admin');
       expect(result).toHaveProperty('salesOrderId');
       expect(result).toHaveProperty('stateCode', 'draft');
-      
-      const saved = await db.select().from(salesOrders).where(eq(salesOrders.salesOrderId, result.salesOrderId as string));
+
+      const saved = await db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, result.salesOrderId));
       expect(saved[0].stateCode).toBe('draft');
     });
 
     it('should snapshot customer discount onto the order lines', async () => {
       const { validDto } = await setupCreate({ disc: '15' });
       const result = await service.create(validDto, 'admin');
-      const lines = await db.select().from(salesOrderLineItems).where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId as string));
+      const lines = await db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
       expect(lines[0].discountPercentage).toBe('15');
     });
 
@@ -270,13 +292,19 @@ describe('OrdersWriteService', () => {
     it('should use product GST category directly without fallback if possible', async () => {
       const { validDto } = await setupCreate();
       await service.create(validDto, 'admin');
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_DEFAULT.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_DEFAULT.taxCategoryId,
+      );
     });
 
     it('should use zero-rated GST for zero-rated product', async () => {
-      const { validDto } = await setupCreate({ productTaxId: TAX_ZERO.taxCategoryId });
+      const { validDto } = await setupCreate({
+        productTaxId: TAX_ZERO.taxCategoryId,
+      });
       await service.create(validDto, 'admin');
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_ZERO.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_ZERO.taxCategoryId,
+      );
     });
 
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
@@ -348,8 +376,11 @@ describe('OrdersWriteService', () => {
         'admin',
       );
       expect(result.name).toBe('New Name');
-      
-      const saved = await db.select().from(salesOrders).where(eq(salesOrders.salesOrderId, order.salesOrderId));
+
+      const saved = await db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
       expect(saved[0].name).toBe('New Name');
     });
 
@@ -366,22 +397,14 @@ describe('OrdersWriteService', () => {
     it('should reject update on invoiced order', async () => {
       const { order } = await setupForUpdate('invoiced');
       await expect(
-        service.update(
-          order.salesOrderId,
-          { name: 'Test' },
-          'admin',
-        ),
+        service.update(order.salesOrderId, { name: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on cancelled order', async () => {
       const { order } = await setupForUpdate('cancelled');
       await expect(
-        service.update(
-          order.salesOrderId,
-          { notes: 'Test' },
-          'admin',
-        ),
+        service.update(order.salesOrderId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -422,11 +445,7 @@ describe('OrdersWriteService', () => {
     ])('should allow transition %s → %s', async (from, to) => {
       const { order } = await setupWithState(from);
       await expect(
-        service.changeState(
-          order.salesOrderId,
-          to,
-          'admin',
-        ),
+        service.changeState(order.salesOrderId, to, 'admin'),
       ).resolves.toBeDefined();
     });
 
@@ -442,22 +461,14 @@ describe('OrdersWriteService', () => {
     ])('should reject transition %s → %s', async (from, to) => {
       const { order } = await setupWithState(from);
       await expect(
-        service.changeState(
-          order.salesOrderId,
-          to,
-          'admin',
-        ),
+        service.changeState(order.salesOrderId, to, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject unknown state name', async () => {
       const { order } = await setupWithState('draft');
       await expect(
-        service.changeState(
-          order.salesOrderId,
-          'nonexistent_state',
-          'admin',
-        ),
+        service.changeState(order.salesOrderId, 'nonexistent_state', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -465,43 +476,33 @@ describe('OrdersWriteService', () => {
 
     it('should transition quoted → confirmed', async () => {
       const { order } = await setupWithState('quoted');
-      await service.changeState(
-        order.salesOrderId,
-        'confirmed',
-        'admin',
-      );
-      const saved = await db.select().from(salesOrders).where(eq(salesOrders.salesOrderId, order.salesOrderId));
+      await service.changeState(order.salesOrderId, 'confirmed', 'admin');
+      const saved = await db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
       expect(saved[0].stateCode).toBe('confirmed');
     });
 
     it('should transition confirmed → cancelled', async () => {
       const { order } = await setupWithState('confirmed');
-      await service.changeState(
-        order.salesOrderId,
-        'cancelled',
-        'admin',
-      );
-      const saved = await db.select().from(salesOrders).where(eq(salesOrders.salesOrderId, order.salesOrderId));
+      await service.changeState(order.salesOrderId, 'cancelled', 'admin');
+      const saved = await db
+        .select()
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, order.salesOrderId));
       expect(saved[0].stateCode).toBe('cancelled');
     });
 
     it('should transition draft → quoted without inventory side-effects', async () => {
       const { order } = await setupWithState('draft');
-      await service.changeState(
-        order.salesOrderId,
-        'quoted',
-        'admin',
-      );
+      await service.changeState(order.salesOrderId, 'quoted', 'admin');
     });
 
     it('should transition draft → cancelled without inventory side-effects', async () => {
       const { order } = await setupWithState('draft');
 
-      await service.changeState(
-        order.salesOrderId,
-        'cancelled',
-        'admin',
-      );
+      await service.changeState(order.salesOrderId, 'cancelled', 'admin');
       expect(
         mockInventoryService.recordInventoryMovement,
       ).not.toHaveBeenCalled();
@@ -574,17 +575,26 @@ describe('OrdersWriteService', () => {
         { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
         'admin',
       );
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_DEFAULT.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_DEFAULT.taxCategoryId,
+      );
     });
 
     it('should use per-line GST override when provided', async () => {
       const { order, product } = await setupForAddLine('draft');
       await service.addLine(
         order.salesOrderId,
-        { productId: product.productId, quantity: '5', pricePerUnit: '12.00', taxCategoryId: TAX_EXEMPT.taxCategoryId },
+        {
+          productId: product.productId,
+          quantity: '5',
+          pricePerUnit: '12.00',
+          taxCategoryId: TAX_EXEMPT.taxCategoryId,
+        },
         'admin',
       );
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_EXEMPT.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_EXEMPT.taxCategoryId,
+      );
     });
 
     it('should reject adding to an invoiced order', async () => {
@@ -592,7 +602,11 @@ describe('OrdersWriteService', () => {
       await expect(
         service.addLine(
           order.salesOrderId,
-          { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
@@ -603,7 +617,11 @@ describe('OrdersWriteService', () => {
       await expect(
         service.addLine(
           order.salesOrderId,
-          { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
@@ -614,7 +632,11 @@ describe('OrdersWriteService', () => {
       await expect(
         service.addLine(
           order.salesOrderId,
-          { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
+          {
+            productId: product.productId,
+            quantity: '5',
+            pricePerUnit: '12.00',
+          },
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
@@ -622,7 +644,10 @@ describe('OrdersWriteService', () => {
 
     it('should use zero-rate for zero-rated product', async () => {
       const { order } = await setupForAddLine('draft');
-      const zeroProduct = await createTestProduct(db, { sku: 'PROD-ZR', name: 'Zero Prod' });
+      const zeroProduct = await createTestProduct(db, {
+        sku: 'PROD-ZR',
+        name: 'Zero Prod',
+      });
       // Mock the product service since the service layer uses it for lookup
       mockProductsService.findOne.mockResolvedValue({
         productId: zeroProduct.productId,
@@ -632,10 +657,16 @@ describe('OrdersWriteService', () => {
 
       await service.addLine(
         order.salesOrderId,
-        { productId: zeroProduct.productId, quantity: '5', pricePerUnit: '12.00' },
+        {
+          productId: zeroProduct.productId,
+          quantity: '5',
+          pricePerUnit: '12.00',
+        },
         'admin',
       );
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_ZERO.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_ZERO.taxCategoryId,
+      );
     });
   });
 
@@ -653,19 +684,22 @@ describe('OrdersWriteService', () => {
         state: orderState as any,
       });
 
-      const [line] = await db.insert(salesOrderLineItems).values({
-        salesOrderId: order.salesOrderId,
-        lineNumber: 1,
-        productId: product.productId,
-        quantity: '10',
-        pricePerUnit: '5.00',
-        taxCategoryId: TAX_DEFAULT.taxCategoryId,
-        amount: '50.00',
-        tax: '5.00',
-        totalAmount: '55.00',
-        unitOfMeasure: 'EA',
-        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
-      }).returning();
+      const [line] = await db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order.salesOrderId,
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        })
+        .returning();
 
       return { order, line, product };
     }
@@ -679,8 +713,11 @@ describe('OrdersWriteService', () => {
         'admin',
       );
       expect(result).toHaveProperty('salesOrderLineId', line.salesOrderLineId);
-      
-      const saved = await db.select().from(salesOrderLineItems).where(eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId));
+
+      const saved = await db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId));
       expect(saved[0].quantity).toBe('20');
     });
 
@@ -692,7 +729,9 @@ describe('OrdersWriteService', () => {
         { quantity: '20' },
         'admin',
       );
-      expect(mocktaxService.getById).toHaveBeenCalledWith(TAX_DEFAULT.taxCategoryId);
+      expect(mocktaxService.getById).toHaveBeenCalledWith(
+        TAX_DEFAULT.taxCategoryId,
+      );
     });
 
     it('should reject update on invoiced order', async () => {
@@ -746,19 +785,22 @@ describe('OrdersWriteService', () => {
         state: orderState as any,
       });
 
-      const [line] = await db.insert(salesOrderLineItems).values({
-        salesOrderId: order.salesOrderId,
-        lineNumber: 1,
-        productId: product.productId,
-        quantity: '10',
-        pricePerUnit: '5.00',
-        taxCategoryId: TAX_DEFAULT.taxCategoryId,
-        amount: '50.00',
-        tax: '5.00',
-        totalAmount: '55.00',
-        unitOfMeasure: 'EA',
-        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
-      }).returning();
+      const [line] = await db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order.salesOrderId,
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        })
+        .returning();
 
       return { order, line, product };
     }
@@ -766,14 +808,13 @@ describe('OrdersWriteService', () => {
     it('should remove a line from a draft order', async () => {
       const { order, line } = await setupForRemoveLine('draft');
       await expect(
-        service.removeLine(
-          order.salesOrderId,
-          line.salesOrderLineId,
-          'admin',
-        ),
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).resolves.toBeUndefined();
 
-      const lines = await db.select().from(salesOrderLineItems).where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+      const lines = await db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
       expect(lines.length).toBe(0);
     });
 
@@ -790,33 +831,21 @@ describe('OrdersWriteService', () => {
     it('should reject removal from invoiced order', async () => {
       const { order, line } = await setupForRemoveLine('invoiced');
       await expect(
-        service.removeLine(
-          order.salesOrderId,
-          line.salesOrderLineId,
-          'admin',
-        ),
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from shipped order', async () => {
       const { order, line } = await setupForRemoveLine('shipped');
       await expect(
-        service.removeLine(
-          order.salesOrderId,
-          line.salesOrderLineId,
-          'admin',
-        ),
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from cancelled order', async () => {
       const { order, line } = await setupForRemoveLine('cancelled');
       await expect(
-        service.removeLine(
-          order.salesOrderId,
-          line.salesOrderLineId,
-          'admin',
-        ),
+        service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -851,11 +880,11 @@ describe('OrdersWriteService', () => {
 
       // Events are automatically handled if created through the service, or we can insert one directly:
       // Since this is just fetching, we'll see if the base findOne works
-      
+
       const result = await service.findOne(order.salesOrderId);
       expect(result).toHaveProperty('salesOrderId', order.salesOrderId);
       expect(result.lines).toHaveLength(1);
-      // Wait, we didn't insert an event, so events might be empty unless create triggers it. 
+      // Wait, we didn't insert an event, so events might be empty unless create triggers it.
       // But we inserted directly, so it'll be 0 unless we also mock the events.
       // We can insert an event manually
       // Let's just expect it to be defined and an array
@@ -863,9 +892,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should throw NotFoundException for unknown order', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000000'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -891,23 +920,32 @@ describe('OrdersWriteService', () => {
     it('should throw BadRequestException if line belongs to different order', async () => {
       const customer = await createTestCustomer(db);
       const product = await createTestProduct(db);
-      
-      const order1 = await createTestSalesOrder(db, { customerId: customer.accountId, locationId: '10000000-0000-0000-0000-000000000001' });
-      const order2 = await createTestSalesOrder(db, { customerId: customer.accountId, locationId: '10000000-0000-0000-0000-000000000001' });
 
-      const [line] = await db.insert(salesOrderLineItems).values({
-        salesOrderId: order2.salesOrderId, // belongs to order2
-        lineNumber: 1,
-        productId: product.productId,
-        quantity: '10',
-        pricePerUnit: '5.00',
-        taxCategoryId: TAX_DEFAULT.taxCategoryId,
-        amount: '50.00',
-        tax: '5.00',
-        totalAmount: '55.00',
-        unitOfMeasure: 'EA',
-        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
-      }).returning();
+      const order1 = await createTestSalesOrder(db, {
+        customerId: customer.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      const order2 = await createTestSalesOrder(db, {
+        customerId: customer.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+
+      const [line] = await db
+        .insert(salesOrderLineItems)
+        .values({
+          salesOrderId: order2.salesOrderId, // belongs to order2
+          lineNumber: 1,
+          productId: product.productId,
+          quantity: '10',
+          pricePerUnit: '5.00',
+          taxCategoryId: TAX_DEFAULT.taxCategoryId,
+          amount: '50.00',
+          tax: '5.00',
+          totalAmount: '55.00',
+          unitOfMeasure: 'EA',
+          fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        })
+        .returning();
 
       await expect(
         service.updateLine(

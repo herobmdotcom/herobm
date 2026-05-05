@@ -25,7 +25,9 @@ describe('API E2E — Data Pipeline Verification', () => {
     // Clear Prometheus metrics (may be polluted from other tests)
     register.clear();
 
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

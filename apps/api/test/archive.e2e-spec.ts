@@ -34,7 +34,9 @@ describe('Archive E2E — Full Round-Trip', () => {
   beforeAll(async () => {
     register.clear();
 
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

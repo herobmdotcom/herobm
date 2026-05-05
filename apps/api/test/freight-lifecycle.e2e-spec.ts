@@ -19,7 +19,9 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   beforeAll(async () => {
     // Force final invoice mode for predictable non-stock billing in E2E
     process.env.NON_STOCK_BILLING_MODE = 'final_invoice';
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

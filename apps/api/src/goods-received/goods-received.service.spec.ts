@@ -45,7 +45,9 @@ describe('GoodsReceivedService', () => {
     db = mem.db;
 
     // Seed static data
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -144,7 +146,7 @@ describe('GoodsReceivedService', () => {
 
     it('should set match_status to "matched" when exactly one open PO line exists', async () => {
       await seedBasics();
-      
+
       const PO_ID = '00000000-0000-0000-0000-000000000001';
       await db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,
@@ -173,7 +175,10 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const lines = await db.select().from(goodsReceivedLines).where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
+      const lines = await db
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
       expect(lines).toHaveLength(1);
       expect(lines[0].matchStatus).toBe('matched');
       expect(lines[0].quantityReceived).toBe('5');
@@ -184,14 +189,44 @@ describe('GoodsReceivedService', () => {
 
       const PO1_ID = '00000000-0000-0000-0000-000000000001';
       const PO2_ID = '00000000-0000-0000-0000-000000000002';
-      
+
       await db.insert(purchaseOrders).values([
-        { purchaseOrderId: PO1_ID, orderNumber: 'PO-1', vendorId: VENDOR_ID, deliveryLocationId: LOCATION_ID, currencyCode: 'EUR', stateCode: 'ordered' },
-        { purchaseOrderId: PO2_ID, orderNumber: 'PO-2', vendorId: VENDOR_ID, deliveryLocationId: LOCATION_ID, currencyCode: 'EUR', stateCode: 'ordered' },
+        {
+          purchaseOrderId: PO1_ID,
+          orderNumber: 'PO-1',
+          vendorId: VENDOR_ID,
+          deliveryLocationId: LOCATION_ID,
+          currencyCode: 'EUR',
+          stateCode: 'ordered',
+        },
+        {
+          purchaseOrderId: PO2_ID,
+          orderNumber: 'PO-2',
+          vendorId: VENDOR_ID,
+          deliveryLocationId: LOCATION_ID,
+          currencyCode: 'EUR',
+          stateCode: 'ordered',
+        },
       ]);
       await db.insert(purchaseOrderLineItems).values([
-        { purchaseOrderId: PO1_ID, productId: PROD_ID, lineNumber: 1, quantity: '10', quantityReceived: '0', pricePerUnit: '10', taxCategoryId: TAX_CAT_ID },
-        { purchaseOrderId: PO2_ID, productId: PROD_ID, lineNumber: 1, quantity: '10', quantityReceived: '0', pricePerUnit: '10', taxCategoryId: TAX_CAT_ID },
+        {
+          purchaseOrderId: PO1_ID,
+          productId: PROD_ID,
+          lineNumber: 1,
+          quantity: '10',
+          quantityReceived: '0',
+          pricePerUnit: '10',
+          taxCategoryId: TAX_CAT_ID,
+        },
+        {
+          purchaseOrderId: PO2_ID,
+          productId: PROD_ID,
+          lineNumber: 1,
+          quantity: '10',
+          quantityReceived: '0',
+          pricePerUnit: '10',
+          taxCategoryId: TAX_CAT_ID,
+        },
       ]);
 
       const result = await service.create(
@@ -203,7 +238,10 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const [line] = await db.select().from(goodsReceivedLines).where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
+      const [line] = await db
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
       expect(line.matchStatus).toBe('ambiguous');
     });
 
@@ -219,7 +257,10 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const [line] = await db.select().from(goodsReceivedLines).where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
+      const [line] = await db
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
       expect(line.matchStatus).toBe('unmatched');
     });
   });
@@ -227,12 +268,15 @@ describe('GoodsReceivedService', () => {
   describe('findOne', () => {
     it('should return a receipt with lines', async () => {
       await seedBasics();
-      const [gr] = await db.insert(goodsReceived).values({
-        receiptNumber: 'GR-001',
-        vendorId: VENDOR_ID,
-        locationId: LOCATION_ID,
-      }).returning();
-      
+      const [gr] = await db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-001',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+        })
+        .returning();
+
       await db.insert(goodsReceivedLines).values({
         goodsReceivedId: gr.goodsReceivedId,
         productId: PROD_ID,
@@ -246,8 +290,9 @@ describe('GoodsReceivedService', () => {
     });
 
     it('should throw NotFoundException when receipt does not exist', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000999'))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000999'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

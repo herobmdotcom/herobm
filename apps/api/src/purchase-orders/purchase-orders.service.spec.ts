@@ -38,7 +38,9 @@ describe('PurchaseOrdersService', () => {
     db = mem.db;
 
     // Seed infrastructure ONCE
-    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db
+      .insert(uomDictionary)
+      .values({ uomCode: 'EA', description: 'Each' });
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -69,7 +71,9 @@ describe('PurchaseOrdersService', () => {
 
   beforeEach(async () => {
     mockInventoryService = { recordInventoryMovement: jest.fn() };
-    mockSuppliersService = { findOne: jest.fn().mockResolvedValue({ vendorId: VENDOR_ID }) };
+    mockSuppliersService = {
+      findOne: jest.fn().mockResolvedValue({ vendorId: VENDOR_ID }),
+    };
     mockTaxCategoriesService = {
       getDefault: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
       getById: jest.fn().mockResolvedValue({ taxCategoryId: TAX_CAT_ID }),
@@ -137,9 +141,16 @@ describe('PurchaseOrdersService', () => {
         stateCode: 'draft',
       });
 
-      await service.addLine(poId, { productId: PROD_ID, quantity: '5', pricePerUnit: '10' });
-      
-      const lines = await db.select().from(purchaseOrderLineItems).where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+      await service.addLine(poId, {
+        productId: PROD_ID,
+        quantity: '5',
+        pricePerUnit: '10',
+      });
+
+      const lines = await db
+        .select()
+        .from(purchaseOrderLineItems)
+        .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
       expect(lines).toHaveLength(1);
     });
   });

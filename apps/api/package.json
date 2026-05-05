@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/apps/api/src/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "npm run test:deps && npm run lint && jest",
     "test:deps": "npx -y depcheck",
@@ -20,8 +20,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --forceExit",
-    "test:pglite": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --runInBand",
+    "test:unit:pglite": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --runInBand",
+    "test:pglite": "npm run lint && npm run test:unit:pglite",
     "test:e2e:fast": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --config ./test/jest-e2e.json --forceExit",
+
+
 
     "seed:coa": "tsx src/scripts/seed-coa.ts",
     "setup": "tsx src/scripts/execute-setup.ts",

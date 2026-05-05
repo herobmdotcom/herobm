@@ -14,7 +14,9 @@ describe('Database Schema Parity (e2e)', () => {
   let db: NodePgDatabase<any>;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

@@ -52,19 +52,23 @@ describe('SuppliersService', () => {
 
   describe('findOne', () => {
     it('should return a single supplier', async () => {
-      const [s] = await db.insert(suppliers).values({
-        vendorNumber: 'V-EX',
-        name: 'Existing Vendor',
-        currencyCode: 'EUR',
-      }).returning();
+      const [s] = await db
+        .insert(suppliers)
+        .values({
+          vendorNumber: 'V-EX',
+          name: 'Existing Vendor',
+          currencyCode: 'EUR',
+        })
+        .returning();
 
       const result = await service.findOne(s.vendorId);
       expect(result.name).toBe('Existing Vendor');
     });
 
     it('should throw NotFoundException if not found', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000999'))
-        .rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000999'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

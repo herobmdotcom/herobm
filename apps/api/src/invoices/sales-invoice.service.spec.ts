@@ -78,7 +78,9 @@ describe('SalesInvoiceService', () => {
 
     mockGlService = {
       getSettings: jest.fn().mockResolvedValue(null),
-      postJournalEntry: jest.fn().mockResolvedValue({ journalEntryId: 'je-001' }),
+      postJournalEntry: jest
+        .fn()
+        .mockResolvedValue({ journalEntryId: 'je-001' }),
     };
 
     mockAppConfigService = {
@@ -136,12 +138,20 @@ describe('SalesInvoiceService', () => {
 
   describe('createInvoice', () => {
     it('should reject if order is not found', async () => {
-      await expect(service.createInvoice('00000000-0000-0000-0000-000000000999', {}, 'admin')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.createInvoice(
+          '00000000-0000-0000-0000-000000000999',
+          {},
+          'admin',
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should reject if order is in draft state', async () => {
       await seedOrder('draft');
-      await expect(service.createInvoice(ORDER_ID, {}, 'admin')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.createInvoice(ORDER_ID, {}, 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should accept orders in shipped state', async () => {
@@ -152,7 +162,7 @@ describe('SalesInvoiceService', () => {
       // But we want to test a SUCCESSFUL creation.
       // We need to seed at least one shipment line.
       // But wait, createInvoice calls getCommittedPerLine(this.db, salesOrderId).
-      
+
       // I'll seed a shipment for the successful test.
       // For now, let's just use valid UUIDs and see.
     });
@@ -160,14 +170,27 @@ describe('SalesInvoiceService', () => {
     it('should reject invoicing more than available (mocked via shipment-helpers)', async () => {
       await seedOrder('shipped');
       await expect(
-        service.createInvoice(ORDER_ID, { lines: [{ salesOrderLineId: '00000000-0000-0000-0000-000000000001', quantityToInvoice: 10 }] }, 'admin'),
+        service.createInvoice(
+          ORDER_ID,
+          {
+            lines: [
+              {
+                salesOrderLineId: '00000000-0000-0000-0000-000000000001',
+                quantityToInvoice: 10,
+              },
+            ],
+          },
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('findOne', () => {
     it('should throw NotFoundException for unknown invoice', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000888')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000888'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

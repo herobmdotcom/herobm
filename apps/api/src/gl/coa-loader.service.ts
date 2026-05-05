@@ -17,8 +17,8 @@ export function resolveChartsDir(dirnameFallback: string): string {
   const dirPath = path.join(dirnameFallback, 'charts');
   if (fs.existsSync(dirPath)) return dirPath;
 
-  // 2. TSC preserves src/ (e.g. dist/src/gl) but nest-cli copies assets to dist/gl
-  const distGlPath = path.join(dirnameFallback, '..', '..', 'gl', 'charts');
+  // 2. TSC preserves src/ (e.g. dist/apps/api/src/gl) but nest-cli copies assets to dist/gl
+  const distGlPath = path.join(dirnameFallback, '..', '..', '..', '..', 'gl', 'charts');
   if (fs.existsSync(distGlPath)) return distGlPath;
 
   // 3. cwd fallbacks

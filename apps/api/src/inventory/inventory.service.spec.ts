@@ -79,14 +79,23 @@ describe('InventoryService', () => {
         { provide: DRIZZLE, useValue: db },
         {
           provide: AppConfigService,
-          useValue: { defaultFulfillmentLocationId: jest.fn().mockReturnValue(LOCATION_ID) },
+          useValue: {
+            defaultFulfillmentLocationId: jest
+              .fn()
+              .mockReturnValue(LOCATION_ID),
+          },
         },
         {
           provide: UomService,
           useValue: {
-            calculateAbsoluteBaseQuantity: jest.fn().mockImplementation(async (pid, lines) => {
-              return lines.reduce((acc: number, l: any) => acc + (l.quantity || 0), 0);
-            }),
+            calculateAbsoluteBaseQuantity: jest
+              .fn()
+              .mockImplementation(async (pid, lines) => {
+                return lines.reduce(
+                  (acc: number, l: any) => acc + (l.quantity || 0),
+                  0,
+                );
+              }),
           },
         },
         {
@@ -115,9 +124,7 @@ describe('InventoryService', () => {
         sourceId: '00000000-0000-0000-0000-000000000e11',
         memo: 'Test movement',
         userId: 'admin',
-        lines: [
-          { productId: PRODUCT_ID, binId: BIN_ID, quantity: 10 },
-        ],
+        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: 10 }],
       };
 
       await db.transaction(async (tx) => {
@@ -125,17 +132,26 @@ describe('InventoryService', () => {
       });
 
       // Verify header
-      const entries = await db.select().from(inventoryEntries).where(eq(inventoryEntries.entryNumber, 'MV-001'));
+      const entries = await db
+        .select()
+        .from(inventoryEntries)
+        .where(eq(inventoryEntries.entryNumber, 'MV-001'));
       expect(entries).toHaveLength(1);
       expect(entries[0].sourceType).toBe('TEST');
 
       // Verify ledger
-      const ledger = await db.select().from(inventoryLedger).where(eq(inventoryLedger.entryId, entries[0].entryId));
+      const ledger = await db
+        .select()
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.entryId, entries[0].entryId));
       expect(ledger).toHaveLength(1);
       expect(ledger[0].quantity).toBe('10');
 
       // Verify bin contents (cache)
-      const bins_data = await db.select().from(binContents).where(eq(binContents.binId, BIN_ID));
+      const bins_data = await db
+        .select()
+        .from(binContents)
+        .where(eq(binContents.binId, BIN_ID));
       expect(bins_data).toHaveLength(1);
       expect(bins_data[0].actualQuantity).toBe('10');
 
@@ -148,16 +164,17 @@ describe('InventoryService', () => {
         entryNumber: 'MV-002',
         sourceType: 'PICK',
         sourceId: '00000000-0000-0000-0000-000000000e12',
-        lines: [
-          { productId: PRODUCT_ID, binId: BIN_ID, quantity: -5 },
-        ],
+        lines: [{ productId: PRODUCT_ID, binId: BIN_ID, quantity: -5 }],
       };
 
       await db.transaction(async (tx) => {
         await service.recordInventoryMovement(tx as any, params);
       });
 
-      const bins_data = await db.select().from(binContents).where(eq(binContents.binId, BIN_ID));
+      const bins_data = await db
+        .select()
+        .from(binContents)
+        .where(eq(binContents.binId, BIN_ID));
       expect(bins_data[0].actualQuantity).toBe('-5');
     });
   });

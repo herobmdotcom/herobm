@@ -4,7 +4,13 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { createMemoryDb } from '../../test/utils/memory-db';
-import { glAccounts, glJournalEntries, glJournalLines, costCenters, activities } from '../drizzle/modbm-core-schema';
+import {
+  glAccounts,
+  glJournalEntries,
+  glJournalLines,
+  costCenters,
+  activities,
+} from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
@@ -23,7 +29,7 @@ describe('GlService', () => {
         { provide: DRIZZLE, useValue: db },
         {
           provide: AppConfigService,
-          useValue: { 
+          useValue: {
             homeCurrency: jest.fn().mockReturnValue('EUR'),
             inventoryAccountingMode: () => 'perpetual',
           },
@@ -124,8 +130,8 @@ describe('GlService', () => {
           [
             { accountCode: 'MISSING-1', debit: 100, credit: 0 },
             { accountCode: 'MISSING-2', debit: 0, credit: 100 },
-          ], 
-          { sourceType: 'manual' }
+          ],
+          { sourceType: 'manual' },
         ),
       ).rejects.toThrow("'MISSING-1' does not exist");
     });
@@ -203,7 +209,10 @@ describe('GlService', () => {
 
       expect(result.journalEntryId).toBeDefined();
 
-      const [entry] = await db.select().from(glJournalEntries).where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
+      const [entry] = await db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
       expect(entry).toMatchObject({
         sourceType: 'sales_invoice',
         sourceId: invId,
@@ -211,12 +220,16 @@ describe('GlService', () => {
         createdBy: 'admin',
       });
 
-      const lines = await db.select().from(glJournalLines).where(eq(glJournalLines.journalEntryId, result.journalEntryId)).orderBy(glJournalLines.debit);
+      const lines = await db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, result.journalEntryId))
+        .orderBy(glJournalLines.debit);
       expect(lines).toHaveLength(2);
-      
-      const debitLine = lines.find(l => parseFloat(l.debit) === 500);
-      const creditLine = lines.find(l => parseFloat(l.credit) === 500);
-      
+
+      const debitLine = lines.find((l) => parseFloat(l.debit) === 500);
+      const creditLine = lines.find((l) => parseFloat(l.credit) === 500);
+
       expect(debitLine).toMatchObject({
         glAccountId: arId,
         memo: 'AR debit',
@@ -230,10 +243,24 @@ describe('GlService', () => {
     it('should increment sequence when entries already exist today', async () => {
       const today = new Date().toISOString().slice(0, 10);
       const todayStripped = today.replace(/-/g, '');
-      
+
       await db.insert(glAccounts).values([
-        { accountCode: 'SEQ-1100', name: 'AR', accountType: 'asset', isGroup: false, isActive: true, currencyCode: 'AUD' },
-        { accountCode: 'SEQ-4100', name: 'Rev', accountType: 'revenue', isGroup: false, isActive: true, currencyCode: 'AUD' },
+        {
+          accountCode: 'SEQ-1100',
+          name: 'AR',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
+        {
+          accountCode: 'SEQ-4100',
+          name: 'Rev',
+          accountType: 'revenue',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        },
       ]);
 
       await db.insert(glJournalEntries).values({
@@ -250,7 +277,10 @@ describe('GlService', () => {
         { sourceType: 'manual' },
       );
 
-      const [entry] = await db.select().from(glJournalEntries).where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
+      const [entry] = await db
+        .select()
+        .from(glJournalEntries)
+        .where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
       expect(entry.entryNumber).toBe(`JE-${todayStripped}-0004`);
     });
   });
@@ -262,39 +292,89 @@ describe('GlService', () => {
       const a3 = randomUUID();
       const a4 = randomUUID();
       const a5 = randomUUID();
-      
+
       await db.insert(glAccounts).values([
-        { glAccountId: a1, accountCode: 'T-1000', name: 'Assets Tree', parentAccountId: null, isGroup: true, accountType: 'asset', currencyCode: 'AUD' },
-        { glAccountId: a2, accountCode: 'T-1100', name: 'AR Tree', parentAccountId: a1, isGroup: false, accountType: 'asset', currencyCode: 'AUD' },
-        { glAccountId: a3, accountCode: 'T-1200', name: 'GST Tree', parentAccountId: a1, isGroup: false, accountType: 'asset', currencyCode: 'AUD' },
-        { glAccountId: a4, accountCode: 'T-2000', name: 'Liabilities Tree', parentAccountId: null, isGroup: true, accountType: 'liability', currencyCode: 'AUD' },
-        { glAccountId: a5, accountCode: 'T-2100', name: 'AP Tree', parentAccountId: a4, isGroup: false, accountType: 'liability', currencyCode: 'AUD' },
+        {
+          glAccountId: a1,
+          accountCode: 'T-1000',
+          name: 'Assets Tree',
+          parentAccountId: null,
+          isGroup: true,
+          accountType: 'asset',
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: a2,
+          accountCode: 'T-1100',
+          name: 'AR Tree',
+          parentAccountId: a1,
+          isGroup: false,
+          accountType: 'asset',
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: a3,
+          accountCode: 'T-1200',
+          name: 'GST Tree',
+          parentAccountId: a1,
+          isGroup: false,
+          accountType: 'asset',
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: a4,
+          accountCode: 'T-2000',
+          name: 'Liabilities Tree',
+          parentAccountId: null,
+          isGroup: true,
+          accountType: 'liability',
+          currencyCode: 'AUD',
+        },
+        {
+          glAccountId: a5,
+          accountCode: 'T-2100',
+          name: 'AP Tree',
+          parentAccountId: a4,
+          isGroup: false,
+          accountType: 'liability',
+          currencyCode: 'AUD',
+        },
       ]);
 
       const tree = await service.getChartOfAccounts();
 
       expect(tree.length).toBeGreaterThanOrEqual(2);
-      expect(tree.find(t => t.name === 'Assets Tree')?.children).toHaveLength(2);
-      expect(tree.find(t => t.name === 'Liabilities Tree')?.children).toHaveLength(1);
+      expect(tree.find((t) => t.name === 'Assets Tree')?.children).toHaveLength(
+        2,
+      );
+      expect(
+        tree.find((t) => t.name === 'Liabilities Tree')?.children,
+      ).toHaveLength(1);
     });
   });
 
   describe('Trial Balance & General Ledger', () => {
     it('should return trial balance with correct balances', async () => {
-      const [acct] = await db.insert(glAccounts).values({
-        accountCode: 'TB-1100',
-        name: 'AR TB',
-        accountType: 'asset',
-        isGroup: false,
-        isActive: true,
-        currencyCode: 'AUD',
-      }).returning();
+      const [acct] = await db
+        .insert(glAccounts)
+        .values({
+          accountCode: 'TB-1100',
+          name: 'AR TB',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        })
+        .returning();
 
-      const [entry] = await db.insert(glJournalEntries).values({
-        entryNumber: 'JE-TB-001',
-        entryDate: new Date(),
-        sourceType: 'manual',
-      }).returning();
+      const [entry] = await db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-TB-001',
+          entryDate: new Date(),
+          sourceType: 'manual',
+        })
+        .returning();
 
       await db.insert(glJournalLines).values({
         journalEntryId: entry.journalEntryId,
@@ -311,46 +391,64 @@ describe('GlService', () => {
       expect(parseFloat(row.balance)).toBe(300);
     });
   });
-  
+
   describe('Dimension Resolution', () => {
     it('should resolve missing dimensions from system defaults (code 00)', async () => {
       const ccId = randomUUID();
       const actId = randomUUID();
-      
-      await db.insert(costCenters).values({
-        costCenterId: ccId,
-        code: '00',
-        name: 'Default CC',
-        isSystem: true,
-        isActive: true,
-      }).onConflictDoUpdate({ target: costCenters.code, set: { costCenterId: ccId } });
-      
-      await db.insert(activities).values({
-        activityId: actId,
-        code: '00',
-        name: 'Default Activity',
-        isSystem: true,
-        isActive: true,
-      }).onConflictDoUpdate({ target: activities.code, set: { activityId: actId } });
 
-      const [acct] = await db.insert(glAccounts).values({
-        accountCode: 'DIM-1000',
-        name: 'Test Dim',
-        accountType: 'asset',
-        isGroup: false,
-        isActive: true,
-        currencyCode: 'AUD',
-      }).returning();
+      await db
+        .insert(costCenters)
+        .values({
+          costCenterId: ccId,
+          code: '00',
+          name: 'Default CC',
+          isSystem: true,
+          isActive: true,
+        })
+        .onConflictDoUpdate({
+          target: costCenters.code,
+          set: { costCenterId: ccId },
+        });
+
+      await db
+        .insert(activities)
+        .values({
+          activityId: actId,
+          code: '00',
+          name: 'Default Activity',
+          isSystem: true,
+          isActive: true,
+        })
+        .onConflictDoUpdate({
+          target: activities.code,
+          set: { activityId: actId },
+        });
+
+      const [acct] = await db
+        .insert(glAccounts)
+        .values({
+          accountCode: 'DIM-1000',
+          name: 'Test Dim',
+          accountType: 'asset',
+          isGroup: false,
+          isActive: true,
+          currencyCode: 'AUD',
+        })
+        .returning();
 
       const result = await service.postJournalEntry(
         [
           { accountCode: 'DIM-1000', debit: 100, credit: 0 },
           { accountCode: 'DIM-1000', debit: 0, credit: 100 },
         ],
-        { sourceType: 'manual', actor: 'test' }
+        { sourceType: 'manual', actor: 'test' },
       );
 
-      const lines = await db.select().from(glJournalLines).where(eq(glJournalLines.journalEntryId, result.journalEntryId));
+      const lines = await db
+        .select()
+        .from(glJournalLines)
+        .where(eq(glJournalLines.journalEntryId, result.journalEntryId));
       expect(lines[0].costCenterId).toBe(ccId);
       expect(lines[0].activityId).toBe(actId);
     });

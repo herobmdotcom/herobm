@@ -17,7 +17,9 @@ describe('API E2E — General Ledger', () => {
   beforeAll(async () => {
     register.clear();
 
-    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
+    const moduleFixture: TestingModule = await (
+      await createE2eModule()
+    ).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');
