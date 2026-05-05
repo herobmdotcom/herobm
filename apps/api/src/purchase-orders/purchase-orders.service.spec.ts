@@ -19,7 +19,7 @@ import {
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
-jest.setTimeout(120000); // 2 minutes for the whole suite
+jest.setTimeout(120000);
 
 describe('PurchaseOrdersService', () => {
   let service: PurchaseOrdersService;

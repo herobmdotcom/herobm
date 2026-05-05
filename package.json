@@ -10,6 +10,7 @@
     "class-validator": "^0.15.1"
   },
   "scripts": {
-    "seed": "npm run seed -w apps/api"
+    "seed": "npm run seed -w apps/api",
+    "setup": "npm run setup -w api"
   }
 }
