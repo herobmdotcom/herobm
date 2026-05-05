@@ -5,7 +5,7 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   purchaseOrders,
   purchaseOrderLineItems,
@@ -19,8 +19,8 @@ import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('PurchaseInvoiceService', () => {
+  const pg = setupPgliteSuite();
   let service: PurchaseInvoiceService;
-  let db: PgliteDatabase<any>;
   let mockGlService: any;
 
   const VENDOR_ID = '00000000-0000-0000-0000-000000000001';
@@ -30,16 +30,13 @@ describe('PurchaseInvoiceService', () => {
   const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-
     // Seed static data
-    await db.insert(uomDictionary).values({
+    await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
     });
 
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -47,20 +44,20 @@ describe('PurchaseInvoiceService', () => {
       type: 'tax_applies',
     });
 
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
 
-    await db.insert(suppliers).values({
+    await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
       vendorNumber: 'V001',
       name: 'Steel Co',
       currencyCode: 'AUD',
     });
 
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PRODUCT_ID,
       productNumber: 'P1',
       name: 'Product 1',
@@ -86,7 +83,7 @@ describe('PurchaseInvoiceService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseInvoiceService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: GlService, useValue: mockGlService },
         {
           provide: TaxCategoriesService,
@@ -108,12 +105,12 @@ describe('PurchaseInvoiceService', () => {
     service = module.get<PurchaseInvoiceService>(PurchaseInvoiceService);
 
     // Clean transactional data
-    await db.delete(purchaseOrderLineItems);
-    await db.delete(purchaseOrders);
+    await pg.db.delete(purchaseOrderLineItems);
+    await pg.db.delete(purchaseOrders);
   });
 
   async function seedPO(stateCode: string = 'received') {
-    await db.insert(purchaseOrders).values({
+    await pg.db.insert(purchaseOrders).values({
       purchaseOrderId: PO_ID,
       orderNumber: 'PO-1',
       vendorId: VENDOR_ID,
@@ -122,7 +119,7 @@ describe('PurchaseInvoiceService', () => {
       deliveryLocationId: LOCATION_ID,
     });
 
-    await db.insert(purchaseOrderLineItems).values({
+    await pg.db.insert(purchaseOrderLineItems).values({
       purchaseOrderLineId: '00000000-0000-0000-0000-000000000003',
       purchaseOrderId: PO_ID,
       lineNumber: 1,

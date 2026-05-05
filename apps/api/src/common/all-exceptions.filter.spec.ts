@@ -95,4 +95,33 @@ describe('AllExceptionsFilter', () => {
     expect(errorSpy).not.toHaveBeenCalled();
     expect(mockResponse.status).toHaveBeenCalledWith(403);
   });
+
+  describe('Postgres Error Mapping', () => {
+    it('should map Postgres code 23505 to 409 Conflict', () => {
+      const error = { code: '23505', detail: 'Key already exists' };
+      filter.catch(error, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.CONFLICT);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          statusCode: 409,
+          message: expect.stringContaining('DB Detail: Key already exists'),
+        }),
+      );
+    });
+
+    it('should map Postgres code 23503 to 422 Unprocessable Entity', () => {
+      const error = { code: '23503', detail: 'Foreign key violation' };
+      filter.catch(error, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNPROCESSABLE_ENTITY);
+    });
+
+    it('should map Postgres code 23514 to 400 Bad Request', () => {
+      const error = { code: '23514', detail: 'Check constraint violation' };
+      filter.catch(error, mockHost);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    });
+  });
 });

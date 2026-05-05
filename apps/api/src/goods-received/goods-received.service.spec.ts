@@ -3,7 +3,7 @@ import { GoodsReceivedService } from './goods-received.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
 import {
@@ -27,8 +27,8 @@ jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
 }));
 
 describe('GoodsReceivedService', () => {
+  const pg = setupPgliteSuite();
   let service: GoodsReceivedService;
-  let db: PgliteDatabase<any>;
   let mockInventoryService: any;
   let mockGlService: any;
   let mockAppConfig: any;
@@ -41,14 +41,11 @@ describe('GoodsReceivedService', () => {
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-
     // Seed static data
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -76,7 +73,7 @@ describe('GoodsReceivedService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GoodsReceivedService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfig },
@@ -86,43 +83,43 @@ describe('GoodsReceivedService', () => {
     service = module.get<GoodsReceivedService>(GoodsReceivedService);
 
     // Clean tables in order
-    await db.delete(goodsReceivedLines);
-    await db.delete(goodsReceived);
-    await db.delete(purchaseOrderLineItems);
-    await db.delete(purchaseOrders);
-    await db.delete(bins);
-    await db.delete(zones);
-    await db.delete(products);
-    await db.delete(locations);
-    await db.delete(suppliers);
+    await pg.db.delete(goodsReceivedLines);
+    await pg.db.delete(goodsReceived);
+    await pg.db.delete(purchaseOrderLineItems);
+    await pg.db.delete(purchaseOrders);
+    await pg.db.delete(bins);
+    await pg.db.delete(zones);
+    await pg.db.delete(products);
+    await pg.db.delete(locations);
+    await pg.db.delete(suppliers);
   });
 
   async function seedBasics() {
-    await db.insert(suppliers).values({
+    await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
       vendorNumber: 'V1',
       name: 'Supplier 1',
       currencyCode: 'EUR',
     });
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main',
     });
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PROD_ID,
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
       standardCost: '10',
     });
-    await db.insert(zones).values({
+    await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
       code: 'RECV',
       name: 'Receiving Zone',
     });
-    await db.insert(bins).values({
+    await pg.db.insert(bins).values({
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'RECEIVING',
@@ -148,7 +145,7 @@ describe('GoodsReceivedService', () => {
       await seedBasics();
 
       const PO_ID = '00000000-0000-0000-0000-000000000001';
-      await db.insert(purchaseOrders).values({
+      await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: PO_ID,
         orderNumber: 'PO-001',
         vendorId: VENDOR_ID,
@@ -156,7 +153,7 @@ describe('GoodsReceivedService', () => {
         currencyCode: 'EUR',
         stateCode: 'ordered',
       });
-      await db.insert(purchaseOrderLineItems).values({
+      await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderId: PO_ID,
         productId: PROD_ID,
         lineNumber: 1,
@@ -175,7 +172,7 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
@@ -190,7 +187,7 @@ describe('GoodsReceivedService', () => {
       const PO1_ID = '00000000-0000-0000-0000-000000000001';
       const PO2_ID = '00000000-0000-0000-0000-000000000002';
 
-      await db.insert(purchaseOrders).values([
+      await pg.db.insert(purchaseOrders).values([
         {
           purchaseOrderId: PO1_ID,
           orderNumber: 'PO-1',
@@ -208,7 +205,7 @@ describe('GoodsReceivedService', () => {
           stateCode: 'ordered',
         },
       ]);
-      await db.insert(purchaseOrderLineItems).values([
+      await pg.db.insert(purchaseOrderLineItems).values([
         {
           purchaseOrderId: PO1_ID,
           productId: PROD_ID,
@@ -238,7 +235,7 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const [line] = await db
+      const [line] = await pg.db
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
@@ -257,7 +254,7 @@ describe('GoodsReceivedService', () => {
         'admin',
       );
 
-      const [line] = await db
+      const [line] = await pg.db
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
@@ -268,7 +265,7 @@ describe('GoodsReceivedService', () => {
   describe('findOne', () => {
     it('should return a receipt with lines', async () => {
       await seedBasics();
-      const [gr] = await db
+      const [gr] = await pg.db
         .insert(goodsReceived)
         .values({
           receiptNumber: 'GR-001',
@@ -277,7 +274,7 @@ describe('GoodsReceivedService', () => {
         })
         .returning();
 
-      await db.insert(goodsReceivedLines).values({
+      await pg.db.insert(goodsReceivedLines).values({
         goodsReceivedId: gr.goodsReceivedId,
         productId: PROD_ID,
         quantityReceived: '10',

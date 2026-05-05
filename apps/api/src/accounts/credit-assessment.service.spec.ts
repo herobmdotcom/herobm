@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   accounts,
   tradingTerms,
@@ -10,20 +9,16 @@ import {
   glJournalEntries,
   glAccounts,
 } from '../drizzle/modbm-core-schema';
+import { sql } from 'drizzle-orm';
 
 describe('CreditAssessmentService', () => {
+  const pg = setupPgliteSuite();
   let service: CreditAssessmentService;
-  let db: PgliteDatabase<any>;
-  let client: any;
   let testGlAccountId: string;
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-    client = mem.client;
-
     // Seed a standard AR GL Account
-    const [gl] = await db.insert(glAccounts).values({
+    const [gl] = await pg.db.insert(glAccounts).values({
       accountCode: '1200',
       name: 'Accounts Receivable',
       accountType: 'asset',
@@ -32,22 +27,18 @@ describe('CreditAssessmentService', () => {
     testGlAccountId = gl.glAccountId;
   });
 
-  afterAll(async () => {
-    await client.close();
-  });
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CreditAssessmentService, { provide: DRIZZLE, useValue: db }],
+      providers: [CreditAssessmentService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<CreditAssessmentService>(CreditAssessmentService);
 
     // Clean tables (reverse order)
-    await db.delete(glJournalLines);
-    await db.delete(glJournalEntries);
-    await db.delete(accounts);
-    await db.delete(tradingTerms);
+    await pg.db.delete(glJournalLines);
+    await pg.db.delete(glJournalEntries);
+    await pg.db.delete(accounts);
+    await pg.db.delete(tradingTerms);
   });
 
   describe('assessCredit', () => {
@@ -61,7 +52,7 @@ describe('CreditAssessmentService', () => {
     });
 
     it('should calculate correct net AR balance from GL entries', async () => {
-      const [term] = await db
+      const [term] = await pg.db
         .insert(tradingTerms)
         .values({
           code: 'NET30',
@@ -71,7 +62,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      const [acc] = await db
+      const [acc] = await pg.db
         .insert(accounts)
         .values({
           name: 'Test Customer',
@@ -82,7 +73,7 @@ describe('CreditAssessmentService', () => {
         .returning();
 
       // Create a recent entry
-      const [entry] = await db
+      const [entry] = await pg.db
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-1',
@@ -91,7 +82,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      await db.insert(glJournalLines).values([
+      await pg.db.insert(glJournalLines).values([
         {
           journalEntryId: entry.journalEntryId,
           partyId: acc.accountId,
@@ -117,7 +108,7 @@ describe('CreditAssessmentService', () => {
     });
 
     it('should identify overdue debt using Balance Forward logic', async () => {
-      const [term] = await db
+      const [term] = await pg.db
         .insert(tradingTerms)
         .values({
           code: 'NET30',
@@ -127,7 +118,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      const [acc] = await db
+      const [acc] = await pg.db
         .insert(accounts)
         .values({
           name: 'Overdue Customer',
@@ -141,7 +132,7 @@ describe('CreditAssessmentService', () => {
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 50);
 
-      const [entryOld] = await db
+      const [entryOld] = await pg.db
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-OLD',

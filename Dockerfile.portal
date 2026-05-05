@@ -13,7 +13,7 @@
 # ==============================================================================
 
 FROM node:22-alpine AS base
-RUN npm install -g npm@11
+# No global npm upgrade needed; using node:22-alpine defaults.
 
 # --- Stage 1: Install dependencies -------------------------------------------
 FROM base AS deps

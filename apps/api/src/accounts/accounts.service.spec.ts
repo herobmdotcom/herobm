@@ -2,29 +2,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsService } from './accounts.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   accounts,
   accountEvents,
   accountGroups,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
+import { sql } from 'drizzle-orm';
 
 describe('AccountsService', () => {
+  const pg = setupPgliteSuite();
   let service: AccountsService;
-  let db: PgliteDatabase<any>;
-  let client: any;
-
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-    client = mem.client;
-  });
-
-  afterAll(async () => {
-    await client.close();
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,15 +23,15 @@ describe('AccountsService', () => {
     service = module.get<AccountsService>(AccountsService);
 
     // Clean tables
-    await db.delete(accountEvents);
-    await db.delete(accounts);
-    await db.delete(accountGroups);
-    await db.delete(taxCategories);
+    await pg.db.delete(accountEvents);
+    await pg.db.delete(accounts);
+    await pg.db.delete(accountGroups);
+    await pg.db.delete(taxCategories);
   });
 
   describe('findAll', () => {
     it('should return paginated accounts', async () => {
-      await db.insert(accounts).values([
+      await pg.db.insert(accounts).values([
         {
           name: 'Account A',
           accountNumber: 'A1',
@@ -62,7 +51,7 @@ describe('AccountsService', () => {
     });
 
     it('should apply search filter (ilike)', async () => {
-      await db.insert(accounts).values([
+      await pg.db.insert(accounts).values([
         {
           name: 'Acme Corp',
           accountNumber: 'ACME',
@@ -90,7 +79,7 @@ describe('AccountsService', () => {
         })
         .returning();
 
-      const [ag] = await db
+      const [ag] = await pg.db
         .insert(accountGroups)
         .values({
           name: 'VIP',
@@ -98,7 +87,7 @@ describe('AccountsService', () => {
         })
         .returning();
 
-      await db.insert(accounts).values({
+      await pg.db.insert(accounts).values({
         name: 'VIP Client',
         accountNumber: 'VIP-001',
         currencyCode: 'AUD',
@@ -114,7 +103,7 @@ describe('AccountsService', () => {
     });
 
     it('should exclude archived accounts by default', async () => {
-      await db.insert(accounts).values([
+      await pg.db.insert(accounts).values([
         {
           name: 'Active',
           accountNumber: 'ACT',
@@ -140,7 +129,7 @@ describe('AccountsService', () => {
 
   describe('findOne', () => {
     it('should return account by UUID with its events', async () => {
-      const [acc] = await db
+      const [acc] = await pg.db
         .insert(accounts)
         .values({
           name: 'Main Account',
@@ -149,7 +138,7 @@ describe('AccountsService', () => {
         })
         .returning();
 
-      await db.insert(accountEvents).values({
+      await pg.db.insert(accountEvents).values({
         accountId: acc.accountId,
         eventType: 'created',
         actor: 'system',
@@ -162,7 +151,7 @@ describe('AccountsService', () => {
     });
 
     it('should return account by sourceId (legacy)', async () => {
-      await db.insert(accounts).values({
+      await pg.db.insert(accounts).values({
         name: 'Legacy Account',
         accountNumber: 'LEG1',
         currencyCode: 'USD',

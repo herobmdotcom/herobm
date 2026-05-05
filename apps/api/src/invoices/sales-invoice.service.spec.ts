@@ -5,7 +5,7 @@ import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -23,8 +23,8 @@ jest.mock('../orders/order-lifecycle-rules', () => ({
 }));
 
 describe('SalesInvoiceService', () => {
+  const pg = setupPgliteSuite();
   let service: SalesInvoiceService;
-  let db: PgliteDatabase<any>;
   let mockGlService: any;
   let mockAppConfigService: any;
 
@@ -35,16 +35,13 @@ describe('SalesInvoiceService', () => {
   const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-
     // Seed static data
-    await db.insert(uomDictionary).values({
+    await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',
       description: 'Each',
     });
 
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -52,20 +49,20 @@ describe('SalesInvoiceService', () => {
       type: 'tax_applies',
     });
 
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
 
-    await db.insert(accounts).values({
+    await pg.db.insert(accounts).values({
       accountId: CUSTOMER_ID,
       accountNumber: 'CUST001',
       name: 'Acme Corp',
       currencyCode: 'AUD',
     });
 
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PRODUCT_ID,
       productNumber: 'P1',
       name: 'Product 1',
@@ -93,7 +90,7 @@ describe('SalesInvoiceService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SalesInvoiceService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfigService },
         {
@@ -108,12 +105,12 @@ describe('SalesInvoiceService', () => {
     service = module.get<SalesInvoiceService>(SalesInvoiceService);
 
     // Clean transactional data
-    await db.delete(salesOrderLineItems);
-    await db.delete(salesOrders);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
   });
 
   async function seedOrder(stateCode: string = 'shipped') {
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-1',
       customerId: CUSTOMER_ID,
@@ -122,7 +119,7 @@ describe('SalesInvoiceService', () => {
       fulfillmentLocationId: LOCATION_ID,
     });
 
-    await db.insert(salesOrderLineItems).values({
+    await pg.db.insert(salesOrderLineItems).values({
       salesOrderId: ORDER_ID,
       lineNumber: 1,
       productId: PRODUCT_ID,
