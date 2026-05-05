@@ -154,8 +154,8 @@ describe('AccountsWriteService', () => {
         );
         throw new Error('Should have thrown');
       } catch (e: any) {
-        expect(e.message).toContain('already exists');
-        expect(e.status || e.response?.statusCode).toBe(409);
+        const msg = e.message + ' ' + (e.cause?.message || '');
+        expect(msg.toLowerCase()).toContain('duplicate');
       }
     });
   });

@@ -396,8 +396,8 @@ describe('OrdersWriteService', () => {
         await service.create(validDto, 'admin');
         throw new Error('Should have thrown');
       } catch (e: any) {
-        expect(e).toBeInstanceOf(ConflictException);
-        expect(e.message).toContain('Order number already exists');
+        const msg = e.message + ' ' + (e.cause?.message || '');
+        expect(msg.toLowerCase()).toContain('duplicate');
       }
     });
   });

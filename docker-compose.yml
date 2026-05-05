@@ -9,7 +9,7 @@ services:
     environment:
       API_URL: http://custom-api:3001
     ports:
-      - "${BIND_IP:-127.0.0.1}:${FE_PORT:-4300}:3000"
+      - "${BIND_IP:-0.0.0.0}:${FE_PORT:-8000}:3000"
     depends_on:
       custom-api:
         condition: service_healthy
