@@ -28,6 +28,7 @@
 
     "seed:coa": "tsx src/scripts/seed-coa.ts",
     "setup": "tsx src/scripts/execute-setup.ts",
+    "setup:prod": "node dist/apps/api/src/scripts/execute-setup.js",
     "seed": "tsx src/scripts/seed.ts",
     "seed:dry": "tsx src/scripts/seed.ts --dry-run"
   },

@@ -408,7 +408,7 @@ endif
 cli-migrate: migrate
 
 cli-bootstrap:
-	npm run setup
+	npm run setup:prod
 	$(MAKE) verify-db
 
 verify-db: migrate-status

@@ -11,6 +11,7 @@
   },
   "scripts": {
     "seed": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/seed.ts",
-    "setup": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/execute-setup.ts"
+    "setup": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/execute-setup.ts",
+    "setup:prod": "podman exec -it custom-api npm run setup:prod --workspace api"
   }
 }
