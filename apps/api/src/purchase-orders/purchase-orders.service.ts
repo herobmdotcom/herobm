@@ -64,6 +64,7 @@ export class PurchaseOrdersService {
   private readonly logger = new Logger(PurchaseOrdersService.name);
 
   private async resolveTaxForLine(
+    tx: any,
     productId?: string,
     taxCategoryIdOverride?: string,
   ): Promise<{ taxCategoryId: string; rate: number }> {
@@ -80,7 +81,7 @@ export class PurchaseOrdersService {
     }
 
     if (productId && productId !== '00000000-0000-0000-0000-000000000000') {
-      const pRows = await this.db
+      const pRows = await tx
         .select({ taxCategoryId: products.purchaseTaxCategoryId })
         .from(products)
         .where(eq(products.productId, productId))
@@ -157,6 +158,7 @@ export class PurchaseOrdersService {
         let index = 0;
         for (const line of createDto.lines) {
           const { taxCategoryId, rate } = await this.resolveTaxForLine(
+            tx,
             line.productId,
             line.taxCategoryId,
           );
@@ -608,6 +610,7 @@ export class PurchaseOrdersService {
       const price = parseFloat(lineDto.pricePerUnit || '0');
       const disc = parseFloat(lineDto.discountPercentage || '0');
       const { taxCategoryId, rate } = await this.resolveTaxForLine(
+        tx,
         lineDto.productId,
         lineDto.taxCategoryId,
       );
@@ -705,6 +708,7 @@ export class PurchaseOrdersService {
         }
 
         const resolved = await this.resolveTaxForLine(
+          tx,
           line.productId,
           targetGst,
         );

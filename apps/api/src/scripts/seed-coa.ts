@@ -4,8 +4,6 @@ import postgres from 'postgres';
 import { CoaLoaderService } from '../gl/coa-loader.service';
 import { Logger } from '@nestjs/common';
 
-process.loadEnvFile(resolve(__dirname, '../../../../.env'));
-
 const dbUrl = process.env.SHADOW_DB_URL || process.env.DATABASE_URL;
 const queryClient = dbUrl
   ? postgres(dbUrl)

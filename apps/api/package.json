@@ -21,10 +21,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --forceExit",
     "test:e2e:fast": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --config ./test/jest-e2e.json --forceExit",
-    "seed:coa": "ts-node src/scripts/seed-coa.ts",
-    "setup": "ts-node -r tsconfig-paths/register src/scripts/execute-setup.ts",
-    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
-    "seed:dry": "ts-node -r tsconfig-paths/register src/scripts/seed.ts --dry-run"
+    "seed:coa": "ts-node -r tsconfig-paths/register -r ./src/scripts/env-loader.ts src/scripts/seed-coa.ts",
+    "setup": "ts-node -r tsconfig-paths/register -r ./src/scripts/env-loader.ts src/scripts/execute-setup.ts",
+    "seed": "ts-node -r tsconfig-paths/register -r ./src/scripts/env-loader.ts src/scripts/seed.ts",
+    "seed:dry": "ts-node -r tsconfig-paths/register -r ./src/scripts/env-loader.ts src/scripts/seed.ts --dry-run"
   },
   "dependencies": {
     "@modbm/shared": "*",

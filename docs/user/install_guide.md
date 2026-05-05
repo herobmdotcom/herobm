@@ -179,7 +179,6 @@ This will automatically create your base database tables and output a URL to you
 For developers who prefer the command line or are working in a remote environment without browser access, you can run the unified setup logic via NPM. This script handles database seeding, Chart of Accounts loading, and configuration in a single step:
 
 ```shell
-cd apps/api
 npm run setup
 ```
 
