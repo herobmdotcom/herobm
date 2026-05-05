@@ -28,6 +28,12 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     }
   }
 
+  // Schema drift catch-up (missing in migrations but present in Drizzle schema)
+  await client.exec(`
+    ALTER TABLE "modbm_core"."sales_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+    ALTER TABLE "modbm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
+  `);
+
   const db = drizzle(client, { schema });
 
   // Run the standard application seeds against the in-memory PGLite DB
