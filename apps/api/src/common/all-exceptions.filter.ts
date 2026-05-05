@@ -25,17 +25,33 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
 
-    const statusCode =
+    let statusCode =
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message =
+    // Native DB Constraint Mapping (ADV-030 enhancement)
+    const pgCode = (exception as any)?.code || (exception as any)?.cause?.code;
+    const pgDetail = (exception as any)?.detail || (exception as any)?.cause?.detail;
+
+    if (pgCode === '23505') {
+      statusCode = HttpStatus.CONFLICT;
+    } else if (pgCode === '23503') {
+      statusCode = HttpStatus.UNPROCESSABLE_ENTITY;
+    } else if (pgCode === '23514') {
+      statusCode = HttpStatus.BAD_REQUEST;
+    }
+
+    let message =
       exception instanceof HttpException
-        ? exception.message
+        ? (exception.getResponse() as any).message || exception.message
         : exception instanceof Error
           ? exception.message
           : String(exception);
+
+    if (pgCode && pgDetail) {
+      message = `${message} (DB Detail: ${pgDetail})`;
+    }
 
     const stack = exception instanceof Error ? exception.stack : undefined;
 

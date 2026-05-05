@@ -2,98 +2,106 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MacrosService } from './macros.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { macros } from '../drizzle/modbm-core-schema';
 
 describe('MacrosService', () => {
   let service: MacrosService;
-  let mockDb: any;
+  let db: PgliteDatabase<any>;
+  let client: any;
+
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+    client = mem.client;
+  });
+
+  afterAll(async () => {
+    await client.close();
+  });
 
   beforeEach(async () => {
-    mockDb = {
-      query: {
-        macros: {
-          findMany: jest.fn(),
-          findFirst: jest.fn(),
-        },
-      },
-      insert: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn(),
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MacrosService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [MacrosService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<MacrosService>(MacrosService);
+
+    // Clean tables
+    await db.delete(macros);
   });
 
   describe('findAll', () => {
     it('should return all macros', async () => {
-      const mockMacros = [{ macroId: '1', name: 'Test Macro' }];
-      mockDb.query.macros.findMany.mockResolvedValueOnce(mockMacros);
+      await db.insert(macros).values([
+        { name: 'Macro 1', content: 'C1', macroType: 'text_template' },
+        { name: 'Macro 2', content: 'C2', macroType: 'text_template' },
+      ]);
 
       const result = await service.findAll();
-      expect(result).toEqual(mockMacros);
+      expect(result).toHaveLength(2);
     });
   });
 
   describe('findOne', () => {
     it('should return a macro if found', async () => {
-      const mockMacro = { macroId: '1', name: 'Test Macro' };
-      mockDb.query.macros.findFirst.mockResolvedValueOnce(mockMacro);
+      const [m] = await db
+        .insert(macros)
+        .values({ name: 'Found', content: 'Content', macroType: 'text_template' })
+        .returning();
 
-      const result = await service.findOne('1');
-      expect(result).toEqual(mockMacro);
+      const result = await service.findOne(m.macroId);
+      expect(result.name).toBe('Found');
     });
 
     it('should throw NotFoundException if not found', async () => {
-      mockDb.query.macros.findFirst.mockResolvedValueOnce(undefined);
-
-      await expect(service.findOne('1')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('create', () => {
     it('should create and return a new macro', async () => {
-      const newMacro = {
+      const data = {
         name: 'New Macro',
-        content: 'Content',
-        macroType: 'text_template',
+        content: 'Something',
+        macroType: 'text_template' as const,
       };
-      const createdMacro = { macroId: '1', ...newMacro };
-      mockDb.returning.mockResolvedValueOnce([createdMacro]);
 
-      const result = await service.create(newMacro);
-      expect(result).toEqual(createdMacro);
+      const result = await service.create(data);
+      expect(result.name).toBe('New Macro');
+      
+      const inDb = await db.query.macros.findFirst();
+      expect(inDb?.name).toBe('New Macro');
     });
   });
 
   describe('update', () => {
     it('should update and return the macro', async () => {
-      const existingMacro = { macroId: '1', name: 'Old Macro' };
-      const updatedMacro = { macroId: '1', name: 'Updated Macro' };
+      const [m] = await db
+        .insert(macros)
+        .values({ name: 'Old', content: 'Old', macroType: 'text_template' })
+        .returning();
 
-      mockDb.query.macros.findFirst.mockResolvedValueOnce(existingMacro);
-      mockDb.returning.mockResolvedValueOnce([updatedMacro]);
-
-      const result = await service.update('1', { name: 'Updated Macro' });
-      expect(result).toEqual(updatedMacro);
+      const result = await service.update(m.macroId, { name: 'Updated' });
+      expect(result.name).toBe('Updated');
     });
   });
 
   describe('remove', () => {
     it('should delete and return the macro', async () => {
-      const existingMacro = { macroId: '1', name: 'Old Macro' };
+      const [m] = await db
+        .insert(macros)
+        .values({ name: 'To Delete', content: 'X', macroType: 'text_template' })
+        .returning();
 
-      mockDb.query.macros.findFirst.mockResolvedValueOnce(existingMacro);
-      mockDb.returning.mockResolvedValueOnce([existingMacro]);
+      const result = await service.remove(m.macroId);
+      expect(result.name).toBe('To Delete');
 
-      const result = await service.remove('1');
-      expect(result).toEqual(existingMacro);
+      const inDb = await db.query.macros.findFirst();
+      expect(inDb).toBeUndefined();
     });
   });
 });

@@ -86,7 +86,8 @@ export class CreditAssessmentService {
     `;
 
     const result = await this.db.execute(query);
-    const aggs = result as unknown as {
+    const rows = (result as any).rows ?? result;
+    const aggs = rows as unknown as {
       total_debits: string;
       total_credits: string;
       overdue_debits: string;

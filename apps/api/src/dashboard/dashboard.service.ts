@@ -283,6 +283,7 @@ export class DashboardService {
     `;
 
     const result = await this.db.execute(fullQuery);
-    return { events: result as unknown as TimelineEvent[] };
+    const rows = (result as any).rows ?? result;
+    return { events: rows as unknown as TimelineEvent[] };
   }
 }

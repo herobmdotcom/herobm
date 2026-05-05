@@ -18,8 +18,8 @@ if ($activeProfile) {
 }
 
 $envInjection = "`$env:ENV_FILE='$envFile'; "
-$apiPort = 3002
-$fePort = 4301
+$apiPort = if ($env:API_PORT) { $env:API_PORT } else { 3001 }
+$fePort = if ($env:FE_PORT) { $env:FE_PORT } else { 4301 }
 if (Test-Path $envFile) {
     Write-Host "Loading configuration from: $envFile" -ForegroundColor DarkGray
     foreach ($line in (Get-Content $envFile | Where-Object { $_ -match '^[a-zA-Z_][a-zA-Z0-9_]*=' })) {
@@ -40,11 +40,12 @@ Write-Host "API will start on port $apiPort" -ForegroundColor Cyan
 Write-Host "Portal will start on port $fePort" -ForegroundColor Cyan
 
 # Start API in a new window
-$apiCmd = $envInjection + "`$env:PORT=$apiPort; `$env:PIPELINE_LOG_DIR='$PSScriptRoot\..\logs'; npm run start:prod -w apps/api"
+$apiCmd = $envInjection + "npx cross-env PORT=$apiPort PIPELINE_LOG_DIR='$PSScriptRoot\..\logs' npm run start:prod -w apps/api"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $apiCmd
 
 # Start FE in a new window
-$feCmd = $envInjection + "`$env:API_URL='http://localhost:$apiPort'; npm run start -w apps/ops-portal -- -p $fePort"
+Write-Host "Portal connecting to API at: http://localhost:$apiPort" -ForegroundColor Green
+$feCmd = $envInjection + "npx cross-env API_URL='http://localhost:$apiPort' PORT=$fePort npm run start:prod -w apps/ops-portal"
 Start-Process pwsh -ArgumentList "-NoExit", "-Command", $feCmd
 
 Pop-Location

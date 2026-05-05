@@ -1,35 +1,58 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CreditAssessmentService } from './credit-assessment.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import {
+  accounts,
+  tradingTerms,
+  glJournalLines,
+  glJournalEntries,
+  glAccounts,
+} from '../drizzle/modbm-core-schema';
 
 describe('CreditAssessmentService', () => {
   let service: CreditAssessmentService;
-  let mockDb: any;
+  let db: PgliteDatabase<any>;
+  let client: any;
+  let testGlAccountId: string;
+
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+    client = mem.client;
+
+    // Seed a standard AR GL Account
+    const [gl] = await db.insert(glAccounts).values({
+      accountCode: '1200',
+      name: 'Accounts Receivable',
+      accountType: 'asset',
+      currencyCode: 'USD',
+    }).returning();
+    testGlAccountId = gl.glAccountId;
+  });
+
+  afterAll(async () => {
+    await client.close();
+  });
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      leftJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn(),
-      execute: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CreditAssessmentService,
-        { provide: DRIZZLE, useValue: mockDb },
-      ],
+      providers: [CreditAssessmentService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<CreditAssessmentService>(CreditAssessmentService);
+
+    // Clean tables (reverse order)
+    await db.delete(glJournalLines);
+    await db.delete(glJournalEntries);
+    await db.delete(accounts);
+    await db.delete(tradingTerms);
   });
 
   describe('assessCredit', () => {
-    it('returns zero balances if account missing', async () => {
-      mockDb.limit.mockResolvedValueOnce([]); // No account found
-      const result = await service.assessCredit('acct-1');
+    it('should return zero balances if account is missing', async () => {
+      const result = await service.assessCredit('00000000-0000-0000-0000-000000000000');
       expect(result).toEqual({
         totalArBalance: 0,
         overdueBalance: 0,
@@ -37,85 +60,157 @@ describe('CreditAssessmentService', () => {
       });
     });
 
-    it('calculates correct net AR balance', async () => {
-      // Mock Account resolution -> NET30
-      mockDb.limit.mockResolvedValueOnce([
+    it('should calculate correct net AR balance from GL entries', async () => {
+      const [term] = await db
+        .insert(tradingTerms)
+        .values({
+          code: 'NET30',
+          days: 30,
+          description: 'Net 30',
+          type: 'net',
+        })
+        .returning();
+
+      const [acc] = await db
+        .insert(accounts)
+        .values({
+          name: 'Test Customer',
+          accountNumber: 'CUST-1',
+          currencyCode: 'USD',
+          tradingTermsId: term.tradingTermsId,
+        })
+        .returning();
+
+      // Create a recent entry
+      const [entry] = await db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-1',
+          entryDate: new Date().toISOString(),
+          sourceType: 'manual',
+        })
+        .returning();
+
+      await db.insert(glJournalLines).values([
         {
-          accountId: 'acct-1',
-          accountTradingTermsId: 'term-30',
-          groupTradingTermsId: null,
+          journalEntryId: entry.journalEntryId,
+          partyId: acc.accountId,
+          partyType: 'customer',
+          debit: '500',
+          credit: '0',
+          glAccountId: testGlAccountId,
         },
-      ]);
-      // Mock Terms resolution
-      mockDb.limit.mockResolvedValueOnce([{ days: 30 }]);
-
-      // Mock GL Aggregation
-      mockDb.execute.mockResolvedValueOnce([
         {
-          total_debits: '500',
-          total_credits: '200',
-          overdue_debits: '0',
-        },
-      ]);
-
-      const result = await service.assessCredit('acct-1');
-      expect(result.totalArBalance).toBe(300); // 500 - 200
-      expect(result.overdueBalance).toBe(0); // MAX(0, 0 - 200) = 0
-      expect(result.isOverdue).toBe(false);
-    });
-
-    it('identifies overdue balances accurately based on balance-forward', async () => {
-      mockDb.limit.mockResolvedValueOnce([
-        {
-          accountId: 'acct-1',
-          accountTradingTermsId: 'term-30',
-        },
-      ]);
-      mockDb.limit.mockResolvedValueOnce([{ days: 30 }]);
-
-      // Invoice 1: 50 days old = $1000 (Overdue)
-      // Invoice 2: 10 days old = $500 (Current)
-      // Payments so far: $400
-      // Expected total debits: 1500
-      // Expected overdue_debits: 1000
-      // Expected total credits: 400
-      // Net AR = 1100
-      // Net Overdue = MAX(0, 1000 - 400) = 600
-
-      mockDb.execute.mockResolvedValueOnce([
-        {
-          total_debits: '1500',
-          total_credits: '400',
-          overdue_debits: '1000',
+          journalEntryId: entry.journalEntryId,
+          partyId: acc.accountId,
+          partyType: 'customer',
+          debit: '0',
+          credit: '200',
+          glAccountId: testGlAccountId,
         },
       ]);
 
-      const result = await service.assessCredit('acct-1');
-      expect(result.totalArBalance).toBe(1100);
-      expect(result.overdueBalance).toBe(600);
-      expect(result.isOverdue).toBe(true);
-    });
-
-    it('clears overdue bounds if total credits cover oldest debt', async () => {
-      mockDb.limit.mockResolvedValueOnce([{ accountId: 'acct-1' }]);
-      mockDb.limit.mockResolvedValueOnce([{ days: 30 }]);
-
-      // Overdue debits = $1000
-      // Cash paid = $1200
-      // The $1200 pays off the $1000 old debt, leaving $200 for current debt.
-      // Net Overdue = 0
-      mockDb.execute.mockResolvedValueOnce([
-        {
-          total_debits: '1500',
-          total_credits: '1200',
-          overdue_debits: '1000',
-        },
-      ]);
-
-      const result = await service.assessCredit('acct-1');
+      const result = await service.assessCredit(acc.accountId);
       expect(result.totalArBalance).toBe(300);
       expect(result.overdueBalance).toBe(0);
       expect(result.isOverdue).toBe(false);
+    });
+
+    it('should identify overdue debt using Balance Forward logic', async () => {
+      const [term] = await db
+        .insert(tradingTerms)
+        .values({
+          code: 'NET30',
+          days: 30,
+          description: 'Net 30',
+          type: 'net',
+        })
+        .returning();
+
+      const [acc] = await db
+        .insert(accounts)
+        .values({
+          name: 'Overdue Customer',
+          accountNumber: 'CUST-2',
+          currencyCode: 'USD',
+          tradingTermsId: term.tradingTermsId,
+        })
+        .returning();
+
+      // 1. Old Overdue Debt (50 days ago)
+      const oldDate = new Date();
+      oldDate.setDate(oldDate.getDate() - 50);
+
+      const [entryOld] = await db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-OLD',
+          entryDate: oldDate.toISOString(),
+          sourceType: 'manual',
+        })
+        .returning();
+
+      await db.insert(glJournalLines).values({
+        journalEntryId: entryOld.journalEntryId,
+        partyId: acc.accountId,
+        partyType: 'customer',
+        debit: '1000',
+        credit: '0',
+        glAccountId: testGlAccountId,
+      });
+
+      // 2. Recent Debt (5 days ago)
+      const recentDate = new Date();
+      recentDate.setDate(recentDate.getDate() - 5);
+
+      const [entryRecent] = await db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-RECENT',
+          entryDate: recentDate.toISOString(),
+          sourceType: 'manual',
+        })
+        .returning();
+
+      await db.insert(glJournalLines).values({
+        journalEntryId: entryRecent.journalEntryId,
+        partyId: acc.accountId,
+        partyType: 'customer',
+        debit: '500',
+        credit: '0',
+        glAccountId: testGlAccountId,
+      });
+
+      // 3. Partial Payment (total credits)
+      const [entryPay] = await db
+        .insert(glJournalEntries)
+        .values({
+          entryNumber: 'JE-PAY',
+          entryDate: new Date().toISOString(),
+          sourceType: 'manual',
+        })
+        .returning();
+
+      await db.insert(glJournalLines).values({
+        journalEntryId: entryPay.journalEntryId,
+        partyId: acc.accountId,
+        partyType: 'customer',
+        debit: '0',
+        credit: '400',
+        glAccountId: testGlAccountId,
+      });
+
+      // Calculation:
+      // Total Debits = 1000 + 500 = 1500
+      // Total Credits = 400
+      // Net AR = 1100
+      // Overdue Debits = 1000 (from JE-OLD)
+      // Overdue Balance = MAX(0, 1000 - 400) = 600
+
+      const result = await service.assessCredit(acc.accountId);
+      expect(result.totalArBalance).toBe(1100);
+      expect(result.overdueBalance).toBe(600);
+      expect(result.isOverdue).toBe(true);
     });
   });
 });

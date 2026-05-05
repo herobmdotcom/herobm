@@ -299,6 +299,13 @@ build-api:
 
 build-portal:
 	npm run build -w apps/ops-portal
+ifeq ($(OS),Windows_NT)
+	if exist apps\ops-portal\public xcopy /E /I /Y apps\ops-portal\public apps\ops-portal\.next\standalone\apps\ops-portal\public
+	if exist apps\ops-portal\.next\static xcopy /E /I /Y apps\ops-portal\.next\static apps\ops-portal\.next\standalone\apps\ops-portal\.next\static
+else
+	[ -d apps/ops-portal/public ] && cp -r apps/ops-portal/public apps/ops-portal/.next/standalone/apps/ops-portal/public || true
+	[ -d apps/ops-portal/.next/static ] && cp -r apps/ops-portal/.next/static apps/ops-portal/.next/standalone/apps/ops-portal/.next/static || true
+endif
 
 build-shared:
 	npm run build -w packages/shared
@@ -350,7 +357,66 @@ clean-build:
 	npm install
 	$(MAKE) build-all
 
-verify-all: build-api verify-fe-api test-structural test-deps test-transform test-data
+# --- CLI Specific Workflow (Granular & Explicit) ---
+
+cli-help:
+	@echo "HeroBM CLI Installation Sequence:"
+	@echo "  1. make cli-install-prereqs  - Install OS-level tools"
+	@echo "  2. make cli-init-env         - Create .env and secrets"
+	@echo "  3. make cli-setup-python     - Create .venv and install pip deps"
+	@echo "  4. make cli-install-npm       - Install npm dependencies"
+	@echo "  5. make cli-up-db            - Start containers"
+	@echo "  6. make cli-init-db          - Initialize schemas (waits for PG)"
+	@echo "  7. make cli-migrate          - Apply SQL migrations"
+	@echo "  8. make cli-bootstrap        - Seed data & verify"
+
+cli-install-prereqs:
+ifeq ($(OS),Windows_NT)
+	powershell -ExecutionPolicy Bypass -File scripts/setup.ps1
+else
+	bash scripts/setup.sh --non-interactive
+endif
+
+cli-init-env: init-env
+
+cli-setup-python:
+ifeq ($(OS),Windows_NT)
+	if not exist .venv python -m venv .venv
+	.venv\Scripts\pip install -r pipelines/abm_extract/requirements.txt
+else
+	[ ! -d .venv ] && python3 -m venv .venv || true
+	.venv/bin/pip install -r pipelines/abm_extract/requirements.txt
+endif
+
+cli-install-npm:
+	npm install
+
+cli-up-db: up-db
+
+cli-init-db:
+	@echo "Waiting for Postgres to be ready..."
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "for ($$i=1; $$i -le 30; $$i++) { if (podman exec postgres-custom pg_isready -U $(POSTGRES_USER)) { break } else { Write-Host \"Postgres is not ready yet... ($$i/30)\"; Start-Sleep -s 2 } }"
+else
+	@for i in $$(seq 1 30); do \
+		podman exec postgres-custom pg_isready -U $(POSTGRES_USER) > /dev/null 2>&1 && break || \
+		(echo "Postgres is not ready yet... ($$i/30)" && sleep 2); \
+	done
+endif
+	$(MAKE) init-db
+
+cli-migrate: migrate
+
+cli-bootstrap:
+	npm run setup
+	$(MAKE) verify-db
+
+verify-db: migrate-status
+	@echo "Verifying seeded system records..."
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Admin User: ' || count(*) FROM modbm_core.users WHERE username = 'admin';"
+	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Organization: ' || count(*) FROM modbm_core.organization;"
+
+verify-all: build-api verify-fe-api verify-db test-structural test-deps test-transform test-data
 
 test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1

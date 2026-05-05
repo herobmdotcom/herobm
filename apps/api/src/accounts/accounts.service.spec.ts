@@ -2,172 +2,179 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsService } from './accounts.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import {
+  accounts,
+  accountEvents,
+  accountGroups,
+  taxCategories,
+} from '../drizzle/modbm-core-schema';
 
 describe('AccountsService', () => {
   let service: AccountsService;
+  let db: PgliteDatabase<any>;
+  let client: any;
 
-  const mockAccounts = [
-    {
-      accountId: '12345678-1234-1234-1234-1234567890ab',
-      accountNumber: 'ACME',
-      name: 'Acme Corp',
-      address1Line1: '123 Main St',
-      stateCode: 'active',
-      source: 'abm',
-      sourceId: 'C001',
-    },
-    {
-      accountId: '22345678-1234-1234-1234-1234567890ab',
-      accountNumber: 'WIDGET',
-      name: 'Widget Industries',
-      address1Line1: '456 Oak Ave',
-      stateCode: 'active',
-      source: 'app',
-      sourceId: null,
-    },
-  ];
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+    client = mem.client;
+  });
 
-  const mockEvent = {
-    eventId: 'e1',
-    eventType: 'imported',
-    createdOn: new Date(),
-  };
-
-  // Chainable mock for Drizzle query builder
-  const mockQueryBuilder = {
-    where: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    leftJoin: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockReturnThis(),
-    $dynamic: jest.fn(),
-    then: jest.fn().mockImplementation((cb) => cb(mockAccounts)),
-    [Symbol.asyncIterator]: jest.fn(),
-  };
-
-  const mockDb = {
-    select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(mockQueryBuilder),
-    }),
-  };
+  afterAll(async () => {
+    await client.close();
+  });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.then = jest
-      .fn()
-      .mockImplementation((cb) => cb(mockAccounts));
-
-    mockDb.select = jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(mockQueryBuilder),
-    });
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountsService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [AccountsService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<AccountsService>(AccountsService);
+
+    // Clean tables
+    await db.delete(accountEvents);
+    await db.delete(accounts);
+    await db.delete(accountGroups);
+    await db.delete(taxCategories);
   });
 
   describe('findAll', () => {
     it('should return paginated accounts', async () => {
+      await db.insert(accounts).values([
+        {
+          name: 'Account A',
+          accountNumber: 'A1',
+          currencyCode: 'USD',
+        },
+        {
+          name: 'Account B',
+          accountNumber: 'B1',
+          currencyCode: 'USD',
+        },
+      ]);
+
       const result = await service.findAll();
-      expect(result).toHaveProperty('data');
-      expect(result).toHaveProperty('page', 1);
-      expect(result).toHaveProperty('limit', 50);
-      expect(mockDb.select).toHaveBeenCalled();
+      expect(result.data).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.page).toBe(1);
     });
 
-    it('should apply pagination parameters', async () => {
-      const result = await service.findAll({ page: 2, limit: 10 });
-      expect(result.page).toBe(2);
-      expect(result.limit).toBe(10);
+    it('should apply search filter (ilike)', async () => {
+      await db.insert(accounts).values([
+        {
+          name: 'Acme Corp',
+          accountNumber: 'ACME',
+          currencyCode: 'USD',
+        },
+        {
+          name: 'Other Inc',
+          accountNumber: 'OTHER',
+          currencyCode: 'USD',
+        },
+      ]);
+
+      const result = await service.findAll({ q: 'acme' });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].name).toBe('Acme Corp');
     });
 
-    it('should cap limit at 100000', async () => {
-      const result = await service.findAll({ limit: 200_000 });
-      expect(result.limit).toBe(100_000);
+    it('should join with account groups and tax categories', async () => {
+      const [tc] = await db
+        .insert(taxCategories)
+        .values({
+          code: 'GST',
+          title: 'GST',
+          type: 'tax_applies',
+        })
+        .returning();
+
+      const [ag] = await db
+        .insert(accountGroups)
+        .values({
+          name: 'VIP',
+          groupCode: 'VIP01',
+        })
+        .returning();
+
+      await db.insert(accounts).values({
+        name: 'VIP Client',
+        accountNumber: 'VIP-001',
+        currencyCode: 'AUD',
+        accountGroupId: ag.accountGroupId,
+        taxCategoryId: tc.taxCategoryId,
+      });
+
+      const result = await service.findAll();
+      expect(result.data[0]).toMatchObject({
+        accountGroupName: 'VIP',
+        gstCategoryName: 'GST',
+      });
     });
 
-    it('should apply search filter when q is provided', async () => {
-      await service.findAll({ q: 'acme' });
-      expect(mockQueryBuilder.where).toHaveBeenCalled();
+    it('should exclude archived accounts by default', async () => {
+      await db.insert(accounts).values([
+        {
+          name: 'Active',
+          accountNumber: 'ACT',
+          currencyCode: 'USD',
+          stateCode: 'active',
+        },
+        {
+          name: 'Archived',
+          accountNumber: 'ARC',
+          currencyCode: 'USD',
+          stateCode: 'archived',
+        },
+      ]);
+
+      const result = await service.findAll();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].name).toBe('Active');
+
+      const resultWithArchived = await service.findAll({ includeArchived: true });
+      expect(resultWithArchived.data).toHaveLength(2);
     });
   });
 
   describe('findOne', () => {
-    it('should return an account by sourceId for non-UUID IDs', async () => {
-      // Mock: first select().from().where().limit() returns the account,
-      //       second select().from().where().orderBy() returns events
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          leftJoin: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockImplementation(() => ({
-              then: jest.fn().mockImplementation((cb) => {
-                if (mockDb.select.mock.calls.length === 1) {
-                  return cb([mockAccounts[0]]);
-                }
-                return cb([mockEvent]);
-              }),
-            })),
-            orderBy: jest.fn().mockImplementation(() => ({
-              then: jest.fn().mockImplementation((cb) => cb([mockEvent])),
-            })),
-          }),
-        }),
+    it('should return account by UUID with its events', async () => {
+      const [acc] = await db
+        .insert(accounts)
+        .values({
+          name: 'Main Account',
+          accountNumber: 'MAIN',
+          currencyCode: 'GBP',
+        })
+        .returning();
+
+      await db.insert(accountEvents).values({
+        accountId: acc.accountId,
+        eventType: 'created',
+        actor: 'system',
       });
 
-      const result = await service.findOne('C001');
-      expect(result).toHaveProperty('source', 'abm');
-      expect(result).toHaveProperty('events');
+      const result = await service.findOne(acc.accountId);
+      expect(result.name).toBe('Main Account');
       expect(result.events).toHaveLength(1);
+      expect(result.events[0].eventType).toBe('created');
     });
 
-    it('should return an account by UUID with events', async () => {
-      const uuid = '12345678-1234-1234-1234-1234567890ab';
-
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          leftJoin: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockImplementation(() => ({
-              then: jest.fn().mockImplementation((cb) => {
-                if (mockDb.select.mock.calls.length === 1) {
-                  return cb([mockAccounts[0]]);
-                }
-                return cb([mockEvent]);
-              }),
-            })),
-            orderBy: jest.fn().mockImplementation(() => ({
-              then: jest.fn().mockImplementation((cb) => cb([mockEvent])),
-            })),
-          }),
-        }),
+    it('should return account by sourceId (legacy)', async () => {
+      await db.insert(accounts).values({
+        name: 'Legacy Account',
+        accountNumber: 'LEG1',
+        currencyCode: 'USD',
+        sourceId: 'ABM-999',
       });
 
-      const result = await service.findOne(uuid);
-      expect(result).toHaveProperty('source', 'abm');
-      expect(result).toHaveProperty('events');
-      expect(result.events).toHaveLength(1);
-      expect(result.events[0]).toEqual(mockEvent);
+      const result = await service.findOne('ABM-999');
+      expect(result.name).toBe('Legacy Account');
     });
 
-    it('should throw NotFoundException for unknown ID', async () => {
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          leftJoin: jest.fn().mockReturnThis(),
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockImplementation(() => ({
-              then: jest.fn().mockImplementation((cb) => cb([])),
-            })),
-          }),
-        }),
-      });
-
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
+    it('should throw NotFoundException if not found', async () => {
+      await expect(service.findOne('non-existent')).rejects.toThrow(
         NotFoundException,
       );
     });

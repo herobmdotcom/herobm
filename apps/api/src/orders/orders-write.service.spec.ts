@@ -6,14 +6,14 @@ import { PickingService } from './picking.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { AccountsService } from '../accounts/accounts.service';
 import { CreditAssessmentService } from '../accounts/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { PGlite } from '@electric-sql/pglite';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { DrizzleDB } from '../drizzle/drizzle.module';
 import { eq, sql } from 'drizzle-orm';
 import {
   createTestCustomer,
@@ -34,9 +34,8 @@ let TAX_EXEMPT: any;
 let TAX_ZERO: any;
 
 describe('OrdersWriteService', () => {
+  const pg = setupPgliteSuite();
   let service: OrdersWriteService;
-  let db: PgliteDatabase<any>;
-  let client: PGlite;
   let mockPickingService: any;
   let mockInventoryService: any;
   let mockAccountsService: any;
@@ -46,24 +45,16 @@ describe('OrdersWriteService', () => {
   let mockCreditAssessmentService: any;
 
   beforeAll(async () => {
-    const memory = await createMemoryDb();
-    db = memory.db;
-    client = memory.client;
-
-    const allTaxes = await db.select().from(taxCategories);
+    const allTaxes = await pg.db.select().from(taxCategories);
     TAX_DEFAULT = allTaxes.find((t) => t.code === 'GST');
     TAX_EXEMPT = allTaxes.find((t) => t.code === 'N-T');
     TAX_ZERO = allTaxes.find((t) => t.code === 'FRE');
   });
 
-  afterAll(async () => {
-    if (client) await client.close();
-  });
-
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    await client.exec(`
+    await pg.client.exec(`
       TRUNCATE modbm_core.sales_order_lines CASCADE;
       TRUNCATE modbm_core.sales_orders CASCADE;
       TRUNCATE modbm_core.accounts CASCADE;
@@ -138,7 +129,7 @@ describe('OrdersWriteService', () => {
           },
         },
         OrdersWriteService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: TaxCategoriesService, useValue: mocktaxService },
         { provide: PickingService, useValue: mockPickingService },
         { provide: InventoryService, useValue: mockInventoryService },
@@ -350,6 +341,54 @@ describe('OrdersWriteService', () => {
       const { validDto } = await setupCreate({ productTaxId: 'unknown-id' });
       await service.create(validDto, 'admin');
       expect(mocktaxService.getDefault).toHaveBeenCalled();
+    });
+
+    it('should roll back order creation if event logging fails (transactional atomicity)', async () => {
+      const { validDto } = await setupCreate();
+      
+      // Force audit insertion to fail at the database level
+      await pg.client.exec(`ALTER TABLE modbm_core.order_events ADD CONSTRAINT fail_audit CHECK (false);`);
+      
+      try {
+        await service.create(validDto, 'admin');
+        throw new Error('Should have thrown');
+      } catch (e: any) {
+        // PG error for check constraint violation is 23514
+        const code = e.code || e.cause?.code;
+        expect(code).toBe('23514');
+      }
+
+      // Verify no order was created
+      const orders = await pg.db.select().from(salesOrders);
+      expect(orders.length).toBe(0);
+      
+      // Cleanup constraint for other tests
+      await pg.client.exec(`ALTER TABLE modbm_core.order_events DROP CONSTRAINT fail_audit;`);
+    });
+
+    it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
+      const { validDto } = await setupCreate();
+      
+      // Insert an order with a specific number
+      await pg.db.insert(salesOrders).values({
+        orderNumber: 'DUPE-001',
+        name: 'Existing',
+        customerId: validDto.customerId,
+        fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+        currencyCode: 'EUR',
+        stateCode: 'draft',
+      });
+
+      // Mock generateOrderNumber to return the same number
+      jest.spyOn(service as any, 'generateOrderNumber').mockResolvedValue('DUPE-001');
+
+      try {
+        await service.create(validDto, 'admin');
+        throw new Error('Should have thrown');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(ConflictException);
+        expect(e.message).toContain('Order number already exists');
+      }
     });
   });
 

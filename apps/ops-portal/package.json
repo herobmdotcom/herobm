@@ -9,6 +9,7 @@
     "prebuild": "tsc --noEmit",
     "build": "next build",
     "start": "next start",
+    "start:prod": "node .next/standalone/apps/ops-portal/server.js",
     "lint": "eslint \"app/**/*.{ts,tsx}\" \"lib/**/*.{ts,tsx}\" \"components/**/*.{ts,tsx}\"",
     "test": "jest",
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"

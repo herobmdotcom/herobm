@@ -2,34 +2,34 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsWriteService } from './products-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,
   productEvents,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 describe('ProductsWriteService', () => {
+  const pg = setupPgliteSuite();
   let service: ProductsWriteService;
-  let db: PgliteDatabase<any>;
 
-  beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-
-    // Seed required UOM for foreign key constraints
-    await db
+  beforeAll(async () => {
+    // Seed required UOM once for the entire suite
+    await pg.db
       .insert(uomDictionary)
       .values({
         uomCode: 'EA',
         description: 'Each',
       })
       .onConflictDoNothing();
+  });
+
+  beforeEach(async () => {
+    await pg.db.execute(sql`TRUNCATE modbm_core.product_events, modbm_core.products CASCADE`);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsWriteService, { provide: DRIZZLE, useValue: db }],
+      providers: [ProductsWriteService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<ProductsWriteService>(ProductsWriteService);
@@ -44,7 +44,7 @@ describe('ProductsWriteService', () => {
       const result = await service.create(dto, 'admin');
 
       expect(result).toBeDefined();
-      const events = await db
+      const events = await pg.db
         .select()
         .from(productEvents)
         .where(eq(productEvents.productId, result.productId));
@@ -57,7 +57,7 @@ describe('ProductsWriteService', () => {
     let productId: string;
 
     beforeEach(async () => {
-      const [p] = await db
+      const [p] = await pg.db
         .insert(products)
         .values({
           productNumber: 'PROD-UP-' + Math.random(),
@@ -71,7 +71,7 @@ describe('ProductsWriteService', () => {
 
     it('should update product and write standard update event', async () => {
       await service.update(productId, { name: 'New Name' }, 'admin');
-      const events = await db
+      const events = await pg.db
         .select()
         .from(productEvents)
         .where(eq(productEvents.productId, productId));
@@ -81,7 +81,7 @@ describe('ProductsWriteService', () => {
 
     it('should write specialized status_changed event if only stateCode is updated', async () => {
       await service.update(productId, { stateCode: 'archived' }, 'admin');
-      const events = await db
+      const events = await pg.db
         .select()
         .from(productEvents)
         .where(eq(productEvents.productId, productId));
@@ -93,7 +93,7 @@ describe('ProductsWriteService', () => {
     let productId: string;
 
     beforeEach(async () => {
-      const [p] = await db
+      const [p] = await pg.db
         .insert(products)
         .values({
           productNumber: 'PROD-ARC-' + Math.random(),
@@ -108,7 +108,7 @@ describe('ProductsWriteService', () => {
     it('should archive an active product and create an event', async () => {
       const result = await service.archive(productId, 'admin');
       expect(result.stateCode).toBe('archived');
-      const events = await db
+      const events = await pg.db
         .select()
         .from(productEvents)
         .where(eq(productEvents.productId, productId));
@@ -121,7 +121,7 @@ describe('ProductsWriteService', () => {
     let productId: string;
 
     beforeEach(async () => {
-      const [p] = await db
+      const [p] = await pg.db
         .insert(products)
         .values({
           productNumber: 'PROD-UNARC-' + Math.random(),
@@ -134,7 +134,7 @@ describe('ProductsWriteService', () => {
     });
 
     it('should unarchive to previous state based on last event', async () => {
-      await db.insert(productEvents).values({
+      await pg.db.insert(productEvents).values({
         productId,
         eventType: 'archived',
         payload: { from: 'draft', to: 'archived' },

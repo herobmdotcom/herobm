@@ -32,7 +32,7 @@ import {
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { findOrderLine as sharedFindOrderLine } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { PickingService } from './picking.service';
@@ -323,8 +323,6 @@ export class OrdersWriteService {
   async create(dto: CreateOrderDto, actor: string) {
     const customer = await this.resolveCustomer(dto.customerId);
 
-    // Per-line GST is resolved inside the line loop
-
     for (const line of dto.lines) {
       if (line.productId) {
         await this.validateProduct(line.productId);
@@ -343,93 +341,93 @@ export class OrdersWriteService {
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      // Resolve fulfillmentLocationId: Fall back to system default if omitted
-      let fallbackLocId = dto.fulfillmentLocationId;
-      if (!fallbackLocId) {
-        fallbackLocId =
-          this.appConfig.defaultFulfillmentLocationId() ?? undefined;
-      }
-      if (!fallbackLocId) {
-        throw new BadRequestException(
-          'Fulfillment location must be provided or configured globally.',
-        );
-      }
+        // Resolve fulfillmentLocationId: Fall back to system default if omitted
+        let fallbackLocId = dto.fulfillmentLocationId;
+        if (!fallbackLocId) {
+          fallbackLocId =
+            this.appConfig.defaultFulfillmentLocationId() ?? undefined;
+        }
+        if (!fallbackLocId) {
+          throw new BadRequestException(
+            'Fulfillment location must be provided or configured globally.',
+          );
+        }
 
-      const orderNumber = await this.generateOrderNumber(tx);
-      // Insert order header with snapshotted customer discount + GST category
-      const [order] = await tx
-        .insert(salesOrders)
-        .values({
-          orderNumber,
-          name: dto.name || orderNumber,
-          customerId: dto.customerId,
-          customerOrderNumber: dto.customerOrderNumber,
-          fulfillmentLocationId: fallbackLocId,
-          stateCode: 'draft',
-          currencyCode: customer.currencyCode,
-          notes: dto.notes,
-          createdBy: actor,
-        })
-        .returning();
+        const orderNumber = await this.generateOrderNumber(tx);
+        // Insert order header with snapshotted customer discount + GST category
+        const [order] = await tx
+          .insert(salesOrders)
+          .values({
+            orderNumber,
+            name: dto.name || orderNumber,
+            customerId: dto.customerId,
+            customerOrderNumber: dto.customerOrderNumber,
+            fulfillmentLocationId: fallbackLocId,
+            stateCode: 'draft',
+            currencyCode: customer.currencyCode,
+            notes: dto.notes,
+            createdBy: actor,
+          })
+          .returning();
 
-      // Insert line items — resolve GST per line (product × customer)
-      const lineValues = [];
-      for (let idx = 0; idx < dto.lines.length; idx++) {
-        const line = dto.lines[idx];
-        const lineTax = await this.resolveTaxForLine(
-          dto.customerId,
-          line.productId,
-          line.taxCategoryId,
-        );
-        const lineDiscount =
-          line.discountPercentage ?? customer.customerDiscount;
-        const computed = this.computeLineAmount(
-          line.quantity,
-          line.pricePerUnit,
-          lineDiscount,
-          lineTax.rate,
-        );
-        lineValues.push({
-          salesOrderId: order.salesOrderId,
-          lineNumber: idx + 1,
-          productId: line.productId,
-          productDescription: line.productDescription,
-          quantity: line.quantity,
-          pricePerUnit: line.pricePerUnit,
-          discountPercentage: lineDiscount,
-          taxCategoryId: lineTax.taxCategoryId,
-          amount: computed.amount,
-          tax: computed.tax,
-          totalAmount: computed.totalAmount,
-          unitOfMeasure: line.unitOfMeasure,
-          fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
+        // Insert line items — resolve GST per line (product × customer)
+        const lineValues = [];
+        for (let idx = 0; idx < dto.lines.length; idx++) {
+          const line = dto.lines[idx];
+          const lineTax = await this.resolveTaxForLine(
+            dto.customerId,
+            line.productId,
+            line.taxCategoryId,
+          );
+          const lineDiscount =
+            line.discountPercentage ?? customer.customerDiscount;
+          const computed = this.computeLineAmount(
+            line.quantity,
+            line.pricePerUnit,
+            lineDiscount,
+            lineTax.rate,
+          );
+          lineValues.push({
+            salesOrderId: order.salesOrderId,
+            lineNumber: idx + 1,
+            productId: line.productId,
+            productDescription: line.productDescription,
+            quantity: line.quantity,
+            pricePerUnit: line.pricePerUnit,
+            discountPercentage: lineDiscount,
+            taxCategoryId: lineTax.taxCategoryId,
+            amount: computed.amount,
+            tax: computed.tax,
+            totalAmount: computed.totalAmount,
+            unitOfMeasure: line.unitOfMeasure,
+            fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
+          });
+        }
+
+        // Assert Credit / State Safety before saving
+        let orderTotal = 0;
+        lineValues.forEach((lv) => (orderTotal += parseFloat(lv.totalAmount)));
+        await this.assertAccountStanding(dto.customerId, orderTotal, 'create');
+
+        if (lineValues.length > 0) {
+          await tx.insert(salesOrderLineItems).values(lineValues);
+        }
+
+        // Audit + outbox
+        await emitEvent(tx, {
+          aggregateType: AggregateType.SALES_ORDER,
+          aggregateId: order.salesOrderId,
+          eventType: EventType.CREATED,
+          payload: {
+            orderNumber,
+            customerId: dto.customerId,
+            lineCount: lineValues.length,
+          },
+          actor,
         });
-      }
 
-      // Assert Credit / State Safety before saving
-      let orderTotal = 0;
-      lineValues.forEach((lv) => (orderTotal += parseFloat(lv.totalAmount)));
-      await this.assertAccountStanding(dto.customerId, orderTotal, 'create');
-
-      if (lineValues.length > 0) {
-        await tx.insert(salesOrderLineItems).values(lineValues);
-      }
-
-      // Audit + outbox
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: order.salesOrderId,
-        eventType: 'created',
-        payload: {
-          orderNumber,
-          customerId: dto.customerId,
-          lineCount: lineValues.length,
-        },
-        actor,
+        return order;
       });
-
-      return order;
-    });
 
     this.logger.log(
       `Order created: ${result.orderNumber} for customer ${dto.customerId} with ${dto.lines.length} lines by ${actor}`,
