@@ -70,7 +70,7 @@ describe('AccountsService', () => {
     });
 
     it('should join with account groups and tax categories', async () => {
-      const [tc] = await db
+      const [tc] = await pg.db
         .insert(taxCategories)
         .values({
           code: 'GST',

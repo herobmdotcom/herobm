@@ -17,7 +17,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 describe('GlService', () => {
-  const pg = setupPgliteSuite();
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: GlService;
 
   beforeEach(async () => {

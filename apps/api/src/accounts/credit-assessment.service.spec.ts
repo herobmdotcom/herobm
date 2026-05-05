@@ -12,7 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 describe('CreditAssessmentService', () => {
-  const pg = setupPgliteSuite();
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: CreditAssessmentService;
   let testGlAccountId: string;
 

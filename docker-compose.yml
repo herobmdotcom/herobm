@@ -9,7 +9,7 @@ services:
     environment:
       API_URL: http://custom-api:3001
     ports:
-      - "127.0.0.1:${FE_PORT:-4300}:3000"
+      - "${BIND_IP:-127.0.0.1}:${FE_PORT:-4300}:3000"
     depends_on:
       custom-api:
         condition: service_healthy
@@ -49,7 +49,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-custom_app}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "${BIND_IP:-127.0.0.1}:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./configs/postgres:/docker-entrypoint-initdb.d:ro
@@ -83,7 +83,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:5000,http://localhost:8000}
       TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH
     ports:
-      - "127.0.0.1:3001:3001"
+      - "${BIND_IP:-127.0.0.1}:3001:3001"
     volumes:
       - ./logs:/app/logs
     depends_on:
@@ -111,7 +111,7 @@ services:
     environment:
       REDISCLI_AUTH: ${REDIS_PASSWORD}
     ports:
-      - "127.0.0.1:6379:6379"
+      - "${BIND_IP:-127.0.0.1}:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -141,7 +141,7 @@ services:
       REDIS_HOST: redis-broker
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
-      - "127.0.0.1:9091:9091"
+      - "${BIND_IP:-127.0.0.1}:9091:9091"
     volumes:
       - ./logs:/app/logs
     depends_on:

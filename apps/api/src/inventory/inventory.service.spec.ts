@@ -24,7 +24,7 @@ jest.mock('../common/emit-event', () => ({
 }));
 
 describe('InventoryService', () => {
-  const pg = setupPgliteSuite();
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: InventoryService;
 
   const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';

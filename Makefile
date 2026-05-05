@@ -16,6 +16,7 @@ ifeq ($(OS),Windows_NT)
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
   PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
+  BIND_IP ?= 127.0.0.1
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
   COMPOSE_OVERRIDE = -f docker-compose.linux.yml
@@ -25,7 +26,9 @@ else
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
   COMPOSE_CMD = podman-compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
+  BIND_IP ?= 0.0.0.0
 endif
+export BIND_IP
 
 # Only use PROFILE if it was passed on the command line (origin=command line),
 # ignore it if it leaked in from the shell environment (origin=environment).

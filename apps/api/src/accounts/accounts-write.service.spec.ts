@@ -135,7 +135,7 @@ describe('AccountsWriteService', () => {
       // Since we have the manual check, we have to bypass it to test the catch block.
 
       // Let's spy on the select and return nothing to bypass manual check
-      jest.spyOn(db, 'select').mockReturnValueOnce({
+      jest.spyOn(pg.db, 'select').mockReturnValueOnce({
         from: jest.fn().mockReturnValueOnce({
           where: jest.fn().mockReturnValueOnce({
             limit: jest.fn().mockResolvedValueOnce([]),
@@ -162,7 +162,7 @@ describe('AccountsWriteService', () => {
 
   describe('update', () => {
     it('should update an existing account', async () => {
-      const [acc] = await db
+      const [acc] = await pg.db
         .insert(accounts)
         .values({ accountNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' })
         .returning();

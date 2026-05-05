@@ -46,7 +46,7 @@ describe('SuppliersService', () => {
 
   describe('findOne', () => {
     it('should return a single supplier', async () => {
-      const [s] = await db
+      const [s] = await pg.db
         .insert(suppliers)
         .values({
           vendorNumber: 'V-EX',

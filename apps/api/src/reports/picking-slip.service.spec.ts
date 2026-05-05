@@ -48,7 +48,7 @@ describe('PickingSlipService', () => {
     await pg.db.delete(uomDictionary);
 
     // Seed UOM
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
 

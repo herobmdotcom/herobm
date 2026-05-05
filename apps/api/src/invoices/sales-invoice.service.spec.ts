@@ -23,7 +23,7 @@ jest.mock('../orders/order-lifecycle-rules', () => ({
 }));
 
 describe('SalesInvoiceService', () => {
-  const pg = setupPgliteSuite();
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: SalesInvoiceService;
   let mockGlService: any;
   let mockAppConfigService: any;
