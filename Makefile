@@ -80,7 +80,7 @@ up-db: check-logs-volume check-postgres-logs
 
 down-db:
 	$(COMPOSE_CMD) stop postgres-custom redis-broker
-	$(COMPOSE_CMD) rm -f postgres-custom redis-broker
+	-podman rm -f postgres-custom redis-broker
 
 # FE + API Core (The standard full-container app stack)
 up-fe-api: check-logs-volume check-postgres-logs
@@ -88,7 +88,7 @@ up-fe-api: check-logs-volume check-postgres-logs
 
 down-fe-api:
 	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker
-	$(COMPOSE_CMD) rm -f custom-api ops-portal postgres-custom redis-broker
+	-podman rm -f custom-api ops-portal postgres-custom redis-broker
 
 # PLG (Prometheus, Loki, Grafana)
 up-plg: check-logs-volume check-postgres-logs
