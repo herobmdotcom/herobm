@@ -8,6 +8,8 @@ import {
   accounts,
   locations,
   taxCategories,
+  products,
+  uomDictionary,
 } from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
@@ -20,12 +22,15 @@ describe('OrdersService', () => {
   const ORDER_ID = '00000000-0000-0000-0000-000000000002';
   const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
 
   beforeAll(async () => {
     const mem = await createMemoryDb({ skipSeeds: true });
     db = mem.db;
 
     // Seed data
+    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    
     await db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
@@ -47,6 +52,13 @@ describe('OrdersService', () => {
       currencyCode: 'EUR',
     });
 
+    await db.insert(products).values({
+      productId: PROD_ID,
+      productNumber: 'P1',
+      name: 'Product 1',
+      baseUom: 'EA',
+    });
+
     await db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-20260312-0001',
@@ -64,7 +76,7 @@ describe('OrdersService', () => {
     await db.insert(salesOrderLineItems).values({
       salesOrderId: ORDER_ID,
       lineNumber: 1,
-      productId: '00000000-0000-0000-0000-00000000000a',
+      productId: PROD_ID,
       quantity: '1',
       pricePerUnit: '250.00',
       totalAmount: '250.00',
@@ -94,10 +106,10 @@ describe('OrdersService', () => {
     });
 
     it('should apply search filter', async () => {
-      const result = await service.findAll({ searchTerm: 'acme' });
+      const result = await service.findAll({ q: 'acme' });
       expect(result.total).toBe(1);
       
-      const noResult = await service.findAll({ searchTerm: 'nonexistent' });
+      const noResult = await service.findAll({ q: 'nonexistent' });
       expect(noResult.total).toBe(0);
     });
 

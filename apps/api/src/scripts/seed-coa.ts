@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { resolve } from 'path';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';

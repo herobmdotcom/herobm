@@ -10,7 +10,7 @@
     "class-validator": "^0.15.1"
   },
   "scripts": {
-    "seed": "ts-node-esm -P apps/api/tsconfig.json -r tsconfig-paths/register -r ./apps/api/src/scripts/env-loader.ts ./apps/api/src/scripts/seed.ts",
-    "setup": "ts-node-esm -P apps/api/tsconfig.json -r tsconfig-paths/register -r ./apps/api/src/scripts/env-loader.ts ./apps/api/src/scripts/execute-setup.ts"
+    "seed": "ts-node-esm -P apps/api/tsconfig.json ./apps/api/src/scripts/seed.ts",
+    "setup": "ts-node-esm -P apps/api/tsconfig.json ./apps/api/src/scripts/execute-setup.ts"
   }
 }
