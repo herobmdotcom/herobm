@@ -22,9 +22,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json --forceExit",
     "test:e2e:fast": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --config ./test/jest-e2e.json --forceExit",
     "seed:coa": "ts-node src/scripts/seed-coa.ts",
-    "setup": "ts-node src/scripts/execute-setup.ts",
-    "seed": "ts-node src/scripts/seed.ts",
-    "seed:dry": "ts-node src/scripts/seed.ts --dry-run"
+    "setup": "ts-node -r tsconfig-paths/register src/scripts/execute-setup.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/scripts/seed.ts",
+    "seed:dry": "ts-node -r tsconfig-paths/register src/scripts/seed.ts --dry-run"
   },
   "dependencies": {
     "@modbm/shared": "*",

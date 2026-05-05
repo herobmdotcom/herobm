@@ -14,7 +14,10 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
-    "paths": {},
+    "paths": {
+      "@modbm/shared": ["../../packages/shared/src/index"],
+      "@modbm/shared/*": ["../../packages/shared/src/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
