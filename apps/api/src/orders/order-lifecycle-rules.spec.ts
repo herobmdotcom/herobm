@@ -35,6 +35,8 @@ describe('Order Lifecycle Rules', () => {
 
   beforeEach(async () => {
     // Clean data
+    await pg.db.delete(orderEvents);
+    await pg.db.delete(outbox);
     await pg.db.delete(salesOrderShipmentLines);
     await pg.db.delete(salesOrderShipments);
     await pg.db.delete(salesOrderLineItems);
