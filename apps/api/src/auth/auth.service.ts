@@ -9,7 +9,7 @@ import { users } from '../drizzle/modbm-core-schema';
 @Injectable()
 export class AuthService {
   constructor(
-    private jwtService: JwtService,
+    @Inject(JwtService) private jwtService: JwtService,
     @Inject(DRIZZLE) private db: DrizzleDB,
   ) {}
 

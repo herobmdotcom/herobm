@@ -28,8 +28,8 @@ export class SetupService {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    private readonly appConfig: AppConfigService,
-    private readonly coaLoader: CoaLoaderService,
+    @Inject(AppConfigService) private readonly appConfig: AppConfigService,
+    @Inject(CoaLoaderService) private readonly coaLoader: CoaLoaderService,
   ) {}
 
   async getStatus() {
