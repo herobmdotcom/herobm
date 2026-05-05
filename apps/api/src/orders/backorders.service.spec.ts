@@ -48,7 +48,7 @@ describe('BackordersService', () => {
       rate: '0.1',
       type: 'tax_applies',
     });
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
@@ -85,7 +85,7 @@ describe('BackordersService', () => {
   describe('evaluateGaps', () => {
     it('should return empty if no valid product lines exist', async () => {
       await seedBasicOrder();
-      await db.insert(salesOrderLineItems).values({
+      await pg.db.insert(salesOrderLineItems).values({
         salesOrderLineId: LINE_ID,
         salesOrderId: ORDER_ID,
         lineNumber: 1,
@@ -136,13 +136,6 @@ describe('BackordersService', () => {
 
   describe('generateDemand', () => {
     it('should create demand for gaps in backorders table', async () => {
-      await db.insert(products).values({
-        productId: PROD_ID,
-        productNumber: 'P1',
-        name: 'P1',
-        baseUom: 'EA',
-      });
-      await seedBasicOrder();
       await pg.db.insert(products).values({
         productId: PROD_ID,
         productNumber: 'P1',

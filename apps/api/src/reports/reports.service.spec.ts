@@ -69,7 +69,7 @@ describe('ReportsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReportsService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: ReportsRegistry, useValue: mockRegistry },
       ],
     }).compile();
@@ -107,7 +107,7 @@ describe('ReportsService', () => {
         template: 'body',
         outputNamePattern: '${orderNo}.pdf',
       });
-      await db.insert(reportHookAssignments).values({
+      await pg.db.insert(reportHookAssignments).values({
         hookSlug: 'print_invoice',
         reportId: TEST_REPORT_ID,
         contextSlug: 'sales_order',

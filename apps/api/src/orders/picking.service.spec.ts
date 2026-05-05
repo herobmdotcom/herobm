@@ -17,6 +17,8 @@ import {
   accounts,
   taxCategories,
   uomDictionary,
+  orderEvents,
+  outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq, and } from 'drizzle-orm';
 
@@ -38,6 +40,8 @@ describe('PickingService', () => {
 
   beforeEach(async () => {
     // Clean data
+    await pg.db.delete(orderEvents);
+    await pg.db.delete(outbox);
     await pg.db.delete(salesOrderPicks);
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
@@ -114,7 +118,7 @@ describe('PickingService', () => {
         },
         { provide: ShipmentService, useValue: mockShipmentService },
         { provide: InventoryService, useValue: mockInventoryService },
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
       ],
     }).compile();
 
@@ -122,7 +126,7 @@ describe('PickingService', () => {
   });
 
   async function seedOrder(state: any = 'picking') {
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
       customerId: CUSTOMER_ID,
@@ -130,7 +134,7 @@ describe('PickingService', () => {
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
     });
-    await db.insert(salesOrderLineItems).values({
+    await pg.db.insert(salesOrderLineItems).values({
       salesOrderLineId: LINE_ID,
       salesOrderId: ORDER_ID,
       lineNumber: 1,
@@ -185,7 +189,7 @@ describe('PickingService', () => {
   describe('getPickingSummary', () => {
     it('should calculate picked quantities from picks table', async () => {
       await seedOrder('picking');
-      await db.insert(salesOrderPicks).values({
+      await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,
@@ -205,7 +209,7 @@ describe('PickingService', () => {
   describe('assertFullyPicked', () => {
     it('should pass when all lines fully picked', async () => {
       await seedOrder('picking');
-      await db.insert(salesOrderPicks).values({
+      await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,
@@ -221,7 +225,7 @@ describe('PickingService', () => {
 
     it('should throw when lines not fully picked', async () => {
       await seedOrder('picking');
-      await db.insert(salesOrderPicks).values({
+      await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,

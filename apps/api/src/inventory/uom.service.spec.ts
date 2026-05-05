@@ -59,14 +59,14 @@ describe('UomService', () => {
     });
 
     it('calculates correctly using baseUom and standard ratios', async () => {
-      await db.insert(products).values({
+      await pg.db.insert(products).values({
         productId: PRODUCT_ID,
         productNumber: 'P1',
         name: 'Product 1',
         baseUom: 'EA',
       });
 
-      await db.insert(productUoms).values([
+      await pg.db.insert(productUoms).values([
         { productId: PRODUCT_ID, uomCode: 'BOX', ratio: '10' },
         { productId: PRODUCT_ID, uomCode: 'VPE025', ratio: '25' },
       ]);
@@ -87,7 +87,7 @@ describe('UomService', () => {
     });
 
     it('throws exact Error message for unmapped UOMs', async () => {
-      await db.insert(products).values({
+      await pg.db.insert(products).values({
         productId: PRODUCT_ID,
         productNumber: 'P1',
         name: 'Product 1',

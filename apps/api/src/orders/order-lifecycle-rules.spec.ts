@@ -12,6 +12,8 @@ import {
   salesOrderShipmentLines,
   locations,
   taxCategories,
+  orderEvents,
+  outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 
@@ -40,7 +42,7 @@ describe('Order Lifecycle Rules', () => {
     await pg.db.delete(locations);
     await pg.db.delete(taxCategories);
 
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main',
@@ -136,13 +138,13 @@ describe('Order Lifecycle Rules', () => {
       await seedOrder('picking');
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
-      await db.insert(salesOrderShipments).values({
+      await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: 'dispatched',
       });
-      await db.insert(salesOrderShipmentLines).values([
+      await pg.db.insert(salesOrderShipmentLines).values([
         {
           shipmentId: SHIP_ID,
           salesOrderLineId: LINE_1_ID,
@@ -156,7 +158,7 @@ describe('Order Lifecycle Rules', () => {
       ]);
 
       const result = await autoShipWhenFullyShipped.evaluate(
-        db,
+        pg.db,
         ORDER_ID,
         trigger,
         'admin',
@@ -177,7 +179,7 @@ describe('Order Lifecycle Rules', () => {
       await seedOrder('shipped');
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
-      await db.insert(salesOrderShipments).values({
+      await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
@@ -185,7 +187,7 @@ describe('Order Lifecycle Rules', () => {
       });
 
       const result = await revertToPickingOnShipmentCancel.evaluate(
-        db,
+        pg.db,
         ORDER_ID,
         trigger,
         'admin',
@@ -200,13 +202,13 @@ describe('Order Lifecycle Rules', () => {
       await seedOrder('picking');
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
-      await db.insert(salesOrderShipments).values({
+      await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: 'dispatched',
       });
-      await db.insert(salesOrderShipmentLines).values([
+      await pg.db.insert(salesOrderShipmentLines).values([
         {
           shipmentId: SHIP_ID,
           salesOrderLineId: LINE_1_ID,
@@ -220,7 +222,7 @@ describe('Order Lifecycle Rules', () => {
       ]);
 
       const transitions = await evaluateLifecycleRules(
-        db,
+        pg.db,
         ORDER_ID,
         { entity: 'shipment', id: SHIP_ID, action: 'dispatched' },
         'admin',

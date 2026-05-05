@@ -910,10 +910,10 @@ describe('ReturnsWriteService', () => {
       returnState: ReturnState,
       alreadyReturned = 0,
     ) {
-      const cust = await createTestCustomer(db);
-      const prod = await createTestProduct(db);
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
 
-      await db
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -923,18 +923,18 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       orderId = order.salesOrderId;
 
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
 
-      const line = await createTestSalesOrderLine(db, {
+      const line = await createTestSalesOrderLine(pg.db, {
         salesOrderId: orderId,
         productId: prod.productId,
         taxCategoryId: taxRes[0].taxCategoryId,
@@ -943,14 +943,14 @@ describe('ReturnsWriteService', () => {
       });
       lineId = line.salesOrderLineId;
 
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: orderId,
         state: returnState,
       });
       returnId = ret.returnId;
 
       if (alreadyReturned > 0) {
-        await createTestReturnLine(db, {
+        await createTestReturnLine(pg.db, {
           returnId,
           salesOrderLineId: lineId,
           quantity: alreadyReturned,
@@ -993,9 +993,9 @@ describe('ReturnsWriteService', () => {
     let returnLineId: string;
 
     async function setupForUpdateLine(stateCode: ReturnState) {
-      const cust = await createTestCustomer(db);
-      const prod = await createTestProduct(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1006,15 +1006,15 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
-      const orderLine = await createTestSalesOrderLine(db, {
+      const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
         productId: prod.productId,
         quantity: 10,
@@ -1022,13 +1022,13 @@ describe('ReturnsWriteService', () => {
         taxCategoryId: taxRes[0].taxCategoryId,
       });
 
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: stateCode,
       });
       returnId = ret.returnId;
 
-      const retLine = await createTestReturnLine(db, {
+      const retLine = await createTestReturnLine(pg.db, {
         returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,
@@ -1081,9 +1081,9 @@ describe('ReturnsWriteService', () => {
     let returnLineId: string;
 
     async function setupForRemoveLine(stateCode: ReturnState) {
-      const cust = await createTestCustomer(db);
-      const prod = await createTestProduct(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1094,15 +1094,15 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
-      const orderLine = await createTestSalesOrderLine(db, {
+      const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
         productId: prod.productId,
         quantity: 10,
@@ -1110,13 +1110,13 @@ describe('ReturnsWriteService', () => {
         taxCategoryId: taxRes[0].taxCategoryId,
       });
 
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: stateCode,
       });
       returnId = ret.returnId;
 
-      const retLine = await createTestReturnLine(db, {
+      const retLine = await createTestReturnLine(pg.db, {
         returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,
@@ -1152,9 +1152,9 @@ describe('ReturnsWriteService', () => {
 
   describe('findOne', () => {
     it('should return return with lines', async () => {
-      const cust = await createTestCustomer(db);
-      const prod = await createTestProduct(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1165,26 +1165,26 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'draft',
       });
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
-      const orderLine = await createTestSalesOrderLine(db, {
+      const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
         productId: prod.productId,
         quantity: 10,
         price: 50,
         taxCategoryId: taxRes[0].taxCategoryId,
       });
-      await createTestReturnLine(db, {
+      await createTestReturnLine(pg.db, {
         returnId: ret.returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,
@@ -1204,8 +1204,8 @@ describe('ReturnsWriteService', () => {
 
   describe('findByOrder', () => {
     it('should return all returns for an order', async () => {
-      const cust = await createTestCustomer(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1216,11 +1216,11 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'draft',
       });
@@ -1249,8 +1249,8 @@ describe('ReturnsWriteService', () => {
 
   describe('findReturnLine (via updateReturnLine)', () => {
     it('should throw NotFoundException when return line does not exist', async () => {
-      const cust = await createTestCustomer(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1260,11 +1260,11 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'draft',
       });
@@ -1280,9 +1280,9 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should throw BadRequestException if line belongs to different return', async () => {
-      const cust = await createTestCustomer(db);
-      const prod = await createTestProduct(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -1292,15 +1292,15 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
-      const orderLine = await createTestSalesOrderLine(db, {
+      const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
         productId: prod.productId,
         quantity: 10,
@@ -1308,16 +1308,16 @@ describe('ReturnsWriteService', () => {
         taxCategoryId: taxRes[0].taxCategoryId,
       });
 
-      const ret1 = await createTestReturn(db, {
+      const ret1 = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'draft',
       });
-      const ret2 = await createTestReturn(db, {
+      const ret2 = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'draft',
       });
 
-      const retLine = await createTestReturnLine(db, {
+      const retLine = await createTestReturnLine(pg.db, {
         returnId: ret2.returnId, // belongs to ret2
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,

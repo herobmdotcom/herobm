@@ -23,4 +23,5 @@ RUN npm prune --omit=dev
 
 EXPOSE 3001
 
-CMD ["npm", "run", "start:prod"]
+# The build output is nested because of the monorepo structure and shared packages
+CMD ["node", "dist/apps/api/src/main.js"]
