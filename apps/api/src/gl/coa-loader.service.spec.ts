@@ -13,8 +13,8 @@ describe('CoaLoaderService', () => {
 
   beforeEach(async () => {
     // Clean tables for isolation
-    await pg.db.delete(glAccounts);
     await pg.db.delete(glSettings);
+    await pg.db.delete(glAccounts);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [CoaLoaderService, { provide: DRIZZLE, useValue: pg.db }],

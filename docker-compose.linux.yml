@@ -5,6 +5,22 @@
 # Usage: podman compose -f docker-compose.yml -f docker-compose.linux.yml up -d
 
 services:
+  ops-portal:
+    ports:
+      - "0.0.0.0:${FE_PORT:-4300}:3000"
+
+  custom-api:
+    ports:
+      - "0.0.0.0:3001:3001"
+
+  postgres-custom:
+    ports:
+      - "0.0.0.0:5432:5432"
+
+  redis-broker:
+    ports:
+      - "0.0.0.0:6379:6379"
+
   promtail:
     volumes:
       - ./configs/promtail/promtail-config-linux.yaml:/etc/promtail/config.yml:ro

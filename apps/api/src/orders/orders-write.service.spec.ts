@@ -224,7 +224,7 @@ describe('OrdersWriteService', () => {
       const prodGstId = opts?.productTaxId ?? TAX_DEFAULT.taxCategoryId;
       const currency = opts?.currency ?? 'EUR';
 
-      const customer = await createTestCustomer(db);
+      const customer = await createTestCustomer(pg.db);
       mockAccountsService.findOne.mockResolvedValue({
         accountId: customer.accountId,
         customerDiscount: disc,
@@ -232,7 +232,7 @@ describe('OrdersWriteService', () => {
         taxCategoryId: gstId,
       });
 
-      const product = await createTestProduct(db);
+      const product = await createTestProduct(pg.db);
       mockProductsService.findOne.mockResolvedValue({
         productId: product.productId,
         name: 'Test Product',
@@ -261,7 +261,7 @@ describe('OrdersWriteService', () => {
       expect(result).toHaveProperty('salesOrderId');
       expect(result).toHaveProperty('stateCode', 'draft');
 
-      const saved = await db
+      const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, result.salesOrderId));
@@ -271,7 +271,7 @@ describe('OrdersWriteService', () => {
     it('should snapshot customer discount onto the order lines', async () => {
       const { validDto } = await setupCreate({ disc: '15' });
       const result = await service.create(validDto, 'admin');
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
@@ -408,8 +408,8 @@ describe('OrdersWriteService', () => {
 
   describe('update', () => {
     async function setupForUpdate(stateCode: string) {
-      const customer = await createTestCustomer(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: stateCode as any,
@@ -426,7 +426,7 @@ describe('OrdersWriteService', () => {
       );
       expect(result.name).toBe('New Name');
 
-      const saved = await db
+      const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, order.salesOrderId));
@@ -470,8 +470,8 @@ describe('OrdersWriteService', () => {
 
   describe('changeState', () => {
     async function setupWithState(currentState: string) {
-      const customer = await createTestCustomer(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: currentState as any,
@@ -526,7 +526,7 @@ describe('OrdersWriteService', () => {
     it('should transition quoted → confirmed', async () => {
       const { order } = await setupWithState('quoted');
       await service.changeState(order.salesOrderId, 'confirmed', 'admin');
-      const saved = await db
+      const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, order.salesOrderId));
@@ -536,7 +536,7 @@ describe('OrdersWriteService', () => {
     it('should transition confirmed → cancelled', async () => {
       const { order } = await setupWithState('confirmed');
       await service.changeState(order.salesOrderId, 'cancelled', 'admin');
-      const saved = await db
+      const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, order.salesOrderId));
@@ -571,16 +571,16 @@ describe('OrdersWriteService', () => {
 
   describe('addLine', () => {
     async function setupForAddLine(stateCode: string, maxLineNumber = 0) {
-      const customer = await createTestCustomer(db);
-      const product = await createTestProduct(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: stateCode as any,
       });
 
       if (maxLineNumber > 0) {
-        const dummyProduct = await createTestProduct(db, {
+        const dummyProduct = await createTestProduct(pg.db, {
           sku: 'DUMMY',
           name: 'Dummy',
         });
@@ -693,7 +693,7 @@ describe('OrdersWriteService', () => {
 
     it('should use zero-rate for zero-rated product', async () => {
       const { order } = await setupForAddLine('draft');
-      const zeroProduct = await createTestProduct(db, {
+      const zeroProduct = await createTestProduct(pg.db, {
         sku: 'PROD-ZR',
         name: 'Zero Prod',
       });
@@ -725,15 +725,15 @@ describe('OrdersWriteService', () => {
 
   describe('updateLine', () => {
     async function setupForUpdateLine(orderState: string) {
-      const customer = await createTestCustomer(db);
-      const product = await createTestProduct(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: orderState as any,
       });
 
-      const [line] = await db
+      const [line] = await pg.db
         .insert(salesOrderLineItems)
         .values({
           salesOrderId: order.salesOrderId,
@@ -763,7 +763,7 @@ describe('OrdersWriteService', () => {
       );
       expect(result).toHaveProperty('salesOrderLineId', line.salesOrderLineId);
 
-      const saved = await db
+      const saved = await pg.db
         .select()
         .from(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, line.salesOrderLineId));
@@ -826,15 +826,15 @@ describe('OrdersWriteService', () => {
 
   describe('removeLine', () => {
     async function setupForRemoveLine(orderState: string) {
-      const customer = await createTestCustomer(db);
-      const product = await createTestProduct(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: orderState as any,
       });
 
-      const [line] = await db
+      const [line] = await pg.db
         .insert(salesOrderLineItems)
         .values({
           salesOrderId: order.salesOrderId,
@@ -860,7 +860,7 @@ describe('OrdersWriteService', () => {
         service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).resolves.toBeUndefined();
 
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
@@ -905,9 +905,9 @@ describe('OrdersWriteService', () => {
 
   describe('findOne', () => {
     it('should return order with lines and events', async () => {
-      const customer = await createTestCustomer(db);
-      const product = await createTestProduct(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: 'draft',
@@ -949,8 +949,8 @@ describe('OrdersWriteService', () => {
 
   describe('findLine (via updateLine)', () => {
     it('should throw NotFoundException when line does not exist', async () => {
-      const customer = await createTestCustomer(db);
-      const order = await createTestSalesOrder(db, {
+      const customer = await createTestCustomer(pg.db);
+      const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: 'draft',
@@ -967,19 +967,19 @@ describe('OrdersWriteService', () => {
     });
 
     it('should throw BadRequestException if line belongs to different order', async () => {
-      const customer = await createTestCustomer(db);
-      const product = await createTestProduct(db);
+      const customer = await createTestCustomer(pg.db);
+      const product = await createTestProduct(pg.db);
 
-      const order1 = await createTestSalesOrder(db, {
+      const order1 = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const order2 = await createTestSalesOrder(db, {
+      const order2 = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
 
-      const [line] = await db
+      const [line] = await pg.db
         .insert(salesOrderLineItems)
         .values({
           salesOrderId: order2.salesOrderId, // belongs to order2

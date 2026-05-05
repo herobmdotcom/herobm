@@ -19,7 +19,7 @@ import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('PurchaseInvoiceService', () => {
-  const pg = setupPgliteSuite();
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PurchaseInvoiceService;
   let mockGlService: any;
 

@@ -162,7 +162,7 @@ describe('CreditAssessmentService', () => {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 5);
 
-      const [entryRecent] = await db
+      const [entryRecent] = await pg.db
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-RECENT',
@@ -181,7 +181,7 @@ describe('CreditAssessmentService', () => {
       });
 
       // 3. Partial Payment (total credits)
-      const [entryPay] = await db
+      const [entryPay] = await pg.db
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-PAY',
