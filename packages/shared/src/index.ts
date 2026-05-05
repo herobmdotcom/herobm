@@ -7,14 +7,6 @@ export {
   RETURN_TRANSITIONS,
   SALES_ORDER_PICK_TRANSITIONS,
 
-  // Union types
-  SalesOrderState,
-  PurchaseOrderState,
-  PurchaseInvoiceState,
-  ShipmentState,
-  ReturnState,
-  SalesOrderPickState,
-
   // Lifecycle ordinals (for UI forward/backward styling)
   SALES_ORDER_LIFECYCLE,
   PURCHASE_ORDER_LIFECYCLE,
@@ -29,6 +21,16 @@ export {
   getValidStates,
   isBackTransition,
   cap,
+} from './state-machines';
+
+export type {
+  // Union types
+  SalesOrderState,
+  PurchaseOrderState,
+  PurchaseInvoiceState,
+  ShipmentState,
+  ReturnState,
+  SalesOrderPickState,
 } from './state-machines';
 
 export {
