@@ -21,6 +21,7 @@ interface UnifiedOrder {
     totalPrice: string | null;
     currencyCode: string | null;
     pickabilityStatus: 'ready' | 'partial' | 'blocked';
+    hasAllocation?: boolean;
 }
 
 interface PickAllocation {
@@ -31,6 +32,8 @@ interface PickAllocation {
     binId: string;
     quantity: string;
     stateCode: string;
+    binName?: string;
+    line?: PickingLine;
 }
 
 interface PickingLine {
@@ -49,6 +52,7 @@ interface PickingLine {
     isFullyPicked: boolean;
     isPhysical: boolean;
     onHand: string;
+    hasAllocation?: boolean;
 }
 
 interface PickingSummary {
@@ -114,7 +118,13 @@ export default function PickingPage() {
     }, [loadOrders]);
 
     const filteredOrders = useMemo(() => {
-        return pendingOrders.filter(o => o.pickabilityStatus === activeTab);
+        const filtered = pendingOrders.filter(o => o.pickabilityStatus === activeTab);
+        // Allocated orders sort first
+        filtered.sort((a, b) => {
+            if (a.hasAllocation !== b.hasAllocation) return a.hasAllocation ? -1 : 1;
+            return 0;
+        });
+        return filtered;
     }, [pendingOrders, activeTab]);
 
     // Fetch Summary for Selected Order
@@ -268,7 +278,11 @@ export default function PickingPage() {
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
-                                                <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${order.pickabilityStatus === 'ready' ? 'bg-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'bg-[var(--warning)]' : 'bg-[var(--danger)]'}`} />
+                                                {order.hasAllocation ? (
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title="Allocated" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                ) : (
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
+                                                )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />
@@ -329,17 +343,23 @@ export default function PickingPage() {
                                                 <tr>
                                                     <th>Product</th>
                                                     <th>Bin Location</th>
+                                                    <th style={{ textAlign: 'right' }}>Ordered</th>
                                                     <th style={{ textAlign: 'right' }}>Remaining</th>
                                                     <th style={{ textAlign: 'right' }}>On Hand</th>
                                                     <th style={{ textAlign: 'right' }}>Pick Qty</th>
-                                                    <th>Action</th>
+                                                    <th>Action / Status</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {itemsToPick.map(line => (
                                                     <tr key={line.salesOrderLineId}>
                                                         <td>
-                                                            <div className="font-bold">{line.productNumber}</div>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <div className="font-bold">{line.productNumber}</div>
+                                                                {line.hasAllocation && (
+                                                                    <span className="material-symbols-outlined indicator-icon text-[var(--accent)]" title="Stock was specifically ordered for this line" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                                )}
+                                                            </div>
                                                             <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
                                                         </td>
                                                         <td>
@@ -359,6 +379,9 @@ export default function PickingPage() {
                                                                     <option key={b.binId} value={b.binId}>{b.binName} (qty: {parseFloat(b.onHand)})</option>
                                                                 ))}
                                                             </select>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <div>{parseFloat(line.quantity).toLocaleString()}</div>
                                                         </td>
                                                         <td style={{ textAlign: 'right' }}>
                                                             <div>{parseFloat(line.remaining).toLocaleString()}</div>
@@ -402,7 +425,7 @@ export default function PickingPage() {
                                                 ))}
                                                 {itemsToPick.length === 0 && (
                                                     <tr>
-                                                        <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
+                                                        <td colSpan={7} className="py-6 text-center text-sm text-[var(--text-muted)]">
                                                             No items available to pick.
                                                         </td>
                                                     </tr>
@@ -419,10 +442,12 @@ export default function PickingPage() {
                                                 <thead>
                                                     <tr>
                                                         <th>Product</th>
+                                                        <th>Bin Location</th>
                                                         <th style={{ textAlign: 'right' }}>Ordered</th>
-                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
                                                         <th style={{ textAlign: 'right' }}>Remaining</th>
-                                                        <th>Status</th>
+                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
+                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
+                                                        <th>Action / Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -432,17 +457,19 @@ export default function PickingPage() {
                                                                 <div className="font-bold">{line.productNumber}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
                                                             </td>
+                                                            <td className="text-[var(--text-muted)]">-</td>
                                                             <td style={{ textAlign: 'right' }}>
                                                                 <div>{parseFloat(line.quantity).toLocaleString()}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }}>
+                                                                <div className="text-[var(--text-muted)]">{parseFloat(line.remaining).toLocaleString()}</div>
                                                             </td>
                                                             <td style={{ textAlign: 'right' }}>
                                                                 <div className="text-[var(--danger)]">
                                                                     {parseFloat(line.onHand).toLocaleString()}
                                                                 </div>
                                                             </td>
-                                                            <td style={{ textAlign: 'right' }}>
-                                                                <div className="text-[var(--text-muted)] text-sm">{parseFloat(line.remaining).toLocaleString()}</div>
-                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">-</td>
                                                             <td>
                                                                 <span className="text-xs italic text-[var(--text-muted)]">Out of Stock</span>
                                                             </td>
@@ -461,8 +488,12 @@ export default function PickingPage() {
                                                 <thead>
                                                     <tr>
                                                         <th>Product</th>
-                                                        <th style={{ textAlign: 'right' }}>Picked Qty</th>
-                                                        <th>Status</th>
+                                                        <th>Bin Location</th>
+                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
+                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
+                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
+                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
+                                                        <th>Action / Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -472,13 +503,27 @@ export default function PickingPage() {
                                                                 <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
                                                             </td>
+                                                            <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.quantity).toLocaleString() : '-'}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.remaining).toLocaleString() : '-'}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.onHand).toLocaleString() : '-'}</div>
+                                                            </td>
                                                             <td style={{ textAlign: 'right' }}>
-                                                                <div className="font-semibold text-[var(--success)]">{parseFloat(pick.quantity).toLocaleString()}</div>
+                                                                <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
+                                                                    {pick.line && !pick.line.isFullyPicked && (
+                                                                        <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title="Partially picked">warning</span>
+                                                                    )}
+                                                                    {parseFloat(pick.quantity).toLocaleString()}
+                                                                </div>
                                                             </td>
                                                             <td>
                                                                 <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
-                                                                    <span className="material-symbols-outlined text-[14px] mr-1">inventory</span>
-                                                                    Staged
+                                                                    Picked
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -496,8 +541,12 @@ export default function PickingPage() {
                                                 <thead>
                                                     <tr>
                                                         <th>Product</th>
-                                                        <th style={{ textAlign: 'right' }}>Shipped Qty</th>
-                                                        <th>Status</th>
+                                                        <th>Bin Location</th>
+                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
+                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
+                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
+                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
+                                                        <th>Action / Status</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -506,6 +555,16 @@ export default function PickingPage() {
                                                             <td>
                                                                 <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
+                                                            </td>
+                                                            <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.quantity).toLocaleString() : '-'}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.remaining).toLocaleString() : '-'}</div>
+                                                            </td>
+                                                            <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">
+                                                                <div>{pick.line ? parseFloat(pick.line.onHand).toLocaleString() : '-'}</div>
                                                             </td>
                                                             <td style={{ textAlign: 'right' }}>
                                                                 <div className="font-semibold">{parseFloat(pick.quantity).toLocaleString()}</div>

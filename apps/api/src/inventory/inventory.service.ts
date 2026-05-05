@@ -35,7 +35,10 @@ import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
 import { getAccountingStrategy } from './inventory-accounting';
-import { filterPickableBins, calculatePickableOnHand } from './inventory-math.utils';
+import {
+  filterPickableBins,
+  calculatePickableOnHand,
+} from './inventory-math.utils';
 
 @Injectable()
 export class InventoryService {
@@ -108,9 +111,13 @@ export class InventoryService {
    * Domain API: Retrieves the specific bins containing pickable stock for a given product.
    * Abstracts away the positive whitelist rules.
    */
-  async getPickableBins(productId: string, locationId?: string, txClient?: any) {
+  async getPickableBins(
+    productId: string,
+    locationId?: string,
+    txClient?: any,
+  ) {
     const client = txClient || this.db;
-    
+
     let qb = client
       .select({
         binId: bins.binId,
@@ -122,7 +129,7 @@ export class InventoryService {
       .from(binContents)
       .innerJoin(bins, eq(binContents.binId, bins.binId))
       .$dynamic();
-      
+
     if (locationId) {
       qb = qb
         .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
@@ -130,18 +137,18 @@ export class InventoryService {
           and(
             eq(binContents.productId, productId),
             eq(zones.locationId, locationId),
-            sql`${binContents.actualQuantity}::numeric > 0`
-          )
+            sql`${binContents.actualQuantity}::numeric > 0`,
+          ),
         );
     } else {
       qb = qb.where(
         and(
           eq(binContents.productId, productId),
-          sql`${binContents.actualQuantity}::numeric > 0`
-        )
+          sql`${binContents.actualQuantity}::numeric > 0`,
+        ),
       );
     }
-    
+
     const rawBins = await qb;
     return filterPickableBins(rawBins);
   }

@@ -146,7 +146,7 @@ export class PickingSlipService {
       }
 
       // Back-order: ordered qty exceeds on-hand stock
-      const onHand = onHandMap.get(productCode) ?? 0;
+      const onHand = onHandMap.get(line.productId!) ?? 0;
       if (ordered > onHand) {
         const qtyToOrder = ordered - onHand;
         backOrderLines.push({

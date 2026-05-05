@@ -2,6 +2,7 @@
  * E2E test setup — loads .env from the project root so that the auth service
  * and drizzle module can read POSTGRES_*, DEV_ADMIN_PASSWORD etc.
  */
+export {};
 import * as path from 'path';
 import * as fs from 'fs';
 

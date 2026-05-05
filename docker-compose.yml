@@ -27,7 +27,7 @@ services:
         max-file: "3"
 
   postgres-custom:
-    image: postgres:16-alpine
+    image: docker.io/library/postgres:16-alpine
     container_name: postgres-custom
     restart: unless-stopped
     command:
@@ -104,7 +104,7 @@ services:
         max-file: "3"
 
   redis-broker:
-    image: redis:7-alpine
+    image: docker.io/library/redis:7-alpine
     container_name: redis-broker
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD}
@@ -159,7 +159,7 @@ services:
         max-file: "3"
 
   postgres-exporter:
-    image: prometheuscommunity/postgres-exporter:latest
+    image: docker.io/prometheuscommunity/postgres-exporter:latest
     container_name: postgres-exporter
     restart: unless-stopped
     profiles:
@@ -181,7 +181,7 @@ services:
       - app-net
 
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: docker.io/oliver006/redis_exporter:latest
     container_name: redis-exporter
     restart: unless-stopped
     profiles:
@@ -198,7 +198,7 @@ services:
       - app-net
 
   prometheus:
-    image: prom/prometheus:latest
+    image: docker.io/prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
     profiles:
@@ -220,7 +220,7 @@ services:
       - monitoring-net
 
   loki:
-    image: grafana/loki:latest
+    image: docker.io/grafana/loki:latest
     container_name: loki
     restart: unless-stopped
     profiles:
@@ -237,7 +237,7 @@ services:
       - monitoring-net
 
   promtail:
-    image: grafana/promtail:latest
+    image: docker.io/grafana/promtail:latest
     container_name: promtail
     restart: unless-stopped
     profiles:
@@ -255,7 +255,7 @@ services:
       - monitoring-net
 
   grafana:
-    image: grafana/grafana:latest
+    image: docker.io/grafana/grafana:latest
     container_name: grafana
     restart: unless-stopped
     profiles:

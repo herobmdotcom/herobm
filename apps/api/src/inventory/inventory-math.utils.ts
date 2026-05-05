@@ -8,11 +8,14 @@ export interface BinState {
 
 /**
  * The single source of truth for whether a bin is eligible for general fulfillment.
- * 
- * Standardized to a POSITIVE whitelist (storage, pick, bulk) to ensure that 
+ *
+ * Standardized to a POSITIVE whitelist (storage, pick, bulk) to ensure that
  * newly introduced, unhandled bin types default securely to exclusion.
  */
-export function isPickableBin(bin: { binType: string | null; isUnavailable: boolean | null }): boolean {
+export function isPickableBin(bin: {
+  binType: string | null;
+  isUnavailable: boolean | null;
+}): boolean {
   if (bin.isUnavailable) {
     return false;
   }
@@ -30,7 +33,7 @@ export function filterPickableBins<T extends BinState>(bins: T[]): T[] {
 }
 
 /**
- * Given a generic array of bin records, filters them for pickability 
+ * Given a generic array of bin records, filters them for pickability
  * and sums their available quantity.
  */
 export function calculatePickableOnHand<T extends BinState>(bins: T[]): number {
@@ -40,7 +43,7 @@ export function calculatePickableOnHand<T extends BinState>(bins: T[]): number {
     if (bin.actualQuantity !== undefined) qty = bin.actualQuantity;
     else if (bin.quantity !== undefined) qty = bin.quantity;
     else if (bin.onHand !== undefined) qty = bin.onHand;
-    
+
     const parsed = parseFloat(qty as string) || 0;
     return sum + parsed;
   }, 0);

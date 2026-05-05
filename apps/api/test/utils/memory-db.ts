@@ -5,16 +5,17 @@ import * as path from 'path';
 import * as schema from '../../src/drizzle/modbm-core-schema';
 import { runStandardSeeds } from '../../src/scripts/seed';
 
-export async function createMemoryDb() {
+export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   const client = new PGlite();
-  
+
   await client.exec(`
     CREATE SCHEMA IF NOT EXISTS modbm_core;
   `);
 
   const migrationsDir = path.join(process.cwd(), 'migrations');
-  const files = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql'))
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
     .sort(); // Sorts alphabetically which handles 0000_, 0001_, etc.
 
   for (const file of files) {
@@ -30,7 +31,9 @@ export async function createMemoryDb() {
   const db = drizzle(client, { schema });
 
   // Run the standard application seeds against the in-memory PGLite DB
-  await runStandardSeeds(db);
+  if (!opts?.skipSeeds) {
+    await runStandardSeeds(db);
+  }
 
   return { client, db };
 }

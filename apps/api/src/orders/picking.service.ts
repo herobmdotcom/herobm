@@ -17,7 +17,6 @@ import {
   locations,
   salesOrderPicks,
   backorders,
-  inventoryLevels,
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
@@ -31,7 +30,10 @@ import { AggregateType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
-import { filterPickableBins, calculatePickableOnHand } from '../inventory/inventory-math.utils';
+import {
+  filterPickableBins,
+  calculatePickableOnHand,
+} from '../inventory/inventory-math.utils';
 
 @Injectable()
 export class PickingService {
@@ -79,6 +81,29 @@ export class PickingService {
 
     const committedMap = await getCommittedPerLine(this.db, orderId);
 
+    // Fetch backorder allocation status per line
+    const lineIds = lines.map((l) => l.salesOrderLineId);
+    const allocations =
+      lineIds.length > 0
+        ? await this.db
+            .select({
+              salesOrderLineId: backorders.salesOrderLineId,
+              allocatedQty:
+                sql<number>`COALESCE(SUM(${backorders.quantity}), 0)`,
+            })
+            .from(backorders)
+            .where(
+              and(
+                inArray(backorders.salesOrderLineId, lineIds),
+                eq(backorders.stateCode, 'received_reserved'),
+              ),
+            )
+            .groupBy(backorders.salesOrderLineId)
+        : [];
+    const allocationMap = new Map(
+      allocations.map((a) => [a.salesOrderLineId, a.allocatedQty]),
+    );
+
     const productIds = Array.from(
       new Set(lines.map((l) => l.productId).filter(Boolean) as string[]),
     );
@@ -101,10 +126,19 @@ export class PickingService {
             .where(inArray(binContents.productId, productIds))
         : [];
 
-    const picks = await this.db
-      .select()
+    const picksRaw = await this.db
+      .select({
+        pick: salesOrderPicks,
+        binName: bins.binNumber,
+      })
       .from(salesOrderPicks)
+      .leftJoin(bins, eq(salesOrderPicks.binId, bins.binId))
       .where(eq(salesOrderPicks.salesOrderId, orderId));
+
+    const picks = picksRaw.map((p) => ({
+      ...p.pick,
+      binName: p.binName,
+    }));
 
     const pickedMap = new Map<string, number>();
     for (const pick of picks) {
@@ -126,15 +160,19 @@ export class PickingService {
       const committed = isPhysical
         ? (committedMap.get(line.salesOrderLineId) ?? 0)
         : ordered;
-        
+
       const productLocationBins = binStock.filter(
         (s) =>
           s.productId === line.productId &&
-          s.locationId === line.fulfillmentLocationId
+          s.locationId === line.fulfillmentLocationId,
       );
 
       const availableBins = filterPickableBins(productLocationBins as any[])
-        .sort((a, b) => parseFloat(String(b.onHand || 0)) - parseFloat(String(a.onHand || 0)))
+        .sort(
+          (a, b) =>
+            parseFloat(String(b.onHand || 0)) -
+            parseFloat(String(a.onHand || 0)),
+        )
         .map((b: any) => ({
           binId: b.binId,
           binName: `${b.zoneCode}.${b.binNumber}`,
@@ -157,6 +195,7 @@ export class PickingService {
         isPhysical,
         onHand: String(calculatePickableOnHand(productLocationBins as any[])),
         availableBins,
+        hasAllocation: (allocationMap.get(line.salesOrderLineId) ?? 0) > 0,
       };
     });
 
@@ -363,7 +402,7 @@ export class PickingService {
 
   /**
    * Returns a queue of orders pending picking, enriched with pickability status.
-   * Pickability uses a hybrid heuristic relying on actual backorder state and physical stock.
+   * Pickability is determined by physical on-hand stock in pickable bins.
    */
   async getPickingQueue(locationId?: string) {
     const rawLines = await this.db
@@ -391,7 +430,17 @@ export class PickingService {
             AND b.is_unavailable = false
             AND b.is_bonded = false
         ), 0)`,
-        backorderQty: sql<number>`COALESCE(SUM(CASE WHEN ${backorders.stateCode} != 'received_reserved' THEN ${backorders.quantity} ELSE 0 END), 0)`,
+        pickedQty: sql<number>`COALESCE((
+          SELECT SUM(quantity) 
+          FROM modbm_core.sales_order_picks 
+          WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
+            AND state_code != 'cancelled'
+        ), 0)`,
+        hasAllocation: sql<boolean>`EXISTS(
+          SELECT 1 FROM modbm_core.backorders bo
+          WHERE bo.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
+            AND bo.state_code = 'received_reserved'
+        )`,
       })
       .from(salesOrders)
       .innerJoin(
@@ -406,10 +455,6 @@ export class PickingService {
         coreProducts,
         eq(salesOrderLineItems.productId, coreProducts.productId),
       )
-      .leftJoin(
-        backorders,
-        eq(salesOrderLineItems.salesOrderLineId, backorders.salesOrderLineId),
-      )
       .where(
         and(
           inArray(salesOrders.stateCode, ['confirmed', 'picking']),
@@ -417,12 +462,6 @@ export class PickingService {
             ? eq(salesOrders.fulfillmentLocationId, locationId)
             : undefined,
         ),
-      )
-      .groupBy(
-        salesOrders.salesOrderId,
-        salesOrderLineItems.salesOrderLineId,
-        coreProducts.productType,
-        coreAccounts.name,
       )
       .orderBy(salesOrders.createdOn);
 
@@ -441,46 +480,68 @@ export class PickingService {
           createdBy: row.createdBy,
           totalPrice: null,
           currencyCode: row.currencyCode,
-          _linesTotal: 0,
+          _linesUnfulfilled: 0,
           _linesFullyPickable: 0,
-          _linesBlocked: 0,
+          _linesPartiallyPickable: 0,
+          _hasAllocation: false,
         });
       }
 
       const order = orderMap.get(row.id);
+      if (row.hasAllocation) {
+        order._hasAllocation = true;
+      }
       if (row.isPhysical) {
-        order._linesTotal += 1;
         const required = parseFloat(row.lineQuantity ?? '0');
-        const backordered = parseFloat(row.backorderQty?.toString() ?? '0');
-        const onHand = parseFloat(row.onHand?.toString() ?? '0');
+        const picked = parseFloat(row.pickedQty?.toString() ?? '0');
+        const remaining = required - picked;
 
-        const expectedPickable = required - backordered;
-        const truePickable = Math.min(expectedPickable, onHand);
+        if (remaining > 0) {
+          order._linesUnfulfilled += 1;
+          const onHand = parseFloat(row.onHand?.toString() ?? '0');
 
-        if (truePickable >= required) {
-          order._linesFullyPickable += 1;
-        } else if (truePickable <= 0) {
-          order._linesBlocked += 1;
+          if (onHand >= remaining) {
+            order._linesFullyPickable += 1;
+          } else if (onHand > 0) {
+            order._linesPartiallyPickable += 1;
+          }
+          // else: blocked (no on-hand) — counted implicitly
         }
       }
     }
 
     const queue = Array.from(orderMap.values()).map((order) => {
-      let pickabilityStatus = 'partial';
-      if (order._linesTotal === 0 || order._linesFullyPickable === order._linesTotal) {
+      let pickabilityStatus: 'ready' | 'partial' | 'blocked';
+
+      if (order._linesUnfulfilled === 0) {
         pickabilityStatus = 'ready';
-      } else if (order._linesBlocked === order._linesTotal) {
+      } else if (order._linesFullyPickable === order._linesUnfulfilled) {
+        pickabilityStatus = 'ready';
+      } else if (order._linesFullyPickable > 0 || order._linesPartiallyPickable > 0) {
+        pickabilityStatus = 'partial';
+      } else {
         pickabilityStatus = 'blocked';
       }
 
-      delete order._linesTotal;
+      const hasAllocation = order._hasAllocation;
+      delete order._linesUnfulfilled;
       delete order._linesFullyPickable;
-      delete order._linesBlocked;
+      delete order._linesPartiallyPickable;
+      delete order._hasAllocation;
 
       return {
         ...order,
         pickabilityStatus,
+        hasAllocation,
       };
+    });
+
+    // Sort: allocated orders first within each status group
+    queue.sort((a, b) => {
+      if (a.hasAllocation !== b.hasAllocation) {
+        return a.hasAllocation ? -1 : 1;
+      }
+      return 0; // preserve original createdOn ordering within same allocation status
     });
 
     return queue;

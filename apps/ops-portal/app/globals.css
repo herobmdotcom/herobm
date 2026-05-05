@@ -185,6 +185,22 @@
   letter-spacing: 0.05em;
 }
 
+@layer base {
+  .material-symbols-outlined {
+    font-size: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+  }
+}
+
+.material-symbols-outlined.indicator-icon {
+  font-size: 9px !important;
+  width: 10px;
+  height: 10px;
+}
+
 .section-heading .material-symbols-outlined {
   font-size: 18px;
   color: var(--accent);

@@ -175,9 +175,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                       </span>
                     )}
                   </label>
-                  <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                    {order.vendorName || order.vendorId || '—'}
-                  </p>
+                  <div className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
+                    {order.vendorId ? (
+                      <Link href={`/suppliers/${order.vendorId}`} className="text-[var(--accent)] hover:underline">
+                        {order.vendorName || order.vendorId}
+                      </Link>
+                    ) : (
+                      order.vendorName || '—'
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>

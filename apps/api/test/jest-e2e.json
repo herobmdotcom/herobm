@@ -5,28 +5,15 @@
   "testRegex": ".e2e-spec.ts$",
   "maxWorkers": 1,
   "transform": {
-    "^.+\\.(t|j)s$": [
-      "ts-jest",
-      {
-        "tsconfig": {
-          "module": "nodenext",
-          "moduleResolution": "nodenext",
-          "esModuleInterop": true,
-          "allowSyntheticDefaultImports": true,
-          "emitDecoratorMetadata": true,
-          "experimentalDecorators": true,
-          "target": "ES2023",
-          "strict": true,
-          "isolatedModules": true,
-          "resolvePackageJsonExports": true,
-          "skipLibCheck": true
-        }
-      }
-    ]
+    "^.+\\.(t|j)s$": "ts-jest"
   },
   "transformIgnorePatterns": [
     "node_modules/(?!(uuid)/)"
   ],
+  "moduleNameMapper": {
+    "^@modbm/shared(.*)$": "<rootDir>/../../../packages/shared/src$1",
+    "^uuid$": "<rootDir>/utils/uuid-mock.js"
+  },
   "setupFiles": ["./setup-env.ts"],
   "setupFilesAfterEnv": ["./suite-setup.ts"],
   "testTimeout": 120000

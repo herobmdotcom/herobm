@@ -30,11 +30,15 @@ const NAMESPACE_COA = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 function uuidv5(name: string, namespace: string): string {
   const nsBuffer = Buffer.from(namespace.replace(/-/g, ''), 'hex');
   const nameBuffer = Buffer.from(name, 'utf8');
-  const hash = crypto.createHash('sha1').update(nsBuffer).update(nameBuffer).digest();
-  
+  const hash = crypto
+    .createHash('sha1')
+    .update(nsBuffer)
+    .update(nameBuffer)
+    .digest();
+
   hash[6] = (hash[6] & 0x0f) | 0x50; // set version 5
   hash[8] = (hash[8] & 0x3f) | 0x80; // set variant 1
-  
+
   return [
     hash.toString('hex', 0, 4),
     hash.toString('hex', 4, 6),
@@ -90,17 +94,35 @@ async function seedUsers(db: any, dryRun: boolean) {
   }
 
   if (dryRun) {
-    console.log('  [DRY RUN] Would seed users: admin, viewer, sales, warehouse, procurement, finance');
+    console.log(
+      '  [DRY RUN] Would seed users: admin, viewer, sales, warehouse, procurement, finance',
+    );
     return;
   }
 
   const rolePasswords = [
     { username: 'admin', pass: process.env.DEV_ADMIN_PASSWORD, role: 'admin' },
-    { username: 'viewer', pass: process.env.DEV_VIEWER_PASSWORD, role: 'viewer' },
+    {
+      username: 'viewer',
+      pass: process.env.DEV_VIEWER_PASSWORD,
+      role: 'viewer',
+    },
     { username: 'sales', pass: process.env.DEV_SALES_PASSWORD, role: 'sales' },
-    { username: 'warehouse', pass: process.env.DEV_WAREHOUSE_PASSWORD, role: 'warehouse' },
-    { username: 'procurement', pass: process.env.DEV_PROCUREMENT_PASSWORD, role: 'procurement' },
-    { username: 'finance', pass: process.env.DEV_FINANCE_PASSWORD, role: 'finance' },
+    {
+      username: 'warehouse',
+      pass: process.env.DEV_WAREHOUSE_PASSWORD,
+      role: 'warehouse',
+    },
+    {
+      username: 'procurement',
+      pass: process.env.DEV_PROCUREMENT_PASSWORD,
+      role: 'procurement',
+    },
+    {
+      username: 'finance',
+      pass: process.env.DEV_FINANCE_PASSWORD,
+      role: 'finance',
+    },
   ];
 
   for (const item of rolePasswords) {
@@ -117,12 +139,16 @@ async function seedUsers(db: any, dryRun: boolean) {
         set: { passwordHash: hash, role: item.role as any },
       });
   }
-  console.log('  Seeded users: admin, viewer, sales, warehouse, procurement, finance');
+  console.log(
+    '  Seeded users: admin, viewer, sales, warehouse, procurement, finance',
+  );
 }
 
 async function seedProducts(db: any, dryRun: boolean) {
   if (dryRun) {
-    console.log("  [DRY RUN] Would seed UOM 'EA' and SYSTEM-CUSTOM-LINE product");
+    console.log(
+      "  [DRY RUN] Would seed UOM 'EA' and SYSTEM-CUSTOM-LINE product",
+    );
     return;
   }
 
@@ -235,7 +261,13 @@ async function seedAppSettings(db: any, dryRun: boolean) {
 }
 
 function loadCoaSettings() {
-  const p = path.join(__dirname, '..', 'gl', 'charts', 'au_standard_settings.json');
+  const p = path.join(
+    __dirname,
+    '..',
+    'gl',
+    'charts',
+    'au_standard_settings.json',
+  );
   if (!fs.existsSync(p)) return null;
   return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
@@ -251,7 +283,9 @@ async function seedCoaSettings(db: any, dryRun: boolean) {
   const terms = settings.trading_terms || [];
 
   if (dryRun) {
-    console.log(`  [DRY RUN] Would seed ${categories.length} tax categories and ${terms.length} trading terms`);
+    console.log(
+      `  [DRY RUN] Would seed ${categories.length} tax categories and ${terms.length} trading terms`,
+    );
     return;
   }
 
@@ -270,7 +304,12 @@ async function seedCoaSettings(db: any, dryRun: boolean) {
       })
       .onConflictDoUpdate({
         target: taxCategories.code,
-        set: { title: cat.title, type: type, rate: cat.rate.toString(), isDefault: !!cat.is_default },
+        set: {
+          title: cat.title,
+          type: type,
+          rate: cat.rate.toString(),
+          isDefault: !!cat.is_default,
+        },
       });
   }
   console.log(`  Seeded ${categories.length} tax categories`);
@@ -288,7 +327,11 @@ async function seedCoaSettings(db: any, dryRun: boolean) {
       })
       .onConflictDoUpdate({
         target: tradingTerms.code,
-        set: { description: term.description, days: term.days, type: term.type },
+        set: {
+          description: term.description,
+          days: term.days,
+          type: term.type,
+        },
       });
   }
   console.log(`  Seeded ${terms.length} trading terms`);
@@ -318,19 +361,24 @@ async function seedCoaSettings(db: any, dryRun: boolean) {
     }
   }
 
-  await db
-    .insert(glSettings)
-    .values(glData)
-    .onConflictDoUpdate({
-      target: glSettings.settingsId,
-      set: glData,
-    });
+  await db.insert(glSettings).values(glData).onConflictDoUpdate({
+    target: glSettings.settingsId,
+    set: glData,
+  });
 
-  console.log(`  Seeded GL settings (base_currency=${baseCurrency}, fiscal_month=${fiscalMonth})`);
+  console.log(
+    `  Seeded GL settings (base_currency=${baseCurrency}, fiscal_month=${fiscalMonth})`,
+  );
 }
 
 async function seedCoaAccounts(db: any, dryRun: boolean) {
-  const coaPath = path.join(__dirname, '..', 'gl', 'charts', 'au_standard.json');
+  const coaPath = path.join(
+    __dirname,
+    '..',
+    'gl',
+    'charts',
+    'au_standard.json',
+  );
   if (!fs.existsSync(coaPath)) {
     console.log(`  SKIP: COA file not found at ${coaPath}`);
     return;
@@ -339,7 +387,9 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
   const coa = JSON.parse(fs.readFileSync(coaPath, 'utf-8'));
 
   if (dryRun) {
-    console.log('  [DRY RUN] Would seed Chart of Accounts from au_standard.json');
+    console.log(
+      '  [DRY RUN] Would seed Chart of Accounts from au_standard.json',
+    );
     return;
   }
 
@@ -352,9 +402,14 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
   let autoCode = 100;
   const insertRows: any[] = [];
 
-  function walk(nodes: any, parentCode: string | null, inheritedType: string | null) {
+  function walk(
+    nodes: any,
+    parentCode: string | null,
+    inheritedType: string | null,
+  ) {
     for (const [name, node] of Object.entries<any>(nodes)) {
-      const accountType = ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
+      const accountType =
+        ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
       const code = node.account_number || String(autoCode++);
       const isGroup = node.is_group === 1 || !!node.children;
 
@@ -382,14 +437,18 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
         glAccountId: detId,
         accountCode: row.code,
         name: row.name,
-        accountType: row.accountType as any,
+        accountType: row.accountType,
         isGroup: row.isGroup,
         isSystem: true,
         currencyCode: 'AUD',
       })
       .onConflictDoUpdate({
         target: glAccounts.accountCode,
-        set: { name: row.name, accountType: row.accountType as any, isGroup: row.isGroup },
+        set: {
+          name: row.name,
+          accountType: row.accountType,
+          isGroup: row.isGroup,
+        },
       });
   }
 
@@ -403,13 +462,24 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
     }
   }
 
-  console.log(`  Seeded ${insertRows.length} GL accounts from au_standard.json`);
+  console.log(
+    `  Seeded ${insertRows.length} GL accounts from au_standard.json`,
+  );
 }
 
 function loadReportConfig() {
   // Shared package is at root/packages/shared
   // __dirname is root/apps/api/src/scripts
-  const p = path.join(__dirname, '..', '..', '..', '..', 'packages', 'shared', 'reports-config.json');
+  const p = path.join(
+    __dirname,
+    '..',
+    '..',
+    '..',
+    '..',
+    'packages',
+    'shared',
+    'reports-config.json',
+  );
   if (!fs.existsSync(p)) return [];
   return JSON.parse(fs.readFileSync(p, 'utf-8')).reports || [];
 }
@@ -418,13 +488,25 @@ async function seedReports(db: any, dryRun: boolean) {
   const reportList = loadReportConfig();
 
   if (dryRun) {
-    console.log(`  [DRY RUN] Would seed ${reportList.length} report templates and hooks`);
+    console.log(
+      `  [DRY RUN] Would seed ${reportList.length} report templates and hooks`,
+    );
     return;
   }
 
   function readTemplate(filename: string) {
     // Template files are in root/tools/seeds/reports
-    const p = path.join(__dirname, '..', '..', '..', '..', 'tools', 'seeds', 'reports', filename);
+    const p = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      '..',
+      'tools',
+      'seeds',
+      'reports',
+      filename,
+    );
     if (!fs.existsSync(p)) {
       console.log(`  [WARN] Template file not found: ${p}`);
       return null;
@@ -486,7 +568,9 @@ async function seedReports(db: any, dryRun: boolean) {
     }
   }
 
-  console.log(`  Seeded ${seededCount} reports and ${hookCount} hook assignments.`);
+  console.log(
+    `  Seeded ${seededCount} reports and ${hookCount} hook assignments.`,
+  );
 }
 
 async function main() {

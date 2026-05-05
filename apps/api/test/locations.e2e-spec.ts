@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
@@ -11,9 +12,7 @@ describe('Locations & Topography (e2e)', () => {
   let viewerToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

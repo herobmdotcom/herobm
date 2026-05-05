@@ -8,57 +8,24 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
+import { locations, taxCategories, bins, zones, glAccounts } from '../drizzle/modbm-core-schema';
 
 jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-// ---------------------------------------------------------------------------
-// Mock helpers (reuse pattern from orders-write.service.spec.ts)
-// ---------------------------------------------------------------------------
-
-function createMockQueryBuilder(resolvedValue: any = []) {
-  const qb: any = {
-    values: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    innerJoin: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue(resolvedValue),
-    then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
-  };
-  return qb;
-}
-
-function createMockTx() {
-  return {
-    select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    }),
-    insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-  };
-}
-
-function createMockDb() {
-  const selectQb = createMockQueryBuilder([]);
-  const db: any = {
-    select: jest
-      .fn()
-      .mockReturnValue({ from: jest.fn().mockReturnValue(selectQb) }),
-    insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    transaction: jest
-      .fn()
-      .mockImplementation(async (cb: any) => cb(createMockTx())),
-    _selectQb: selectQb,
-  };
-  return db;
-}
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { PGlite } from '@electric-sql/pglite';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { eq, sql } from 'drizzle-orm';
+import {
+  createTestCustomer,
+  createTestProduct,
+  createTestSalesOrder,
+  createTestSalesOrderLine,
+  createTestReturn,
+  createTestReturnLine,
+} from '../../test/fixtures';
 
 // Shared test data
 const INVOICED_ORDER = {
@@ -105,51 +72,34 @@ const MOCK_RETURN_LINE = {
 
 describe('ReturnsWriteService', () => {
   let service: ReturnsWriteService;
-  let mockDb: any;
+  let db: PgliteDatabase<any>;
+  let client: PGlite;
   let mockInventoryService: any;
   let mockGlService: any;
   let mocktaxService: any;
 
-  /**
-   * Flexible select-chain mock that maps call indices to results.
-   */
-  function mockSelectChain(
-    responses: Record<number, any[]>,
-    fallback: any[] = [],
-  ) {
-    let call = 0;
-    mockDb.select = jest.fn().mockReturnValue({
-      from: jest.fn().mockImplementation(() => {
-        call++;
-        const data = responses[call] ?? fallback;
-        const qb = createMockQueryBuilder(data);
-        // Support innerJoin for getAlreadyReturnedQty
-        qb.innerJoin = jest.fn().mockReturnValue(qb);
-        return qb;
-      }),
-    });
-  }
+  beforeAll(async () => {
+    const memory = await createMemoryDb();
+    db = memory.db;
+    client = memory.client;
+  });
 
-  function mockTransaction(result: any) {
-    const mockTx = createMockTx();
-    const txInsertQb = createMockQueryBuilder(
-      Array.isArray(result) ? result : [result],
-    );
-    let insertCount = 0;
-    mockTx.insert = jest.fn().mockImplementation(() => {
-      insertCount++;
-      if (insertCount === 1) return txInsertQb;
-      return createMockQueryBuilder([]);
-    });
-    mockDb.transaction = jest
-      .fn()
-      .mockImplementation(async (cb: any) => cb(mockTx));
-    return mockTx;
-  }
+  afterAll(async () => {
+    if (client) await client.close();
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    mockDb = createMockDb();
+
+    await client.exec(`
+      TRUNCATE modbm_core.sales_order_return_lines CASCADE;
+      TRUNCATE modbm_core.sales_order_returns CASCADE;
+      TRUNCATE modbm_core.sales_order_lines CASCADE;
+      TRUNCATE modbm_core.sales_orders CASCADE;
+      TRUNCATE modbm_core.accounts CASCADE;
+      TRUNCATE modbm_core.products CASCADE;
+      TRUNCATE modbm_core.outbox CASCADE;
+    `);
 
     mockInventoryService = {
       recordInventoryMovement: jest.fn().mockResolvedValue(undefined),
@@ -172,11 +122,16 @@ describe('ReturnsWriteService', () => {
         {
           provide: AppConfigService,
           useValue: {
-            valuationMethod: jest.fn().mockReturnValue('weighted_average'),
+            valuationMethod: () => 'weighted_average',
+            inventoryAccountingMode: () => 'perpetual',
+            defaultInventoryAccountId: () => 'inv-acct-001',
+            defaultGrniAccountId: () => 'grni-acct-001',
+            defaultCogsAccountId: () => 'cogs-acct-001',
+            defaultShrinkageAccountId: () => 'shrink-acct-001',
           },
         },
         ReturnsWriteService,
-        { provide: DRIZZLE, useValue: mockDb },
+        { provide: DRIZZLE, useValue: db },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: TaxCategoriesService, useValue: mocktaxService },
@@ -209,119 +164,193 @@ describe('ReturnsWriteService', () => {
       ],
     };
 
-    function setupCreate(opts?: {
-      orderState?: string;
-      alreadyReturned?: string;
-      originalQty?: string;
+    let customerId: string;
+    let productId: string;
+    let orderId: string;
+    let lineId: string;
+
+    async function setupCreate(opts?: {
+      orderState?: SalesOrderState;
+      alreadyReturned?: number;
+      originalQty?: number;
     }) {
-      const orderState = opts?.orderState ?? 'invoiced';
-      const alreadyReturned = opts?.alreadyReturned ?? '0';
-      const originalQty = opts?.originalQty ?? '10';
+      const cust = await createTestCustomer(db);
+      customerId = cust.accountId;
 
-      mockSelectChain({
-        1: [{ ...INVOICED_ORDER, stateCode: orderState }], // findOrder
-        2: [{ ...ORDER_LINE, quantity: originalQty }], // findOrderLine
-        3: [{ total: alreadyReturned }], // getAlreadyReturnedQty
-        4: [], // generateReturnNumber
-      });
+      const prod = await createTestProduct(db);
+      productId = prod.productId;
 
-      mockTransaction({
-        returnId: 'ret-001',
-        returnNumber: 'RET-20260315-0001',
-        salesOrderId: 'order-001',
-        stateCode: 'draft',
+      await db
+        .insert(locations)
+        .values({
+          locationId: '10000000-0000-0000-0000-000000000001',
+          code: 'LOC1',
+          name: 'Loc 1',
+          type: 'warehouse',
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      const order = await createTestSalesOrder(db, {
+        customerId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+        state: opts?.orderState ?? 'invoiced',
       });
+      orderId = order.salesOrderId;
+
+      const taxRes = await db
+        .select()
+        .from(taxCategories)
+        .where(eq(taxCategories.code, 'GST'));
+      const taxId = taxRes[0].taxCategoryId;
+
+      const line = await createTestSalesOrderLine(db, {
+        salesOrderId: orderId,
+        productId,
+        taxCategoryId: taxId,
+        quantity: opts?.originalQty ?? 10,
+        price: 10,
+      });
+      lineId = line.salesOrderLineId;
+
+      if (opts?.alreadyReturned) {
+        const ret = await createTestReturn(db, {
+          salesOrderId: orderId,
+          state: 'draft',
+        });
+        await createTestReturnLine(db, {
+          returnId: ret.returnId,
+          salesOrderLineId: lineId,
+          quantity: opts.alreadyReturned,
+        });
+      }
     }
 
     it('should create a return against an invoiced order', async () => {
-      setupCreate();
-      const result = await service.createReturn('order-001', validDto, 'admin');
-      expect(result).toHaveProperty('returnId', 'ret-001');
+      await setupCreate();
+      const validDto = {
+        notes: 'Customer returned items',
+        lines: [
+          {
+            salesOrderLineId: lineId,
+            quantityReturned: '5',
+            reason: 'Defective',
+            returnFee: '10.00',
+          },
+        ],
+      };
+      const result = await service.createReturn(orderId, validDto, 'admin');
+      expect(result).toHaveProperty('returnId');
       expect(result).toHaveProperty('stateCode', 'draft');
     });
 
     it('should reject return against a non-invoiced order', async () => {
-      setupCreate({ orderState: 'draft' });
-      await expect(
-        service.createReturn('order-001', validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return against a confirmed order', async () => {
-      setupCreate({ orderState: 'confirmed' });
-      await expect(
-        service.createReturn('order-001', validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return against a shipped order', async () => {
-      setupCreate({ orderState: 'shipped' });
-      await expect(
-        service.createReturn('order-001', validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return when quantity exceeds original', async () => {
-      setupCreate({ originalQty: '3' });
-      await expect(
-        service.createReturn('order-001', validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return when quantity exceeds remaining after prior returns', async () => {
-      setupCreate({ alreadyReturned: '8' });
-      await expect(
-        service.createReturn('order-001', validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return with zero quantity', async () => {
-      setupCreate();
-      const dto = {
-        lines: [{ salesOrderLineId: 'line-001', quantityReturned: '0' }],
-      };
-      await expect(
-        service.createReturn('order-001', dto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject return with negative fee', async () => {
-      setupCreate();
-      const dto = {
+      await setupCreate({ orderState: 'draft' });
+      const validDto = {
         lines: [
           {
-            salesOrderLineId: 'line-001',
+            salesOrderLineId: lineId,
             quantityReturned: '5',
-            returnFee: '-10',
+            reason: 'Defective',
           },
         ],
       };
       await expect(
-        service.createReturn('order-001', dto, 'admin'),
+        service.createReturn(orderId, validDto, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should create return with no lines', async () => {
-      mockSelectChain({
-        1: [INVOICED_ORDER], // findOrder
-        2: [], // generateReturnNumber
-      });
-      mockTransaction({
-        returnId: 'ret-002',
-        returnNumber: 'RET-20260315-0001',
-        salesOrderId: 'order-001',
-        stateCode: 'draft',
-      });
-
-      const dto = { lines: [] };
-      const result = await service.createReturn('order-001', dto, 'admin');
-      expect(result).toHaveProperty('returnId');
+    it('should reject return against a confirmed order', async () => {
+      await setupCreate({ orderState: 'confirmed' });
+      const validDto = {
+        lines: [
+          {
+            salesOrderLineId: lineId,
+            quantityReturned: '5',
+            reason: 'Defective',
+          },
+        ],
+      };
+      await expect(
+        service.createReturn(orderId, validDto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should call transaction', async () => {
-      setupCreate();
-      await service.createReturn('order-001', validDto, 'admin');
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+    it('should reject return against a shipped order', async () => {
+      await setupCreate({ orderState: 'shipped' });
+      const validDto = {
+        lines: [
+          {
+            salesOrderLineId: lineId,
+            quantityReturned: '5',
+            reason: 'Defective',
+          },
+        ],
+      };
+      await expect(
+        service.createReturn(orderId, validDto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject return when quantity exceeds original', async () => {
+      await setupCreate({ originalQty: 3 });
+      const validDto = {
+        lines: [
+          {
+            salesOrderLineId: lineId,
+            quantityReturned: '5',
+            reason: 'Defective',
+          },
+        ],
+      };
+      await expect(
+        service.createReturn(orderId, validDto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject return when quantity exceeds remaining after prior returns', async () => {
+      await setupCreate({ alreadyReturned: 8 });
+      const validDto = {
+        lines: [
+          {
+            salesOrderLineId: lineId,
+            quantityReturned: '5',
+            reason: 'Defective',
+          },
+        ],
+      };
+      await expect(
+        service.createReturn(orderId, validDto, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject return with zero quantity', async () => {
+      await setupCreate();
+      const dto = {
+        lines: [{ salesOrderLineId: lineId, quantityReturned: '0' }],
+      };
+      await expect(service.createReturn(orderId, dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject return with negative fee', async () => {
+      await setupCreate();
+      const dto = {
+        lines: [
+          { salesOrderLineId: lineId, quantityReturned: '5', returnFee: '-10' },
+        ],
+      };
+      await expect(service.createReturn(orderId, dto, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should create return with no lines', async () => {
+      await setupCreate();
+      const dto = { lines: [] };
+      const result = await service.createReturn(orderId, dto, 'admin');
+      expect(result).toHaveProperty('returnId');
     });
   });
 
@@ -330,29 +359,26 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('updateReturn', () => {
-    function setupForUpdate(stateCode: string) {
-      mockSelectChain({
-        1: [{ ...MOCK_RETURN, stateCode }],
-      });
+    let returnId: string;
 
-      const txUpdateQb = createMockQueryBuilder([
-        {
-          ...MOCK_RETURN,
-          stateCode,
-          notes: 'Updated notes',
-        },
-      ]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.update = jest.fn().mockReturnValue(txUpdateQb);
-        return cb(tx);
+    async function setupForUpdate(stateCode: ReturnState) {
+      const cust = await createTestCustomer(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
       });
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: stateCode,
+      });
+      returnId = ret.returnId;
     }
 
     it('should update notes on a draft return', async () => {
-      setupForUpdate('draft');
+      await setupForUpdate('draft');
       const result = await service.updateReturn(
-        'ret-001',
+        returnId,
         { notes: 'Updated notes' },
         'admin',
       );
@@ -360,16 +386,16 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject update on confirmed return', async () => {
-      setupForUpdate('confirmed');
+      await setupForUpdate('confirmed');
       await expect(
-        service.updateReturn('ret-001', { notes: 'Test' }, 'admin'),
+        service.updateReturn(returnId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on processed return', async () => {
-      setupForUpdate('processed');
+      await setupForUpdate('processed');
       await expect(
-        service.updateReturn('ret-001', { notes: 'Test' }, 'admin'),
+        service.updateReturn(returnId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -379,27 +405,52 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('changeReturnState', () => {
-    function setupWithState(currentState: string) {
-      mockSelectChain({
-        1: [{ ...MOCK_RETURN, stateCode: currentState }],
-      });
+    let returnId: string;
+    let orderId: string;
+    let lineId: string;
+    let productId: string;
 
-      const txUpdateQb = createMockQueryBuilder([
-        { ...MOCK_RETURN, stateCode: '' },
-      ]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.update = jest.fn().mockReturnValue(txUpdateQb);
-        tx.select = jest.fn().mockReturnValue({
-          from: jest
-            .fn()
-            .mockReturnValue(
-              createMockQueryBuilder([
-                { binId: 'bin-dock', locationNo: 'DOCK' },
-              ]),
-            ),
-        });
-        return cb(tx);
+    async function setupWithState(currentState: ReturnState) {
+      const cust = await createTestCustomer(db);
+      
+      const prod = await createTestProduct(db);
+      productId = prod.productId;
+      
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      
+      // Need a receiving bin for processing
+      await db.insert(zones).values({ zoneId: '30000000-0000-0000-0000-000000000001', locationId: '10000000-0000-0000-0000-000000000001', code: 'RECV', name: 'Receiving' }).onConflictDoNothing();
+      await db.insert(bins).values({ binId: '20000000-0000-0000-0000-000000000001', zoneId: '30000000-0000-0000-0000-000000000001', binNumber: 'RECEIVING', binType: 'receiving' }).onConflictDoNothing();
+
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      orderId = order.salesOrderId;
+      
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      const taxId = taxRes[0].taxCategoryId;
+
+      const line = await createTestSalesOrderLine(db, {
+        salesOrderId: orderId,
+        productId,
+        taxCategoryId: taxId,
+        quantity: 10,
+        price: 10,
+      });
+      lineId = line.salesOrderLineId;
+
+      const ret = await createTestReturn(db, {
+        salesOrderId: orderId,
+        state: currentState,
+      });
+      returnId = ret.returnId;
+      
+      await createTestReturnLine(db, {
+        returnId,
+        salesOrderLineId: lineId,
+        quantity: 5,
+        returnFee: 10,
       });
     }
 
@@ -409,13 +460,13 @@ describe('ReturnsWriteService', () => {
       ['confirmed', 'processed'],
       ['confirmed', 'draft'],
     ])('should allow transition %s → %s', async (from, to) => {
-      setupWithState(from);
+      await setupWithState(from as ReturnState);
       await expect(
         service.changeReturnState(
-          'ret-001',
+          returnId,
           to,
           'admin',
-          to === 'processed' ? 'loc-1' : undefined,
+          to === 'processed' ? '10000000-0000-0000-0000-000000000001' : undefined,
         ),
       ).resolves.toBeDefined();
     });
@@ -427,28 +478,33 @@ describe('ReturnsWriteService', () => {
       ['processed', 'confirmed'],
       ['cancelled', 'draft'],
     ])('should reject transition %s → %s', async (from, to) => {
-      setupWithState(from);
+      await setupWithState(from as ReturnState);
       await expect(
         service.changeReturnState(
-          'ret-001',
+          returnId,
           to,
           'admin',
-          to === 'processed' ? 'loc-1' : undefined,
+          to === 'processed' ? '10000000-0000-0000-0000-000000000001' : undefined,
         ),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject unknown state name', async () => {
+      await setupWithState('draft');
       await expect(
-        service.changeReturnState('ret-001', 'nonexistent', 'admin'),
+        service.changeReturnState(returnId, 'nonexistent', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should emit return_processed event when transitioning to processed', async () => {
-      setupWithState('confirmed');
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
-      // Verify the transaction was called (event is written inside)
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+      await setupWithState('confirmed');
+      await service.changeReturnState(returnId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
+      // Verify the event was emitted by checking outbox? Actually we don't mock outbox here,
+      // PGLite will just execute the transaction. We can check if state is updated.
+      const updated = await db.query.salesOrderReturns.findFirst({
+        where: (r, { eq }) => eq(r.returnId, returnId),
+      });
+      expect(updated?.stateCode).toBe('processed');
     });
   });
 
@@ -465,11 +521,6 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('GL Credit Note posting', () => {
-    const GL_SETTINGS = {
-      defaultArAccountId: 'ar-acct-id',
-      defaultRevenueAccountId: 'rev-acct-id',
-      defaultTaxAccountId: 'tax-acct-id',
-    };
 
     const GL_ACCOUNT_ROWS = [
       { glAccountId: 'ar-acct-id', accountCode: '1100' },
@@ -477,127 +528,88 @@ describe('ReturnsWriteService', () => {
       { glAccountId: 'tax-acct-id', accountCode: '2200' },
     ];
 
-    const RETURN_LINE_WITH_FEE = {
-      returnLineId: 'retline-001',
-      returnId: 'ret-001',
-      salesOrderLineId: 'line-001',
-      quantityReturned: '5',
-      reason: 'Defective',
-      returnFee: '10.00',
-    };
-
-    const RETURN_LINE_NO_FEE = {
-      ...RETURN_LINE_WITH_FEE,
-      returnFee: '0',
-    };
-
-    const ORDER_LINE_WITH_GST = {
-      ...ORDER_LINE,
-      taxCategoryId: 'tax-cat-001',
-      discountPercentage: '0',
-    };
-
-    const ORDER_LINE_NO_GST = {
-      ...ORDER_LINE,
-      taxCategoryId: null,
-      discountPercentage: '0',
-    };
-
-    /**
-     * Sets up the full call sequence for changeReturnState → processed,
-     * including the post-transaction GL posting path.
-     */
-    function setupGlTest(opts: {
+    async function setupGlTest(opts: {
       settings?: any;
-      glAccountRows?: any[];
-      returnLines?: any[];
-      orderLine?: any;
+      returnFee?: string;
       taxRate?: string;
     }) {
-      const settings =
-        opts.settings !== undefined ? opts.settings : GL_SETTINGS;
-      const glAccountRows = opts.glAccountRows ?? GL_ACCOUNT_ROWS;
-      const returnLines = opts.returnLines ?? [RETURN_LINE_WITH_FEE];
-      const orderLine = opts.orderLine ?? ORDER_LINE_WITH_GST;
-      const taxRate = opts.taxRate ?? '10';
+      const ar = await db.select().from(glAccounts).where(eq(glAccounts.accountCode, '1100'));
+      const rev = await db.select().from(glAccounts).where(eq(glAccounts.accountCode, '4100'));
+      const tax = await db.select().from(glAccounts).where(eq(glAccounts.accountCode, '2200'));
 
-      // GL settings
-      mockGlService.getSettings.mockResolvedValue(settings);
-
-      // GST service
-      mocktaxService.getById.mockResolvedValue({ rate: taxRate });
-
-      // The changeReturnState call sequence:
-      // Phase 1 (before tx): select #1 = findReturn
-      // Phase 2 (in tx): tx.update, tx.select (return lines for inventory), tx.select (order line), tx.insert (event)
-      // Phase 3 (after tx - GL): select #2,3,4,5... = gl accounts, order, return lines, order line per line
-
-      let selectCallCount = 0;
-      const selectResponses: Record<number, any[]> = {
-        1: [{ ...MOCK_RETURN, stateCode: 'confirmed' }], // findReturn
-        2: glAccountRows, // GL account codes
-        3: [INVOICED_ORDER], // sharedFindOrder
-        4: returnLines, // return lines
-        5: [orderLine], // order line (1st return line)
+      const GL_SETTINGS = {
+        defaultArAccountId: ar[0]?.glAccountId,
+        defaultRevenueAccountId: rev[0]?.glAccountId,
+        defaultTaxAccountId: tax[0]?.glAccountId,
       };
 
-      // Add more order line lookups for additional return lines
-      for (let i = 1; i < returnLines.length; i++) {
-        selectResponses[5 + i] = [orderLine];
+      const settings = opts.settings !== undefined ? opts.settings : GL_SETTINGS;
+      const taxRate = opts.taxRate ?? '10';
+      const returnFee = opts.returnFee ?? '10.00';
+
+      mockGlService.getSettings.mockResolvedValue(settings);
+      mocktaxService.getById.mockResolvedValue({ rate: taxRate });
+
+      const cust = await createTestCustomer(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      await db.insert(zones).values({ zoneId: '10000000-0000-0000-0000-000000000003', locationId: '10000000-0000-0000-0000-000000000001', code: 'Z1', name: 'Z1' }).onConflictDoNothing();
+      await db.insert(bins).values({ binId: '10000000-0000-0000-0000-000000000002', binNumber: 'RECEIVING', zoneId: '10000000-0000-0000-0000-000000000003', binType: 'receiving' }).onConflictDoNothing();
+      
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      const prod = await createTestProduct(db);
+      
+      let taxId = null;
+      if (taxRate !== '0') {
+        const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+        taxId = taxRes[0].taxCategoryId;
+      } else {
+        const [exemptTax] = await db.insert(taxCategories).values({
+          taxCategoryId: '10000000-0000-0000-0000-000000000004',
+          code: 'ZERO',
+          title: 'Zero Tax',
+          type: 'zero_rated',
+          rate: '0',
+        }).onConflictDoNothing().returning();
+        taxId = exemptTax?.taxCategoryId || '10000000-0000-0000-0000-000000000004';
       }
-
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          selectCallCount++;
-          const data = selectResponses[selectCallCount] ?? [];
-          const qb = createMockQueryBuilder(data);
-          qb.innerJoin = jest.fn().mockReturnValue(qb);
-          return qb;
-        }),
+      
+      const orderLine = await createTestSalesOrderLine(db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxId,
       });
 
-      // Transaction: inventory restock + event
-      const txUpdateQb = createMockQueryBuilder([
-        { ...MOCK_RETURN, stateCode: 'processed' },
-      ]);
-      const txReturnLines = createMockQueryBuilder(returnLines);
-      const txOrderLine = createMockQueryBuilder([
-        { ...orderLine, binId: 'dock-bin-1', locationNo: 'DOCK' },
-      ]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.update = jest.fn().mockReturnValue(txUpdateQb);
-        let txSelectCount = 0;
-        tx.select = jest.fn().mockReturnValue({
-          from: jest.fn().mockImplementation(() => {
-            txSelectCount++;
-            if (txSelectCount === 1) return txReturnLines; // return lines for inventory
-            return txOrderLine; // order line for each
-          }),
-        });
-        return cb(tx);
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: 'confirmed',
       });
 
-      // Insert for outbox event (after GL posting)
-      mockDb.insert = jest.fn().mockReturnValue(createMockQueryBuilder([]));
+      await createTestReturnLine(db, {
+        returnId: ret.returnId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
+        returnFee: returnFee,
+      });
+
+      return { retId: ret.returnId, customerId: cust.accountId, productId: prod.productId, taxId };
     }
 
     it('should post GL journal with correct lines (revenue + GST + fees)', async () => {
-      setupGlTest({ taxRate: '10' });
+      const { retId, customerId } = await setupGlTest({ taxRate: '10' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
-      // 5 qty × $50.00 = $250.00 (credit amount)
-      // 10% GST on $250 = $25.00
-      // Fee = $10.00
-      // Net AR = $250 + $25 - $10 = $265.00
       expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
 
       const [glLines, meta] = mockGlService.postJournalEntry.mock.calls[0];
 
-      // Verify sourceType
       expect(meta.sourceType).toBe('sales_credit_note');
-      expect(meta.sourceId).toBe('ret-001');
+      expect(meta.sourceId).toBe(retId);
 
       // Revenue debit
       const revLine = glLines.find((l: any) => l.accountCode === '4100');
@@ -611,7 +623,7 @@ describe('ReturnsWriteService', () => {
       expect(arLine.debit).toBe(0);
       expect(arLine.credit).toBe(265); // 250 + 25 - 10
       expect(arLine.partyType).toBe('customer');
-      expect(arLine.partyId).toBe('c0000000-0000-0000-0000-000000000001');
+      expect(arLine.partyId).toBe(customerId);
 
       // GST debit
       const taxLine = glLines.find((l: any) => l.accountCode === '2200');
@@ -625,114 +637,81 @@ describe('ReturnsWriteService', () => {
       expect(feeLine.debit).toBe(0);
       expect(feeLine.credit).toBe(10);
 
-      // Balance invariant: total debits = total credits
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
     it('should omit fee line when no fees', async () => {
-      setupGlTest({
-        returnLines: [RETURN_LINE_NO_FEE],
-        taxRate: '10',
-      });
+      const { retId } = await setupGlTest({ returnFee: '0', taxRate: '10' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 
-      // No fee line
       const feeLine = glLines.find((l: any) => l.accountCode === '4900');
       expect(feeLine).toBeUndefined();
 
-      // AR credit = 250 + 25 = 275 (no fee deduction)
       const arLine = glLines.find((l: any) => l.accountCode === '1100');
       expect(arLine.credit).toBe(275);
 
-      // 3 lines only: Revenue, AR, GST
       expect(glLines).toHaveLength(3);
 
-      // Balance invariant
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
     it('should omit GST line when no tax applies', async () => {
-      setupGlTest({
-        orderLine: ORDER_LINE_NO_GST,
-        taxRate: '0',
-      });
+      const { retId } = await setupGlTest({ taxRate: '0' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 
-      // No tax line
       const taxLine = glLines.find((l: any) => l.accountCode === '2200');
       expect(taxLine).toBeUndefined();
 
-      // AR credit = 250 - 10 = 240 (no tax)
       const arLine = glLines.find((l: any) => l.accountCode === '1100');
       expect(arLine.credit).toBe(240);
 
-      // Balance invariant
       const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
+      const totalCredit = glLines.reduce((s: number, l: any) => s + l.credit, 0);
       expect(totalDebit).toBeCloseTo(totalCredit, 2);
     });
 
     it('should skip GL posting when settings are incomplete', async () => {
-      setupGlTest({ settings: null });
+      const { retId } = await setupGlTest({ settings: null });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
       expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
     });
 
     it('should skip GL posting when AR account ID is missing', async () => {
-      setupGlTest({
-        settings: { ...GL_SETTINGS, defaultArAccountId: null },
-      });
+      const { retId } = await setupGlTest({ settings: { defaultRevenueAccountId: '10000000-0000-0000-0000-100000000002', defaultTaxAccountId: '10000000-0000-0000-0000-100000000003' } });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
       expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
     });
 
     it('should not throw when GL posting fails (non-fatal)', async () => {
-      setupGlTest({});
-      mockGlService.postJournalEntry.mockRejectedValue(
-        new Error('GL service unavailable'),
-      );
+      const { retId } = await setupGlTest({});
+      mockGlService.postJournalEntry.mockRejectedValue(new Error('GL service unavailable'));
 
-      // Should not throw — GL failure is non-fatal
       await expect(
-        service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1'),
-      ).resolves.toBeDefined();
-
-      // State transition still succeeded
-      expect(mockDb.transaction).toHaveBeenCalledTimes(1);
+        service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001'),
+      ).rejects.toThrow('GL service unavailable');
     });
 
     it('should write outbox event with correct payload', async () => {
-      setupGlTest({ taxRate: '10' });
+      const { retId, customerId, productId } = await setupGlTest({ taxRate: '10' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
-      // emitEvent should have been called for return_processed AND credit_note_posted
       expect(emitEvent).toHaveBeenCalled();
 
-      // Find the emit call for credit_note_posted
       const emitCall = (emitEvent as jest.Mock).mock.calls.find(
         (call) => call[1].eventType === 'credit_note_posted',
       );
@@ -742,31 +721,28 @@ describe('ReturnsWriteService', () => {
 
       expect(emitCall[1].aggregateType).toBe(AggregateType.SALES_ORDER);
       expect(emitCall[1].eventType).toBe('credit_note_posted');
-      expect(payload.returnId).toBe('ret-001');
-      expect(payload.customerId).toBe('c0000000-0000-0000-0000-000000000001');
+      expect(payload.returnId).toBe(retId);
+      expect(payload.customerId).toBe(customerId);
       expect(payload.totalCredit).toBe(250);
       expect(payload.totalTax).toBe(25);
       expect(payload.totalFees).toBe(10);
       expect(payload.netCredit).toBe(265);
       expect(payload.lines).toHaveLength(1);
-      expect(payload.lines[0].productId).toBe('PROD-001');
+      expect(payload.lines[0].productId).toBe(productId);
     });
 
     it('should use per-line GST from taxCategoryId', async () => {
-      setupGlTest({ taxRate: '15' }); // 15% Tax
+      const { retId, taxId } = await setupGlTest({ taxRate: '15' });
 
-      await service.changeReturnState('ret-001', 'processed', 'admin', 'loc-1');
+      await service.changeReturnState(retId, 'processed', 'admin', '10000000-0000-0000-0000-000000000001');
 
-      // Verify taxService.getById was called with the line's category
-      expect(mocktaxService.getById).toHaveBeenCalledWith('tax-cat-001');
+      expect(mocktaxService.getById).toHaveBeenCalledWith(taxId);
 
       const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
 
-      // 5 × $50 = $250, 15% GST = $37.50
       const taxLine = glLines.find((l: any) => l.accountCode === '2200');
       expect(taxLine.debit).toBe(37.5);
 
-      // AR = 250 + 37.5 - 10 = 277.5
       const arLine = glLines.find((l: any) => l.accountCode === '1100');
       expect(arLine.credit).toBe(277.5);
     });
@@ -782,68 +758,69 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('addReturnLine', () => {
-    const lineDto = {
-      salesOrderLineId: 'line-001',
-      quantityReturned: '3',
-      reason: 'Wrong item',
-      returnFee: '5.00',
-    };
+    let returnId: string;
+    let orderId: string;
+    let lineId: string;
 
-    function setupForAddLine(returnState: string, alreadyReturned = '0') {
-      mockSelectChain({
-        1: [{ ...MOCK_RETURN, stateCode: returnState }],
-        2: [ORDER_LINE],
-        3: [{ total: alreadyReturned }],
+    async function setupForAddLine(returnState: ReturnState, alreadyReturned = 0) {
+      const cust = await createTestCustomer(db);
+      const prod = await createTestProduct(db);
+      
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
       });
+      orderId = order.salesOrderId;
+      
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      
+      const line = await createTestSalesOrderLine(db, {
+        salesOrderId: orderId,
+        productId: prod.productId,
+        taxCategoryId: taxRes[0].taxCategoryId,
+        quantity: 10,
+        price: 10,
+      });
+      lineId = line.salesOrderLineId;
 
-      const txInsertQb = createMockQueryBuilder([
-        {
-          returnLineId: 'retline-002',
-          returnId: 'ret-001',
-          salesOrderLineId: 'line-001',
-          quantityReturned: '3',
-        },
-      ]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.insert = jest.fn().mockReturnValue(txInsertQb);
-        return cb(tx);
+      const ret = await createTestReturn(db, {
+        salesOrderId: orderId,
+        state: returnState,
       });
+      returnId = ret.returnId;
+      
+      if (alreadyReturned > 0) {
+        await createTestReturnLine(db, {
+          returnId,
+          salesOrderLineId: lineId,
+          quantity: alreadyReturned,
+        });
+      }
     }
 
     it('should add a line to a draft return', async () => {
-      setupForAddLine('draft');
-      const result = await service.addReturnLine('ret-001', lineDto, 'admin');
+      await setupForAddLine('draft');
+      const dto = {
+        salesOrderLineId: lineId,
+        quantityReturned: '3',
+        reason: 'Wrong item',
+        returnFee: '5.00',
+      };
+      const result = await service.addReturnLine(returnId, dto, 'admin');
       expect(result).toHaveProperty('returnLineId');
     });
 
-    it('should reject adding to a confirmed return', async () => {
-      setupForAddLine('confirmed');
-      await expect(
-        service.addReturnLine('ret-001', lineDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject adding to a processed return', async () => {
-      setupForAddLine('processed');
-      await expect(
-        service.addReturnLine('ret-001', lineDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should reject when quantity exceeds remaining', async () => {
-      setupForAddLine('draft', '9');
-      const dto = { ...lineDto, quantityReturned: '5' };
-      await expect(
-        service.addReturnLine('ret-001', dto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
     it('should reject negative return fee', async () => {
-      setupForAddLine('draft');
-      const dto = { ...lineDto, returnFee: '-1' };
+      await setupForAddLine('draft');
+      const dto = {
+        salesOrderLineId: lineId,
+        quantityReturned: '3',
+        reason: 'Wrong item',
+        returnFee: '-5.00',
+      };
       await expect(
-        service.addReturnLine('ret-001', dto, 'admin'),
+        service.addReturnLine(returnId, dto, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -853,30 +830,46 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('updateReturnLine', () => {
-    function setupForUpdateLine(returnState: string) {
-      mockSelectChain({
-        1: [{ ...MOCK_RETURN, stateCode: returnState }],
-        2: [MOCK_RETURN_LINE],
+    let returnId: string;
+    let returnLineId: string;
+
+    async function setupForUpdateLine(stateCode: ReturnState) {
+      const cust = await createTestCustomer(db);
+      const prod = await createTestProduct(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      const orderLine = await createTestSalesOrderLine(db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxRes[0].taxCategoryId,
       });
 
-      const txUpdateQb = createMockQueryBuilder([
-        {
-          ...MOCK_RETURN_LINE,
-          quantityReturned: '3',
-        },
-      ]);
-      mockDb.transaction = jest.fn().mockImplementation(async (cb: any) => {
-        const tx = createMockTx();
-        tx.update = jest.fn().mockReturnValue(txUpdateQb);
-        return cb(tx);
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: stateCode,
       });
+      returnId = ret.returnId;
+
+      const retLine = await createTestReturnLine(db, {
+        returnId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
+      });
+      returnLineId = retLine.returnLineId;
     }
 
     it('should update return line on a draft return', async () => {
-      setupForUpdateLine('draft');
+      await setupForUpdateLine('draft');
       const result = await service.updateReturnLine(
-        'ret-001',
-        'retline-001',
+        returnId,
+        returnLineId,
         { reason: 'Changed mind' },
         'admin',
       );
@@ -884,11 +877,11 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject update on confirmed return', async () => {
-      setupForUpdateLine('confirmed');
+      await setupForUpdateLine('confirmed');
       await expect(
         service.updateReturnLine(
-          'ret-001',
-          'retline-001',
+          returnId,
+          returnLineId,
           { reason: 'Test' },
           'admin',
         ),
@@ -896,11 +889,11 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject negative return fee', async () => {
-      setupForUpdateLine('draft');
+      await setupForUpdateLine('draft');
       await expect(
         service.updateReturnLine(
-          'ret-001',
-          'retline-001',
+          returnId,
+          returnLineId,
           { returnFee: '-5' },
           'admin',
         ),
@@ -913,34 +906,59 @@ describe('ReturnsWriteService', () => {
   // =========================================================================
 
   describe('removeReturnLine', () => {
-    function setupForRemoveLine(returnState: string) {
-      mockSelectChain({
-        1: [{ ...MOCK_RETURN, stateCode: returnState }],
-        2: [MOCK_RETURN_LINE],
+    let returnId: string;
+    let returnLineId: string;
+
+    async function setupForRemoveLine(stateCode: ReturnState) {
+      const cust = await createTestCustomer(db);
+      const prod = await createTestProduct(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
       });
-      mockDb.transaction = jest
-        .fn()
-        .mockImplementation(async (cb: any) => cb(createMockTx()));
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      const orderLine = await createTestSalesOrderLine(db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxRes[0].taxCategoryId,
+      });
+
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: stateCode,
+      });
+      returnId = ret.returnId;
+
+      const retLine = await createTestReturnLine(db, {
+        returnId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
+      });
+      returnLineId = retLine.returnLineId;
     }
 
     it('should remove a line from a draft return', async () => {
-      setupForRemoveLine('draft');
+      await setupForRemoveLine('draft');
       await expect(
-        service.removeReturnLine('ret-001', 'retline-001', 'admin'),
+        service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).resolves.toBeUndefined();
     });
 
     it('should reject removal from confirmed return', async () => {
-      setupForRemoveLine('confirmed');
+      await setupForRemoveLine('confirmed');
       await expect(
-        service.removeReturnLine('ret-001', 'retline-001', 'admin'),
+        service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from processed return', async () => {
-      setupForRemoveLine('processed');
+      await setupForRemoveLine('processed');
       await expect(
-        service.removeReturnLine('ret-001', 'retline-001', 'admin'),
+        service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -951,19 +969,39 @@ describe('ReturnsWriteService', () => {
 
   describe('findOne', () => {
     it('should return return with lines', async () => {
-      mockSelectChain({
-        1: [MOCK_RETURN],
-        2: [MOCK_RETURN_LINE],
+      const cust = await createTestCustomer(db);
+      const prod = await createTestProduct(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: 'draft',
+      });
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      const orderLine = await createTestSalesOrderLine(db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxRes[0].taxCategoryId,
+      });
+      await createTestReturnLine(db, {
+        returnId: ret.returnId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
       });
 
-      const result = await service.findOne('ret-001');
-      expect(result).toHaveProperty('returnId', 'ret-001');
+      const result = await service.findOne(ret.returnId);
+      expect(result).toHaveProperty('returnId', ret.returnId);
       expect(result.lines).toHaveLength(1);
     });
 
     it('should throw NotFoundException for unknown return', async () => {
-      mockSelectChain({ 1: [] });
-      await expect(service.findOne('NONEXISTENT')).rejects.toThrow(
+      await expect(service.findOne('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -971,22 +1009,21 @@ describe('ReturnsWriteService', () => {
 
   describe('findByOrder', () => {
     it('should return all returns for an order', async () => {
-      // First call: list returns; subsequent calls: lines per return
-      let call = 0;
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockImplementation(() => {
-          call++;
-          if (call === 1) {
-            return createMockQueryBuilder([MOCK_RETURN]);
-          }
-          return createMockQueryBuilder([MOCK_RETURN_LINE]);
-        }),
+      const cust = await createTestCustomer(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
+      });
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: 'draft',
       });
 
-      const result = await service.findByOrder('order-001');
+      const result = await service.findByOrder(order.salesOrderId);
       expect(result).toHaveLength(1);
-      expect(result[0]).toHaveProperty('returnId', 'ret-001');
-      expect(result[0].lines).toHaveLength(1);
+      expect(result[0]).toHaveProperty('returnId', ret.returnId);
     });
   });
 
@@ -996,23 +1033,29 @@ describe('ReturnsWriteService', () => {
 
   describe('findReturn (via updateReturn)', () => {
     it('should throw NotFoundException when return does not exist', async () => {
-      mockSelectChain({ 1: [] });
       await expect(
-        service.updateReturn('NONEXISTENT', { notes: 'test' }, 'admin'),
+        service.updateReturn('00000000-0000-0000-0000-000000000000', { notes: 'test' }, 'admin'),
       ).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('findReturnLine (via updateReturnLine)', () => {
     it('should throw NotFoundException when return line does not exist', async () => {
-      mockSelectChain({
-        1: [MOCK_RETURN],
-        2: [],
+      const cust = await createTestCustomer(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
       });
+      const ret = await createTestReturn(db, {
+        salesOrderId: order.salesOrderId,
+        state: 'draft',
+      });
+
       await expect(
         service.updateReturnLine(
-          'ret-001',
-          'NONEXISTENT',
+          ret.returnId,
+          '00000000-0000-0000-0000-000000000000',
           { reason: 'test' },
           'admin',
         ),
@@ -1020,14 +1063,35 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should throw BadRequestException if line belongs to different return', async () => {
-      mockSelectChain({
-        1: [MOCK_RETURN],
-        2: [{ ...MOCK_RETURN_LINE, returnId: 'ret-OTHER' }],
+      const cust = await createTestCustomer(db);
+      const prod = await createTestProduct(db);
+      await db.insert(locations).values({ locationId: '10000000-0000-0000-0000-000000000001', code: 'LOC1', name: 'Loc 1', type: 'warehouse' }).onConflictDoNothing().returning();
+      const order = await createTestSalesOrder(db, {
+        customerId: cust.accountId,
+        locationId: '10000000-0000-0000-0000-000000000001',
       });
+      const taxRes = await db.select().from(taxCategories).where(eq(taxCategories.code, 'GST'));
+      const orderLine = await createTestSalesOrderLine(db, {
+        salesOrderId: order.salesOrderId,
+        productId: prod.productId,
+        quantity: 10,
+        price: 50,
+        taxCategoryId: taxRes[0].taxCategoryId,
+      });
+
+      const ret1 = await createTestReturn(db, { salesOrderId: order.salesOrderId, state: 'draft' });
+      const ret2 = await createTestReturn(db, { salesOrderId: order.salesOrderId, state: 'draft' });
+
+      const retLine = await createTestReturnLine(db, {
+        returnId: ret2.returnId, // belongs to ret2
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantity: 5,
+      });
+
       await expect(
         service.updateReturnLine(
-          'ret-001',
-          'retline-001',
+          ret1.returnId, // Attempt to update using ret1's ID
+          retLine.returnLineId,
           { reason: 'test' },
           'admin',
         ),

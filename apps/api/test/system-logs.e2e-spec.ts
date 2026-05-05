@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 import { FileLoggerService } from '../src/common/file-logger.service';
@@ -11,9 +12,7 @@ describe('System Logs E2E Verification', () => {
   let authToken: string;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     // Use the real FileLoggerService so NestJS startup writes to logs/api.log
     // (exactly as main.ts does in production)

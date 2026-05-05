@@ -2,88 +2,64 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { products, productEvents, uomDictionary } from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('ProductsService', () => {
   let service: ProductsService;
-
-  const mockProducts = [
-    {
-      productId: '11111111-1111-1111-1111-111111111111',
-      productNumber: 'BOLT-M8',
-      name: 'M8 Hex Bolt',
-      productGroupName: 'Fasteners',
-      standardCost: '1.25',
-      barcode: '9312000001',
-      stateCode: 'active',
-      source: 'abm',
-    },
-    {
-      productId: '22222222-2222-2222-2222-222222222222',
-      productNumber: 'NUT-M8',
-      name: 'M8 Hex Nut',
-      productGroupName: 'Fasteners',
-      standardCost: '0.45',
-      barcode: '9312000002',
-      stateCode: 'active',
-      source: 'app',
-    },
-  ];
-
-  const mockQueryBuilder = {
-    where: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    leftJoin: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    offset: jest.fn().mockReturnThis(),
-    $dynamic: jest.fn().mockReturnThis(),
-    groupBy: jest.fn().mockReturnThis(),
-    then: jest.fn().mockImplementation((cb) => cb(mockProducts)),
-    [Symbol.asyncIterator]: jest.fn(),
-  };
-
-  const mockDb = {
-    select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue({
-        leftJoin: jest.fn().mockReturnValue(mockQueryBuilder),
-        where: jest.fn().mockReturnValue(mockQueryBuilder),
-        $dynamic: jest.fn().mockReturnValue(mockQueryBuilder),
-      }),
-    }),
-  };
+  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    mockQueryBuilder.$dynamic.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.where.mockReturnValue(mockQueryBuilder);
-    // Default: findAll returns products, count query returns [{count: 2}]
-    let callCount = 0;
-    mockQueryBuilder.then = jest.fn().mockImplementation((cb) => {
-      callCount++;
-      // First call = data query, second call = count query
-      if (callCount % 2 === 0) return cb([{ count: 2 }]);
-      return cb(mockProducts);
-    });
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+
+    // Seed required UOM
+    await db.insert(uomDictionary).values({
+      uomCode: 'EA',
+      description: 'Each',
+    }).onConflictDoNothing();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [ProductsService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
   });
 
   describe('findAll', () => {
+    beforeEach(async () => {
+      await db.insert(products).values([
+        {
+          productId: '11111111-1111-1111-1111-111111111111',
+          productNumber: 'BOLT-M8',
+          name: 'M8 Hex Bolt',
+          stateCode: 'active',
+          baseUom: 'EA',
+        },
+        {
+          productId: '22222222-2222-2222-2222-222222222222',
+          productNumber: 'NUT-M8',
+          name: 'M8 Hex Nut',
+          stateCode: 'active',
+          baseUom: 'EA',
+        },
+      ]);
+    });
+
     it('should return paginated products with total count', async () => {
       const result = await service.findAll();
       expect(result).toHaveProperty('data');
+      expect(result.data).toHaveLength(2);
       expect(result).toHaveProperty('page', 1);
-      expect(result).toHaveProperty('limit', 50);
-      expect(result).toHaveProperty('total');
+      expect(result).toHaveProperty('total', 2);
     });
 
     it('should apply search filter when q is provided', async () => {
-      await service.findAll({ q: 'bolt' });
-      expect(mockQueryBuilder.where).toHaveBeenCalled();
+      const result = await service.findAll({ q: 'bolt' });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].productNumber).toBe('BOLT-M8');
     });
 
     it('should cap limit at 100000', async () => {
@@ -93,23 +69,33 @@ describe('ProductsService', () => {
   });
 
   describe('findOne', () => {
-    it('should return a single product with events', async () => {
-      // First call returns product, second returns events
-      let call = 0;
-      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => {
-        call++;
-        if (call === 1) return cb([mockProducts[0]]);
-        return cb([]); // no events
+    const targetId = '11111111-1111-1111-1111-111111111111';
+
+    beforeEach(async () => {
+      await db.insert(products).values({
+        productId: targetId,
+        productNumber: 'BOLT-M8',
+        name: 'M8 Hex Bolt',
+        stateCode: 'active',
+        baseUom: 'EA',
       });
-      const result = await service.findOne(
-        '11111111-1111-1111-1111-111111111111',
-      );
+
+      await db.insert(productEvents).values({
+        productId: targetId,
+        eventType: 'created',
+        payload: { name: 'M8 Hex Bolt' },
+        actor: 'admin',
+      });
+    });
+
+    it('should return a single product with events', async () => {
+      const result = await service.findOne(targetId);
       expect(result.productNumber).toBe('BOLT-M8');
-      expect(result.events).toEqual([]);
+      expect(result.events).toHaveLength(1);
+      expect(result.events[0].eventType).toBe('created');
     });
 
     it('should throw NotFoundException for unknown ID', async () => {
-      mockQueryBuilder.then = jest.fn().mockImplementation((cb) => cb([]));
       await expect(
         service.findOne('99999999-9999-9999-9999-999999999999'),
       ).rejects.toThrow(NotFoundException);

@@ -61,7 +61,7 @@ export class CreateBinDto {
 
   @IsOptional()
   @IsIn(binTypeEnum.enumValues)
-  binType?: typeof binTypeEnum.enumValues[number];
+  binType?: (typeof binTypeEnum.enumValues)[number];
 
   @IsOptional()
   @IsBoolean()

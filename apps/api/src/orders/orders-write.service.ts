@@ -146,7 +146,7 @@ export class OrdersWriteService {
 
     if (account.taxCategoryId) {
       const acctCat = await this.taxService.getById(account.taxCategoryId);
-      if (acctCat.code === 'EXE') {
+      if (acctCat.code === 'EXE' || acctCat.type === 'exempt') {
         return {
           taxCategoryId: acctCat.taxCategoryId,
           rate: parseFloat(acctCat.rate ?? '0'),

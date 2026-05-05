@@ -1,5 +1,5 @@
 import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'crypto';
 import {
   accounts,
   products,
@@ -7,13 +7,25 @@ import {
   salesOrderLineItems,
   salesOrderReturns,
   salesOrderReturnLines,
+  purchaseOrders,
+  purchaseOrderLineItems,
+  glJournalEntries,
+  salesInvoices,
 } from '../../src/drizzle/modbm-core-schema';
-import { SalesOrderState, ReturnState } from '@modbm/shared';
+import {
+  SalesOrderState,
+  ReturnState,
+  PurchaseOrderState,
+  SalesInvoiceState,
+} from '@modbm/shared';
 
 // Ensures random order numbers during test isolation
 let _sequence = 0;
 
-export async function createTestCustomer(db: PgliteDatabase<any>, opts?: { name?: string }) {
+export async function createTestCustomer(
+  db: PgliteDatabase<any>,
+  opts?: { name?: string },
+) {
   const accountId = uuidv4();
   await db.insert(accounts).values({
     accountId,
@@ -24,7 +36,10 @@ export async function createTestCustomer(db: PgliteDatabase<any>, opts?: { name?
   return { accountId };
 }
 
-export async function createTestProduct(db: PgliteDatabase<any>, opts?: { type?: 'inventory' | 'non-stock', name?: string }) {
+export async function createTestProduct(
+  db: PgliteDatabase<any>,
+  opts?: { type?: 'inventory' | 'non-stock'; name?: string },
+) {
   const productId = uuidv4();
   await db.insert(products).values({
     productId,
@@ -42,11 +57,11 @@ export async function createTestSalesOrder(
     customerId: string;
     locationId: string;
     state?: SalesOrderState;
-  }
+  },
 ) {
   const salesOrderId = uuidv4();
   const orderNumber = `ORD-TEST-${++_sequence}`;
-  
+
   await db.insert(salesOrders).values({
     salesOrderId,
     orderNumber,
@@ -69,10 +84,10 @@ export async function createTestSalesOrderLine(
     quantity: number;
     price: number;
     lineNumber?: number;
-  }
+  },
 ) {
   const salesOrderLineId = uuidv4();
-  
+
   await db.insert(salesOrderLineItems).values({
     salesOrderLineId,
     salesOrderId: opts.salesOrderId,
@@ -93,7 +108,7 @@ export async function createTestReturn(
   opts: {
     salesOrderId: string;
     state?: ReturnState;
-  }
+  },
 ) {
   const returnId = uuidv4();
   const returnNumber = `RET-TEST-${++_sequence}`;
@@ -115,7 +130,7 @@ export async function createTestReturnLine(
     salesOrderLineId: string;
     quantity: number;
     returnFee?: number;
-  }
+  },
 ) {
   const returnLineId = uuidv4();
 
@@ -129,4 +144,86 @@ export async function createTestReturnLine(
   });
 
   return { returnLineId };
+}
+
+export async function createTestSupplier(
+  db: PgliteDatabase<any>,
+  opts?: { name?: string },
+) {
+  // Uses the same `accounts` table as customers, but conceptually a supplier.
+  const accountId = uuidv4();
+  await db.insert(accounts).values({
+    accountId,
+    accountNumber: `SUPP-TEST-${++_sequence}`,
+    name: opts?.name || 'Test Supplier',
+    currencyCode: 'AUD',
+  });
+  return { accountId };
+}
+
+export async function createTestPurchaseOrder(
+  db: PgliteDatabase<any>,
+  opts: {
+    supplierId: string;
+    locationId: string;
+    state?: PurchaseOrderState;
+  },
+) {
+  const purchaseOrderId = uuidv4();
+  const orderNumber = `PO-TEST-${++_sequence}`;
+
+  await db.insert(purchaseOrders).values({
+    purchaseOrderId,
+    orderNumber,
+    supplierId: opts.supplierId,
+    receivingLocationId: opts.locationId,
+    stateCode: opts.state || 'draft',
+    currencyCode: 'AUD',
+    source: 'app',
+  });
+
+  return { purchaseOrderId, orderNumber };
+}
+
+export async function createTestGlEntry(
+  db: PgliteDatabase<any>,
+  opts: {
+    sourceId: string;
+    sourceType: string;
+  },
+) {
+  const journalEntryId = uuidv4();
+  const entryNumber = `GL-TEST-${++_sequence}`;
+
+  await db.insert(glJournalEntries).values({
+    journalEntryId,
+    entryNumber,
+    sourceId: opts.sourceId,
+    sourceType: opts.sourceType,
+    currencyCode: 'AUD',
+    status: 'posted',
+    entryDate: new Date(),
+  });
+
+  return { journalEntryId };
+}
+
+export async function createTestInvoice(
+  db: PgliteDatabase<any>,
+  opts: {
+    salesOrderId: string;
+    state?: SalesInvoiceState;
+  },
+) {
+  const invoiceId = uuidv4();
+  const invoiceNumber = `INV-TEST-${++_sequence}`;
+
+  await db.insert(salesInvoices).values({
+    invoiceId,
+    invoiceNumber,
+    salesOrderId: opts.salesOrderId,
+    stateCode: opts.state || 'draft',
+  });
+
+  return { invoiceId };
 }

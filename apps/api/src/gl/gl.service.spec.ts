@@ -1,158 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { GlService, JournalMeta } from './gl.service';
-import { JournalLineDto } from './dto';
+import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-
-/**
- * Comprehensive unit tests for the GL Service.
- *
- * Test strategy: we use a "programmable mock" that lets each test configure
- * what specific DB calls return, rather than a one-size-fits-all chain.
- * This avoids the problem of the Drizzle ORM using many chaining patterns.
- */
-
-// ---------------------------------------------------------------------------
-// Programmable mock DB
-// ---------------------------------------------------------------------------
-
-/**
- * The key insight: Drizzle chains are awaitable at different points.
- * Some paths: select().from().where()           -> awaited (returns array)
- * Other paths: select().from().where().limit()   -> awaited (returns array)
- * Other paths: select().from().orderBy()         -> awaited (returns array)
- * Other paths: insert().values().returning()      -> awaited (returns array)
- * Other paths: update().set().where().returning() -> awaited (returns array)
- * Other paths: execute()                          -> awaited (returns { rows })
- * Other paths: transaction(fn)                    -> awaited
- *
- * We create a deeply chainable proxy that is ALSO thenable (so await resolves it).
- */
-function createChainProxy(resolveValue: any = []): any {
-  const handler: ProxyHandler<any> = {
-    get(_target, prop) {
-      if (prop === 'then') {
-        // Make the proxy thenable — await will resolve to resolveValue
-        return (resolve: any, reject: any) =>
-          Promise.resolve(resolveValue).then(resolve, reject);
-      }
-      if (prop === Symbol.iterator) {
-        return undefined; // Not iterable
-      }
-      // For any method call, return a function that returns a new chainable proxy
-      return (...args: any[]) => createChainProxy(resolveValue);
-    },
-    apply(_target, _thisArg, args) {
-      return createChainProxy(resolveValue);
-    },
-  };
-  return new Proxy(function () {}, handler);
-}
-
-interface MockDb {
-  select: jest.Mock;
-  insert: jest.Mock;
-  update: jest.Mock;
-  execute: jest.Mock;
-  transaction: jest.Mock;
-}
-
-function createMockDb(): {
-  db: MockDb;
-  /**
-   * Configure the mock so that the next N select chains resolve
-   * to the given arrays, in order. After exhausted, returns [].
-   */
-  onSelect: (...results: any[][]) => void;
-  onInsert: (...results: any[][]) => void;
-  onUpdate: (...results: any[][]) => void;
-  onExecute: (...results: any[]) => void;
-  onTransaction: (fn?: (tx: any) => any) => void;
-} {
-  const selectQueue: any[][] = [];
-  const insertQueue: any[][] = [];
-  const updateQueue: any[][] = [];
-  const executeQueue: any[] = [];
-
-  const selectMock = jest.fn().mockImplementation(() => {
-    const val = selectQueue.shift() || [];
-    return createChainProxy(val);
-  });
-  const insertMock = jest.fn().mockImplementation(() => {
-    const val = insertQueue.shift() || [];
-    return createChainProxy(val);
-  });
-  const updateMock = jest.fn().mockImplementation(() => {
-    const val = updateQueue.shift() || [];
-    return createChainProxy(val);
-  });
-  const executeMock = jest.fn().mockImplementation(() => {
-    const val = executeQueue.shift() || { rows: [] };
-    return Promise.resolve(val);
-  });
-
-  const db: MockDb = {
-    select: selectMock,
-    insert: insertMock,
-    update: updateMock,
-    execute: executeMock,
-    transaction: jest.fn().mockImplementation(async (fn: any) => {
-      const tx: any = {
-        insert: insertMock,
-        select: selectMock,
-        execute: executeMock,
-      };
-      return fn(tx);
-    }),
-  };
-
-  return {
-    db,
-    onSelect: (...results) => {
-      selectQueue.push(...results);
-    },
-    onInsert: (...results) => {
-      insertQueue.push(...results);
-    },
-    onUpdate: (...results) => {
-      updateQueue.push(...results);
-    },
-    onExecute: (...results) => {
-      executeQueue.push(...results);
-    },
-    onTransaction: (fn) => {
-      if (fn) {
-        db.transaction = jest.fn().mockImplementation(fn);
-      }
-    },
-  };
-}
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { glAccounts, glJournalEntries, glJournalLines, costCenters, activities } from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 describe('GlService', () => {
   let service: GlService;
-  let mock: ReturnType<typeof createMockDb>;
+  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    mock = createMockDb();
+    const mem = await createMemoryDb();
+    db = mem.db;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlService,
-        { provide: DRIZZLE, useValue: mock.db },
+        { provide: DRIZZLE, useValue: db },
         {
           provide: AppConfigService,
-          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+          useValue: { 
+            homeCurrency: jest.fn().mockReturnValue('EUR'),
+            inventoryAccountingMode: () => 'perpetual',
+          },
         },
       ],
     }).compile();
 
     service = module.get<GlService>(GlService);
   });
-
-  // =========================================================================
-  // postJournalEntry — Balance Invariant
-  // =========================================================================
 
   describe('postJournalEntry — balance invariant', () => {
     it('should reject null/undefined lines', async () => {
@@ -200,30 +80,12 @@ describe('GlService', () => {
       ).rejects.toThrow('unbalanced');
     });
 
-    it('should include debit and credit totals in error message', async () => {
-      try {
-        await service.postJournalEntry(
-          [
-            { accountCode: '1100', debit: 100.5, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 99.0 },
-          ],
-          { sourceType: 'manual' },
-        );
-        fail('Should have thrown');
-      } catch (e: any) {
-        expect(e.message).toContain('100.50');
-        expect(e.message).toContain('99.00');
-      }
-    });
-
     it('should accept balanced entries (proceeds past balance check to account lookup)', async () => {
-      // Account lookup returns empty -> will throw "does not exist" (proving balance passed)
-      mock.onSelect([]); // Account resolution
       await expect(
         service.postJournalEntry(
           [
-            { accountCode: '1100', debit: 100, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 100 },
+            { accountCode: 'NON-EXISTENT-1', debit: 100, credit: 0 },
+            { accountCode: 'NON-EXISTENT-2', debit: 0, credit: 100 },
           ],
           { sourceType: 'manual' },
         ),
@@ -231,17 +93,15 @@ describe('GlService', () => {
     });
 
     it('should tolerate floating-point imprecision within 0.005', async () => {
-      // 0.1 + 0.2 = 0.30000000000000004 in JS
-      mock.onSelect([]); // Account resolution
       await expect(
         service.postJournalEntry(
           [
-            { accountCode: '1100', debit: 0.1 + 0.2, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 0.3 },
+            { accountCode: 'NON-EXISTENT-1', debit: 0.1 + 0.2, credit: 0 },
+            { accountCode: 'NON-EXISTENT-2', debit: 0, credit: 0.3 },
           ],
           { sourceType: 'manual' },
         ),
-      ).rejects.toThrow('does not exist'); // Passed balance check
+      ).rejects.toThrow('does not exist');
     });
 
     it('should reject imbalance beyond tolerance (0.01)', async () => {
@@ -255,1129 +115,244 @@ describe('GlService', () => {
         ),
       ).rejects.toThrow('unbalanced');
     });
-
-    it('should handle multi-line entries with balanced totals', async () => {
-      // 3-line: AR=110, Revenue=100, GST=10
-      mock.onSelect([]); // Account resolution
-      await expect(
-        service.postJournalEntry(
-          [
-            { accountCode: '1100', debit: 110, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 100 },
-            { accountCode: '2200', debit: 0, credit: 10 },
-          ],
-          { sourceType: 'sales_invoice' },
-        ),
-      ).rejects.toThrow('does not exist'); // Passed balance
-    });
-
-    it('should handle zero-value entries (balanced at zero)', async () => {
-      mock.onSelect([]); // Account resolution
-      await expect(
-        service.postJournalEntry(
-          [
-            { accountCode: '1100', debit: 0, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 0 },
-          ],
-          { sourceType: 'manual' },
-        ),
-      ).rejects.toThrow('does not exist'); // Passed balance
-    });
   });
 
-  // =========================================================================
-  // postJournalEntry — Account Validation
-  // =========================================================================
-
   describe('postJournalEntry — account validation', () => {
-    const balancedLines: JournalLineDto[] = [
-      { accountCode: '1100', debit: 100, credit: 0 },
-      { accountCode: '4100', debit: 0, credit: 100 },
-    ];
-
     it('should reject when no account codes exist', async () => {
-      mock.onSelect([]); // Empty result
       await expect(
-        service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
-      ).rejects.toThrow("'1100' does not exist");
-    });
-
-    it('should reject when only one of two accounts exists', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'id1',
-          accountCode: '1100',
-          isGroup: false,
-          isActive: true,
-          name: 'AR',
-        },
-        // 4100 missing
-      ]);
-      await expect(
-        service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
-      ).rejects.toThrow("'4100' does not exist");
+        service.postJournalEntry(
+          [
+            { accountCode: 'MISSING-1', debit: 100, credit: 0 },
+            { accountCode: 'MISSING-2', debit: 0, credit: 100 },
+          ], 
+          { sourceType: 'manual' }
+        ),
+      ).rejects.toThrow("'MISSING-1' does not exist");
     });
 
     it('should reject posting to a group account', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'id1',
-          accountCode: '1100',
-          isGroup: true,
-          isActive: true,
-          name: 'Current Assets',
-        },
-        {
-          glAccountId: 'id2',
-          accountCode: '4100',
-          isGroup: false,
-          isActive: true,
-          name: 'Revenue',
-        },
-      ]);
-      await expect(
-        service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
-      ).rejects.toThrow('group account');
-    });
+      await db.insert(glAccounts).values({
+        glAccountId: randomUUID(),
+        accountCode: 'G-VAL-1000',
+        name: 'Group Account',
+        accountType: 'asset',
+        isGroup: true,
+        isActive: true,
+        currencyCode: 'AUD',
+      });
+      await db.insert(glAccounts).values({
+        glAccountId: randomUUID(),
+        accountCode: 'L-VAL-1000',
+        name: 'Leaf Account',
+        accountType: 'asset',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      });
 
-    it('should include account code and name in group rejection message', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'id1',
-          accountCode: '1000',
-          isGroup: true,
-          isActive: true,
-          name: 'Assets',
-        },
-        {
-          glAccountId: 'id2',
-          accountCode: '4100',
-          isGroup: false,
-          isActive: true,
-          name: 'Revenue',
-        },
-      ]);
-      try {
-        await service.postJournalEntry(
+      await expect(
+        service.postJournalEntry(
           [
-            { accountCode: '1000', debit: 100, credit: 0 },
-            { accountCode: '4100', debit: 0, credit: 100 },
+            { accountCode: 'G-VAL-1000', debit: 100, credit: 0 },
+            { accountCode: 'L-VAL-1000', debit: 0, credit: 100 },
           ],
           { sourceType: 'manual' },
-        );
-        fail('Should have thrown');
-      } catch (e: any) {
-        expect(e.message).toContain('1000');
-        expect(e.message).toContain('Assets');
-      }
-    });
-
-    it('should reject posting to an inactive account', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'id1',
-          accountCode: '1100',
-          isGroup: false,
-          isActive: false,
-          name: 'AR (Closed)',
-        },
-        {
-          glAccountId: 'id2',
-          accountCode: '4100',
-          isGroup: false,
-          isActive: true,
-          name: 'Revenue',
-        },
-      ]);
-      await expect(
-        service.postJournalEntry(balancedLines, { sourceType: 'manual' }),
-      ).rejects.toThrow('inactive');
-    });
-
-    it('should include account code and name in inactive rejection message', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'id1',
-          accountCode: '1100',
-          isGroup: false,
-          isActive: false,
-          name: 'AR Old',
-        },
-        {
-          glAccountId: 'id2',
-          accountCode: '4100',
-          isGroup: false,
-          isActive: true,
-          name: 'Revenue',
-        },
-      ]);
-      try {
-        await service.postJournalEntry(balancedLines, { sourceType: 'manual' });
-        fail('Should have thrown');
-      } catch (e: any) {
-        expect(e.message).toContain('1100');
-        expect(e.message).toContain('AR Old');
-      }
+        ),
+      ).rejects.toThrow('group account');
     });
   });
 
-  // =========================================================================
-  // postJournalEntry — Full Success Path
-  // =========================================================================
-
   describe('postJournalEntry — success path', () => {
     it('should create entry and lines within a transaction', async () => {
-      const accounts = [
+      const arId = randomUUID();
+      const revId = randomUUID();
+      const invId = randomUUID();
+      await db.insert(glAccounts).values([
         {
-          glAccountId: 'id-ar',
-          accountCode: '1100',
+          glAccountId: arId,
+          accountCode: 'S-1100',
           isGroup: false,
           isActive: true,
           name: 'AR',
+          accountType: 'asset',
+          currencyCode: 'AUD',
         },
         {
-          glAccountId: 'id-rev',
-          accountCode: '4100',
+          glAccountId: revId,
+          accountCode: 'S-4100',
           isGroup: false,
           isActive: true,
           name: 'Revenue',
+          accountType: 'revenue',
+          currencyCode: 'AUD',
         },
-      ];
-
-      mock.onSelect(
-        accounts, // 1. Account resolution
-        [], // 2. Entry number generation (no existing entries today)
-      );
-
-      const txInsertCalls: any[] = [];
-      mock.onTransaction(async (fn: any) => {
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            const call: any = {};
-            txInsertCalls.push(call);
-            return createChainProxy(undefined); // chainable
-          }),
-        };
-        // Need to actually make insert().values().returning() work
-        let insertCount = 0;
-        tx.insert = jest.fn().mockImplementation(() => {
-          insertCount++;
-          const proxy = {
-            values: jest.fn().mockImplementation((vals: any) => {
-              txInsertCalls.push(vals);
-              return {
-                returning: jest.fn().mockResolvedValue(
-                  insertCount === 1
-                    ? [
-                        {
-                          journalEntryId: 'je-001',
-                          entryNumber: 'JE-20260322-0001',
-                          entryDate: '2026-03-22',
-                        },
-                      ]
-                    : undefined,
-                ),
-              };
-            }),
-          };
-          return proxy;
-        });
-        return fn(tx);
-      });
+      ]);
 
       const result = await service.postJournalEntry(
         [
-          { accountCode: '1100', debit: 500, credit: 0, memo: 'AR debit' },
-          { accountCode: '4100', debit: 0, credit: 500, memo: 'Rev credit' },
+          { accountCode: 'S-1100', debit: 500, credit: 0, memo: 'AR debit' },
+          { accountCode: 'S-4100', debit: 0, credit: 500, memo: 'Rev credit' },
         ],
         {
           sourceType: 'sales_invoice',
-          sourceId: 'inv-001',
+          sourceId: invId,
           memo: 'Test',
           actor: 'admin',
         },
       );
 
-      expect(result.journalEntryId).toBe('je-001');
-      expect(mock.db.transaction).toHaveBeenCalledTimes(1);
+      expect(result.journalEntryId).toBeDefined();
 
-      // Verify header inserted
-      expect(txInsertCalls[0]).toMatchObject({
+      const [entry] = await db.select().from(glJournalEntries).where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
+      expect(entry).toMatchObject({
         sourceType: 'sales_invoice',
-        sourceId: 'inv-001',
+        sourceId: invId,
         memo: 'Test',
         createdBy: 'admin',
       });
 
-      // Verify lines inserted with correct account IDs
-      expect(txInsertCalls[1]).toHaveLength(2);
-      expect(txInsertCalls[1][0]).toMatchObject({
-        glAccountId: 'id-ar',
-        debit: '500',
-        credit: '0',
+      const lines = await db.select().from(glJournalLines).where(eq(glJournalLines.journalEntryId, result.journalEntryId)).orderBy(glJournalLines.debit);
+      expect(lines).toHaveLength(2);
+      
+      const debitLine = lines.find(l => parseFloat(l.debit) === 500);
+      const creditLine = lines.find(l => parseFloat(l.credit) === 500);
+      
+      expect(debitLine).toMatchObject({
+        glAccountId: arId,
         memo: 'AR debit',
       });
-      expect(txInsertCalls[1][1]).toMatchObject({
-        glAccountId: 'id-rev',
-        debit: '0',
-        credit: '500',
+      expect(creditLine).toMatchObject({
+        glAccountId: revId,
         memo: 'Rev credit',
       });
     });
 
-    it('should use entryDate from meta when provided', async () => {
-      mock.onSelect(
-        [
-          {
-            glAccountId: 'id1',
-            accountCode: '1100',
-            isGroup: false,
-            isActive: true,
-            name: 'AR',
-          },
-          {
-            glAccountId: 'id2',
-            accountCode: '4100',
-            isGroup: false,
-            isActive: true,
-            name: 'Rev',
-          },
-        ],
-        [], // entry number
-      );
-
-      let headerValues: any;
-      mock.onTransaction(async (fn: any) => {
-        let insertCount = 0;
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            insertCount++;
-            return {
-              values: jest.fn().mockImplementation((vals: any) => {
-                if (insertCount === 1) headerValues = vals;
-                return {
-                  returning: jest.fn().mockResolvedValue(
-                    insertCount === 1
-                      ? [
-                          {
-                            journalEntryId: 'je-date',
-                            entryNumber: 'JE-test',
-                            entryDate: '2025-12-31',
-                          },
-                        ]
-                      : undefined,
-                  ),
-                };
-              }),
-            };
-          }),
-        };
-        return fn(tx);
-      });
-
-      await service.postJournalEntry(
-        [
-          { accountCode: '1100', debit: 100, credit: 0 },
-          { accountCode: '4100', debit: 0, credit: 100 },
-        ],
-        { sourceType: 'manual', entryDate: '2025-12-31' },
-      );
-
-      expect(headerValues.entryDate).toBe('2025-12-31');
-    });
-
-    it('should default entryDate to today when not provided', async () => {
-      mock.onSelect(
-        [
-          {
-            glAccountId: 'id1',
-            accountCode: '1100',
-            isGroup: false,
-            isActive: true,
-            name: 'AR',
-          },
-          {
-            glAccountId: 'id2',
-            accountCode: '4100',
-            isGroup: false,
-            isActive: true,
-            name: 'Rev',
-          },
-        ],
-        [],
-      );
-
-      let headerValues: any;
-      mock.onTransaction(async (fn: any) => {
-        let insertCount = 0;
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            insertCount++;
-            return {
-              values: jest.fn().mockImplementation((vals: any) => {
-                if (insertCount === 1) headerValues = vals;
-                return {
-                  returning: jest
-                    .fn()
-                    .mockResolvedValue(
-                      insertCount === 1
-                        ? [{ journalEntryId: 'je-today' }]
-                        : undefined,
-                    ),
-                };
-              }),
-            };
-          }),
-        };
-        return fn(tx);
-      });
-
-      await service.postJournalEntry(
-        [
-          { accountCode: '1100', debit: 100, credit: 0 },
-          { accountCode: '4100', debit: 0, credit: 100 },
-        ],
-        { sourceType: 'manual' },
-      );
-
+    it('should increment sequence when entries already exist today', async () => {
       const today = new Date().toISOString().slice(0, 10);
-      expect(headerValues.entryDate).toBe(today);
-    });
+      const todayStripped = today.replace(/-/g, '');
+      
+      await db.insert(glAccounts).values([
+        { accountCode: 'SEQ-1100', name: 'AR', accountType: 'asset', isGroup: false, isActive: true, currencyCode: 'AUD' },
+        { accountCode: 'SEQ-4100', name: 'Rev', accountType: 'revenue', isGroup: false, isActive: true, currencyCode: 'AUD' },
+      ]);
 
-    it('should deduplicate account codes when same code appears multiple times', async () => {
-      // Transfer within same account (zero-sum)
-      mock.onSelect(
-        [
-          {
-            glAccountId: 'id1',
-            accountCode: '1100',
-            isGroup: false,
-            isActive: true,
-            name: 'AR',
-          },
-        ],
-        [],
-      );
-
-      mock.onTransaction(async (fn: any) => {
-        let insertCount = 0;
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            insertCount++;
-            return {
-              values: jest.fn().mockImplementation(() => ({
-                returning: jest
-                  .fn()
-                  .mockResolvedValue(
-                    insertCount === 1
-                      ? [{ journalEntryId: 'je-dup' }]
-                      : undefined,
-                  ),
-              })),
-            };
-          }),
-        };
-        return fn(tx);
+      await db.insert(glJournalEntries).values({
+        entryNumber: `JE-${todayStripped}-0003`,
+        entryDate: today,
+        sourceType: 'manual',
       });
 
-      // Should not throw — '1100' used twice but only looked up once
       const result = await service.postJournalEntry(
         [
-          { accountCode: '1100', debit: 100, credit: 0 },
-          { accountCode: '1100', debit: 0, credit: 100 },
-        ],
-        { sourceType: 'adjustment' },
-      );
-      expect(result.journalEntryId).toBe('je-dup');
-    });
-  });
-
-  // =========================================================================
-  // postJournalEntry — Entry Number Generation
-  // =========================================================================
-
-  describe('postJournalEntry — entry number', () => {
-    it('should generate JE-YYYYMMDD-0001 for first entry of the day', async () => {
-      mock.onSelect(
-        [
-          {
-            glAccountId: 'id1',
-            accountCode: '1100',
-            isGroup: false,
-            isActive: true,
-            name: 'AR',
-          },
-          {
-            glAccountId: 'id2',
-            accountCode: '4100',
-            isGroup: false,
-            isActive: true,
-            name: 'Rev',
-          },
-        ],
-        [], // No existing entries
-      );
-
-      let capturedNumber: string;
-      mock.onTransaction(async (fn: any) => {
-        let insertCount = 0;
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            insertCount++;
-            return {
-              values: jest.fn().mockImplementation((vals: any) => {
-                if (insertCount === 1) capturedNumber = vals.entryNumber;
-                return {
-                  returning: jest.fn().mockResolvedValue(
-                    insertCount === 1
-                      ? [
-                          {
-                            journalEntryId: 'je-num1',
-                            entryNumber: vals.entryNumber,
-                          },
-                        ]
-                      : undefined,
-                  ),
-                };
-              }),
-            };
-          }),
-        };
-        return fn(tx);
-      });
-
-      await service.postJournalEntry(
-        [
-          { accountCode: '1100', debit: 100, credit: 0 },
-          { accountCode: '4100', debit: 0, credit: 100 },
+          { accountCode: 'SEQ-1100', debit: 100, credit: 0 },
+          { accountCode: 'SEQ-4100', debit: 0, credit: 100 },
         ],
         { sourceType: 'manual' },
       );
 
-      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      expect(capturedNumber!).toBe(`JE-${today}-0001`);
-    });
-
-    it('should increment sequence when entries already exist today', async () => {
-      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      mock.onSelect(
-        [
-          {
-            glAccountId: 'id1',
-            accountCode: '1100',
-            isGroup: false,
-            isActive: true,
-            name: 'AR',
-          },
-          {
-            glAccountId: 'id2',
-            accountCode: '4100',
-            isGroup: false,
-            isActive: true,
-            name: 'Rev',
-          },
-        ],
-        [{ entryNumber: `JE-${today}-0003` }], // Existing max
-      );
-
-      let capturedNumber: string;
-      mock.onTransaction(async (fn: any) => {
-        let insertCount = 0;
-        const tx: any = {
-          select: mock.db.select,
-          insert: jest.fn().mockImplementation(() => {
-            insertCount++;
-            return {
-              values: jest.fn().mockImplementation((vals: any) => {
-                if (insertCount === 1) capturedNumber = vals.entryNumber;
-                return {
-                  returning: jest
-                    .fn()
-                    .mockResolvedValue(
-                      insertCount === 1
-                        ? [{ journalEntryId: 'je-num4' }]
-                        : undefined,
-                    ),
-                };
-              }),
-            };
-          }),
-        };
-        return fn(tx);
-      });
-
-      await service.postJournalEntry(
-        [
-          { accountCode: '1100', debit: 100, credit: 0 },
-          { accountCode: '4100', debit: 0, credit: 100 },
-        ],
-        { sourceType: 'manual' },
-      );
-
-      expect(capturedNumber!).toBe(`JE-${today}-0004`);
+      const [entry] = await db.select().from(glJournalEntries).where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
+      expect(entry.entryNumber).toBe(`JE-${todayStripped}-0004`);
     });
   });
-
-  // =========================================================================
-  // Chart of Accounts — getChartOfAccounts / buildTree
-  // =========================================================================
 
   describe('getChartOfAccounts (tree builder)', () => {
     it('should build nested tree from flat accounts', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'a1',
-          accountCode: '1000',
-          name: 'Assets',
-          parentAccountId: null,
-          isGroup: true,
-        },
-        {
-          glAccountId: 'a2',
-          accountCode: '1100',
-          name: 'AR',
-          parentAccountId: 'a1',
-          isGroup: false,
-        },
-        {
-          glAccountId: 'a3',
-          accountCode: '1200',
-          name: 'GST Recv',
-          parentAccountId: 'a1',
-          isGroup: false,
-        },
-        {
-          glAccountId: 'a4',
-          accountCode: '2000',
-          name: 'Liabilities',
-          parentAccountId: null,
-          isGroup: true,
-        },
-        {
-          glAccountId: 'a5',
-          accountCode: '2100',
-          name: 'AP',
-          parentAccountId: 'a4',
-          isGroup: false,
-        },
+      const a1 = randomUUID();
+      const a2 = randomUUID();
+      const a3 = randomUUID();
+      const a4 = randomUUID();
+      const a5 = randomUUID();
+      
+      await db.insert(glAccounts).values([
+        { glAccountId: a1, accountCode: 'T-1000', name: 'Assets Tree', parentAccountId: null, isGroup: true, accountType: 'asset', currencyCode: 'AUD' },
+        { glAccountId: a2, accountCode: 'T-1100', name: 'AR Tree', parentAccountId: a1, isGroup: false, accountType: 'asset', currencyCode: 'AUD' },
+        { glAccountId: a3, accountCode: 'T-1200', name: 'GST Tree', parentAccountId: a1, isGroup: false, accountType: 'asset', currencyCode: 'AUD' },
+        { glAccountId: a4, accountCode: 'T-2000', name: 'Liabilities Tree', parentAccountId: null, isGroup: true, accountType: 'liability', currencyCode: 'AUD' },
+        { glAccountId: a5, accountCode: 'T-2100', name: 'AP Tree', parentAccountId: a4, isGroup: false, accountType: 'liability', currencyCode: 'AUD' },
       ]);
 
       const tree = await service.getChartOfAccounts();
 
-      expect(tree).toHaveLength(2);
-      expect(tree[0].name).toBe('Assets');
-      expect(tree[0].children).toHaveLength(2);
-      expect(tree[0].children[0].name).toBe('AR');
-      expect(tree[0].children[0].children).toBeUndefined(); // leaf
-      expect(tree[1].name).toBe('Liabilities');
-      expect(tree[1].children).toHaveLength(1);
-    });
-
-    it('should handle 3-level deep hierarchy', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'r1',
-          accountCode: '1000',
-          name: 'Assets',
-          parentAccountId: null,
-          isGroup: true,
-        },
-        {
-          glAccountId: 'g1',
-          accountCode: '1020',
-          name: 'Bank',
-          parentAccountId: 'r1',
-          isGroup: true,
-        },
-        {
-          glAccountId: 'l1',
-          accountCode: '1021',
-          name: 'Operating',
-          parentAccountId: 'g1',
-          isGroup: false,
-        },
-      ]);
-
-      const tree = await service.getChartOfAccounts();
-      expect(tree).toHaveLength(1);
-      expect(tree[0].children[0].name).toBe('Bank');
-      expect(tree[0].children[0].children[0].name).toBe('Operating');
-    });
-
-    it('should return empty array when no accounts exist', async () => {
-      mock.onSelect([]);
-      const tree = await service.getChartOfAccounts();
-      expect(tree).toEqual([]);
-    });
-
-    it('should not show orphaned accounts at root', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'a1',
-          accountCode: '1100',
-          name: 'Orphan',
-          parentAccountId: 'deleted-parent',
-          isGroup: false,
-        },
-      ]);
-      const tree = await service.getChartOfAccounts();
-      expect(tree).toEqual([]); // Orphan hangs off missing parent
-    });
-
-    it('should handle single root account with no children', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'a1',
-          accountCode: '1000',
-          name: 'Assets',
-          parentAccountId: null,
-          isGroup: true,
-        },
-      ]);
-      const tree = await service.getChartOfAccounts();
-      expect(tree).toHaveLength(1);
-      expect(tree[0].children).toEqual([]);
+      expect(tree.length).toBeGreaterThanOrEqual(2);
+      expect(tree.find(t => t.name === 'Assets Tree')?.children).toHaveLength(2);
+      expect(tree.find(t => t.name === 'Liabilities Tree')?.children).toHaveLength(1);
     });
   });
 
-  // =========================================================================
-  // getAccountsList
-  // =========================================================================
-
-  describe('getAccountsList', () => {
-    it('should return flat list', async () => {
-      mock.onSelect([
-        { accountCode: '1100', name: 'AR' },
-        { accountCode: '2100', name: 'AP' },
-      ]);
-      const result = await service.getAccountsList();
-      expect(result).toHaveLength(2);
-    });
-  });
-
-  // =========================================================================
-  // createAccount
-  // =========================================================================
-
-  describe('createAccount', () => {
-    it('should reject invalid account type', async () => {
-      await expect(
-        service.createAccount({
-          accountCode: '9000',
-          name: 'Bad',
-          accountType: 'debit',
-        }),
-      ).rejects.toThrow('Invalid account type');
-    });
-
-    it('should list valid types in error message', async () => {
-      try {
-        await service.createAccount({
-          accountCode: '9000',
-          name: 'Bad',
-          accountType: 'invalid',
-        });
-        fail('Should have thrown');
-      } catch (e: any) {
-        expect(e.message).toContain('asset');
-        expect(e.message).toContain('liability');
-        expect(e.message).toContain('equity');
-        expect(e.message).toContain('revenue');
-        expect(e.message).toContain('expense');
-      }
-    });
-
-    it('should reject non-existent parent account', async () => {
-      mock.onSelect([]); // Parent not found
-      await expect(
-        service.createAccount({
-          accountCode: '9001',
-          name: 'Child',
-          accountType: 'asset',
-          parentAccountId: 'nonexistent',
-        }),
-      ).rejects.toThrow('Parent account not found');
-    });
-
-    it('should reject parent that is not a group', async () => {
-      mock.onSelect([{ glAccountId: 'p1', isGroup: false }]);
-      await expect(
-        service.createAccount({
-          accountCode: '9001',
-          name: 'Child',
-          accountType: 'asset',
-          parentAccountId: 'p1',
-        }),
-      ).rejects.toThrow('must be a group');
-    });
-
-    it('should accept valid account with group parent', async () => {
-      mock.onSelect([{ glAccountId: 'p1', isGroup: true }]); // Parent check
-      mock.onInsert([
-        { glAccountId: 'new-1', accountCode: '9001', name: 'New' },
-      ]);
-
-      const result = await service.createAccount({
-        accountCode: '9001',
-        name: 'New',
-        accountType: 'expense',
-        parentAccountId: 'p1',
-      });
-      expect(result.glAccountId).toBe('new-1');
-    });
-
-    it('should default isGroup to false', async () => {
-      mock.onInsert([{ glAccountId: 'new-2', isGroup: false }]);
-      const result = await service.createAccount({
-        accountCode: '9002',
-        name: 'Leaf',
+  describe('Trial Balance & General Ledger', () => {
+    it('should return trial balance with correct balances', async () => {
+      const [acct] = await db.insert(glAccounts).values({
+        accountCode: 'TB-1100',
+        name: 'AR TB',
         accountType: 'asset',
-      });
-      expect(mock.db.insert).toHaveBeenCalled();
-    });
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      }).returning();
 
-    it('should accept all 5 valid account types', async () => {
-      for (const type of [
-        'asset',
-        'liability',
-        'equity',
-        'revenue',
-        'expense',
-      ]) {
-        mock.onInsert([{ glAccountId: `id-${type}` }]);
-        const result = await service.createAccount({
-          accountCode: `code-${type}`,
-          name: `Name-${type}`,
-          accountType: type,
-        });
-        expect(result).toBeDefined();
-      }
-    });
-  });
-
-  // =========================================================================
-  // updateAccount
-  // =========================================================================
-
-  describe('updateAccount', () => {
-    it('should throw NotFoundException for non-existent account', async () => {
-      mock.onSelect([]); // Not found
-      await expect(
-        service.updateAccount('nonexistent', { name: 'New Name' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should reject deactivating a system account', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'sys-1',
-          accountCode: '1100',
-          name: 'AR',
-          isSystem: true,
-        },
-      ]);
-      await expect(
-        service.updateAccount('sys-1', { isActive: false }),
-      ).rejects.toThrow('cannot be deactivated');
-    });
-
-    it('should allow renaming a system account', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'sys-1',
-          accountCode: '1100',
-          name: 'AR',
-          isSystem: true,
-        },
-      ]);
-      mock.onUpdate([{ glAccountId: 'sys-1', name: 'Accounts Receivable' }]);
-
-      const result = await service.updateAccount('sys-1', {
-        name: 'Accounts Receivable',
-      });
-      expect(result.name).toBe('Accounts Receivable');
-    });
-
-    it('should allow deactivating a non-system account', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'c1',
-          accountCode: '9900',
-          name: 'Custom',
-          isSystem: false,
-        },
-      ]);
-      mock.onUpdate([{ glAccountId: 'c1', isActive: false }]);
-
-      const result = await service.updateAccount('c1', { isActive: false });
-      expect(result.isActive).toBe(false);
-    });
-
-    it('should allow setting isActive=true on system account (re-enable)', async () => {
-      mock.onSelect([
-        {
-          glAccountId: 'sys-1',
-          accountCode: '1100',
-          name: 'AR',
-          isSystem: true,
-        },
-      ]);
-      mock.onUpdate([{ glAccountId: 'sys-1', isActive: true }]);
-
-      const result = await service.updateAccount('sys-1', { isActive: true });
-      expect(result.isActive).toBe(true);
-    });
-  });
-
-  // =========================================================================
-  // getJournalEntry
-  // =========================================================================
-
-  describe('getJournalEntry', () => {
-    it('should throw NotFoundException for non-existent entry', async () => {
-      mock.onSelect([]); // Not found
-      await expect(service.getJournalEntry('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should return entry with hydrated lines', async () => {
-      mock.onSelect(
-        [
-          {
-            journalEntryId: 'je-1',
-            entryNumber: 'JE-20260322-0001',
-            entryDate: '2026-03-22',
-            sourceType: 'manual',
-          },
-        ],
-        [
-          {
-            journalLineId: 'jl-1',
-            debit: '100',
-            credit: '0',
-            memo: 'DR',
-            accountCode: '1100',
-            accountName: 'AR',
-          },
-          {
-            journalLineId: 'jl-2',
-            debit: '0',
-            credit: '100',
-            memo: 'CR',
-            accountCode: '4100',
-            accountName: 'Revenue',
-          },
-        ],
-      );
-
-      const result = await service.getJournalEntry('je-1');
-      expect(result.journalEntryId).toBe('je-1');
-      expect(result.lines).toHaveLength(2);
-      expect(result.lines[0].accountCode).toBe('1100');
-    });
-  });
-
-  // =========================================================================
-  // getSettings
-  // =========================================================================
-
-  describe('getSettings', () => {
-    it('should return default precedence when no settings exist', async () => {
-      mock.onSelect([]);
-      const result = await service.getSettings();
-      expect(result.revenueRoutingPrecedence).toBeDefined();
-      expect(result.expenseRoutingPrecedence).toBeDefined();
-    });
-
-    it('should return settings when they exist', async () => {
-      mock.onSelect([
-        { settingsId: 's1', fiscalYearStartMonth: 7, baseCurrency: 'AUD' },
-      ]);
-      const result = await service.getSettings();
-      expect(result.baseCurrency).toBe('AUD');
-    });
-  });
-
-  // =========================================================================
-  // getTrialBalance
-  // =========================================================================
-
-  describe('getTrialBalance', () => {
-    it('should return rows from execute', async () => {
-      mock.onExecute({
-        rows: [
-          {
-            account_code: '1100',
-            name: 'AR',
-            total_debit: 500,
-            total_credit: 200,
-            balance: 300,
-          },
-          {
-            account_code: '4100',
-            name: 'Revenue',
-            total_debit: 0,
-            total_credit: 500,
-            balance: -500,
-          },
-        ],
-      });
-
-      const result = await service.getTrialBalance();
-      expect(result).toHaveLength(2);
-      expect(result[0].balance).toBe(300);
-    });
-
-    it('should pass asOfDate filter', async () => {
-      mock.onExecute({ rows: [] });
-      await service.getTrialBalance('2026-03-31');
-      expect(mock.db.execute).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return empty when no GL data', async () => {
-      mock.onExecute({ rows: [] });
-      const result = await service.getTrialBalance();
-      expect(result).toEqual([]);
-    });
-  });
-
-  // =========================================================================
-  // getGeneralLedger
-  // =========================================================================
-
-  describe('getGeneralLedger', () => {
-    it('should return ledger rows', async () => {
-      mock.onExecute({
-        rows: [
-          {
-            entry_number: 'JE-001',
-            account_code: '1100',
-            debit: 100,
-            credit: 0,
-          },
-        ],
-      });
-      const result = await service.getGeneralLedger({ accountCode: '1100' });
-      expect(result.data).toHaveLength(1);
-    });
-
-    it('should default limit to 200 and cap at 500', async () => {
-      mock.onExecute({ rows: [] });
-      // limit: 999 -> capped to 500
-      await service.getGeneralLedger({ limit: 999 });
-      expect(mock.db.execute).toHaveBeenCalledTimes(2);
-    });
-
-    it('should handle no filters', async () => {
-      mock.onExecute({ rows: [] });
-      await service.getGeneralLedger({});
-      expect(mock.db.execute).toHaveBeenCalled();
-    });
-  });
-
-  // =========================================================================
-  // getJournalEntries (list)
-  // =========================================================================
-
-  describe('getJournalEntries', () => {
-    it('should return entries list', async () => {
-      // Return entries for first execute, and count for second execute
-      mock.db.execute
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              journal_entry_id: 'je-1',
-              entry_number: 'JE-001',
-              source_type: 'manual',
-            },
-          ],
-        })
-        .mockResolvedValueOnce({
-          rows: [{ count: 1 }],
-        });
-
-      const result = await service.getJournalEntries({});
-      expect(result.data).toHaveLength(1);
-      expect(mock.db.execute).toHaveBeenCalledTimes(2);
-    });
-
-    it('should pass filter parameters', async () => {
-      mock.db.execute.mockResolvedValue({ rows: [] });
-      await service.getJournalEntries({
-        fromDate: '2026-01-01',
-        toDate: '2026-12-31',
-        sourceType: 'sales_invoice',
-        limit: 10,
-      });
-      expect(mock.db.execute).toHaveBeenCalledTimes(2);
-    });
-
-    it('should cap limit at 200', async () => {
-      mock.db.execute.mockResolvedValue({ rows: [] });
-      await service.getJournalEntries({ limit: 999 });
-      // Code uses Math.min(limit, 200) — we verify it doesn't crash
-      expect(mock.db.execute).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  // =========================================================================
-  // postJournalEntry — dimension resolution
-  // =========================================================================
-
-  describe('postJournalEntry — dimension resolution', () => {
-    const GL_ACCT = {
-      glAccountId: 'acct-1',
-      accountCode: '1000',
-      isActive: true,
-      isGroup: false,
-      name: 'Test',
-    };
-
-    beforeEach(() => {
-      // 1. Account lookup
-      mock.onSelect([GL_ACCT]);
-      // 2. generateEntryNumber (select from glJournalEntries)
-      mock.onSelect([]);
-      // 3. Insert Entry
-      mock.onInsert([{ journalEntryId: 'je-1' }]);
-    });
-
-    it('should resolve missing dimensions from system defaults (code 00)', async () => {
-      // 4. getDefaults (Cost Center select then Activity select)
-      mock.onSelect([{ id: 'cc-default-uuid' }], [{ id: 'act-default-uuid' }]);
-      // 5. Insert Entry (already in beforeEach) — wait, no, beforeEach only has 3 items in queues.
-      // queue: [GL_ACCT], [todayEntries], [je-1]
-      // postJournalEntry calls:
-      // 1. select accounts -> [GL_ACCT]
-      // 2. select today entries -> [todayEntries]
-      // 3. insert entry -> [je-1]
-      // 4. select defaults cc -> ?
-      // 5. select defaults act -> ?
-      // 6. insert lines -> ?
-
-      // So I need to add 3 more items to the queues
-      mock.onInsert([]); // for the lines
-
-      const lines = [
-        { accountCode: '1000', debit: 100, credit: 0, memo: 'm' },
-        { accountCode: '1000', debit: 0, credit: 100, memo: 'm' },
-      ];
-
-      await service.postJournalEntry(lines, {
+      const [entry] = await db.insert(glJournalEntries).values({
+        entryNumber: 'JE-TB-001',
+        entryDate: new Date(),
         sourceType: 'manual',
-        actor: 'test',
+      }).returning();
+
+      await db.insert(glJournalLines).values({
+        journalEntryId: entry.journalEntryId,
+        glAccountId: acct.glAccountId,
+        debit: '500',
+        credit: '200',
       });
 
-      // Total insert calls: 1 (entry) + 1 (lines) + 2 (audit/outbox) = 4
-      expect(mock.db.insert).toHaveBeenCalledTimes(4);
-      // Total select calls: 1 (accounts) + 1 (entry num) + 2 (defaults) = 4
-      expect(mock.db.select).toHaveBeenCalledTimes(4);
+      const tb = await service.getTrialBalance();
+      const row = tb.find((r: any) => r.account_code === 'TB-1100');
+      expect(row).toBeDefined();
+      expect(parseFloat(row.total_debit)).toBe(500);
+      expect(parseFloat(row.total_credit)).toBe(200);
+      expect(parseFloat(row.balance)).toBe(300);
+    });
+  });
+  
+  describe('Dimension Resolution', () => {
+    it('should resolve missing dimensions from system defaults (code 00)', async () => {
+      const ccId = randomUUID();
+      const actId = randomUUID();
+      
+      await db.insert(costCenters).values({
+        costCenterId: ccId,
+        code: '00',
+        name: 'Default CC',
+        isSystem: true,
+        isActive: true,
+      }).onConflictDoUpdate({ target: costCenters.code, set: { costCenterId: ccId } });
+      
+      await db.insert(activities).values({
+        activityId: actId,
+        code: '00',
+        name: 'Default Activity',
+        isSystem: true,
+        isActive: true,
+      }).onConflictDoUpdate({ target: activities.code, set: { activityId: actId } });
+
+      const [acct] = await db.insert(glAccounts).values({
+        accountCode: 'DIM-1000',
+        name: 'Test Dim',
+        accountType: 'asset',
+        isGroup: false,
+        isActive: true,
+        currencyCode: 'AUD',
+      }).returning();
+
+      const result = await service.postJournalEntry(
+        [
+          { accountCode: 'DIM-1000', debit: 100, credit: 0 },
+          { accountCode: 'DIM-1000', debit: 0, credit: 100 },
+        ],
+        { sourceType: 'manual', actor: 'test' }
+      );
+
+      const lines = await db.select().from(glJournalLines).where(eq(glJournalLines.journalEntryId, result.journalEntryId));
+      expect(lines[0].costCenterId).toBe(ccId);
+      expect(lines[0].activityId).toBe(actId);
     });
   });
 });

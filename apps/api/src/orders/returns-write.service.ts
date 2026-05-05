@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-import { eq, sql, and } from 'drizzle-orm';
+import { inArray, eq, sql, and, desc, isNull, sum } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -784,7 +784,7 @@ export class ReturnsWriteService {
       settings.defaultArAccountId,
       settings.defaultRevenueAccountId,
       settings.defaultTaxAccountId,
-    ].filter(Boolean);
+    ].filter((id): id is string => !!id);
 
     const acctRows = await queryDb
       .select({
@@ -792,12 +792,10 @@ export class ReturnsWriteService {
         accountCode: glAccounts.accountCode,
       })
       .from(glAccounts)
-      .where(
-        sql`${glAccounts.glAccountId} IN (${sql.join(
-          settingsIds.map((id) => sql`${id}`),
-          sql`, `,
-        )})`,
-      );
+      .where(inArray(glAccounts.glAccountId, settingsIds));
+
+    console.log('acctRows', acctRows);
+    console.log('settingsIds', settingsIds);
 
     const idToCode = new Map(
       acctRows.map((a) => [a.glAccountId, a.accountCode]),

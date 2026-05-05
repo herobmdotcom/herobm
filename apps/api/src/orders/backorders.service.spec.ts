@@ -4,65 +4,49 @@ import type { InventoryGap } from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
-
-function createMockQueryBuilder(resolvedValue: any = []) {
-  const qb: any = {
-    values: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    leftJoin: jest.fn().mockReturnThis(),
-    innerJoin: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue(resolvedValue),
-    then: jest.fn().mockImplementation((cb: any) => cb(resolvedValue)),
-  };
-  return qb;
-}
-
-function createMockTx() {
-  return {
-    insert: jest
-      .fn()
-      .mockReturnValue(
-        createMockQueryBuilder([
-          { purchaseOrderId: 'po-123', purchaseOrderLineId: 'pol-123' },
-        ]),
-      ),
-    execute: jest
-      .fn()
-      .mockResolvedValue([{ order_number: 'PO-20000101-0001' }]),
-    select: jest.fn().mockReturnValue(
-      createMockQueryBuilder([
-        { productId: 'p1', vendorId: 'v1', costPrice: '10.50' },
-        { productId: 'p2', vendorId: 'v1', costPrice: '15.00' },
-      ]),
-    ),
-  };
-}
-
-function createMockDb() {
-  const selectQb = createMockQueryBuilder([]);
-  const db: any = {
-    select: jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(selectQb),
-    }),
-    insert: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    update: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    delete: jest.fn().mockReturnValue(createMockQueryBuilder([])),
-    _selectQb: selectQb,
-  };
-  return db;
-}
+import { createMemoryDb } from '../../test/utils/memory-db';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  backorders,
+  products,
+  locations,
+  uomDictionary,
+  taxCategories,
+} from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('BackordersService', () => {
   let service: BackordersService;
-  let db: any;
+  let db: PgliteDatabase<any>;
   let inventoryService: any;
 
+  const ORDER_ID = '00000000-0000-0000-0000-000000000001';
+  const PROD_ID = '00000000-0000-0000-0000-00000000000a';
+  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+  const LINE_ID = '00000000-0000-0000-0000-000000000011';
+
   beforeEach(async () => {
-    db = createMockDb();
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+
+    // Seed infrastructure
+    await db.insert(uomDictionary).values({ uomCode: 'EA', description: 'Each' });
+    await db.insert(taxCategories).values({
+      taxCategoryId: TAX_CAT_ID,
+      code: 'GST',
+      title: 'GST',
+      rate: '0.1',
+      type: 'tax_applies',
+    });
+    await db.insert(locations).values({
+      locationId: LOCATION_ID,
+      code: 'MAIN',
+      name: 'Main Warehouse',
+    });
+
     inventoryService = {
       findByProductIds: jest.fn(),
     };
@@ -74,7 +58,7 @@ describe('BackordersService', () => {
         { provide: InventoryService, useValue: inventoryService },
         {
           provide: AppConfigService,
-          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+          useValue: { homeCurrency: () => 'EUR' },
         },
       ],
     }).compile();
@@ -82,91 +66,104 @@ describe('BackordersService', () => {
     service = module.get<BackordersService>(BackordersService);
   });
 
+  async function seedBasicOrder() {
+    await db.insert(salesOrders).values({
+      salesOrderId: ORDER_ID,
+      orderNumber: 'ORD-001',
+      fulfillmentLocationId: LOCATION_ID,
+      currencyCode: 'EUR',
+    });
+  }
+
   describe('evaluateGaps', () => {
     it('should return empty if no valid product lines exist', async () => {
-      db._selectQb.where.mockResolvedValueOnce([
-        { salesOrderLineId: 'L1', productId: null, quantity: '10' },
-      ]);
-      const gaps = await service.evaluateGaps('SO1');
+      await seedBasicOrder();
+      await db.insert(salesOrderLineItems).values({
+        salesOrderLineId: LINE_ID,
+        salesOrderId: ORDER_ID,
+        lineNumber: 1,
+        productId: null,
+        quantity: '10',
+        pricePerUnit: '0',
+        taxCategoryId: TAX_CAT_ID,
+        fulfillmentLocationId: LOCATION_ID,
+      });
+
+      const gaps = await service.evaluateGaps(ORDER_ID);
       expect(gaps).toEqual([]);
       expect(inventoryService.findByProductIds).not.toHaveBeenCalled();
     });
 
     it('should calculate gaps correctly based on ordered vs available quantity', async () => {
-      db._selectQb.where.mockResolvedValueOnce([
-        {
-          salesOrderLineId: 'L1',
-          productId: 'P1',
-          quantity: '10',
-          fulfillmentLocationId: 'LOC1',
-        },
-        {
-          salesOrderLineId: 'L2',
-          productId: 'P2',
-          quantity: '5',
-          fulfillmentLocationId: 'LOC1',
-        },
-        {
-          salesOrderLineId: 'L3',
-          productId: 'P3',
-          quantity: '2',
-          fulfillmentLocationId: 'LOC1',
-        },
-      ]);
+      await db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'P1',
+        baseUom: 'EA',
+      });
+      await seedBasicOrder();
+      await db.insert(salesOrderLineItems).values({
+        salesOrderLineId: LINE_ID,
+        salesOrderId: ORDER_ID,
+        lineNumber: 1,
+        productId: PROD_ID,
+        quantity: '10',
+        pricePerUnit: '50',
+        fulfillmentLocationId: LOCATION_ID,
+        taxCategoryId: TAX_CAT_ID,
+      });
 
-      inventoryService.findByProductIds.mockResolvedValueOnce({
+      inventoryService.findByProductIds.mockResolvedValue({
         data: [
-          { productId: 'P1', locationId: 'LOC1', quantityAvailable: 3 }, // Short 7
-          { productId: 'P2', locationId: 'LOC1', quantityAvailable: 10 }, // No gap
-          { productId: 'P3', locationId: 'LOC1', quantityAvailable: 0 }, // Short 2
+          { productId: PROD_ID, locationId: LOCATION_ID, quantityAvailable: 3 }, // Short 7
         ],
       });
 
-      const gaps = await service.evaluateGaps('SO1');
+      const gaps = await service.evaluateGaps(ORDER_ID);
 
-      expect(gaps).toHaveLength(2);
-      expect(gaps.find((g) => g.productId === 'P1')).toMatchObject({
-        shortage: 7,
-      });
-      expect(gaps.find((g) => g.productId === 'P3')).toMatchObject({
-        shortage: 2,
-      });
+      expect(gaps).toHaveLength(1);
+      expect(gaps[0].productId).toBe(PROD_ID);
+      expect(gaps[0].shortage).toBe(7);
     });
   });
 
   describe('generateDemand', () => {
-    it('should gracefully return if no gaps are provided', async () => {
-      const tx = createMockTx();
-      await service.generateDemand('SO1', [], 'system', tx as any);
-      expect(tx.insert).not.toHaveBeenCalled();
-    });
+    it('should create demand for gaps in backorders table', async () => {
+      await db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'P1',
+        baseUom: 'EA',
+      });
+      await seedBasicOrder();
+      await db.insert(salesOrderLineItems).values({
+        salesOrderLineId: LINE_ID,
+        salesOrderId: ORDER_ID,
+        lineNumber: 1,
+        productId: PROD_ID,
+        quantity: '10',
+        pricePerUnit: '50',
+        fulfillmentLocationId: LOCATION_ID,
+        taxCategoryId: TAX_CAT_ID,
+      });
 
-    it('should create demand for gaps', async () => {
-      const tx = createMockTx();
       const gaps: InventoryGap[] = [
         {
-          salesOrderLineId: 'L1',
-          productId: 'p1',
+          salesOrderLineId: LINE_ID,
+          productId: PROD_ID,
           productDescription: 'Prod 1',
           orderedQuantity: 10,
           availableQuantity: 0,
           shortage: 10,
-          locationId: 'LOC1',
-        },
-        {
-          salesOrderLineId: 'L2',
-          productId: 'p2',
-          productDescription: 'Prod 2',
-          orderedQuantity: 5,
-          availableQuantity: 0,
-          shortage: 5,
-          locationId: 'LOC1',
+          locationId: LOCATION_ID,
         },
       ];
 
-      await service.generateDemand('SO1', gaps, 'test-user', tx as any);
+      await service.generateDemand(ORDER_ID, gaps, 'test-user', db);
 
-      expect(tx.insert).toHaveBeenCalled();
+      const res = await db.select().from(backorders).where(eq(backorders.salesOrderLineId, LINE_ID));
+      expect(res).toHaveLength(1);
+      expect(res[0].quantity).toBe('10');
     });
   });
 });

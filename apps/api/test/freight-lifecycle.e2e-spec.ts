@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../src/app.module';
 
@@ -18,9 +19,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   beforeAll(async () => {
     // Force final invoice mode for predictable non-stock billing in E2E
     process.env.NON_STOCK_BILLING_MODE = 'final_invoice';
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

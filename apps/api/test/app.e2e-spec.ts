@@ -7,7 +7,8 @@
  * Run with: npm run test:e2e
  * Requires: Postgres running with populated marts (make elt && make transform)
  */
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
@@ -24,9 +25,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     // Clear Prometheus metrics (may be polluted from other tests)
     register.clear();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

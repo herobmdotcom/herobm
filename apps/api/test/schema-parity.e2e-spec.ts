@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import * as schema from '../src/drizzle/modbm-core-schema';
@@ -13,9 +14,7 @@ describe('Database Schema Parity (e2e)', () => {
   let db: NodePgDatabase<any>;
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();

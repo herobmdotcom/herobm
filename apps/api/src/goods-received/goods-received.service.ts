@@ -19,6 +19,7 @@ import {
   zones,
   bins,
   binContents,
+  backorders,
 } from '../drizzle/modbm-core-schema';
 
 import { InventoryService } from '../inventory/inventory.service';
@@ -354,6 +355,57 @@ export class GoodsReceivedService {
                 ml.purchaseOrderLineId,
               ),
             );
+        }
+
+        // --- 6.1 Backorder Sync: Transition awaiting_receipt → received_reserved ---
+        for (const ml of matchedLines) {
+          if (!ml.purchaseOrderLineId) continue;
+
+          const awaitingBackorders = await tx
+            .select()
+            .from(backorders)
+            .where(
+              and(
+                eq(backorders.purchaseOrderLineId, ml.purchaseOrderLineId),
+                eq(backorders.stateCode, 'awaiting_receipt'),
+              ),
+            );
+
+          let receiptRemaining = parseFloat(ml.quantityReceived);
+
+          for (const bo of awaitingBackorders) {
+            if (receiptRemaining <= 0) break;
+            const boQty = parseFloat(bo.quantity);
+
+            if (receiptRemaining >= boQty) {
+              // Fully fulfilled — transition entire backorder
+              await tx
+                .update(backorders)
+                .set({ stateCode: 'received_reserved', modifiedOn: new Date() })
+                .where(eq(backorders.backorderId, bo.backorderId));
+              receiptRemaining -= boQty;
+            } else {
+              // Partially fulfilled — split the backorder record
+              await tx
+                .update(backorders)
+                .set({
+                  quantity: (boQty - receiptRemaining).toString(),
+                  modifiedOn: new Date(),
+                })
+                .where(eq(backorders.backorderId, bo.backorderId));
+
+              await tx.insert(backorders).values({
+                salesOrderId: bo.salesOrderId,
+                salesOrderLineId: bo.salesOrderLineId,
+                productId: bo.productId,
+                purchaseOrderId: bo.purchaseOrderId,
+                purchaseOrderLineId: bo.purchaseOrderLineId,
+                quantity: receiptRemaining.toString(),
+                stateCode: 'received_reserved',
+              });
+              receiptRemaining = 0;
+            }
+          }
         }
 
         // Recompute PO State for any affected POs
@@ -750,6 +802,51 @@ export class GoodsReceivedService {
           quantityReceived: sql`CAST(quantity_received AS NUMERIC) + CAST(${targetQuantity} AS NUMERIC)`,
         })
         .where(eq(purchaseOrderLineItems.purchaseOrderLineId, poLine.poLineId));
+
+      // --- Backorder Sync: Transition awaiting_receipt → received_reserved ---
+      const awaitingBackorders = await tx
+        .select()
+        .from(backorders)
+        .where(
+          and(
+            eq(backorders.purchaseOrderLineId, poLine.poLineId),
+            eq(backorders.stateCode, 'awaiting_receipt'),
+          ),
+        );
+
+      let receiptRemaining = targetQuantity;
+
+      for (const bo of awaitingBackorders) {
+        if (receiptRemaining <= 0) break;
+        const boQty = parseFloat(bo.quantity);
+
+        if (receiptRemaining >= boQty) {
+          await tx
+            .update(backorders)
+            .set({ stateCode: 'received_reserved', modifiedOn: new Date() })
+            .where(eq(backorders.backorderId, bo.backorderId));
+          receiptRemaining -= boQty;
+        } else {
+          await tx
+            .update(backorders)
+            .set({
+              quantity: (boQty - receiptRemaining).toString(),
+              modifiedOn: new Date(),
+            })
+            .where(eq(backorders.backorderId, bo.backorderId));
+
+          await tx.insert(backorders).values({
+            salesOrderId: bo.salesOrderId,
+            salesOrderLineId: bo.salesOrderLineId,
+            productId: bo.productId,
+            purchaseOrderId: bo.purchaseOrderId,
+            purchaseOrderLineId: bo.purchaseOrderLineId,
+            quantity: receiptRemaining.toString(),
+            stateCode: 'received_reserved',
+          });
+          receiptRemaining = 0;
+        }
+      }
 
       // Recompute PO State
       const poLines = await tx

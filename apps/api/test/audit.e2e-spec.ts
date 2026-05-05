@@ -1,4 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
+import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
@@ -16,9 +17,7 @@ describe('Audit Events (e2e)', () => {
   beforeAll(async () => {
     register.clear();
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    const moduleFixture: TestingModule = await (await createE2eModule()).compile();
 
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');

@@ -7,9 +7,9 @@ import {
 describe('Inventory Math Utilities', () => {
   describe('isPickableBin', () => {
     it('should return false if bin is unavailable', () => {
-      expect(
-        isPickableBin({ binType: 'storage', isUnavailable: true }),
-      ).toBe(false);
+      expect(isPickableBin({ binType: 'storage', isUnavailable: true })).toBe(
+        false,
+      );
     });
 
     it('should return false if binType is null', () => {
@@ -19,24 +19,24 @@ describe('Inventory Math Utilities', () => {
     });
 
     it('should return true for whitelisted bin types', () => {
-      expect(
-        isPickableBin({ binType: 'storage', isUnavailable: false }),
-      ).toBe(true);
-      expect(
-        isPickableBin({ binType: 'pick', isUnavailable: false }),
-      ).toBe(true);
-      expect(
-        isPickableBin({ binType: 'bulk', isUnavailable: false }),
-      ).toBe(true);
+      expect(isPickableBin({ binType: 'storage', isUnavailable: false })).toBe(
+        true,
+      );
+      expect(isPickableBin({ binType: 'pick', isUnavailable: false })).toBe(
+        true,
+      );
+      expect(isPickableBin({ binType: 'bulk', isUnavailable: false })).toBe(
+        true,
+      );
     });
 
     it('should return false for un-whitelisted bin types', () => {
       expect(
         isPickableBin({ binType: 'receiving', isUnavailable: false }),
       ).toBe(false);
-      expect(
-        isPickableBin({ binType: 'staging', isUnavailable: false }),
-      ).toBe(false);
+      expect(isPickableBin({ binType: 'staging', isUnavailable: false })).toBe(
+        false,
+      );
       expect(
         isPickableBin({ binType: 'quarantine', isUnavailable: false }),
       ).toBe(false);

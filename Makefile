@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local verify-local
+.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
 
 # Environment Profile Resolution
 # 1. Command Line explicit (make ... PROFILE=staging)
@@ -14,6 +14,7 @@ ifeq ($(OS),Windows_NT)
   VENV_PYTHON = $(CURDIR)/.venv/Scripts/python
   INIT_ENV_CMD = python scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
+  PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 else
   ACTIVE_PROFILE := $(strip $(shell cat .active_profile 2>/dev/null))
@@ -22,6 +23,7 @@ else
   VENV_PYTHON = $(CURDIR)/.venv/bin/python
   INIT_ENV_CMD = python3 scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
+  PROD_LOCAL_CMD = bash scripts/prod-local.sh
   COMPOSE_CMD = podman-compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
 endif
 
@@ -216,6 +218,10 @@ extract-docker-dry:
 # Hot-reloads FE and API natively, assuming database containers are running.
 dev-local:
 	$(DEV_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG)
+
+# Production-like local environment. Builds both FE and API and runs them locally.
+prod-local: build-api build-portal
+	$(PROD_LOCAL_CMD) $(DEV_LOCAL_PROFILE_ARG)
 
 dev-api:
 	node --env-file=.env apps/api/dist/main.js
