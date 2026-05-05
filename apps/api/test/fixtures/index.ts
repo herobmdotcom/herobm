@@ -42,11 +42,6 @@ export async function createTestProduct(
   opts?: { type?: 'inventory' | 'non-stock'; name?: string },
 ) {
   const productId = uuidv4();
-  const uoms = await db.select().from(uomDictionary);
-  if (uoms.length === 0) {
-    console.log('UOM DICTIONARY IS EMPTY BEFORE INSERTING PRODUCT!');
-  }
-
   await db.insert(products).values({
     productId,
     productNumber: `PROD-TEST-${++_sequence}`,
