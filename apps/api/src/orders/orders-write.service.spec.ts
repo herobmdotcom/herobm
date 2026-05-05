@@ -6,7 +6,11 @@ import { PickingService } from './picking.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { AccountsService } from '../accounts/accounts.service';
 import { CreditAssessmentService } from '../accounts/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
@@ -345,10 +349,12 @@ describe('OrdersWriteService', () => {
 
     it('should roll back order creation if event logging fails (transactional atomicity)', async () => {
       const { validDto } = await setupCreate();
-      
+
       // Force audit insertion to fail at the database level
-      await pg.client.exec(`ALTER TABLE modbm_core.order_events ADD CONSTRAINT fail_audit CHECK (false);`);
-      
+      await pg.client.exec(
+        `ALTER TABLE modbm_core.order_events ADD CONSTRAINT fail_audit CHECK (false);`,
+      );
+
       try {
         await service.create(validDto, 'admin');
         throw new Error('Should have thrown');
@@ -361,14 +367,16 @@ describe('OrdersWriteService', () => {
       // Verify no order was created
       const orders = await pg.db.select().from(salesOrders);
       expect(orders.length).toBe(0);
-      
+
       // Cleanup constraint for other tests
-      await pg.client.exec(`ALTER TABLE modbm_core.order_events DROP CONSTRAINT fail_audit;`);
+      await pg.client.exec(
+        `ALTER TABLE modbm_core.order_events DROP CONSTRAINT fail_audit;`,
+      );
     });
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
       const { validDto } = await setupCreate();
-      
+
       // Insert an order with a specific number
       await pg.db.insert(salesOrders).values({
         orderNumber: 'DUPE-001',
@@ -380,7 +388,9 @@ describe('OrdersWriteService', () => {
       });
 
       // Mock generateOrderNumber to return the same number
-      jest.spyOn(service as any, 'generateOrderNumber').mockResolvedValue('DUPE-001');
+      jest
+        .spyOn(service as any, 'generateOrderNumber')
+        .mockResolvedValue('DUPE-001');
 
       try {
         await service.create(validDto, 'admin');

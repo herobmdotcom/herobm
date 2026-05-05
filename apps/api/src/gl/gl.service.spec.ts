@@ -3,7 +3,7 @@ import { GlService } from './gl.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   glAccounts,
   glJournalEntries,
@@ -16,17 +16,21 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 describe('GlService', () => {
+  const pg = setupPgliteSuite();
   let service: GlService;
-  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    const mem = await createMemoryDb();
-    db = mem.db;
+    // Clean tables for isolation
+    await pg.db.delete(glJournalLines);
+    await pg.db.delete(glJournalEntries);
+    await pg.db.delete(glAccounts);
+    await pg.db.delete(costCenters);
+    await pg.db.delete(activities);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GlService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
           useValue: {
@@ -137,7 +141,7 @@ describe('GlService', () => {
     });
 
     it('should reject posting to a group account', async () => {
-      await db.insert(glAccounts).values({
+      await pg.db.insert(glAccounts).values({
         glAccountId: randomUUID(),
         accountCode: 'G-VAL-1000',
         name: 'Group Account',
@@ -146,7 +150,7 @@ describe('GlService', () => {
         isActive: true,
         currencyCode: 'AUD',
       });
-      await db.insert(glAccounts).values({
+      await pg.db.insert(glAccounts).values({
         glAccountId: randomUUID(),
         accountCode: 'L-VAL-1000',
         name: 'Leaf Account',
@@ -173,7 +177,7 @@ describe('GlService', () => {
       const arId = randomUUID();
       const revId = randomUUID();
       const invId = randomUUID();
-      await db.insert(glAccounts).values([
+      await pg.db.insert(glAccounts).values([
         {
           glAccountId: arId,
           accountCode: 'S-1100',
@@ -209,7 +213,7 @@ describe('GlService', () => {
 
       expect(result.journalEntryId).toBeDefined();
 
-      const [entry] = await db
+      const [entry] = await pg.db
         .select()
         .from(glJournalEntries)
         .where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
@@ -220,7 +224,7 @@ describe('GlService', () => {
         createdBy: 'admin',
       });
 
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(glJournalLines)
         .where(eq(glJournalLines.journalEntryId, result.journalEntryId))
@@ -244,7 +248,7 @@ describe('GlService', () => {
       const today = new Date().toISOString().slice(0, 10);
       const todayStripped = today.replace(/-/g, '');
 
-      await db.insert(glAccounts).values([
+      await pg.db.insert(glAccounts).values([
         {
           accountCode: 'SEQ-1100',
           name: 'AR',
@@ -263,7 +267,7 @@ describe('GlService', () => {
         },
       ]);
 
-      await db.insert(glJournalEntries).values({
+      await pg.db.insert(glJournalEntries).values({
         entryNumber: `JE-${todayStripped}-0003`,
         entryDate: today,
         sourceType: 'manual',
@@ -277,7 +281,7 @@ describe('GlService', () => {
         { sourceType: 'manual' },
       );
 
-      const [entry] = await db
+      const [entry] = await pg.db
         .select()
         .from(glJournalEntries)
         .where(eq(glJournalEntries.journalEntryId, result.journalEntryId));
@@ -293,7 +297,7 @@ describe('GlService', () => {
       const a4 = randomUUID();
       const a5 = randomUUID();
 
-      await db.insert(glAccounts).values([
+      await pg.db.insert(glAccounts).values([
         {
           glAccountId: a1,
           accountCode: 'T-1000',
@@ -355,7 +359,7 @@ describe('GlService', () => {
 
   describe('Trial Balance & General Ledger', () => {
     it('should return trial balance with correct balances', async () => {
-      const [acct] = await db
+      const [acct] = await pg.db
         .insert(glAccounts)
         .values({
           accountCode: 'TB-1100',
@@ -367,7 +371,7 @@ describe('GlService', () => {
         })
         .returning();
 
-      const [entry] = await db
+      const [entry] = await pg.db
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-TB-001',
@@ -376,7 +380,7 @@ describe('GlService', () => {
         })
         .returning();
 
-      await db.insert(glJournalLines).values({
+      await pg.db.insert(glJournalLines).values({
         journalEntryId: entry.journalEntryId,
         glAccountId: acct.glAccountId,
         debit: '500',
@@ -397,7 +401,7 @@ describe('GlService', () => {
       const ccId = randomUUID();
       const actId = randomUUID();
 
-      await db
+      await pg.db
         .insert(costCenters)
         .values({
           costCenterId: ccId,
@@ -411,7 +415,7 @@ describe('GlService', () => {
           set: { costCenterId: ccId },
         });
 
-      await db
+      await pg.db
         .insert(activities)
         .values({
           activityId: actId,
@@ -425,7 +429,7 @@ describe('GlService', () => {
           set: { activityId: actId },
         });
 
-      const [acct] = await db
+      const [acct] = await pg.db
         .insert(glAccounts)
         .values({
           accountCode: 'DIM-1000',
@@ -445,7 +449,7 @@ describe('GlService', () => {
         { sourceType: 'manual', actor: 'test' },
       );
 
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(glJournalLines)
         .where(eq(glJournalLines.journalEntryId, result.journalEntryId));

@@ -26,7 +26,9 @@ describe('ProductsWriteService', () => {
   });
 
   beforeEach(async () => {
-    await pg.db.execute(sql`TRUNCATE modbm_core.product_events, modbm_core.products CASCADE`);
+    await pg.db.execute(
+      sql`TRUNCATE modbm_core.product_events, modbm_core.products CASCADE`,
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [ProductsWriteService, { provide: DRIZZLE, useValue: pg.db }],

@@ -32,7 +32,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Native DB Constraint Mapping (ADV-030 enhancement)
     const pgCode = (exception as any)?.code || (exception as any)?.cause?.code;
-    const pgDetail = (exception as any)?.detail || (exception as any)?.cause?.detail;
+    const pgDetail =
+      (exception as any)?.detail || (exception as any)?.cause?.detail;
 
     if (pgCode === '23505') {
       statusCode = HttpStatus.CONFLICT;

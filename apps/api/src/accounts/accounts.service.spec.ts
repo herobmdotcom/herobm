@@ -122,7 +122,9 @@ describe('AccountsService', () => {
       expect(result.data).toHaveLength(1);
       expect(result.data[0].name).toBe('Active');
 
-      const resultWithArchived = await service.findAll({ includeArchived: true });
+      const resultWithArchived = await service.findAll({
+        includeArchived: true,
+      });
       expect(resultWithArchived.data).toHaveLength(2);
     });
   });

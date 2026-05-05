@@ -18,18 +18,24 @@ describe('CreditAssessmentService', () => {
 
   beforeAll(async () => {
     // Seed a standard AR GL Account
-    const [gl] = await pg.db.insert(glAccounts).values({
-      accountCode: '1200',
-      name: 'Accounts Receivable',
-      accountType: 'asset',
-      currencyCode: 'USD',
-    }).returning();
+    const [gl] = await pg.db
+      .insert(glAccounts)
+      .values({
+        accountCode: '1200',
+        name: 'Accounts Receivable',
+        accountType: 'asset',
+        currencyCode: 'USD',
+      })
+      .returning();
     testGlAccountId = gl.glAccountId;
   });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CreditAssessmentService, { provide: DRIZZLE, useValue: pg.db }],
+      providers: [
+        CreditAssessmentService,
+        { provide: DRIZZLE, useValue: pg.db },
+      ],
     }).compile();
 
     service = module.get<CreditAssessmentService>(CreditAssessmentService);
@@ -43,7 +49,9 @@ describe('CreditAssessmentService', () => {
 
   describe('assessCredit', () => {
     it('should return zero balances if account is missing', async () => {
-      const result = await service.assessCredit('00000000-0000-0000-0000-000000000000');
+      const result = await service.assessCredit(
+        '00000000-0000-0000-0000-000000000000',
+      );
       expect(result).toEqual({
         totalArBalance: 0,
         overdueBalance: 0,

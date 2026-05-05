@@ -2,39 +2,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MacrosService } from './macros.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { macros } from '../drizzle/modbm-core-schema';
 
 describe('MacrosService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: MacrosService;
-  let db: PgliteDatabase<any>;
-  let client: any;
-
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-    client = mem.client;
-  });
-
-  afterAll(async () => {
-    await client.close();
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [MacrosService, { provide: DRIZZLE, useValue: db }],
+      providers: [MacrosService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<MacrosService>(MacrosService);
 
     // Clean tables
-    await db.delete(macros);
+    await pg.db.delete(macros);
   });
 
   describe('findAll', () => {
     it('should return all macros', async () => {
-      await db.insert(macros).values([
+      await pg.db.insert(macros).values([
         { name: 'Macro 1', content: 'C1', macroType: 'text_template' },
         { name: 'Macro 2', content: 'C2', macroType: 'text_template' },
       ]);
@@ -46,9 +34,13 @@ describe('MacrosService', () => {
 
   describe('findOne', () => {
     it('should return a macro if found', async () => {
-      const [m] = await db
+      const [m] = await pg.db
         .insert(macros)
-        .values({ name: 'Found', content: 'Content', macroType: 'text_template' })
+        .values({
+          name: 'Found',
+          content: 'Content',
+          macroType: 'text_template',
+        })
         .returning();
 
       const result = await service.findOne(m.macroId);
@@ -56,9 +48,9 @@ describe('MacrosService', () => {
     });
 
     it('should throw NotFoundException if not found', async () => {
-      await expect(service.findOne('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.findOne('00000000-0000-0000-0000-000000000000'),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -72,15 +64,15 @@ describe('MacrosService', () => {
 
       const result = await service.create(data);
       expect(result.name).toBe('New Macro');
-      
-      const inDb = await db.query.macros.findFirst();
+
+      const inDb = await pg.db.query.macros.findFirst();
       expect(inDb?.name).toBe('New Macro');
     });
   });
 
   describe('update', () => {
     it('should update and return the macro', async () => {
-      const [m] = await db
+      const [m] = await pg.db
         .insert(macros)
         .values({ name: 'Old', content: 'Old', macroType: 'text_template' })
         .returning();
@@ -92,7 +84,7 @@ describe('MacrosService', () => {
 
   describe('remove', () => {
     it('should delete and return the macro', async () => {
-      const [m] = await db
+      const [m] = await pg.db
         .insert(macros)
         .values({ name: 'To Delete', content: 'X', macroType: 'text_template' })
         .returning();
@@ -100,7 +92,7 @@ describe('MacrosService', () => {
       const result = await service.remove(m.macroId);
       expect(result.name).toBe('To Delete');
 
-      const inDb = await db.query.macros.findFirst();
+      const inDb = await pg.db.query.macros.findFirst();
       expect(inDb).toBeUndefined();
     });
   });

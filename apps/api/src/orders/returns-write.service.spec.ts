@@ -20,9 +20,7 @@ jest.mock('../common/emit-event', () => ({
   emitEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { PGlite } from '@electric-sql/pglite';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { eq, sql } from 'drizzle-orm';
 import {
   createTestCustomer,
@@ -77,27 +75,16 @@ const MOCK_RETURN_LINE = {
 };
 
 describe('ReturnsWriteService', () => {
+  const pg = setupPgliteSuite();
   let service: ReturnsWriteService;
-  let db: PgliteDatabase<any>;
-  let client: PGlite;
   let mockInventoryService: any;
   let mockGlService: any;
   let mocktaxService: any;
 
-  beforeAll(async () => {
-    const memory = await createMemoryDb();
-    db = memory.db;
-    client = memory.client;
-  });
-
-  afterAll(async () => {
-    if (client) await client.close();
-  });
-
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    await client.exec(`
+    await pg.client.exec(`
       TRUNCATE modbm_core.sales_order_return_lines CASCADE;
       TRUNCATE modbm_core.sales_order_returns CASCADE;
       TRUNCATE modbm_core.sales_order_lines CASCADE;
@@ -137,7 +124,7 @@ describe('ReturnsWriteService', () => {
           },
         },
         ReturnsWriteService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: TaxCategoriesService, useValue: mocktaxService },
@@ -180,13 +167,13 @@ describe('ReturnsWriteService', () => {
       alreadyReturned?: number;
       originalQty?: number;
     }) {
-      const cust = await createTestCustomer(db);
+      const cust = await createTestCustomer(pg.db);
       customerId = cust.accountId;
 
-      const prod = await createTestProduct(db);
+      const prod = await createTestProduct(pg.db);
       productId = prod.productId;
 
-      await db
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -197,20 +184,20 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: opts?.orderState ?? 'invoiced',
       });
       orderId = order.salesOrderId;
 
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
       const taxId = taxRes[0].taxCategoryId;
 
-      const line = await createTestSalesOrderLine(db, {
+      const line = await createTestSalesOrderLine(pg.db, {
         salesOrderId: orderId,
         productId,
         taxCategoryId: taxId,
@@ -220,11 +207,11 @@ describe('ReturnsWriteService', () => {
       lineId = line.salesOrderLineId;
 
       if (opts?.alreadyReturned) {
-        const ret = await createTestReturn(db, {
+        const ret = await createTestReturn(pg.db, {
           salesOrderId: orderId,
           state: 'draft',
         });
-        await createTestReturnLine(db, {
+        await createTestReturnLine(pg.db, {
           returnId: ret.returnId,
           salesOrderLineId: lineId,
           quantity: opts.alreadyReturned,
@@ -368,8 +355,8 @@ describe('ReturnsWriteService', () => {
     let returnId: string;
 
     async function setupForUpdate(stateCode: ReturnState) {
-      const cust = await createTestCustomer(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -379,11 +366,11 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: stateCode,
       });
@@ -426,12 +413,12 @@ describe('ReturnsWriteService', () => {
     let productId: string;
 
     async function setupWithState(currentState: ReturnState) {
-      const cust = await createTestCustomer(db);
+      const cust = await createTestCustomer(pg.db);
 
-      const prod = await createTestProduct(db);
+      const prod = await createTestProduct(pg.db);
       productId = prod.productId;
 
-      await db
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -443,7 +430,7 @@ describe('ReturnsWriteService', () => {
         .returning();
 
       // Need a receiving bin for processing
-      await db
+      await pg.db
         .insert(zones)
         .values({
           zoneId: '30000000-0000-0000-0000-000000000001',
@@ -452,7 +439,7 @@ describe('ReturnsWriteService', () => {
           name: 'Receiving',
         })
         .onConflictDoNothing();
-      await db
+      await pg.db
         .insert(bins)
         .values({
           binId: '20000000-0000-0000-0000-000000000001',
@@ -462,19 +449,19 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       orderId = order.salesOrderId;
 
-      const taxRes = await db
+      const taxRes = await pg.db
         .select()
         .from(taxCategories)
         .where(eq(taxCategories.code, 'GST'));
       const taxId = taxRes[0].taxCategoryId;
 
-      const line = await createTestSalesOrderLine(db, {
+      const line = await createTestSalesOrderLine(pg.db, {
         salesOrderId: orderId,
         productId,
         taxCategoryId: taxId,
@@ -483,13 +470,13 @@ describe('ReturnsWriteService', () => {
       });
       lineId = line.salesOrderLineId;
 
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: orderId,
         state: currentState,
       });
       returnId = ret.returnId;
 
-      await createTestReturnLine(db, {
+      await createTestReturnLine(pg.db, {
         returnId,
         salesOrderLineId: lineId,
         quantity: 5,
@@ -553,7 +540,7 @@ describe('ReturnsWriteService', () => {
       );
       // Verify the event was emitted by checking outbox? Actually we don't mock outbox here,
       // PGLite will just execute the transaction. We can check if state is updated.
-      const updated = await db.query.salesOrderReturns.findFirst({
+      const updated = await pg.db.query.salesOrderReturns.findFirst({
         where: (r, { eq }) => eq(r.returnId, returnId),
       });
       expect(updated?.stateCode).toBe('processed');
@@ -641,21 +628,21 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing();
 
-      const order = await createTestSalesOrder(db, {
+      const order = await createTestSalesOrder(pg.db, {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const prod = await createTestProduct(db);
+      const prod = await createTestProduct(pg.db);
 
       let taxId = null;
       if (taxRate !== '0') {
-        const taxRes = await db
+        const taxRes = await pg.db
           .select()
           .from(taxCategories)
           .where(eq(taxCategories.code, 'GST'));
         taxId = taxRes[0].taxCategoryId;
       } else {
-        const [exemptTax] = await db
+        const [exemptTax] = await pg.db
           .insert(taxCategories)
           .values({
             taxCategoryId: '10000000-0000-0000-0000-000000000004',
@@ -670,7 +657,7 @@ describe('ReturnsWriteService', () => {
           exemptTax?.taxCategoryId || '10000000-0000-0000-0000-000000000004';
       }
 
-      const orderLine = await createTestSalesOrderLine(db, {
+      const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
         productId: prod.productId,
         quantity: 10,
@@ -678,12 +665,12 @@ describe('ReturnsWriteService', () => {
         taxCategoryId: taxId,
       });
 
-      const ret = await createTestReturn(db, {
+      const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: 'confirmed',
       });
 
-      await createTestReturnLine(db, {
+      await createTestReturnLine(pg.db, {
         returnId: ret.returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,

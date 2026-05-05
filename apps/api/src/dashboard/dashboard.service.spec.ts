@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   accounts,
   products,
@@ -18,20 +17,16 @@ import {
 import { sql } from 'drizzle-orm';
 
 describe('DashboardService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: DashboardService;
-  let db: PgliteDatabase<any>;
-  let client: any;
   let testLocationId: string;
   let testTaxCategoryId: string;
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-    client = mem.client;
 
     // Ensure the view exists since it's an .existing() view in Drizzle
     // and might be missing from migrations if it was created manually.
-    await db.execute(sql`
+    await pg.db.execute(sql`
       CREATE OR REPLACE VIEW modbm_core.dashboard_timeline AS
       SELECT 
         event_id,
@@ -45,7 +40,7 @@ describe('DashboardService', () => {
     `);
 
     // Create a shared location for tests
-    const [loc] = await db
+    const [loc] = await pg.db
       .insert(locations)
       .values({
         name: 'Test Warehouse',
@@ -55,56 +50,62 @@ describe('DashboardService', () => {
     testLocationId = loc.locationId;
 
     // Seed UOM dictionary
-    await db.insert(uomDictionary).values({
-      uomCode: 'EA',
-      description: 'Each',
-    }).onConflictDoNothing();
+    await pg.db
+      .insert(uomDictionary)
+      .values({
+        uomCode: 'EA',
+        description: 'Each',
+      })
+      .onConflictDoNothing();
 
     // Seed Tax Category
-    const [tc] = await db.insert(taxCategories).values({
-      code: 'STD',
-      title: 'Standard Tax',
-      type: 'tax_applies',
-      rate: '15',
-    }).returning();
+    const [tc] = await pg.db
+      .insert(taxCategories)
+      .values({
+        code: 'STD',
+        title: 'Standard Tax',
+        type: 'tax_applies',
+        rate: '15',
+      })
+      .returning();
     testTaxCategoryId = tc.taxCategoryId;
   });
 
-  afterAll(async () => {
-    await client.close();
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DashboardService, { provide: DRIZZLE, useValue: db }],
+      providers: [DashboardService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<DashboardService>(DashboardService);
 
     // Clean tables in reverse order of FKs
-    await db.delete(systemEvents);
-    await db.delete(salesOrderLineItems);
-    await db.delete(salesOrders);
-    await db.delete(purchaseOrders);
-    await db.delete(accounts);
-    await db.delete(products);
-    await db.delete(suppliers);
+    await pg.db.delete(systemEvents);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
+    await pg.db.delete(purchaseOrders);
+    await pg.db.delete(accounts);
+    await pg.db.delete(products);
+    await pg.db.delete(suppliers);
   });
 
   describe('getSummary', () => {
     it('should return counts for all entities', async () => {
-      const [acc] = await db.insert(accounts).values({
-        name: 'Test Account',
-        accountNumber: 'ACC1',
-        currencyCode: 'USD',
-      }).returning();
-      
-      await db.insert(products).values({
+      const [acc] = await pg.db
+        .insert(accounts)
+        .values({
+          name: 'Test Account',
+          accountNumber: 'ACC1',
+          currencyCode: 'USD',
+        })
+        .returning();
+
+      await pg.db.insert(products).values({
         name: 'Test Product',
         productNumber: 'PROD1',
       });
-      
-      const [so] = await db
+
+      const [so] = await pg.db
         .insert(salesOrders)
         .values({
           orderNumber: 'SO1',
@@ -115,7 +116,7 @@ describe('DashboardService', () => {
         })
         .returning();
 
-      await db.insert(salesOrderLineItems).values({
+      await pg.db.insert(salesOrderLineItems).values({
         salesOrderId: so.salesOrderId,
         lineNumber: 1,
         quantity: '10',
@@ -138,11 +139,11 @@ describe('DashboardService', () => {
     });
 
     it('should query all entity tables and return unified results', async () => {
-      const [p] = await db
+      const [p] = await pg.db
         .insert(products)
         .values({ name: 'Widget Alpha', productNumber: 'WA-01' })
         .returning();
-      const [a] = await db
+      const [a] = await pg.db
         .insert(accounts)
         .values({
           name: 'Alpha Corp',
@@ -171,16 +172,19 @@ describe('DashboardService', () => {
     });
 
     it('should return correct href for each entity type', async () => {
-      const [acc] = await db.insert(accounts).values({
-        name: 'Search Acc',
-        accountNumber: 'SA1',
-        currencyCode: 'USD',
-      }).returning();
+      const [acc] = await pg.db
+        .insert(accounts)
+        .values({
+          name: 'Search Acc',
+          accountNumber: 'SA1',
+          currencyCode: 'USD',
+        })
+        .returning();
 
-      const [so] = await db
+      const [so] = await pg.db
         .insert(salesOrders)
-        .values({ 
-          orderNumber: 'SO-999', 
+        .values({
+          orderNumber: 'SO-999',
           name: 'Special Order',
           customerId: acc.accountId,
           fulfillmentLocationId: testLocationId,
@@ -196,18 +200,17 @@ describe('DashboardService', () => {
     });
   });
 
-
   describe('getTimeline', () => {
     it('should return chronological events from system_events', async () => {
       const accountId = '00000000-0000-0000-0000-00000000000a';
-      await db.insert(accounts).values({
+      await pg.db.insert(accounts).values({
         accountId,
         name: 'Timeline Account',
         accountNumber: 'TACC',
         currencyCode: 'USD',
       });
 
-      await db.insert(systemEvents).values({
+      await pg.db.insert(systemEvents).values({
         aggregateType: 'account',
         aggregateId: accountId,
         eventType: 'created',

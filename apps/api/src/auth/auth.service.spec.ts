@@ -4,24 +4,23 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as bcrypt from 'bcrypt';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { users } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 
 // eslint-disable-next-line no-restricted-syntax
 const TEST_PASSWORD = 'test-admin-pw-xyz'; // TEST_CREDENTIAL
 const TEST_HASH = bcrypt.hashSync(TEST_PASSWORD, 10);
 
 describe('AuthService', () => {
+  const pg = setupPgliteSuite();
   let service: AuthService;
-  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    const mem = await createMemoryDb();
-    db = mem.db;
+    // Clean table for isolation
+    await pg.db.delete(users);
 
     // Seed a standard admin user
-    await db.insert(users).values({
+    await pg.db.insert(users).values({
       userId: '11111111-1111-1111-1111-111111111111',
       username: 'admin',
       passwordHash: TEST_HASH,
@@ -32,7 +31,7 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         {
           provide: JwtService,
           useValue: {
@@ -66,7 +65,7 @@ describe('AuthService', () => {
     });
 
     it('should throw UnauthorizedException for inactive user', async () => {
-      await db.insert(users).values({
+      await pg.db.insert(users).values({
         userId: '22222222-2222-2222-2222-222222222222',
         username: 'disabled',
         passwordHash: TEST_HASH,

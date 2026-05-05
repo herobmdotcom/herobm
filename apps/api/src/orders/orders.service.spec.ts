@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -11,12 +11,11 @@ import {
   products,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('OrdersService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: OrdersService;
-  let db: PgliteDatabase<any>;
 
   const ACCOUNT_ID = '00000000-0000-0000-0000-000000000001';
   const ORDER_ID = '00000000-0000-0000-0000-000000000002';
@@ -25,15 +24,13 @@ describe('OrdersService', () => {
   const PROD_ID = '00000000-0000-0000-0000-00000000000a';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
 
     // Seed data
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
 
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -41,27 +38,27 @@ describe('OrdersService', () => {
       type: 'tax_applies',
     });
 
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
 
-    await db.insert(accounts).values({
+    await pg.db.insert(accounts).values({
       accountId: ACCOUNT_ID,
       accountNumber: 'ACC001',
       name: 'Acme Corp',
       currencyCode: 'EUR',
     });
 
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PROD_ID,
       productNumber: 'P1',
       name: 'Product 1',
       baseUom: 'EA',
     });
 
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-20260312-0001',
       name: 'Test Order',
@@ -75,7 +72,7 @@ describe('OrdersService', () => {
       fulfillmentLocationId: LOCATION_ID,
     });
 
-    await db.insert(salesOrderLineItems).values({
+    await pg.db.insert(salesOrderLineItems).values({
       salesOrderId: ORDER_ID,
       lineNumber: 1,
       productId: PROD_ID,
@@ -91,7 +88,7 @@ describe('OrdersService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OrdersService, { provide: DRIZZLE, useValue: db }],
+      providers: [OrdersService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);

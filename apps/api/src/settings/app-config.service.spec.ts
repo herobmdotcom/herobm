@@ -1,33 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppConfigService } from './app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { glSettings, appSettings, locations } from '../drizzle/modbm-core-schema';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import {
+  glSettings,
+  appSettings,
+  locations,
+} from '../drizzle/modbm-core-schema';
 import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import * as schema from '../drizzle/modbm-core-schema';
 
 describe('AppConfigService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: AppConfigService;
-  let db: PgliteDatabase<any>;
-  let client: any;
   let testLocationId: string;
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-    client = mem.client;
-
-    const [loc] = await db.insert(locations).values({
-      name: 'Test Wh',
-      code: 'TWH',
-    }).returning();
+    const [loc] = await pg.db
+      .insert(locations)
+      .values({
+        name: 'Test Wh',
+        code: 'TWH',
+      })
+      .returning();
     testLocationId = loc.locationId;
-  });
-
-  afterAll(async () => {
-    await client.close();
   });
 
   beforeEach(async () => {
@@ -38,20 +35,20 @@ describe('AppConfigService', () => {
     service = module.get<AppConfigService>(AppConfigService);
 
     // Clean tables
-    await db.delete(glSettings);
-    await db.delete(appSettings);
+    await pg.db.delete(glSettings);
+    await pg.db.delete(appSettings);
   });
 
   describe('onModuleInit', () => {
     it('should load settings from both tables', async () => {
-      await db.insert(glSettings).values({
+      await pg.db.insert(glSettings).values({
         fiscalYearStartMonth: 7,
         baseCurrency: 'AUD',
         revenueRoutingPrecedence: 'product_first',
         expenseRoutingPrecedence: 'product_first',
       });
 
-      await db.insert(appSettings).values({
+      await pg.db.insert(appSettings).values({
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'weighted_average',
         nonStockBillingMode: 'per_shipment',
@@ -69,7 +66,9 @@ describe('AppConfigService', () => {
     it('should fall back to error when tables are empty', async () => {
       await service.onModuleInit();
 
-      expect(() => service.homeCurrency()).toThrow('GL Settings not configured');
+      expect(() => service.homeCurrency()).toThrow(
+        'GL Settings not configured',
+      );
       expect(service.isSetupComplete()).toBe(false);
     });
 
@@ -79,18 +78,15 @@ describe('AppConfigService', () => {
       const rawDb = drizzle(rawClient, { schema });
 
       const module: TestingModule = await Test.createTestingModule({
-        providers: [
-          AppConfigService,
-          { provide: DRIZZLE, useValue: rawDb },
-        ],
+        providers: [AppConfigService, { provide: DRIZZLE, useValue: pg.db }],
       }).compile();
 
       const freshService = module.get<AppConfigService>(AppConfigService);
-      
+
       // Should not crash
       await freshService.onModuleInit();
       expect(freshService.isSetupComplete()).toBe(false);
-      
+
       await rawClient.close();
     });
   });
@@ -100,14 +96,14 @@ describe('AppConfigService', () => {
       await service.onModuleInit();
       expect(service.isSetupComplete()).toBe(false);
 
-      await db.insert(glSettings).values({
+      await pg.db.insert(glSettings).values({
         fiscalYearStartMonth: 4,
         baseCurrency: 'NZD',
         revenueRoutingPrecedence: 'customer_first',
         expenseRoutingPrecedence: 'supplier_first',
       });
 
-      await db.insert(appSettings).values({
+      await pg.db.insert(appSettings).values({
         defaultFulfillmentLocationId: testLocationId,
         inventoryValuationMethod: 'fifo',
         nonStockBillingMode: 'final_invoice',

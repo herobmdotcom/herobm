@@ -2,14 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { taxCategories } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('TaxCategoriesService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: TaxCategoriesService;
-  let db: PgliteDatabase<any>;
 
   const mockCategories = [
     {
@@ -38,20 +37,15 @@ describe('TaxCategoriesService', () => {
     },
   ];
 
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-  });
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TaxCategoriesService, { provide: DRIZZLE, useValue: db }],
+      providers: [TaxCategoriesService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<TaxCategoriesService>(TaxCategoriesService);
 
-    await db.delete(taxCategories);
-    await db.insert(taxCategories).values(mockCategories);
+    await pg.db.delete(taxCategories);
+    await pg.db.insert(taxCategories).values(mockCategories);
   });
 
   describe('findAll', () => {
@@ -85,7 +79,7 @@ describe('TaxCategoriesService', () => {
     });
 
     it('should throw NotFoundException when no default configured', async () => {
-      await db.update(taxCategories).set({ isDefault: false });
+      await pg.db.update(taxCategories).set({ isDefault: false });
       await expect(service.getDefault()).rejects.toThrow(NotFoundException);
     });
   });

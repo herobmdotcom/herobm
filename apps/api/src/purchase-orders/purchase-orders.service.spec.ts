@@ -6,7 +6,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   purchaseOrders,
   purchaseOrderLineItems,
@@ -16,14 +16,13 @@ import {
   taxCategories,
   suppliers,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 jest.setTimeout(120000);
 
 describe('PurchaseOrdersService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PurchaseOrdersService;
-  let db: PgliteDatabase<any>;
   let mockInventoryService: any;
   let mockSuppliersService: any;
   let mockTaxCategoriesService: any;
@@ -34,33 +33,31 @@ describe('PurchaseOrdersService', () => {
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
 
     // Seed infrastructure ONCE
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
       rate: '0.1',
       type: 'tax_applies',
     });
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
-    await db.insert(suppliers).values({
+    await pg.db.insert(suppliers).values({
       vendorId: VENDOR_ID,
       vendorNumber: 'V001',
       name: 'Test Vendor',
       currencyCode: 'EUR',
       stateCode: 'active',
     });
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PROD_ID,
       productNumber: 'P1',
       name: 'Product 1',
@@ -70,6 +67,9 @@ describe('PurchaseOrdersService', () => {
   });
 
   beforeEach(async () => {
+    await pg.db.delete(purchaseOrderLineItems);
+    await pg.db.delete(purchaseOrders);
+
     mockInventoryService = { recordInventoryMovement: jest.fn() };
     mockSuppliersService = {
       findOne: jest.fn().mockResolvedValue({ vendorId: VENDOR_ID }),
@@ -82,7 +82,7 @@ describe('PurchaseOrdersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PurchaseOrdersService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: SuppliersService, useValue: mockSuppliersService },
         { provide: TaxCategoriesService, useValue: mockTaxCategoriesService },
@@ -115,7 +115,7 @@ describe('PurchaseOrdersService', () => {
   describe('changeState', () => {
     it('should transition state from draft to ordered', async () => {
       const poId = '00000000-0000-0000-0000-000000000101';
-      await db.insert(purchaseOrders).values({
+      await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: poId,
         orderNumber: 'PO-STATE-' + Math.random(),
         vendorId: VENDOR_ID,
@@ -132,7 +132,7 @@ describe('PurchaseOrdersService', () => {
   describe('addLine', () => {
     it('should add a line item to a draft order', async () => {
       const poId = '00000000-0000-0000-0000-000000000102';
-      await db.insert(purchaseOrders).values({
+      await pg.db.insert(purchaseOrders).values({
         purchaseOrderId: poId,
         orderNumber: 'PO-LINE-' + Math.random(),
         vendorId: VENDOR_ID,
@@ -147,7 +147,7 @@ describe('PurchaseOrdersService', () => {
         pricePerUnit: '10',
       });
 
-      const lines = await db
+      const lines = await pg.db
         .select()
         .from(purchaseOrderLineItems)
         .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));

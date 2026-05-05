@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AccountsWriteService } from './accounts-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { accounts, accountEvents } from '../drizzle/modbm-core-schema';
@@ -66,13 +70,19 @@ describe('AccountsWriteService', () => {
 
     it('should roll back account creation if event logging fails (transactional atomicity)', async () => {
       // 1. Add a DB constraint that will fail for a specific actor name
-      await pg.db.execute(sql`ALTER TABLE modbm_core.account_events ADD CONSTRAINT fail_on_test CHECK (actor != 'fail-actor')`);
+      await pg.db.execute(
+        sql`ALTER TABLE modbm_core.account_events ADD CONSTRAINT fail_on_test CHECK (actor != 'fail-actor')`,
+      );
 
       // 2. Attempt to create with the forbidden actor
       // The service inserts into 'accounts' first, then 'account_events'.
       await expect(
         service.create(
-          { accountNumber: 'ROLLBACK_001', name: 'Rollback Test', currencyCode: 'EUR' },
+          {
+            accountNumber: 'ROLLBACK_001',
+            name: 'Rollback Test',
+            currencyCode: 'EUR',
+          },
           'fail-actor',
         ),
       ).rejects.toThrow();
@@ -85,7 +95,9 @@ describe('AccountsWriteService', () => {
       expect(rows).toHaveLength(0);
 
       // Cleanup constraint
-      await pg.db.execute(sql`ALTER TABLE modbm_core.account_events DROP CONSTRAINT fail_on_test`);
+      await pg.db.execute(
+        sql`ALTER TABLE modbm_core.account_events DROP CONSTRAINT fail_on_test`,
+      );
     });
 
     it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
@@ -118,10 +130,10 @@ describe('AccountsWriteService', () => {
 
       // Bypass manual check by mocking the select? No, just rely on race condition potential.
       // But we can just test that the service handles it if the manual check fails or is bypassed.
-      
+
       // Here we just verify the service throws ConflictException if the DB insert fails.
       // Since we have the manual check, we have to bypass it to test the catch block.
-      
+
       // Let's spy on the select and return nothing to bypass manual check
       jest.spyOn(db, 'select').mockReturnValueOnce({
         from: jest.fn().mockReturnValueOnce({
@@ -133,7 +145,11 @@ describe('AccountsWriteService', () => {
 
       try {
         await service.create(
-          { accountNumber: 'CONFLICT-001', name: 'Duplicate', currencyCode: 'EUR' },
+          {
+            accountNumber: 'CONFLICT-001',
+            name: 'Duplicate',
+            currencyCode: 'EUR',
+          },
           'actor',
         );
         throw new Error('Should have thrown');

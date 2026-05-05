@@ -114,7 +114,9 @@ describe('AllExceptionsFilter', () => {
       const error = { code: '23503', detail: 'Foreign key violation' };
       filter.catch(error, mockHost);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNPROCESSABLE_ENTITY);
+      expect(mockResponse.status).toHaveBeenCalledWith(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     });
 
     it('should map Postgres code 23514 to 400 Bad Request', () => {

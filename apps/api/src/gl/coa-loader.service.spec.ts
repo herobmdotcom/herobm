@@ -3,22 +3,21 @@ import { CoaLoaderService } from './coa-loader.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import * as fs from 'fs';
 import * as path from 'path';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { glAccounts, glSettings } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { count, eq } from 'drizzle-orm';
 
 describe('CoaLoaderService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: CoaLoaderService;
-  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    // We start with skipSeeds: true so we can test the loader's behavior from a clean state
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    // Clean tables for isolation
+    await pg.db.delete(glAccounts);
+    await pg.db.delete(glSettings);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CoaLoaderService, { provide: DRIZZLE, useValue: db }],
+      providers: [CoaLoaderService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<CoaLoaderService>(CoaLoaderService);
@@ -27,7 +26,7 @@ describe('CoaLoaderService', () => {
   describe('loadFromFile — existing accounts logic', () => {
     it('should proceed even if accounts already exist', async () => {
       // Seed one account
-      await db.insert(glAccounts).values({
+      await pg.db.insert(glAccounts).values({
         accountCode: 'EXISTING',
         name: 'Existing',
         accountType: 'asset',
@@ -89,7 +88,7 @@ describe('CoaLoaderService', () => {
 
       expect(result.created).toBe(4); // Assets, Cash, Revenue, Sales
 
-      const accounts = await db
+      const accounts = await pg.db
         .select()
         .from(glAccounts)
         .orderBy(glAccounts.accountCode);
@@ -122,11 +121,11 @@ describe('CoaLoaderService', () => {
       fs.writeFileSync(tempFile, JSON.stringify(chart));
       await service.loadFromFile('_test_chart.json');
 
-      const [settings] = await db.select().from(glSettings);
+      const [settings] = await pg.db.select().from(glSettings);
       expect(settings).toBeDefined();
       expect(settings.baseCurrency).toBe('AUD');
 
-      const [ar] = await db
+      const [ar] = await pg.db
         .select()
         .from(glAccounts)
         .where(eq(glAccounts.accountCode, '1100'));
@@ -139,7 +138,7 @@ describe('CoaLoaderService', () => {
       const result = await service.loadFromFile('au_standard.json');
       expect(result.created).toBeGreaterThan(25);
 
-      const [accCount] = await db.select({ val: count() }).from(glAccounts);
+      const [accCount] = await pg.db.select({ val: count() }).from(glAccounts);
       expect(accCount.val).toBe(result.created);
     });
   });
