@@ -1,65 +1,83 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersService } from './orders.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  accounts,
+  locations,
+  taxCategories,
+} from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('OrdersService', () => {
   let service: OrdersService;
+  let db: PgliteDatabase<any>;
 
-  const mockRows = [
-    {
-      id: 'uuid-001',
+  const ACCOUNT_ID = '00000000-0000-0000-0000-000000000001';
+  const ORDER_ID = '00000000-0000-0000-0000-000000000002';
+  const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
+  const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
+
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+
+    // Seed data
+    await db.insert(taxCategories).values({
+      taxCategoryId: TAX_CAT_ID,
+      code: 'GST',
+      title: 'GST',
+      rate: '0.1',
+      type: 'tax_applies',
+    });
+
+    await db.insert(locations).values({
+      locationId: LOCATION_ID,
+      code: 'MAIN',
+      name: 'Main Warehouse',
+    });
+
+    await db.insert(accounts).values({
+      accountId: ACCOUNT_ID,
+      accountNumber: 'ACC001',
+      name: 'Acme Corp',
+      currencyCode: 'EUR',
+    });
+
+    await db.insert(salesOrders).values({
+      salesOrderId: ORDER_ID,
       orderNumber: 'ORD-20260312-0001',
       name: 'Test Order',
-      customerName: 'Acme Corp',
+      customerId: ACCOUNT_ID,
       customerOrderNumber: 'PO-123',
       stateCode: 'draft',
       source: 'app',
       createdBy: 'admin',
       createdOn: new Date('2026-03-12'),
       currencyCode: 'EUR',
-    },
-  ];
+      fulfillmentLocationId: LOCATION_ID,
+    });
 
-  function createMockQb(resolvedValue: any[] = []) {
-    const qb: any = {
-      where: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      offset: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      $dynamic: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      leftJoin: jest.fn().mockReturnThis(),
-      then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
-    };
-    return qb;
-  }
-
-  let mockDb: any;
+    await db.insert(salesOrderLineItems).values({
+      salesOrderId: ORDER_ID,
+      lineNumber: 1,
+      productId: '00000000-0000-0000-0000-00000000000a',
+      quantity: '1',
+      pricePerUnit: '250.00',
+      totalAmount: '250.00',
+      tax: '0.00',
+      amount: '250.00',
+      taxCategoryId: TAX_CAT_ID,
+      fulfillmentLocationId: LOCATION_ID,
+    });
+  });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-
-    let selectCallCount = 0;
-    const countQb = createMockQb([{ count: 1 }]);
-    const dataQb = createMockQb(mockRows);
-    const totalsQb = createMockQb([
-      { salesOrderId: 'uuid-001', total: '250.00' },
-    ]);
-
-    mockDb = {
-      select: jest.fn().mockImplementation(() => {
-        selectCallCount++;
-        if (selectCallCount === 1)
-          return { from: jest.fn().mockReturnValue(countQb) };
-        if (selectCallCount === 2)
-          return { from: jest.fn().mockReturnValue(dataQb) };
-        return { from: jest.fn().mockReturnValue(totalsQb) };
-      }),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [OrdersService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [OrdersService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<OrdersService>(OrdersService);
@@ -76,14 +94,11 @@ describe('OrdersService', () => {
     });
 
     it('should apply search filter', async () => {
-      const qb = createMockQb([{ count: 0 }]);
-      const dataQb = createMockQb([]);
-      mockDb.select = jest.fn().mockImplementation(() => ({
-        from: jest.fn().mockReturnValue(qb),
-      }));
-
-      await service.findAll({ q: 'acme' });
-      expect(qb.where).toHaveBeenCalled();
+      const result = await service.findAll({ searchTerm: 'acme' });
+      expect(result.total).toBe(1);
+      
+      const noResult = await service.findAll({ searchTerm: 'nonexistent' });
+      expect(noResult.total).toBe(0);
     });
 
     it('should cap limit at 100000', async () => {
