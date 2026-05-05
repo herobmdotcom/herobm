@@ -43,7 +43,8 @@ describe('API E2E — Sales Order Returns', () => {
     await app.init();
 
     const db = app.get(DRIZZLE);
-    await db.execute(sql`
+    if (process.env.USE_PGLITE !== 'true') {
+      await db.execute(sql`
       DO $$ 
       DECLARE
           r RECORD;
@@ -65,6 +66,7 @@ describe('API E2E — Sales Order Returns', () => {
           END LOOP;
       END $$;
     `);
+    }
 
     // Login
     const adminLogin = await request(app.getHttpServer())

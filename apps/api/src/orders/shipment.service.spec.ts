@@ -97,17 +97,6 @@ describe('ShipmentService', () => {
     });
     if (stdTax) ORDER_LINE.taxCategoryId = stdTax.taxCategoryId;
 
-    // Standard seeds do not include locations. Insert a default location.
-    await pg.db
-      .insert(locations)
-      .values([
-        {
-          locationId: '10000000-0000-0000-0000-000000000001',
-          code: 'MAIN',
-          name: 'Main',
-        },
-      ])
-      .onConflictDoNothing();
     ORDER_LINE.fulfillmentLocationId = '10000000-0000-0000-0000-000000000001';
     PICKING_ORDER.fulfillmentLocationId =
       '10000000-0000-0000-0000-000000000001';

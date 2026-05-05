@@ -14,6 +14,13 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE, DrizzleDB } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import {
+  salesOrders,
+  salesOrderLineItems,
+  taxCategories,
+  binContents,
+  products,
+} from '../src/drizzle/modbm-core-schema';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
 
@@ -50,6 +57,84 @@ describe('API E2E — Data Pipeline Verification', () => {
         `${'loginRes'} login failed: ${loginRes.status} ${JSON.stringify(loginRes.body)}`,
       );
     }
+
+    if (process.env.USE_PGLITE === 'true') {
+      const db = app.get<DrizzleDB>(DRIZZLE);
+      try {
+        const prod = await db.select().from(products).limit(1);
+        const productId = prod[0]?.productId;
+
+        if (!productId) {
+          console.error(
+            'No product seeded! Cannot insert sales order line mock.',
+          );
+        } else {
+          await db
+            .insert(salesOrders)
+            .values({
+              salesOrderId: '50000000-0000-0000-0000-000000000001',
+              orderNumber: 'SO-E2E-001',
+              customerId: '20000000-0000-0000-0000-000000000001',
+              fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+              currencyCode: 'AUD',
+              stateCode: 'draft',
+            })
+            .onConflictDoNothing();
+
+          let taxCategory = await db
+            .select()
+            .from(taxCategories)
+            .limit(1)
+            .then((res) => res[0]);
+          if (!taxCategory) {
+            [taxCategory] = await db
+              .insert(taxCategories)
+              .values({
+                taxCategoryId: '80000000-0000-0000-0000-000000000001',
+                code: 'GST',
+                title: 'Goods and Services Tax',
+                type: 'tax_applies',
+                rate: '10',
+                isDefault: true,
+              })
+              .returning();
+          }
+
+          await db
+            .insert(salesOrderLineItems)
+            .values({
+              salesOrderLineId: '60000000-0000-0000-0000-000000000001',
+              salesOrderId: '50000000-0000-0000-0000-000000000001',
+              lineNumber: 1,
+              productId,
+              quantity: '10',
+              pricePerUnit: '10.00',
+              taxCategoryId: taxCategory.taxCategoryId,
+              fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
+            })
+            .onConflictDoNothing();
+
+          await db
+            .insert(binContents)
+            .values({
+              binContentId: '70000000-0000-0000-0000-000000000001',
+              binId: '40000000-0000-0000-0000-000000000003',
+              productId,
+              actualQuantity: '50',
+            })
+            .onConflictDoNothing();
+        }
+      } catch (err: any) {
+        console.error(
+          'FAILED TO INSERT E2E MOCK DATA:',
+          err.message,
+          err.name,
+          err.code,
+          err,
+        );
+      }
+    }
+
     authToken = loginRes.body.access_token;
     expect(authToken).toBeDefined();
   });
@@ -396,9 +481,12 @@ describe('API E2E — Data Pipeline Verification', () => {
   describe('System Integrity — Required Seed Data', () => {
     it('verifies that system bins (SHIPPING, RECEIVING) exist in modbm_core.bins', async () => {
       const db = app.get<DrizzleDB>(DRIZZLE);
-      const systemBins = await db.execute(
+      const systemBinsRaw = await db.execute(
         sql`SELECT * FROM modbm_core.bins WHERE bin_number IN ('SHIPPING', 'RECEIVING') AND source = 'system' AND bin_type = 'staging' AND is_unavailable = true`,
       );
+      const systemBins = Array.isArray(systemBinsRaw)
+        ? systemBinsRaw
+        : systemBinsRaw.rows || [];
 
       // Verify that the system-defined staging bins are present
       expect(systemBins.length).toBeGreaterThanOrEqual(2);
@@ -412,9 +500,12 @@ describe('API E2E — Data Pipeline Verification', () => {
 
     it('verifies that the system custom line magic product exists', async () => {
       const db = app.get<DrizzleDB>(DRIZZLE);
-      const magicProducts = await db.execute(
-        sql`SELECT * FROM modbm_core.products WHERE product_id = '00000000-0000-0000-0000-000000000000'`,
+      const magicProductsRaw = await db.execute(
+        sql`SELECT * FROM modbm_core.products WHERE product_number = 'SYSTEM-CUSTOM-LINE'`,
       );
+      const magicProducts = Array.isArray(magicProductsRaw)
+        ? magicProductsRaw
+        : magicProductsRaw.rows || [];
 
       expect(magicProducts.length).toBe(1);
       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');

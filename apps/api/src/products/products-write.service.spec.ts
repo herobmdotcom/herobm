@@ -14,7 +14,7 @@ describe('ProductsWriteService', () => {
   const pg = setupPgliteSuite();
   let service: ProductsWriteService;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed required UOM once for the entire suite
     await pg.db
       .insert(uomDictionary)

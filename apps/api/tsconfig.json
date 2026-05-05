@@ -15,8 +15,8 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@modbm/shared": ["../../packages/shared/src/index"],
-      "@modbm/shared/*": ["../../packages/shared/src/*"]
+      "@modbm/shared": ["../../packages/shared/dist/index"],
+      "@modbm/shared/*": ["../../packages/shared/dist/*"]
     },
     "incremental": true,
     "skipLibCheck": true,
@@ -24,8 +24,21 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "rootDir": "src"
   },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "debug_find_one.ts",
+    "test-login.ts",
+    "drizzle.config.ts",
+    "./scripts",
+    "./tools",
+    "run-migrations.ts",
+    "**/*.js"
+  ],
   "ts-node": {
     "esm": true,
     "experimentalSpecifierResolution": "node"

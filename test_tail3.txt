@@ -1,0 +1,30 @@
+﻿    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+PASS src/orders/backorders.service.spec.ts
+  â— Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: âš™ï¸  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/test-utils/simple.spec.ts

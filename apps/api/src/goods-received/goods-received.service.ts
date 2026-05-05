@@ -170,6 +170,10 @@ export class GoodsReceivedService {
             productId: line.productId,
             quantityReceived: line.quantityReceived.toString(),
             matchStatus,
+            putawayStatus:
+              matchStatus === 'matched'
+                ? 'pending_putaway'
+                : 'awaiting_matching',
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
             unitCost: unitCost, // Use for valuation, filtered out during insert
@@ -773,6 +777,11 @@ export class GoodsReceivedService {
         .update(goodsReceivedLines)
         .set({
           matchStatus: 'matched',
+          // ADV-086: Preserve quarantined status if set — matching doesn't clear quarantine
+          putawayStatus:
+            grLine.putawayStatus === 'quarantined'
+              ? 'quarantined'
+              : 'pending_putaway',
           purchaseOrderLineId: poLine.poLineId,
           purchaseOrderId: poLine.poId,
           quantityReceived: targetQuantity.toString(),
@@ -790,6 +799,7 @@ export class GoodsReceivedService {
             productId: grLine.productId,
             quantityReceived: remainder.toString(),
             matchStatus: 'ambiguous',
+            putawayStatus: 'awaiting_matching',
           })
           .returning();
         splitLine = inserted;
@@ -958,10 +968,15 @@ export class GoodsReceivedService {
           );
       } else {
         // Just unresolve it normally
+        // ADV-086: Preserve quarantined status — only clear PO links, don't change putaway state
         await tx
           .update(goodsReceivedLines)
           .set({
             matchStatus: 'ambiguous',
+            putawayStatus:
+              grLine.putawayStatus === 'quarantined'
+                ? 'quarantined'
+                : 'awaiting_matching',
             purchaseOrderLineId: null,
             purchaseOrderId: null,
           })
@@ -1050,8 +1065,18 @@ export class GoodsReceivedService {
         );
       }
 
-      const newStatus =
-        currentStatus === 'quarantined' ? 'pending_putaway' : 'quarantined';
+      // ADV-086: Context-aware status restoration
+      // When un-quarantining, restore to 'pending_putaway' only if matched to a PO;
+      // otherwise restore to 'awaiting_matching' to prevent unmatched items
+      // from bypassing the allocation stage.
+      let newStatus: 'quarantined' | 'pending_putaway' | 'awaiting_matching';
+      if (currentStatus === 'quarantined') {
+        newStatus = grLine.line.purchaseOrderLineId
+          ? 'pending_putaway'
+          : 'awaiting_matching';
+      } else {
+        newStatus = 'quarantined';
+      }
       const targetBinCode =
         newStatus === 'quarantined' ? 'QUARANTINE' : 'RECEIVING';
       const currentBinCode =
@@ -1126,27 +1151,32 @@ export class GoodsReceivedService {
         targetBin = newBin;
       }
 
-      if (sourceBin && targetBin) {
-        await this.inventoryService.recordInventoryMovement(tx, {
-          entryNumber: `QRN-${grLine.receiptNumber}-${grLine.line.goodsReceivedLineId.substring(0, 4)}`,
-          sourceType: 'PO_RECEIPT',
-          sourceId: grLine.line.goodsReceivedId,
-          memo: `Status changed to ${newStatus}`,
-          userId,
-          lines: [
-            {
-              productId: grLine.line.productId,
-              binId: sourceBin.binId,
-              quantity: -parseFloat(grLine.line.quantityReceived),
-            },
-            {
-              productId: grLine.line.productId,
-              binId: targetBin.binId,
-              quantity: parseFloat(grLine.line.quantityReceived),
-            },
-          ],
-        });
+      // ADV-086: Strict bin validation — never update status without a ledger movement
+      if (!sourceBin) {
+        throw new BadRequestException(
+          `Source bin '${currentBinCode}' not found for this location. Cannot toggle quarantine.`,
+        );
       }
+
+      await this.inventoryService.recordInventoryMovement(tx, {
+        entryNumber: `QRN-${grLine.receiptNumber}-${grLine.line.goodsReceivedLineId.substring(0, 4)}`,
+        sourceType: 'PO_RECEIPT',
+        sourceId: grLine.line.goodsReceivedId,
+        memo: `Status changed to ${newStatus}`,
+        userId,
+        lines: [
+          {
+            productId: grLine.line.productId,
+            binId: sourceBin.binId,
+            quantity: -parseFloat(grLine.line.quantityReceived),
+          },
+          {
+            productId: grLine.line.productId,
+            binId: targetBin.binId,
+            quantity: parseFloat(grLine.line.quantityReceived),
+          },
+        ],
+      });
 
       await tx
         .update(goodsReceivedLines)

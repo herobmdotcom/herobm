@@ -20,6 +20,11 @@ import {
   reports,
   reportHookAssignments,
   reportContexts,
+  locations,
+  zones,
+  bins,
+  accounts,
+  suppliers,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import * as dotenv from 'dotenv';
@@ -74,6 +79,8 @@ export async function runStandardSeeds(db: any, dryRun = false) {
   await seedCoaSettings(db, dryRun);
   await seedAppSettings(db, dryRun);
   await seedFinancialDimensions(db, dryRun);
+  await seedLocations(db, dryRun);
+  await seedAccounts(db, dryRun);
   await seedReports(db, dryRun);
 
   console.log('\nDone.');
@@ -134,10 +141,11 @@ async function seedUsers(db: any, dryRun: boolean) {
         username: item.username,
         passwordHash: hash,
         role: item.role as any,
+        isActive: true,
       })
       .onConflictDoUpdate({
         target: users.username,
-        set: { passwordHash: hash, role: item.role as any },
+        set: { passwordHash: hash, role: item.role as any, isActive: true },
       });
   }
   console.log(
@@ -156,7 +164,10 @@ async function seedProducts(db: any, dryRun: boolean) {
   await db
     .insert(uomDictionary)
     .values({ uomCode: 'EA', description: 'Each' })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: uomDictionary.uomCode,
+      set: { description: 'Each' },
+    });
 
   await db
     .insert(products)
@@ -231,7 +242,10 @@ async function seedOrganization(db: any, dryRun: boolean) {
       organizationId: '00000000-0000-0000-0000-000000000000',
       name: 'My Company',
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: organization.organizationId,
+      set: { name: 'My Company' },
+    });
 
   console.log('  Seeded default organization (fallback)');
 }
@@ -601,4 +615,108 @@ if (require.main === module) {
     console.error(e);
     process.exit(1);
   });
+}
+
+async function seedLocations(db: any, dryRun: boolean) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed location: MAIN');
+    return;
+  }
+
+  await db
+    .insert(locations)
+    .values({
+      locationId: '10000000-0000-0000-0000-000000000001',
+      code: 'MAIN',
+      name: 'Main Location',
+    })
+    .onConflictDoUpdate({
+      target: locations.locationId,
+      set: { code: 'MAIN', name: 'Main Location' },
+    });
+
+  await db
+    .insert(zones)
+    .values({
+      zoneId: '30000000-0000-0000-0000-000000000001',
+      locationId: '10000000-0000-0000-0000-000000000001',
+      code: 'MAIN-Z1',
+      name: 'Main Zone',
+    })
+    .onConflictDoUpdate({
+      target: zones.zoneId,
+      set: { code: 'MAIN-Z1', name: 'Main Zone' },
+    });
+
+  await db
+    .insert(bins)
+    .values([
+      {
+        binId: '40000000-0000-0000-0000-000000000001',
+        zoneId: '30000000-0000-0000-0000-000000000001',
+        binNumber: 'RECEIVING',
+        binType: 'staging',
+        source: 'system',
+        isUnavailable: true,
+      },
+      {
+        binId: '40000000-0000-0000-0000-000000000002',
+        zoneId: '30000000-0000-0000-0000-000000000001',
+        binNumber: 'SHIPPING',
+        binType: 'staging',
+        source: 'system',
+        isUnavailable: true,
+      },
+      {
+        binId: '40000000-0000-0000-0000-000000000003',
+        zoneId: '30000000-0000-0000-0000-000000000001',
+        binNumber: 'MAIN-BIN-1',
+        binType: 'storage',
+        source: 'app',
+        isUnavailable: false,
+      },
+    ])
+    .onConflictDoUpdate({
+      target: bins.binId,
+      set: { binNumber: 'RECEIVING', binType: 'staging' },
+    });
+
+  console.log("  Seeded 'MAIN' location, zone, and bins");
+}
+
+async function seedAccounts(db: any, dryRun: boolean) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed default customer and vendor');
+    return;
+  }
+
+  // Seed customer
+  await db
+    .insert(accounts)
+    .values({
+      accountId: '20000000-0000-0000-0000-000000000001',
+      accountNumber: 'CUST-E2E-001',
+      name: 'E2E Default Customer',
+      currencyCode: 'AUD',
+    })
+    .onConflictDoUpdate({
+      target: accounts.accountId,
+      set: { name: 'E2E Default Customer' },
+    });
+
+  // Seed vendor
+  await db
+    .insert(suppliers)
+    .values({
+      vendorId: '20000000-0000-0000-0000-000000000002',
+      vendorNumber: 'VEND-E2E-001',
+      name: 'E2E Default Vendor',
+      currencyCode: 'AUD',
+    })
+    .onConflictDoUpdate({
+      target: suppliers.vendorId,
+      set: { name: 'Seed Vendor' },
+    });
+
+  console.log('  Seeded default customer and vendor');
 }

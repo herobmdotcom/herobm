@@ -177,7 +177,6 @@ export class BackordersService {
    * then generates new consolidated draft POs for the remainder.
    */
   async resolveOpenDemands(actor: string): Promise<void> {
-    console.log('DEBUG: Starting MRP Allocation Engine run');
     await this.db.transaction(async (tx) => {
       // 1. Fetch all open demands
       const openDemands = await tx

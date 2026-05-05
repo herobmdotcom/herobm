@@ -25,7 +25,8 @@ export class TaxCategoriesService {
     return this.db.select().from(taxCategories);
   }
 
-  async getById(id: string) {
+  async getById(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         id,
@@ -34,7 +35,7 @@ export class TaxCategoriesService {
       throw new NotFoundException(`Invalid tax category ID: ${id}`);
     }
 
-    const rows = await this.db
+    const rows = await db
       .select()
       .from(taxCategories)
       .where(eq(taxCategories.taxCategoryId, id))
@@ -45,8 +46,9 @@ export class TaxCategoriesService {
     return rows[0];
   }
 
-  async getDefault() {
-    const rows = await this.db
+  async getDefault(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select()
       .from(taxCategories)
       .where(eq(taxCategories.isDefault, true))
@@ -57,8 +59,9 @@ export class TaxCategoriesService {
     return rows[0];
   }
 
-  async getByCode(code: string) {
-    const rows = await this.db
+  async getByCode(code: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select()
       .from(taxCategories)
       .where(eq(taxCategories.code, code))

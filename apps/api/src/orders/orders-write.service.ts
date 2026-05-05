@@ -78,25 +78,27 @@ export class OrdersWriteService {
    */
   private async generateOrderNumber(tx?: DrizzleDB): Promise<string> {
     const db = tx || this.db;
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const prefix = `ORD-${today}-`;
 
     // Find the highest sequence for today, locking the row to prevent races
-    const result = await db.execute(
-      sql`SELECT order_number FROM modbm_core.sales_orders
-          WHERE order_number LIKE ${prefix + '%'}
-          ORDER BY order_number DESC
-          LIMIT 1
-          FOR UPDATE`,
-    );
+    const rows = await db
+      .select({ order_number: salesOrders.orderNumber })
+      .from(salesOrders)
+      .where(sql`${salesOrders.orderNumber} LIKE ${prefix + '%'}`)
+      .orderBy(sql`${salesOrders.orderNumber} DESC`)
+      .limit(1);
 
-    const rows = result as unknown as { order_number: string }[];
-    const seq =
-      rows.length > 0
-        ? parseInt(rows[0].order_number.replace(prefix, ''), 10) + 1
-        : 1;
+    const lastNumber = rows[0]?.order_number;
+    let nextSeq = 1;
+    if (lastNumber) {
+      const parts = lastNumber.split('-');
+      const seqStr = parts[parts.length - 1];
+      nextSeq = parseInt(seqStr, 10) + 1;
+    }
 
-    return `${prefix}${String(seq).padStart(4, '0')}`;
+    const nextNumber = `${prefix}${nextSeq.toString().padStart(4, '0')}`;
+    return nextNumber;
   }
 
   /**
@@ -131,10 +133,11 @@ export class OrdersWriteService {
     customerId: string,
     productId?: string,
     taxCategoryIdOverride?: string,
+    tx?: DrizzleDB,
   ): Promise<{ taxCategoryId: string; rate: number }> {
     // 1. Explicit override wins
     if (taxCategoryIdOverride) {
-      const cat = await this.taxService.getById(taxCategoryIdOverride);
+      const cat = await this.taxService.getById(taxCategoryIdOverride, tx);
       return {
         taxCategoryId: cat.taxCategoryId,
         rate: parseFloat(cat.rate ?? '0'),
@@ -142,10 +145,10 @@ export class OrdersWriteService {
     }
 
     // 2. Customer exempt → always 0%
-    const account = await this.accountsService.findOne(customerId);
+    const account = await this.accountsService.findOne(customerId, tx);
 
     if (account.taxCategoryId) {
-      const acctCat = await this.taxService.getById(account.taxCategoryId);
+      const acctCat = await this.taxService.getById(account.taxCategoryId, tx);
       if (acctCat.code === 'EXE' || acctCat.type === 'exempt') {
         return {
           taxCategoryId: acctCat.taxCategoryId,
@@ -156,10 +159,13 @@ export class OrdersWriteService {
 
     // 3. Product's GST category
     if (productId) {
-      const product = await this.lookupProduct(productId);
+      const product = await this.lookupProduct(productId, tx);
       if (product.salesTaxCategoryId) {
         try {
-          const cat = await this.taxService.getById(product.salesTaxCategoryId);
+          const cat = await this.taxService.getById(
+            product.salesTaxCategoryId,
+            tx,
+          );
           return {
             taxCategoryId: cat.taxCategoryId,
             rate: parseFloat(cat.rate ?? '0'),
@@ -174,7 +180,7 @@ export class OrdersWriteService {
     }
 
     // 4. Fallback: system default
-    const defaultGst = await this.taxService.getDefault();
+    const defaultGst = await this.taxService.getDefault(tx);
     return {
       taxCategoryId: defaultGst.taxCategoryId,
       rate: parseFloat(defaultGst.rate ?? '0'),
@@ -186,12 +192,15 @@ export class OrdersWriteService {
    * Throws BadRequestException if not found.
    * Returns the customer discount percentage.
    */
-  private async resolveCustomer(customerId: string): Promise<{
+  private async resolveCustomer(
+    customerId: string,
+    tx?: DrizzleDB,
+  ): Promise<{
     customerDiscount: string;
     currencyCode: string;
   }> {
     try {
-      const account = await this.accountsService.findOne(customerId);
+      const account = await this.accountsService.findOne(customerId, tx);
       const effectiveDiscount = resolveEffectiveDiscount(
         account.customerDiscount,
         (account as any).accountGroupDiscount,
@@ -217,8 +226,9 @@ export class OrdersWriteService {
     customerId: string,
     additionalExposure: number,
     operation: 'create' | 'update' | 'confirm',
+    tx?: DrizzleDB,
   ): Promise<void> {
-    const account = await this.accountsService.findOne(customerId);
+    const account = await this.accountsService.findOne(customerId, tx);
 
     // 1. Strict State Block
     if (account.stateCode === 'inactive' || account.stateCode === 'archived') {
@@ -246,8 +256,10 @@ export class OrdersWriteService {
     }
 
     // 3. Credit Assessment (Limits and Overdue)
-    const assessment =
-      await this.creditAssessmentService.assessCredit(customerId);
+    const assessment = await this.creditAssessmentService.assessCredit(
+      customerId,
+      tx,
+    );
 
     if (assessment.isOverdue && operation === 'confirm') {
       throw new BadRequestException(
@@ -288,12 +300,15 @@ export class OrdersWriteService {
    * Throws BadRequestException if not found.
    * Returns productId and taxCategoryId.
    */
-  private async lookupProduct(productId: string): Promise<{
+  private async lookupProduct(
+    productId: string,
+    tx?: DrizzleDB,
+  ): Promise<{
     productId: string;
     salesTaxCategoryId: string | null;
   }> {
     try {
-      const product = await this.productsService.findOne(productId);
+      const product = await this.productsService.findOne(productId, tx);
       return {
         productId: product.productId,
         salesTaxCategoryId: product.salesTaxCategoryId ?? null,
@@ -309,8 +324,11 @@ export class OrdersWriteService {
   /**
    * Validate that a product exists in modbm_core.products.
    */
-  private async validateProduct(productId: string): Promise<void> {
-    await this.lookupProduct(productId);
+  private async validateProduct(
+    productId: string,
+    tx?: DrizzleDB,
+  ): Promise<void> {
+    await this.lookupProduct(productId, tx);
   }
 
   // -------------------------------------------------------------------------
@@ -321,26 +339,28 @@ export class OrdersWriteService {
    * Create a new sales order with line items.
    */
   async create(dto: CreateOrderDto, actor: string) {
-    const customer = await this.resolveCustomer(dto.customerId);
-
-    for (const line of dto.lines) {
-      if (line.productId) {
-        await this.validateProduct(line.productId);
-      }
-    }
-
-    // Check for duplicate product IDs in the input lines
-    // Exemption: The system custom line product can be added multiple times.
-    const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
-    const productIds = dto.lines
-      .map((l) => l.productId)
-      .filter((id) => id && id !== CUSTOM_LINE_ID);
-    const uniqueProductIds = new Set(productIds);
-    if (uniqueProductIds.size !== productIds.length) {
-      throw new BadRequestException('Order cannot contain duplicate products');
-    }
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      const customer = await this.resolveCustomer(dto.customerId, tx);
+
+      for (const line of dto.lines) {
+        if (line.productId) {
+          await this.validateProduct(line.productId, tx);
+        }
+      }
+
+      // Check for duplicate product IDs in the input lines
+      // Exemption: The system custom line product can be added multiple times.
+      const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
+      const productIds = dto.lines
+        .map((l) => l.productId)
+        .filter((id) => id && id !== CUSTOM_LINE_ID);
+      const uniqueProductIds = new Set(productIds);
+      if (uniqueProductIds.size !== productIds.length) {
+        throw new BadRequestException(
+          'Order cannot contain duplicate products',
+        );
+      }
+
       // Resolve fulfillmentLocationId: Fall back to system default if omitted
       let fallbackLocId = dto.fulfillmentLocationId;
       if (!fallbackLocId) {
@@ -378,6 +398,7 @@ export class OrdersWriteService {
           dto.customerId,
           line.productId,
           line.taxCategoryId,
+          tx,
         );
         const lineDiscount =
           line.discountPercentage ?? customer.customerDiscount;
@@ -407,7 +428,12 @@ export class OrdersWriteService {
       // Assert Credit / State Safety before saving
       let orderTotal = 0;
       lineValues.forEach((lv) => (orderTotal += parseFloat(lv.totalAmount)));
-      await this.assertAccountStanding(dto.customerId, orderTotal, 'create');
+      await this.assertAccountStanding(
+        dto.customerId,
+        orderTotal,
+        'create',
+        tx,
+      );
 
       if (lineValues.length > 0) {
         await tx.insert(salesOrderLineItems).values(lineValues);
@@ -611,7 +637,6 @@ export class OrdersWriteService {
       generateBackorders === true &&
       gaps.length > 0
     ) {
-      console.log(`DEBUG: Calling resolveOpenDemands after transaction`);
       await this.backordersService.resolveOpenDemands(actor);
     }
 

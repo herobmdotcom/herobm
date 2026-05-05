@@ -287,8 +287,8 @@ export default function PickingPage() {
                                             </div>
                                             <StateBadge state={order.stateCode as ValidState} />
                                         </div>
-                                        <div className="text-xs font-bold text-[var(--text-secondary)] mb-1 pl-4.5">{order.customerName}</div>
-                                        <div className="text-xs text-[var(--text-muted)] truncate pl-4.5">{order.name || order.customerOrderNumber}</div>
+                                        <div className="text-xs font-bold text-[var(--text-secondary)] mb-1 pl-7">{order.customerName}</div>
+                                        <div className="text-xs text-[var(--text-muted)] truncate pl-7">{order.name || order.customerOrderNumber}</div>
                                     </div>
                                 ))}
                             </div>

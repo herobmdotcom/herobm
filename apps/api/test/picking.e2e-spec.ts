@@ -42,7 +42,8 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     db = app.get(DRIZZLE);
 
     // Clean up prior E2E data
-    await db.execute(sql`
+    if (process.env.USE_PGLITE !== 'true') {
+      await db.execute(sql`
       DO $$ 
       DECLARE r RECORD;
       BEGIN
@@ -63,6 +64,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         END LOOP;
       END $$;
     `);
+    }
 
     // Login as admin
     const adminLogin = await request(app.getHttpServer())

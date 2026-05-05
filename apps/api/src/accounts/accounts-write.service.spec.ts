@@ -28,9 +28,6 @@ describe('AccountsWriteService', () => {
     }).compile();
 
     service = module.get<AccountsWriteService>(AccountsWriteService);
-
-    await pg.db.delete(accountEvents);
-    await pg.db.delete(accounts);
   });
 
   afterEach(() => {
@@ -143,20 +140,16 @@ describe('AccountsWriteService', () => {
         }),
       } as any);
 
-      try {
-        await service.create(
+      await expect(
+        service.create(
           {
             accountNumber: 'CONFLICT-001',
             name: 'Duplicate',
             currencyCode: 'EUR',
           },
           'actor',
-        );
-        throw new Error('Should have thrown');
-      } catch (e: any) {
-        const msg = e.message + ' ' + (e.cause?.message || '');
-        expect(msg.toLowerCase()).toContain('duplicate');
-      }
+        ),
+      ).rejects.toThrow(ConflictException);
     });
   });
 

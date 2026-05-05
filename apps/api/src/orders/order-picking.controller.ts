@@ -53,4 +53,16 @@ export class OrderPickingController {
       user.userId,
     );
   }
+
+  @Get('shipping-queue')
+  @CasbinAction('read')
+  getShippingQueue(@Query('locationId') locationId?: string) {
+    return this.pickingService.getShippingQueue(locationId);
+  }
+
+  @Get(':id/shipping-context')
+  @CasbinAction('read')
+  getShippingContext(@Param('id') id: string) {
+    return this.pickingService.getShippingContext(id);
+  }
 }

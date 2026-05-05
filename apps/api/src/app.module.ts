@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
+import { CasbinGuard } from './auth/casbin.guard';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { DrizzleModule } from './drizzle/drizzle.module';
@@ -58,6 +60,10 @@ import { PaymentsModule } from './payments/payments.module';
     MacrosModule,
     UsersModule,
   ],
-  providers: [{ provide: APP_INTERCEPTOR, useClass: MetricsInterceptor }],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: CasbinGuard },
+  ],
 })
 export class AppModule {}

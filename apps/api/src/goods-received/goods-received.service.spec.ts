@@ -40,7 +40,7 @@ describe('GoodsReceivedService', () => {
   const BIN_ID = '00000000-0000-0000-0000-00000000000b';
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed static data
     await pg.db
       .insert(uomDictionary)
@@ -290,6 +290,241 @@ describe('GoodsReceivedService', () => {
       await expect(
         service.findOne('00000000-0000-0000-0000-000000000999'),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // ADV-086: Quarantine state machine tests
+  // -------------------------------------------------------------------------
+  describe('toggleQuarantine (ADV-086)', () => {
+    const QUAR_ZONE_ID = '00000000-0000-0000-0000-0000000000d0';
+    const QUAR_BIN_ID = '00000000-0000-0000-0000-0000000000d1';
+
+    async function seedQuarantineInfra() {
+      await pg.db.insert(zones).values({
+        zoneId: QUAR_ZONE_ID,
+        locationId: LOCATION_ID,
+        code: 'QUAR',
+        name: 'Quarantine Zone',
+      });
+      await pg.db.insert(bins).values({
+        binId: QUAR_BIN_ID,
+        zoneId: QUAR_ZONE_ID,
+        binNumber: 'QUARANTINE',
+        binType: 'quarantine',
+      });
+    }
+
+    async function createUnmatchedLine(): Promise<string> {
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-Q1',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+        })
+        .returning();
+      const [line] = await pg.db
+        .insert(goodsReceivedLines)
+        .values({
+          goodsReceivedId: gr.goodsReceivedId,
+          productId: PROD_ID,
+          quantityReceived: '50',
+          matchStatus: 'ambiguous',
+          putawayStatus: 'awaiting_matching',
+        })
+        .returning();
+      return line.goodsReceivedLineId;
+    }
+
+    async function createMatchedLine(): Promise<string> {
+      const PO_ID = '00000000-0000-0000-0000-000000000051';
+      const PO_LINE_ID = '00000000-0000-0000-0000-000000000052';
+
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-Q1',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: 'ordered',
+      });
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '50',
+        quantityReceived: '50',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+      });
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-Q2',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+        })
+        .returning();
+      const [line] = await pg.db
+        .insert(goodsReceivedLines)
+        .values({
+          goodsReceivedId: gr.goodsReceivedId,
+          productId: PROD_ID,
+          quantityReceived: '50',
+          matchStatus: 'matched',
+          putawayStatus: 'pending_putaway',
+          purchaseOrderLineId: PO_LINE_ID,
+          purchaseOrderId: PO_ID,
+        })
+        .returning();
+      return line.goodsReceivedLineId;
+    }
+
+    it('should restore awaiting_matching when un-quarantining an unmatched line', async () => {
+      await seedBasics();
+      await seedQuarantineInfra();
+      const lineId = await createUnmatchedLine();
+
+      // Quarantine it
+      const qResult = await service.toggleQuarantine(lineId, 'admin');
+      expect(qResult.putawayStatus).toBe('quarantined');
+
+      // Un-quarantine it: should go back to awaiting_matching, NOT pending_putaway
+      const uResult = await service.toggleQuarantine(lineId, 'admin');
+      expect(uResult.putawayStatus).toBe('awaiting_matching');
+
+      // Verify in DB
+      const [dbLine] = await pg.db
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId));
+      expect(dbLine.putawayStatus).toBe('awaiting_matching');
+    });
+
+    it('should restore pending_putaway when un-quarantining a matched line', async () => {
+      await seedBasics();
+      await seedQuarantineInfra();
+      const lineId = await createMatchedLine();
+
+      // Quarantine it
+      const qResult = await service.toggleQuarantine(lineId, 'admin');
+      expect(qResult.putawayStatus).toBe('quarantined');
+
+      // Un-quarantine it: should go to pending_putaway because it has a PO link
+      const uResult = await service.toggleQuarantine(lineId, 'admin');
+      expect(uResult.putawayStatus).toBe('pending_putaway');
+    });
+
+    it('should throw when source bin is missing', async () => {
+      await seedBasics();
+      // Seed quarantine bin but NO receiving bin — delete the one from seedBasics
+      await seedQuarantineInfra();
+      await pg.db.delete(bins).where(eq(bins.binId, BIN_ID));
+
+      const lineId = await createUnmatchedLine();
+
+      await expect(service.toggleQuarantine(lineId, 'admin')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should record inventory movement on quarantine toggle', async () => {
+      await seedBasics();
+      await seedQuarantineInfra();
+      const lineId = await createUnmatchedLine();
+
+      await service.toggleQuarantine(lineId, 'admin');
+
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
+      const call =
+        mockInventoryService.recordInventoryMovement.mock.calls[0][1];
+      expect(call.lines).toHaveLength(2);
+      expect(call.lines[0].quantity).toBe(-50);
+      expect(call.lines[1].quantity).toBe(50);
+    });
+  });
+
+  describe('resolve preserves quarantined status (ADV-086)', () => {
+    it('should keep quarantined status when matching a quarantined line', async () => {
+      await seedBasics();
+
+      // Seed quarantine infrastructure
+      const QUAR_ZONE_ID = '00000000-0000-0000-0000-0000000000d0';
+      const QUAR_BIN_ID = '00000000-0000-0000-0000-0000000000d1';
+      await pg.db.insert(zones).values({
+        zoneId: QUAR_ZONE_ID,
+        locationId: LOCATION_ID,
+        code: 'QUAR',
+        name: 'Quarantine Zone',
+      });
+      await pg.db.insert(bins).values({
+        binId: QUAR_BIN_ID,
+        zoneId: QUAR_ZONE_ID,
+        binNumber: 'QUARANTINE',
+        binType: 'quarantine',
+      });
+
+      const PO_ID = '00000000-0000-0000-0000-000000000061';
+      const PO_LINE_ID = '00000000-0000-0000-0000-000000000062';
+      await pg.db.insert(purchaseOrders).values({
+        purchaseOrderId: PO_ID,
+        orderNumber: 'PO-R1',
+        vendorId: VENDOR_ID,
+        deliveryLocationId: LOCATION_ID,
+        currencyCode: 'EUR',
+        stateCode: 'ordered',
+      });
+      await pg.db.insert(purchaseOrderLineItems).values({
+        purchaseOrderLineId: PO_LINE_ID,
+        purchaseOrderId: PO_ID,
+        productId: PROD_ID,
+        lineNumber: 1,
+        quantity: '100',
+        quantityReceived: '0',
+        pricePerUnit: '10',
+        taxCategoryId: TAX_CAT_ID,
+      });
+
+      // Create a quarantined, unmatched line
+      const [gr] = await pg.db
+        .insert(goodsReceived)
+        .values({
+          receiptNumber: 'GR-R1',
+          vendorId: VENDOR_ID,
+          locationId: LOCATION_ID,
+        })
+        .returning();
+      const [line] = await pg.db
+        .insert(goodsReceivedLines)
+        .values({
+          goodsReceivedId: gr.goodsReceivedId,
+          productId: PROD_ID,
+          quantityReceived: '50',
+          matchStatus: 'ambiguous',
+          putawayStatus: 'quarantined',
+        })
+        .returning();
+
+      // Match it to a PO — status should remain quarantined
+      await service.resolveAllocation(
+        line.goodsReceivedLineId,
+        PO_LINE_ID,
+        'admin',
+      );
+
+      const [dbLine] = await pg.db
+        .select()
+        .from(goodsReceivedLines)
+        .where(
+          eq(goodsReceivedLines.goodsReceivedLineId, line.goodsReceivedLineId),
+        );
+
+      expect(dbLine.matchStatus).toBe('matched');
+      expect(dbLine.putawayStatus).toBe('quarantined');
     });
   });
 });

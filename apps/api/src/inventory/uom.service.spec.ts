@@ -16,7 +16,7 @@ describe('UomService', () => {
 
   const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed required UOMs
     await pg.db.insert(uomDictionary).values([
       { uomCode: 'EA', description: 'Each' },

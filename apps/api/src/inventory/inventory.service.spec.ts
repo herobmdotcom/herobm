@@ -32,7 +32,7 @@ describe('InventoryService', () => {
   const ZONE_ID = '00000000-0000-0000-0000-00000000000c';
   const BIN_ID = '00000000-0000-0000-0000-00000000000b';
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed static data
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',

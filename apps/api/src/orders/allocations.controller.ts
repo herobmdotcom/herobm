@@ -99,6 +99,7 @@ export class AllocationsController {
         quantity: sql<number>`CAST(${backorders.quantity} AS float)`,
         createdOn: backorders.createdOn,
         purchaseOrderLineId: backorders.purchaseOrderLineId,
+        stateCode: backorders.stateCode,
       })
       .from(backorders)
       .leftJoin(

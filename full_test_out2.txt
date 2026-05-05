@@ -1,0 +1,2576 @@
+
+> api@0.0.1 test:pglite
+> npm run lint && npm run test:unit:pglite
+
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix --cache --cache-location .eslintcache --quiet
+
+
+> api@0.0.1 test:unit:pglite
+> cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules --max-old-space-size=8192" jest --max-workers=2
+
+(node:16248) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23660) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+PASS src/accounts/accounts-write.service.spec.ts (5.846 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+PASS src/orders/returns-write.service.spec.ts (22.545 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+    console.log
+      acctRows [
+        {
+          glAccountId: 'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+          accountCode: '1100'
+        },
+        {
+          glAccountId: '3f86d519-c670-5161-9765-a02a65e5bd4c',
+          accountCode: '2200'
+        },
+        {
+          glAccountId: 'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+          accountCode: '4100'
+        }
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:844:13)
+
+    console.log
+      settingsIds [
+        'cc003e99-a05d-57c1-ac1f-c208a2c2a1eb',
+        'd7f22ad9-6aed-5511-84e6-2d8d795e4e14',
+        '3f86d519-c670-5161-9765-a02a65e5bd4c'
+      ]
+
+      at ReturnsWriteService.postCreditNoteGl (orders/returns-write.service.ts:845:13)
+
+PASS src/orders/shipment.service.spec.ts (11.864 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+PASS src/test-utils/schema-pglite.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+    console.log
+      Tax categories count: 3
+
+      at Object.<anonymous> (test-utils/schema-pglite.spec.ts:10:13)
+
+FAIL src/settings/app-config.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● AppConfigService › onModuleInit › should load settings from both tables
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › onModuleInit › should fall back to error when tables are empty
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › onModuleInit › should handle missing tables gracefully (pre-migration)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › reload › should refresh cached values
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+PASS src/orders/backorders.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/test-utils/simple.spec.ts
+PASS src/accounts/accounts.service.spec.ts (5.708 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+FAIL src/orders/orders.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● OrdersService › findAll › should return paginated orders
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+  ● OrdersService › findAll › should apply search filter
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+  ● OrdersService › findAll › should cap limit at 100000
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+FAIL src/products/products-write.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+  ● ProductsWriteService › create › should create a product and insert an event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › update › should update product and write standard update event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › update › should write specialized status_changed event if only stateCode is updated
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › archive › should archive an active product and create an event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › unarchive › should unarchive to previous state based on last event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › unarchive › should unarchive to active if no previous state is found
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+PASS src/suppliers/suppliers.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+FAIL src/purchase-orders/purchase-orders.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● PurchaseOrdersService › create › should create a purchase order and return it
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+  ● PurchaseOrdersService › changeState › should transition state from draft to ordered
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+  ● PurchaseOrdersService › addLine › should add a line item to a draft order
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+PASS src/auth/auth.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+PASS src/products/products.service.spec.ts (5.301 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/picking.service.spec.ts (6.078 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+FAIL src/dashboard/dashboard.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● DashboardService › getSummary › should return counts for all entities
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should return empty results for queries shorter than 2 chars
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should query all entity tables and return unified results
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should return correct href for each entity type
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › getTimeline › should return chronological events from system_events
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › getTimeline › should return empty if no types provided
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+PASS src/reports/picking-slip.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+FAIL src/inventory/inventory.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● InventoryService › recordInventoryMovement › should insert an entry header, ledger lines, and update bin contents
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+  ● InventoryService › recordInventoryMovement › should correctly handle negative quantities (picks)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+  ● InventoryService › findAll › should return paginated inventory levels
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+FAIL src/inventory/uom.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● UomService › calculateAbsoluteBaseQuantity › returns 0 if lines are empty
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › throws NotFoundException if product is missing
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › calculates correctly using baseUom and standard ratios
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › throws exact Error message for unmapped UOMs
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+PASS src/locations/locations.service.spec.ts (7.457 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+FAIL src/goods-received/goods-received.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● GoodsReceivedService › create › should throw NotFoundException when supplier does not exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "matched" when exactly one open PO line exists
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "ambiguous" when multiple open PO lines exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "unmatched" when no open PO lines exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › findOne › should return a receipt with lines
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › findOne › should throw NotFoundException when receipt does not exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should restore awaiting_matching when un-quarantining an unmatched line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should restore pending_putaway when un-quarantining a matched line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should throw when source bin is missing
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should record inventory movement on quarantine toggle
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › resolve preserves quarantined status (ADV-086) › should keep quarantined status when matching a quarantined line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+FAIL src/invoices/sales-invoice.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ● SalesInvoiceService › createInvoice › should reject if order is not found
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should reject if order is in draft state
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should accept orders in shipped state
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should reject invoicing more than available (mocked via shipment-helpers)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › findOne › should throw NotFoundException for unknown invoice
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+PASS src/gl/coa-loader.service.spec.ts (6.194 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/accounts/credit-assessment.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/suppliers/suppliers-write.service.spec.ts (5.545 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tax/tax-categories.service.spec.ts (7.904 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/reports/reports.service.spec.ts (8.513 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/macros/macros.service.spec.ts (7.512 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/gl/gl.service.spec.ts (14.12 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/invoices/purchase-invoice.service.spec.ts
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/order-lifecycle-rules.spec.ts (6.527 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/products/products.controller.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/goods-received/goods-received.controller.spec.ts
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/orders/orders.controller.spec.ts
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/tax/tax-categories.controller.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/reports/reports.controller.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/setup/setup.guard.spec.ts
+[33m[Nest] 16248  - [39m05/05/2026, 7:07:02 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+[33m[Nest] 16248  - [39m05/05/2026, 7:07:02 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+PASS src/inventory/inventory-accounting.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/orders/picking-math.utils.spec.ts
+PASS src/orders/returns-math.utils.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+PASS src/common/emit-event.spec.ts
+PASS src/test-mock.spec.ts
+  ● Console
+
+    console.log
+      Vendor: { vendorId: 'v1', name: 'ACME' }
+
+      at Object.<anonymous> (test-mock.spec.ts:9:11)
+
+PASS src/inventory/inventory-math.utils.spec.ts
+PASS src/suppliers/supplier-risk.domain.spec.ts
+PASS src/gl/gl-transaction-boundary.spec.ts
+PASS src/accounts/credit-control.utils.spec.ts
+PASS src/common/pricing.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+  ● Console
+
+    console.warn
+      Projection has fields not in schema: productType, baseUom. These should be either computed / joined columns or projection errors.
+
+    [0m [90m 153 |[39m       [90m// but flag them for review.[39m
+     [90m 154 |[39m       [36mif[39m (unknownFields[33m.[39mlength [33m>[39m [35m0[39m) {
+    [31m[1m>[22m[39m[90m 155 |[39m         console[33m.[39mwarn(
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 156 |[39m           [32m`Projection has fields not in schema: ${unknownFields.join(', ')}. `[39m [33m+[39m
+     [90m 157 |[39m             [32m`These should be either computed / joined columns or projection errors.`[39m[33m,[39m
+     [90m 158 |[39m         )[33m;[39m[0m
+
+      at Object.<anonymous> (orders/projection-completeness.spec.ts:155:17)
+
+FAIL src/orders/orders-write.service.spec.ts (1536.798 s)
+  ● Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+        SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+    console.log
+        Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+    console.log
+        Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+    console.log
+        Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+    console.log
+        Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+    console.log
+        Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+    console.log
+        Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+    console.log
+        Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+    console.log
+        Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+    console.log
+        Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+    console.log
+        Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+    console.log
+        Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+    console.log
+      
+      Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+  ● OrdersWriteService › create › should use product GST category directly without fallback if possible
+
+    RangeError: Invalid string length
+
+    [0m [90m 271 |[39m       [36mconst[39m { validDto } [33m=[39m [36mawait[39m setupCreate()[33m;[39m
+     [90m 272 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 273 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 274 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 275 |[39m       )[33m;[39m
+     [90m 276 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:273:38)
+
+  ● OrdersWriteService › create › should use zero-rated GST for zero-rated product
+
+    RangeError: Invalid string length
+
+    [0m [90m 281 |[39m       })[33m;[39m
+     [90m 282 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 283 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 284 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 285 |[39m       )[33m;[39m
+     [90m 286 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:283:38)
+
+  ● OrdersWriteService › addLine › should resolve GST via product category
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+
+    Number of calls: 2
+
+    [0m [90m 608 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 609 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 610 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 611 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 612 |[39m       )[33m;[39m
+     [90m 613 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:610:38)
+
+  ● OrdersWriteService › addLine › should use per-line GST override when provided
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85"
+    Received: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85", undefined
+
+    Number of calls: 1
+
+    [0m [90m 625 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 626 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 627 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 628 |[39m         [33mTAX_EXEMPT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 629 |[39m       )[33m;[39m
+     [90m 630 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:627:38)
+
+  ● OrdersWriteService › addLine › should use zero-rate for zero-rated product
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "f9375783-593e-5707-aca9-28756a8d753c"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "f9375783-593e-5707-aca9-28756a8d753c", undefined
+
+    Number of calls: 2
+
+    [0m [90m 697 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 698 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 699 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 700 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 701 |[39m       )[33m;[39m
+     [90m 702 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:699:38)
+
+Summary of all failing tests
+FAIL settings/app-config.service.spec.ts
+  ● AppConfigService › onModuleInit › should load settings from both tables
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › onModuleInit › should fall back to error when tables are empty
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › onModuleInit › should handle missing tables gracefully (pre-migration)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+  ● AppConfigService › reload › should refresh cached values
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (settings/app-config.service.spec.ts:20:28)
+
+FAIL orders/orders.service.spec.ts
+  ● OrdersService › findAll › should return paginated orders
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+  ● OrdersService › findAll › should apply search filter
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+  ● OrdersService › findAll › should cap limit at 100000
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (orders/orders.service.spec.ts:28:14)
+
+FAIL products/products-write.service.spec.ts
+  ● ProductsWriteService › create › should create a product and insert an event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › update › should update product and write standard update event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › update › should write specialized status_changed event if only stateCode is updated
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › archive › should archive an active product and create an event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › unarchive › should unarchive to previous state based on last event
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+  ● ProductsWriteService › unarchive › should unarchive to active if no previous state is found
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (products/products-write.service.spec.ts:19:14)
+
+FAIL purchase-orders/purchase-orders.service.spec.ts
+  ● PurchaseOrdersService › create › should create a purchase order and return it
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+  ● PurchaseOrdersService › changeState › should transition state from draft to ordered
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+  ● PurchaseOrdersService › addLine › should add a line item to a draft order
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:38:14)
+
+FAIL dashboard/dashboard.service.spec.ts
+  ● DashboardService › getSummary › should return counts for all entities
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should return empty results for queries shorter than 2 chars
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should query all entity tables and return unified results
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › universalSearch › should return correct href for each entity type
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › getTimeline › should return chronological events from system_events
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+  ● DashboardService › getTimeline › should return empty if no types provided
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (dashboard/dashboard.service.spec.ts:28:14)
+
+FAIL inventory/inventory.service.spec.ts
+  ● InventoryService › recordInventoryMovement › should insert an entry header, ledger lines, and update bin contents
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+  ● InventoryService › recordInventoryMovement › should correctly handle negative quantities (picks)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+  ● InventoryService › findAll › should return paginated inventory levels
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/inventory.service.spec.ts:37:14)
+
+FAIL inventory/uom.service.spec.ts
+  ● UomService › calculateAbsoluteBaseQuantity › returns 0 if lines are empty
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › throws NotFoundException if product is missing
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › calculates correctly using baseUom and standard ratios
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+  ● UomService › calculateAbsoluteBaseQuantity › throws exact Error message for unmapped UOMs
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (inventory/uom.service.spec.ts:21:14)
+
+FAIL goods-received/goods-received.service.spec.ts
+  ● GoodsReceivedService › create › should throw NotFoundException when supplier does not exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "matched" when exactly one open PO line exists
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "ambiguous" when multiple open PO lines exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › create › should set match_status to "unmatched" when no open PO lines exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › findOne › should return a receipt with lines
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › findOne › should throw NotFoundException when receipt does not exist
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should restore awaiting_matching when un-quarantining an unmatched line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should restore pending_putaway when un-quarantining a matched line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should throw when source bin is missing
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › toggleQuarantine (ADV-086) › should record inventory movement on quarantine toggle
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+  ● GoodsReceivedService › resolve preserves quarantined status (ADV-086) › should keep quarantined status when matching a quarantined line
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:45:14)
+
+FAIL invoices/sales-invoice.service.spec.ts
+  ● SalesInvoiceService › createInvoice › should reject if order is not found
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should reject if order is in draft state
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should accept orders in shipped state
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › createInvoice › should reject invoicing more than available (mocked via shipment-helpers)
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+  ● SalesInvoiceService › findOne › should throw NotFoundException for unknown invoice
+
+    PGLite context.db accessed before it is initialized
+
+    [0m [90m 28 |[39m     [36mget[39m db() {
+     [90m 29 |[39m       [36mif[39m ([33m![39m[36mthis[39m[33m.[39m_db)
+    [31m[1m>[22m[39m[90m 30 |[39m         [36mthrow[39m [36mnew[39m [33mError[39m([32m'PGLite context.db accessed before it is initialized'[39m)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 31 |[39m       [36mreturn[39m [36mthis[39m[33m.[39m_db[33m;[39m
+     [90m 32 |[39m     }[33m,[39m
+     [90m 33 |[39m     [36mget[39m client() {[0m
+
+      at Object.get db [as db] (test-utils/pglite-suite.ts:30:15)
+      at Object.<anonymous> (invoices/sales-invoice.service.spec.ts:39:14)
+
+FAIL orders/orders-write.service.spec.ts (1536.798 s)
+  ● OrdersWriteService › create › should use product GST category directly without fallback if possible
+
+    RangeError: Invalid string length
+
+    [0m [90m 271 |[39m       [36mconst[39m { validDto } [33m=[39m [36mawait[39m setupCreate()[33m;[39m
+     [90m 272 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 273 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 274 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 275 |[39m       )[33m;[39m
+     [90m 276 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:273:38)
+
+  ● OrdersWriteService › create › should use zero-rated GST for zero-rated product
+
+    RangeError: Invalid string length
+
+    [0m [90m 281 |[39m       })[33m;[39m
+     [90m 282 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 283 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 284 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 285 |[39m       )[33m;[39m
+     [90m 286 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:283:38)
+
+  ● OrdersWriteService › addLine › should resolve GST via product category
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+
+    Number of calls: 2
+
+    [0m [90m 608 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 609 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 610 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 611 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 612 |[39m       )[33m;[39m
+     [90m 613 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:610:38)
+
+  ● OrdersWriteService › addLine › should use per-line GST override when provided
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85"
+    Received: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85", undefined
+
+    Number of calls: 1
+
+    [0m [90m 625 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 626 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 627 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 628 |[39m         [33mTAX_EXEMPT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 629 |[39m       )[33m;[39m
+     [90m 630 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:627:38)
+
+  ● OrdersWriteService › addLine › should use zero-rate for zero-rated product
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "f9375783-593e-5707-aca9-28756a8d753c"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "f9375783-593e-5707-aca9-28756a8d753c", undefined
+
+    Number of calls: 2
+
+    [0m [90m 697 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 698 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 699 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 700 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 701 |[39m       )[33m;[39m
+     [90m 702 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:699:38)
+
+
+Test Suites: 10 failed, 55 passed, 65 total
+Tests:       50 failed, 437 passed, 487 total
+Snapshots:   0 total
+Time:        1537.685 s, estimated 1962 s
+Ran all test suites.
+npm error Lifecycle script `test:unit:pglite` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules --max-old-space-size=8192" jest --max-workers=2
+npm error Lifecycle script `test:pglite` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c npm run lint && npm run test:unit:pglite

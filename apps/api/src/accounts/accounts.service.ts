@@ -77,14 +77,14 @@ export class AccountsService {
     return { data, page, limit, total: Number(count) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
         id,
       );
-
     // Look up by UUID or by sourceId (legacy ABM slugs)
-    const rows = await this.db
+    const rows = await db
       .select({
         ...getTableColumns(accounts),
         accountGroupName: accountGroups.name,
@@ -114,7 +114,7 @@ export class AccountsService {
     const account = rows[0];
 
     // Load activity events
-    const events = await this.db
+    const events = await db
       .select()
       .from(accountEvents)
       .where(eq(accountEvents.accountId, account.accountId))

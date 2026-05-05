@@ -1,0 +1,135 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
+import Link from 'next/link';
+
+/**
+ * PickingStatusSection — Read-only picking status for the Sales Order detail page.
+ * Shows picking progress per line (ordered, picked, remaining, on-hand).
+ */
+
+interface PickingSummaryLine {
+    salesOrderLineId: string;
+    lineNumber: number;
+    productId: string;
+    productNumber: string;
+    productDescription: string;
+    quantity: string;
+    quantityPicked: string;
+    quantityShipped: string;
+    remaining: string;
+    isFullyPicked: boolean;
+    isPhysical: boolean;
+    onHand: string;
+}
+
+interface PickingSummary {
+    totalLines: number;
+    fullyPickedLines: number;
+    isFullyPicked: boolean;
+    lines: PickingSummaryLine[];
+}
+
+interface Props {
+    pickingSummary: PickingSummary | null;
+}
+
+export default function PickingStatusSection({ pickingSummary }: Props) {
+    const tPicking = useTranslations('picking');
+    const tCommon = useTranslations('common');
+
+    if (!pickingSummary) {
+        return (
+            <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                {tCommon('loading')}
+            </div>
+        );
+    }
+
+    const physicalLines = pickingSummary.lines.filter(l => l.isPhysical);
+    const fullyPicked = physicalLines.filter(l => l.isFullyPicked).length;
+
+    return (
+        <div id="picking-section" className="card">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="section-heading">
+                    <span className="material-symbols-outlined">inventory</span>
+                    {tPicking('title')}
+                </h3>
+                <div className="flex items-center gap-2">
+                    <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        {fullyPicked} / {physicalLines.length}
+                    </span>
+                    {pickingSummary.isFullyPicked && (
+                        <span className="text-xs font-bold text-[var(--success)]">
+                            <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
+                            {tPicking('statuses.done')}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <table className="table-lines">
+                <thead>
+                    <tr>
+                        <th>{tPicking('columns.product')}</th>
+                        <th style={{ textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
+                        <th style={{ textAlign: 'right' }}>{tPicking('columns.picked')}</th>
+                        <th style={{ textAlign: 'right' }}>{tPicking('columns.remaining')}</th>
+                        <th style={{ textAlign: 'right' }}>{tPicking('columns.onHand')}</th>
+                        <th style={{ textAlign: 'center' }}>{tPicking('columns.status')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {physicalLines.map(line => {
+                        const remaining = parseFloat(line.remaining);
+                        return (
+                            <tr key={line.salesOrderLineId} className={line.isFullyPicked ? 'opacity-60' : ''}>
+                                <td>
+                                    <div className="font-bold text-sm">
+                                        {line.productId ? (
+                                            <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                {line.productNumber}
+                                            </Link>
+                                        ) : line.productNumber}
+                                    </div>
+                                    <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                                </td>
+                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    {parseFloat(line.quantity).toLocaleString()}
+                                </td>
+                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    {parseFloat(line.quantityPicked).toLocaleString()}
+                                </td>
+                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    <span className={remaining > 0 ? 'font-semibold text-[var(--warning)]' : 'text-[var(--text-muted)]'}>
+                                        {remaining.toLocaleString()}
+                                    </span>
+                                </td>
+                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                    {parseFloat(line.onHand).toLocaleString()}
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                    {line.isFullyPicked ? (
+                                        <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                    ) : remaining > 0 ? (
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                    ) : null}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                    {physicalLines.length === 0 && (
+                        <tr>
+                            <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
+                                No physical lines.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    );
+}

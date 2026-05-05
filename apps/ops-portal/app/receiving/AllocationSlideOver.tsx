@@ -31,8 +31,9 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
   // Initialize localLines when the slide-over opens
   useEffect(() => {
     if (isOpen) {
-      // Only take lines that are currently unmatched
-      const initialUnmatched = grLines.filter((l) => l.matchStatus !== 'matched');
+      // Only take lines that are currently unmatched AND not quarantined
+      // ADV-086: Quarantined items must be cleared before matching
+      const initialUnmatched = grLines.filter((l) => l.matchStatus !== 'matched' && l.putawayStatus !== 'quarantined');
       setLocalLines(initialUnmatched);
       if (initialUnmatched.length > 0) {
         setActiveLineId(initialUnmatched[0].goodsReceivedLineId);
@@ -119,7 +120,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
   }, []);
 
-  const markAllocated = useCallback((lineId: string, splitLine?: any) => {
+  const markAllocated = useCallback((lineId: string, allocatedQty: string, splitLine?: any) => {
     setLineStates((prev) => {
       const next = new Map(prev);
       const state = next.get(lineId);
@@ -129,27 +130,30 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     });
 
     setLocalLines((prev) => {
-      if (splitLine) {
-        // Find where the current line is and insert the split line right after it
-        const idx = prev.findIndex(l => l.goodsReceivedLineId === lineId);
-        if (idx >= 0) {
-          const next = [...prev];
-          next.splice(idx + 1, 0, splitLine);
-          return next;
-        }
-        return [...prev, splitLine];
-      }
-      return prev;
-    });
+      const idx = prev.findIndex(l => l.goodsReceivedLineId === lineId);
+      if (idx === -1) return prev;
 
-    // Auto-advance to the next unallocated line
-    setLocalLines((prev) => {
-      const currentIndex = prev.findIndex(l => l.goodsReceivedLineId === lineId);
-      if (currentIndex >= 0 && currentIndex < prev.length - 1) {
-        // Since we might have just inserted the split line at currentIndex + 1, it will become active!
-        setActiveLineId(prev[currentIndex + 1].goodsReceivedLineId);
+      const next = [...prev];
+      // Update original line quantity to what was actually allocated
+      next[idx] = { ...next[idx], quantityReceived: allocatedQty };
+
+      let newActiveId = null;
+
+      if (splitLine) {
+        // Insert the split line right after the current line
+        next.splice(idx + 1, 0, splitLine);
+        // The split line becomes the new active line
+        newActiveId = splitLine.goodsReceivedLineId;
+      } else if (idx < next.length - 1) {
+        // Auto-advance to the next line in the queue
+        newActiveId = next[idx + 1].goodsReceivedLineId;
       }
-      return prev;
+
+      if (newActiveId) {
+        setActiveLineId(newActiveId);
+      }
+
+      return next;
     });
   }, []);
 
@@ -187,7 +191,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
         };
       }
 
-      markAllocated(grLine.goodsReceivedLineId, splitLine);
+      markAllocated(grLine.goodsReceivedLineId, qtyStr, splitLine);
       onRefresh();
     } catch (err: any) {
       alert(err.message || 'Failed to match receipt');

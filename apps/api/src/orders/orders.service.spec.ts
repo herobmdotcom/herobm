@@ -23,7 +23,7 @@ describe('OrdersService', () => {
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
   const PROD_ID = '00000000-0000-0000-0000-00000000000a';
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed data
     await pg.db
       .insert(uomDictionary)

@@ -27,7 +27,8 @@ describe('Audit Events (e2e)', () => {
 
     // Clean up stale E2E data to prevent order number collisions
     const db = app.get(DRIZZLE);
-    await db.execute(sql`
+    if (process.env.USE_PGLITE !== 'true') {
+      await db.execute(sql`
       DO $$ 
       DECLARE
           r RECORD;
@@ -48,6 +49,7 @@ describe('Audit Events (e2e)', () => {
           END LOOP;
       END $$;
     `);
+    }
 
     // Login as admin
     const adminRes = await request(app.getHttpServer())

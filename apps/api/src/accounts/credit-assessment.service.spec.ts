@@ -16,7 +16,16 @@ describe('CreditAssessmentService', () => {
   let service: CreditAssessmentService;
   let testGlAccountId: string;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CreditAssessmentService,
+        { provide: DRIZZLE, useValue: pg.db },
+      ],
+    }).compile();
+
+    service = module.get<CreditAssessmentService>(CreditAssessmentService);
+
     // Seed a standard AR GL Account
     const [gl] = await pg.db
       .insert(glAccounts)
@@ -28,23 +37,6 @@ describe('CreditAssessmentService', () => {
       })
       .returning();
     testGlAccountId = gl.glAccountId;
-  });
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CreditAssessmentService,
-        { provide: DRIZZLE, useValue: pg.db },
-      ],
-    }).compile();
-
-    service = module.get<CreditAssessmentService>(CreditAssessmentService);
-
-    // Clean tables (reverse order)
-    await pg.db.delete(glJournalLines);
-    await pg.db.delete(glJournalEntries);
-    await pg.db.delete(accounts);
-    await pg.db.delete(tradingTerms);
   });
 
   describe('assessCredit', () => {

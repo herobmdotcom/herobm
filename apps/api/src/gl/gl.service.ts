@@ -705,8 +705,9 @@ export class GlService {
   // GL Settings
   // -------------------------------------------------------------------------
 
-  async getSettings() {
-    const [settings] = await this.db.select().from(glSettings).limit(1);
+  async getSettings(tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const [settings] = await db.select().from(glSettings).limit(1);
     return {
       ...(settings || {}),
       revenueRoutingPrecedence: REVENUE_ROUTING_PRECEDENCE,

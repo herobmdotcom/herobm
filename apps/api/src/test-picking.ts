@@ -23,4 +23,7 @@ async function run() {
   await app.close();
 }
 
-run();
+run().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

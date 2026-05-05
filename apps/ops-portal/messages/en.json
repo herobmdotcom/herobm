@@ -989,7 +989,12 @@
       "action": "Action",
       "qtyToShip": "Qty to Ship",
       "notes": "Notes",
-      "trackingNumber": "Tracking Number"
+      "trackingNumber": "Tracking Number",
+      "status": "Status"
+    },
+    "statuses": {
+      "done": "Fully Picked",
+      "partial": "Partially Picked"
     },
     "actions": {
       "pickAll": "Pick All",
@@ -1009,6 +1014,69 @@
       "failedToGeneratePickingSlip": "Failed to generate picking slip",
       "failedToUpdateLocation": "Failed to update location",
       "unpickToChangeLocation": "Must unpick to change location"
+    }
+  },
+  "fulfillment": {
+    "title": "Picking & Shipping",
+    "picked": "Picked",
+    "shipped": "Shipped",
+    "noData": "Fulfillment data unavailable.",
+    "noPhysicalLines": "No physical lines on this order.",
+    "columns": {
+      "product": "Product",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "onHand": "On Hand",
+      "shipped": "Shipped",
+      "readyToShip": "Ready to Ship",
+      "status": "Status"
+    },
+    "statuses": {
+      "shipped": "Fully shipped",
+      "readyToShip": "Ready to ship",
+      "awaitingShipment": "Picked, awaiting shipment",
+      "partiallyPicked": "Partially picked",
+      "notPicked": "Not yet picked"
+    }
+  },
+  "shipping": {
+    "title": "Shipping",
+    "tabs": {
+      "ready": "Ready",
+      "partial": "Partial"
+    },
+    "selectOrder": "Select an order to create a shipment.",
+    "noOrders": "No {tab} orders pending.",
+    "loadingOrder": "Loading order context…",
+    "columns": {
+      "product": "Product",
+      "description": "Description",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "shipped": "Shipped",
+      "available": "Available",
+      "qtyToShip": "Qty to Ship",
+      "notes": "Notes",
+      "trackingNumber": "Tracking Number"
+    },
+    "placeholders": {
+      "notes": "Shipment notes",
+      "tracking": "Tracking #"
+    },
+    "buttons": {
+      "createShipment": "Create Shipment"
+    },
+    "existingShipments": "Existing Shipments",
+    "noShipmentsYet": "No shipments created yet.",
+    "shipmentLines": "{count} lines",
+    "toasts": {
+      "shipmentCreated": "Shipment created successfully!"
+    },
+    "errors": {
+      "atLeastOneLine": "At least one line with a quantity is required",
+      "failedToCreate": "Failed to create shipment",
+      "failedToLoadOrders": "Failed to load shipping queue",
+      "failedToLoadContext": "Failed to load order context"
     }
   },
   "gl": {
@@ -1197,6 +1265,7 @@
       "supplierInvoices": "Supplier Invoices",
       "receiving": "Receiving",
       "picking": "Picking",
+      "shipping": "Shipping",
       "users": "Users",
       "settings": "Settings",
       "system": "System",

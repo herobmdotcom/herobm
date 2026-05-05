@@ -35,14 +35,22 @@ export default function GoodsReceivedListPage() {
         try {
             // Toggle for all selected that are not completed
             const eligible = selectedRows.filter(r => r.putawayStatus !== 'completed');
+            const errors: string[] = [];
             for (const row of eligible) {
-                await fetch(`/api/goods-received/quarantine/${row.goodsReceivedLineId}`, {
+                const res = await fetch(`/api/goods-received/lines/${row.goodsReceivedLineId}/quarantine`, {
                     method: 'POST',
                 });
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    errors.push(body.message || `Failed for ${row.receiptNumber}`);
+                }
+            }
+            if (errors.length > 0) {
+                alert(`Quarantine errors:\n${errors.join('\n')}`);
             }
             triggerRefresh();
-        } catch (err) {
-            console.error('Failed to toggle quarantine', err);
+        } catch (err: any) {
+            alert(err.message || 'Failed to toggle quarantine');
         }
     }, [selectedRows, triggerRefresh]);
 
@@ -97,6 +105,7 @@ export default function GoodsReceivedListPage() {
                 if (p.value === 'completed') { bg = 'bg-green-100 text-green-800'; label = 'Completed'; }
                 else if (p.value === 'quarantined') { bg = 'bg-red-100 text-red-800'; label = 'Quarantined'; }
                 else if (p.value === 'pending_putaway') { bg = 'bg-blue-100 text-blue-800'; label = 'Pending'; }
+                else if (p.value === 'awaiting_matching') { bg = 'bg-amber-100 text-amber-800 border border-amber-200'; label = 'Awaiting Match'; }
                 
                 return (
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${bg}`}>
@@ -109,8 +118,9 @@ export default function GoodsReceivedListPage() {
         { field: 'notes', headerName: tCommon('columns.notes'), flex: 1, minWidth: 200 }
     ], [t, tCommon]);
 
-    // Count unmatched in selection
-    const unmatchedCount = selectedRows.filter((r) => r.matchStatus !== 'matched').length;
+    // Count unmatched (and not quarantined) in selection — quarantined items cannot be matched
+    const matchableCount = selectedRows.filter((r) => r.matchStatus !== 'matched' && r.putawayStatus !== 'quarantined').length;
+    const hasQuarantinedSelected = selectedRows.some((r) => r.putawayStatus === 'quarantined');
 
     return (
         <>
@@ -193,11 +203,12 @@ export default function GoodsReceivedListPage() {
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={handleAllocate}
-                                            disabled={unmatchedCount === 0}
+                                            disabled={matchableCount === 0}
+                                            title={hasQuarantinedSelected ? 'Quarantined items must be cleared before matching' : undefined}
                                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             {/* eslint-disable-next-line i18next/no-literal-string */}
-                                            Match{unmatchedCount > 0 ? ` (${unmatchedCount})` : ''}
+                                            Match{matchableCount > 0 ? ` (${matchableCount})` : ''}
                                         </button>
                                     </div>
                                 </div>

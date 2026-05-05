@@ -17,6 +17,7 @@ import PageNav from '@/components/shared/PageNav';
 
 import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
+import FulfillmentSection from './FulfillmentSection';
 import QuoteGenerationDialog from './QuoteGenerationDialog';
 import { formatLocationDisplay } from '@/lib/formatters';
 
@@ -193,11 +194,12 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     /* ── Centralised section visibility rules ──────────────────────── */
     const PICKING_INVOICE_STATES = ['picking', 'shipped', 'invoiced', 'legacy', 'archived'];
     const sections = {
-        details:   { id: 'details-section',   label: 'Details',   show: true },
-        lines:     { id: 'lines-section',     label: 'Lines',     show: true },
-        invoices:  { id: 'invoices-section',  label: 'Invoices',  show: PICKING_INVOICE_STATES.includes(order.stateCode) },
-        returns:   { id: 'returns-section',   label: 'Returns',   show: PICKING_INVOICE_STATES.includes(order.stateCode) },
-        activity:  { id: 'activity-section',  label: 'Activity',  show: true },
+        details:      { id: 'details-section',      label: 'Details',      show: true },
+        lines:        { id: 'lines-section',        label: 'Lines',        show: true },
+        fulfillment:  { id: 'fulfillment-section',  label: 'Fulfillment',  show: PICKING_INVOICE_STATES.includes(order.stateCode) },
+        invoices:     { id: 'invoices-section',     label: 'Invoices',     show: PICKING_INVOICE_STATES.includes(order.stateCode) },
+        returns:      { id: 'returns-section',      label: 'Returns',      show: PICKING_INVOICE_STATES.includes(order.stateCode) },
+        activity:     { id: 'activity-section',     label: 'Activity',     show: true },
     };
     const visibleSections = Object.values(sections).filter(s => s.show);
     
@@ -1015,6 +1017,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         </div>
                     )}
                 </div>
+
+                {sections.fulfillment.show && (
+                    <FulfillmentSection orderId={id} pickingSummary={pickingSummary} />
+                )}
 
                 {sections.invoices.show && (
                     <InvoicesSection 

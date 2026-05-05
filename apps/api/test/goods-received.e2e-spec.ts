@@ -87,31 +87,42 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     validVendorId = suppliers.body.data[0].vendorId;
 
     // Fetch a delivery location
+    console.log('Fetching locations');
     const locationsRes = await request(app.getHttpServer())
       .get('/api/inventory/locations')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
+    console.log('Setting location');
     validLocationId = locationsRes.body.data[0].locationId;
 
     // Create an open PO for the test product to enable auto-matching
-    const poRes = await request(app.getHttpServer())
-      .post('/api/purchase-orders')
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({
-        orderNumber: `PO-E2E-${Date.now()}`,
-        vendorId: validVendorId,
-        deliveryLocationId: validLocationId,
-        currencyCode: 'EUR',
-        lines: [
-          {
-            productId: appProductId,
-            quantity: '1000',
-            pricePerUnit: '10.00',
-          },
-        ],
-      })
-      .expect(201);
+    console.log('Creating PO');
+    let poRes;
+    try {
+      poRes = await request(app.getHttpServer())
+        .post('/api/purchase-orders')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          orderNumber: `PO-E2E-${Date.now()}`,
+          vendorId: validVendorId,
+          deliveryLocationId: validLocationId,
+          currencyCode: 'EUR',
+          lines: [
+            {
+              productId: appProductId,
+              quantity: '1000',
+              pricePerUnit: '10.00',
+            },
+          ],
+        });
+      console.log('PO Create Status:', poRes.status, poRes.body);
+      expect(poRes.status).toBe(201);
+    } catch (err) {
+      console.error('PO CREATE ERROR:', err);
+      throw err;
+    }
 
+    console.log('Patching PO');
     await request(app.getHttpServer())
       .patch(`/api/purchase-orders/${poRes.body.purchaseOrderId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)

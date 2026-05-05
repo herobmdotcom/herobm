@@ -1590,7 +1590,7 @@ export const goodsReceivedLines = modbmCore.table('goods_received_lines', {
   quantityReceived: numeric('quantity_received').notNull(),
   matchStatus: text('match_status').notNull().default('unmatched'), // matched | unmatched | ambiguous
   putawayStatus: text('putaway_status', {
-    enum: ['pending_putaway', 'quarantined', 'completed'],
+    enum: ['awaiting_matching', 'pending_putaway', 'quarantined', 'completed'],
   })
     .notNull()
     .default('pending_putaway'),

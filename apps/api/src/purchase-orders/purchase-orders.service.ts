@@ -19,6 +19,7 @@ import {
   backorders,
   purchaseInvoices,
   purchaseInvoiceLines,
+  taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
@@ -70,11 +71,17 @@ export class PurchaseOrdersService {
   ): Promise<{ taxCategoryId: string; rate: number }> {
     if (taxCategoryIdOverride) {
       try {
-        const cat = await this.taxService.getById(taxCategoryIdOverride);
-        return {
-          taxCategoryId: cat.taxCategoryId,
-          rate: parseFloat(cat.rate ?? '0'),
-        };
+        const catRows = await tx
+          .select()
+          .from(taxCategories)
+          .where(eq(taxCategories.taxCategoryId, taxCategoryIdOverride))
+          .limit(1);
+        if (catRows.length > 0) {
+          return {
+            taxCategoryId: catRows[0].taxCategoryId,
+            rate: parseFloat(catRows[0].rate ?? '0'),
+          };
+        }
       } catch (err) {
         // Ignore and fallback
       }
@@ -89,11 +96,17 @@ export class PurchaseOrdersService {
 
       if (pRows.length > 0 && pRows[0].taxCategoryId) {
         try {
-          const cat = await this.taxService.getById(pRows[0].taxCategoryId);
-          return {
-            taxCategoryId: cat.taxCategoryId,
-            rate: parseFloat(cat.rate ?? '0'),
-          };
+          const catRows = await tx
+            .select()
+            .from(taxCategories)
+            .where(eq(taxCategories.taxCategoryId, pRows[0].taxCategoryId))
+            .limit(1);
+          if (catRows.length > 0) {
+            return {
+              taxCategoryId: catRows[0].taxCategoryId,
+              rate: parseFloat(catRows[0].rate ?? '0'),
+            };
+          }
         } catch (err) {
           this.logger.warn(
             `Product ${productId} had invalid tax category ID: ${pRows[0].taxCategoryId}`,
@@ -102,10 +115,17 @@ export class PurchaseOrdersService {
       }
     }
 
-    const defaultGst = await this.taxService.getDefault();
+    const defaultGstRows = await tx
+      .select()
+      .from(taxCategories)
+      .where(eq(taxCategories.isDefault, true))
+      .limit(1);
+    if (defaultGstRows.length === 0) {
+      throw new NotFoundException('No default tax category configured');
+    }
     return {
-      taxCategoryId: defaultGst.taxCategoryId,
-      rate: parseFloat(defaultGst.rate ?? '0'),
+      taxCategoryId: defaultGstRows[0].taxCategoryId,
+      rate: parseFloat(defaultGstRows[0].rate ?? '0'),
     };
   }
 

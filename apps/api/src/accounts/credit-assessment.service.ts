@@ -28,9 +28,13 @@ export class CreditAssessmentService {
    * dynamically from the General Ledger.
    * Uses a Balance Forward reduction strategy (all credits pay down oldest debts first).
    */
-  async assessCredit(accountId: string): Promise<CreditAssessmentResult> {
+  async assessCredit(
+    accountId: string,
+    tx?: DrizzleDB,
+  ): Promise<CreditAssessmentResult> {
+    const db = tx || this.db;
     // 1. Fetch the account, its group, and resolve its trading terms
-    const acctList = await this.db
+    const acctList = await db
       .select({
         accountId: accounts.accountId,
         accountTradingTermsId: accounts.tradingTermsId,
@@ -40,6 +44,10 @@ export class CreditAssessmentService {
       .leftJoin(
         accountGroups,
         eq(accounts.accountGroupId, accountGroups.accountGroupId),
+      )
+      .leftJoin(
+        tradingTerms,
+        eq(accounts.tradingTermsId, tradingTerms.tradingTermsId),
       )
       .where(eq(accounts.accountId, accountId))
       .limit(1);
@@ -61,7 +69,7 @@ export class CreditAssessmentService {
 
     let allowedDays = 0;
     if (effectiveTermsId) {
-      const [terms] = await this.db
+      const [terms] = await db
         .select()
         .from(tradingTerms)
         .where(eq(tradingTerms.tradingTermsId, effectiveTermsId))
@@ -85,7 +93,7 @@ export class CreditAssessmentService {
       WHERE l.party_id = ${accountId} AND l.party_type = 'customer'
     `;
 
-    const result = await this.db.execute(query);
+    const result = await db.execute(query);
     const rows = (result as any).rows ?? result;
     const aggs = rows as unknown as {
       total_debits: string;

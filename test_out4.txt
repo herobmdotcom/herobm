@@ -1,0 +1,257 @@
+
+> api@0.0.1 test:unit:pglite
+> cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules --max-old-space-size=8192" jest --max-workers=2 src/orders/orders-write.service.spec.ts
+
+  console.log
+    [dotenv@17.3.1] injecting env (0) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+(node:19780) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+  console.log
+      SKIP: Missing env vars: DEV_ADMIN_PASSWORD, DEV_VIEWER_PASSWORD, DEV_SALES_PASSWORD, DEV_WAREHOUSE_PASSWORD, DEV_PROCUREMENT_PASSWORD, DEV_FINANCE_PASSWORD
+
+      at seedUsers (scripts/seed.ts:100:13)
+
+  console.log
+      Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+
+      at seedProducts (scripts/seed.ts:184:11)
+
+  console.log
+      Seeded default organization (fallback)
+
+      at seedOrganization (scripts/seed.ts:250:11)
+
+  console.log
+      Seeded 47 GL accounts from au_standard.json
+
+      at seedCoaAccounts (scripts/seed.ts:480:11)
+
+  console.log
+      Seeded 3 tax categories
+
+      at seedCoaSettings (scripts/seed.ts:330:11)
+
+  console.log
+      Seeded 6 trading terms
+
+      at seedCoaSettings (scripts/seed.ts:352:11)
+
+  console.log
+      Seeded GL settings (base_currency=AUD, fiscal_month=7)
+
+      at seedCoaSettings (scripts/seed.ts:384:11)
+
+  console.log
+      Seeded default app_settings
+
+      at seedAppSettings (scripts/seed.ts:275:11)
+
+  console.log
+      Seeded default '00' dimensions (Cost Center, Activity)
+
+      at seedFinancialDimensions (scripts/seed.ts:224:11)
+
+  console.log
+      Seeded 'MAIN' location, zone, and bins
+
+      at seedLocations (scripts/seed.ts:684:11)
+
+  console.log
+      Seeded default customer and vendor
+
+      at seedAccounts (scripts/seed.ts:721:11)
+
+  console.log
+      Seeded 7 reports and 5 hook assignments.
+
+      at seedReports (scripts/seed.ts:586:11)
+
+  console.log
+    
+    Done.
+
+      at runStandardSeeds (scripts/seed.ts:86:11)
+
+FAIL src/orders/orders-write.service.spec.ts (1675.791 s)
+  OrdersWriteService
+    line amount computation
+      √ should compute amount without discount or tax (405 ms)
+      √ should apply percentage discount (421 ms)
+      √ should auto-calculate tax from GST rate (424 ms)
+      √ should handle discount and GST rate together (404 ms)
+      √ should handle fractional quantities (425 ms)
+    create
+      √ should create an order in draft state (382 ms)
+      √ should snapshot customer discount onto the order lines (393 ms)
+      √ should snapshot non-EUR currency onto the order (ADV-034) (388 ms)
+      × should use product GST category directly without fallback if possible (820166 ms)
+      × should use zero-rated GST for zero-rated product (828765 ms)
+      √ should use exempt GST for exempt customer (regardless of product) (448 ms)
+      √ should reject unknown customer (381 ms)
+      √ should reject unknown product (481 ms)
+      √ should create order with no lines (362 ms)
+      √ should fall back to system default when product has unknown GST category (417 ms)
+      √ should roll back order creation if event logging fails (transactional atomicity) (376 ms)
+      √ should throw native PG unique violation error (23505) if manual check is bypassed (336 ms)
+    update
+      √ should update header fields on a draft order (342 ms)
+      √ should update header fields on a quoted order (378 ms)
+      √ should reject update on invoiced order (364 ms)
+      √ should reject update on cancelled order (346 ms)
+      √ should throw NotFoundException for unknown order (347 ms)
+    changeState
+      √ should allow transition draft → quoted (384 ms)
+      √ should allow transition draft → cancelled (332 ms)
+      √ should allow transition quoted → confirmed (369 ms)
+      √ should allow transition quoted → draft (363 ms)
+      √ should allow transition quoted → cancelled (346 ms)
+      √ should allow transition confirmed → picking (370 ms)
+      √ should allow transition confirmed → cancelled (348 ms)
+      √ should allow transition picking → shipped (366 ms)
+      √ should allow transition picking → confirmed (396 ms)
+      √ should allow transition shipped → invoiced (351 ms)
+      √ should allow transition cancelled → draft (372 ms)
+      √ should reject transition draft → shipped (376 ms)
+      √ should reject transition draft → invoiced (351 ms)
+      √ should reject transition draft → picking (390 ms)
+      √ should reject transition draft → confirmed (400 ms)
+      √ should reject transition confirmed → quoted (386 ms)
+      √ should reject transition shipped → draft (371 ms)
+      √ should reject transition invoiced → draft (341 ms)
+      √ should reject transition invoiced → cancelled (379 ms)
+      √ should reject unknown state name (360 ms)
+      √ should transition quoted → confirmed (330 ms)
+      √ should transition confirmed → cancelled (374 ms)
+      √ should transition draft → quoted without inventory side-effects (332 ms)
+      √ should transition draft → cancelled without inventory side-effects (374 ms)
+    addLine
+      √ should add a line to a draft order (374 ms)
+      × should resolve GST via product category (379 ms)
+      × should use per-line GST override when provided (358 ms)
+      √ should reject adding to an invoiced order (352 ms)
+      √ should reject adding to a shipped order (359 ms)
+      √ should reject adding to a cancelled order (360 ms)
+      × should use zero-rate for zero-rated product (367 ms)
+    updateLine
+      √ should update line quantity on a draft order (412 ms)
+      √ should resolve GST category for recomputation (385 ms)
+      √ should reject update on invoiced order (350 ms)
+      √ should reject update on shipped order (367 ms)
+      √ should reject update on cancelled order (363 ms)
+    removeLine
+      √ should remove a line from a draft order (358 ms)
+      √ should call transaction for removal (357 ms)
+      √ should reject removal from invoiced order (364 ms)
+      √ should reject removal from shipped order (357 ms)
+      √ should reject removal from cancelled order (364 ms)
+    findOne
+      √ should return order with lines and events (363 ms)
+      √ should throw NotFoundException for unknown order (363 ms)
+    findLine (via updateLine)
+      √ should throw NotFoundException when line does not exist (400 ms)
+      √ should throw BadRequestException if line belongs to different order (385 ms)
+
+  ● OrdersWriteService › create › should use product GST category directly without fallback if possible
+
+    RangeError: Invalid string length
+
+    [0m [90m 271 |[39m       [36mconst[39m { validDto } [33m=[39m [36mawait[39m setupCreate()[33m;[39m
+     [90m 272 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 273 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 274 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 275 |[39m       )[33m;[39m
+     [90m 276 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:273:38)
+
+  ● OrdersWriteService › create › should use zero-rated GST for zero-rated product
+
+    RangeError: Invalid string length
+
+    [0m [90m 281 |[39m       })[33m;[39m
+     [90m 282 |[39m       [36mawait[39m service[33m.[39mcreate(validDto[33m,[39m [32m'admin'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 283 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 284 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 285 |[39m       )[33m;[39m
+     [90m 286 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:283:38)
+
+  ● OrdersWriteService › addLine › should resolve GST via product category
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+
+    Number of calls: 2
+
+    [0m [90m 608 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 609 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 610 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 611 |[39m         [33mTAX_DEFAULT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 612 |[39m       )[33m;[39m
+     [90m 613 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:610:38)
+
+  ● OrdersWriteService › addLine › should use per-line GST override when provided
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85"
+    Received: "a45c0e30-c2f2-5620-9c62-2c086e9e6e85", undefined
+
+    Number of calls: 1
+
+    [0m [90m 625 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 626 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 627 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 628 |[39m         [33mTAX_EXEMPT[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 629 |[39m       )[33m;[39m
+     [90m 630 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:627:38)
+
+  ● OrdersWriteService › addLine › should use zero-rate for zero-rated product
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "f9375783-593e-5707-aca9-28756a8d753c"
+    Received
+           1: "76ef6967-32f2-5e02-82d2-9bac3b0c18b4", undefined
+           2: "f9375783-593e-5707-aca9-28756a8d753c", undefined
+
+    Number of calls: 2
+
+    [0m [90m 697 |[39m         [32m'admin'[39m[33m,[39m
+     [90m 698 |[39m       )[33m;[39m
+    [31m[1m>[22m[39m[90m 699 |[39m       expect(mocktaxService[33m.[39mgetById)[33m.[39mtoHaveBeenCalledWith(
+     [90m     |[39m                                      [31m[1m^[22m[39m
+     [90m 700 |[39m         [33mTAX_ZERO[39m[33m.[39mtaxCategoryId[33m,[39m
+     [90m 701 |[39m       )[33m;[39m
+     [90m 702 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (orders/orders-write.service.spec.ts:699:38)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 62 passed, 67 total
+Snapshots:   0 total
+Time:        1675.985 s, estimated 1962 s
+Ran all test suites matching src/orders/orders-write.service.spec.ts.
+npm error Lifecycle script `test:unit:pglite` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules --max-old-space-size=8192" jest --max-workers=2 src/orders/orders-write.service.spec.ts

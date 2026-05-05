@@ -48,27 +48,14 @@ describe('OrdersWriteService', () => {
   let mockBackordersService: any;
   let mockCreditAssessmentService: any;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    jest.clearAllMocks();
+
     const allTaxes = await pg.db.select().from(taxCategories);
     TAX_DEFAULT = allTaxes.find((t) => t.code === 'GST');
     TAX_EXEMPT = allTaxes.find((t) => t.code === 'N-T');
     TAX_ZERO = allTaxes.find((t) => t.code === 'FRE');
-  });
 
-  beforeEach(async () => {
-    jest.clearAllMocks();
-
-    await pg.client.exec(`
-      TRUNCATE modbm_core.sales_order_lines CASCADE;
-      TRUNCATE modbm_core.sales_orders CASCADE;
-      TRUNCATE modbm_core.accounts CASCADE;
-      TRUNCATE modbm_core.products CASCADE;
-      TRUNCATE modbm_core.outbox CASCADE;
-      TRUNCATE modbm_core.locations CASCADE;
-      
-      INSERT INTO modbm_core.locations (location_id, code, name) 
-      VALUES ('10000000-0000-0000-0000-000000000001', 'MAIN', 'Main Location');
-    `);
     mocktaxService = {
       getDefault: jest.fn().mockResolvedValue(TAX_DEFAULT),
       getByCode: jest.fn().mockImplementation(async (code: string) => {
@@ -121,33 +108,29 @@ describe('OrdersWriteService', () => {
       }),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        {
-          provide: AppConfigService,
-          useValue: {
-            defaultFulfillmentLocationId: jest
-              .fn()
-              .mockReturnValue('10000000-0000-0000-0000-000000000001'),
-            creditLimitBehavior: jest.fn().mockReturnValue('soft'),
-          },
-        },
-        OrdersWriteService,
-        { provide: DRIZZLE, useValue: pg.db },
-        { provide: TaxCategoriesService, useValue: mocktaxService },
-        { provide: PickingService, useValue: mockPickingService },
-        { provide: InventoryService, useValue: mockInventoryService },
-        { provide: AccountsService, useValue: mockAccountsService },
-        {
-          provide: CreditAssessmentService,
-          useValue: mockCreditAssessmentService,
-        },
-        { provide: ProductsService, useValue: mockProductsService },
-        { provide: BackordersService, useValue: mockBackordersService },
-      ],
-    }).compile();
-
-    service = module.get<OrdersWriteService>(OrdersWriteService);
+    service = new OrdersWriteService(
+      pg.db,
+      mocktaxService,
+      mockPickingService,
+      mockInventoryService,
+      mockAccountsService,
+      mockCreditAssessmentService,
+      mockProductsService,
+      mockBackordersService,
+      {
+        defaultFulfillmentLocationId: jest
+          .fn()
+          .mockReturnValue('10000000-0000-0000-0000-000000000001'),
+        creditLimitBehavior: jest.fn().mockReturnValue('soft'),
+      } as any,
+    );
+    (service as any).logger = {
+      log: jest.fn(),
+      warn: jest.fn(),
+      error: jest.fn(),
+      debug: jest.fn(),
+      verbose: jest.fn(),
+    };
   });
 
   // =========================================================================
@@ -289,6 +272,7 @@ describe('OrdersWriteService', () => {
       await service.create(validDto, 'admin');
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_DEFAULT.taxCategoryId,
+        expect.anything(),
       );
     });
 
@@ -299,6 +283,7 @@ describe('OrdersWriteService', () => {
       await service.create(validDto, 'admin');
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_ZERO.taxCategoryId,
+        expect.anything(),
       );
     });
 
@@ -626,6 +611,7 @@ describe('OrdersWriteService', () => {
       );
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_DEFAULT.taxCategoryId,
+        undefined,
       );
     });
 
@@ -643,6 +629,7 @@ describe('OrdersWriteService', () => {
       );
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_EXEMPT.taxCategoryId,
+        undefined,
       );
     });
 
@@ -715,6 +702,7 @@ describe('OrdersWriteService', () => {
       );
       expect(mocktaxService.getById).toHaveBeenCalledWith(
         TAX_ZERO.taxCategoryId,
+        undefined,
       );
     });
   });

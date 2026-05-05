@@ -42,29 +42,31 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     app.setGlobalPrefix('api');
     await app.init();
 
-    const db = app.get(DRIZZLE);
-    await db.execute(sql`
-      DO $$ 
-      DECLARE
-          r RECORD;
-      BEGIN
-          FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E-OW%'
-          LOOP
-              DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
-              DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
-              DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
-              DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
-          END LOOP;
-      END $$;
-    `);
+    if (process.env.USE_PGLITE !== 'true') {
+      const db = app.get(DRIZZLE);
+      await db.execute(sql`
+        DO $$ 
+        DECLARE
+            r RECORD;
+        BEGIN
+            FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E-OW%'
+            LOOP
+                DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+                DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+                DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
+                DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;
+                DELETE FROM modbm_core.sales_orders WHERE sales_order_id = r.sales_order_id;
+            END LOOP;
+        END $$;
+      `);
+    }
 
     // Login as admin (has orders:write)
     const adminLogin = await request(app.getHttpServer())

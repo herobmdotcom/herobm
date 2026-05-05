@@ -5,9 +5,12 @@
     "test",
     "dist",
     "**/*spec.ts",
+    "src/test-utils",
+    "debug_find_one.ts",
+    "test-login.ts",
     "drizzle.config.ts",
-    "scripts",
-    "tools",
+    "./scripts",
+    "./tools",
     "run-migrations.ts",
     "**/*.js"
   ]

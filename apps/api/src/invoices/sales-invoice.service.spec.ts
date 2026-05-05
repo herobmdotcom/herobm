@@ -34,7 +34,7 @@ describe('SalesInvoiceService', () => {
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
   const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     // Seed static data
     await pg.db.insert(uomDictionary).values({
       uomCode: 'EA',

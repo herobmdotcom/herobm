@@ -12,6 +12,6 @@
   "scripts": {
     "seed": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/seed.ts",
     "setup": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/execute-setup.ts",
-    "setup:prod": "node apps/api/dist/apps/api/src/scripts/execute-setup.js"
+    "setup:prod": "node apps/api/dist/scripts/execute-setup.js"
   }
 }

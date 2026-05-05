@@ -16,6 +16,8 @@ import {
   binContents,
   locations,
   salesOrderPicks,
+  salesOrderShipments,
+  salesOrderShipmentLines,
   backorders,
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
@@ -547,5 +549,261 @@ export class PickingService {
     });
 
     return queue;
+  }
+
+  // -------------------------------------------------------------------------
+  // Shipping Queue
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns a queue of orders pending shipment, enriched with shippability status.
+   * Shippability is determined by comparing picked quantities to shipped quantities.
+   */
+  async getShippingQueue(locationId?: string) {
+    const rawLines = await this.db
+      .select({
+        id: salesOrders.salesOrderId,
+        orderNumber: salesOrders.orderNumber,
+        name: salesOrders.name,
+        customerName: coreAccounts.name,
+        customerOrderNumber: salesOrders.customerOrderNumber,
+        stateCode: salesOrders.stateCode,
+        createdOn: salesOrders.createdOn,
+        createdBy: salesOrders.createdBy,
+        currencyCode: salesOrders.currencyCode,
+        lineId: salesOrderLineItems.salesOrderLineId,
+        lineQuantity: salesOrderLineItems.quantity,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' OR ${coreProducts.productType} IS NULL THEN true ELSE false END`,
+        pickedQty: sql<number>`COALESCE((
+          SELECT SUM(quantity)
+          FROM modbm_core.sales_order_picks
+          WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
+            AND state_code != 'cancelled'
+        ), 0)`,
+        shippedQty: sql<number>`COALESCE((
+          SELECT SUM(sl.quantity_shipped)
+          FROM modbm_core.sales_order_shipment_lines sl
+          JOIN modbm_core.sales_order_shipments s ON s.shipment_id = sl.shipment_id
+          WHERE sl.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
+            AND s.state_code != 'cancelled'
+        ), 0)`,
+      })
+      .from(salesOrders)
+      .innerJoin(
+        salesOrderLineItems,
+        eq(salesOrders.salesOrderId, salesOrderLineItems.salesOrderId),
+      )
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .where(
+        and(
+          eq(salesOrders.stateCode, 'picking'),
+          locationId
+            ? eq(salesOrders.fulfillmentLocationId, locationId)
+            : undefined,
+        ),
+      )
+      .orderBy(salesOrders.createdOn);
+
+    const orderMap = new Map<string, any>();
+
+    for (const row of rawLines) {
+      if (!orderMap.has(row.id)) {
+        orderMap.set(row.id, {
+          id: row.id,
+          orderNumber: row.orderNumber,
+          name: row.name,
+          customerName: row.customerName,
+          customerOrderNumber: row.customerOrderNumber,
+          stateCode: row.stateCode,
+          createdOn: row.createdOn,
+          createdBy: row.createdBy,
+          currencyCode: row.currencyCode,
+          _totalPhysicalLines: 0,
+          _fullyPickedLines: 0,
+          _shippableLines: 0,
+        });
+      }
+
+      const order = orderMap.get(row.id);
+      if (row.isPhysical) {
+        order._totalPhysicalLines += 1;
+        const ordered = parseFloat(row.lineQuantity ?? '0');
+        const picked = parseFloat(row.pickedQty?.toString() ?? '0');
+        const shipped = parseFloat(row.shippedQty?.toString() ?? '0');
+        const availableToShip = picked - shipped;
+
+        if (picked >= ordered) {
+          order._fullyPickedLines += 1;
+        }
+
+        if (availableToShip > 0) {
+          order._shippableLines += 1;
+        }
+      }
+    }
+
+    const queue = Array.from(orderMap.values())
+      .filter((order) => order._shippableLines > 0)
+      .map((order) => {
+        let shippabilityStatus: 'ready' | 'partial';
+
+        if (
+          order._totalPhysicalLines > 0 &&
+          order._fullyPickedLines === order._totalPhysicalLines
+        ) {
+          shippabilityStatus = 'ready';
+        } else {
+          shippabilityStatus = 'partial';
+        }
+
+        const totalShippableLines = order._shippableLines;
+        const totalLines = order._totalPhysicalLines;
+        delete order._totalPhysicalLines;
+        delete order._fullyPickedLines;
+        delete order._shippableLines;
+
+        return {
+          ...order,
+          shippabilityStatus,
+          totalShippableLines,
+          totalLines,
+        };
+      });
+
+    return queue;
+  }
+
+  // -------------------------------------------------------------------------
+  // Shipping Context
+  // -------------------------------------------------------------------------
+
+  /**
+   * Returns shipping context for an order: lines enriched with picked/shipped
+   * quantities and available-to-ship amounts, plus existing shipment summaries.
+   */
+  async getShippingContext(orderId: string) {
+    await findOrder(this.db, orderId);
+
+    const lines = await this.db
+      .select({
+        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        lineNumber: salesOrderLineItems.lineNumber,
+        productId: salesOrderLineItems.productId,
+        productDescription: salesOrderLineItems.productDescription,
+        quantity: salesOrderLineItems.quantity,
+        productNumber: coreProducts.productNumber,
+        productType: coreProducts.productType,
+      })
+      .from(salesOrderLineItems)
+      .leftJoin(
+        coreProducts,
+        eq(salesOrderLineItems.productId, coreProducts.productId),
+      )
+      .where(eq(salesOrderLineItems.salesOrderId, orderId))
+      .orderBy(salesOrderLineItems.lineNumber);
+
+    // Get picked quantities from the picks sub-ledger
+    const lineIds = lines.map((l) => l.salesOrderLineId);
+    const pickedMap = new Map<string, number>();
+    if (lineIds.length > 0) {
+      const pickSums = await this.db
+        .select({
+          salesOrderLineId: salesOrderPicks.salesOrderLineId,
+          totalPicked: sql<number>`COALESCE(SUM(${salesOrderPicks.quantity}), 0)`,
+        })
+        .from(salesOrderPicks)
+        .where(
+          and(
+            inArray(salesOrderPicks.salesOrderLineId, lineIds),
+            sql`${salesOrderPicks.stateCode} != 'cancelled'`,
+          ),
+        )
+        .groupBy(salesOrderPicks.salesOrderLineId);
+
+      for (const row of pickSums) {
+        pickedMap.set(
+          row.salesOrderLineId,
+          parseFloat(String(row.totalPicked)),
+        );
+      }
+    }
+
+    // Get shipped quantities from committed (non-cancelled) shipment lines
+    const committedMap = await getCommittedPerLine(this.db, orderId);
+
+    const enrichedLines = lines.map((line) => {
+      const ordered = parseFloat(line.quantity);
+      const isPhysical = !line.productType || line.productType === 'inventory';
+      const picked = isPhysical
+        ? (pickedMap.get(line.salesOrderLineId) ?? 0)
+        : ordered;
+      const shipped = committedMap.get(line.salesOrderLineId) ?? 0;
+      const availableToShip = Math.max(0, picked - shipped);
+
+      return {
+        salesOrderLineId: line.salesOrderLineId,
+        lineNumber: line.lineNumber,
+        productId: line.productId,
+        productNumber: line.productNumber,
+        productDescription: line.productDescription,
+        isPhysical,
+        quantity: line.quantity,
+        quantityPicked: String(picked),
+        quantityShipped: String(shipped),
+        availableToShip: String(availableToShip),
+      };
+    });
+
+    // Existing shipments summary
+    const shipments = await this.db
+      .select({
+        shipmentId: salesOrderShipments.shipmentId,
+        shipmentNumber: salesOrderShipments.shipmentNumber,
+        stateCode: salesOrderShipments.stateCode,
+        notes: salesOrderShipments.notes,
+        trackingNumber: salesOrderShipments.trackingNumber,
+        createdOn: salesOrderShipments.createdOn,
+      })
+      .from(salesOrderShipments)
+      .where(
+        and(
+          eq(salesOrderShipments.salesOrderId, orderId),
+          sql`${salesOrderShipments.stateCode} != 'cancelled'`,
+        ),
+      )
+      .orderBy(desc(salesOrderShipments.createdOn));
+
+    // Get line counts per shipment
+    const shipmentIds = shipments.map((s) => s.shipmentId);
+    const lineCountMap = new Map<string, number>();
+    if (shipmentIds.length > 0) {
+      const lineCounts = await this.db
+        .select({
+          shipmentId: salesOrderShipmentLines.shipmentId,
+          lineCount: sql<number>`COUNT(*)`,
+        })
+        .from(salesOrderShipmentLines)
+        .where(inArray(salesOrderShipmentLines.shipmentId, shipmentIds))
+        .groupBy(salesOrderShipmentLines.shipmentId);
+
+      for (const row of lineCounts) {
+        lineCountMap.set(row.shipmentId, Number(row.lineCount));
+      }
+    }
+
+    return {
+      lines: enrichedLines,
+      shipments: shipments.map((s) => ({
+        ...s,
+        lineCount: lineCountMap.get(s.shipmentId) ?? 0,
+      })),
+    };
   }
 }

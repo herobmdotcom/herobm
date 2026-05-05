@@ -19,7 +19,9 @@ export default tseslint.config(
       },
       sourceType: 'commonjs',
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['*.mjs', '*.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -59,7 +61,13 @@ export default tseslint.config(
           message: "ADV-039: Use 'req.user.username' instead of 'user.sub' for consistent human-readable audit trails."
         },
         {
-          // ADV-038: Casbin Decorators (Class level)
+          // ADV-038/082/083: Casbin Metadata Enforcement (Class level)
+          // Every @Controller must have @CasbinResource(...) or be marked with @SkipCasbin().
+          selector: "ClassDeclaration:has(Decorator > CallExpression > Identifier[name='Controller']):not(:has(Decorator > CallExpression > Identifier[name='CasbinResource'])):not(:has(Decorator > CallExpression > Identifier[name='SkipCasbin']))",
+          message: "ADV-038: Every @Controller must have @CasbinResource(...) or be marked with @SkipCasbin()."
+        },
+        {
+          // ADV-038: Casbin Decorators (Class level - legacy/guard check)
           selector: "ClassDeclaration:has(Decorator > CallExpression > Identifier[name='CasbinGuard']):not(:has(Decorator > CallExpression > Identifier[name='CasbinResource']))",
           message: "ADV-038: Controller uses CasbinGuard but is missing the @CasbinResource class decorator."
         },

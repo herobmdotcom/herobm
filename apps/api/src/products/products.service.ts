@@ -76,7 +76,8 @@ export class ProductsService {
     return { data, page, limit, total: Number(total) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
     // Reject non-UUID strings early — product_id is a uuid column
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -86,7 +87,7 @@ export class ProductsService {
       throw new NotFoundException(`Product '${id}' not found`);
     }
 
-    const rows = await this.db
+    const rows = await db
       .select({
         ...getTableColumns(coreProducts),
         productGroupName: productGroups.name,
@@ -101,18 +102,18 @@ export class ProductsService {
       .limit(1);
 
     if (rows.length > 0) {
-      const events = await this.db
+      const events = await db
         .select()
         .from(productEvents)
         .where(eq(productEvents.productId, id))
         .orderBy(productEvents.createdOn);
 
-      const uoms = await this.db
+      const uoms = await db
         .select()
         .from(productUoms)
         .where(eq(productUoms.productId, id));
 
-      const defaultBins = await this.db
+      const defaultBins = await db
         .select({
           productDefaultBinId: productDefaultBins.productDefaultBinId,
           productId: productDefaultBins.productId,

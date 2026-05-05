@@ -31,8 +31,21 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
     // Login as admin
     const adminLogin = await request(app.getHttpServer())
       .post('/api/auth/login')
-      .send({ username: 'admin', password: process.env.DEV_ADMIN_PASSWORD })
-      .expect(201);
+      .send({
+        username: 'admin',
+        password: process.env.DEV_ADMIN_PASSWORD || 'password',
+      });
+
+    if (adminLogin.status !== 201) {
+      console.error(
+        'ADMIN LOGIN FAIL:',
+        adminLogin.status,
+        adminLogin.body,
+        'PASSWORD USED:',
+        process.env.DEV_ADMIN_PASSWORD || 'password',
+      );
+    }
+    expect(adminLogin.status).toBe(201);
     adminToken = adminLogin.body.access_token;
 
     // Create a vendor
@@ -42,8 +55,11 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .send({
         vendorNumber: `E2E-MATCH-VEND-${Date.now()}`,
         name: 'E2E 3-Way Matching Vendor',
-      })
-      .expect(201);
+      });
+    if (vendorRes.status !== 201) {
+      console.error('SUPPLIER CREATE FAIL:', vendorRes.status, vendorRes.body);
+    }
+    expect(vendorRes.status).toBe(201);
     validVendorId = vendorRes.body.vendorId;
 
     // Create a product

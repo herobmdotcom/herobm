@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
@@ -78,26 +79,37 @@ export class AccountsWriteService {
       }
     }
 
-    const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [account] = await tx
-        .insert(coreAccounts)
-        .values({
-          ...sanitizedDto,
-          currencyCode:
-            sanitizedDto.currencyCode || this.appConfig.homeCurrency(),
-          createdBy: actor,
-        })
-        .returning();
+    let result;
+    try {
+      result = await this.db.transaction(async (tx: DrizzleDB) => {
+        const [account] = await tx
+          .insert(coreAccounts)
+          .values({
+            ...sanitizedDto,
+            currencyCode:
+              sanitizedDto.currencyCode || this.appConfig.homeCurrency(),
+            createdBy: actor,
+          })
+          .returning();
 
-      await tx.insert(accountEvents).values({
-        accountId: account.accountId,
-        eventType: 'created',
-        payload: dto,
-        actor,
+        await tx.insert(accountEvents).values({
+          accountId: account.accountId,
+          eventType: 'created',
+          payload: dto,
+          actor,
+        });
+
+        return account;
       });
-
-      return account;
-    });
+    } catch (e: any) {
+      const pgCode = e.code || e.cause?.code;
+      if (pgCode === '23505') {
+        throw new ConflictException(
+          `Account number '${dto.accountNumber}' already exists`,
+        );
+      }
+      throw e;
+    }
 
     this.logger.log(
       `Account created: ${dto.accountNumber} (ID: ${result.accountId}) by ${actor}`,

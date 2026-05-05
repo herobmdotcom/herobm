@@ -15,6 +15,9 @@ RUN npm ci
 # Copy the actual source code
 COPY apps/api/ ./apps/api/
 
+# Build shared package first (dist is excluded by .dockerignore)
+RUN npm run build -w packages/shared
+
 WORKDIR /app/apps/api
 # Skip tests during container build for speed and environmental stability
 # RUN npm test
@@ -23,5 +26,4 @@ RUN npm prune --omit=dev
 
 EXPOSE 3001
 
-# The build output is nested because of the monorepo structure and shared packages
-CMD ["node", "dist/apps/api/src/main.js"]
+CMD ["node", "dist/main.js"]

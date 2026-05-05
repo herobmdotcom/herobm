@@ -1,0 +1,215 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import StateBadge from '@/components/StateBadge';
+import { ValidState } from '@/types/states';
+import { apiFetch } from '@/lib/api';
+import Link from 'next/link';
+
+/**
+ * FulfillmentSection — Combined read-only picking + shipping status
+ * for the Sales Order detail page. Single table showing the full
+ * fulfillment pipeline per line: Ordered → Picked → Shipped → Available.
+ */
+
+interface ShippingLine {
+    salesOrderLineId: string;
+    lineNumber: number;
+    productId: string;
+    productNumber: string;
+    productDescription: string;
+    isPhysical: boolean;
+    quantity: string;
+    quantityPicked: string;
+    quantityShipped: string;
+    availableToShip: string;
+}
+
+interface ShipmentSummary {
+    shipmentId: string;
+    shipmentNumber: string;
+    stateCode: string;
+    notes: string | null;
+    trackingNumber: string | null;
+    createdOn: string;
+    lineCount: number;
+}
+
+interface ShippingContext {
+    lines: ShippingLine[];
+    shipments: ShipmentSummary[];
+}
+
+interface PickingSummaryLine {
+    salesOrderLineId: string;
+    lineNumber: number;
+    productId: string;
+    productNumber: string;
+    productDescription: string;
+    quantity: string;
+    quantityPicked: string;
+    remaining: string;
+    isFullyPicked: boolean;
+    isPhysical: boolean;
+    onHand: string;
+}
+
+interface PickingSummary {
+    totalLines: number;
+    fullyPickedLines: number;
+    isFullyPicked: boolean;
+    lines: PickingSummaryLine[];
+}
+
+interface Props {
+    orderId: string;
+    pickingSummary: PickingSummary | null;
+}
+
+export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
+    const t = useTranslations('fulfillment');
+    const tShipping = useTranslations('shipping');
+    const tCommon = useTranslations('common');
+
+    const [shippingCtx, setShippingCtx] = useState<ShippingContext | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setLoading(true);
+        apiFetch<ShippingContext>(`/api/sales-orders/${orderId}/shipping-context`)
+            .then(setShippingCtx)
+            .catch(() => setShippingCtx(null))
+            .finally(() => setLoading(false));
+    }, [orderId]);
+
+    // Merge data: picking summary provides on-hand and remaining; shipping context provides shipped/available-to-ship.
+    // Use shipping context lines as the primary source (it has shipped + available).
+    // Enrich with on-hand from picking summary.
+    const pickingMap = new Map(
+        (pickingSummary?.lines ?? []).map(l => [l.salesOrderLineId, l])
+    );
+
+    const physicalLines = (shippingCtx?.lines ?? []).filter(l => l.isPhysical);
+
+    return (
+        <div id="fulfillment-section" className="card">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="section-heading">
+                    <span className="material-symbols-outlined">local_shipping</span>
+                    {t('title')}
+                </h3>
+            </div>
+
+            {loading ? (
+                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {tCommon('loading')}
+                </div>
+            ) : !shippingCtx ? (
+                <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+                    {t('noData')}
+                </div>
+            ) : (
+                <>
+                    <table className="table-lines">
+                        <thead>
+                            <tr>
+                                <th>{t('columns.product')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('columns.picked')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('columns.shipped')}</th>
+                                <th style={{ textAlign: 'right' }}>{t('columns.readyToShip')}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {physicalLines.map(line => {
+                                const ordered = parseFloat(line.quantity);
+                                const picked = parseFloat(line.quantityPicked);
+                                const shipped = parseFloat(line.quantityShipped);
+                                const available = parseFloat(line.availableToShip);
+                                const pickLine = pickingMap.get(line.salesOrderLineId);
+                                const onHand = pickLine ? parseFloat(pickLine.onHand) : null;
+                                const isPicked = picked >= ordered;
+                                const isShipped = shipped >= ordered;
+
+                                return (
+                                    <tr key={line.salesOrderLineId} className={isShipped ? 'opacity-50' : ''}>
+                                        <td>
+                                            <div className="font-bold text-sm">
+                                                {line.productId ? (
+                                                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                        {line.productNumber}
+                                                    </Link>
+                                                ) : line.productNumber}
+                                            </div>
+                                            <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            {ordered.toLocaleString()}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
+                                                {picked.toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                                            {onHand !== null ? onHand.toLocaleString() : '—'}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
+                                                {shipped.toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                            <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
+                                                {available.toLocaleString()}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {physicalLines.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
+                                        {t('noPhysicalLines')}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+
+                    {/* Existing Shipments */}
+                    {shippingCtx.shipments.length > 0 && (
+                        <div className="mt-6">
+                            <h4 className="section-heading !mb-3 !text-[var(--text-muted)]">{tShipping('existingShipments')}</h4>
+                            <div className="flex flex-col gap-2">
+                                {shippingCtx.shipments.map(shipment => (
+                                    <Link
+                                        key={shipment.shipmentId}
+                                        href={`/shipments/${shipment.shipmentId}`}
+                                        className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
+                                            <div>
+                                                <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
+                                                <div className="text-xs text-[var(--text-muted)]">
+                                                    {new Date(shipment.createdOn).toLocaleDateString()} · {tShipping('shipmentLines', { count: shipment.lineCount })}
+                                                    {shipment.trackingNumber && (
+                                                        <span> · {shipment.trackingNumber}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <StateBadge state={shipment.stateCode as ValidState} />
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}

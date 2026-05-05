@@ -16,7 +16,7 @@ describe('AppConfigService', () => {
   let service: AppConfigService;
   let testLocationId: string;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const [loc] = await pg.db
       .insert(locations)
       .values({
