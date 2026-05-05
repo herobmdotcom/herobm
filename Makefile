@@ -408,6 +408,7 @@ endif
 cli-migrate: migrate
 
 cli-bootstrap:
+	$(MAKE) build-api
 	npm run setup:prod
 	$(MAKE) verify-db
 
