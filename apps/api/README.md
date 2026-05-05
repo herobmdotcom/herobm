@@ -47,10 +47,14 @@ $ npm run start:prod
 ## Run tests
 
 ```bash
-# unit tests
+# Standard unit tests (MockDrizzle)
 $ npm run test
 
-# e2e tests
+# High-fidelity unit tests (PGLite)
+# Use this for services with complex SQL or transactional logic.
+$ npm run test:unit:pglite
+
+# e2e tests (Requires full stack up)
 $ npm run test:e2e
 
 # test coverage

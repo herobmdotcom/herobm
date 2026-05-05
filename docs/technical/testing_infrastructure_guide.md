@@ -41,16 +41,29 @@ make test-infra
 
 ---
 
-## 3. Data Parity & Pipeline Tests
+## 4. Backend Unit & Integration Testing
 
-Data integrity is the highest priority when migrating from ABM. We must guarantee that the raw data in the staging layer matches the transformed data in the core schema.
+The API backend uses a multi-tiered unit testing strategy to balance execution speed with validation fidelity.
 
-*   **`test_data_counts.py`**: A critical Python script that queries the database directly. It compares row counts between `public_staging.stg_*` tables and `modbm_core.*` tables. 
-    *   *Nuance:* It understands business logic differences, such as translating flat ABM order lines into nested headers + lines in the core schema.
+### MockDrizzle Tier (Fast)
+Used for simple business logic that does not rely on complex SQL joins or database-level constraints. It uses a virtual memory DB that mocks the Drizzle ORM's structural responses.
+- **Reference:** `docs/conventions.md#12-mockdrizzle-unit-testing-pattern`
+
+### PGLite Tier (High Fidelity)
+Used for services that execute complex transactional logic, GL postings, or raw SQL. It provides a real PostgreSQL engine (via WASM) running inside the Node.js process.
+- **Key Utility:** `setupPgliteSuite()` in `apps/api/src/test-utils/pglite-suite.ts`.
+- **Lifecycle:** The engine is provisioned once per test file. Developers must use `beforeEach` to truncate transactional tables to maintain isolation.
+- **Standard Seeds:** Includes a `runStandardSeeds()` loop that populates the environment with critical baseline data (COA, Tax, UOMs).
+
+**How to run:**
+```bash
+# Run all pglite-compatible unit tests
+npm run test:unit:pglite
+```
 
 ---
 
-## 4. The Continuous Integration (CI) Workflow
+## 5. The Continuous Integration (CI) Workflow
 
 The automated tests are heavily integrated into the project's workflow:
 1.  **Local Development:** Developers are expected to run `make test-structural` before committing code.

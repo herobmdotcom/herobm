@@ -76,7 +76,7 @@ endif
 
 # DB Backend Core (Local FE + API run path)
 up-db: check-logs-volume check-postgres-logs
-	$(COMPOSE_CMD) up -d postgres-custom redis-broker
+	$(COMPOSE_CMD) up -d $(ARGS) postgres-custom redis-broker
 
 down-db:
 	$(COMPOSE_CMD) stop postgres-custom redis-broker
@@ -84,7 +84,7 @@ down-db:
 
 # FE + API Core (The standard full-container app stack)
 up-fe-api: check-logs-volume check-postgres-logs
-	$(COMPOSE_CMD) up -d custom-api ops-portal postgres-custom redis-broker
+	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker
 
 down-fe-api:
 	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker
@@ -92,7 +92,7 @@ down-fe-api:
 
 # PLG (Prometheus, Loki, Grafana)
 up-plg: check-logs-volume check-postgres-logs
-	$(COMPOSE_CMD) --profile plg up -d
+	$(COMPOSE_CMD) --profile plg up -d $(ARGS)
 
 down-plg:
 	$(COMPOSE_CMD) --profile plg down
