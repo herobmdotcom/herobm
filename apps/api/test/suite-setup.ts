@@ -3,6 +3,10 @@ import postgres from 'postgres';
 jest.setTimeout(120000);
 
 beforeAll(async () => {
+  if (process.env.USE_PGLITE === 'true') {
+    return;
+  }
+
   if (!process.env.JWT_SECRET) {
     process.env.JWT_SECRET = 'test-secret-value-for-e2e';
   }

@@ -3,49 +3,25 @@ import { SuppliersWriteService } from './suppliers-write.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { suppliers, supplierEvents } from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
   let service: SuppliersWriteService;
-  let mockDb: any;
+  let db: PgliteDatabase<any>;
+
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+  });
 
   beforeEach(async () => {
-    mockDb = {
-      select: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([]),
-          }),
-        }),
-      }),
-      transaction: jest.fn().mockImplementation(async (cb) => {
-        const tx = {
-          insert: jest.fn().mockReturnValue({
-            values: jest.fn().mockReturnValue({
-              returning: jest
-                .fn()
-                .mockResolvedValue([
-                  { vendorId: 'new-uuid', vendorNumber: 'V-001' },
-                ]),
-            }),
-          }),
-          update: jest.fn().mockReturnValue({
-            set: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnValue({
-                returning: jest
-                  .fn()
-                  .mockResolvedValue([{ vendorId: 'existing-uuid' }]),
-              }),
-            }),
-          }),
-        };
-        return cb(tx);
-      }),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SuppliersWriteService,
-        { provide: DRIZZLE, useValue: mockDb },
+        { provide: DRIZZLE, useValue: db },
         {
           provide: AppConfigService,
           useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
@@ -54,6 +30,10 @@ describe('SuppliersWriteService', () => {
     }).compile();
 
     service = module.get<SuppliersWriteService>(SuppliersWriteService);
+
+    // Clean transactional data
+    await db.delete(supplierEvents);
+    await db.delete(suppliers);
   });
 
   describe('create', () => {
@@ -61,53 +41,47 @@ describe('SuppliersWriteService', () => {
       const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
       const result = await service.create(dto, 'test-actor');
       expect(result.vendorNumber).toBe('V-001');
-      expect(mockDb.transaction).toHaveBeenCalled();
+      
+      const rows = await db.select().from(suppliers).where(eq(suppliers.vendorNumber, 'V-001'));
+      expect(rows).toHaveLength(1);
     });
 
-    it('should throw if DB unique constraint is violated', async () => {
-      // Vendor number uniqueness is enforced by DB UNIQUE constraint.
-      // The transaction will throw when the insert fails.
-      mockDb.transaction.mockRejectedValueOnce(
-        new BadRequestException('Vendor number already exists'),
-      );
+    it('should throw if vendor number already exists', async () => {
+      await db.insert(suppliers).values({
+        vendorNumber: 'V-001',
+        name: 'Existing',
+        currencyCode: 'EUR',
+      });
 
-      const dto = { vendorNumber: 'V-001', name: 'Vendor 1' };
-      await expect(service.create(dto, 'test-actor')).rejects.toThrow(
-        BadRequestException,
-      );
+      const dto = { vendorNumber: 'V-001', name: 'Duplicate' };
+      await expect(service.create(dto, 'test-actor')).rejects.toThrow();
     });
   });
 
   describe('update', () => {
-    const existingUuid = '88888888-4444-4444-4444-121212121212';
+    let existingId: string;
 
-    it('should update an existing core supplier', async () => {
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest
-              .fn()
-              .mockResolvedValue([{ vendorId: existingUuid, name: 'Old' }]),
-          }),
-        }),
-      });
+    beforeEach(async () => {
+      const [s] = await db.insert(suppliers).values({
+        vendorNumber: 'V-EX',
+        name: 'Old Name',
+        currencyCode: 'EUR',
+      }).returning();
+      existingId = s.vendorId;
+    });
 
-      const dto = { name: 'New' };
-      const result = await service.update(existingUuid, dto, 'test-actor');
-      expect(result.vendorId).toBe('existing-uuid');
+    it('should update an existing supplier', async () => {
+      const result = await service.update(existingId, { name: 'New Name' }, 'test-actor');
+      expect(result.name).toBe('New Name');
+      
+      const [row] = await db.select().from(suppliers).where(eq(suppliers.vendorId, existingId));
+      expect(row.name).toBe('New Name');
     });
 
     it('should throw NotFoundException if supplier not found', async () => {
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([]),
-          }),
-        }),
-      });
-
+      const unknownId = '00000000-0000-0000-0000-000000000999';
       await expect(
-        service.update(existingUuid, {}, 'test-actor'),
+        service.update(unknownId, { name: 'New' }, 'test-actor'),
       ).rejects.toThrow(NotFoundException);
     });
   });

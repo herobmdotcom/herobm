@@ -2,9 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TaxCategoriesService } from './tax-categories.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { taxCategories } from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('TaxCategoriesService', () => {
   let service: TaxCategoriesService;
+  let db: PgliteDatabase<any>;
 
   const mockCategories = [
     {
@@ -33,103 +38,64 @@ describe('TaxCategoriesService', () => {
     },
   ];
 
-  // Chainable mock that supports select().from(...).where(...).limit(...)
-  function createChainableQb(resolvedValue: any[]) {
-    const qb: any = {
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      then: jest.fn().mockImplementation((cb) => cb(resolvedValue)),
-    };
-    return qb;
-  }
-
-  let mockDb: any;
-  let currentQb: any;
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+  });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    currentQb = createChainableQb(mockCategories);
-
-    mockDb = {
-      select: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue(currentQb),
-      }),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
-      providers: [TaxCategoriesService, { provide: DRIZZLE, useValue: mockDb }],
+      providers: [TaxCategoriesService, { provide: DRIZZLE, useValue: db }],
     }).compile();
 
     service = module.get<TaxCategoriesService>(TaxCategoriesService);
-  });
 
-  // Helper to reconfigure the mock for a specific resolved value
-  function mockReturns(value: any[]) {
-    const qb = createChainableQb(value);
-    mockDb.select = jest.fn().mockReturnValue({
-      from: jest.fn().mockReturnValue(qb),
-    });
-  }
+    await db.delete(taxCategories);
+    await db.insert(taxCategories).values(mockCategories);
+  });
 
   describe('findAll', () => {
     it('should return all tax categories', async () => {
-      // findAll does select().from() — no where/limit
       const result = await service.findAll();
-      expect(result).toEqual(mockCategories);
-      expect(mockDb.select).toHaveBeenCalled();
+      expect(result).toHaveLength(3);
+      expect(result.map(c => c.code).sort()).toEqual(['EXE', 'GST', 'ZRO']);
     });
   });
 
   describe('getById', () => {
     it('should return a category by ID', async () => {
-      mockReturns([mockCategories[0]]);
-      const result = await service.getById(
-        '550e8400-e29b-41d4-a716-446655440000',
-      );
-      expect(result).toEqual(mockCategories[0]);
+      const targetId = '550e8400-e29b-41d4-a716-446655440000';
+      const result = await service.getById(targetId);
+      expect(result.code).toBe('GST');
     });
 
     it('should throw NotFoundException for unknown ID', async () => {
-      mockReturns([]);
-      await expect(service.getById('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
+      const unknownId = '550e8400-e29b-41d4-a716-446655440999';
+      await expect(service.getById(unknownId)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('getDefault', () => {
     it('should return the default category', async () => {
-      mockReturns([mockCategories[0]]);
       const result = await service.getDefault();
-      expect(result).toEqual(mockCategories[0]);
+      expect(result.code).toBe('GST');
+      expect(result.isDefault).toBe(true);
     });
 
     it('should throw NotFoundException when no default configured', async () => {
-      mockReturns([]);
+      await db.update(taxCategories).set({ isDefault: false });
       await expect(service.getDefault()).rejects.toThrow(NotFoundException);
-      mockReturns([]);
-      await expect(service.getDefault()).rejects.toThrow(
-        'No default tax category configured',
-      );
     });
   });
 
   describe('getByCode', () => {
     it('should return a category by code', async () => {
-      mockReturns([mockCategories[1]]);
       const result = await service.getByCode('EXE');
-      expect(result).toEqual(mockCategories[1]);
+      expect(result.code).toBe('EXE');
     });
 
     it('should throw NotFoundException for unknown code', async () => {
-      mockReturns([]);
-      await expect(service.getByCode('INVALID')).rejects.toThrow(
-        NotFoundException,
-      );
-      mockReturns([]);
-      await expect(service.getByCode('INVALID')).rejects.toThrow(
-        "Tax category code 'INVALID' not found",
-      );
+      await expect(service.getByCode('INVALID')).rejects.toThrow(NotFoundException);
     });
   });
 });

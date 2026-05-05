@@ -20,7 +20,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --forceExit",
+    "test:pglite": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --runInBand",
     "test:e2e:fast": "cross-env USE_PGLITE=true NODE_OPTIONS=\"--experimental-vm-modules\" jest --config ./test/jest-e2e.json --forceExit",
+
     "seed:coa": "tsx src/scripts/seed-coa.ts",
     "setup": "tsx src/scripts/execute-setup.ts",
     "seed": "tsx src/scripts/seed.ts",

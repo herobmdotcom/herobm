@@ -3,97 +3,71 @@ import { AccountsWriteService } from './accounts-write.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
+import { createMemoryDb } from '../../test/utils/memory-db';
+import { accounts, accountEvents } from '../drizzle/modbm-core-schema';
+import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('AccountsWriteService', () => {
   let service: AccountsWriteService;
+  let db: PgliteDatabase<any>;
 
-  const mockDb = {
-    select: jest.fn(),
-    transaction: jest.fn().mockImplementation((cb) => cb(mockDb)),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    set: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    values: jest.fn().mockReturnThis(),
-    returning: jest.fn().mockResolvedValue([
-      {
-        accountId: '00000000-0000-0000-0000-000000000001',
-        accountNumber: 'TEST001',
-      },
-    ]),
-    limit: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-  };
+  beforeAll(async () => {
+    const mem = await createMemoryDb({ skipSeeds: true });
+    db = mem.db;
+  });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AccountsWriteService,
-        { provide: DRIZZLE, useValue: mockDb },
+        { provide: DRIZZLE, useValue: db },
         {
           provide: AppConfigService,
-          useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
+          useValue: { homeCurrency: () => 'EUR' },
         },
       ],
     }).compile();
 
     service = module.get<AccountsWriteService>(AccountsWriteService);
+
+    await db.delete(accountEvents);
+    await db.delete(accounts);
   });
 
   describe('create', () => {
-    it('should create a new account when it does not exist', async () => {
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([]),
-      });
-
+    it('should create a new account', async () => {
       const result = await service.create(
-        { accountNumber: 'TEST001', name: 'Test' },
+        { accountNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
         'actor',
       );
 
       expect(result.accountNumber).toBe('TEST001');
-      expect(mockDb.insert).toHaveBeenCalledTimes(2); // Account + Event
+      
+      const rows = await db.select().from(accounts).where(eq(accounts.accountNumber, 'TEST001'));
+      expect(rows).toHaveLength(1);
     });
 
-    it('should throw BadRequestException if accountNumber exists in core', async () => {
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([{ id: 'existing' }]),
-      });
+    it('should throw BadRequestException if accountNumber exists', async () => {
+      await db.insert(accounts).values({ accountNumber: 'TEST001', name: 'Existing', currencyCode: 'EUR' });
 
       await expect(
-        service.create({ accountNumber: 'TEST001', name: 'Test' }, 'actor'),
+        service.create({ accountNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' }, 'actor'),
       ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('update', () => {
-    it('should update an existing core account', async () => {
-      const id = '00000000-0000-0000-0000-000000000001';
-      mockDb.select.mockReturnValueOnce({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([{ accountId: id }]),
-      });
-
-      await service.update(id, { name: 'Updated' }, 'actor');
-
-      expect(mockDb.update).toHaveBeenCalled();
+    it('should update an existing account', async () => {
+      const [acc] = await db.insert(accounts).values({ accountNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' }).returning();
+      
+      const result = await service.update(acc.accountId, { name: 'New' }, 'actor');
+      expect(result.name).toBe('New');
     });
 
-    it('should throw NotFoundException if account does not exist anywhere', async () => {
-      mockDb.select.mockReturnValue({
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([]),
-      });
-
+    it('should throw NotFoundException if account does not exist', async () => {
       await expect(
-        service.update('invalid', { name: 'Updated' }, 'actor'),
+        service.update('00000000-0000-0000-0000-000000000999', { name: 'Updated' }, 'actor'),
       ).rejects.toThrow(NotFoundException);
     });
   });
