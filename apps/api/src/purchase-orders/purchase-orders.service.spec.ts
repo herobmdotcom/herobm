@@ -33,7 +33,6 @@ describe('PurchaseOrdersService', () => {
   const TAX_CAT_ID = '00000000-0000-0000-0000-000000000007';
 
   beforeAll(async () => {
-
     // Seed infrastructure ONCE
     await pg.db
       .insert(uomDictionary)

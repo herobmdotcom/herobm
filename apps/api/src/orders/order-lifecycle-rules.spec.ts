@@ -4,7 +4,7 @@ import {
   evaluateLifecycleRules,
   LifecycleTrigger,
 } from './order-lifecycle-rules';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -13,7 +13,6 @@ import {
   locations,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 // Mock emitEvent to avoid needing event emitter setup
@@ -24,7 +23,7 @@ jest.mock('../common/emit-event', () => ({
 import { emitEvent } from '../common/emit-event';
 
 describe('Order Lifecycle Rules', () => {
-  let db: PgliteDatabase<any>;
+  const pg = setupPgliteSuite({ skipSeeds: true });
 
   const ORDER_ID = '00000000-0000-0000-0000-000000000001';
   const LOCATION_ID = '00000000-0000-0000-0000-00000000000f';
@@ -33,8 +32,13 @@ describe('Order Lifecycle Rules', () => {
   const LINE_2_ID = '00000000-0000-0000-0000-000000000012';
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    // Clean data
+    await pg.db.delete(salesOrderShipmentLines);
+    await pg.db.delete(salesOrderShipments);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
+    await pg.db.delete(locations);
+    await pg.db.delete(taxCategories);
 
     await db.insert(locations).values({
       locationId: LOCATION_ID,
@@ -42,7 +46,7 @@ describe('Order Lifecycle Rules', () => {
       name: 'Main',
     });
 
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -54,14 +58,14 @@ describe('Order Lifecycle Rules', () => {
   });
 
   async function seedOrder(state: any) {
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
       stateCode: state,
       fulfillmentLocationId: LOCATION_ID,
       currencyCode: 'AUD',
     });
-    await db.insert(salesOrderLineItems).values([
+    await pg.db.insert(salesOrderLineItems).values([
       {
         salesOrderLineId: LINE_1_ID,
         salesOrderId: ORDER_ID,
@@ -94,13 +98,13 @@ describe('Order Lifecycle Rules', () => {
       await seedOrder('picking');
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
-      await db.insert(salesOrderShipments).values({
+      await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
         stateCode: 'dispatched',
       });
-      await db.insert(salesOrderShipmentLines).values([
+      await pg.db.insert(salesOrderShipmentLines).values([
         {
           shipmentId: SHIP_ID,
           salesOrderLineId: LINE_1_ID,
@@ -114,14 +118,14 @@ describe('Order Lifecycle Rules', () => {
       ]);
 
       const result = await autoShipWhenFullyShipped.evaluate(
-        db,
+        pg.db,
         ORDER_ID,
         trigger,
         'admin',
       );
 
       expect(result?.to).toBe('shipped');
-      const [order] = await db
+      const [order] = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, ORDER_ID));

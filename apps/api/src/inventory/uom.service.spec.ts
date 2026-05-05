@@ -2,27 +2,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UomService } from './uom.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,
   productUoms,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('UomService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: UomService;
-  let db: PgliteDatabase<any>;
 
   const PRODUCT_ID = '00000000-0000-0000-0000-00000000000a';
 
   beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-
     // Seed required UOMs
-    await db.insert(uomDictionary).values([
+    await pg.db.insert(uomDictionary).values([
       { uomCode: 'EA', description: 'Each' },
       { uomCode: 'BOX', description: 'Box' },
       { uomCode: 'VPE025', description: 'Pack 25' },
@@ -35,7 +31,7 @@ describe('UomService', () => {
         UomService,
         {
           provide: DRIZZLE,
-          useValue: db,
+          useValue: pg.db,
         },
       ],
     }).compile();
@@ -43,8 +39,8 @@ describe('UomService', () => {
     service = module.get<UomService>(UomService);
 
     // Clean transactional data
-    await db.delete(productUoms);
-    await db.delete(products);
+    await pg.db.delete(productUoms);
+    await pg.db.delete(products);
   });
 
   describe('calculateAbsoluteBaseQuantity', () => {

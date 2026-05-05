@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PickingSlipService } from './picking-slip.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -15,11 +15,11 @@ import {
   bins,
   binContents,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
+import { eq } from 'drizzle-orm';
 
 describe('PickingSlipService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PickingSlipService;
-  let db: PgliteDatabase<any>;
 
   const ORDER_ID = '00000000-0000-0000-0000-000000000001';
   const CUSTOMER_ID = '00000000-0000-0000-0000-000000000002';
@@ -35,8 +35,17 @@ describe('PickingSlipService', () => {
   const LINE_3_ID = '00000000-0000-0000-0000-000000000013';
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    // Clean data
+    await pg.db.delete(binContents);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
+    await pg.db.delete(coreProducts);
+    await pg.db.delete(coreAccounts);
+    await pg.db.delete(bins);
+    await pg.db.delete(zones);
+    await pg.db.delete(locations);
+    await pg.db.delete(taxCategories);
+    await pg.db.delete(uomDictionary);
 
     // Seed UOM
     await db
@@ -155,14 +164,14 @@ describe('PickingSlipService', () => {
     ]);
 
     // Seed Inventory (via binContents since inventory_levels is a view)
-    await db.insert(binContents).values([
+    await pg.db.insert(binContents).values([
       { binId: BIN_ID, productId: PROD_A_ID, actualQuantity: '100' },
       { binId: BIN_ID, productId: PROD_B_ID, actualQuantity: '50' },
       { binId: BIN_ID, productId: PROD_C_ID, actualQuantity: '5' },
     ]);
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PickingSlipService, { provide: DRIZZLE, useValue: db }],
+      providers: [PickingSlipService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<PickingSlipService>(PickingSlipService);

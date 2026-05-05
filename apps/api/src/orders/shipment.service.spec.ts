@@ -4,8 +4,7 @@ import { ShipmentService } from './shipment.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { setupTestModule } from '../../test/utils/test-module';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -21,8 +20,7 @@ import {
   taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
-import { PGlite } from '@electric-sql/pglite';
+import { setupTestModule } from '../../test/utils/test-module';
 
 // Shared test data
 const PICKING_ORDER = {
@@ -64,20 +62,9 @@ const MOCK_SHIPMENT_LINE = {
 };
 
 describe('ShipmentService', () => {
+  const pg = setupPgliteSuite();
   let service: ShipmentService;
-  let db: PgliteDatabase<any>;
-  let client: PGlite;
   let mockInventoryService: any;
-
-  beforeAll(async () => {
-    const memory = await createMemoryDb();
-    db = memory.db;
-    client = memory.client;
-  });
-
-  afterAll(async () => {
-    await client.close();
-  });
 
   beforeEach(async () => {
     mockInventoryService = {
@@ -89,13 +76,13 @@ describe('ShipmentService', () => {
       { provide: InventoryService, useValue: mockInventoryService },
     ])
       .overrideProvider(DRIZZLE)
-      .useValue(db)
+      .useValue(pg.db)
       .compile();
 
     service = module.get<ShipmentService>(ShipmentService);
 
     // Clean only transactional tables
-    await client.exec(`
+    await pg.client.exec(`
       TRUNCATE TABLE modbm_core.sales_order_shipment_lines CASCADE;
       TRUNCATE TABLE modbm_core.sales_order_shipments CASCADE;
       TRUNCATE TABLE modbm_core.sales_order_picks CASCADE;
@@ -105,13 +92,13 @@ describe('ShipmentService', () => {
     `);
 
     // Fetch dynamic IDs from standard seeds
-    const stdTax = await db.query.taxCategories.findFirst({
+    const stdTax = await pg.db.query.taxCategories.findFirst({
       where: eq(taxCategories.code, 'GST'),
     });
     if (stdTax) ORDER_LINE.taxCategoryId = stdTax.taxCategoryId;
 
     // Standard seeds do not include locations. Insert a default location.
-    await db
+    await pg.db
       .insert(locations)
       .values([
         {
@@ -126,7 +113,7 @@ describe('ShipmentService', () => {
       '10000000-0000-0000-0000-000000000001';
 
     // Since accounts isn't seeded with customers by default, let's just insert one or use the org. Let's insert a customer.
-    await db
+    await pg.db
       .insert(accounts)
       .values([
         {
@@ -139,7 +126,7 @@ describe('ShipmentService', () => {
       .onConflictDoNothing();
 
     // Insert Default Mocks
-    await db.insert(products).values([
+    await pg.db.insert(products).values([
       {
         productId: 'a0000000-0000-0000-0000-000000000001',
         productNumber: 'PROD-001',
@@ -148,9 +135,9 @@ describe('ShipmentService', () => {
         baseUom: 'EA',
       },
     ]);
-    await db.insert(salesOrders).values([PICKING_ORDER]);
-    await db.insert(salesOrderLineItems).values([ORDER_LINE]);
-    await db.insert(salesOrderPicks).values([
+    await pg.db.insert(salesOrders).values([PICKING_ORDER]);
+    await pg.db.insert(salesOrderLineItems).values([ORDER_LINE]);
+    await pg.db.insert(salesOrderPicks).values([
       {
         salesOrderPickId: 'b0000000-0000-0000-0000-000000000001',
         salesOrderId: '00000000-0000-0000-0000-000000000001',
@@ -160,8 +147,8 @@ describe('ShipmentService', () => {
         stateCode: 'picked',
       },
     ]);
-    await db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
-    await db.insert(salesOrderShipmentLines).values([MOCK_SHIPMENT_LINE]);
+    await pg.db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
+    await pg.db.insert(salesOrderShipmentLines).values([MOCK_SHIPMENT_LINE]);
   });
 
   afterEach(() => {
@@ -181,7 +168,7 @@ describe('ShipmentService', () => {
 
     it('should increment the latest sequence number', async () => {
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      await db.insert(salesOrderShipments).values([
+      await pg.db.insert(salesOrderShipments).values([
         {
           ...MOCK_SHIPMENT,
           shipmentId: '10000000-0000-0000-0000-000000000009',
@@ -219,7 +206,7 @@ describe('ShipmentService', () => {
     });
 
     it('should reject if order is not in picking state', async () => {
-      await db
+      await pg.db
         .update(salesOrders)
         .set({ stateCode: 'draft' })
         .where(
@@ -277,7 +264,7 @@ describe('ShipmentService', () => {
     });
 
     it('should reject updating a cancelled shipment', async () => {
-      await db
+      await pg.db
         .update(salesOrderShipments)
         .set({ stateCode: 'cancelled' })
         .where(
@@ -315,7 +302,7 @@ describe('ShipmentService', () => {
     });
 
     it('should reject if shipment is not in draft', async () => {
-      await db
+      await pg.db
         .update(salesOrderShipments)
         .set({ stateCode: 'cancelled' })
         .where(
@@ -354,7 +341,7 @@ describe('ShipmentService', () => {
     });
 
     it('should reject if shipment is not in draft', async () => {
-      await db
+      await pg.db
         .update(salesOrderShipments)
         .set({ stateCode: 'dispatched' })
         .where(
@@ -380,7 +367,7 @@ describe('ShipmentService', () => {
 
   describe('changeShipmentState', () => {
     async function setupWithState(currentState: string) {
-      await db
+      await pg.db
         .update(salesOrderShipments)
         .set({ stateCode: currentState as any })
         .where(
@@ -449,7 +436,7 @@ describe('ShipmentService', () => {
     });
 
     it('should reject removal from dispatched shipment', async () => {
-      await db
+      await pg.db
         .update(salesOrderShipments)
         .set({ stateCode: 'dispatched' })
         .where(
@@ -485,8 +472,8 @@ describe('ShipmentService', () => {
     });
 
     it('should throw NotFoundException for unknown shipment', async () => {
-      await db.delete(salesOrderShipmentLines);
-      await db.delete(salesOrderShipments);
+      await pg.db.delete(salesOrderShipmentLines);
+      await pg.db.delete(salesOrderShipments);
       await expect(
         service.findOne('00000000-0000-0000-0000-000000000999'),
       ).rejects.toThrow(NotFoundException);

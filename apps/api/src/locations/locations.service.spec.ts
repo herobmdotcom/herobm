@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { LocationsService } from './locations.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   locations,
   zones,
@@ -10,31 +10,25 @@ import {
   binContents,
   appSettings,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('LocationsService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: LocationsService;
-  let db: PgliteDatabase<any>;
-
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LocationsService, { provide: DRIZZLE, useValue: db }],
+      providers: [LocationsService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<LocationsService>(LocationsService);
 
     // Clean data in correct order
-    await db.delete(binContents);
-    await db.delete(bins);
-    await db.delete(zones);
-    await db.delete(appSettings);
-    await db.delete(locations);
+    await pg.db.delete(binContents);
+    await pg.db.delete(bins);
+    await pg.db.delete(zones);
+    await pg.db.delete(appSettings);
+    await pg.db.delete(locations);
   });
 
   describe('Locations', () => {
@@ -43,7 +37,7 @@ describe('LocationsService', () => {
       const result = await service.createLocation(dto, 'admin');
       expect(result.code).toBe('L1');
 
-      const rows = await db
+      const rows = await pg.db
         .select()
         .from(locations)
         .where(eq(locations.locationId, result.locationId));
@@ -51,7 +45,7 @@ describe('LocationsService', () => {
     });
 
     it('should update a location', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'Old' })
         .returning();
@@ -62,11 +56,11 @@ describe('LocationsService', () => {
     });
 
     it('should prevent deleting location with zones', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
-      await db
+      await pg.db
         .insert(zones)
         .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' });
 
@@ -76,11 +70,11 @@ describe('LocationsService', () => {
     });
 
     it('should prevent deleting location set as default', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
-      await db
+      await pg.db
         .insert(appSettings)
         .values({ defaultFulfillmentLocationId: loc.locationId });
 
@@ -92,7 +86,7 @@ describe('LocationsService', () => {
 
   describe('Zones', () => {
     it('should create a zone', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
@@ -102,15 +96,15 @@ describe('LocationsService', () => {
     });
 
     it('should prevent deleting zone with bins', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
-      const [zone] = await db
+      const [zone] = await pg.db
         .insert(zones)
         .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
         .returning();
-      await db
+      await pg.db
         .insert(bins)
         .values({ zoneId: zone.zoneId, binNumber: 'B1', binType: 'storage' });
 
@@ -122,11 +116,11 @@ describe('LocationsService', () => {
 
   describe('Bins', () => {
     it('should create a bin', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
-      const [zone] = await db
+      const [zone] = await pg.db
         .insert(zones)
         .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
         .returning();
@@ -136,15 +130,15 @@ describe('LocationsService', () => {
     });
 
     it('should prevent deleting bin with stock', async () => {
-      const [loc] = await db
+      const [loc] = await pg.db
         .insert(locations)
         .values({ code: 'L1', name: 'L1' })
         .returning();
-      const [zone] = await db
+      const [zone] = await pg.db
         .insert(zones)
         .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
         .returning();
-      const [bin] = await db
+      const [bin] = await pg.db
         .insert(bins)
         .values({ zoneId: zone.zoneId, binNumber: 'B1', binType: 'storage' })
         .returning();

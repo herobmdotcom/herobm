@@ -2,25 +2,24 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   products,
   productEvents,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('ProductsService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ProductsService;
-  let db: PgliteDatabase<any>;
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    await pg.db.delete(productEvents);
+    await pg.db.delete(products);
 
     // Seed required UOM
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({
         uomCode: 'EA',
@@ -29,7 +28,7 @@ describe('ProductsService', () => {
       .onConflictDoNothing();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductsService, { provide: DRIZZLE, useValue: db }],
+      providers: [ProductsService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<ProductsService>(ProductsService);
@@ -37,7 +36,7 @@ describe('ProductsService', () => {
 
   describe('findAll', () => {
     beforeEach(async () => {
-      await db.insert(products).values([
+      await pg.db.insert(products).values([
         {
           productId: '11111111-1111-1111-1111-111111111111',
           productNumber: 'BOLT-M8',

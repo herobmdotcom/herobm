@@ -6,9 +6,8 @@ import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { reports, reportHookAssignments } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
 import * as fs from 'fs';
 import * as child_process from 'child_process';
@@ -50,15 +49,15 @@ jest.mock('child_process', () => ({
 }));
 
 describe('ReportsService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: ReportsService;
-  let db: PgliteDatabase<any>;
   let mockRegistry: any;
 
   const TEST_REPORT_ID = '00000000-0000-0000-0000-000000000001';
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    await pg.db.delete(reportHookAssignments);
+    await pg.db.delete(reports);
 
     mockRegistry = {
       getResolver: jest.fn(),
@@ -87,13 +86,13 @@ describe('ReportsService', () => {
 
     it('should throw NotFoundException if report not found', async () => {
       // Use replica role to bypass FK constraint for this test case
-      await db.execute(sql`SET session_replication_role = 'replica'`);
-      await db.insert(reportHookAssignments).values({
+      await pg.db.execute(sql`SET session_replication_role = 'replica'`);
+      await pg.db.insert(reportHookAssignments).values({
         hookSlug: 'print_invoice',
         reportId: TEST_REPORT_ID,
         contextSlug: 'sales_order',
       });
-      await db.execute(sql`SET session_replication_role = 'origin'`);
+      await pg.db.execute(sql`SET session_replication_role = 'origin'`);
 
       await expect(
         service.runHook('print_invoice', '1', 'sales_order', {}),
@@ -101,7 +100,7 @@ describe('ReportsService', () => {
     });
 
     it('should compile and return PDF and formatted filename', async () => {
-      await db.insert(reports).values({
+      await pg.db.insert(reports).values({
         id: TEST_REPORT_ID,
         slug: 'inv',
         name: 'Invoice',
@@ -133,7 +132,7 @@ describe('ReportsService', () => {
 
   describe('CRUD operations', () => {
     it('should return all reports', async () => {
-      await db.insert(reports).values({
+      await pg.db.insert(reports).values({
         id: TEST_REPORT_ID,
         slug: 'r1',
         name: 'R1',
@@ -144,7 +143,7 @@ describe('ReportsService', () => {
     });
 
     it('should get a report by id', async () => {
-      await db.insert(reports).values({
+      await pg.db.insert(reports).values({
         id: TEST_REPORT_ID,
         slug: 'r1',
         name: 'R1',
@@ -164,7 +163,7 @@ describe('ReportsService', () => {
     });
 
     it('should update a report', async () => {
-      await db.insert(reports).values({
+      await pg.db.insert(reports).values({
         id: TEST_REPORT_ID,
         slug: 'r1',
         name: 'R1',

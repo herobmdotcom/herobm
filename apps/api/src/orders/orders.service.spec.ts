@@ -24,7 +24,6 @@ describe('OrdersService', () => {
   const PROD_ID = '00000000-0000-0000-0000-00000000000a';
 
   beforeAll(async () => {
-
     // Seed data
     await pg.db
       .insert(uomDictionary)

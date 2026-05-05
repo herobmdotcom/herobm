@@ -3,19 +3,13 @@ import { SuppliersWriteService } from './suppliers-write.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { suppliers, supplierEvents } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersWriteService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: SuppliersWriteService;
-  let db: PgliteDatabase<any>;
-
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,8 +26,8 @@ describe('SuppliersWriteService', () => {
     service = module.get<SuppliersWriteService>(SuppliersWriteService);
 
     // Clean transactional data
-    await db.delete(supplierEvents);
-    await db.delete(suppliers);
+    await pg.db.delete(supplierEvents);
+    await pg.db.delete(suppliers);
   });
 
   describe('create', () => {
@@ -42,7 +36,7 @@ describe('SuppliersWriteService', () => {
       const result = await service.create(dto, 'test-actor');
       expect(result.vendorNumber).toBe('V-001');
 
-      const rows = await db
+      const rows = await pg.db
         .select()
         .from(suppliers)
         .where(eq(suppliers.vendorNumber, 'V-001'));

@@ -571,15 +571,15 @@ describe('ReturnsWriteService', () => {
       returnFee?: string;
       taxRate?: string;
     }) {
-      const ar = await db
+      const ar = await pg.db
         .select()
         .from(glAccounts)
         .where(eq(glAccounts.accountCode, '1100'));
-      const rev = await db
+      const rev = await pg.db
         .select()
         .from(glAccounts)
         .where(eq(glAccounts.accountCode, '4100'));
-      const tax = await db
+      const tax = await pg.db
         .select()
         .from(glAccounts)
         .where(eq(glAccounts.accountCode, '2200'));
@@ -598,8 +598,8 @@ describe('ReturnsWriteService', () => {
       mockGlService.getSettings.mockResolvedValue(settings);
       mocktaxService.getById.mockResolvedValue({ rate: taxRate });
 
-      const cust = await createTestCustomer(db);
-      await db
+      const cust = await createTestCustomer(pg.db);
+      await pg.db
         .insert(locations)
         .values({
           locationId: '10000000-0000-0000-0000-000000000001',
@@ -609,7 +609,7 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
-      await db
+      await pg.db
         .insert(zones)
         .values({
           zoneId: '10000000-0000-0000-0000-000000000003',
@@ -618,7 +618,7 @@ describe('ReturnsWriteService', () => {
           name: 'Z1',
         })
         .onConflictDoNothing();
-      await db
+      await pg.db
         .insert(bins)
         .values({
           binId: '10000000-0000-0000-0000-000000000002',

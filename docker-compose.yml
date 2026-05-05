@@ -12,7 +12,7 @@ services:
       - "127.0.0.1:${FE_PORT:-4300}:3000"
     depends_on:
       custom-api:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
       interval: 15s
@@ -80,7 +80,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       DEV_ADMIN_PASSWORD: ${DEV_ADMIN_PASSWORD}
       DEV_VIEWER_PASSWORD: ${DEV_VIEWER_PASSWORD}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4300,http://localhost:4400,http://localhost:${FE_PORT:-4300}}
       TYPST_BINARY_PATH: typst  # Override Windows host path — Alpine has typst on $PATH
     ports:
       - "127.0.0.1:3001:3001"

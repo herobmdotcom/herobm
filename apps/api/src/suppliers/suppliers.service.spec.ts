@@ -2,33 +2,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SuppliersService } from './suppliers.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException } from '@nestjs/common';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { suppliers } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('SuppliersService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: SuppliersService;
-  let db: PgliteDatabase<any>;
-
-  beforeAll(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
-  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SuppliersService, { provide: DRIZZLE, useValue: db }],
+      providers: [SuppliersService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<SuppliersService>(SuppliersService);
 
-    await db.delete(suppliers);
+    await pg.db.delete(suppliers);
   });
 
   describe('findAll', () => {
     it('should return paginated suppliers', async () => {
-      await db.insert(suppliers).values([
+      await pg.db.insert(suppliers).values([
         { vendorNumber: 'V1', name: 'Vendor 1', currencyCode: 'EUR' },
         { vendorNumber: 'V2', name: 'Vendor 2', currencyCode: 'USD' },
       ]);

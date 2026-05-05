@@ -23,7 +23,6 @@ describe('DashboardService', () => {
   let testTaxCategoryId: string;
 
   beforeAll(async () => {
-
     // Ensure the view exists since it's an .existing() view in Drizzle
     // and might be missing from migrations if it was created manually.
     await pg.db.execute(sql`
@@ -70,7 +69,6 @@ describe('DashboardService', () => {
       .returning();
     testTaxCategoryId = tc.taxCategoryId;
   });
-
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

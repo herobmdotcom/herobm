@@ -4,7 +4,7 @@ import type { InventoryGap } from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { AppConfigService } from '../settings/app-config.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -14,12 +14,11 @@ import {
   uomDictionary,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
 
 describe('BackordersService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: BackordersService;
-  let db: PgliteDatabase<any>;
   let inventoryService: any;
 
   const ORDER_ID = '00000000-0000-0000-0000-000000000001';
@@ -29,14 +28,20 @@ describe('BackordersService', () => {
   const LINE_ID = '00000000-0000-0000-0000-000000000011';
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    // Clean data
+    await pg.db.delete(backorders);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
+    await pg.db.delete(products);
+    await pg.db.delete(locations);
+    await pg.db.delete(taxCategories);
+    await pg.db.delete(uomDictionary);
 
     // Seed infrastructure
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -56,7 +61,7 @@ describe('BackordersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BackordersService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         { provide: InventoryService, useValue: inventoryService },
         {
           provide: AppConfigService,
@@ -69,7 +74,7 @@ describe('BackordersService', () => {
   });
 
   async function seedBasicOrder() {
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
       fulfillmentLocationId: LOCATION_ID,
@@ -97,14 +102,14 @@ describe('BackordersService', () => {
     });
 
     it('should calculate gaps correctly based on ordered vs available quantity', async () => {
-      await db.insert(products).values({
+      await pg.db.insert(products).values({
         productId: PROD_ID,
         productNumber: 'P1',
         name: 'P1',
         baseUom: 'EA',
       });
       await seedBasicOrder();
-      await db.insert(salesOrderLineItems).values({
+      await pg.db.insert(salesOrderLineItems).values({
         salesOrderLineId: LINE_ID,
         salesOrderId: ORDER_ID,
         lineNumber: 1,
@@ -138,7 +143,14 @@ describe('BackordersService', () => {
         baseUom: 'EA',
       });
       await seedBasicOrder();
-      await db.insert(salesOrderLineItems).values({
+      await pg.db.insert(products).values({
+        productId: PROD_ID,
+        productNumber: 'P1',
+        name: 'P1',
+        baseUom: 'EA',
+      });
+      await seedBasicOrder();
+      await pg.db.insert(salesOrderLineItems).values({
         salesOrderLineId: LINE_ID,
         salesOrderId: ORDER_ID,
         lineNumber: 1,
@@ -161,9 +173,9 @@ describe('BackordersService', () => {
         },
       ];
 
-      await service.generateDemand(ORDER_ID, gaps, 'test-user', db);
+      await service.generateDemand(ORDER_ID, gaps, 'test-user', pg.db);
 
-      const res = await db
+      const res = await pg.db
         .select()
         .from(backorders)
         .where(eq(backorders.salesOrderLineId, LINE_ID));

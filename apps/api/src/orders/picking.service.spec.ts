@@ -5,7 +5,7 @@ import { ShipmentService } from './shipment.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
-import { createMemoryDb } from '../../test/utils/memory-db';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
@@ -18,12 +18,11 @@ import {
   taxCategories,
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
-import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, and } from 'drizzle-orm';
 
 describe('PickingService', () => {
+  const pg = setupPgliteSuite({ skipSeeds: true });
   let service: PickingService;
-  let db: PgliteDatabase<any>;
   let mockInventoryService: any;
   let mockShipmentService: any;
 
@@ -38,32 +37,41 @@ describe('PickingService', () => {
   const LINE_ID = '00000000-0000-0000-0000-000000000011';
 
   beforeEach(async () => {
-    const mem = await createMemoryDb({ skipSeeds: true });
-    db = mem.db;
+    // Clean data
+    await pg.db.delete(salesOrderPicks);
+    await pg.db.delete(salesOrderLineItems);
+    await pg.db.delete(salesOrders);
+    await pg.db.delete(products);
+    await pg.db.delete(accounts);
+    await pg.db.delete(bins);
+    await pg.db.delete(zones);
+    await pg.db.delete(locations);
+    await pg.db.delete(taxCategories);
+    await pg.db.delete(uomDictionary);
 
     // Seed infrastructure
-    await db
+    await pg.db
       .insert(uomDictionary)
       .values({ uomCode: 'EA', description: 'Each' });
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
       rate: '0.1',
       type: 'tax_applies',
     });
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
-    await db.insert(zones).values({
+    await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
       code: 'Z1',
       name: 'Zone 1',
     });
-    await db.insert(bins).values([
+    await pg.db.insert(bins).values([
       {
         binId: STORAGE_BIN_ID,
         zoneId: ZONE_ID,
@@ -77,7 +85,7 @@ describe('PickingService', () => {
         binType: 'storage',
       },
     ]);
-    await db.insert(accounts).values({
+    await pg.db.insert(accounts).values({
       accountId: CUSTOMER_ID,
       accountNumber: 'CUST01',
       name: 'Acme Corp',
@@ -85,7 +93,7 @@ describe('PickingService', () => {
       stateCode: 'active',
       source: 'app',
     });
-    await db.insert(products).values({
+    await pg.db.insert(products).values({
       productId: PROD_ID,
       productNumber: 'PROD-001',
       name: 'Widget A',
@@ -151,7 +159,7 @@ describe('PickingService', () => {
       expect(result.quantity).toBe('5');
 
       // Verify picks table instead of line.quantityPicked (which isn't updated by pickLine)
-      const picks = await db
+      const picks = await pg.db
         .select()
         .from(salesOrderPicks)
         .where(eq(salesOrderPicks.salesOrderLineId, LINE_ID));
