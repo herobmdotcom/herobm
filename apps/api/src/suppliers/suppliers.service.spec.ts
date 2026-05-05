@@ -33,7 +33,7 @@ describe('SuppliersService', () => {
     });
 
     it('should apply search filter', async () => {
-      await db.insert(suppliers).values([
+      await pg.db.insert(suppliers).values([
         { vendorNumber: 'V1', name: 'Alpha', currencyCode: 'EUR' },
         { vendorNumber: 'V2', name: 'Beta', currencyCode: 'USD' },
       ]);

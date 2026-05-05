@@ -600,7 +600,7 @@ describe('OrdersWriteService', () => {
             fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
           });
         }
-        await db.insert(salesOrderLineItems).values(lineValues);
+        await pg.db.insert(salesOrderLineItems).values(lineValues);
       }
 
       return { order, product };
@@ -913,7 +913,7 @@ describe('OrdersWriteService', () => {
         state: 'draft',
       });
 
-      await db.insert(salesOrderLineItems).values({
+      await pg.db.insert(salesOrderLineItems).values({
         salesOrderId: order.salesOrderId,
         lineNumber: 1,
         productId: product.productId,

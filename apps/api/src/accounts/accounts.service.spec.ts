@@ -17,7 +17,7 @@ describe('AccountsService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountsService, { provide: DRIZZLE, useValue: db }],
+      providers: [AccountsService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<AccountsService>(AccountsService);

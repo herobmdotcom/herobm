@@ -53,7 +53,7 @@ describe('PickingSlipService', () => {
       .values({ uomCode: 'EA', description: 'Each' });
 
     // Seed Tax Category
-    await db.insert(taxCategories).values({
+    await pg.db.insert(taxCategories).values({
       taxCategoryId: TAX_CAT_ID,
       code: 'GST',
       title: 'GST',
@@ -62,18 +62,18 @@ describe('PickingSlipService', () => {
     });
 
     // Seed Location, Zone, Bin
-    await db.insert(locations).values({
+    await pg.db.insert(locations).values({
       locationId: LOCATION_ID,
       code: 'MAIN',
       name: 'Main Warehouse',
     });
-    await db.insert(zones).values({
+    await pg.db.insert(zones).values({
       zoneId: ZONE_ID,
       locationId: LOCATION_ID,
       code: 'Z1',
       name: 'Zone 1',
     });
-    await db.insert(bins).values({
+    await pg.db.insert(bins).values({
       binId: BIN_ID,
       zoneId: ZONE_ID,
       binNumber: 'B1', // Fixed field name
@@ -81,7 +81,7 @@ describe('PickingSlipService', () => {
     });
 
     // Seed Customer
-    await db.insert(coreAccounts).values({
+    await pg.db.insert(coreAccounts).values({
       accountId: CUSTOMER_ID,
       accountNumber: 'CUST01',
       name: 'Acme Corp',
@@ -91,7 +91,7 @@ describe('PickingSlipService', () => {
     });
 
     // Seed Products
-    await db.insert(coreProducts).values([
+    await pg.db.insert(coreProducts).values([
       {
         productId: PROD_A_ID,
         productNumber: 'PROD-A',
@@ -113,7 +113,7 @@ describe('PickingSlipService', () => {
     ]);
 
     // Seed Order
-    await db.insert(salesOrders).values({
+    await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-20260317-0001',
       customerId: CUSTOMER_ID,
@@ -124,7 +124,7 @@ describe('PickingSlipService', () => {
     });
 
     // Seed Order Lines
-    await db.insert(salesOrderLineItems).values([
+    await pg.db.insert(salesOrderLineItems).values([
       {
         salesOrderLineId: LINE_1_ID,
         salesOrderId: ORDER_ID,

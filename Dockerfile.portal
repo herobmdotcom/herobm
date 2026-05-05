@@ -70,4 +70,5 @@ COPY --from=builder /app/apps/ops-portal/messages ./messages
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# In a monorepo, the standalone server.js is nested under the app path
+CMD ["node", "apps/ops-portal/server.js"]

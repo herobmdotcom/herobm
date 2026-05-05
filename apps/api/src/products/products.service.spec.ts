@@ -78,7 +78,7 @@ describe('ProductsService', () => {
     const targetId = '11111111-1111-1111-1111-111111111111';
 
     beforeEach(async () => {
-      await db.insert(products).values({
+      await pg.db.insert(products).values({
         productId: targetId,
         productNumber: 'BOLT-M8',
         name: 'M8 Hex Bolt',
@@ -86,7 +86,7 @@ describe('ProductsService', () => {
         baseUom: 'EA',
       });
 
-      await db.insert(productEvents).values({
+      await pg.db.insert(productEvents).values({
         productId: targetId,
         eventType: 'created',
         payload: { name: 'M8 Hex Bolt' },

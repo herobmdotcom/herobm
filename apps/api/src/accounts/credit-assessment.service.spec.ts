@@ -149,7 +149,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      await db.insert(glJournalLines).values({
+      await pg.db.insert(glJournalLines).values({
         journalEntryId: entryOld.journalEntryId,
         partyId: acc.accountId,
         partyType: 'customer',
@@ -171,7 +171,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      await db.insert(glJournalLines).values({
+      await pg.db.insert(glJournalLines).values({
         journalEntryId: entryRecent.journalEntryId,
         partyId: acc.accountId,
         partyType: 'customer',
@@ -190,7 +190,7 @@ describe('CreditAssessmentService', () => {
         })
         .returning();
 
-      await db.insert(glJournalLines).values({
+      await pg.db.insert(glJournalLines).values({
         journalEntryId: entryPay.journalEntryId,
         partyId: acc.accountId,
         partyType: 'customer',

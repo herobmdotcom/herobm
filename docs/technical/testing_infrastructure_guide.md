@@ -45,6 +45,16 @@ make test-infra
 
 The API backend uses a multi-tiered unit testing strategy to balance execution speed with validation fidelity.
 
+### Which tool should I use?
+
+| Scenario | Recommendation | Why? |
+| :--- | :--- | :--- |
+| **Simple CRUD / Utility** | **MockDrizzle** | Faster execution; DB constraints are not the focus. |
+| **Financial / GL Posting** | **PGLite** | Must verify transactional atomicity and balancing rules. |
+| **Complex Joins / Raw SQL** | **PGLite** | Ensures SQL syntax and relationship logic is valid. |
+| **State Machine Transitions** | **PGLite** | Verifies audit logs and lifecycle state persistence. |
+| **Performance Critical Suite** | **MockDrizzle** | Pure JS objects have zero overhead for hundreds of tests. |
+
 ### MockDrizzle Tier (Fast)
 Used for simple business logic that does not rely on complex SQL joins or database-level constraints. It uses a virtual memory DB that mocks the Drizzle ORM's structural responses.
 - **Reference:** `docs/conventions.md#12-mockdrizzle-unit-testing-pattern`

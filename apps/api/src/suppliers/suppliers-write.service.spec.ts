@@ -15,7 +15,7 @@ describe('SuppliersWriteService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SuppliersWriteService,
-        { provide: DRIZZLE, useValue: db },
+        { provide: DRIZZLE, useValue: pg.db },
         {
           provide: AppConfigService,
           useValue: { homeCurrency: jest.fn().mockReturnValue('EUR') },
@@ -44,7 +44,7 @@ describe('SuppliersWriteService', () => {
     });
 
     it('should throw if vendor number already exists', async () => {
-      await db.insert(suppliers).values({
+      await pg.db.insert(suppliers).values({
         vendorNumber: 'V-001',
         name: 'Existing',
         currencyCode: 'EUR',
@@ -59,7 +59,7 @@ describe('SuppliersWriteService', () => {
     let existingId: string;
 
     beforeEach(async () => {
-      const [s] = await db
+      const [s] = await pg.db
         .insert(suppliers)
         .values({
           vendorNumber: 'V-EX',
@@ -78,7 +78,7 @@ describe('SuppliersWriteService', () => {
       );
       expect(result.name).toBe('New Name');
 
-      const [row] = await db
+      const [row] = await pg.db
         .select()
         .from(suppliers)
         .where(eq(suppliers.vendorId, existingId));

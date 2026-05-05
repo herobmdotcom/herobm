@@ -29,7 +29,7 @@ describe('AppConfigService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AppConfigService, { provide: DRIZZLE, useValue: db }],
+      providers: [AppConfigService, { provide: DRIZZLE, useValue: pg.db }],
     }).compile();
 
     service = module.get<AppConfigService>(AppConfigService);
