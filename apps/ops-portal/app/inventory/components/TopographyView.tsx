@@ -459,7 +459,7 @@ export default function TopographyView() {
                                             {bin.binNumber}
                                           </td>
                                           <td className="px-4 py-2" style={{ color: 'var(--text-secondary)' }}>
-                                            {bin.binType ? tLoc(`binTypes.${bin.binType}`) : '—'}
+                                            {bin.binType ? tLoc(`binTypes.${bin.binType}` as any) : '—'}
                                           </td>
                                           <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-1.5">

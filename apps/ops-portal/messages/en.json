@@ -21,6 +21,7 @@
     "dismiss": "dismiss",
     "loading": "Loading…",
     "noMatchingResults": "No matching results",
+    "resolving": "Resolving...",
     "select": "Select",
     "selectEllipsis": "Select…",
     "selectNone": "(None)",
