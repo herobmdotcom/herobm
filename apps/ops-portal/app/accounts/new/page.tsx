@@ -91,6 +91,7 @@ export default function NewAccountPage() {
                 </button>
               </>
             }
+            showPrint={false}
           />
         }
       >

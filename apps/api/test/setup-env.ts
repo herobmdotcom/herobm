@@ -39,3 +39,4 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.SETUP_TOKEN) {
   process.env.SETUP_TOKEN = 'test-setup-token';
 }
+

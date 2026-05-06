@@ -278,6 +278,7 @@ export default function SystemSettingsPage() {
               <PageNav sections={navSections} />
             </div>
           }
+          showPrint={false}
         />
       }
     >

@@ -178,7 +178,7 @@ export default function DataGrid<T>({
     };
   }, [gridKey]);
 
-  const [data, setData] = useState<T[]>([]);
+  const [data, setData] = useState<T[] | undefined>(undefined);
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch ?? "");
@@ -669,7 +669,7 @@ export default function DataGrid<T>({
             </span>
             <button
               onClick={() => setPage((p) => p + 1)}
-              disabled={data.length < limit}
+              disabled={!data || data.length < limit}
               className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
               style={{
                 background: "var(--bg-card)",

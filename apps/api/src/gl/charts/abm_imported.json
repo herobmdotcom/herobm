@@ -1,0 +1,503 @@
+{
+  "name": "ABM Imported - vau2010",
+  "country_code": "au",
+  "tree": {
+    "Revenue": {
+      "root_type": "Income",
+      "is_group": 1,
+      "children": {
+        "Sales": {
+          "is_group": 1,
+          "children": {
+            "Stock Sales": {
+              "account_number": "0010",
+              "description": "Remittance to:"
+            },
+            "Discounts Given": {
+              "account_number": "0091"
+            }
+          }
+        },
+        "Other Income": {
+          "is_group": 1,
+          "children": {
+            "Restocking Fees": {
+              "account_number": "0011"
+            },
+            "Other Income": {
+              "account_number": "0012",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Non-operating Income": {
+          "is_group": 1,
+          "children": {
+            "Interest received": {
+              "account_number": "0225",
+              "description": "Remittance to:"
+            },
+            "Sundry Income": {
+              "account_number": "0226",
+              "description": "Remittance to:"
+            }
+          }
+        }
+      }
+    },
+    "Expenses": {
+      "root_type": "Expense",
+      "is_group": 1,
+      "children": {
+        "Cost of Sales": {
+          "is_group": 1,
+          "children": {
+            "Opening Stock": {
+              "account_number": "0100"
+            },
+            "Freight": {
+              "account_number": "0110",
+              "description": "Remittance to:"
+            },
+            "Stock Transfers": {
+              "account_number": "0120"
+            },
+            "Stock Purchases": {
+              "account_number": "0130"
+            },
+            "Currency Settlement Gains": {
+              "account_number": "0131"
+            },
+            "Stock Movement Account": {
+              "account_number": "0180"
+            },
+            "Currency SOH Adjustment": {
+              "account_number": "0181",
+              "description": "Remittance to:"
+            },
+            "Duty Refunds / Paid": {
+              "account_number": "0184",
+              "description": "Remittance to:"
+            },
+            "Corrosion Wdown": {
+              "account_number": "0185",
+              "description": "Remittance to:"
+            },
+            "Nickel Surcharge": {
+              "account_number": "0186",
+              "description": "Remittance to:"
+            },
+            "Marine Cargo Insurance": {
+              "account_number": "0187"
+            },
+            "Currency Settlement Gain": {
+              "account_number": "0204"
+            },
+            "Stock Adjustment Account": {
+              "account_number": "0205"
+            },
+            "Realised Foreign Exchange Losses": {
+              "account_number": "0206",
+              "description": "Remittance to:"
+            },
+            "Unrealised Foreign Exchange Gains": {
+              "account_number": "0207"
+            },
+            "Unrealised Foreign Exchange Losses": {
+              "account_number": "0208"
+            }
+          }
+        },
+        "Administration Expenses": {
+          "is_group": 1,
+          "children": {
+            "Administration": {
+              "account_number": "0200",
+              "description": "Remittance to:"
+            },
+            "Management": {
+              "account_number": "0230",
+              "description": "Remittance to:"
+            },
+            "Office": {
+              "account_number": "0240",
+              "description": "Remittance to:"
+            },
+            "Vehicle": {
+              "account_number": "0250",
+              "description": "Remittance to:"
+            },
+            "Warehouse": {
+              "account_number": "0260",
+              "description": "Remittance to:"
+            },
+            "Travel": {
+              "account_number": "0270",
+              "description": "Remittance to:"
+            },
+            "Plant & Equipment Costs": {
+              "account_number": "0280",
+              "description": "Remittance to:"
+            },
+            "Employment": {
+              "account_number": "0290",
+              "description": "Remittance to:"
+            },
+            "Depreciation - Other": {
+              "account_number": "0420",
+              "account_type": "Depreciation"
+            }
+          }
+        },
+        "Finance Expenses": {
+          "is_group": 1,
+          "children": {
+            "Finance Expenses": {
+              "account_number": "0220",
+              "description": "Remittance to:"
+            },
+            "Interest Paid": {
+              "account_number": "0221",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Non-operating Expense": {
+          "is_group": 1,
+          "children": {
+            "Income Tax Expense": {
+              "account_number": "0440",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            }
+          }
+        }
+      }
+    },
+    "Assets": {
+      "root_type": "Asset",
+      "is_group": 1,
+      "children": {
+        "Local Currency Bank Accounts": {
+          "is_group": 1,
+          "children": {
+            "ANZ Cheque Account 6527": {
+              "account_number": "0501",
+              "account_type": "Bank"
+            },
+            "ANZ Online Saver 903922655": {
+              "account_number": "0502",
+              "account_type": "Bank"
+            }
+          }
+        },
+        "Debtors": {
+          "is_group": 1,
+          "children": {
+            "Trade Debtors": {
+              "account_number": "0510",
+              "account_type": "Receivable"
+            },
+            "Debtor Retentions": {
+              "account_number": "0515",
+              "account_type": "Receivable"
+            }
+          }
+        },
+        "Other Current Assets": {
+          "is_group": 1,
+          "children": {
+            "GST Deductable": {
+              "account_number": "0520",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "GST Paid Jnls": {
+              "account_number": "0521",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "TAX Provisional Payments": {
+              "account_number": "0525",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "Accruals": {
+              "account_number": "0526"
+            },
+            "Bad Debt Provisions": {
+              "account_number": "0527",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Stock on Hand": {
+          "is_group": 1,
+          "children": {
+            "Stock on Hand": {
+              "account_number": "0530",
+              "account_type": "Stock"
+            },
+            "Stock Revaluation Account": {
+              "account_number": "0531",
+              "account_type": "Stock",
+              "description": "Remittance to:"
+            },
+            "Currency Adjustment SOH": {
+              "account_number": "0532",
+              "account_type": "Stock"
+            },
+            "Stock - C/S Corrosion Wdown": {
+              "account_number": "0533",
+              "account_type": "Stock",
+              "description": "Remittance to:"
+            },
+            "Stock Delivered not invoiced": {
+              "account_number": "0535",
+              "account_type": "Stock",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Intangible Assets": {
+          "is_group": 1,
+          "children": {
+            "Rental Bond": {
+              "account_number": "0545",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Investments": {
+          "is_group": 1,
+          "children": {
+            "Investment G & W Mullooly": {
+              "account_number": "0570",
+              "description": "Remittance to:"
+            },
+            "Loan Stock Advance VNZ": {
+              "account_number": "0571",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Fixed Assets": {
+          "is_group": 1,
+          "children": {
+            "Buildings": {
+              "account_number": "0700"
+            },
+            "Fixtures & Fittings": {
+              "account_number": "0710"
+            },
+            "Freehold Land": {
+              "account_number": "0720"
+            },
+            "Motor Vehicles": {
+              "account_number": "0730",
+              "description": "Remittance to:"
+            },
+            "Office Equipment": {
+              "account_number": "0740",
+              "description": "Remittance to:\r\nGST on Sundry Payment"
+            },
+            "Warehouse Equipment": {
+              "account_number": "0745"
+            },
+            "Accumulated Depreciation Vehicles": {
+              "account_number": "0750",
+              "account_type": "Depreciation"
+            }
+          }
+        }
+      }
+    },
+    "Liabilities": {
+      "root_type": "Liability",
+      "is_group": 1,
+      "children": {
+        "Credit Card Accounts": {
+          "is_group": 1,
+          "children": {
+            "ANZ Credit Card -2268": {
+              "account_number": "0505",
+              "account_type": "Bank"
+            },
+            "VOLZ ANZ CC 5117": {
+              "account_number": "0507",
+              "account_type": "Bank"
+            }
+          }
+        },
+        "Other Current Liabilities": {
+          "is_group": 1,
+          "children": {
+            "Trade Creditors": {
+              "account_number": "0600",
+              "description": "Remittance to:"
+            },
+            "GST Payable": {
+              "account_number": "0610",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "GST Collected Jnls": {
+              "account_number": "0611",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "State Payroll Tax": {
+              "account_number": "0612",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            },
+            "PAYG Salary & Wages": {
+              "account_number": "0613",
+              "description": "Remittance to:"
+            },
+            "SGC Accrual & Payable": {
+              "account_number": "0614",
+              "description": "Remittance to:"
+            },
+            "Child Support Payments": {
+              "account_number": "0615",
+              "description": "Remittance to:"
+            },
+            "Accrued Bonus Liability": {
+              "account_number": "0616",
+              "description": "Remittance to:"
+            },
+            "Creditors Retentions": {
+              "account_number": "0617",
+              "description": "Remittance to:"
+            },
+            "Provisions": {
+              "account_number": "0661",
+              "description": "Remittance to:"
+            },
+            "ATO Client Account": {
+              "account_number": "0630",
+              "description": "Remittance to:"
+            },
+            "Loan": {
+              "account_number": "0644",
+              "description": "Remittance to:"
+            },
+            "Lease liabilities": {
+              "account_number": "0650"
+            },
+            "Accruals": {
+              "account_number": "0660",
+              "description": "Remittance to:"
+            },
+            "Taxation": {
+              "account_number": "0800",
+              "account_type": "Tax",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Long Term Liabilities": {
+          "is_group": 1,
+          "children": {
+            "Loan - Stock Act VGW Pte Ltd": {
+              "account_number": "0640",
+              "description": "Remittance to:"
+            },
+            "Loan - Volz Fluid Technology": {
+              "account_number": "0641",
+              "description": "Remittance to:"
+            },
+            "ANZ WA Triton Loan $792.42": {
+              "account_number": "0645",
+              "description": "Remittance to:"
+            },
+            "Less: Unexpired Charges": {
+              "account_number": "0646",
+              "description": "Remittance to:"
+            },
+            "ANZ Camry Loan $331.27": {
+              "account_number": "0647",
+              "description": "Remittance to:"
+            },
+            "Less: Unxpired Charges": {
+              "account_number": "0648",
+              "description": "Remittance to:"
+            },
+            "ANZ QLD Triton Loan $786.83": {
+              "account_number": "0649",
+              "description": "Remittance to:"
+            },
+            "ANZ QLD Triton Balloon": {
+              "account_number": "0651",
+              "description": "Remittance to:"
+            },
+            "Less: UnExpd Chgs": {
+              "account_number": "0652",
+              "description": "Remittance to:"
+            },
+            "Hilux SR 2024 ANZ Asset Finance": {
+              "account_number": "0653",
+              "description": "Remittance to:"
+            }
+          }
+        }
+      }
+    },
+    "Equity": {
+      "root_type": "Equity",
+      "is_group": 1,
+      "children": {
+        "Company Equity": {
+          "is_group": 1,
+          "children": {
+            "Retained Profits Brought Forward": {
+              "account_number": "0890",
+              "description": "Remittance to:"
+            },
+            "GST Adjustment": {
+              "account_number": "0891",
+              "account_type": "Tax"
+            },
+            "Share Capital": {
+              "account_number": "0990"
+            }
+          }
+        },
+        "Suspense Accounts": {
+          "is_group": 1,
+          "children": {
+            "Opening Balances Creditors": {
+              "account_number": "0905"
+            },
+            "Opening Balances Debtors": {
+              "account_number": "0906"
+            },
+            "Opening Balances Bank": {
+              "account_number": "0908"
+            },
+            "Opening Balances Credit Card": {
+              "account_number": "0909",
+              "description": "Remittance to:"
+            },
+            "Opening Balance Stock": {
+              "account_number": "0910"
+            },
+            "Suspense Account": {
+              "account_number": "0999",
+              "description": "Remittance to:"
+            }
+          }
+        },
+        "Company Distribution": {
+          "is_group": 1,
+          "children": {
+            "Dividends": {
+              "account_number": "0930"
+            }
+          }
+        }
+      }
+    }
+  }
+}

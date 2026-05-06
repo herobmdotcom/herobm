@@ -55,6 +55,7 @@ describe('API E2E — Sales Order Returns', () => {
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
@@ -166,7 +167,8 @@ describe('API E2E — Sales Order Returns', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const binId = binsRes.body.data[0].binId;
+    const binId =
+      binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
 
     const detail = await request(app.getHttpServer())
       .get(`/api/sales-orders/${orderId}`)
@@ -193,14 +195,6 @@ describe('API E2E — Sales Order Returns', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ lines: shipLines })
       .expect(201);
-
-    await request(app.getHttpServer())
-      .patch(
-        `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
-      )
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'dispatched' })
-      .expect(200);
 
     // shipped state is auto-transitioned, now transition to invoiced
     await request(app.getHttpServer())
@@ -383,3 +377,4 @@ describe('API E2E — Sales Order Returns', () => {
     });
   });
 });
+

@@ -229,6 +229,20 @@ export const orderEvents = modbmCore.table('order_events', {
 });
 
 // ---------------------------------------------------------------------------
+// shipment_events  (Audit log + event sourcing for shipments)
+// ---------------------------------------------------------------------------
+export const shipmentEvents = modbmCore.table('shipment_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  shipmentId: uuid('shipment_id')
+    .notNull()
+    .references(() => salesOrderShipments.shipmentId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // sales_order_returns  (Return header against an invoiced order)
 // ---------------------------------------------------------------------------
 export const salesOrderReturns = modbmCore.table(

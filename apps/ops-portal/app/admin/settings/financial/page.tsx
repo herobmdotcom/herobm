@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
+import CsvImportButton from '@/components/shared/CsvImportButton';
+
 import { getCurrency } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 
@@ -97,6 +99,8 @@ export default function FinancialSettingsPage() {
   const [glSettings, setGlSettings] = useState<any>(null);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [glLoading, setGlLoading] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
+
 
   const areaMap: Record<string, string> = {
     gl: tSettings('sections.gl'),
@@ -256,6 +260,19 @@ export default function FinancialSettingsPage() {
     catch (err: any) { toast.error(err.message); }
   };
 
+  const handleImportCc = async (data: any[]) => {
+    setIsImporting(true);
+    try {
+      const res = await apiMutate<any>('/api/settings/cost-centers/import', 'POST', data);
+      toast.success(tSettings('toasts.importSuccess', { count: res.count }));
+      loadCcs();
+    } catch (err: any) {
+      toast.error(tSettings('toasts.importFailed', { message: err.message }));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // ── Activities data ───────────────────────────────────────────────────────
 
   const loadActivities = async () => {
@@ -301,6 +318,19 @@ export default function FinancialSettingsPage() {
       loadActivities(); 
     }
     catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleImportActivity = async (data: any[]) => {
+    setIsImporting(true);
+    try {
+      const res = await apiMutate<any>('/api/settings/activities/import', 'POST', data);
+      toast.success(tSettings('toasts.importSuccess', { count: res.count }));
+      loadActivities();
+    } catch (err: any) {
+      toast.error(tSettings('toasts.importFailed', { message: err.message }));
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────
@@ -536,6 +566,7 @@ export default function FinancialSettingsPage() {
               <PageNav sections={navSections} />
             </div>
           }
+          showPrint={false}
         />
       }
     >
@@ -724,7 +755,10 @@ export default function FinancialSettingsPage() {
               <span className="material-symbols-outlined">folder_shared</span>
               {tSettings('sections.costCenters')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={ccCreate}>+ {tSettings('actions.create')}</button>
+            <div className="flex items-center gap-2">
+              <CsvImportButton onImport={handleImportCc} disabled={isImporting} />
+              <button className="btn btn-primary btn-sm" onClick={ccCreate}>+ {tSettings('actions.create')}</button>
+            </div>
           </div>
           <table className="table-lines w-full">
             <thead>
@@ -758,7 +792,10 @@ export default function FinancialSettingsPage() {
               <span className="material-symbols-outlined">account_tree</span>
               {tSettings('sections.activities')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={activityCreate}>+ {tSettings('actions.create')}</button>
+            <div className="flex items-center gap-2">
+              <CsvImportButton onImport={handleImportActivity} disabled={isImporting} />
+              <button className="btn btn-primary btn-sm" onClick={activityCreate}>+ {tSettings('actions.create')}</button>
+            </div>
           </div>
           <table className="table-lines w-full">
             <thead>

@@ -15,7 +15,11 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { CreateGoodsReceivedDto, ResolveAllocationDto } from './dto';
+import {
+  CreateGoodsReceivedDto,
+  ResolveAllocationDto,
+  ToggleQuarantineDto,
+} from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
@@ -99,8 +103,13 @@ export class GoodsReceivedController {
   @CasbinAction('write')
   async toggleQuarantine(
     @Param('lineId') lineId: string,
+    @Body() dto: ToggleQuarantineDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.goodsReceivedService.toggleQuarantine(lineId, user.username);
+    return this.goodsReceivedService.toggleQuarantine(
+      lineId,
+      user.username,
+      dto.reason,
+    );
   }
 }

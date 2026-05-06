@@ -324,6 +324,7 @@ export default function NewOrderPage() {
                 </button>
               </>
             }
+            showPrint={false}
           />
         }
       >

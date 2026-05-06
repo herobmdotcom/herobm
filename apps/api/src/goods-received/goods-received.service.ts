@@ -477,6 +477,7 @@ export class GoodsReceivedService {
         or(
           ilike(goodsReceived.receiptNumber, searchTerm),
           ilike(goodsReceived.packingSlipNumber, searchTerm),
+          ilike(suppliers.name, searchTerm),
         ),
       );
     }
@@ -505,6 +506,7 @@ export class GoodsReceivedService {
     const [{ count }] = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(goodsReceived)
+      .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
       .where(whereClause);
 
     // For each receipt, count match statuses
@@ -591,6 +593,8 @@ export class GoodsReceivedService {
           ilike(goodsReceived.packingSlipNumber, searchTerm),
           ilike(products.productNumber, searchTerm),
           ilike(products.alternateProductNumber, searchTerm),
+          ilike(products.name, searchTerm),
+          ilike(suppliers.name, searchTerm),
         ),
       );
     }
@@ -642,6 +646,7 @@ export class GoodsReceivedService {
         eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
+      .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
       .where(whereClause);
 
     return {
@@ -1040,7 +1045,11 @@ export class GoodsReceivedService {
     });
   }
 
-  async toggleQuarantine(goodsReceivedLineId: string, userId: string) {
+  async toggleQuarantine(
+    goodsReceivedLineId: string,
+    userId: string,
+    reason?: string,
+  ) {
     return await this.db.transaction(async (tx) => {
       const [grLine] = await tx
         .select({
@@ -1162,7 +1171,9 @@ export class GoodsReceivedService {
         entryNumber: `QRN-${grLine.receiptNumber}-${grLine.line.goodsReceivedLineId.substring(0, 4)}`,
         sourceType: 'PO_RECEIPT',
         sourceId: grLine.line.goodsReceivedId,
-        memo: `Status changed to ${newStatus}`,
+        memo: reason
+          ? `Status: ${newStatus} - ${reason}`
+          : `Status: ${newStatus}`,
         userId,
         lines: [
           {

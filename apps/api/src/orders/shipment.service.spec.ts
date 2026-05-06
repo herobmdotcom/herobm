@@ -13,11 +13,14 @@ import {
   salesOrderShipmentLines,
   inventoryBinEntries,
   products,
+  zones,
   bins,
   locations,
   uomDictionary,
   accounts,
   taxCategories,
+  inventoryEntries,
+  inventoryLedger,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 import { setupTestModule } from '../../test/utils/test-module';
@@ -49,7 +52,7 @@ const MOCK_SHIPMENT = {
   shipmentId: 'e0000000-0000-0000-0000-000000000001',
   shipmentNumber: 'SHP-20260316-0001',
   salesOrderId: '00000000-0000-0000-0000-000000000001',
-  stateCode: 'draft',
+  stateCode: 'dispatched',
   notes: null,
   createdBy: 'admin',
 };
@@ -89,6 +92,8 @@ describe('ShipmentService', () => {
       TRUNCATE TABLE modbm_core.sales_order_lines CASCADE;
       TRUNCATE TABLE modbm_core.sales_orders CASCADE;
       TRUNCATE TABLE modbm_core.products CASCADE;
+      TRUNCATE TABLE modbm_core.inventory_ledger CASCADE;
+      TRUNCATE TABLE modbm_core.inventory_entries CASCADE;
     `);
 
     // Fetch dynamic IDs from standard seeds
@@ -138,6 +143,72 @@ describe('ShipmentService', () => {
     ]);
     await pg.db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
     await pg.db.insert(salesOrderShipmentLines).values([MOCK_SHIPMENT_LINE]);
+
+    await pg.db
+      .insert(zones)
+      .values([
+        {
+          zoneId: '80000000-0000-0000-0000-000000000001',
+          code: 'DEFAULT',
+          name: 'Default Zone',
+          locationId: '10000000-0000-0000-0000-000000000001',
+        },
+      ])
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(bins)
+      .values([
+        {
+          binId: '90000000-0000-0000-0000-000000000001',
+          binNumber: 'SHIPPING',
+          zoneId: '80000000-0000-0000-0000-000000000001',
+        },
+      ])
+      .onConflictDoNothing();
+
+    // Insert picked stock for the item so createShipment can dispatch it
+    await pg.db.insert(inventoryEntries).values([
+      {
+        entryId: 'e0000000-0000-0000-0000-000000000002',
+        entryNumber: 'PICK-001',
+        sourceType: 'SO_PICK',
+        sourceId: '00000000-0000-0000-0000-000000000001', // salesOrderId
+        entryDate: new Date(),
+        createdBy: 'admin',
+        memo: 'Test pick',
+      },
+      {
+        entryId: 'e0000000-0000-0000-0000-000000000003',
+        entryNumber: 'SHP-001',
+        sourceType: 'SO_SHIPMENT',
+        sourceId: 'e0000000-0000-0000-0000-000000000001', // shipmentId
+        entryDate: new Date(),
+        createdBy: 'admin',
+        memo: 'Test dispatch',
+      },
+    ]);
+
+    await pg.db.insert(inventoryLedger).values([
+      {
+        ledgerId: 'c1000000-0000-0000-0000-000000000001',
+        entryId: 'e0000000-0000-0000-0000-000000000002',
+        productId: 'a0000000-0000-0000-0000-000000000001',
+        binId: '90000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-0000-0000-000000000001',
+        zoneId: '80000000-0000-0000-0000-000000000001',
+        quantity: '10',
+      },
+      {
+        ledgerId: 'c1000000-0000-0000-0000-000000000002',
+        entryId: 'e0000000-0000-0000-0000-000000000003',
+        productId: 'a0000000-0000-0000-0000-000000000001',
+        binId: '90000000-0000-0000-0000-000000000001',
+        locationId: '10000000-0000-0000-0000-000000000001',
+        zoneId: '80000000-0000-0000-0000-000000000001',
+        quantity: '-5', // dispatch deducts quantity
+      },
+    ]);
   });
 
   afterEach(() => {
@@ -243,7 +314,7 @@ describe('ShipmentService', () => {
   // =========================================================================
 
   describe('updateShipment', () => {
-    it('should allow updating notes on a draft shipment', async () => {
+    it('should allow updating notes on a dispatched shipment', async () => {
       const result = await service.updateShipment(
         'e0000000-0000-0000-0000-000000000001',
         { notes: 'Updated notes' },
@@ -277,29 +348,7 @@ describe('ShipmentService', () => {
   // =========================================================================
 
   describe('addShipmentLine', () => {
-    it('should add a line to a draft shipment', async () => {
-      // Default mocks have shipment in draft.
-      const result = await service.addShipmentLine(
-        'e0000000-0000-0000-0000-000000000001',
-        {
-          salesOrderLineId: '00000000-0000-0000-0000-000000000002',
-          quantityShipped: '2',
-        },
-        'admin',
-      );
-      expect(result).toBeDefined();
-    });
-
-    it('should reject if shipment is not in draft', async () => {
-      await pg.db
-        .update(salesOrderShipments)
-        .set({ stateCode: 'cancelled' })
-        .where(
-          eq(
-            salesOrderShipments.shipmentId,
-            'e0000000-0000-0000-0000-000000000001',
-          ),
-        );
+    it('should reject if shipment is already dispatched', async () => {
       await expect(
         service.addShipmentLine(
           'e0000000-0000-0000-0000-000000000001',
@@ -318,27 +367,7 @@ describe('ShipmentService', () => {
   // =========================================================================
 
   describe('updateShipmentLine', () => {
-    it('should update a line in a draft shipment', async () => {
-      // Default mocks have shipment in draft.
-      const result = await service.updateShipmentLine(
-        'e0000000-0000-0000-0000-000000000001',
-        'f0000000-0000-0000-0000-000000000001',
-        { quantityShipped: '4' },
-        'admin',
-      );
-      expect(result).toBeDefined();
-    });
-
-    it('should reject if shipment is not in draft', async () => {
-      await pg.db
-        .update(salesOrderShipments)
-        .set({ stateCode: 'dispatched' })
-        .where(
-          eq(
-            salesOrderShipments.shipmentId,
-            'e0000000-0000-0000-0000-000000000001',
-          ),
-        );
+    it('should reject updating a line in a dispatched shipment', async () => {
       await expect(
         service.updateShipmentLine(
           'e0000000-0000-0000-0000-000000000001',
@@ -368,7 +397,7 @@ describe('ShipmentService', () => {
       // Inventory is already seeded in the global beforeEach
     }
 
-    it.each([['draft', 'cancelled']])(
+    it.each([['dispatched', 'cancelled']])(
       'should allow transition %s → %s',
       async (from, to) => {
         await setupWithState(from);
@@ -382,20 +411,19 @@ describe('ShipmentService', () => {
       },
     );
 
-    it.each([
-      ['cancelled', 'draft'],
-      ['cancelled', 'dispatched'],
-      ['dispatched', 'cancelled'],
-    ])('should reject transition %s → %s', async (from, to) => {
-      await setupWithState(from);
-      await expect(
-        service.changeShipmentState(
-          'e0000000-0000-0000-0000-000000000001',
-          to,
-          'admin',
-        ),
-      ).rejects.toThrow(BadRequestException);
-    });
+    it.each([['cancelled', 'dispatched']])(
+      'should reject transition %s → %s',
+      async (from, to) => {
+        await setupWithState(from);
+        await expect(
+          service.changeShipmentState(
+            'e0000000-0000-0000-0000-000000000001',
+            to,
+            'admin',
+          ),
+        ).rejects.toThrow(BadRequestException);
+      },
+    );
 
     it('should reject unknown state name', async () => {
       await expect(
@@ -413,27 +441,7 @@ describe('ShipmentService', () => {
   // =========================================================================
 
   describe('removeShipmentLine', () => {
-    it('should remove a line from a draft shipment', async () => {
-      // Default mocks have shipment in draft.
-      await expect(
-        service.removeShipmentLine(
-          'e0000000-0000-0000-0000-000000000001',
-          'f0000000-0000-0000-0000-000000000001',
-          'admin',
-        ),
-      ).resolves.toBeUndefined();
-    });
-
     it('should reject removal from dispatched shipment', async () => {
-      await pg.db
-        .update(salesOrderShipments)
-        .set({ stateCode: 'dispatched' })
-        .where(
-          eq(
-            salesOrderShipments.shipmentId,
-            'e0000000-0000-0000-0000-000000000001',
-          ),
-        );
       await expect(
         service.removeShipmentLine(
           'e0000000-0000-0000-0000-000000000001',

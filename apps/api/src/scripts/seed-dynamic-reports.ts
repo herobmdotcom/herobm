@@ -10,7 +10,9 @@ import {
   reportContexts,
 } from '../drizzle/modbm-core-schema';
 
-process.loadEnvFile(resolve(__dirname, '../../../../.env'));
+const profile = process.env.PROFILE;
+const envFile = profile ? `.env.${profile}` : '.env';
+process.loadEnvFile(resolve(__dirname, `../../../../${envFile}`));
 
 const dbUrl = process.env.DATABASE_URL;
 const queryClient = dbUrl
@@ -60,6 +62,24 @@ const SEEDS = [
       'System default template for generating Pro Forma Invoices for confirmed orders.',
     templatePath: '../../../../tools/seeds/reports/pro-forma-invoice.typ',
     outputPattern: 'ProForma-{{orderNumber}}.pdf',
+  },
+  {
+    slug: 'sales-return',
+    name: 'Standard Return Credit Note',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Credit Notes for returned customer goods.',
+    templatePath: '../../../../tools/seeds/reports/sales-return-credit.typ',
+    outputPattern: 'Credit-{{returnNumber}}.pdf',
+  },
+  {
+    slug: 'shipping-docket',
+    name: 'Standard Shipping Docket',
+    contexts: ['shipment'],
+    description:
+      'System default template for generating Shipping Dockets that accompany dispatched goods.',
+    templatePath: '../../../../tools/seeds/reports/shipping-docket.typ',
+    outputPattern: 'Docket-{{shipmentNumber}}.pdf',
   },
   {
     slug: 'sales-return-credit',

@@ -198,6 +198,7 @@ export default function NewPurchaseInvoicePage() {
                 </button>
               </>
             }
+            showPrint={false}
           />
         }
       >

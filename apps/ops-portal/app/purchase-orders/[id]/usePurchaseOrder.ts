@@ -114,9 +114,9 @@ export function usePurchaseOrder(id: string) {
       })
       .map(state => {
         const back = isBackTransition(order.stateCode, state);
-        const label = state === 'closed_short' ? 'Close Short' : cap(state);
+        const label = state === 'cancelled' ? tCommon('cancel') : state === 'closed_short' ? 'Close Short' : cap(state);
         const isDanger = state === 'cancelled' || state === 'closed_short';
-        const icon = isDanger ? '✕ ' : back ? '← ' : '→ ';
+        const icon = state === 'cancelled' ? 'close' : isDanger ? '✕ ' : back ? '← ' : '→ ';
         return { state, label, icon, isDanger, isBack: back };
       });
   }, [order, allowedTransitions]);

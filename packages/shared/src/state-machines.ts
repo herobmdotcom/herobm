@@ -59,8 +59,7 @@ export const SALES_INVOICE_TRANSITIONS: Record<string, string[]> = {
 };
 
 export const SHIPMENT_TRANSITIONS: Record<string, string[]> = {
-  draft: ['dispatched', 'cancelled'],
-  dispatched: ['draft'],
+  dispatched: ['cancelled'],
   cancelled: [],
 };
 
@@ -113,7 +112,7 @@ export const SALES_INVOICE_LIFECYCLE: Record<string, number> = {
 };
 
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, dispatched: 2,
+  cancelled: 0, dispatched: 1,
 };
 
 export const RETURN_LIFECYCLE: Record<string, number> = {

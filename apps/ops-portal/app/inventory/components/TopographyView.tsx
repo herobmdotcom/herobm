@@ -459,7 +459,7 @@ export default function TopographyView() {
                                             {bin.binNumber}
                                           </td>
                                           <td className="px-4 py-2" style={{ color: 'var(--text-secondary)' }}>
-                                            {bin.binType || '—'}
+                                            {bin.binType ? tLoc(`binTypes.${bin.binType}`) : '—'}
                                           </td>
                                           <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-1.5">
@@ -762,7 +762,7 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
         isUnavailable: initialData.bin.isUnavailable
       });
     } else {
-      setFormData({ binNumber: '', binType: '', isConsignment: false, isBonded: false, isUnavailable: false });
+      setFormData({ binNumber: '', binType: 'storage', isConsignment: false, isBonded: false, isUnavailable: false });
     }
   }, [initialData, isOpen]);
 
@@ -805,12 +805,18 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>{tLoc('fields.binType')}</label>
-          <input 
-            className="input" 
-            value={formData.binType} 
+          <select
+            className="input"
+            value={formData.binType}
             onChange={e => setFormData({...formData, binType: e.target.value})}
-            placeholder={'e.g. Picking, Staging'}
-          />
+          >
+            <option value="storage">{tLoc('binTypes.storage')}</option>
+            <option value="pick">{tLoc('binTypes.pick')}</option>
+            <option value="bulk">{tLoc('binTypes.bulk')}</option>
+            <option value="receiving">{tLoc('binTypes.receiving')}</option>
+            <option value="staging">{tLoc('binTypes.staging')}</option>
+            <option value="quarantine">{tLoc('binTypes.quarantine')}</option>
+          </select>
         </div>
         <div className="flex flex-col gap-3 pt-2">
           <label className="flex items-center gap-3 cursor-pointer group">

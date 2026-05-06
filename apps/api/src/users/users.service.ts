@@ -166,7 +166,7 @@ export class UsersService {
         BCRYPT_ROUNDS,
       );
       // SECURITY: Never log the actual password — record only that it changed
-      auditChanges.password = '(changed)';
+      auditChanges.passwordHash = '(changed)';
     }
 
     if (Object.keys(updatePayload).length === 0) {

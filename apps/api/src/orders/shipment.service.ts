@@ -22,6 +22,7 @@ import {
   backorders,
   purchaseOrders,
   systemEvents,
+  shipmentEvents,
   salesOrderPicks,
 } from '../drizzle/modbm-core-schema';
 import { AppConfigService } from '../settings/app-config.service';
@@ -145,7 +146,7 @@ export class ShipmentService {
           .values({
             shipmentNumber,
             salesOrderId,
-            stateCode: 'draft',
+            stateCode: 'dispatched',
             notes: dto.notes,
             trackingNumber: dto.trackingNumber,
             createdBy: actor,
@@ -162,9 +163,40 @@ export class ShipmentService {
           await innerTx.insert(salesOrderShipmentLines).values(lineValues);
         }
 
+        const stockLines = [];
+        for (const line of lineValues) {
+          const orderLine = await findOrderLine(
+            innerTx,
+            line.salesOrderLineId,
+            salesOrderId,
+          );
+          const [product] = await innerTx
+            .select({ productType: coreProducts.productType })
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, orderLine.productId!));
+
+          stockLines.push({
+            productId: orderLine.productId,
+            quantity: line.quantityShipped,
+            isPhysical:
+              !product ||
+              !product.productType ||
+              product.productType === 'inventory',
+          });
+        }
+        const physicalStockLines = stockLines.filter((l) => l.isPhysical);
+
+        await this.executeDispatch(
+          innerTx,
+          shipment,
+          lineValues,
+          physicalStockLines,
+          actor,
+        );
+
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: salesOrderId,
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipment.shipmentId,
           eventType: 'shipment_created',
           payload: {
             shipmentId: shipment.shipmentId,
@@ -174,7 +206,14 @@ export class ShipmentService {
           actor,
         });
 
-        return shipment;
+        const autoTransitions = await evaluateLifecycleRules(
+          innerTx,
+          salesOrderId,
+          { entity: 'shipment', id: shipment.shipmentId, action: 'dispatched' },
+          actor,
+        );
+
+        return { ...shipment, _autoTransitions: autoTransitions };
       },
     );
 
@@ -197,10 +236,8 @@ export class ShipmentService {
       async (innerTx: DrizzleDB) => {
         const shipment = await findShipment(innerTx, shipmentId);
 
-        if (shipment.stateCode !== 'draft') {
-          throw new BadRequestException(
-            `Cannot update a ${shipment.stateCode} shipment.`,
-          );
+        if (shipment.stateCode === 'cancelled') {
+          throw new BadRequestException(`Cannot update a cancelled shipment.`);
         }
 
         const [updated] = await innerTx
@@ -216,8 +253,8 @@ export class ShipmentService {
           .returning();
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: shipment.salesOrderId,
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipmentId,
           eventType: 'shipment_updated',
           payload: {
             shipmentId,
@@ -296,232 +333,7 @@ export class ShipmentService {
 
         const physicalStockLines = stockLines.filter((l) => l.isPhysical);
 
-        if (shipment.stateCode === 'draft' && newState === 'dispatched') {
-          const method = this.appConfig.valuationMethod();
-          const strategy = getValuationStrategy(method);
-
-          const pickHistory = await innerTx
-            .select({
-              binId: inventoryLedger.binId,
-              productId: inventoryLedger.productId,
-              netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`,
-            })
-            .from(inventoryLedger)
-            .innerJoin(
-              inventoryEntries,
-              eq(inventoryLedger.entryId, inventoryEntries.entryId),
-            )
-            .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
-            .where(
-              and(
-                eq(inventoryEntries.sourceId, shipment.salesOrderId),
-                eq(inventoryEntries.sourceType, 'SO_PICK'),
-                eq(bins.binNumber, 'SHIPPING'),
-              ),
-            )
-            .groupBy(inventoryLedger.binId, inventoryLedger.productId);
-
-          const dispatchLines = [];
-          for (const line of physicalStockLines) {
-            let remainingToShip = parseFloat(line.quantity);
-            const availablePicks = pickHistory.filter(
-              (p) => p.productId === line.productId && p.netPicked > 0,
-            );
-
-            for (const pick of availablePicks) {
-              if (remainingToShip <= 0) break;
-              const take = Math.min(remainingToShip, pick.netPicked);
-              dispatchLines.push({
-                productId: line.productId!,
-                binId: pick.binId,
-                quantity: -take,
-              });
-              pick.netPicked -= take;
-              remainingToShip -= take;
-            }
-
-            if (remainingToShip > 0) {
-              throw new BadRequestException(
-                `System Integrity Error: Could not find enough successfully picked stock in SHIPPING bins for product ${line.productId} to dispatch ${line.quantity}. Missing ${remainingToShip}`,
-              );
-            }
-          }
-
-          if (dispatchLines.length > 0) {
-            await this.inventoryService.recordInventoryMovement(innerTx, {
-              entryNumber:
-                'DSP-' +
-                shipment.shipmentNumber +
-                '-' +
-                Date.now().toString().slice(-4),
-              sourceType: 'SO_SHIPMENT',
-              sourceId: shipmentId,
-              memo: 'Goods Dispatched',
-              userId: actor,
-              lines: dispatchLines,
-            });
-          }
-
-          // Transition sales_order_picks to shipped
-          for (const sl of shipmentLines) {
-            let remainingToShip = parseFloat(sl.quantityShipped);
-            const linePicks = await innerTx
-              .select()
-              .from(salesOrderPicks)
-              .where(
-                and(
-                  eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
-                  eq(salesOrderPicks.stateCode, 'picked'),
-                ),
-              );
-
-            for (const pick of linePicks) {
-              if (remainingToShip <= 0) break;
-              const pickQty = parseFloat(pick.quantity);
-              const take = Math.min(remainingToShip, pickQty);
-              if (take === pickQty) {
-                await innerTx
-                  .update(salesOrderPicks)
-                  .set({ stateCode: 'shipped', modifiedOn: new Date() })
-                  .where(eq(salesOrderPicks.pickId, pick.pickId));
-              } else {
-                // Partial pick shipped - split the pick
-                await innerTx
-                  .update(salesOrderPicks)
-                  .set({
-                    quantity: String(pickQty - take),
-                    modifiedOn: new Date(),
-                  })
-                  .where(eq(salesOrderPicks.pickId, pick.pickId));
-                await innerTx.insert(salesOrderPicks).values({
-                  salesOrderId: pick.salesOrderId,
-                  salesOrderLineId: pick.salesOrderLineId,
-                  productId: pick.productId,
-                  binId: pick.binId,
-                  quantity: String(take),
-                  stateCode: 'shipped',
-                  createdBy: pick.createdBy,
-                });
-              }
-              remainingToShip -= take;
-            }
-          }
-
-          // Calculate COGS and record outbox event for GL mapping
-          const cogsDetails = [];
-          for (const line of physicalStockLines) {
-            if (!line.productId) continue;
-
-            const isUuid =
-              /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-                line.productId,
-              );
-
-            const [product] = await innerTx
-              .select()
-              .from(coreProducts)
-              .where(
-                isUuid
-                  ? eq(coreProducts.productId, line.productId)
-                  : eq(coreProducts.productNumber, line.productId),
-              );
-
-            if (product) {
-              const cogsAmount = strategy.getCogs(
-                {
-                  productId: product.productId,
-                  standardCost: product.standardCost || '0',
-                  weightedAverageCost: product.weightedAverageCost || '0',
-                },
-                parseFloat(line.quantity),
-              );
-
-              cogsDetails.push({
-                productId: line.productId,
-                quantity: line.quantity,
-                cogsAmount,
-              });
-            }
-          }
-
-          // --- Financial Integration: Post COGS Journal Entry via Accounting Strategy ---
-          const totalCogs = cogsDetails.reduce(
-            (sum, detail) => sum + parseFloat(detail.cogsAmount),
-            0,
-          );
-
-          const accountingStrategy = getAccountingStrategy(
-            this.appConfig.inventoryAccountingMode(),
-            {
-              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
-              grniAccountId: this.appConfig.defaultGrniAccountId(),
-              cogsAccountId: this.appConfig.defaultCogsAccountId(),
-              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
-            },
-          );
-
-          // Resolve customer account group dimensions for COGS posting
-          let customerCostCenterId: string | undefined;
-          let customerActivityId: string | undefined;
-          const [order] = await innerTx
-            .select({
-              customerId: salesOrders.customerId,
-              costCenterId: accountGroups.defaultCostCenterId,
-              activityId: accountGroups.defaultActivityId,
-            })
-            .from(salesOrders)
-            .leftJoin(
-              coreAccounts,
-              eq(salesOrders.customerId, coreAccounts.accountId),
-            )
-            .leftJoin(
-              accountGroups,
-              eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
-            )
-            .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
-          if (order) {
-            customerCostCenterId = order.costCenterId || undefined;
-            customerActivityId = order.activityId || undefined;
-          }
-
-          const dispatchGl = accountingStrategy.onGoodsDispatch({
-            amount: Number(totalCogs.toFixed(2)),
-            memo: `Dispatch ${shipment.shipmentNumber}`,
-            costCenterId: customerCostCenterId,
-            activityId: customerActivityId,
-          });
-
-          if (dispatchGl) {
-            await this.glService.postJournalEntry(
-              dispatchGl.lines as any,
-              {
-                actor,
-                entryDate: new Date().toISOString().slice(0, 10),
-                sourceType: dispatchGl.sourceType,
-                sourceId: shipmentId,
-                memo: `Dispatch ${shipment.shipmentNumber}`,
-              },
-              innerTx,
-            );
-          }
-
-          await emitEvent(innerTx, {
-            aggregateType: AggregateType.SALES_ORDER,
-            aggregateId: shipment.salesOrderId,
-            eventType: EventType.STOCK_DISPATCHED,
-            payload: {
-              shipmentId,
-              shipmentNumber: shipment.shipmentNumber,
-              salesOrderId: shipment.salesOrderId,
-              cogsDetails,
-            },
-            actor,
-          });
-        } else if (
-          shipment.stateCode === 'dispatched' &&
-          (newState === 'draft' || newState === 'cancelled')
-        ) {
-          // [GUARD]: Check if reverting drops shipped below invoiced
+        if (shipment.stateCode === 'dispatched' && newState === 'cancelled') {
           const invoicedMap = await getInvoicedPerLine(
             innerTx,
             shipment.salesOrderId,
@@ -534,8 +346,7 @@ export class ShipmentService {
           for (const line of shipmentLines) {
             const invoiced = invoicedMap.get(line.salesOrderLineId) || 0;
             const currentlyShipped = shippedMap.get(line.salesOrderLineId) || 0;
-            const newShipped =
-              currentlyShipped - parseFloat(line.quantityShipped);
+            const newShipped = currentlyShipped;
 
             if (invoiced > newShipped) {
               const orderLine = await findOrderLine(
@@ -607,6 +418,53 @@ export class ShipmentService {
               userId: actor,
               lines: returnLines,
             });
+          }
+
+          // Revert sales_order_picks from shipped back to picked
+          for (const sl of shipmentLines) {
+            let remainingToRevert = parseFloat(sl.quantityShipped);
+            const linePicks = await innerTx
+              .select()
+              .from(salesOrderPicks)
+              .where(
+                and(
+                  eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
+                  eq(salesOrderPicks.stateCode, 'shipped'),
+                ),
+              );
+
+            for (const pick of linePicks) {
+              if (remainingToRevert <= 0) break;
+              const pickQty = parseFloat(pick.quantity);
+              const take = Math.min(remainingToRevert, pickQty);
+
+              if (take === pickQty) {
+                await innerTx
+                  .update(salesOrderPicks)
+                  .set({ stateCode: 'picked', modifiedOn: new Date() })
+                  .where(eq(salesOrderPicks.pickId, pick.pickId));
+              } else {
+                // Partial pick reversal - split the pick
+                await innerTx
+                  .update(salesOrderPicks)
+                  .set({
+                    quantity: String(pickQty - take),
+                    modifiedOn: new Date(),
+                  })
+                  .where(eq(salesOrderPicks.pickId, pick.pickId));
+
+                await innerTx.insert(salesOrderPicks).values({
+                  salesOrderId: pick.salesOrderId,
+                  salesOrderLineId: pick.salesOrderLineId,
+                  productId: pick.productId,
+                  binId: pick.binId,
+                  quantity: String(take),
+                  stateCode: 'picked',
+                  createdBy: actor,
+                });
+              }
+              remainingToRevert -= take;
+            }
           }
 
           // --- Financial Integration: Post COGS Reversal Entry via Accounting Strategy ---
@@ -700,8 +558,8 @@ export class ShipmentService {
 
           // Record reversal outbox event to mathematically restore COGS dynamically
           await emitEvent(innerTx, {
-            aggregateType: AggregateType.SALES_ORDER,
-            aggregateId: shipment.salesOrderId,
+            aggregateType: AggregateType.SHIPMENT,
+            aggregateId: shipmentId,
             eventType: EventType.STOCK_DISPATCH_REVERTED,
             payload: {
               shipmentId,
@@ -718,8 +576,8 @@ export class ShipmentService {
             : 'shipment_status_changed';
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: shipment.salesOrderId,
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipmentId,
           eventType,
           payload: {
             shipmentId,
@@ -795,8 +653,8 @@ export class ShipmentService {
           .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: shipment.salesOrderId,
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipmentId,
           eventType: 'shipment_line_added',
           payload: {
             shipmentId,
@@ -872,8 +730,8 @@ export class ShipmentService {
           .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
         await emitEvent(innerTx, {
-          aggregateType: AggregateType.SALES_ORDER,
-          aggregateId: shipment.salesOrderId,
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipmentId,
           eventType: 'shipment_line_updated',
           payload: {
             shipmentId,
@@ -920,8 +778,8 @@ export class ShipmentService {
         .where(eq(salesOrderShipments.shipmentId, shipmentId));
 
       await emitEvent(innerTx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: shipment.salesOrderId,
+        aggregateType: AggregateType.SHIPMENT,
+        aggregateId: shipmentId,
         eventType: 'shipment_line_removed',
         payload: {
           shipmentId,
@@ -1002,17 +860,17 @@ export class ShipmentService {
 
     const events = await this.db
       .select({
-        eventId: systemEvents.eventId,
-        aggregateType: systemEvents.aggregateType,
-        aggregateId: systemEvents.aggregateId,
-        eventType: systemEvents.eventType,
-        payload: systemEvents.payload,
-        actor: systemEvents.actor,
-        createdOn: systemEvents.createdOn,
+        eventId: shipmentEvents.eventId,
+        aggregateType: sql<string>`'shipment'`,
+        aggregateId: shipmentEvents.shipmentId,
+        eventType: shipmentEvents.eventType,
+        payload: shipmentEvents.payload,
+        actor: shipmentEvents.actor,
+        createdOn: shipmentEvents.createdOn,
       })
-      .from(systemEvents)
-      .where(eq(systemEvents.aggregateId, shipmentId))
-      .orderBy(desc(systemEvents.createdOn));
+      .from(shipmentEvents)
+      .where(eq(shipmentEvents.shipmentId, shipmentId))
+      .orderBy(desc(shipmentEvents.createdOn));
 
     return { ...shipment, lines, events };
   }
@@ -1140,5 +998,234 @@ export class ShipmentService {
       ...s,
       purchaseOrders: Array.from(poMap.get(s.shipmentId) || []),
     }));
+  }
+
+  public async executeDispatch(
+    innerTx: any,
+    shipment: any,
+    shipmentLines: any[],
+    physicalStockLines: any[],
+    actor: string,
+  ) {
+    const method = this.appConfig.valuationMethod();
+    const strategy = getValuationStrategy(method);
+
+    const pickHistory = await innerTx
+      .select({
+        binId: inventoryLedger.binId,
+        productId: inventoryLedger.productId,
+        netPicked: sql<number>`SUM(${inventoryLedger.quantity}::numeric)`,
+      })
+      .from(inventoryLedger)
+      .innerJoin(
+        inventoryEntries,
+        eq(inventoryLedger.entryId, inventoryEntries.entryId),
+      )
+      .innerJoin(bins, eq(inventoryLedger.binId, bins.binId))
+      .where(
+        and(
+          eq(inventoryEntries.sourceId, shipment.salesOrderId),
+          eq(inventoryEntries.sourceType, 'SO_PICK'),
+          eq(bins.binNumber, 'SHIPPING'),
+        ),
+      )
+      .groupBy(inventoryLedger.binId, inventoryLedger.productId);
+
+    const dispatchLines = [];
+    for (const line of physicalStockLines) {
+      let remainingToShip = parseFloat(line.quantity);
+      const availablePicks = pickHistory.filter(
+        (p: any) => p.productId === line.productId && p.netPicked > 0,
+      );
+
+      for (const pick of availablePicks) {
+        if (remainingToShip <= 0) break;
+        const take = Math.min(remainingToShip, pick.netPicked);
+        dispatchLines.push({
+          productId: line.productId!,
+          binId: pick.binId,
+          quantity: -take,
+        });
+        pick.netPicked -= take;
+        remainingToShip -= take;
+      }
+
+      if (remainingToShip > 0) {
+        throw new BadRequestException(
+          `System Integrity Error: Could not find enough successfully picked stock in SHIPPING bins for product ${line.productId} to dispatch ${line.quantity}. Missing ${remainingToShip}`,
+        );
+      }
+    }
+
+    if (dispatchLines.length > 0) {
+      await this.inventoryService.recordInventoryMovement(innerTx, {
+        entryNumber:
+          'DSP-' +
+          shipment.shipmentNumber +
+          '-' +
+          Date.now().toString().slice(-4),
+        sourceType: 'SO_SHIPMENT',
+        sourceId: shipment.shipmentId,
+        memo: 'Goods Dispatched',
+        userId: actor,
+        lines: dispatchLines,
+      });
+    }
+
+    // Transition sales_order_picks to shipped
+    for (const sl of shipmentLines) {
+      let remainingToShip = parseFloat(sl.quantityShipped);
+      const linePicks = await innerTx
+        .select()
+        .from(salesOrderPicks)
+        .where(
+          and(
+            eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
+            eq(salesOrderPicks.stateCode, 'picked'),
+          ),
+        );
+
+      for (const pick of linePicks) {
+        if (remainingToShip <= 0) break;
+        const pickQty = parseFloat(pick.quantity);
+        const take = Math.min(remainingToShip, pickQty);
+        if (take === pickQty) {
+          await innerTx
+            .update(salesOrderPicks)
+            .set({ stateCode: 'shipped', modifiedOn: new Date() })
+            .where(eq(salesOrderPicks.pickId, pick.pickId));
+        } else {
+          // Partial pick shipped - split the pick
+          await innerTx
+            .update(salesOrderPicks)
+            .set({
+              quantity: String(pickQty - take),
+              modifiedOn: new Date(),
+            })
+            .where(eq(salesOrderPicks.pickId, pick.pickId));
+          await innerTx.insert(salesOrderPicks).values({
+            salesOrderId: pick.salesOrderId,
+            salesOrderLineId: pick.salesOrderLineId,
+            productId: pick.productId,
+            binId: pick.binId,
+            quantity: String(take),
+            stateCode: 'shipped',
+            createdBy: pick.createdBy,
+          });
+        }
+        remainingToShip -= take;
+      }
+    }
+
+    // Calculate COGS and record outbox event for GL mapping
+    const cogsDetails = [];
+    for (const line of physicalStockLines) {
+      if (!line.productId) continue;
+
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          line.productId,
+        );
+
+      const [product] = await innerTx
+        .select()
+        .from(coreProducts)
+        .where(
+          isUuid
+            ? eq(coreProducts.productId, line.productId)
+            : eq(coreProducts.productNumber, line.productId),
+        );
+
+      if (product) {
+        const cogsAmount = strategy.getCogs(
+          {
+            productId: product.productId,
+            standardCost: product.standardCost || '0',
+            weightedAverageCost: product.weightedAverageCost || '0',
+          },
+          parseFloat(line.quantity),
+        );
+
+        cogsDetails.push({
+          productId: line.productId,
+          quantity: line.quantity,
+          cogsAmount,
+        });
+      }
+    }
+
+    // --- Financial Integration: Post COGS Journal Entry via Accounting Strategy ---
+    const totalCogs = cogsDetails.reduce(
+      (sum, detail) => sum + parseFloat(detail.cogsAmount),
+      0,
+    );
+
+    const accountingStrategy = getAccountingStrategy(
+      this.appConfig.inventoryAccountingMode(),
+      {
+        inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+        grniAccountId: this.appConfig.defaultGrniAccountId(),
+        cogsAccountId: this.appConfig.defaultCogsAccountId(),
+        shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+      },
+    );
+
+    // Resolve customer account group dimensions for COGS posting
+    let customerCostCenterId: string | undefined;
+    let customerActivityId: string | undefined;
+    const [order] = await innerTx
+      .select({
+        customerId: salesOrders.customerId,
+        costCenterId: accountGroups.defaultCostCenterId,
+        activityId: accountGroups.defaultActivityId,
+      })
+      .from(salesOrders)
+      .leftJoin(
+        coreAccounts,
+        eq(salesOrders.customerId, coreAccounts.accountId),
+      )
+      .leftJoin(
+        accountGroups,
+        eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+      )
+      .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
+    if (order) {
+      customerCostCenterId = order.costCenterId || undefined;
+      customerActivityId = order.activityId || undefined;
+    }
+
+    const dispatchGl = accountingStrategy.onGoodsDispatch({
+      amount: Number(totalCogs.toFixed(2)),
+      memo: `Dispatch ${shipment.shipmentNumber}`,
+      costCenterId: customerCostCenterId,
+      activityId: customerActivityId,
+    });
+
+    if (dispatchGl) {
+      await this.glService.postJournalEntry(
+        dispatchGl.lines as any,
+        {
+          actor,
+          entryDate: new Date().toISOString().slice(0, 10),
+          sourceType: dispatchGl.sourceType,
+          sourceId: shipment.shipmentId,
+          memo: `Dispatch ${shipment.shipmentNumber}`,
+        },
+        innerTx,
+      );
+    }
+
+    await emitEvent(innerTx, {
+      aggregateType: AggregateType.SHIPMENT,
+      aggregateId: shipment.shipmentId,
+      eventType: EventType.STOCK_DISPATCHED,
+      payload: {
+        shipmentId: shipment.shipmentId,
+        shipmentNumber: shipment.shipmentNumber,
+        salesOrderId: shipment.salesOrderId,
+        cogsDetails,
+      },
+      actor,
+    });
   }
 }

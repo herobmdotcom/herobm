@@ -230,6 +230,8 @@
       "price_discrepancy_warning": "Price Discrepancy",
       "over_received_warning": "Over-received Warning",
       "location_discrepancy_warning": "Location Discrepancy",
+      "shipment_dispatched": "Shipment Dispatched",
+      "stock_dispatch_reverted": "Dispatch Reverted",
       "deleted": "Deleted"
     },
     "productSearch": {
@@ -448,7 +450,8 @@
       "quantityOnHand": "On Hand",
       "uomCode": "UoM Code",
       "ratio": "Ratio",
-      "ratioBase": "Ratio (× Base)"
+      "ratioBase": "Ratio (× Base)",
+      "notes": "Notes"
     },
     "generalInfo": "General Information",
     "pricing": "Pricing & Costs",
@@ -712,7 +715,10 @@
     },
     "shipmentDetails": "Shipment Details",
     "lineItems": "Line Items",
-    "backToShipments": "← Back to Shipments"
+    "backToShipments": "← Back to Shipments",
+    "cancelShipment": "Cancel Shipment",
+    "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
+    "cancelFailed": "Failed to cancel shipment"
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
@@ -894,7 +900,15 @@
         "zoneCode": "e.g. BULK",
         "zoneName": "e.g. Bulk Storage",
         "binNumber": "e.g. A-01-01",
-        "binType": "e.g. Picking, Staging"
+        "binType": "Select bin type..."
+      },
+      "binTypes": {
+        "storage": "Storage",
+        "pick": "Picking",
+        "bulk": "Bulk",
+        "receiving": "Receiving",
+        "staging": "Staging",
+        "quarantine": "Quarantine"
       },
       "zonesCount": "{count, plural, =1 {# zone} other {# zones}}",
       "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
@@ -1107,6 +1121,7 @@
       "title": "Accounting Codes Cheat Sheet",
       "subtitle": "Quick reference for accounts, cost centers, and activities",
       "search": "Search codes...",
+      "exportCsv": "Export CSV",
       "columns": {
         "chartOfAccounts": "Chart of Accounts",
         "costCenters": "Cost Centers",
@@ -1547,6 +1562,7 @@
         "save": "Save",
         "cancel": "Cancel",
         "create": "Create",
+        "importCsv": "Import CSV",
         "actions": "Actions"
       },
       "title": "System Settings",
@@ -1575,7 +1591,9 @@
         "ccDeleted": "Cost Center deleted",
         "activityUpdated": "Activity updated",
         "activityCreated": "Activity created",
-        "activityDeleted": "Activity deleted"
+        "activityDeleted": "Activity deleted",
+        "importSuccess": "Imported {count} items successfully",
+        "importFailed": "Import failed: {message}"
       },
       "sections": {
         "company": "Company Details",

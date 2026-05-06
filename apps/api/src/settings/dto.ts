@@ -7,6 +7,7 @@ import {
   IsEmail,
   IsUrl,
   IsBoolean,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateUomDto {
@@ -183,4 +184,12 @@ export class UpdateActivityDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+}
+
+export class BulkImportResultDto {
+  @IsNumber()
+  count!: number;
+
+  @IsNumber()
+  updated!: number;
 }

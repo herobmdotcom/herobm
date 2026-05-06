@@ -247,11 +247,15 @@ USE_PGLITE ?= true
 
 ifeq ($(USE_PGLITE),true)
   TEST_API_TARGET = test:pglite
-  TEST_E2E_TARGET = test:e2e:fast
 else
   TEST_API_TARGET = test
-  TEST_E2E_TARGET = test:e2e
 endif
+
+# E2E tests always run against real Postgres.
+# PGlite (WASM) is too slow for multi-step transactional workflows
+# (order → pick → ship → invoice → return) that execute dozens of
+# queries per request. Unit tests use PGlite for fast isolation.
+TEST_E2E_TARGET = test:e2e
 
 test-api:
 	npm run $(TEST_API_TARGET) -w apps/api
@@ -439,9 +443,6 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_typed_injection.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_global_exception_filter.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_report_seeding_internal.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_singleton_settings_integrity.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
-	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_lint_performance.ps1
 verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform

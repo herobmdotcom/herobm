@@ -849,6 +849,20 @@ export default function ProductDetailPage() {
                   </select>
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.notes')}
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  disabled={!isEditable || saving}
+                  value={dto.notes}
+                  onChange={(e) => setDto({ ...dto, notes: e.target.value })}
+                  onBlur={(e) => handleBlur('notes', e.target.value)}
+                  placeholder={t('products.placeholders.notes')}
+                />
+              </div>
             </div>
           </div>
 

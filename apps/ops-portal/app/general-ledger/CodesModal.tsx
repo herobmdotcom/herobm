@@ -41,6 +41,78 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const exportToCsv = () => {
+    const rows: string[][] = [];
+    
+    // CSV Header
+    rows.push(['Section', 'Code', 'Name', 'Type/Status', 'Depth']);
+    
+    // Chart of Accounts Section
+    rows.push([t('columns.chartOfAccounts'), '', '', '', '']);
+    const flattenCoa = (nodes: CoaNode[], depth = 0) => {
+      for (const node of nodes) {
+        rows.push([
+          'Account',
+          node.accountCode,
+          node.name,
+          node.accountType + (node.isGroup ? ' (Group)' : ''),
+          String(depth)
+        ]);
+        if (node.children && node.children.length > 0) {
+          flattenCoa(node.children, depth + 1);
+        }
+      }
+    };
+    flattenCoa(coa);
+    
+    rows.push(['', '', '', '', '']); // Spacer
+    
+    // Cost Centers Section
+    rows.push([t('columns.costCenters'), '', '', '', '']);
+    for (const cc of costCenters) {
+      rows.push([
+        'Cost Center',
+        cc.code,
+        cc.name,
+        cc.isActive ? 'Active' : 'Inactive',
+        ''
+      ]);
+    }
+    
+    rows.push(['', '', '', '', '']); // Spacer
+    
+    // Activities Section
+    rows.push([t('columns.activities'), '', '', '', '']);
+    for (const act of activities) {
+      rows.push([
+        'Activity',
+        act.code,
+        act.name,
+        act.isActive ? 'Active' : 'Inactive',
+        ''
+      ]);
+    }
+    
+    const escapeCsv = (val: string) => {
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+    
+    const csvContent = rows.map(row => row.map(escapeCsv).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `accounting_codes_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [selectedCc, setSelectedCc] = useState<string>('');
   const [selectedAct, setSelectedAct] = useState<string>('');
@@ -137,7 +209,14 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           </div>
 
           {/* Right: Close Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end items-center gap-3">
+            <button 
+              onClick={exportToCsv}
+              className="flex items-center justify-center p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
+              title={t('exportCsv')}
+            >
+              <span className="material-symbols-outlined text-xl !leading-none">download</span>
+            </button>
             <button 
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--bg-primary)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"

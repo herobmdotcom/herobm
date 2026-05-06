@@ -465,3 +465,166 @@ h2 {
   color: #44474c !important;
 }
 
+/* ── Utility: hide elements in print ─────────────────────────────────── */
+.print-hidden {
+  /* no-op on screen; hidden by @media print below */
+}
+
+/* ── Print Stylesheet ────────────────────────────────────────────────── */
+@media print {
+
+  /* ── 1. HIDE UI CHROME ──────────────────────────────────────────────── */
+  .print-hidden,
+  #print-page-btn,
+  aside,
+  nav,
+  [data-sidebar],
+  .details-chevron {
+    display: none !important;
+  }
+
+  /* Hide buttons/selects but NOT inside the main content details/summary */
+  button,
+  .btn,
+  select,
+  [class^="badge-return"] {
+    display: none !important;
+  }
+
+  /* ── 2. FLATTEN THE FULL DOM HEIGHT CHAIN ────────────────────────────
+     The Shell → DetailsLayout hierarchy creates nested flex containers 
+     with fixed viewport heights (h-screen, h-full) and scroll boundaries 
+     (overflow-hidden, overflow-y-auto). In Tailwind v4, targeting these 
+     by class selector (e.g. .h-screen) fails because they are compiled 
+     as atomic CSS in a layer with higher specificity. We use attribute 
+     selectors [class*="..."] to match the literal class string on the 
+     DOM element instead. ──────────────────────────────────────────────── */
+
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Kill all fixed heights and scroll traps at every nesting level */
+  [class*="h-screen"],
+  [class*="h-full"],
+  [class*="min-h-0"],
+  [class*="min-h-["],
+  [class*="overflow-hidden"],
+  [class*="overflow-y-auto"] {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Kill flex column containers that create viewport-sized blocks */
+  [class*="flex"][class*="flex-col"][class*="h-screen"],
+  [class*="flex"][class*="flex-col"][class*="h-full"],
+  [class*="flex"][class*="flex-col"][class*="overflow-hidden"] {
+    display: block !important;
+  }
+
+  /* Remove the sidebar gutter */
+  [class*="ml-60"] {
+    margin-left: 0 !important;
+  }
+
+  /* Ensure .detail-content and its children flow naturally */
+  .detail-content,
+  .detail-content > div {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    flex: none !important;
+  }
+
+  /* ── 3. CARDS & INPUTS ──────────────────────────────────────────────── */
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 0 1.5rem 0 !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  input, 
+  textarea,
+  .input {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    appearance: none !important;
+    resize: none !important;
+  }
+
+  /* ── 4. TABLES ──────────────────────────────────────────────────────── */
+  .table-lines tr {
+    page-break-inside: avoid;
+  }
+
+  /* ag-Grid — basic print support */
+  .ag-theme-alpine-dark {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .ag-body-viewport {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* ── 5. LINKS & BADGES ──────────────────────────────────────────────── */
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+
+  .badge {
+    border: 1px solid currentColor !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .section-heading .material-symbols-outlined {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* ── 6. ACTIVITY TIMELINE ───────────────────────────────────────────── */
+  /* Clean up details styling; expansion is handled by React (isPrinting) */
+  details {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 0 1rem 0 !important;
+  }
+
+  details summary {
+    pointer-events: none !important;
+    list-style: none !important;
+  }
+
+  details summary::-webkit-details-marker {
+    display: none !important;
+  }
+
+  /* ── 7. PAGE SETUP ──────────────────────────────────────────────────── */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+}
+

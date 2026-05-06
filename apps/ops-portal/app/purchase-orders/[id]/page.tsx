@@ -114,7 +114,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     className={`btn btn-sm ${t.isDanger ? 'btn-danger' : t.isBack ? 'btn-secondary' : 'btn-primary'}`}
                     onClick={() => changeState(t.state)}
                   >
-                    {t.icon}{t.label}
+                    {t.icon === 'close' ? (
+                      <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                    ) : (
+                      t.icon
+                    )}
+                    {t.label}
                   </button>
                 ))}
               </>

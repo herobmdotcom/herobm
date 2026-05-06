@@ -112,7 +112,8 @@ describe('API E2E — Sales Invoices', () => {
         .get('/api/inventory/bins')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
-      const binId = binsRes.body.data[0].binId;
+      const binId =
+        binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
 
       await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/picking/lines/${orderLineId1}`)
@@ -135,14 +136,6 @@ describe('API E2E — Sales Invoices', () => {
           ],
         })
         .expect(201);
-
-      await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'dispatched' })
-        .expect(200);
 
       // 3. Generate Partial Invoice #1
       const partialInvoiceRes = await request(app.getHttpServer())
@@ -235,7 +228,12 @@ describe('API E2E — Sales Invoices', () => {
       await request(app.getHttpServer())
         .post(`/api/sales-orders/${testOrderId}/picking/lines/${testLineId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ binId: binsRes2.body.data[0].binId, quantity: '4' })
+        .send({
+          binId:
+            binsRes2.body.data[0]?.binId ||
+            '40000000-0000-0000-0000-000000000003',
+          quantity: '4',
+        })
         .expect(201);
 
       // 4. Try to invoice it - this should FAIL securely because 0 shipped
@@ -330,3 +328,4 @@ describe('API E2E — Sales Invoices', () => {
     });
   });
 });
+

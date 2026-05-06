@@ -24,8 +24,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": true,
     "strictBindCallApply": true,
-    "noFallthroughCasesInSwitch": true,
-    "rootDir": "src"
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*", "test/**/*"],
   "exclude": [

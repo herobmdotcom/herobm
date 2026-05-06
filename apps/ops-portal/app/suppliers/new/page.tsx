@@ -67,6 +67,7 @@ export default function NewSupplierPage() {
             isDirty={isValid}
             onSave={handleSubmit}
             saveLabel={t('buttons.createSupplier')}
+            showPrint={false}
           />
         }
       >

@@ -189,6 +189,7 @@ function ReceivingFlow() {
                 </button>
               </div>
             }
+            showPrint={false}
           />
         }
       >
@@ -274,6 +275,7 @@ function ReceivingFlow() {
               {t('flow.confirmReception')}
             </button>
           }
+          showPrint={false}
         />
       }
     >

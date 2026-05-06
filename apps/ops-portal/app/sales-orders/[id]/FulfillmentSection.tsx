@@ -179,35 +179,6 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                         </tbody>
                     </table>
 
-                    {/* Existing Shipments */}
-                    {shippingCtx.shipments.length > 0 && (
-                        <div className="mt-6">
-                            <h4 className="section-heading !mb-3 !text-[var(--text-muted)]">{tShipping('existingShipments')}</h4>
-                            <div className="flex flex-col gap-2">
-                                {shippingCtx.shipments.map(shipment => (
-                                    <Link
-                                        key={shipment.shipmentId}
-                                        href={`/shipments/${shipment.shipmentId}`}
-                                        className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
-                                            <div>
-                                                <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
-                                                <div className="text-xs text-[var(--text-muted)]">
-                                                    {new Date(shipment.createdOn).toLocaleDateString()} · {tShipping('shipmentLines', { count: shipment.lineCount })}
-                                                    {shipment.trackingNumber && (
-                                                        <span> · {shipment.trackingNumber}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <StateBadge state={shipment.stateCode as ValidState} />
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </>
             )}
         </div>

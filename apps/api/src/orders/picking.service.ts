@@ -511,34 +511,34 @@ export class PickingService {
       }
     }
 
-    const queue = Array.from(orderMap.values()).map((order) => {
-      let pickabilityStatus: 'ready' | 'partial' | 'blocked';
+    const queue = Array.from(orderMap.values())
+      .filter((order) => order._linesUnfulfilled > 0)
+      .map((order) => {
+        let pickabilityStatus: 'ready' | 'partial' | 'blocked';
 
-      if (order._linesUnfulfilled === 0) {
-        pickabilityStatus = 'ready';
-      } else if (order._linesFullyPickable === order._linesUnfulfilled) {
-        pickabilityStatus = 'ready';
-      } else if (
-        order._linesFullyPickable > 0 ||
-        order._linesPartiallyPickable > 0
-      ) {
-        pickabilityStatus = 'partial';
-      } else {
-        pickabilityStatus = 'blocked';
-      }
+        if (order._linesFullyPickable === order._linesUnfulfilled) {
+          pickabilityStatus = 'ready';
+        } else if (
+          order._linesFullyPickable > 0 ||
+          order._linesPartiallyPickable > 0
+        ) {
+          pickabilityStatus = 'partial';
+        } else {
+          pickabilityStatus = 'blocked';
+        }
 
-      const hasAllocation = order._hasAllocation;
-      delete order._linesUnfulfilled;
-      delete order._linesFullyPickable;
-      delete order._linesPartiallyPickable;
-      delete order._hasAllocation;
+        const hasAllocation = order._hasAllocation;
+        delete order._linesUnfulfilled;
+        delete order._linesFullyPickable;
+        delete order._linesPartiallyPickable;
+        delete order._hasAllocation;
 
-      return {
-        ...order,
-        pickabilityStatus,
-        hasAllocation,
-      };
-    });
+        return {
+          ...order,
+          pickabilityStatus,
+          hasAllocation,
+        };
+      });
 
     // Sort: allocated orders first within each status group
     queue.sort((a, b) => {

@@ -92,6 +92,7 @@ export default function NewProductPage() {
                 </button>
               </>
             }
+            showPrint={false}
           />
         }
       >
@@ -237,6 +238,19 @@ export default function NewProductPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.notes')}
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  value={dto.notes}
+                  onChange={(e) => updateField('notes', e.target.value)}
+                  placeholder={t('products.placeholders.notes')}
+                  disabled={submitting}
+                />
               </div>
             </div>
           </div>

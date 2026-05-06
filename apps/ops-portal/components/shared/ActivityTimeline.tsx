@@ -64,6 +64,32 @@ export default function ActivityTimeline({
   const t = useTranslations('common');
   const displayTitle = title || t('activityTimeline');
   const displayEmptyMessage = emptyMessage || t('noEvents');
+  const detailsRef = React.useRef<HTMLDetailsElement>(null);
+
+  React.useEffect(() => {
+    const handleBeforePrint = () => {
+      // Imperatively open the details element — this is synchronous and
+      // guaranteed to be visible to the print engine, unlike setState.
+      if (detailsRef.current) {
+        detailsRef.current.setAttribute('open', '');
+      }
+    };
+    const handleAfterPrint = () => {
+      // Restore the original state after printing
+      if (detailsRef.current && !defaultOpen) {
+        detailsRef.current.removeAttribute('open');
+      }
+    };
+    
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, [defaultOpen]);
+
   if (!events || events.length === 0) {
     return (
       <div>
@@ -86,7 +112,7 @@ export default function ActivityTimeline({
   }
 
   return (
-    <details open={defaultOpen || undefined}>
+    <details ref={detailsRef} open={defaultOpen || undefined}>
       <summary
         className="text-sm font-semibold cursor-pointer select-none flex items-center gap-2"
         style={{

@@ -18,6 +18,7 @@ import PageNav from '@/components/shared/PageNav';
 import InvoicesSection from './InvoicesSection';
 import ReturnsSection from './ReturnsSection';
 import FulfillmentSection from './FulfillmentSection';
+import ShipmentsSection from './ShipmentsSection';
 import QuoteGenerationDialog from './QuoteGenerationDialog';
 import { formatLocationDisplay } from '@/lib/formatters';
 
@@ -197,6 +198,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
         details:      { id: 'details-section',      label: 'Details',      show: true },
         lines:        { id: 'lines-section',        label: 'Lines',        show: true },
         fulfillment:  { id: 'fulfillment-section',  label: 'Fulfillment',  show: PICKING_INVOICE_STATES.includes(order.stateCode) },
+        shipments:    { id: 'shipments-section',    label: 'Shipments',    show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         invoices:     { id: 'invoices-section',     label: 'Invoices',     show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         returns:      { id: 'returns-section',      label: 'Returns',      show: PICKING_INVOICE_STATES.includes(order.stateCode) },
         activity:     { id: 'activity-section',     label: 'Activity',     show: true },
@@ -252,7 +254,16 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     }`}
                                                 onClick={() => handleStateClick(state)}
                                             >
-                                                {state === 'cancelled' ? <><span dangerouslySetInnerHTML={{ __html: '&#10005;&nbsp;' }} /><StateName state={state as ValidState} /></> : back ? <>← <StateName state={state as ValidState} /></> : <>→ <StateName state={state as ValidState} /></>}
+                                                {state === 'cancelled' ? (
+                                                    <>
+                                                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                                                        {tCommon('cancel')}
+                                                    </>
+                                                ) : back ? (
+                                                    <>← <StateName state={state as ValidState} /></>
+                                                ) : (
+                                                    <>→ <StateName state={state as ValidState} /></>
+                                                )}
                                             </button>
                                         );
                                     })}
@@ -1020,6 +1031,10 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
                 {sections.fulfillment.show && (
                     <FulfillmentSection orderId={id} pickingSummary={pickingSummary} />
+                )}
+
+                {sections.shipments.show && (
+                    <ShipmentsSection orderId={id} />
                 )}
 
                 {sections.invoices.show && (

@@ -1,40 +1,15 @@
-﻿
-> api@0.0.1 test:unit:pglite
-> cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules" jest --testPathPatterns=goods-received.service.spec --no-coverage
-
-  console.log
-    [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
-
-      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
-
-node.exe : (node:15660) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+﻿node.exe : PASS src/inventory/inventory-state-boundary.spec.ts
 At line:1 char:1
 + & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ((node:15660) Ex...nge at any time:String) [], RemoteException
+    + CategoryInfo          : NotSpecified: (PASS src/invent...oundary.spec.ts:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
-(Use `node --trace-warnings ...` to show where the warning was created)
-PASS src/goods-received/goods-received.service.spec.ts
-  GoodsReceivedService
-    create
-      ΓêÜ should throw NotFoundException when supplier does not exist (123 ms)
-      ΓêÜ should set match_status to "matched" when exactly one open PO line exists (38 ms)
-      ΓêÜ should set match_status to "ambiguous" when multiple open PO lines exist (38 ms)
-      ΓêÜ should set match_status to "unmatched" when no open PO lines exist (29 ms)
-    findOne
-      ΓêÜ should return a receipt with lines (19 ms)
-      ΓêÜ should throw NotFoundException when receipt does not exist (18 ms)
-    toggleQuarantine (ADV-086)
-      ΓêÜ should restore awaiting_matching when un-quarantining an unmatched line (22 ms)
-      ΓêÜ should restore pending_putaway when un-quarantining a matched line (21 ms)
-      ΓêÜ should throw when source bin is missing (16 ms)
-      ΓêÜ should record inventory movement on quarantine toggle (15 ms)
-    resolve preserves quarantined status (ADV-086)
-      ΓêÜ should keep quarantined status when matching a quarantined line (26 ms)
+  Inventory State Boundary (structural)
+    ΓêÜ recordInventoryMovement must not be silently skipped in conditional blocks (113 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       11 passed, 11 total
+Tests:       1 passed, 1 total
 Snapshots:   0 total
-Time:        2.87 s, estimated 8 s
-Ran all test suites matching goods-received.service.spec.
+Time:        0.551 s, estimated 1 s
+Ran all test suites matching inventory-state-boundary.spec.

@@ -130,7 +130,7 @@ export default function Sidebar() {
       title={t('title')}
       subtitle={t('subtitle')}
       sections={sections}
-      footer={t('footer')}
+      footer={process.env.BUILD_TIME || 'Unknown Build'}
     />
   );
 }

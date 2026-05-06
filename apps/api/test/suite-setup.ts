@@ -56,6 +56,7 @@ beforeAll(async () => {
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r_so.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id);
+              DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id);
               DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r_so.sales_order_id;
 
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r_so.sales_order_id;
@@ -103,3 +104,4 @@ beforeAll(async () => {
     await sql.end();
   }
 });
+

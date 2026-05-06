@@ -73,3 +73,9 @@ export class PutawayBulkDto {
   @Type(() => PutawayLineDto)
   putaways!: PutawayLineDto[];
 }
+
+export class ToggleQuarantineDto {
+  @IsOptional()
+  @IsString()
+  reason?: string;
+}

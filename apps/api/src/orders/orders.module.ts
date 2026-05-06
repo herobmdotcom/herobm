@@ -13,6 +13,7 @@ import {
   salesOrders,
   salesOrderLineItems,
   salesInvoices,
+  salesOrderShipments,
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { ConfigModule } from '@nestjs/config';
@@ -38,6 +39,8 @@ import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
 import { SalesQuoteService } from '../reports/sales-quote.service';
 import { SalesReturnCreditService } from '../reports/sales-return-credit.service';
+
+import { ShippingDocketService } from '../reports/shipping-docket.service';
 
 @Module({
   imports: [
@@ -69,6 +72,7 @@ import { SalesReturnCreditService } from '../reports/sales-return-credit.service
     ReportSalesInvoiceService,
     SalesQuoteService,
     SalesReturnCreditService,
+    ShippingDocketService,
   ],
   exports: [OrdersService, OrdersWriteService, BackordersService],
 })
@@ -79,6 +83,7 @@ export class OrdersModule implements OnModuleInit {
     private readonly reportSalesInvoiceService: ReportSalesInvoiceService,
     private readonly salesQuoteService: SalesQuoteService,
     private readonly reportSalesReturnCreditService: SalesReturnCreditService,
+    private readonly shippingDocketService: ShippingDocketService,
     @Inject(DRIZZLE) private db: DrizzleDB,
   ) {}
 
@@ -154,6 +159,22 @@ export class OrdersModule implements OnModuleInit {
       },
       getRandomId: async () => {
         return undefined; // Usually we don't need random resolving for returns
+      },
+    });
+
+    this.reportsRegistry.register('shipment', {
+      resolveData: async (id: string, user: any) => {
+        return (await this.shippingDocketService.assembleData(
+          id,
+        )) as unknown as Record<string, any>;
+      },
+      getRandomId: async () => {
+        const rows = await this.db
+          .select({ id: salesOrderShipments.shipmentId })
+          .from(salesOrderShipments)
+          .orderBy(sql`RANDOM()`)
+          .limit(1);
+        return rows.length > 0 ? rows[0].id : undefined;
       },
     });
   }

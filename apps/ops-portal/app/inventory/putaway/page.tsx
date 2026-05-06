@@ -152,8 +152,8 @@ export default function PutawayPage() {
                     <span className="text-sm font-semibold text-[var(--text-muted)]">Location:</span>
                     <select
                         value={selectedLocationId}
-                        onChange={e => setSelectedLocationId(e.target.value)}
-                        className="px-3 py-1.5 border border-[var(--border)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] text-sm font-medium"
+                        onChange={(e) => setSelectedLocationId(e.target.value)}
+                        className="input text-sm w-48"
                     >
                         {locations.map(loc => (
                             <option key={loc.locationId} value={loc.locationId}>

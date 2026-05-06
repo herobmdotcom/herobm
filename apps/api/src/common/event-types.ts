@@ -8,6 +8,7 @@
  */
 export const AggregateType = {
   SALES_ORDER: 'sales_order',
+  SHIPMENT: 'shipment',
   PURCHASE_ORDER: 'purchase_order',
   PRODUCT: 'product',
   ACCOUNT: 'account',

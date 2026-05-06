@@ -12,6 +12,7 @@ import {
   supplierEvents,
   productSupplierEvents,
   systemEvents,
+  shipmentEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
 
@@ -31,7 +32,7 @@ const EVENT_TABLE_MAP: Record<string, { table: any; fkField: string | null }> =
       table: productSupplierEvents,
       fkField: 'productSupplierId',
     },
-    shipment: { table: systemEvents, fkField: null },
+    shipment: { table: shipmentEvents, fkField: 'shipmentId' },
     system: { table: systemEvents, fkField: null },
   };
 

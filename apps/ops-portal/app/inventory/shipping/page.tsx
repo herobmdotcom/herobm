@@ -8,6 +8,7 @@ import { ValidState } from '@/types/states';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -220,8 +221,8 @@ export default function ShippingPage() {
                     <span className="text-sm font-semibold text-[var(--text-muted)]">Location:</span>
                     <select
                         value={selectedLocationId}
-                        onChange={e => setSelectedLocationId(e.target.value)}
-                        className="px-3 py-1.5 border border-[var(--border)] rounded-md bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] text-sm font-medium"
+                        onChange={(e) => setSelectedLocationId(e.target.value)}
+                        className="input text-sm w-48"
                     >
                         {locations.map(loc => (
                             <option key={loc.locationId} value={loc.locationId}>
@@ -305,7 +306,9 @@ export default function ShippingPage() {
                             {/* Header */}
                             <div className="px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)] flex justify-between items-center">
                                 <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
-                                    <span className="font-bold shrink-0">{selectedOrder.orderNumber}</span>
+                                    <Link href={`/sales-orders/${selectedOrder.id}`} className="font-bold shrink-0 hover:text-[var(--accent)] hover:underline transition-colors">
+                                        {selectedOrder.orderNumber}
+                                    </Link>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
                                     <span className="truncate">{selectedOrder.name || 'No Name'}</span>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
@@ -436,7 +439,6 @@ export default function ShippingPage() {
                                                 disabled={isSubmitting || shippableLines.length === 0}
                                                 className="btn btn-primary"
                                             >
-                                                <span className="material-symbols-outlined text-[18px] mr-1.5">local_shipping</span>
                                                 {t('buttons.createShipment')}
                                             </button>
                                         </div>

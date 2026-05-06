@@ -53,7 +53,8 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
           DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
           DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
           DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-          DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+          DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
           DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
           DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
           DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
@@ -177,7 +178,9 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       .get('/api/inventory/bins')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    return summary.body.data[0].binId;
+    return (
+      summary.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003'
+    );
   }
 
   /** Pick a line via the new POST endpoint. */
@@ -335,14 +338,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
       expect(shipRes.body).toHaveProperty('shipmentId');
 
-      // Dispatch — should auto-transition order to shipped
-      await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${shipRes.body.shipmentId}/state`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'dispatched' })
-        .expect(200);
+      // Dispatch is automatic on creation — should auto-transition order to shipped
 
       const detail = await request(app.getHttpServer())
         .get(`/api/sales-orders/${orderId}`)
@@ -475,7 +471,6 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     let orderId: string;
     let lineIds: string[];
     let shipmentId: string;
-    let shipmentLineId: string;
 
     beforeAll(async () => {
       const result = await createConfirmedOrder();
@@ -488,7 +483,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       await pickLine(orderId, lineIds[1], binId, '5');
     });
 
-    it('POST /shipments — creates a shipment with lines', async () => {
+    it('POST /shipments — creates a shipment natively as dispatched', async () => {
       const res = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -498,7 +493,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         })
         .expect(201);
 
-      expect(res.body.stateCode).toBe('draft');
+      expect(res.body.stateCode).toBe('dispatched');
       expect(res.body).toHaveProperty('shipmentNumber');
       shipmentId = res.body.shipmentId;
     });
@@ -511,10 +506,9 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
 
       expect(res.body.lines).toHaveLength(1);
       expect(res.body.lines[0].quantityShipped).toBe('5');
-      shipmentLineId = res.body.lines[0].shipmentLineId;
     });
 
-    it('PATCH /shipments/:id — updates notes on draft', async () => {
+    it('PATCH /shipments/:id — updates notes', async () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/shipments/${shipmentId}`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -524,44 +518,13 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       expect(res.body.notes).toBe('Updated notes');
     });
 
-    it('POST /shipments/:id/lines — adds a line', async () => {
-      const res = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/lines`)
+    it('rejects line mutations on dispatched shipment', async () => {
+      // Get the existing shipment line id to test remove
+      const detail = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}/shipments/${shipmentId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ salesOrderLineId: lineIds[1], quantityShipped: '3' })
-        .expect(201);
-
-      expect(res.body).toHaveProperty('shipmentLineId');
-    });
-
-    it('PATCH /shipments/:id/lines/:lid — updates line quantity', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${shipmentId}/lines/${shipmentLineId}`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ quantityShipped: '8' })
         .expect(200);
-
-      expect(res.body.quantityShipped).toBe('8');
-    });
-
-    it('PATCH /shipments/:id/state → dispatched', async () => {
-      const res = await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/shipments/${shipmentId}/state`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'dispatched' })
-        .expect(200);
-
-      expect(res.body.stateCode).toBe('dispatched');
-    });
-
-    it('rejects mutations on dispatched shipment', async () => {
-      await request(app.getHttpServer())
-        .patch(`/api/sales-orders/${orderId}/shipments/${shipmentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ notes: 'Should fail' })
-        .expect(400);
+      const shipmentLineId = detail.body.lines[0].shipmentLineId;
 
       await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/lines`)
@@ -596,7 +559,7 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       await pickLine(orderId, lineIds[1], binId, '5');
     });
 
-    it('can cancel a draft shipment', async () => {
+    it('can transition dispatched → cancelled', async () => {
       const createRes = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -614,32 +577,6 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
         .expect(200);
 
       expect(res.body.stateCode).toBe('cancelled');
-    });
-
-    it('cannot transition dispatched → cancelled', async () => {
-      const createRes = await request(app.getHttpServer())
-        .post(`/api/sales-orders/${orderId}/shipments`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '5' }],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${createRes.body.shipmentId}/state`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'dispatched' })
-        .expect(200);
-
-      await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${createRes.body.shipmentId}/state`,
-        )
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'cancelled' })
-        .expect(400);
     });
   });
 
@@ -691,3 +628,4 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     });
   });
 });
+

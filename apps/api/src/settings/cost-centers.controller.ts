@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CostCentersService } from './cost-centers.service';
-import { CreateCostCenterDto, UpdateCostCenterDto } from './dto';
+import {
+  CreateCostCenterDto,
+  UpdateCostCenterDto,
+  BulkImportResultDto,
+} from './dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   CasbinGuard,
@@ -51,5 +55,12 @@ export class CostCentersController {
   @ApiOperation({ summary: 'Delete a cost center' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
+  }
+
+  @Post('import')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Bulk import cost centers' })
+  import(@Body() data: CreateCostCenterDto[]): Promise<BulkImportResultDto> {
+    return this.service.importMany(data);
   }
 }

@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { activities } from '../drizzle/modbm-core-schema';
@@ -84,5 +84,33 @@ export class ActivitiesService {
       }
       throw err;
     }
+  }
+
+  async importMany(data: CreateActivityDto[]) {
+    if (data.length === 0) return { count: 0, updated: 0 };
+
+    const values = data.map((d) => ({
+      code: d.code.trim().toUpperCase(),
+      name: d.name.trim(),
+      isActive: d.isActive ?? true,
+    }));
+
+    const rows = await this.db
+      .insert(activities)
+      .values(values)
+      .onConflictDoUpdate({
+        target: activities.code,
+        set: {
+          name: sql`EXCLUDED.name`,
+          isActive: sql`EXCLUDED.is_active`,
+          modifiedOn: new Date(),
+        },
+      })
+      .returning();
+
+    return {
+      count: rows.length,
+      updated: rows.length,
+    };
   }
 }

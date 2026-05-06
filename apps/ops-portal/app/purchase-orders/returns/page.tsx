@@ -221,6 +221,7 @@ function ReturnsFlow() {
               {t('confirmReturns')}
             </button>
           }
+          showPrint={false}
         />
       }
     >

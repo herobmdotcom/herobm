@@ -267,6 +267,7 @@ export default function NewPurchaseOrderPage() {
                 </button>
               </>
             }
+            showPrint={false}
           />
         }
       >

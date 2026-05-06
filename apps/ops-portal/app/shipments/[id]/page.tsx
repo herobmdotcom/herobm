@@ -3,8 +3,8 @@
 import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
-import StateBadge from '@/components/StateBadge';
+import { apiFetch, apiMutate } from '@/lib/api';
+import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
@@ -44,8 +44,10 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
   const router = useRouter();
   const [shipment, setShipment] = useState<ShipmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  useEffect(() => {
+  const loadShipment = () => {
+    setLoading(true);
     apiFetch<ShipmentDetail>(`/api/shipments/${id}`)
       .then((res) => {
         setShipment(res);
@@ -55,7 +57,29 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         console.error('Failed to load shipment:', err);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadShipment();
   }, [id]);
+
+  const handleCancel = async () => {
+    if (!shipment) return;
+    if (!window.confirm(t('confirmCancel'))) return;
+
+    setIsCancelling(true);
+    try {
+      await apiMutate(`/api/sales-orders/${shipment.salesOrderId}/shipments/${shipment.shipmentId}/state`, 'PATCH', { 
+        stateCode: 'cancelled' 
+      });
+      loadShipment();
+    } catch (err: any) {
+      console.error('Failed to cancel shipment:', err);
+      alert(err.message || t('cancelFailed'));
+    } finally {
+      setIsCancelling(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -84,6 +108,24 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
           subtitle={`${t('shipmentDetails')} • ${new Date(shipment.createdOn).toLocaleDateString()}`}
           onBack={() => router.push('/shipments')}
           badges={<StateBadge state={shipment.stateCode as ValidState} />}
+          actions={
+            shipment.stateCode === 'dispatched' && (
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={handleCancel}
+                disabled={isCancelling}
+              >
+                {isCancelling ? (
+                  tCommon('resolving')
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                    {tCommon('cancel')}
+                  </>
+                )}
+              </button>
+            )
+          }
         />
       }
     >

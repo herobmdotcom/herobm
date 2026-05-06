@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ActivitiesService } from './activities.service';
-import { CreateActivityDto, UpdateActivityDto } from './dto';
+import {
+  CreateActivityDto,
+  UpdateActivityDto,
+  BulkImportResultDto,
+} from './dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   CasbinGuard,
@@ -51,5 +55,12 @@ export class ActivitiesController {
   @ApiOperation({ summary: 'Delete an activity' })
   delete(@Param('id') id: string) {
     return this.service.delete(id);
+  }
+
+  @Post('import')
+  @CasbinAction('write')
+  @ApiOperation({ summary: 'Bulk import activities' })
+  import(@Body() data: CreateActivityDto[]): Promise<BulkImportResultDto> {
+    return this.service.importMany(data);
   }
 }

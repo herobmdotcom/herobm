@@ -1,0 +1,18 @@
+﻿[dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (27) from ..\..\.env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+[PGlite Cache] Generating global snapshot...
+  Seeded users: admin, viewer, sales, warehouse, procurement, finance
+  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+  Seeded default organization (fallback)
+  Seeded 47 GL accounts from au_standard.json
+  Seeded 3 tax categories
+  Seeded 6 trading terms
+  Seeded GL settings (base_currency=AUD, fiscal_month=7)
+  Seeded default app_settings
+  Seeded default '00' dimensions (Cost Center, Activity)
+  Seeded 'MAIN' location, zone, and bins
+  Seeded default customer and vendor
+  Seeded 7 reports and 5 hook assignments.
+
+Done.
+[PGlite Cache] Global snapshot generated to C:\Users\Marcel\volz\modbm\modbm\apps\api\.pglite-snapshot.bin in 1857ms

@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useSettings } from '@/components/SettingsProvider';
+import { apiFetch, apiMutate } from '@/lib/api';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
@@ -12,8 +14,24 @@ export default function GoodsReceivedListPage() {
     const t = useTranslations('goodsReceived');
     const tCommon = useTranslations('common');
     useDocumentTitle(t('title'));
+    const { app } = useSettings();
     const [days, setDays] = useState('90');
     const [refreshKey, setRefreshKey] = useState(0);
+
+    const [locations, setLocations] = useState<any[]>([]);
+    const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+
+    useEffect(() => {
+        apiFetch<any>('/api/inventory/locations')
+            .then(response => {
+                const locs = response.data || [];
+                setLocations(locs);
+                // For receiving, we default to the app default but allow "All" (which is empty string)
+                const defaultLocId = app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : '');
+                setSelectedLocationId(defaultLocId);
+            })
+            .catch(err => console.error('Failed to load locations', err));
+    }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
@@ -33,16 +51,16 @@ export default function GoodsReceivedListPage() {
         if (selectedRows.length === 0) return;
         
         try {
+            const reason = window.prompt('Reason for quarantine', '') || undefined;
+
             // Toggle for all selected that are not completed
             const eligible = selectedRows.filter(r => r.putawayStatus !== 'completed');
             const errors: string[] = [];
             for (const row of eligible) {
-                const res = await fetch(`/api/goods-received/lines/${row.goodsReceivedLineId}/quarantine`, {
-                    method: 'POST',
-                });
-                if (!res.ok) {
-                    const body = await res.json().catch(() => ({}));
-                    errors.push(body.message || `Failed for ${row.receiptNumber}`);
+                try {
+                    await apiMutate(`/api/goods-received/lines/${row.goodsReceivedLineId}/quarantine`, 'POST', { reason });
+                } catch (err: any) {
+                    errors.push(err.message || `Failed for ${row.receiptNumber}`);
                 }
             }
             if (errors.length > 0) {
@@ -54,7 +72,7 @@ export default function GoodsReceivedListPage() {
         }
     }, [selectedRows, triggerRefresh]);
 
-    const gridEndpoint = `/api/goods-received/lines?days=${days}&limit=0`;
+    const gridEndpoint = `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}`;
 
     const gridColumns: any[] = useMemo(() => [
         {
@@ -160,6 +178,19 @@ export default function GoodsReceivedListPage() {
                                     </div>
                                     
                                     <div className="flex items-center gap-3 shrink-0 ml-4">
+                                        <select
+                                            value={selectedLocationId}
+                                            onChange={(e) => setSelectedLocationId(e.target.value)}
+                                            className="input text-sm"
+                                            style={{ minWidth: 180 }}
+                                        >
+                                            <option value="">All locations</option>
+                                            {locations.map(loc => (
+                                                <option key={loc.locationId} value={loc.locationId}>
+                                                    {loc.code} - {loc.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                         <select
                                             value={days}
                                             onChange={(e) => setDays(e.target.value)}

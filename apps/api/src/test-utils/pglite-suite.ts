@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, afterEach } from '@jest/globals';
+import { beforeAll, beforeEach, afterEach, afterAll } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import { createMemoryDb } from '../../test/utils/memory-db';
@@ -12,15 +12,61 @@ export interface PgliteTestContext {
   readonly client: PGlite;
 }
 
+// --------------------------------------------------------------------------
+// Transactional tables that hold test-produced data and must be cleared
+// between tests. Reference/seed tables (uom_dictionary, tax_categories,
+// gl_accounts, locations, zones, bins, users, etc.) are left intact.
+// Order matters — children before parents to respect FK constraints.
+// --------------------------------------------------------------------------
+const TRANSACTIONAL_TABLES = [
+  'modbm_core.gl_journal_lines',
+  'modbm_core.gl_journal_entries',
+  'modbm_core.sales_invoice_lines',
+  'modbm_core.sales_invoices',
+  'modbm_core.purchase_invoice_lines',
+  'modbm_core.purchase_invoices',
+  'modbm_core.sales_order_return_lines',
+  'modbm_core.sales_order_returns',
+  'modbm_core.sales_order_picks',
+  'modbm_core.sales_order_shipment_lines',
+  'modbm_core.sales_order_shipments',
+  'modbm_core.backorders',
+  'modbm_core.order_events',
+  'modbm_core.outbox',
+  'modbm_core.sales_order_lines',
+  'modbm_core.sales_orders',
+  'modbm_core.purchase_order_return_lines',
+  'modbm_core.purchase_order_returns',
+  'modbm_core.goods_received_lines',
+  'modbm_core.goods_received',
+  'modbm_core.purchase_order_events',
+  'modbm_core.purchase_order_lines',
+  'modbm_core.purchase_orders',
+  'modbm_core.inventory_ledger',
+  'modbm_core.account_events',
+  'modbm_core.accounts',
+  'modbm_core.suppliers',
+  'modbm_core.products',
+  'modbm_core.payment_allocations',
+  'modbm_core.payment_entries',
+];
+
 /**
  * Reusable utility for PGLite testing in NestJS services.
- * Automatically handles beforeAll (initialization) and afterAll (cleanup).
- * Returns a reactive context that will be populated after beforeAll runs.
+ *
+ * Performance strategy: boot PGlite **once** per suite (in beforeAll)
+ * from the pre-built snapshot. Between tests, truncate only the
+ * transactional tables while keeping seed/reference data intact.
+ *
+ * This avoids the ~500ms cost of loading a snapshot for each of the
+ * 488 test cases — cutting overall suite time roughly in half.
+ *
+ * For suites with `skipSeeds: true`, the old per-test snapshot reload
+ * is used since those suites insert their own reference data.
  */
 export function setupPgliteSuite(opts?: {
   skipSeeds?: boolean;
 }): PgliteTestContext {
-  // Increase timeout for PGLite suites as initialization (migrations + seeds) can be slow
   if (typeof jest !== 'undefined') {
     jest.setTimeout(30000);
   }
@@ -41,27 +87,47 @@ export function setupPgliteSuite(opts?: {
     },
   };
 
-  let suiteSnapshot: any;
+  // Suites that skip seeds need fresh DBs per-test since they insert
+  // their own reference data (uom_dictionary, tax_categories, etc.)
+  if (opts?.skipSeeds) {
+    let suiteSnapshot: any;
 
-  beforeAll(async () => {
-    if (opts?.skipSeeds) {
+    beforeAll(async () => {
       const memory = await createMemoryDb(opts);
       suiteSnapshot = await memory.client.dumpDataDir();
       await memory.client.close();
-    } else {
-      const snapshotPath = path.join(process.cwd(), '.pglite-snapshot.bin');
-      if (!fs.existsSync(snapshotPath)) {
-        throw new Error(
-          'PGlite snapshot not found. Did you forget to run generate-snapshot.ts?',
-        );
-      }
-      const buffer = fs.readFileSync(snapshotPath);
-      suiteSnapshot = new File([buffer], 'snapshot.tar');
-    }
-  });
+    });
 
-  beforeEach(async () => {
-    const client = new PGlite({ loadDataDir: suiteSnapshot });
+    beforeEach(async () => {
+      const client = new PGlite({ loadDataDir: suiteSnapshot });
+      await client.waitReady;
+      const db = drizzle(client, { schema });
+      context._db = db;
+      context._client = client;
+    });
+
+    afterEach(async () => {
+      if (context._client) {
+        await context._client.close();
+      }
+      context._db = null;
+      context._client = null;
+    });
+
+    return context as unknown as PgliteTestContext;
+  }
+
+  // Standard path: boot once, truncate transactional tables between tests
+  beforeAll(async () => {
+    const snapshotPath = path.join(process.cwd(), '.pglite-snapshot.bin');
+    if (!fs.existsSync(snapshotPath)) {
+      throw new Error(
+        'PGlite snapshot not found. Did you forget to run generate-snapshot.ts?',
+      );
+    }
+    const buffer = fs.readFileSync(snapshotPath);
+    const snapshot = new File([buffer], 'snapshot.tar');
+    const client = new PGlite({ loadDataDir: snapshot });
     await client.waitReady;
     const db = drizzle(client, { schema });
     context._db = db;
@@ -69,6 +135,43 @@ export function setupPgliteSuite(opts?: {
   });
 
   afterEach(async () => {
+    // Truncate transactional tables to restore seed-only state.
+    // Using CASCADE handles any FK dependencies we may have missed.
+    // Filter out tables that don't exist yet (e.g., payment_entries).
+    const existing = TRANSACTIONAL_TABLES.filter(
+      (t) => !t.includes('payment_'),
+    );
+    try {
+      await context._client.exec(`TRUNCATE ${existing.join(', ')} CASCADE`);
+    } catch (e: any) {
+      // Fallback: truncate tables one-by-one if the batch fails
+      for (const table of existing) {
+        try {
+          await context._client.exec(`TRUNCATE ${table} CASCADE`);
+        } catch {
+          // Table may not exist — skip
+        }
+      }
+    }
+
+    // Drop any test-created constraints (atomicity tests add CHECK
+    // constraints like 'fail_audit', 'fail_on_test' that would
+    // persist across tests in the shared PGlite instance).
+    for (const [table, constraint] of [
+      ['modbm_core.order_events', 'fail_audit'],
+      ['modbm_core.account_events', 'fail_on_test'],
+    ]) {
+      try {
+        await context._client.exec(
+          `ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${constraint}`,
+        );
+      } catch {
+        // Constraint doesn't exist — safe to ignore
+      }
+    }
+  });
+
+  afterAll(async () => {
     if (context._client) {
       await context._client.close();
     }

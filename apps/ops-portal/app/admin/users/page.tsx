@@ -367,6 +367,7 @@ export default function UsersPage() {
           title={t('title')}
           subtitle={t('subtitle')}
           onBack={() => router.push('/')}
+          showPrint={false}
         />
       }
     >

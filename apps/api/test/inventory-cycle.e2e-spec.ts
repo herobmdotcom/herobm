@@ -261,12 +261,7 @@ describe('Inventory Cycle (e2e)', () => {
 
     const shipmentId = shipCreateRes.body.shipmentId;
 
-    // Dispatching the shipment auto-transitions the order to 'shipped'
-    await request(app.getHttpServer())
-      .patch(`/api/sales-orders/${soId}/shipments/${shipmentId}/state`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'dispatched' })
-      .expect(200);
+    // Dispatching is now automatic on creation.
 
     // Create Invoice (Mandatory for returns)
     const invRes = await request(app.getHttpServer())
@@ -366,3 +361,4 @@ describe('Inventory Cycle (e2e)', () => {
     expect(totalQoh).toBe(0);
   });
 });
+

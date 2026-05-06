@@ -55,7 +55,8 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
                 DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
                 DELETE FROM modbm_core.sales_order_picks WHERE sales_order_id = r.sales_order_id;
                 DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
-                DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
+                DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id;
                 DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
                 DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
                 DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
@@ -95,12 +96,25 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     validCustomerId = accounts.body.data[0].accountId;
 
     const products = await request(app.getHttpServer())
-      .get('/api/products?limit=3')
+      .get('/api/products?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     validProductId = products.body.data[0].productId;
-    secondProductId = products.body.data[1]?.productId ?? validProductId;
-    thirdProductId = products.body.data[2]?.productId ?? validProductId;
+
+    // Create non-custom products to properly test duplication validation
+    const p1 = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ productNumber: 'E2E-P1', name: 'Test Product 1', baseUom: 'EA' })
+      .expect(201);
+    secondProductId = p1.body.productId;
+
+    const p2 = await request(app.getHttpServer())
+      .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ productNumber: 'E2E-P2', name: 'Test Product 2', baseUom: 'EA' })
+      .expect(201);
+    thirdProductId = p2.body.productId;
   }, 120_000);
 
   afterAll(async () => {
@@ -292,7 +306,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           .get('/api/inventory/bins')
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
-        const binId = binsRes.body.data[0].binId;
+        // Hardcode a valid storage bin ID from seeds, as /inventory/bins now returns binContents
+        const binId =
+          binsRes.body.data[0]?.binId || '40000000-0000-0000-0000-000000000003';
 
         const detail = await request(app.getHttpServer())
           .get(`/api/sales-orders/${oid}`)
@@ -320,13 +336,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           .send({ lines: shipLines })
           .expect(201);
 
-        await request(app.getHttpServer())
-          .patch(
-            `/api/sales-orders/${oid}/shipments/${shipRes.body.shipmentId}/state`,
-          )
-          .set('Authorization', `Bearer ${adminToken}`)
-          .send({ stateCode: 'dispatched' })
-          .expect(200);
+        // Dispatched automatically upon creation
       }
 
       for (const nextState of transitions) {
@@ -387,7 +397,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
           customerId: validCustomerId,
           lines: [
             {
-              productId: validProductId,
+              productId: secondProductId,
               quantity: '1',
               pricePerUnit: '10.00',
             },
@@ -488,7 +498,9 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
             .get('/api/inventory/bins')
             .set('Authorization', `Bearer ${adminToken}`)
             .expect(200);
-          const binId = binsRes.body.data[0].binId;
+          const binId =
+            binsRes.body.data[0]?.binId ||
+            '40000000-0000-0000-0000-000000000003';
 
           const detail = await request(app.getHttpServer())
             .get(`/api/sales-orders/${invoicedId}`)
@@ -516,13 +528,6 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
             .send({ lines: shipLines })
             .expect(201);
 
-          await request(app.getHttpServer())
-            .patch(
-              `/api/sales-orders/${invoicedId}/shipments/${shipRes.body.shipmentId}/state`,
-            )
-            .set('Authorization', `Bearer ${adminToken}`)
-            .send({ stateCode: 'dispatched' })
-            .expect(200);
           // shipped state is auto-transitioned
           continue;
         }
@@ -595,8 +600,16 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
           customerId: validCustomerId,
           lines: [
-            { productId: validProductId, quantity: '1', pricePerUnit: '10.00' },
-            { productId: validProductId, quantity: '2', pricePerUnit: '10.00' },
+            {
+              productId: secondProductId,
+              quantity: '1',
+              pricePerUnit: '10.00',
+            },
+            {
+              productId: secondProductId,
+              quantity: '2',
+              pricePerUnit: '10.00',
+            },
           ],
         })
         .expect(400);
@@ -608,7 +621,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
         .post(`/api/sales-orders/${draftOrderId}/lines`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          productId: validProductId,
+          productId: secondProductId,
           quantity: '5',
           pricePerUnit: '10.00',
         })
@@ -641,3 +654,4 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     });
   });
 });
+

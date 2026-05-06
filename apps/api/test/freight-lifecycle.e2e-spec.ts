@@ -250,14 +250,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .send({ lines: shipLines })
       .expect(201);
 
-    // Dispatch the shipment
-    await request(app.getHttpServer())
-      .patch(
-        `/api/sales-orders/${soId}/shipments/${shipRes.body.shipmentId}/state`,
-      )
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'dispatched' })
-      .expect(200);
+    // Dispatch the shipment is automatic on creation.
 
     // The order should now be 'shipped' automatically
     const soDetail = await request(app.getHttpServer())
@@ -296,3 +289,4 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     expect(invoiceLineCount).toBe(2);
   });
 });
+
