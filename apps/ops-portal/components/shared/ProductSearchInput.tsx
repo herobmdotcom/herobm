@@ -20,6 +20,7 @@ interface Product {
   standardCost?: string | null;
   baseUom?: string | null;
   productUoms?: any[];
+  productGroupId?: string | null;
 }
 
 interface InventoryLevel {

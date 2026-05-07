@@ -289,4 +289,3 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     expect(invoiceLineCount).toBe(2);
   });
 });
-

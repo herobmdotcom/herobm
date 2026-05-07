@@ -28,6 +28,7 @@ import { GoodsReceivedModule } from './goods-received/goods-received.module';
 import { MacrosModule } from './macros/macros.module';
 import { UsersModule } from './users/users.module';
 import { PaymentsModule } from './payments/payments.module';
+import { PricingModule } from './pricing/pricing.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { PaymentsModule } from './payments/payments.module';
     GoodsReceivedModule,
     MacrosModule,
     UsersModule,
+    PricingModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },

@@ -141,4 +141,3 @@ provision().catch((err) => {
   console.error('[E2E DB] Provisioning failed:', err);
   process.exit(1);
 });
-

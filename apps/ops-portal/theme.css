@@ -74,3 +74,9 @@ details summary::-webkit-details-marker { display: none; }
 details[open] > summary .details-chevron {
   transform: rotate(90deg);
 }
+
+/* ── Slide-over animation ─────────────────────────────────────────────── */
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}

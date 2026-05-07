@@ -20,6 +20,8 @@ import {
   bins,
   binContents,
   backorders,
+  glJournalEntries,
+  glJournalLines,
 } from '../drizzle/modbm-core-schema';
 
 import { InventoryService } from '../inventory/inventory.service';
@@ -465,6 +467,225 @@ export class GoodsReceivedService {
   }
 
   /**
+   * Cancel a goods receipt.
+   *
+   * Reverses inventory ledgers, GL integration, decrements PO quantity,
+   * and reverts PO state if applicable.
+   */
+  async cancelReception(goodsReceivedId: string, userId: string) {
+    return await this.db.transaction(async (tx) => {
+      // 1. Load receipt and lines
+      const [receipt] = await tx
+        .select()
+        .from(goodsReceived)
+        .where(eq(goodsReceived.goodsReceivedId, goodsReceivedId))
+        .limit(1);
+
+      if (!receipt) {
+        throw new NotFoundException(
+          `Goods receipt ${goodsReceivedId} not found.`,
+        );
+      }
+
+      if (receipt.stateCode === 'cancelled') {
+        throw new BadRequestException('Receipt is already cancelled.');
+      }
+
+      const receiptLines = await tx
+        .select()
+        .from(goodsReceivedLines)
+        .where(eq(goodsReceivedLines.goodsReceivedId, goodsReceivedId));
+
+      // 2. Validate states
+      for (const line of receiptLines) {
+        if (line.putawayStatus === 'completed') {
+          throw new BadRequestException(
+            `Line ${line.goodsReceivedLineId} has been putaway. Cannot cancel receipt directly. You must reverse the putaway first.`,
+          );
+        }
+      }
+
+      // Check if it is invoiced (Optional, but if we don't have purchase_invoice_lines handy, stateCode 'invoiced' on GR isn't tracked. We will rely on manual checks if any).
+      // Wait, let's assume no invoice logic is explicitly checked for now, just cancellation.
+
+      // 3. Reverse Inventory Movement
+      const receivingBinCode = 'RECEIVING';
+      const [receivingZone] = await tx
+        .select({ zoneId: zones.zoneId })
+        .from(zones)
+        .where(
+          and(eq(zones.locationId, receipt.locationId), eq(zones.code, 'RECV')),
+        )
+        .limit(1);
+
+      if (!receivingZone) {
+        throw new BadRequestException(
+          'Receiving zone not found. Cannot cancel.',
+        );
+      }
+
+      const [receivingBin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .where(
+          and(
+            eq(bins.zoneId, receivingZone.zoneId),
+            eq(bins.binNumber, receivingBinCode),
+          ),
+        )
+        .limit(1);
+
+      if (!receivingBin) {
+        throw new BadRequestException(
+          'Receiving bin not found. Cannot cancel.',
+        );
+      }
+
+      await this.inventoryService.recordInventoryMovement(tx, {
+        entryNumber: `CAN-${receipt.receiptNumber}`,
+        sourceType: 'PO_RECEIPT',
+        sourceId: receipt.goodsReceivedId,
+        memo: `Cancel Reception ${receipt.receiptNumber}`,
+        userId,
+        lines: receiptLines.map((lv) => ({
+          productId: lv.productId,
+          binId: receivingBin.binId,
+          quantity: -parseFloat(lv.quantityReceived),
+        })),
+      });
+
+      // 4. Reverse Financial Integration (GL)
+      // Find the original journal entry
+      const [originalEntry] = await tx
+        .select()
+        .from(glJournalEntries)
+        .where(
+          and(
+            eq(glJournalEntries.sourceId, receipt.goodsReceivedId),
+            eq(glJournalEntries.sourceType, 'inventory_receipt'),
+          ),
+        )
+        .limit(1);
+
+      if (originalEntry) {
+        const originalLines = await tx
+          .select()
+          .from(glJournalLines)
+          .where(
+            eq(glJournalLines.journalEntryId, originalEntry.journalEntryId),
+          );
+
+        if (originalLines.length > 0) {
+          const reversedLines = originalLines.map((line) => ({
+            accountId: line.glAccountId,
+            costCenterId: line.costCenterId,
+            activityId: line.activityId,
+            partyType: line.partyType,
+            partyId: line.partyId,
+            debit: parseFloat(line.credit), // Swap debits/credits
+            credit: parseFloat(line.debit),
+            memo: `Reversal of ${originalEntry.entryNumber}`,
+          }));
+
+          await this.glService.postJournalEntry(
+            reversedLines as any,
+            {
+              actor: userId,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: 'inventory_receipt',
+              sourceId: receipt.goodsReceivedId,
+              memo: `Cancel Reception ${receipt.receiptNumber}`,
+            },
+            tx,
+          );
+        }
+      }
+
+      // 5. Decrement PO lines and revert PO state
+      const updatedPoIds = new Set<string>();
+
+      for (const line of receiptLines) {
+        if (
+          line.matchStatus === 'matched' &&
+          line.purchaseOrderLineId &&
+          line.purchaseOrderId
+        ) {
+          await tx.execute(
+            sql`UPDATE modbm_core.purchase_order_lines 
+                SET quantity_received = COALESCE(quantity_received, 0) - CAST(${line.quantityReceived} AS NUMERIC)
+                WHERE purchase_order_line_id = ${line.purchaseOrderLineId}`,
+          );
+          updatedPoIds.add(line.purchaseOrderId);
+        }
+      }
+
+      // Revert PO States
+      for (const poId of updatedPoIds) {
+        const lines = await tx
+          .select({
+            quantityReceived: purchaseOrderLineItems.quantityReceived,
+          })
+          .from(purchaseOrderLineItems)
+          .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+
+        const totalReceived = lines.reduce(
+          (sum, l) => sum + parseFloat(l.quantityReceived || '0'),
+          0,
+        );
+
+        let newPoState = 'ordered';
+        if (totalReceived > 0) {
+          // If there are still received lines, it might be partially received
+          newPoState = 'partially_received';
+        }
+
+        // Just blindly revert state, assuming no invoice blocking. If the user wants to close short later they can.
+        await tx
+          .update(purchaseOrders)
+          .set({ stateCode: newPoState, modifiedOn: new Date() })
+          .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+        await emitEvent(tx, {
+          aggregateType: AggregateType.PURCHASE_ORDER,
+          aggregateId: poId,
+          eventType: 'auto_status_changed',
+          payload: {
+            rule: 'cancel_receipt_revert',
+            from: 'received',
+            to: newPoState,
+            reason: `Receipt ${receipt.receiptNumber} was cancelled.`,
+          },
+          actor: userId,
+        });
+      }
+
+      // 6. Update GR state
+      await tx
+        .update(goodsReceived)
+        .set({ stateCode: 'cancelled', modifiedOn: new Date() })
+        .where(eq(goodsReceived.goodsReceivedId, goodsReceivedId));
+
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SYSTEM,
+        aggregateId: receipt.goodsReceivedId,
+        eventType: EventType.STOCK_RECEIVED, // You might want a different event, but sticking to existing
+        payload: {
+          goodsReceivedId: receipt.goodsReceivedId,
+          receiptNumber: receipt.receiptNumber,
+          action: 'cancelled',
+        },
+        actor: userId,
+      });
+
+      this.logger.log(
+        `Goods received ${receipt.receiptNumber} cancelled by ${userId}`,
+      );
+
+      return { success: true };
+    });
+  }
+
+  /**
    * List all goods receipts with pagination and optional filtering.
    */
   async findAll(params: PaginationQuery) {
@@ -620,6 +841,7 @@ export class GoodsReceivedService {
         productNumber: products.productNumber,
         productName: products.name,
         orderNumber: purchaseOrders.orderNumber,
+        stateCode: goodsReceived.stateCode,
       })
       .from(goodsReceivedLines)
       .leftJoin(
@@ -662,6 +884,7 @@ export class GoodsReceivedService {
         productNumber: d.productNumber,
         productName: d.productName,
         orderNumber: d.orderNumber,
+        stateCode: d.stateCode,
       })),
       page,
       limit,

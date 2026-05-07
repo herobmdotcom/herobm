@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, apiFetchBlob } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
 
 interface UnifiedOrder {
@@ -81,6 +81,7 @@ export default function PickingPage() {
     
     // Action State
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pickInputs, setPickInputs] = useState<Record<string, { quantity: string, binId: string }>>({});
 
@@ -187,6 +188,34 @@ export default function PickingPage() {
             setError(err.message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleCancelPick = async (pickId: string) => {
+        if (!selectedOrder) return;
+        setIsSubmitting(true);
+        setError(null);
+        try {
+            await apiMutate(`/api/sales-orders/${selectedOrder.id}/picking/picks/${pickId}`, 'DELETE');
+            await loadSummary();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handlePrintDocket = async () => {
+        if (!selectedOrder) return;
+        setIsGeneratingPdf(true);
+        try {
+            const blob = await apiFetchBlob(`/api/reports/hooks/picking-slip/run?id=${selectedOrder.id}&context=picking-slip`, { method: 'POST' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (err: any) {
+            alert('Failed to generate PDF: ' + err.message);
+        } finally {
+            setIsGeneratingPdf(false);
         }
     };
 
@@ -318,7 +347,15 @@ export default function PickingPage() {
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
                                     <span className="truncate">{selectedOrder.customerName}</span>
                                 </h2>
-                                <div className="flex items-center shrink-0">
+                                <div className="flex items-center gap-3 shrink-0">
+                                    <button 
+                                        onClick={handlePrintDocket} 
+                                        disabled={isGeneratingPdf}
+                                        className="btn btn-secondary btn-sm flex items-center gap-1.5"
+                                    >
+                                        {isGeneratingPdf && <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>}
+                                        Picking Slip PDF
+                                    </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                         {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
                                     </span>
@@ -522,9 +559,20 @@ export default function PickingPage() {
                                                                 </div>
                                                             </td>
                                                             <td>
-                                                                <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
-                                                                    Picked
-                                                                </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
+                                                                        Picked
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleCancelPick(pick.pickId)}
+                                                                        disabled={isSubmitting}
+                                                                        className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
+                                                                        title="Cancel Pick"
+                                                                    >
+                                                                        <span className="material-symbols-outlined text-[18px]">close</span>
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}

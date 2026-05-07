@@ -186,6 +186,63 @@ describe('PickingService', () => {
     });
   });
 
+  describe('cancelPick', () => {
+    it('should cancel an existing pick and reverse physical movement', async () => {
+      await seedOrder('picking');
+
+      const pick = await service.pickLine(
+        ORDER_ID,
+        LINE_ID,
+        STORAGE_BIN_ID,
+        '5',
+        'admin',
+      );
+
+      // Verify it was picked
+      const beforePicks = await pg.db
+        .select()
+        .from(salesOrderPicks)
+        .where(eq(salesOrderPicks.pickId, pick.pickId));
+      expect(beforePicks[0].stateCode).toBe('picked');
+
+      // Now cancel it
+      await service.cancelPick(ORDER_ID, pick.pickId, 'admin');
+
+      // Verify state is cancelled
+      const afterPicks = await pg.db
+        .select()
+        .from(salesOrderPicks)
+        .where(eq(salesOrderPicks.pickId, pick.pickId));
+      expect(afterPicks[0].stateCode).toBe('cancelled');
+
+      // Verify physical movement was reversed (mock was called)
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(2); // Once for pick, once for cancel
+    });
+
+    it('should reject cancelling a pick that is not in picked state', async () => {
+      await seedOrder('picking');
+
+      // Seed a shipped pick
+      const [shippedPick] = await pg.db
+        .insert(salesOrderPicks)
+        .values({
+          salesOrderId: ORDER_ID,
+          salesOrderLineId: LINE_ID,
+          productId: PROD_ID,
+          binId: STORAGE_BIN_ID,
+          quantity: '5',
+          stateCode: 'shipped', // Invalid state for cancellation
+        })
+        .returning();
+
+      await expect(
+        service.cancelPick(ORDER_ID, shippedPick.pickId, 'admin'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
   describe('getPickingSummary', () => {
     it('should calculate picked quantities from picks table', async () => {
       await seedOrder('picking');

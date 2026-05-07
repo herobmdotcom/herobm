@@ -251,14 +251,38 @@ describe('OrdersWriteService', () => {
       expect(saved[0].stateCode).toBe('draft');
     });
 
-    it('should snapshot customer discount onto the order lines', async () => {
+    it('should default to 0% discount when no discount is provided (frontend-authoritative)', async () => {
       const { validDto } = await setupCreate({ disc: '15' });
       const result = await service.create(validDto, 'admin');
       const lines = await pg.db
         .select()
         .from(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
-      expect(lines[0].discountPercentage).toBe('15');
+      // Backend no longer resolves customer discount — defaults to '0' unless frontend provides one
+      expect(lines[0].discountPercentage).toBe('0');
+    });
+
+    it('should use explicit line discount when provided by frontend', async () => {
+      const { customer, product } = await setupCreate();
+      const result = await service.create(
+        {
+          customerId: customer.accountId,
+          lines: [
+            {
+              productId: product.productId,
+              quantity: '10',
+              pricePerUnit: '5.00',
+              discountPercentage: '12.5',
+            },
+          ],
+        },
+        'admin',
+      );
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId));
+      expect(lines[0].discountPercentage).toBe('12.5');
     });
 
     it('should snapshot non-EUR currency onto the order (ADV-034)', async () => {

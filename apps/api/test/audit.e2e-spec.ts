@@ -304,4 +304,3 @@ describe('Audit Events (e2e)', () => {
     });
   });
 });
-

@@ -118,4 +118,3 @@ export class MockDrizzle {
     return cb(this);
   });
 }
-

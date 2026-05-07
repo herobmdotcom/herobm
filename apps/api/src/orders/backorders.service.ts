@@ -817,4 +817,104 @@ export class BackordersService {
       });
     });
   }
+
+  /**
+   * Reallocates a demand (backorder) to a new fulfillment location.
+   * This unlinks any existing PO allocations for the entire sales order line,
+   * updates the line's fulfillment location, and re-evaluates the gap.
+   */
+  async reallocateDemand(
+    backorderId: string,
+    newLocationId: string,
+    actor: string,
+  ) {
+    await this.db.transaction(async (tx) => {
+      // 1. Get the current demand to find the salesOrderLineId
+      const [demand] = await tx
+        .select({
+          salesOrderId: backorders.salesOrderId,
+          salesOrderLineId: backorders.salesOrderLineId,
+        })
+        .from(backorders)
+        .where(eq(backorders.backorderId, backorderId));
+
+      if (!demand) {
+        throw new HttpException('Demand not found', HttpStatus.NOT_FOUND);
+      }
+
+      // 2. Find ALL demands for this line
+      const lineDemands = await tx
+        .select({
+          backorderId: backorders.backorderId,
+          purchaseOrderId: backorders.purchaseOrderId,
+        })
+        .from(backorders)
+        .where(eq(backorders.salesOrderLineId, demand.salesOrderLineId));
+
+      // 3. Unlink any linked demands
+      for (const ld of lineDemands) {
+        if (ld.purchaseOrderId) {
+          // Inline the unlink logic so we can pass 'tx' (since unlinkDemand uses its own transaction internally if not passed)
+          // Actually, unlinkDemand uses this.db.transaction. If we call it inside tx, it's fine (Drizzle supports nested but it's better to just inline the update)
+          await tx
+            .update(backorders)
+            .set({
+              purchaseOrderId: null,
+              purchaseOrderLineId: null,
+              stateCode: 'pending_supply',
+            })
+            .where(eq(backorders.backorderId, ld.backorderId));
+
+          await emitEvent(tx, {
+            aggregateType: AggregateType.PURCHASE_ORDER,
+            aggregateId: ld.purchaseOrderId,
+            eventType: EventType.DEMAND_UNALLOCATED,
+            actor,
+            payload: { backorderId: ld.backorderId },
+          });
+        }
+      }
+
+      // 4. Update the Sales Order Line's fulfillmentLocationId
+      await tx
+        .update(salesOrderLineItems)
+        .set({ fulfillmentLocationId: newLocationId })
+        .where(
+          eq(salesOrderLineItems.salesOrderLineId, demand.salesOrderLineId),
+        );
+
+      // 5. Delete all backorders for this line to recalculate cleanly
+      await tx
+        .delete(backorders)
+        .where(eq(backorders.salesOrderLineId, demand.salesOrderLineId));
+
+      // 6. Run gap evaluation for the order
+      const gaps = await this.evaluateGaps(demand.salesOrderId);
+
+      // Filter the gaps to only the line we just touched
+      const lineGaps = gaps.filter(
+        (g) => g.salesOrderLineId === demand.salesOrderLineId,
+      );
+
+      // 7. Regenerate demand for this line if there is still a shortage
+      if (lineGaps.length > 0) {
+        // We need to implement generateDemand logic inline or pass tx
+        // generateDemand accepts tx as a parameter
+        await this.generateDemand(demand.salesOrderId, lineGaps, actor, tx);
+      }
+
+      // 8. Emit an event indicating reallocation
+      await emitEvent(tx, {
+        aggregateType: AggregateType.SALES_ORDER,
+        aggregateId: demand.salesOrderId,
+        eventType: 'demand_reallocated' as any,
+        actor,
+        payload: {
+          lineId: demand.salesOrderLineId,
+          newLocationId,
+          stillHasShortage: lineGaps.length > 0,
+        },
+      });
+    });
+  }
 }

@@ -24,6 +24,7 @@ import {
   backorders,
   products,
   salesOrders,
+  salesOrderLineItems,
   productSuppliers,
   suppliers,
   locations,
@@ -56,7 +57,7 @@ export class AllocationsController {
         vendorName: suppliers.name,
         costPrice: sql<number>`CAST(${productSuppliers.costPrice} AS float)`,
         currencyCode: suppliers.currencyCode,
-        locationId: salesOrders.fulfillmentLocationId,
+        locationId: salesOrderLineItems.fulfillmentLocationId,
         locationName: locations.name,
       })
       .from(backorders)
@@ -65,8 +66,12 @@ export class AllocationsController {
         eq(backorders.salesOrderId, salesOrders.salesOrderId),
       )
       .leftJoin(
+        salesOrderLineItems,
+        eq(backorders.salesOrderLineId, salesOrderLineItems.salesOrderLineId),
+      )
+      .leftJoin(
         locations,
-        eq(salesOrders.fulfillmentLocationId, locations.locationId),
+        eq(salesOrderLineItems.fulfillmentLocationId, locations.locationId),
       )
       .leftJoin(products, eq(backorders.productId, products.productId))
       .leftJoin(
@@ -145,6 +150,18 @@ export class AllocationsController {
   async unlinkDemand(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.unlinkDemand(id, actor);
+    return { success: true };
+  }
+
+  @Post(':id/reallocate')
+  @CasbinAction('write')
+  async reallocateDemand(
+    @Param('id') id: string,
+    @Body('locationId') locationId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    const actor = user?.username || 'system';
+    await this.backordersService.reallocateDemand(id, locationId, actor);
     return { success: true };
   }
 

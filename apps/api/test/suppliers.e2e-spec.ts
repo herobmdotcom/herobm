@@ -146,4 +146,3 @@ describe('Suppliers (e2e)', () => {
     expect(res.body.events.length).toBeGreaterThanOrEqual(2); // created + updated
   });
 });
-

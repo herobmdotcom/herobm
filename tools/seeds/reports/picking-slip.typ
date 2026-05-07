@@ -24,7 +24,12 @@
 #v(0.8cm)
 
 // ── Table 1: Items to Pick ──────────────────────────────────────────────────
-#text(12pt, weight: "bold")[Items to Pick]
+#grid(
+  columns: (1fr, auto),
+  align: (left, right),
+  [#text(12pt, weight: "bold")[Items to Pick]],
+  [#text(10pt, style: "italic")[Location: #data.header.locationName]]
+)
 #v(0.3cm)
 
 #if data.pickingLines.len() > 0 {

@@ -59,7 +59,13 @@ export const SALES_INVOICE_TRANSITIONS: Record<string, string[]> = {
 };
 
 export const SHIPMENT_TRANSITIONS: Record<string, string[]> = {
+  draft: ['dispatched', 'cancelled'],
   dispatched: ['cancelled'],
+  cancelled: [],
+};
+
+export const GOODS_RECEIVED_TRANSITIONS: Record<string, string[]> = {
+  received: ['cancelled'],
   cancelled: [],
 };
 
@@ -81,6 +87,7 @@ export type PurchaseOrderState = keyof typeof PURCHASE_ORDER_TRANSITIONS;
 export type PurchaseInvoiceState = keyof typeof PURCHASE_INVOICE_TRANSITIONS;
 export type SalesInvoiceState = keyof typeof SALES_INVOICE_TRANSITIONS;
 export type ShipmentState = keyof typeof SHIPMENT_TRANSITIONS;
+export type GoodsReceivedState = keyof typeof GOODS_RECEIVED_TRANSITIONS;
 export type ReturnState = keyof typeof RETURN_TRANSITIONS;
 export type SalesOrderPickState = keyof typeof SALES_ORDER_PICK_TRANSITIONS;
 
@@ -113,6 +120,10 @@ export const SALES_INVOICE_LIFECYCLE: Record<string, number> = {
 
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {
   cancelled: 0, dispatched: 1,
+};
+
+export const GOODS_RECEIVED_LIFECYCLE: Record<string, number> = {
+  cancelled: 0, received: 1,
 };
 
 export const RETURN_LIFECYCLE: Record<string, number> = {

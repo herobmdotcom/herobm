@@ -1308,6 +1308,20 @@
       },
       "notConfigured": "Not configured"
     },
+    "discountMatrix": {
+      "title": "Discount Rules",
+      "baseDiscount": "Base Default Discount",
+      "baseDiscountHint": "Applies to all product groups unless overridden below",
+      "productGroupRules": "Product Group Overrides",
+      "productGroup": "Product Group",
+      "discountPercent": "Discount %",
+      "noProductGroupRules": "No product-group-specific overrides defined.",
+      "selectProductGroup": "— Select product group —",
+      "toasts": {
+        "saved": "Discount rule saved",
+        "deleted": "Discount rule deleted"
+      }
+    },
     "productGroups": {
       "title": "Product Groups",
       "subtitle": "Manage group classifications for products and inventory",

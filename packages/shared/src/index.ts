@@ -40,6 +40,8 @@ export {
   resolveEffectiveDiscount,
 } from './pricing';
 
+
+
 export {
   formatCompositeQuantity,
   calculateUomPriceAdjustment,
@@ -71,7 +73,7 @@ export type { InventoryLevelMinimal, OrderLineMinimal, InventoryGap, InventoryLe
 export type { ReportDefinition } from './reports';
 
 export type { ProductUom } from './uom';
-export type { LinePricingInput, LinePricingResult, OrderTotalsResult } from './pricing';
+export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRule } from './pricing';
 export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from './currency';
 
 export type ProductType = 'inventory' | 'non-stock' | 'service';

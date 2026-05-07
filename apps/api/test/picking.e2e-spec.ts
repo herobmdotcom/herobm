@@ -542,12 +542,13 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
   });
 
   // =========================================================================
-  // Cancelled shipment
+  // Cancellation Workflow
   // =========================================================================
 
-  describe('Cancelled shipment', () => {
+  describe('Cancellation Workflow', () => {
     let orderId: string;
     let lineIds: string[];
+    let shipmentId: string;
 
     beforeAll(async () => {
       const result = await createConfirmedOrder();
@@ -559,24 +560,48 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       await pickLine(orderId, lineIds[1], binId, '5');
     });
 
-    it('can transition dispatched → cancelled', async () => {
+    it('rejects transitioning to cancelled via PATCH state endpoint', async () => {
       const createRes = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          lines: [{ salesOrderLineId: lineIds[0], quantityShipped: '5' }],
+          lines: [
+            { salesOrderLineId: lineIds[0], quantityShipped: '10' },
+            { salesOrderLineId: lineIds[1], quantityShipped: '5' },
+          ],
         })
         .expect(201);
 
-      const res = await request(app.getHttpServer())
-        .patch(
-          `/api/sales-orders/${orderId}/shipments/${createRes.body.shipmentId}/state`,
-        )
+      shipmentId = createRes.body.shipmentId;
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/shipments/${shipmentId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ stateCode: 'cancelled' })
+        .expect(400); // Bad Request
+    });
+
+    it('POST /cancel correctly cancels the shipment', async () => {
+      // Order should be 'shipped' before cancellation because we shipped everything
+      const detailBefore = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
+      expect(detailBefore.body.stateCode).toBe('shipped');
+
+      const res = await request(app.getHttpServer())
+        .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(201);
 
       expect(res.body.stateCode).toBe('cancelled');
+
+      // Check that the order reverted back to 'picking' because the shipment was cancelled
+      const detailAfter = await request(app.getHttpServer())
+        .get(`/api/sales-orders/${orderId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+      expect(detailAfter.body.stateCode).toBe('picking');
     });
   });
 
@@ -628,4 +653,3 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     });
   });
 });
-

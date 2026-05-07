@@ -66,6 +66,12 @@ export class GoodsReceivedController {
     return this.goodsReceivedService.findOne(id);
   }
 
+  @Post(':id/cancel')
+  @CasbinAction('write')
+  async cancelReception(@Param('id') id: string, @AuthUser() user: JwtUser) {
+    return this.goodsReceivedService.cancelReception(id, user.username);
+  }
+
   @Post('lines/:lineId/resolve')
   @CasbinAction('write')
   async resolveAllocation(

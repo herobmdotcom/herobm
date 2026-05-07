@@ -4,6 +4,7 @@ import { useMemo, useState, useCallback } from 'react';
 import DataGrid from '@/components/DataGrid';
 import DraftPOsModal from './DraftPOsModal';
 import LinkToPOSlideOver from './LinkToPOSlideOver';
+import ReallocateModal from './ReallocateModal';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
@@ -34,6 +35,7 @@ export default function DemandsContent() {
   const [selectedRows, setSelectedRows] = useState<DemandRow[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLinkSlideOverOpen, setIsLinkSlideOverOpen] = useState(false);
+  const [isReallocateModalOpen, setIsReallocateModalOpen] = useState(false);
 
   const columns = useMemo<ColDef<DemandRow>[]>(() => [
     {
@@ -77,6 +79,7 @@ export default function DemandsContent() {
   const handleModalSuccess = () => {
     setIsModalOpen(false);
     setIsLinkSlideOverOpen(false);
+    setIsReallocateModalOpen(false);
     setSelectedRows([]);
     setRefreshKey((k) => k + 1);
   };
@@ -133,6 +136,13 @@ export default function DemandsContent() {
                   >
                     Draft POs {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
+                  <button 
+                    onClick={() => setIsReallocateModalOpen(true)} 
+                    disabled={selectedRows.length === 0}
+                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    Reallocate {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                  </button>
                 </div>
               </div>
             )}
@@ -150,6 +160,12 @@ export default function DemandsContent() {
         onClose={() => setIsLinkSlideOverOpen(false)}
         demands={selectedRows}
         onRefresh={handleModalSuccess}
+      />
+      <ReallocateModal
+        isOpen={isReallocateModalOpen}
+        onClose={() => setIsReallocateModalOpen(false)}
+        selectedDemands={selectedRows}
+        onSuccess={handleModalSuccess}
       />
     </div>
   );

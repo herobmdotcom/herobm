@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Patch,
   Param,
   Body,
@@ -52,6 +53,16 @@ export class OrderPickingController {
       quantity,
       user.userId,
     );
+  }
+
+  @Delete(':id/picking/picks/:pickId')
+  @CasbinAction('write')
+  cancelPick(
+    @Param('id') orderId: string,
+    @Param('pickId') pickId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.pickingService.cancelPick(orderId, pickId, user.userId);
   }
 
   @Get('shipping-queue')

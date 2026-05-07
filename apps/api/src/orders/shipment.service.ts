@@ -123,6 +123,8 @@ export class ShipmentService {
           );
         }
 
+        let shipmentLocationId: string | null = null;
+
         // Validate every line: shipped qty must be available
         for (const line of dto.lines) {
           const orderLine = await findOrderLine(
@@ -130,6 +132,19 @@ export class ShipmentService {
             line.salesOrderLineId,
             salesOrderId,
           );
+
+          if (!shipmentLocationId && orderLine.fulfillmentLocationId) {
+            shipmentLocationId = orderLine.fulfillmentLocationId;
+          } else if (
+            shipmentLocationId &&
+            orderLine.fulfillmentLocationId &&
+            shipmentLocationId !== orderLine.fulfillmentLocationId
+          ) {
+            throw new BadRequestException(
+              `Cannot mix lines from different fulfillment locations in a single shipment. Line ${orderLine.lineNumber} belongs to a different location.`,
+            );
+          }
+
           await assertShipmentQtyAvailable(
             innerTx,
             salesOrderId,
@@ -149,6 +164,7 @@ export class ShipmentService {
             stateCode: 'dispatched',
             notes: dto.notes,
             trackingNumber: dto.trackingNumber,
+            fulfillmentLocationId: shipmentLocationId,
             createdBy: actor,
           })
           .returning();
@@ -295,11 +311,73 @@ export class ShipmentService {
           );
         }
 
+        if (newState === 'cancelled') {
+          throw new BadRequestException(
+            'Please use the dedicated POST /cancel endpoint to cancel a shipment.',
+          );
+        }
+
         const [updated] = await innerTx
           .update(salesOrderShipments)
           .set({ stateCode: newState, modifiedOn: new Date() })
           .where(eq(salesOrderShipments.shipmentId, shipmentId))
           .returning();
+
+        const eventType =
+          newState === 'dispatched'
+            ? 'shipment_dispatched'
+            : 'shipment_status_changed';
+
+        await emitEvent(innerTx, {
+          aggregateType: AggregateType.SHIPMENT,
+          aggregateId: shipmentId,
+          eventType,
+          payload: {
+            shipmentId,
+            shipmentNumber: shipment.shipmentNumber,
+            from: shipment.stateCode,
+            to: newState,
+          },
+          actor,
+        });
+
+        const autoTransitions = await evaluateLifecycleRules(
+          innerTx,
+          shipment.salesOrderId,
+          { entity: 'shipment', id: shipmentId, action: newState },
+          actor,
+        );
+
+        this.logger.log(
+          `Shipment ${shipment.shipmentNumber} state: ${shipment.stateCode} → ${newState} by ${actor}`,
+        );
+
+        return { ...updated, _autoTransitions: autoTransitions };
+      },
+    );
+
+    return result;
+  }
+
+  /**
+   * Cancel a shipment.
+   * Reverses inventory, picks, and financial entries if the shipment was dispatched.
+   */
+  async cancelShipment(shipmentId: string, actor: string, tx?: DrizzleDB) {
+    const result = await (tx || this.db).transaction(
+      async (innerTx: DrizzleDB) => {
+        const shipment = await findShipment(innerTx, shipmentId);
+
+        if (shipment.stateCode === 'cancelled') {
+          throw new BadRequestException('Shipment is already cancelled.');
+        }
+
+        const allowed = SHIPMENT_STATE_TRANSITIONS[shipment.stateCode];
+        if (!allowed || !allowed.includes('cancelled')) {
+          throw new BadRequestException(
+            `Cannot transition shipment from '${shipment.stateCode}' to 'cancelled'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+          );
+        }
 
         // ── Inventory hooks ──
         // Fetch shipment lines to get quantities
@@ -333,7 +411,7 @@ export class ShipmentService {
 
         const physicalStockLines = stockLines.filter((l) => l.isPhysical);
 
-        if (shipment.stateCode === 'dispatched' && newState === 'cancelled') {
+        if (shipment.stateCode === 'dispatched') {
           const invoicedMap = await getInvoicedPerLine(
             innerTx,
             shipment.salesOrderId,
@@ -570,20 +648,21 @@ export class ShipmentService {
           });
         }
 
-        const eventType =
-          newState === 'dispatched'
-            ? 'shipment_dispatched'
-            : 'shipment_status_changed';
+        const [updated] = await innerTx
+          .update(salesOrderShipments)
+          .set({ stateCode: 'cancelled', modifiedOn: new Date() })
+          .where(eq(salesOrderShipments.shipmentId, shipmentId))
+          .returning();
 
         await emitEvent(innerTx, {
           aggregateType: AggregateType.SHIPMENT,
           aggregateId: shipmentId,
-          eventType,
+          eventType: 'shipment_status_changed',
           payload: {
             shipmentId,
             shipmentNumber: shipment.shipmentNumber,
             from: shipment.stateCode,
-            to: newState,
+            to: 'cancelled',
           },
           actor,
         });
@@ -591,12 +670,12 @@ export class ShipmentService {
         const autoTransitions = await evaluateLifecycleRules(
           innerTx,
           shipment.salesOrderId,
-          { entity: 'shipment', id: shipmentId, action: newState },
+          { entity: 'shipment', id: shipmentId, action: 'cancelled' },
           actor,
         );
 
         this.logger.log(
-          `Shipment ${shipment.shipmentNumber} state: ${shipment.stateCode} → ${newState} by ${actor}`,
+          `Shipment ${shipment.shipmentNumber} state: ${shipment.stateCode} → cancelled by ${actor}`,
         );
 
         return { ...updated, _autoTransitions: autoTransitions };

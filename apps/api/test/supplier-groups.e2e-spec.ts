@@ -120,4 +120,3 @@ describe('Supplier Groups (e2e)', () => {
     expect(deleteRes.body.deleted).toBe(true);
   });
 });
-

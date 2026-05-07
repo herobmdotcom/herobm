@@ -240,4 +240,3 @@ describe('API E2E — Purchase Invoices', () => {
     });
   });
 });
-

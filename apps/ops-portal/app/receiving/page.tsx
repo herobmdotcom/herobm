@@ -72,6 +72,29 @@ export default function GoodsReceivedListPage() {
         }
     }, [selectedRows, triggerRefresh]);
 
+    const handleCancelReceipt = useCallback(async () => {
+        const uniqueReceiptIds = [...new Set(selectedRows.map((r) => r.goodsReceivedId))];
+        if (uniqueReceiptIds.length !== 1) {
+            alert('Please select lines from exactly one receipt to cancel.');
+            return;
+        }
+
+        const receiptId = uniqueReceiptIds[0];
+        const receiptNumber = selectedRows.find(r => r.goodsReceivedId === receiptId)?.receiptNumber;
+
+        if (!window.confirm(`Are you sure you want to cancel the ENTIRE receipt ${receiptNumber}? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await apiMutate(`/api/goods-received/${receiptId}/cancel`, 'POST');
+            triggerRefresh();
+            setSelectedRows([]);
+        } catch (err: any) {
+            alert(err.message || 'Failed to cancel receipt');
+        }
+    }, [selectedRows, triggerRefresh]);
+
     const gridEndpoint = `/api/goods-received/lines?days=${days}&limit=0${selectedLocationId ? `&locationId=${selectedLocationId}` : ''}`;
 
     const gridColumns: any[] = useMemo(() => [
@@ -120,7 +143,8 @@ export default function GoodsReceivedListPage() {
                 if (!p.value) return null;
                 let bg = 'bg-gray-100 text-gray-700';
                 let label = p.value;
-                if (p.value === 'completed') { bg = 'bg-green-100 text-green-800'; label = 'Completed'; }
+                if (p.data?.stateCode === 'cancelled') { bg = 'bg-gray-200 text-gray-500'; label = 'Cancelled'; }
+                else if (p.value === 'completed') { bg = 'bg-green-100 text-green-800'; label = 'Completed'; }
                 else if (p.value === 'quarantined') { bg = 'bg-red-100 text-red-800'; label = 'Quarantined'; }
                 else if (p.value === 'pending_putaway') { bg = 'bg-blue-100 text-blue-800'; label = 'Pending'; }
                 else if (p.value === 'awaiting_matching') { bg = 'bg-amber-100 text-amber-800 border border-amber-200'; label = 'Awaiting Match'; }
@@ -217,14 +241,22 @@ export default function GoodsReceivedListPage() {
                                     
                                     <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
                                     
-                                    {/* Group 2: Quarantine */}
-                                    <div className="flex items-center">
+                                    {/* Group 2: Quarantine & Cancel */}
+                                    <div className="flex items-center gap-3">
                                         <button
                                             onClick={handleToggleQuarantine}
                                             disabled={selectedRows.filter(r => r.putawayStatus !== 'completed').length === 0}
                                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             Quarantine
+                                        </button>
+                                        <button
+                                            onClick={handleCancelReceipt}
+                                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === 'completed')}
+                                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                                            title="Cancel the entire receipt for the selected lines"
+                                        >
+                                            Cancel
                                         </button>
                                     </div>
 

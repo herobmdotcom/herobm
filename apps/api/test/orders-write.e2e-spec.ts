@@ -654,4 +654,3 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
     });
   });
 });
-

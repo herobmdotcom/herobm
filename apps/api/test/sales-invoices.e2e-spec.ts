@@ -328,4 +328,3 @@ describe('API E2E — Sales Invoices', () => {
     });
   });
 });
-

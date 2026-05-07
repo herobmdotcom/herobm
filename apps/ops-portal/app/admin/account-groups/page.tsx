@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 
 export default function AccountGroupsAdmin() {
   useDocumentTitle('Account Groups');
@@ -16,11 +17,14 @@ export default function AccountGroupsAdmin() {
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [costCenters, setCostCenters] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [matrixRules, setMatrixRules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isCreating, setIsCreating] = useState(false);
+
+  const [discountGroup, setDiscountGroup] = useState<any | null>(null);
 
   const renderGlAccountLabel = (id: string | null | undefined) => {
     if (!id) return <span className="text-muted text-xs italic">{t('notConfigured')}</span>;
@@ -37,11 +41,12 @@ export default function AccountGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, accounts, cc, act] = await Promise.all([
+      const [data, accounts, cc, act, rules] = await Promise.all([
         apiFetch<any[]>('/api/account-groups'),
         apiFetch<any[]>('/api/gl/accounts'),
         apiFetch<any[]>('/api/settings/cost-centers'),
-        apiFetch<any[]>('/api/settings/activities')
+        apiFetch<any[]>('/api/settings/activities'),
+        apiFetch<any[]>('/api/discount-matrix?ownerType=account_group')
       ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
@@ -50,6 +55,7 @@ export default function AccountGroupsAdmin() {
       setGlAccounts(accounts || []);
       setCostCenters(cc || []);
       setActivities(act || []);
+      setMatrixRules(rules || []);
     } catch(err: any) {
       toast.error('Failed to load groups: ' + err.message);
     } finally {
@@ -71,7 +77,6 @@ export default function AccountGroupsAdmin() {
     setEditForm({
       groupCode: '',
       name: '',
-      defaultDiscountPercentage: '0',
       defaultArAccountId: '',
       defaultRevenueAccountId: '',
       defaultCostCenterId: '',
@@ -141,7 +146,7 @@ export default function AccountGroupsAdmin() {
             <tr>
               <th style={{ width: 100 }}>{tCommon('code')}</th>
               <th>{tCommon('name')}</th>
-              <th style={{ width: 120 }}>{tCommon('defDiscount')}</th>
+              <th style={{ width: 140 }}>Discount Rules</th>
               <th style={{ width: 140 }}>{tCommon('defArAccount')}</th>
               <th style={{ width: 140 }}>{tCommon('defRevAccount')}</th>
               <th style={{ width: 140 }}>{tCommon('defCostCenter')}</th>
@@ -159,7 +164,7 @@ export default function AccountGroupsAdmin() {
                   <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
                 </td>
                 <td>
-                  <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
+                  <span className="text-xs text-muted italic">Save to manage</span>
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
@@ -220,7 +225,7 @@ export default function AccountGroupsAdmin() {
                     <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </td>
                   <td>
-                    <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
+                    <span className="text-xs text-muted italic">Save to manage</span>
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
@@ -265,7 +270,19 @@ export default function AccountGroupsAdmin() {
                 <tr key={g.accountGroupId}>
                   <td className="font-mono text-xs">{g.groupCode}</td>
                   <td className="font-medium">{g.name}</td>
-                  <td>{parseFloat(g.defaultDiscountPercentage || '0').toFixed(2)}%</td>
+                  <td>
+                    <button 
+                      className="btn btn-secondary btn-xs relative"
+                      onClick={() => setDiscountGroup(g)}
+                    >
+                      Manage
+                      {matrixRules.some((r: any) => r.accountGroupId === g.accountGroupId) && (
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                      )}
+                    </button>
+                  </td>
                   <td>{renderGlAccountLabel(g.defaultArAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
                   <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>
@@ -282,6 +299,13 @@ export default function AccountGroupsAdmin() {
           </tbody>
         </table>
       </div>
+
+      <DiscountMatrixSlideOver
+        open={!!discountGroup}
+        onClose={() => setDiscountGroup(null)}
+        ownerLabel={discountGroup ? `${discountGroup.groupCode} — ${discountGroup.name}` : ''}
+        accountGroupId={discountGroup?.accountGroupId}
+      />
     </div>
   );
 }

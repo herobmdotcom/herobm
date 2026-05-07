@@ -14,6 +14,7 @@ import {
   zones,
   bins,
   binContents,
+  salesOrderPicks,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
 
@@ -36,6 +37,7 @@ describe('PickingSlipService', () => {
 
   beforeEach(async () => {
     // Clean data
+    await pg.db.delete(salesOrderPicks);
     await pg.db.delete(binContents);
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
@@ -160,6 +162,28 @@ describe('PickingSlipService', () => {
         productDescription: 'Gizmo Gamma',
         taxCategoryId: TAX_CAT_ID,
         fulfillmentLocationId: LOCATION_ID,
+      },
+    ]);
+
+    // Seed Picks
+    await pg.db.insert(salesOrderPicks).values([
+      {
+        pickId: '00000000-0000-0000-0000-000000000101',
+        salesOrderId: ORDER_ID,
+        salesOrderLineId: LINE_1_ID,
+        productId: PROD_A_ID,
+        binId: BIN_ID,
+        quantity: '3',
+        createdBy: 'test_user',
+      },
+      {
+        pickId: '00000000-0000-0000-0000-000000000102',
+        salesOrderId: ORDER_ID,
+        salesOrderLineId: LINE_2_ID,
+        productId: PROD_B_ID,
+        binId: BIN_ID,
+        quantity: '5',
+        createdBy: 'test_user',
       },
     ]);
 

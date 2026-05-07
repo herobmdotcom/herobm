@@ -398,7 +398,7 @@ describe('ShipmentService', () => {
     }
 
     it.each([['dispatched', 'cancelled']])(
-      'should allow transition %s → %s',
+      'should reject state-machine transition %s → %s in favor of dedicated endpoint',
       async (from, to) => {
         await setupWithState(from);
         await expect(
@@ -407,7 +407,7 @@ describe('ShipmentService', () => {
             to,
             'admin',
           ),
-        ).resolves.toBeDefined();
+        ).rejects.toThrow(BadRequestException);
       },
     );
 

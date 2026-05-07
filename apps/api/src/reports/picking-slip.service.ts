@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, sql } from 'drizzle-orm';
 import { join } from 'path';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -9,6 +9,11 @@ import {
   products as coreProducts,
   inventoryLevels,
   accounts as coreAccounts,
+  salesOrderPicks,
+  binContents,
+  bins,
+  zones,
+  locations,
 } from '../drizzle/modbm-core-schema';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
@@ -18,6 +23,7 @@ export interface PickingSlipHeader {
   customerName: string;
   customerOrderNumber: string;
   orderDate: string;
+  locationName: string;
 }
 
 export interface PickingLine {
@@ -58,11 +64,16 @@ export class PickingSlipService {
         customerName: coreAccounts.name,
         customerOrderNumber: salesOrders.customerOrderNumber,
         createdOn: salesOrders.createdOn,
+        locationName: locations.name,
       })
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.accountId),
+      )
+      .leftJoin(
+        locations,
+        eq(salesOrders.fulfillmentLocationId, locations.locationId),
       )
       .where(eq(salesOrders.salesOrderId, orderId))
       .limit(1);
@@ -101,7 +112,58 @@ export class PickingSlipService {
       .map((l) => l.productId)
       .filter((id): id is string => id !== null && id !== undefined);
 
+    const lineIds = lines.map((l) => l.salesOrderLineId);
+
     const binMap = new Map<string, string>();
+    if (productIds.length > 0) {
+      // Find a valid bin for each product
+      const binRows = await this.db
+        .select({
+          productId: binContents.productId,
+          binNumber: bins.binNumber,
+          zoneCode: zones.code,
+        })
+        .from(binContents)
+        .innerJoin(bins, eq(binContents.binId, bins.binId))
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            inArray(binContents.productId, productIds),
+            eq(bins.isUnavailable, false),
+            inArray(bins.binType, ['storage', 'pick', 'bulk']),
+          ),
+        );
+
+      for (const row of binRows) {
+        if (!binMap.has(row.productId)) {
+          binMap.set(row.productId, `${row.zoneCode}.${row.binNumber}`);
+        }
+      }
+    }
+
+    // 4. Get accurate picked quantities from the picks subledger
+    const pickedMap = new Map<string, number>();
+    if (lineIds.length > 0) {
+      const picks = await this.db
+        .select({
+          salesOrderLineId: salesOrderPicks.salesOrderLineId,
+          quantity: salesOrderPicks.quantity,
+        })
+        .from(salesOrderPicks)
+        .where(
+          and(
+            inArray(salesOrderPicks.salesOrderLineId, lineIds),
+            sql`${salesOrderPicks.stateCode} != 'cancelled'`,
+          ),
+        );
+
+      for (const p of picks) {
+        pickedMap.set(
+          p.salesOrderLineId,
+          (pickedMap.get(p.salesOrderLineId) || 0) + parseFloat(p.quantity),
+        );
+      }
+    }
 
     // 5. Get on-hand quantities from inventoryLevels for back-order logic
     const onHandMap = new Map<string, number>();
@@ -127,7 +189,7 @@ export class PickingSlipService {
 
     for (const line of lines) {
       const ordered = parseFloat(line.quantity);
-      const picked = parseFloat(line.quantityPicked ?? '0');
+      const picked = pickedMap.get(line.salesOrderLineId) ?? 0;
       const toPick = ordered - picked;
       const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
       const isCustomLine = line.productId === CUSTOM_LINE_ID;
@@ -140,7 +202,7 @@ export class PickingSlipService {
         pickingLines.push({
           productCode,
           description,
-          binNumber: binMap.get(productCode) ?? '—',
+          binNumber: binMap.get(line.productId!) ?? '—',
           qtyToPick: toPick,
         });
       }
@@ -164,6 +226,7 @@ export class PickingSlipService {
       orderDate: order.createdOn
         ? new Date(order.createdOn).toLocaleDateString('en-IE')
         : '',
+      locationName: order.locationName ?? '',
     };
 
     return {

@@ -44,7 +44,6 @@ import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   getValidStates,
   computeLinePriceForStorage,
-  resolveEffectiveDiscount,
 } from '@modbm/shared';
 import {
   resolveEffectiveCreditHold,
@@ -190,24 +189,18 @@ export class OrdersWriteService {
   /**
    * Resolve a customer from modbm_core.accounts.
    * Throws BadRequestException if not found.
-   * Returns the customer discount percentage.
+   * Returns the currency code. Discount resolution is now handled
+   * by the frontend via the discount_matrix; backend trusts posted values.
    */
   private async resolveCustomer(
     customerId: string,
     tx?: DrizzleDB,
   ): Promise<{
-    customerDiscount: string;
     currencyCode: string;
   }> {
     try {
       const account = await this.accountsService.findOne(customerId, tx);
-      const effectiveDiscount = resolveEffectiveDiscount(
-        account.customerDiscount,
-        (account as any).accountGroupDiscount,
-      );
-
       return {
-        customerDiscount: effectiveDiscount,
         currencyCode: account.currencyCode ?? 'EUR',
       };
     } catch (err) {
@@ -400,8 +393,7 @@ export class OrdersWriteService {
           line.taxCategoryId,
           tx,
         );
-        const lineDiscount =
-          line.discountPercentage ?? customer.customerDiscount;
+        const lineDiscount = line.discountPercentage ?? '0';
         const computed = this.computeLineAmount(
           line.quantity,
           line.pricePerUnit,
@@ -778,9 +770,7 @@ export class OrdersWriteService {
     const taxCategoryId = lineTax.taxCategoryId;
     const taxRate = lineTax.rate;
 
-    const customer = await this.resolveCustomer(order.customerId ?? '');
-    const lineDiscount =
-      dto.discountPercentage ?? customer.customerDiscount ?? '0';
+    const lineDiscount = dto.discountPercentage ?? '0';
 
     const computed = this.computeLineAmount(
       dto.quantity,
@@ -890,9 +880,7 @@ export class OrdersWriteService {
     const taxCategoryId = lineTax.taxCategoryId;
     const taxRate = lineTax.rate;
 
-    const customer = await this.resolveCustomer(order.customerId ?? '');
-    const lineDiscount =
-      dto.discountPercentage ?? customer.customerDiscount ?? '0';
+    const lineDiscount = dto.discountPercentage ?? '0';
 
     const computed = this.computeLineAmount(
       dto.quantity,

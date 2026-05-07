@@ -310,6 +310,9 @@ export const salesOrderShipments = modbmCore.table(
       .default('draft'),
     notes: text('notes'),
     trackingNumber: text('tracking_number'),
+    fulfillmentLocationId: uuid('fulfillment_location_id').references(
+      () => locations.locationId,
+    ),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -744,9 +747,7 @@ export const accountGroups = modbmCore.table('account_groups', {
   accountGroupId: uuid('account_group_id').primaryKey().defaultRandom(),
   groupCode: text('group_code').unique().notNull(),
   name: text('name').notNull(),
-  defaultDiscountPercentage: numeric('default_discount_percentage').default(
-    '0',
-  ),
+
   defaultArAccountId: uuid('default_ar_account_id').references(
     () => glAccounts.glAccountId,
   ),
@@ -829,6 +830,53 @@ export const productGroups = modbmCore.table('product_groups', {
     () => activities.activityId,
   ),
 });
+
+// ---------------------------------------------------------------------------
+// discount_matrix  (Multi-dimensional default discount rules)
+//
+// Each row encodes a discount percentage for a specific intersection of
+// (account OR account_group) × (product_group OR wildcard).
+// Exactly one of account_group_id / account_id must be set (CHECK constraint).
+// product_group_id = NULL means "all product groups" (wildcard).
+// ---------------------------------------------------------------------------
+export const discountMatrix = modbmCore.table(
+  'discount_matrix',
+  {
+    discountMatrixId: uuid('discount_matrix_id').primaryKey().defaultRandom(),
+    accountGroupId: uuid('account_group_id').references(
+      () => accountGroups.accountGroupId,
+    ),
+    accountId: uuid('account_id').references(() => accounts.accountId),
+    productGroupId: uuid('product_group_id').references(
+      () => productGroups.productGroupId,
+    ), // NULL = wildcard (all product groups)
+    discountPercentage: numeric('discount_percentage').notNull().default('0'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    // Exactly one of account_group_id or account_id must be set
+    exactlyOneOwner: check(
+      'discount_matrix_owner_check',
+      sql`(account_group_id IS NOT NULL AND account_id IS NULL) OR
+          (account_group_id IS NULL AND account_id IS NOT NULL)`,
+    ),
+    // Unique per intersection
+    unqGroup: unique('discount_matrix_group_product_unq').on(
+      t.accountGroupId,
+      t.productGroupId,
+    ),
+    unqAccount: unique('discount_matrix_account_product_unq').on(
+      t.accountId,
+      t.productGroupId,
+    ),
+    // Indexes for lookup performance
+    accountGroupIdx: index('idx_discount_matrix_account_group').on(
+      t.accountGroupId,
+    ),
+    accountIdx: index('idx_discount_matrix_account').on(t.accountId),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // products  (Native schema structure mapped to CDM product definitions)
@@ -962,7 +1010,7 @@ export const accounts = modbmCore.table(
     ),
     creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
     isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false), // Manual override per account
-    customerDiscount: numeric('customer_discount').default('0'),
+
     externalId: text('external_id'),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),

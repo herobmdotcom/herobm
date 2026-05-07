@@ -54,6 +54,8 @@ export function useAccount(id: string) {
   /* ── Tax categories ─────────────────────────────────────────── */
   const [taxCategories, setTaxCategories] = useState<any[]>([]);
 
+  const [hasDiscountRules, setHasDiscountRules] = useState(false);
+
   /* ── Derived ─────────────────────────────────────────────────── */
   const isEditable = account?.stateCode !== 'archived';
 
@@ -62,9 +64,13 @@ export function useAccount(id: string) {
   const loadAccount = async () => {
     setLoading(true);
     try {
-      const data = await apiFetch<Account>(`/api/accounts/${id}`);
+      const [data, rules] = await Promise.all([
+        apiFetch<Account>(`/api/accounts/${id}`),
+        apiFetch<any[]>(`/api/discount-matrix?ownerType=account&accountId=${id}`).catch(() => [])
+      ]);
       setAccount(data);
       setDto(data);
+      setHasDiscountRules(rules && rules.length > 0);
       setIsDirty(false);
     } catch (err) {
       reportError(err, 'AccountDetailPage');
@@ -189,6 +195,7 @@ export function useAccount(id: string) {
     isDirty,
     isEditable,
     taxCategories,
+    hasDiscountRules,
 
     // Field helpers
     updateField,

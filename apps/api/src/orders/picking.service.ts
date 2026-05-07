@@ -460,7 +460,7 @@ export class PickingService {
         and(
           inArray(salesOrders.stateCode, ['confirmed', 'picking']),
           locationId
-            ? eq(salesOrders.fulfillmentLocationId, locationId)
+            ? eq(salesOrderLineItems.fulfillmentLocationId, locationId)
             : undefined,
         ),
       )
@@ -552,6 +552,114 @@ export class PickingService {
   }
 
   // -------------------------------------------------------------------------
+  // Cancel Pick Line
+  // -------------------------------------------------------------------------
+
+  async cancelPick(orderId: string, pickId: string, actor: string) {
+    const pickRows = await this.db
+      .select({
+        pick: salesOrderPicks,
+        locationId: zones.locationId,
+      })
+      .from(salesOrderPicks)
+      .innerJoin(bins, eq(salesOrderPicks.binId, bins.binId))
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(
+          eq(salesOrderPicks.pickId, pickId),
+          eq(salesOrderPicks.salesOrderId, orderId),
+        ),
+      )
+      .limit(1);
+
+    if (pickRows.length === 0) {
+      throw new BadRequestException(
+        `Pick not found or does not belong to this order.`,
+      );
+    }
+
+    const { pick, locationId } = pickRows[0];
+
+    if (pick.stateCode !== 'picked') {
+      throw new BadRequestException(
+        `Cannot cancel pick in state '${pick.stateCode}'. Only 'picked' lines can be cancelled.`,
+      );
+    }
+
+    const qty = parseFloat(pick.quantity);
+
+    // Resolve SHIPPING bin for physical stock movement reversal
+    const [shippingBin] = await this.db
+      .select({ binId: bins.binId })
+      .from(bins)
+      .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+      .where(
+        and(eq(bins.binNumber, 'SHIPPING'), eq(zones.locationId, locationId)),
+      )
+      .limit(1);
+
+    if (!shippingBin) {
+      throw new BadRequestException(
+        `No SHIPPING staging bin found for location ${locationId}.`,
+      );
+    }
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // 1. Record physical inventory movement (reverse the pick)
+      await this.inventoryService.recordInventoryMovement(tx, {
+        entryNumber: `UPK-${orderId.substring(0, 8)}-${Date.now()
+          .toString()
+          .slice(-4)}`,
+        sourceType: 'SO_PICK',
+        sourceId: orderId,
+        memo: `Sales Order Pick Reversal`,
+        userId: actor,
+        lines: [
+          {
+            productId: pick.productId,
+            binId: shippingBin.binId,
+            quantity: -qty, // remove from shipping
+          },
+          {
+            productId: pick.productId,
+            binId: pick.binId!, // put back to original bin
+            quantity: qty,
+          },
+        ],
+      });
+
+      // 2. Update sales_order_picks
+      await tx
+        .update(salesOrderPicks)
+        .set({ stateCode: 'cancelled', modifiedOn: new Date() })
+        .where(eq(salesOrderPicks.pickId, pickId));
+
+      // 3. Update order modifiedOn
+      await tx
+        .update(salesOrders)
+        .set({ modifiedOn: new Date() })
+        .where(eq(salesOrders.salesOrderId, orderId));
+
+      return pick;
+    });
+
+    await emitEvent(this.db as any, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: orderId,
+      eventType: 'sales_order_pick_cancelled',
+      payload: {
+        salesOrderLineId: pick.salesOrderLineId,
+        productId: pick.productId,
+        quantity: pick.quantity,
+        binId: pick.binId,
+      },
+      actor,
+    });
+
+    return result;
+  }
+
+  // -------------------------------------------------------------------------
   // Shipping Queue
   // -------------------------------------------------------------------------
 
@@ -605,7 +713,7 @@ export class PickingService {
         and(
           eq(salesOrders.stateCode, 'picking'),
           locationId
-            ? eq(salesOrders.fulfillmentLocationId, locationId)
+            ? eq(salesOrderLineItems.fulfillmentLocationId, locationId)
             : undefined,
         ),
       )

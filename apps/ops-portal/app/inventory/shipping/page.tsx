@@ -449,15 +449,16 @@ export default function ShippingPage() {
                                                 <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('existingShipments')}</h4>
                                                 <div className="flex flex-col gap-2">
                                                     {context.shipments.map(shipment => (
-                                                        <a
+                                                        <div
                                                             key={shipment.shipmentId}
-                                                            href={`/shipments/${shipment.shipmentId}`}
                                                             className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
                                                         >
                                                             <div className="flex items-center gap-3">
                                                                 <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
                                                                 <div>
-                                                                    <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
+                                                                    <Link href={`/shipments/${shipment.shipmentId}`} className="font-bold text-sm text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline">
+                                                                        {shipment.shipmentNumber}
+                                                                    </Link>
                                                                     <div className="text-xs text-[var(--text-muted)]">
                                                                         {new Date(shipment.createdOn).toLocaleDateString()} · {t('shipmentLines', { count: shipment.lineCount })}
                                                                         {shipment.trackingNumber && (
@@ -466,8 +467,27 @@ export default function ShippingPage() {
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <StateBadge state={shipment.stateCode as ValidState} />
-                                                        </a>
+                                                            <div className="flex items-center gap-3">
+                                                                <StateBadge state={shipment.stateCode as ValidState} />
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-secondary btn-sm flex items-center"
+                                                                    onClick={async () => {
+                                                                        try {
+                                                                            const { apiFetchBlob } = await import('@/lib/api');
+                                                                            const blob = await apiFetchBlob(`/api/reports/hooks/shipping-docket/run?id=${shipment.shipmentId}&context=shipment`, { method: 'POST' });
+                                                                            const url = URL.createObjectURL(blob);
+                                                                            window.open(url, '_blank');
+                                                                        } catch (err) {
+                                                                            console.error('Failed to generate shipping docket', err);
+                                                                            toast.error('Failed to generate shipping docket.');
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <span className="font-medium">Docket PDF</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>

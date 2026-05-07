@@ -57,4 +57,3 @@ describe('Database Schema Parity (e2e)', () => {
     }
   });
 });
-

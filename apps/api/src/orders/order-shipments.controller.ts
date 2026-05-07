@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -79,6 +79,16 @@ export class OrderShipmentsController {
       stateCode,
       user.username,
     );
+  }
+
+  @Post(':id/shipments/:shipmentId/cancel')
+  @CasbinAction('write')
+  cancelShipment(
+    @Param('id') _id: string,
+    @Param('shipmentId') shipmentId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.shipmentService.cancelShipment(shipmentId, user.username);
   }
 
   @Post(':id/shipments/:shipmentId/lines')

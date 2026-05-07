@@ -13,7 +13,8 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
-import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment } from '@modbm/shared';
+import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
+import type { DiscountRule } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useSettings } from '@/components/SettingsProvider';
 
@@ -21,6 +22,7 @@ interface Account {
   accountId: string;
   accountNumber: string;
   name: string;
+  accountGroupId: string | null;
   customerDiscount: string | null;
   currencyCode: string | null;
   taxPosition: string | null;
@@ -60,6 +62,7 @@ interface LineItem {
   fulfillmentLocationId: string;
   baseUom?: string | null;
   productUoms?: any[];
+  productGroupId?: string | null;
 }
 
 let lineKey = 0;
@@ -98,6 +101,7 @@ export default function NewOrderPage() {
   const [customerId, setCustomerId] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerDiscount, setCustomerDiscount] = useState('0');
+  const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [currencyCode, setCurrencyCode] = useState('');
   const [customerTaxPosition, setCustomerTaxPosition] = useState<string | null>(null);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -164,12 +168,25 @@ export default function NewOrderPage() {
     (term: unknown) => searchAccounts(term as string), 300,
   );
 
-  const selectCustomer = (a: Account) => {
+  const selectCustomer = async (a: Account) => {
     setCustomerId(a.accountId);
     setCustomerSearch(`${a.accountNumber} — ${a.name}`);
     setShowCustomerDropdown(false);
-    const disc = a.customerDiscount ?? '0';
-    setCustomerDiscount(disc);
+    
+    // Fetch discount rules for this customer
+    let rules: DiscountRule[] = [];
+    try {
+      const q = new URLSearchParams({ accountId: a.accountId });
+      if (a.accountGroupId) q.set('accountGroupId', a.accountGroupId);
+      rules = await apiFetch<DiscountRule[]>(`/api/discount-matrix/resolve?${q.toString()}`);
+      setDiscountRules(rules);
+    } catch (err) {
+      reportError(err, 'NewOrderPage_Rules');
+    }
+
+    const baseDisc = resolveEffectiveDiscount(rules, null);
+    setCustomerDiscount(baseDisc);
+    
     const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
     setCustomerTaxPosition(a.taxPosition);
@@ -182,7 +199,7 @@ export default function NewOrderPage() {
     setLines((prev) =>
       prev.map((l) => ({
         ...l,
-        discountPercentage: l.discountPercentage === '0' ? disc : l.discountPercentage,
+        discountPercentage: resolveEffectiveDiscount(rules, l.productGroupId || null),
         taxCategoryId: custExempt ? lineTaxId : l.taxCategoryId,
       })),
     );
@@ -203,12 +220,13 @@ export default function NewOrderPage() {
         productDescription: p.name,
         quantity: '1',
         pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
-        discountPercentage: customerDiscount,
+        discountPercentage: resolveEffectiveDiscount(discountRules, p.productGroupId || null),
         taxCategoryId: effectivetaxCategoryId,
         unitOfMeasure: p.baseUom || 'EA',
         fulfillmentLocationId,
         baseUom: p.baseUom,
         productUoms: p.productUoms,
+        productGroupId: p.productGroupId || null,
       },
     ]);
   };

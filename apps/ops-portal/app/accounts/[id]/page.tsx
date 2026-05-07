@@ -14,6 +14,7 @@ import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
 import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
+import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 import { useSettings } from '@/components/SettingsProvider';
 import { useAccount } from './useAccount';
 
@@ -27,6 +28,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
   const {
     account, loading, saving, dto, isDirty, isEditable, taxCategories,
+    hasDiscountRules,
     updateField, saveField, handleSave,
     archiveAccount, unarchiveAccount,
   } = useAccount(params.id);
@@ -35,6 +37,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
   // Tab state is purely UI, kept local to the page
   const [activeTab, setActiveTab] = useState<'details' | 'salesOrders' | 'invoices'>('details');
+  const [showDiscounts, setShowDiscounts] = useState(false);
 
   const handleOrderRowClicked = useCallback((order: any) => {
     router.push(`/sales-orders/${order.id}`);
@@ -346,19 +349,20 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('accounts.columns.discountPct')}
+                  Discount Rules
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  className="input"
-                  value={dto.customerDiscount || '0'}
-                  onChange={(e) => updateField('customerDiscount', e.target.value)}
-                  onBlur={(e) => saveField('customerDiscount', e.target.value)}
+                <button
+                  className="btn btn-secondary relative"
+                  onClick={() => setShowDiscounts(true)}
                   disabled={!isEditable || saving}
-                />
+                >
+                  Manage
+                  {hasDiscountRules && (
+                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                  )}
+                </button>
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -586,6 +590,13 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             </div>
         </div>
       )}
+      
+      <DiscountMatrixSlideOver
+        open={showDiscounts}
+        onClose={() => setShowDiscounts(false)}
+        ownerLabel={account ? `${account.accountNumber} — ${account.name}` : ''}
+        accountId={params.id}
+      />
       </DetailsLayout>
     </>
   );

@@ -10,6 +10,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
+import { toast } from 'react-hot-toast';
 
 interface ShipmentLine {
   shipmentLineId: string;
@@ -69,9 +70,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
 
     setIsCancelling(true);
     try {
-      await apiMutate(`/api/sales-orders/${shipment.salesOrderId}/shipments/${shipment.shipmentId}/state`, 'PATCH', { 
-        stateCode: 'cancelled' 
-      });
+      await apiMutate(`/api/sales-orders/${shipment.salesOrderId}/shipments/${shipment.shipmentId}/cancel`, 'POST', {});
       loadShipment();
     } catch (err: any) {
       console.error('Failed to cancel shipment:', err);
@@ -137,6 +136,22 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               <span className="material-symbols-outlined">local_shipping</span>
               {t('shipmentDetails')}
             </h3>
+            <button
+              className="btn btn-secondary btn-sm flex items-center"
+              onClick={async () => {
+                try {
+                  const { apiFetchBlob } = await import('@/lib/api');
+                  const blob = await apiFetchBlob(`/api/reports/hooks/shipping-docket/run?id=${id}&context=shipment`, { method: 'POST' });
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                } catch (err) {
+                  console.error('Failed to generate shipping docket', err);
+                  toast.error('Failed to generate shipping docket.');
+                }
+              }}
+            >
+              Docket PDF
+            </button>
           </div>
           
           <div className="grid grid-cols-2 gap-4">

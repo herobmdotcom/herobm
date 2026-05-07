@@ -72,4 +72,3 @@ export function setupTestModule(providers: any[] = []): TestingModuleBuilder {
     ],
   });
 }
-

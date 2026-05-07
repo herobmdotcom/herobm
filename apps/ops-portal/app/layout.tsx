@@ -64,6 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             position="top-center"
             containerStyle={{
               top: 40,
+              zIndex: 99999,
             }}
             toastOptions={{
               duration: 3000,

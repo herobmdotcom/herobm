@@ -491,5 +491,112 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       expect(binBalance.quantityOnHand).toBe(140);
     });
   });
-});
 
+  // =========================================================================
+  // Cancellation Workflow
+  // =========================================================================
+  describe('Cancellation Workflow', () => {
+    let cancelPoId: string;
+    let cancelGrId: string;
+    let cancelProductId: string;
+
+    it('creates a PO and receives against it', async () => {
+      // 0. Create a fresh product so there is exactly 1 open PO for it (unambiguous match)
+      const productRes = await request(app.getHttpServer())
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          productNumber: `E2E-GR-P-${Date.now()}-CAN`,
+          name: 'E2E Goods Received Test Product - Cancel',
+          listPrice: '25.00',
+        })
+        .expect(201);
+      cancelProductId = productRes.body.productId;
+
+      // 1. Create a PO
+      const poRes = await request(app.getHttpServer())
+        .post('/api/purchase-orders')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          orderNumber: `PO-CAN-${Date.now()}`,
+          vendorId: validVendorId,
+          deliveryLocationId: validLocationId,
+          currencyCode: 'EUR',
+          lines: [
+            {
+              productId: cancelProductId,
+              quantity: '100',
+              pricePerUnit: '10.00',
+            },
+          ],
+        })
+        .expect(201);
+
+      cancelPoId = poRes.body.purchaseOrderId;
+
+      await request(app.getHttpServer())
+        .patch(`/api/purchase-orders/${cancelPoId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: 'ordered' })
+        .expect(200);
+
+      // 2. Receive 10 units against the PO
+      const grRes = await request(app.getHttpServer())
+        .post('/api/goods-received')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          vendorId: validVendorId,
+          locationId: validLocationId,
+          packingSlipNumber: 'PS-CAN-001',
+          lines: [{ productId: cancelProductId, quantityReceived: '10' }],
+        })
+        .expect(201);
+
+      cancelGrId = grRes.body.goodsReceivedId;
+
+      // Ensure it was matched
+      expect(grRes.body.lines[0].matchStatus).toBe('matched');
+      expect(grRes.body.lines[0].purchaseOrderId).toBe(cancelPoId);
+    });
+
+    it('validates PO is partially_received and quantity_received is 10', async () => {
+      const poRes = await request(app.getHttpServer())
+        .get(`/api/purchase-orders/${cancelPoId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(poRes.body.stateCode).toBe('partially_received');
+      expect(poRes.body.lines[0].quantityReceived).toBe('10');
+    });
+
+    it('cancels the receipt', async () => {
+      const cancelRes = await request(app.getHttpServer())
+        .post(`/api/goods-received/${cancelGrId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      if (cancelRes.status !== 201) {
+        console.error('CANCEL ERROR:', cancelRes.body);
+      }
+      expect(cancelRes.status).toBe(201);
+    });
+
+    it('validates PO state reverted to ordered and quantity_received is 0', async () => {
+      const poRes = await request(app.getHttpServer())
+        .get(`/api/purchase-orders/${cancelPoId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(poRes.body.stateCode).toBe('ordered');
+      expect(poRes.body.lines[0].quantityReceived).toBe('0');
+    });
+
+    it('validates goods receipt state is cancelled', async () => {
+      const grRes = await request(app.getHttpServer())
+        .get(`/api/goods-received/${cancelGrId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .expect(200);
+
+      expect(grRes.body.stateCode).toBe('cancelled');
+    });
+  });
+});

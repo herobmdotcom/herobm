@@ -148,4 +148,3 @@ describe('Locations & Topography (e2e)', () => {
     expect(deleteLocRes.status).toBe(200);
   });
 });
-
