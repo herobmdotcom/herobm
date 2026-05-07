@@ -45,7 +45,6 @@ export class AccountGroupsService {
       .values({
         groupCode: dto.groupCode,
         name: dto.name,
-        defaultDiscountPercentage: dto.defaultDiscountPercentage || '0',
         defaultArAccountId: dto.defaultArAccountId || null,
         defaultRevenueAccountId: dto.defaultRevenueAccountId || null,
       })
@@ -61,9 +60,6 @@ export class AccountGroupsService {
       .set({
         ...(dto.groupCode !== undefined && { groupCode: dto.groupCode }),
         ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.defaultDiscountPercentage !== undefined && {
-          defaultDiscountPercentage: dto.defaultDiscountPercentage,
-        }),
         ...(dto.defaultArAccountId !== undefined && {
           defaultArAccountId: dto.defaultArAccountId,
         }),
