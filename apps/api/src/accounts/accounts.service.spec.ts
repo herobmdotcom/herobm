@@ -10,6 +10,7 @@ import {
   taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { sql } from 'drizzle-orm';
+import { ACCOUNT_STATE } from '@modbm/shared';
 
 describe('AccountsService', () => {
   const pg = setupPgliteSuite();

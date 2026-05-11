@@ -47,7 +47,12 @@ export async function createTestCustomer(
 
 export async function createTestProduct(
   db: PgliteDatabase<any>,
-  opts?: { type?: 'inventory' | 'non-stock'; name?: string },
+  opts?: {
+    type?: 'inventory' | 'non-stock';
+    name?: string;
+    standardCost?: string;
+    weightedAverageCost?: string;
+  },
 ) {
   const productId = uuidv4();
   await db.insert(products).values({
@@ -56,6 +61,8 @@ export async function createTestProduct(
     name: opts?.name || 'Test Product',
     productType: opts?.type || 'inventory',
     baseUom: 'EA',
+    standardCost: opts?.standardCost || '10.00',
+    weightedAverageCost: opts?.weightedAverageCost || '10.00',
   });
   return { productId };
 }

@@ -7,6 +7,7 @@ import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { BackordersService } from '../orders/backorders.service';
 import {
   purchaseOrders,
   purchaseOrderLineItems,
@@ -91,6 +92,10 @@ describe('PurchaseOrdersService', () => {
         {
           provide: AppConfigService,
           useValue: { homeCurrency: () => 'EUR' },
+        },
+        {
+          provide: BackordersService,
+          useValue: { changeBackorderState: jest.fn() },
         },
       ],
     }).compile();

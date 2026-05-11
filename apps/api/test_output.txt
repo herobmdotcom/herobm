@@ -1,15 +1,1922 @@
-﻿node.exe : PASS src/inventory/inventory-state-boundary.spec.ts
+﻿
+> api@0.0.1 test:pglite
+> npm run lint && npm run test:unit:pglite
+
+
+> api@0.0.1 lint
+> eslint "{src,apps,libs,test}/**/*.ts" --fix --cache --cache-location .eslintcache --quiet
+
+
+> api@0.0.1 test:unit:pglite
+> cross-env USE_PGLITE=true tsx src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules --max-old-space-size=8192" jest --max-workers=2
+
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (28) from ..\..\.env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+[PGlite Cache] Generating global snapshot...
+  Seeded users: admin, viewer, sales, warehouse, procurement, finance
+  Seeded UOM 'EA' and SYSTEM-CUSTOM-LINE product
+  Seeded default organization (fallback)
+  Seeded 47 GL accounts from au_standard.json
+  Seeded 3 tax categories
+  Seeded 6 trading terms
+  Seeded GL settings (base_currency=AUD, fiscal_month=7)
+  Seeded default app_settings
+  Seeded default '00' dimensions (Cost Center, Activity)
+  Seeded 'MAIN' location, zone, and bins
+  Seeded default customer and vendor
+  Seeded 7 reports and 5 hook assignments.
+
+Done.
+[PGlite Cache] Global snapshot generated to C:\Users\Marcel\volz\modbm\modbm\apps\api\.pglite-snapshot.bin in 2341ms
+node.exe : (node:27736) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
 At line:1 char:1
 + & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
 + ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: (PASS src/invent...oundary.spec.ts:String) [], RemoteException
+    + CategoryInfo          : NotSpecified: ((node:27736) Ex...nge at any time:String) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
-  Inventory State Boundary (structural)
-    ΓêÜ recordInventoryMovement must not be silently skipped in conditional blocks (113 ms)
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27904) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+FAIL src/orders/returns-write.service.spec.ts (7.39 s)
+  ΓùÅ Console
 
-Test Suites: 1 passed, 1 total
-Tests:       1 passed, 1 total
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ΓùÅ ReturnsWriteService ΓÇ║ GL posting on state transitions ΓÇ║ should post inventory GL reversal on RECEIVED 
+transition
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 0
+
+    [0m [90m 673 |[39m
+     [90m 674 |[39m       [90m// Inventory receive + COGS GL reversal should have been posted[39m
+    [31m[1m>[22m[39m[90m 675 |[39m       
+expect(mockGlService[33m.[39mpostJournalEntry)[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m
+     [90m     |[39m                                              [31m[1m^[22m[39m
+     [90m 676 |[39m       expect(
+     [90m 677 |[39m         mockInventoryService[33m.[39mrecordInventoryMovement[33m,[39m
+     [90m 678 |[39m       )[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (orders/returns-write.service.spec.ts:675:46)
+
+FAIL src/goods-received/goods-received.service.spec.ts (8.806 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent building .env in docker: 
+https://dotenvx.com/prebuild
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should throw NotFoundException when supplier does not exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "matched" when exactly one open PO line exists
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "ambiguous" when multiple open PO lines exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "unmatched" when no open PO lines exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ findOne ΓÇ║ should return a receipt with lines
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ findOne ΓÇ║ should throw NotFoundException when receipt does not exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should restore awaiting_matching when un-quarantining an 
+unmatched line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should restore pending_putaway when un-quarantining a 
+matched line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should throw when source bin is missing
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should record inventory movement on quarantine toggle
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ resolve preserves quarantined status (ADV-086) ΓÇ║ should keep quarantined status when 
+matching a quarantined line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+FAIL src/accounts/accounts.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ΓùÅ AccountsService ΓÇ║ findAll ΓÇ║ should exclude archived accounts by default
+
+    ReferenceError: ACCOUNT_STATE is not defined
+
+    [0m [90m 109 |[39m           accountNumber[33m:[39m [32m'ACT'[39m[33m,[39m
+     [90m 110 |[39m           currencyCode[33m:[39m [32m'USD'[39m[33m,[39m
+    [31m[1m>[22m[39m[90m 111 |[39m           stateCode[33m:[39m 
+[33mACCOUNT_STATE[39m[33m.[39m[33mACTIVE[39m[33m,[39m
+     [90m     |[39m                      [31m[1m^[22m[39m
+     [90m 112 |[39m         }[33m,[39m
+     [90m 113 |[39m         {
+     [90m 114 |[39m           name[33m:[39m [32m'Archived'[39m[33m,[39m[0m
+
+      at Object.<anonymous> (accounts/accounts.service.spec.ts:111:22)
+
+FAIL src/purchase-orders/purchase-orders.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ΓùÅ PurchaseOrdersService ΓÇ║ create ΓÇ║ should create a purchase order and return it
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+  ΓùÅ PurchaseOrdersService ΓÇ║ changePurchaseOrderState ΓÇ║ should transition state from draft to ordered
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+  ΓùÅ PurchaseOrdersService ΓÇ║ addLine ΓÇ║ should add a line item to a draft order
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+FAIL src/products/products-write.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', 
+'.env'] }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+  ΓùÅ ProductsWriteService ΓÇ║ unarchive ΓÇ║ should unarchive to previous state based on last event
+
+    BadRequestException: Invalid product state transition: 'archived' -> 'draft'. Valid next states: active
+
+    [0m [90m 204 |[39m     [36mconst[39m allowed [33m=[39m [33mPRODUCT_TRANSITIONS[39m[currentState] 
+[33m||[39m [][33m;[39m
+     [90m 205 |[39m     [36mif[39m ([33m![39mallowed[33m.[39mincludes(newState)) {
+    [31m[1m>[22m[39m[90m 206 |[39m       [36mthrow[39m [36mnew[39m [33mBadRequestException[39m(
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 207 |[39m         [32m`Invalid product state transition: '${currentState}' -> '${newState}'. Valid next 
+states: ${allowed.join(', ') || 'None'}`[39m[33m,[39m
+     [90m 208 |[39m       )[33m;[39m
+     [90m 209 |[39m     }[0m
+
+      at ProductsWriteService.changeProductState (products/products-write.service.ts:206:13)
+      at ProductsWriteService.unarchive (products/products-write.service.ts:169:12)
+      at Object.<anonymous> (products/products-write.service.spec.ts:152:22)
+
+PASS src/gl/gl.service.spec.ts (9.393 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/payments/payments.service.spec.ts (10.959 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/reports/reports.service.spec.ts (6.487 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒ¢í∩╕Å auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/picking.service.spec.ts (6.061 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/inventory/uom.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/macros/macros.service.spec.ts (5.033 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/locations/locations.service.spec.ts (6.547 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/dashboard/dashboard.service.spec.ts (5.18 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  override existing env vars with { override: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/gl/coa-loader.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/settings/app-config.service.spec.ts (5.743 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  specify custom .env file path with { path: 
+'/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/order-lifecycle-rules.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tax/tax-categories.service.spec.ts (6.121 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒ¢í∩╕Å auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/invoices/sales-invoice.service.spec.ts (5.116 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  specify custom .env file path with { path: 
+'/custom/path/.env' }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/orders-write.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/orders.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/accounts/credit-assessment.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/backorders.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒ¢í∩╕Å auth for agents: https://vestauth.com
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/suppliers/suppliers.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/invoices/purchase-invoice.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/products/products.service.spec.ts (5.716 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/inventory/inventory.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', 
+'.env'] }
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/reports/picking-slip.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/suppliers/suppliers-write.service.spec.ts (5.296 s)
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ΓÜí∩╕Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/reports/shipping-docket.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/shipment.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/test-utils/simple.spec.ts
+PASS src/auth/auth.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent committing .env to code: 
+https://dotenvx.com/precommit
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/accounts/accounts-write.service.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent building .env in docker: 
+https://dotenvx.com/prebuild
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/orders/orders.controller.spec.ts
+PASS src/test-utils/schema-pglite.spec.ts
+  ΓùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../../../node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      Tax categories count: 3
+
+      at Object.<anonymous> (test-utils/schema-pglite.spec.ts:10:13)
+
+PASS src/invoices/invoices.controller.spec.ts
+PASS src/orders/order-returns.controller.spec.ts
+PASS src/reports/sales-invoice.service.spec.ts
+PASS src/purchase-orders/purchase-orders.controller.spec.ts
+PASS src/inventory/inventory.controller.spec.ts
+PASS src/goods-received/goods-received.controller.spec.ts
+PASS src/products/products.controller.spec.ts
+PASS src/accounts/accounts.controller.spec.ts
+PASS src/tax/tax-categories.controller.spec.ts
+PASS src/inventory/inventory-state-boundary.spec.ts
+PASS src/suppliers/suppliers.controller.spec.ts
+PASS src/reports/sales-quote.service.spec.ts
+PASS src/gl/gl.controller.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/reports/reports.controller.spec.ts
+PASS src/telemetry/telemetry.controller.spec.ts
+PASS src/dashboard/dashboard.controller.spec.ts
+PASS src/auth/casbin.guard.spec.ts
+PASS src/setup/setup.guard.spec.ts
+PASS src/orders/return-credit-boundary.spec.ts
+[33m[Nest] 27904  - [39m05/11/2026, 10:37:39 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+[33m[Nest] 27904  - [39m05/11/2026, 10:37:39 PM [33m   WARN[39m [38;5;3m[SetupGuard] [39m[33mSetup token attempted but users exist. Rejecting token fallback.[39m
+PASS src/orders/returns-math.utils.spec.ts
+PASS src/orders/shipment-math.utils.spec.ts
+PASS src/inventory/inventory-accounting.spec.ts
+PASS src/common/emit-event.spec.ts
+PASS src/orders/picking-math.utils.spec.ts
+PASS src/common/all-exceptions.filter.spec.ts
+PASS src/gl/gl-transaction-boundary.spec.ts
+PASS src/test-mock.spec.ts
+  ΓùÅ Console
+
+    console.log
+      Vendor: { vendorId: 'v1', name: 'ACME' }
+
+      at Object.<anonymous> (test-mock.spec.ts:9:11)
+
+PASS src/suppliers/supplier-risk.domain.spec.ts
+PASS src/common/audit.spec.ts
+PASS src/orders/state-constants.spec.ts
+PASS src/orders/projection-completeness.spec.ts
+  ΓùÅ Console
+
+    console.warn
+      Projection has fields not in schema: productType, baseUom. These should be either computed / joined columns or 
+projection errors.
+
+    [0m [90m 153 |[39m       [90m// but flag them for review.[39m
+     [90m 154 |[39m       [36mif[39m (unknownFields[33m.[39mlength [33m>[39m [35m0[39m) {
+    [31m[1m>[22m[39m[90m 155 |[39m         console[33m.[39mwarn(
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 156 |[39m           [32m`Projection has fields not in schema: ${unknownFields.join(', ')}. `[39m 
+[33m+[39m
+     [90m 157 |[39m             [32m`These should be either computed / joined columns or projection 
+errors.`[39m[33m,[39m
+     [90m 158 |[39m         )[33m;[39m[0m
+
+      at Object.<anonymous> (orders/projection-completeness.spec.ts:155:17)
+
+PASS src/common/pricing.spec.ts
+PASS src/inventory/inventory-math.utils.spec.ts
+PASS src/accounts/credit-control.utils.spec.ts
+
+Summary of all failing tests
+FAIL orders/returns-write.service.spec.ts (7.39 s)
+  ΓùÅ ReturnsWriteService ΓÇ║ GL posting on state transitions ΓÇ║ should post inventory GL reversal on RECEIVED 
+transition
+
+    expect(jest.fn()).toHaveBeenCalledTimes(expected)
+
+    Expected number of calls: 1
+    Received number of calls: 0
+
+    [0m [90m 673 |[39m
+     [90m 674 |[39m       [90m// Inventory receive + COGS GL reversal should have been posted[39m
+    [31m[1m>[22m[39m[90m 675 |[39m       
+expect(mockGlService[33m.[39mpostJournalEntry)[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m
+     [90m     |[39m                                              [31m[1m^[22m[39m
+     [90m 676 |[39m       expect(
+     [90m 677 |[39m         mockInventoryService[33m.[39mrecordInventoryMovement[33m,[39m
+     [90m 678 |[39m       )[33m.[39mtoHaveBeenCalledTimes([35m1[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (orders/returns-write.service.spec.ts:675:46)
+
+FAIL goods-received/goods-received.service.spec.ts (8.806 s)
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should throw NotFoundException when supplier does not exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "matched" when exactly one open PO line exists
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "ambiguous" when multiple open PO lines exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ create ΓÇ║ should set match_status to "unmatched" when no open PO lines exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ findOne ΓÇ║ should return a receipt with lines
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ findOne ΓÇ║ should throw NotFoundException when receipt does not exist
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should restore awaiting_matching when un-quarantining an 
+unmatched line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should restore pending_putaway when un-quarantining a 
+matched line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should throw when source bin is missing
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ toggleQuarantine (ADV-086) ΓÇ║ should record inventory movement on quarantine toggle
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+  ΓùÅ GoodsReceivedService ΓÇ║ resolve preserves quarantined status (ADV-086) ΓÇ║ should keep quarantined status when 
+matching a quarantined line
+
+    Nest can't resolve dependencies of the GoodsReceivedService (Symbol(DRIZZLE), InventoryService, AppConfigService, 
+GlService, ?, PurchaseOrdersService). Please make sure that the argument BackordersService at index [4] is available 
+in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 76 |[39m     }[33m;[39m
+     [90m 77 |[39m
+    [31m[1m>[22m[39m[90m 78 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 79 |[39m       providers[33m:[39m [
+     [90m 80 |[39m         [33mGoodsReceivedService[39m[33m,[39m
+     [90m 81 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 4)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (goods-received/goods-received.service.spec.ts:78:35)
+
+FAIL accounts/accounts.service.spec.ts
+  ΓùÅ AccountsService ΓÇ║ findAll ΓÇ║ should exclude archived accounts by default
+
+    ReferenceError: ACCOUNT_STATE is not defined
+
+    [0m [90m 109 |[39m           accountNumber[33m:[39m [32m'ACT'[39m[33m,[39m
+     [90m 110 |[39m           currencyCode[33m:[39m [32m'USD'[39m[33m,[39m
+    [31m[1m>[22m[39m[90m 111 |[39m           stateCode[33m:[39m 
+[33mACCOUNT_STATE[39m[33m.[39m[33mACTIVE[39m[33m,[39m
+     [90m     |[39m                      [31m[1m^[22m[39m
+     [90m 112 |[39m         }[33m,[39m
+     [90m 113 |[39m         {
+     [90m 114 |[39m           name[33m:[39m [32m'Archived'[39m[33m,[39m[0m
+
+      at Object.<anonymous> (accounts/accounts.service.spec.ts:111:22)
+
+FAIL purchase-orders/purchase-orders.service.spec.ts
+  ΓùÅ PurchaseOrdersService ΓÇ║ create ΓÇ║ should create a purchase order and return it
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+  ΓùÅ PurchaseOrdersService ΓÇ║ changePurchaseOrderState ΓÇ║ should transition state from draft to ordered
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+  ΓùÅ PurchaseOrdersService ΓÇ║ addLine ΓÇ║ should add a line item to a draft order
+
+    Nest can't resolve dependencies of the PurchaseOrdersService (Symbol(DRIZZLE), InventoryService, SuppliersService, 
+TaxCategoriesService, AppConfigService, ?). Please make sure that the argument BackordersService at index [5] is 
+available in the RootTestModule module.
+
+    Potential solutions:
+    - Is RootTestModule a valid NestJS module?
+    - If BackordersService is a provider, is it part of the current RootTestModule?
+    - If BackordersService is exported from a separate @Module, is that module imported within RootTestModule?
+      @Module({
+        imports: [ /* the Module containing BackordersService */ ]
+      })
+
+    For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+
+    [0m [90m 82 |[39m     }[33m;[39m
+     [90m 83 |[39m
+    [31m[1m>[22m[39m[90m 84 |[39m     [36mconst[39m module[33m:[39m [33mTestingModule[39m [33m=[39m 
+[36mawait[39m [33mTest[39m[33m.[39mcreateTestingModule({
+     [90m    |[39m                                   [31m[1m^[22m[39m
+     [90m 85 |[39m       providers[33m:[39m [
+     [90m 86 |[39m         [33mPurchaseOrdersService[39m[33m,[39m
+     [90m 87 |[39m         { provide[33m:[39m [33mDRIZZLE[39m[33m,[39m useValue[33m:[39m pg[33m.[39mdb 
+}[33m,[39m[0m
+
+      at TestingInjector.lookupComponentInParentModules 
+(../../../node_modules/@nestjs/core/injector/injector.js:290:19)
+      at TestingInjector.resolveComponentWrapper (../../../node_modules/@nestjs/testing/testing-injector.js:19:45)
+      at resolveParam (../../../node_modules/@nestjs/core/injector/injector.js:140:38)
+          at async Promise.all (index 5)
+      at TestingInjector.resolveConstructorParams (../../../node_modules/@nestjs/core/injector/injector.js:169:27)
+      at TestingInjector.loadInstance (../../../node_modules/@nestjs/core/injector/injector.js:75:13)
+      at TestingInjector.loadProvider (../../../node_modules/@nestjs/core/injector/injector.js:103:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:56:13
+          at async Promise.all (index 3)
+      at TestingInstanceLoader.createInstancesOfProviders 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:55:9)
+      at ../../../node_modules/@nestjs/core/injector/instance-loader.js:40:13
+          at async Promise.all (index 1)
+      at TestingInstanceLoader.createInstances (../../../node_modules/@nestjs/core/injector/instance-loader.js:39:9)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/core/injector/instance-loader.js:22:13)
+      at TestingInstanceLoader.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-instance-loader.js:9:9)
+      at TestingModuleBuilder.createInstancesOfDependencies 
+(../../../node_modules/@nestjs/testing/testing-module.builder.js:118:9)
+      at TestingModuleBuilder.compile (../../../node_modules/@nestjs/testing/testing-module.builder.js:74:9)
+      at Object.<anonymous> (purchase-orders/purchase-orders.service.spec.ts:84:35)
+
+FAIL products/products-write.service.spec.ts
+  ΓùÅ ProductsWriteService ΓÇ║ unarchive ΓÇ║ should unarchive to previous state based on last event
+
+    BadRequestException: Invalid product state transition: 'archived' -> 'draft'. Valid next states: active
+
+    [0m [90m 204 |[39m     [36mconst[39m allowed [33m=[39m [33mPRODUCT_TRANSITIONS[39m[currentState] 
+[33m||[39m [][33m;[39m
+     [90m 205 |[39m     [36mif[39m ([33m![39mallowed[33m.[39mincludes(newState)) {
+    [31m[1m>[22m[39m[90m 206 |[39m       [36mthrow[39m [36mnew[39m [33mBadRequestException[39m(
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 207 |[39m         [32m`Invalid product state transition: '${currentState}' -> '${newState}'. Valid next 
+states: ${allowed.join(', ') || 'None'}`[39m[33m,[39m
+     [90m 208 |[39m       )[33m;[39m
+     [90m 209 |[39m     }[0m
+
+      at ProductsWriteService.changeProductState (products/products-write.service.ts:206:13)
+      at ProductsWriteService.unarchive (products/products-write.service.ts:169:12)
+      at Object.<anonymous> (products/products-write.service.spec.ts:152:22)
+
+
+Test Suites: 5 failed, 65 passed, 70 total
+Tests:       17 failed, 2 skipped, 497 passed, 516 total
 Snapshots:   0 total
-Time:        0.551 s, estimated 1 s
-Ran all test suites matching inventory-state-boundary.spec.
+Time:        85.508 s, estimated 87 s
+Ran all test suites.
+npm error Lifecycle script `test:unit:pglite` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c cross-env USE_PGLITE=true tsx 
+src/test-utils/generate-snapshot.ts && cross-env USE_PGLITE=true NODE_OPTIONS="--experimental-vm-modules 
+--max-old-space-size=8192" jest --max-workers=2
+npm error Lifecycle script `test:pglite` failed with error:
+npm error code 1
+npm error path C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error workspace api@0.0.1
+npm error location C:\Users\Marcel\volz\modbm\modbm\apps\api
+npm error command failed
+npm error command C:\windows\system32\cmd.exe /d /s /c npm run lint && npm run test:unit:pglite

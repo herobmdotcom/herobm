@@ -6,6 +6,8 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import { GlService } from '../gl/gl.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { BackordersService } from '../orders/backorders.service';
+import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
 import {
   suppliers,
   locations,
@@ -82,6 +84,17 @@ describe('GoodsReceivedService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: AppConfigService, useValue: mockAppConfig },
+        {
+          provide: BackordersService,
+          useValue: { changeBackorderState: jest.fn() },
+        },
+        {
+          provide: PurchaseOrdersService,
+          useValue: {
+            updateReceivedQuantities: jest.fn(),
+            changePurchaseOrderState: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
