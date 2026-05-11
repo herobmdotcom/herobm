@@ -18,6 +18,7 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { BackordersService } from './backorders.service';
 import { Inject } from '@nestjs/common';
+import { BACKORDER_STATE } from '@modbm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -85,7 +86,8 @@ export class AllocationsController {
       .where(
         and(
           sql`${backorders.purchaseOrderId} IS NULL`,
-          eq(backorders.stateCode, 'pending_supply'),
+          sql`${backorders.transferOrderId} IS NULL`,
+          eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
         ),
       );
     return { data: openDemands };
@@ -170,6 +172,14 @@ export class AllocationsController {
   async generatePOs(@Body() payload: any, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.generatePOsFromDemands(payload, actor);
+    return { success: true };
+  }
+
+  @Post('generate-transfers')
+  @CasbinAction('write')
+  async generateTransfers(@Body() payload: any, @AuthUser() user: JwtUser) {
+    const actor = user?.username || 'system';
+    await this.backordersService.generateTransfersFromDemands(payload, actor);
     return { success: true };
   }
 }

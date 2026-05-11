@@ -1,4 +1,11 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -18,10 +25,16 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
-import { eq, inArray, and, sql } from 'drizzle-orm';
+import { eq, sql, and, inArray } from 'drizzle-orm';
+import {
+  BACKORDER_STATE,
+  PURCHASE_ORDER_STATE,
+  TRANSFER_ORDER_STATE,
+  OPEN_PURCHASE_ORDER_STATES,
+  BACKORDER_TRANSITIONS,
+} from '@modbm/shared';
 import { InventoryService } from '../inventory/inventory.service';
 import { calculateInventoryGaps } from '@modbm/shared';
-import { OPEN_PURCHASE_ORDER_STATES } from '@modbm/shared';
 import type { InventoryGap, PurchaseOrderState } from '@modbm/shared';
 
 import { AppConfigService } from '../settings/app-config.service';
@@ -126,7 +139,7 @@ export class BackordersService {
         salesOrderLineId: gap.salesOrderLineId,
         productId: gap.productId,
         quantity: gap.shortage.toString(),
-        stateCode: 'pending_supply',
+        stateCode: BACKORDER_STATE.PENDING_SUPPLY,
       });
     }
 
@@ -150,14 +163,16 @@ export class BackordersService {
         .from(backorders)
         .where(eq(backorders.backorderId, backorderId));
 
-      await tx
-        .update(backorders)
-        .set({
+      await this.changeBackorderState(
+        backorderId,
+        BACKORDER_STATE.PENDING_SUPPLY,
+        actor,
+        tx,
+        {
           purchaseOrderId: null,
           purchaseOrderLineId: null,
-          stateCode: 'pending_supply',
-        })
-        .where(eq(backorders.backorderId, backorderId));
+        },
+      );
 
       if (current && current.purchaseOrderId) {
         // Emit event on PO side using the old PO ID
@@ -197,7 +212,7 @@ export class BackordersService {
         .where(
           and(
             sql`${backorders.purchaseOrderId} IS NULL`,
-            eq(backorders.stateCode, 'pending_supply'),
+            eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
           ),
         );
 
@@ -275,15 +290,17 @@ export class BackordersService {
 
           if (remainingQty > 0) {
             // Split demand: Update current row to allocQty, and insert new row for remainingQty
-            await tx
-              .update(backorders)
-              .set({
+            await this.changeBackorderState(
+              currentDemandId,
+              BACKORDER_STATE.AWAITING_RECEIPT,
+              actor,
+              tx,
+              {
                 purchaseOrderId: line.purchaseOrderId,
                 purchaseOrderLineId: line.purchaseOrderLineId,
                 quantity: allocQty.toString(),
-                stateCode: 'awaiting_receipt',
-              })
-              .where(eq(backorders.backorderId, currentDemandId));
+              },
+            );
 
             // Create remaining demand
             const [newDemand] = await tx
@@ -293,7 +310,7 @@ export class BackordersService {
                 salesOrderLineId: demand.salesOrderLineId,
                 productId: demand.productId,
                 quantity: remainingQty.toString(),
-                stateCode: 'pending_supply',
+                stateCode: BACKORDER_STATE.PENDING_SUPPLY,
               })
               .returning();
 
@@ -301,15 +318,17 @@ export class BackordersService {
             demand = { ...newDemand, orderNumber: demand.orderNumber }; // For next iteration if there are more lines
           } else {
             // Fully allocated
-            await tx
-              .update(backorders)
-              .set({
+            await this.changeBackorderState(
+              currentDemandId,
+              BACKORDER_STATE.AWAITING_RECEIPT,
+              actor,
+              tx,
+              {
                 purchaseOrderId: line.purchaseOrderId,
                 purchaseOrderLineId: line.purchaseOrderLineId,
                 quantity: allocQty.toString(),
-                stateCode: 'awaiting_receipt',
-              })
-              .where(eq(backorders.backorderId, currentDemandId));
+              },
+            );
           }
         }
 
@@ -331,182 +350,6 @@ export class BackordersService {
         `Leaving ${unfulfilledDemands.length} demands as open Requisitions (no auto-PO creation).`,
       );
       return;
-
-      /*
-      // 4. Generate new POs for remaining demands
-      const [defaultTaxCat] = await tx
-        .select({ id: taxCategories.taxCategoryId })
-        .from(taxCategories)
-        .where(eq(taxCategories.isDefault, true))
-        .limit(1);
-
-      // If no default marked, just take the first one as an absolute safety fallback
-      let fallbackTaxId = defaultTaxCat?.id;
-      if (!fallbackTaxId) {
-        const [firstCat] = await tx
-          .select({ id: taxCategories.taxCategoryId })
-          .from(taxCategories)
-          .limit(1);
-        fallbackTaxId = firstCat?.id;
-      }
-
-      const productIds = unfulfilledDemands.map((g) => g.productId);
-      const suppliers = await tx
-        .select({
-          productId: productSuppliers.productId,
-          vendorId: productSuppliers.vendorId,
-          costPrice: productSuppliers.costPrice,
-          isPreferred: productSuppliers.isPreferred,
-          currencyCode: coreSuppliers.currencyCode,
-        })
-        .from(productSuppliers)
-        .leftJoin(
-          coreSuppliers,
-          eq(productSuppliers.vendorId, coreSuppliers.vendorId),
-        )
-        .where(inArray(productSuppliers.productId, productIds));
-
-      suppliers.sort((a, b) =>
-        a.isPreferred === b.isPreferred ? 0 : a.isPreferred ? 1 : -1,
-      );
-
-      const preferredSupplierMap = new Map<
-        string,
-        { vendorId: string; costPrice: string | null; currencyCode: string }
-      >();
-      for (const sup of suppliers) {
-        if (sup.productId && sup.vendorId) {
-          preferredSupplierMap.set(sup.productId, {
-            vendorId: sup.vendorId,
-            costPrice: sup.costPrice,
-            currencyCode: sup.currencyCode || this.appConfig.homeCurrency(),
-          });
-        }
-      }
-
-      const gapsByVendorAndLocation = new Map<
-        string,
-        typeof unfulfilledDemands
-      >();
-      for (const gap of unfulfilledDemands) {
-        const sup = preferredSupplierMap.get(gap.productId);
-        const vid = sup ? sup.vendorId : 'null';
-        // Assume location from the Sales Order line... wait, we don't have location on backorder.
-        // Let's lookup location from SO header for grouping.
-        const [soLine] = await tx
-          .select({
-            fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
-          })
-          .from(salesOrderLineItems)
-          .where(
-            eq(salesOrderLineItems.salesOrderLineId, gap.salesOrderLineId),
-          );
-        const loc = soLine?.fulfillmentLocationId || 'null';
-        const key = `${vid}::${loc}`;
-        if (!gapsByVendorAndLocation.has(key))
-          gapsByVendorAndLocation.set(key, []);
-        gapsByVendorAndLocation.get(key)!.push(gap);
-      }
-
-      for (const [groupKey, vendorGaps] of gapsByVendorAndLocation.entries()) {
-        const [vidStr, locStr] = groupKey.split('::');
-        const vendorId = vidStr === 'null' ? null : vidStr;
-        const deliveryLocationId = locStr === 'null' ? null : locStr;
-
-        const firstGap = vendorGaps[0];
-        const pref = preferredSupplierMap.get(firstGap.productId);
-        const currencyCode =
-          pref?.currencyCode || this.appConfig.homeCurrency();
-
-        const orderNumber = await this.generatePurchaseOrderNumber(tx);
-        const uniqueSoNumbers = [
-          ...new Set(vendorGaps.map((g: any) => g.orderNumber)),
-        ];
-
-        const [po] = await tx
-          .insert(purchaseOrders)
-          .values({
-            orderNumber,
-            name: `Auto-Backorder PO ${orderNumber}`,
-            vendorId,
-            deliveryLocationId,
-            stateCode: 'draft',
-            currencyCode,
-            notes: `Auto-generated to fulfill open demands: ${uniqueSoNumbers.join(', ')}`,
-            createdBy: actor,
-          })
-          .returning();
-
-        await emitEvent(tx, {
-          aggregateType: AggregateType.PURCHASE_ORDER,
-          aggregateId: po.purchaseOrderId,
-          eventType: EventType.CREATED,
-          actor,
-          payload: { reason: 'auto_backorder' },
-        });
-
-        // Consolidate lines for the same product to avoid many 1-qty lines
-        const consolidatedLines = new Map<
-          string,
-          {
-            productDesc?: string;
-            purchaseTaxCategoryId?: string | null;
-            quantity: number;
-            price: string;
-            gapRefs: typeof unfulfilledDemands;
-          }
-        >();
-        for (const gap of vendorGaps) {
-          const pref = preferredSupplierMap.get(gap.productId);
-          if (!consolidatedLines.has(gap.productId)) {
-            const [coreProd] = await tx
-              .select({
-                name: coreProducts.name,
-                purchaseTaxCategoryId: coreProducts.purchaseTaxCategoryId,
-              })
-              .from(coreProducts)
-              .where(eq(coreProducts.productId, gap.productId));
-            consolidatedLines.set(gap.productId, {
-              productDesc: coreProd?.name,
-              purchaseTaxCategoryId: coreProd?.purchaseTaxCategoryId,
-              quantity: 0,
-              price: pref?.costPrice || '0',
-              gapRefs: [],
-            });
-          }
-          const item = consolidatedLines.get(gap.productId)!;
-          item.quantity += Number(gap.quantity);
-          item.gapRefs.push(gap);
-        }
-
-        let openLineNumber = 1;
-        for (const [productId, lineInfo] of consolidatedLines.entries()) {
-          const [poLine] = await tx
-            .insert(purchaseOrderLineItems)
-            .values({
-              purchaseOrderId: po.purchaseOrderId,
-              lineNumber: openLineNumber++,
-              productId: productId,
-              productDescription: lineInfo.productDesc,
-              quantity: lineInfo.quantity.toString(),
-              pricePerUnit: lineInfo.price,
-              taxCategoryId: lineInfo.purchaseTaxCategoryId || fallbackTaxId,
-            })
-            .returning();
-
-          for (const gap of lineInfo.gapRefs) {
-            await tx
-              .update(backorders)
-              .set({
-                purchaseOrderId: po.purchaseOrderId,
-                purchaseOrderLineId: poLine.purchaseOrderLineId,
-                stateCode: 'awaiting_receipt',
-              })
-              .where(eq(backorders.backorderId, gap.backorderId));
-          }
-        }
-      }
-      */
     });
   }
 
@@ -546,7 +389,6 @@ export class BackordersService {
             HttpStatus.BAD_REQUEST,
           );
         }
-
         const currencyCode =
           poPayload.currencyCode || this.appConfig.homeCurrency();
         const orderNumber = await this.generatePurchaseOrderNumber(tx);
@@ -579,7 +421,7 @@ export class BackordersService {
             name: `Requisition PO ${orderNumber}`,
             vendorId: poPayload.vendorId,
             deliveryLocationId: deliveryLocationId,
-            stateCode: 'draft',
+            stateCode: PURCHASE_ORDER_STATE.DRAFT,
             currencyCode,
             notes: `Generated ${soNotes}`,
             createdBy: actor,
@@ -619,19 +461,29 @@ export class BackordersService {
 
           if (line.backorderIds && line.backorderIds.length > 0) {
             for (const backorderId of line.backorderIds) {
-              await tx
-                .update(backorders)
-                .set({
+              await this.changeBackorderState(
+                backorderId,
+                BACKORDER_STATE.AWAITING_RECEIPT,
+                actor,
+                tx,
+                {
                   purchaseOrderId: po.purchaseOrderId,
                   purchaseOrderLineId: poLine.purchaseOrderLineId,
-                  stateCode: 'awaiting_receipt',
-                })
-                .where(eq(backorders.backorderId, backorderId));
+                },
+              );
             }
           }
         }
       }
     });
+  }
+
+  async generateTransfersFromDemands(payload: any, actor: string) {
+    this.logger.warn(
+      `generateTransfersFromDemands called by ${actor} but not fully implemented yet`,
+    );
+    // Stub to fix build
+    return { success: false, message: 'Not implemented' };
   }
 
   /**
@@ -776,15 +628,17 @@ export class BackordersService {
       // 3. Link (and split if needed)
       if (quantityToLink < demandQty) {
         // Update current row to the allocated quantity
-        await tx
-          .update(backorders)
-          .set({
+        await this.changeBackorderState(
+          demandId,
+          BACKORDER_STATE.AWAITING_RECEIPT,
+          actor,
+          tx,
+          {
             purchaseOrderId: poLine.purchaseOrderId,
             purchaseOrderLineId: purchaseOrderLineId,
             quantity: quantityToLink.toString(),
-            stateCode: 'awaiting_receipt',
-          })
-          .where(eq(backorders.backorderId, demandId));
+          },
+        );
 
         // Create remaining demand
         const remainingQty = demandQty - quantityToLink;
@@ -793,18 +647,20 @@ export class BackordersService {
           salesOrderLineId: demand.salesOrderLineId,
           productId: demand.productId,
           quantity: remainingQty.toString(),
-          stateCode: 'pending_supply',
+          stateCode: BACKORDER_STATE.PENDING_SUPPLY,
         });
       } else {
         // Fully allocate
-        await tx
-          .update(backorders)
-          .set({
+        await this.changeBackorderState(
+          demandId,
+          BACKORDER_STATE.AWAITING_RECEIPT,
+          actor,
+          tx,
+          {
             purchaseOrderId: poLine.purchaseOrderId,
             purchaseOrderLineId: purchaseOrderLineId,
-            stateCode: 'awaiting_receipt',
-          })
-          .where(eq(backorders.backorderId, demandId));
+          },
+        );
       }
 
       // Optional: Emit event
@@ -856,14 +712,16 @@ export class BackordersService {
         if (ld.purchaseOrderId) {
           // Inline the unlink logic so we can pass 'tx' (since unlinkDemand uses its own transaction internally if not passed)
           // Actually, unlinkDemand uses this.db.transaction. If we call it inside tx, it's fine (Drizzle supports nested but it's better to just inline the update)
-          await tx
-            .update(backorders)
-            .set({
+          await this.changeBackorderState(
+            ld.backorderId,
+            BACKORDER_STATE.PENDING_SUPPLY,
+            actor,
+            tx,
+            {
               purchaseOrderId: null,
               purchaseOrderLineId: null,
-              stateCode: 'pending_supply',
-            })
-            .where(eq(backorders.backorderId, ld.backorderId));
+            },
+          );
 
           await emitEvent(tx, {
             aggregateType: AggregateType.PURCHASE_ORDER,
@@ -907,7 +765,7 @@ export class BackordersService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: demand.salesOrderId,
-        eventType: 'demand_reallocated' as any,
+        eventType: EventType.DEMAND_REALLOCATED,
         actor,
         payload: {
           lineId: demand.salesOrderLineId,
@@ -916,5 +774,60 @@ export class BackordersService {
         },
       });
     });
+  }
+  /**
+   * Formal state transition helper for Backorders.
+   * Ensures transitions follow the state machine and emits events.
+   */
+  async changeBackorderState(
+    backorderId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+    additionalFields: Record<string, any> = {},
+  ) {
+    const db = tx || this.db;
+
+    const [existing] = await db
+      .select()
+      .from(backorders)
+      .where(eq(backorders.backorderId, backorderId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Backorder ${backorderId} not found`);
+    }
+
+    const allowed = BACKORDER_TRANSITIONS[existing.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition backorder from ${existing.stateCode} to ${newState}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(backorders)
+      .set({
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+        ...additionalFields,
+      })
+      .where(eq(backorders.backorderId, backorderId))
+      .returning();
+
+    await emitEvent(db, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: existing.salesOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      actor,
+      payload: {
+        entity: 'backorder',
+        entityId: backorderId,
+        from: existing.stateCode,
+        to: newState,
+      },
+    });
+
+    return updated;
   }
 }

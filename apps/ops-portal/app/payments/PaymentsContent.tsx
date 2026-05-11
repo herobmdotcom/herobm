@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
@@ -23,17 +24,44 @@ interface UnifiedPayment {
   currencyCode: string;
   createdOn: string;
   createdBy: string;
+  partyName?: string;
 }
 
 export default function PaymentsContent() {
   const { baseCurrency } = useSettings();
   const [slideOverOpen, setSlideOverOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  const [payments, setPayments] = useState<UnifiedPayment[]>([]);
+  const [days, setDays] = useState('90');
+  const [allocationFilter, setAllocationFilter] = useState('all');
+  const tCommon = useTranslations('common');
+
+  const handleNext = useCallback(() => {
+    if (!selectedPaymentId || payments.length === 0) return;
+    const idx = payments.findIndex(p => p.paymentId === selectedPaymentId);
+    if (idx !== -1 && idx < payments.length - 1) {
+      setSelectedPaymentId(payments[idx + 1].paymentId);
+    }
+  }, [selectedPaymentId, payments]);
+
+  const handlePrev = useCallback(() => {
+    if (!selectedPaymentId || payments.length === 0) return;
+    const idx = payments.findIndex(p => p.paymentId === selectedPaymentId);
+    if (idx !== -1 && idx > 0) {
+      setSelectedPaymentId(payments[idx - 1].paymentId);
+    }
+  }, [selectedPaymentId, payments]);
 
   const columns = useMemo<ColDef<UnifiedPayment>[]>(() => [
-    { field: 'paymentNumber', headerName: 'Payment #', width: 150, pinned: 'left' },
+    { 
+      field: 'paymentNumber', 
+      headerName: 'Payment #', 
+      width: 150, 
+      pinned: 'left',
+    },
     { field: 'paymentType', headerName: 'Type', width: 120, cellRenderer: (params: any) => params.value === 'receive' ? 'Receipt' : 'Payment' },
     { field: 'partyType', headerName: 'Party Type', width: 120, cellRenderer: (params: any) => params.value === 'customer' ? 'Customer' : 'Supplier' },
+    { field: 'partyName', headerName: 'Party', width: 200 },
     {
       field: 'stateCode',
       headerName: 'Status',
@@ -42,6 +70,25 @@ export default function PaymentsContent() {
         if (!params.value) return null;
         return <StateBadge state={params.value as ValidState} />;
       },
+    },
+    {
+      headerName: 'Allocation',
+      width: 140,
+      valueGetter: (params: { data?: UnifiedPayment }) => {
+        if (!params.data) return null;
+        const total = parseFloat(params.data.totalAmount);
+        const unalloc = parseFloat(params.data.unallocatedAmount);
+        if (unalloc === total) return 'Unallocated';
+        if (unalloc > 0) return 'Partial';
+        return 'Fully Allocated';
+      },
+      cellRenderer: (params: { value: string }) => {
+        if (!params.value) return null;
+        let className = 'badge badge-legacy'; // Partial (gray)
+        if (params.value === 'Unallocated') className = 'badge badge-partially_paid'; // Amber
+        else if (params.value === 'Fully Allocated') className = 'badge badge-paid'; // Green
+        return <span className={className}>{params.value}</span>;
+      }
     },
     {
       field: 'totalAmount',
@@ -95,13 +142,14 @@ export default function PaymentsContent() {
         <div className="relative h-full flex flex-col">
           <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
             <DataGrid<UnifiedPayment>
-              endpoint="/api/payments"
+              endpoint={`/api/payments?days=${days}&allocation=${allocationFilter}`}
               columns={columns}
               gridKey="ops-payments"
               searchPlaceholder="Search payments..."
               exportFileName="payments"
               fetchAll
               rowIdField="paymentId"
+              onDataLoaded={setPayments}
               onRowClicked={handleRowClicked}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
                 <div className="flex items-center justify-between px-6 py-4">
@@ -125,13 +173,33 @@ export default function PaymentsContent() {
                   </div>
                   
                   <div className="flex items-center gap-3 shrink-0 ml-4">
+                    <select
+                      value={allocationFilter}
+                      onChange={(e) => setAllocationFilter(e.target.value)}
+                      className="input text-sm"
+                      style={{ minWidth: 150 }}
+                    >
+                      <option value="all">All Allocations</option>
+                      <option value="unallocated">Unallocated Only</option>
+                    </select>
+                    <select
+                      value={days}
+                      onChange={(e) => setDays(e.target.value)}
+                      className="input text-sm"
+                      style={{ minWidth: 150 }}
+                    >
+                      <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
+                      <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
+                      <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
+                      <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+                    </select>
                     {optionsButton}
                     <button 
                       onClick={() => {
                         setSelectedPaymentId(null);
                         setSlideOverOpen(true);
                       }}
-                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap"
+                      className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
                     >
                       New Payment
                     </button>
@@ -147,12 +215,15 @@ export default function PaymentsContent() {
         <PaymentManagerSlideOver
           paymentId={selectedPaymentId}
           onClose={() => setSlideOverOpen(false)}
-          onSaved={() => {
-            setSlideOverOpen(false);
+          onSaved={(close) => {
+            if (close !== false) setSlideOverOpen(false);
             window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
           }}
+          onNext={handleNext}
+          onPrev={handlePrev}
         />
       )}
     </>
   );
 }
+

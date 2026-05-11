@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { ACCOUNT_STATE } from '@modbm/shared';
 import type { ValidState } from '@/types/states';
 
 /* ── Account shape ───────────────────────────────────────────────── */
@@ -57,7 +58,7 @@ export function useAccount(id: string) {
   const [hasDiscountRules, setHasDiscountRules] = useState(false);
 
   /* ── Derived ─────────────────────────────────────────────────── */
-  const isEditable = account?.stateCode !== 'archived';
+  const isEditable = account?.stateCode !== ACCOUNT_STATE.ARCHIVED;
 
   /* ── Data loader ─────────────────────────────────────────────── */
 

@@ -30,6 +30,14 @@ import { evaluateLifecycleRules } from '../orders/order-lifecycle-rules';
 import { computeLinePrice } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { CreateSalesInvoiceDto } from './dto';
+import {
+  SALES_INVOICE_STATE,
+  SALES_INVOICE_TRANSITIONS,
+  SALES_ORDER_STATE,
+  getValidStates,
+} from '@modbm/shared';
+
+const VALID_INVOICE_STATES = getValidStates(SALES_INVOICE_TRANSITIONS);
 
 @Injectable()
 export class SalesInvoiceService {
@@ -85,7 +93,11 @@ export class SalesInvoiceService {
     }
 
     const order = orderRows[0];
-    if (!['shipped', 'picking'].includes(order.stateCode)) {
+    if (
+      ![SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.PICKING].includes(
+        order.stateCode as any,
+      )
+    ) {
       throw new BadRequestException(
         `Order ${order.orderNumber} must be in 'shipped' or 'picking' state to generate an invoice. Currently: '${order.stateCode}'.`,
       );
@@ -232,7 +244,7 @@ export class SalesInvoiceService {
         const billingMode = this.appConfig.nonStockBillingMode();
         if (billingMode === 'final_invoice') {
           // Bill only on the final closing invoice
-          if (order.stateCode === 'shipped') {
+          if (order.stateCode === SALES_ORDER_STATE.SHIPPED) {
             shippedQty = orderedQty;
           } else {
             shippedQty = 0;
@@ -372,11 +384,18 @@ export class SalesInvoiceService {
           outstandingAmount: String(combinedTotal),
           taxAmount: String(taxAmount),
           currencyCode: order.currencyCode,
-          stateCode: 'invoiced',
+          stateCode: SALES_INVOICE_STATE.DRAFT, // Start in draft and then transition
           notes: dto.notes,
           createdBy: actor,
         })
         .returning();
+
+      await this.changeSalesInvoiceState(
+        invoice.invoiceId,
+        SALES_INVOICE_STATE.INVOICED,
+        actor,
+        tx,
+      );
 
       // B. Structure local Invoice Details mapping natively
       const preparedLines = invoiceLineValues.map((l) => ({
@@ -716,6 +735,7 @@ export class SalesInvoiceService {
         customerName: accounts.name,
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
+        outstandingAmount: salesInvoices.outstandingAmount,
         currencyCode: salesInvoices.currencyCode,
         stateCode: salesInvoices.stateCode,
         createdOn: salesInvoices.createdOn,
@@ -733,5 +753,61 @@ export class SalesInvoiceService {
       return await dataQuery.limit(limit);
     }
     return await dataQuery;
+  }
+  async changeSalesInvoiceState(
+    invoiceId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    if (!VALID_INVOICE_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid invoice state: '${newState}'`);
+    }
+
+    const db = tx || this.db;
+    const [existing] = await db
+      .select({
+        stateCode: salesInvoices.stateCode,
+        invoiceNumber: salesInvoices.invoiceNumber,
+      })
+      .from(salesInvoices)
+      .where(eq(salesInvoices.invoiceId, invoiceId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Invoice ${invoiceId} not found`);
+    }
+
+    const allowed = SALES_INVOICE_TRANSITIONS[existing.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition invoice from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(salesInvoices)
+      .set({
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(salesInvoices.invoiceId, invoiceId))
+      .returning();
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.SALES_INVOICE,
+      aggregateId: invoiceId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'sales_invoice',
+        entityId: invoiceId,
+        invoiceNumber: existing.invoiceNumber,
+        from: existing.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 }

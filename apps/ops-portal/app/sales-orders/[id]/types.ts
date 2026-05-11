@@ -108,6 +108,36 @@ export interface OrderReturn {
     createdOn: string;
     modifiedOn: string;
     lines: ReturnLine[];
+    creditNoteNumber?: string | null;
+}
+
+export interface CreditNoteLine {
+    creditNoteLineId: string;
+    creditNoteId: string;
+    salesOrderLineId: string;
+    quantityCredited: string;
+    pricePerUnit: string;
+    amount: string;
+    taxAmount: string;
+}
+
+export interface CreditNote {
+    creditNoteId: string;
+    creditNoteNumber: string;
+    returnId: string;
+    salesOrderId: string;
+    invoiceId: string | null;
+    totalAmount: string;
+    taxAmount: string;
+    feeAmount: string;
+    outstandingAmount: string;
+    currencyCode: string;
+    stateCode: string;
+    notes: string | null;
+    createdBy: string | null;
+    createdOn: string;
+    modifiedOn: string;
+    lines?: CreditNoteLine[];
 }
 
 export interface InvoiceLine {

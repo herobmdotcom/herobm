@@ -13,6 +13,7 @@ import {
   inventoryLedger,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { PRODUCT_STATE } from '@modbm/shared';
 
 @Injectable()
 export class ProductsService {
@@ -49,7 +50,9 @@ export class ProductsService {
     }
 
     if (!includeArchived) {
-      conditions.push(sql`${coreProducts.stateCode} != 'archived'`);
+      conditions.push(
+        sql`${coreProducts.stateCode} != ${PRODUCT_STATE.ARCHIVED}`,
+      );
     }
 
     if (conditions.length > 0) {

@@ -113,9 +113,19 @@ export default tseslint.config(
         },
         {
           // ADV-024: No hardcoded secrets in source code
-          // Flag ANY string literal assigned to password/secret fields (not just weak ones)
           selector: ":matches(Property[key.name=/password|secret|token|apiKey/i], VariableDeclarator[id.name=/password|secret|token|apiKey/i], AssignmentExpression[left.name=/password|secret|token|apiKey/i]) > Literal[value=/./]",
           message: "ADV-024: Do not hardcode credentials. Use process.env or mark as // TEST_CREDENTIAL if intentional."
+        },
+        {
+          // ADV-050: State Machine Enforcement
+          // Prevents raw mutations of stateCode outside of official change[Entity]State helpers.
+          selector: "MethodDefinition[key.name!=/^change.*State$/] CallExpression[callee.property.name='set'] Property[key.name='stateCode']",
+          message: "ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation."
+        },
+        {
+          // ADV-051: No Raw State Strings
+          selector: "Literal[value=/^(active|inactive|archived|discontinued|draft|pending_putaway|awaiting_matching|quarantined|matched|unmatched|ambiguous)$/]:not(ImportDeclaration > Literal):not(TSLiteralType > Literal):not(CallExpression[callee.name=/^(describe|it|test|t|tCommon)$/] > Literal):not(JSXAttribute > Literal)",
+          message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @modbm/shared."
         }
       ]
     },

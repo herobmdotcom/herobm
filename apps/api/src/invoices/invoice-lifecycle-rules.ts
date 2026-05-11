@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { salesInvoices, purchaseInvoices } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
+import { SALES_INVOICE_STATE } from '@modbm/shared';
 
 export interface InvoiceLifecycleTrigger {
   entity: 'payment';
@@ -60,7 +61,10 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
       if (!invoice) return null;
 
       // Ignore drafts and cancelled invoices
-      if (invoice.stateCode === 'draft' || invoice.stateCode === 'cancelled')
+      if (
+        invoice.stateCode === SALES_INVOICE_STATE.DRAFT ||
+        invoice.stateCode === SALES_INVOICE_STATE.CANCELLED
+      )
         return null;
 
       const outstanding = parseFloat(invoice.outstandingAmount);
@@ -70,11 +74,11 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 
       // 2. Determine correct state
       if (outstanding <= 0.001) {
-        targetState = 'paid';
+        targetState = SALES_INVOICE_STATE.PAID;
       } else if (outstanding < total - 0.001) {
-        targetState = 'partially_paid';
+        targetState = SALES_INVOICE_STATE.PARTIALLY_PAID;
       } else {
-        targetState = 'invoiced';
+        targetState = SALES_INVOICE_STATE.INVOICED;
       }
 
       // 3. If state hasn't changed, do nothing
@@ -88,16 +92,17 @@ export const autoTransitionInvoiceBasedOnOutstandingAmount: InvoiceLifecycleRule
 
       const aggType =
         invoiceType === 'sales'
-          ? AggregateType.SALES_ORDER
-          : AggregateType.PURCHASE_ORDER; // We typically map invoice events to their parent orders or system.
+          ? AggregateType.SALES_INVOICE
+          : AggregateType.PURCHASE_INVOICE;
       // In ModBM, we don't have an INVOICE aggregate type yet, so we will use the system aggregate type for invoice status changes or omit it.
       // Let's use SYSTEM for now as a fallback, or if we want to add an INVOICE aggregate type later.
 
       await emitEvent(db as any, {
-        aggregateType: AggregateType.SYSTEM,
+        aggregateType: aggType,
         aggregateId: invoiceId,
-        eventType: 'status_changed',
+        eventType: EventType.STATUS_CHANGED,
         payload: {
+          isAutomated: true,
           rule: 'auto-transition-invoice-outstanding-amount',
           trigger,
           from: invoice.stateCode,

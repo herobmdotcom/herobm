@@ -4,22 +4,24 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiMutate } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 
 import type { OrderDetail, OrderReturn, TaxCategory } from './types';
 import {
-    RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
+    RETURN_STATE,
+    RETURN_TRANSITIONS,
     RETURN_LIFECYCLE,
+    SALES_ORDER_STATE,
     isBackTransition as sharedIsBackTransition,
 } from '@modbm/shared';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import { useSettings } from '@/components/SettingsProvider';
 
-function ReturnStateBadge({ state }: { state: ValidState }) {
+function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
-    return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
+    return <span className={`badge badge-${state}`}>{t(state)}</span>;
 }
 
 interface NewReturnLine {
@@ -121,7 +123,12 @@ export default function ReturnsSection({
                     <span className="material-symbols-outlined">assignment_return</span>
                     {tSales('returnsHeading')}
                 </h3>
-                {!showCreateReturn && ['picking', 'shipped', 'invoiced', 'legacy'].includes(order.stateCode) && (
+                {!showCreateReturn && [
+                    SALES_ORDER_STATE.PICKING,
+                    SALES_ORDER_STATE.SHIPPED, 
+                    SALES_ORDER_STATE.INVOICED, 
+                    SALES_ORDER_STATE.LEGACY
+                ].includes(order.stateCode as any) && (
                     <button
                         className="btn btn-secondary btn-sm"
                         onClick={() => setShowCreateReturn(true)}
@@ -275,15 +282,20 @@ export default function ReturnsSection({
                                 const activeFLines = newReturnLines.filter(l => l.quantityReturned && parseFloat(l.quantityReturned) > 0);
                                 if (activeFLines.length === 0) return null;
                                 const cc = order.currencyCode || 'AUD';
-                                const totalAmount = activeFLines.reduce((sum, rl) => {
-                                    const origLine = order.lines.find(l => l.salesOrderLineId === rl.salesOrderLineId);
-                                    const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                    const disc = parseFloat(origLine?.discountPercentage || '0');
-                                    const qty = parseFloat(rl.quantityReturned || '0');
-                                    return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice, discountPercentage: disc }).amount;
-                                }, 0);
-                                const totalFees = activeFLines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
-                                const netCredit = totalAmount - totalFees;
+                                const summary = computeReturnCreditSummary(
+                                    activeFLines.map((rl) => {
+                                        const origLine = order.lines.find(l => l.salesOrderLineId === rl.salesOrderLineId);
+                                        const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
+                                        return {
+                                            quantity: parseFloat(rl.quantityReturned || '0'),
+                                            pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
+                                            discountPercentage: parseFloat(origLine?.discountPercentage || '0'),
+                                            taxRate: parseFloat(taxCat?.rate || '0'),
+                                            returnFee: parseFloat(rl.returnFee || '0'),
+                                        };
+                                    }),
+                                );
+                                const { subtotal, totalTax, totalFees, netCredit } = summary;
                                 return (
                                     <>
                                         <tr style={{ borderTop: '2px solid var(--border)' }}>
@@ -292,7 +304,16 @@ export default function ReturnsSection({
                                             </td>
                                             <td></td>
                                             <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                {formatAmount(totalAmount, cc)}
+                                                {formatAmount(subtotal, cc)}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                {tSales('columns.tax')}
+                                            </td>
+                                            <td></td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                                {formatAmount(totalTax, cc)}
                                             </td>
                                         </tr>
                                         <tr>
@@ -344,8 +365,8 @@ export default function ReturnsSection({
             ) : (
                 <div className="space-y-3">
                     {returns.map((ret) => {
-                        const allowedRetTransitions = RETURN_STATE_TRANSITIONS[ret.stateCode] || [];
-                        const isRetEditable = ret.stateCode === 'draft';
+                        const allowedRetTransitions = RETURN_TRANSITIONS[ret.stateCode] || [];
+                        const isRetEditable = ret.stateCode === RETURN_STATE.DRAFT;
                         return (
                             <div
                                 key={ret.returnId}
@@ -359,14 +380,14 @@ export default function ReturnsSection({
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center gap-3">
                                         <span style={{ fontWeight: 700, fontSize: 13 }}>{ret.returnNumber}</span>
-                                        <ReturnStateBadge state={ret.stateCode as ValidState} />
+                                        <PurchaseReturnStateBadge state={ret.stateCode as ValidState} />
                                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                             {new Date(ret.createdOn).toLocaleString()}
                                             {ret.createdBy && ` ${tCommon('by')} ${ret.createdBy}`}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {(ret.stateCode === 'draft' || ret.stateCode === 'received') && (
+                                        {ret.stateCode === RETURN_STATE.CONFIRMED && (
                                             <select
                                                 className="input"
                                                 style={{ width: 140, fontSize: 12, padding: '2px 8px', height: 28 }}
@@ -380,7 +401,7 @@ export default function ReturnsSection({
                                             </select>
                                         )}
                                         <div className="flex gap-2">
-                                        {allowedRetTransitions.map((s) => (
+                                        {allowedRetTransitions.map((s: string) => (
                                             <button
                                                 key={s}
                                                 className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
@@ -400,7 +421,7 @@ export default function ReturnsSection({
                                                 → <StateName state={s as ValidState} />
                                             </button>
                                         ))}
-                                        {ret.stateCode === 'processed' && (
+                                        {ret.stateCode === RETURN_STATE.PROCESSED && (
                                             <button
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={async () => {
@@ -426,6 +447,14 @@ export default function ReturnsSection({
                                     <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>
                                         {ret.notes}
                                     </p>
+                                )}
+
+                                {ret.creditNoteNumber && (
+                                    <div className="flex items-center gap-2 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>receipt_long</span>
+                                        <span style={{ fontWeight: 600 }}>{tSales('returns.creditNote')}:</span>
+                                        <span>{ret.creditNoteNumber}</span>
+                                    </div>
                                 )}
 
                                 <table className="table-lines">
@@ -600,17 +629,20 @@ export default function ReturnsSection({
                                             </tr>
                                         )}
                                         {ret.lines.length > 0 && (() => {
-                                            const totalAmount = ret.lines.reduce((sum, rl) => {
-                                                const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
-                                                const unitPrice = parseFloat(origLine?.pricePerUnit || '0');
-                                                const disc = parseFloat(origLine?.discountPercentage || '0');
-                                                const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
-                                                const taxRate = parseFloat(taxCat?.rate || '0');
-                                                const qty = parseFloat(rl.quantityReturned || '0');
-                                                return sum + computeLinePrice({ quantity: qty, pricePerUnit: unitPrice, discountPercentage: disc, taxRate: taxRate }).amount;
-                                            }, 0);
-                                            const totalFees = ret.lines.reduce((sum, rl) => sum + parseFloat(rl.returnFee || '0'), 0);
-                                            const totalCredit = totalAmount - totalFees;
+                                            const summary = computeReturnCreditSummary(
+                                                ret.lines.map((rl) => {
+                                                    const origLine = order.lines.find((l) => l.salesOrderLineId === rl.salesOrderLineId);
+                                                    const taxCat = taxCategories.find(c => c.taxCategoryId === origLine?.taxCategoryId);
+                                                    return {
+                                                        quantity: parseFloat(rl.quantityReturned || '0'),
+                                                        pricePerUnit: parseFloat(origLine?.pricePerUnit || '0'),
+                                                        discountPercentage: parseFloat(origLine?.discountPercentage || '0'),
+                                                        taxRate: parseFloat(taxCat?.rate || '0'),
+                                                        returnFee: parseFloat(rl.returnFee || '0'),
+                                                    };
+                                                }),
+                                            );
+                                            const { subtotal, totalTax, totalFees, netCredit } = summary;
                                             const cc = order.currencyCode || baseCurrency;
                                             return (
                                                 <>
@@ -620,7 +652,17 @@ export default function ReturnsSection({
                                                         </td>
                                                         <td></td>
                                                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                            {formatAmount(totalAmount, cc)}
+                                                            {formatAmount(subtotal, cc)}
+                                                        </td>
+                                                        {isRetEditable && <td></td>}
+                                                    </tr>
+                                                    <tr>
+                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                            {tSales('columns.tax')}
+                                                        </td>
+                                                        <td></td>
+                                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                                            {formatAmount(totalTax, cc)}
                                                         </td>
                                                         {isRetEditable && <td></td>}
                                                     </tr>
@@ -640,7 +682,7 @@ export default function ReturnsSection({
                                                         </td>
                                                         <td></td>
                                                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>
-                                                            {formatAmount(totalCredit, cc)}
+                                                            {formatAmount(netCredit, cc)}
                                                         </td>
                                                         {isRetEditable && <td></td>}
                                                     </tr>

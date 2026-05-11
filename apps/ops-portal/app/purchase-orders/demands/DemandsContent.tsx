@@ -5,6 +5,7 @@ import DataGrid from '@/components/DataGrid';
 import DraftPOsModal from './DraftPOsModal';
 import LinkToPOSlideOver from './LinkToPOSlideOver';
 import ReallocateModal from './ReallocateModal';
+import InternalTransferModal from './InternalTransferModal';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
@@ -36,6 +37,7 @@ export default function DemandsContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLinkSlideOverOpen, setIsLinkSlideOverOpen] = useState(false);
   const [isReallocateModalOpen, setIsReallocateModalOpen] = useState(false);
+  const [isInternalTransferModalOpen, setIsInternalTransferModalOpen] = useState(false);
 
   const columns = useMemo<ColDef<DemandRow>[]>(() => [
     {
@@ -80,6 +82,7 @@ export default function DemandsContent() {
     setIsModalOpen(false);
     setIsLinkSlideOverOpen(false);
     setIsReallocateModalOpen(false);
+    setIsInternalTransferModalOpen(false);
     setSelectedRows([]);
     setRefreshKey((k) => k + 1);
   };
@@ -143,6 +146,13 @@ export default function DemandsContent() {
                   >
                     Reallocate {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
+                  <button 
+                    onClick={() => setIsInternalTransferModalOpen(true)} 
+                    disabled={selectedRows.length === 0}
+                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    Internal Transfer {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                  </button>
                 </div>
               </div>
             )}
@@ -164,6 +174,12 @@ export default function DemandsContent() {
       <ReallocateModal
         isOpen={isReallocateModalOpen}
         onClose={() => setIsReallocateModalOpen(false)}
+        selectedDemands={selectedRows}
+        onSuccess={handleModalSuccess}
+      />
+      <InternalTransferModal
+        isOpen={isInternalTransferModalOpen}
+        onClose={() => setIsInternalTransferModalOpen(false)}
         selectedDemands={selectedRows}
         onSuccess={handleModalSuccess}
       />

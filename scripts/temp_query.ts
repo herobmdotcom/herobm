@@ -1,0 +1,1 @@
+import { db } from '../apps/api/src/drizzle/db'; import { accounts } from '../apps/api/src/drizzle/modbm-core-schema'; import { eq } from 'drizzle-orm'; async function main() { const a = await db.select().from(accounts).where(eq(accounts.accountNumber, 'BREAUS')); console.log(a[0].accountNumber, '|', a[0].name, '|', a[0].emailAddress1); process.exit(0); } main();

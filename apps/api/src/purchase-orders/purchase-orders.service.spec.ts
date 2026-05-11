@@ -18,6 +18,7 @@ import {
   purchaseOrderEvents,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
+import { PURCHASE_ORDER_STATE, SUPPLIER_STATE } from '@modbm/shared';
 
 jest.setTimeout(120000);
 
@@ -55,7 +56,7 @@ describe('PurchaseOrdersService', () => {
       vendorNumber: 'V001',
       name: 'Test Vendor',
       currencyCode: 'EUR',
-      stateCode: 'active',
+      stateCode: SUPPLIER_STATE.ACTIVE,
     });
     await pg.db.insert(products).values({
       productId: PROD_ID,
@@ -109,11 +110,11 @@ describe('PurchaseOrdersService', () => {
 
       const result = await service.create(dto, 'admin');
       expect(result.salesOrderId).toBeDefined();
-      expect(result.stateCode).toBe('draft');
+      expect(result.stateCode).toBe(PURCHASE_ORDER_STATE.DRAFT);
     });
   });
 
-  describe('changeState', () => {
+  describe('changePurchaseOrderState', () => {
     it('should transition state from draft to ordered', async () => {
       const poId = '00000000-0000-0000-0000-000000000101';
       await pg.db.insert(purchaseOrders).values({
@@ -122,11 +123,14 @@ describe('PurchaseOrdersService', () => {
         vendorId: VENDOR_ID,
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
-        stateCode: 'draft',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
       });
 
-      const result = await service.changeState(poId, 'ordered');
-      expect(result.stateCode).toBe('ordered');
+      const result = await service.changePurchaseOrderState(
+        poId,
+        PURCHASE_ORDER_STATE.ORDERED,
+      );
+      expect(result.stateCode).toBe(PURCHASE_ORDER_STATE.ORDERED);
     });
   });
 
@@ -139,7 +143,7 @@ describe('PurchaseOrdersService', () => {
         vendorId: VENDOR_ID,
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
-        stateCode: 'draft',
+        stateCode: PURCHASE_ORDER_STATE.DRAFT,
       });
 
       await service.addLine(poId, {

@@ -17,6 +17,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
+import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 
 describe('PurchaseInvoiceService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -109,7 +110,7 @@ describe('PurchaseInvoiceService', () => {
     await pg.db.delete(purchaseOrders);
   });
 
-  async function seedPO(stateCode: string = 'received') {
+  async function seedPO(stateCode: string = PURCHASE_ORDER_STATE.RECEIVED) {
     await pg.db.insert(purchaseOrders).values({
       purchaseOrderId: PO_ID,
       orderNumber: 'PO-1',

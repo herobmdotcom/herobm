@@ -14,7 +14,13 @@ import {
   accounts as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
+import {
+  ACCOUNT_TRANSITIONS,
+  ACCOUNT_STATE,
+  AccountState,
+  getValidStates,
+} from '@modbm/shared';
 
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { CreateAccountDto, UpdateAccountDto } from './dto';
@@ -68,7 +74,7 @@ export class AccountsWriteService {
       'accountGroupId',
       'taxCategoryId',
       'currencyCode',
-      'customerDiscount',
+
       'notes',
     ];
 
@@ -150,7 +156,7 @@ export class AccountsWriteService {
       'stateCode',
       'taxCategoryId',
       'currencyCode',
-      'customerDiscount',
+
       'notes',
     ];
 
@@ -211,47 +217,7 @@ export class AccountsWriteService {
    * Archive an account.
    */
   async archive(id: string, actor: string) {
-    if (!isUuid(id)) {
-      throw new BadRequestException(
-        `Account '${id}' is a legacy ABM account and cannot be archived.`,
-      );
-    }
-
-    const existing = await this.db
-      .select()
-      .from(coreAccounts)
-      .where(eq(coreAccounts.accountId, id))
-      .limit(1);
-
-    if (existing.length === 0) {
-      throw new NotFoundException(
-        `Account '${id}' not found in application data`,
-      );
-    }
-
-    if (existing[0].stateCode === 'archived') {
-      throw new BadRequestException(`Account '${id}' is already archived`);
-    }
-
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreAccounts)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
-        .where(eq(coreAccounts.accountId, id))
-        .returning();
-
-      await tx.insert(accountEvents).values({
-        accountId: id,
-        eventType: 'archived',
-        payload: {
-          from: existing[0].stateCode,
-          to: 'archived',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changeAccountState(id, ACCOUNT_STATE.ARCHIVED, actor);
   }
 
   /**
@@ -272,7 +238,7 @@ export class AccountsWriteService {
       throw new NotFoundException(`Account '${id}' not found`);
     }
 
-    if (existing[0].stateCode !== 'archived') {
+    if (existing[0].stateCode !== ACCOUNT_STATE.ARCHIVED) {
       throw new BadRequestException(`Account '${id}' is not archived`);
     }
 
@@ -280,33 +246,95 @@ export class AccountsWriteService {
       .select()
       .from(accountEvents)
       .where(
-        sql`${accountEvents.accountId} = ${id} AND ${accountEvents.eventType} = 'archived'`,
+        sql`${accountEvents.accountId} = ${id} AND ${accountEvents.eventType} = ${EventType.ARCHIVED}`,
       )
       .orderBy(sql`${accountEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
-      'active';
+      ACCOUNT_STATE.ACTIVE;
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreAccounts)
-        .set({ stateCode: previousState, modifiedOn: new Date() })
-        .where(eq(coreAccounts.accountId, id))
-        .returning();
+    return await this.changeAccountState(
+      id,
+      previousState as AccountState,
+      actor,
+    );
+  }
 
+  /**
+   * Centralised state transition logic for accounts.
+   * Validates against the shared transition map and records audit events.
+   */
+  async changeAccountState(
+    accountId: string,
+    newState: AccountState,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+
+    const existing = await db
+      .select()
+      .from(coreAccounts)
+      .where(eq(coreAccounts.accountId, accountId))
+      .limit(1);
+
+    if (existing.length === 0) {
+      throw new NotFoundException(`Account '${accountId}' not found`);
+    }
+
+    const currentState = existing[0].stateCode as AccountState;
+
+    if (currentState === newState) {
+      return existing[0];
+    }
+
+    // Validation
+    const allowed = ACCOUNT_TRANSITIONS[currentState] || [];
+    if (!allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Invalid account state transition: '${currentState}' -> '${newState}'. Valid next states: ${allowed.join(', ') || 'None'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(coreAccounts)
+      .set({
+        stateCode: newState as any, // eslint-disable-line
+        modifiedOn: new Date(),
+      })
+      .where(eq(coreAccounts.accountId, accountId))
+      .returning();
+
+    if (tx) {
       await tx.insert(accountEvents).values({
-        accountId: id,
-        eventType: 'unarchived',
+        accountId,
+        eventType:
+          newState === ACCOUNT_STATE.ARCHIVED
+            ? EventType.ARCHIVED
+            : EventType.STATUS_CHANGED,
         payload: {
-          from: 'archived',
-          to: previousState,
+          from: currentState,
+          to: newState,
         },
         actor,
       });
+    } else {
+      await this.db.insert(accountEvents).values({
+        accountId,
+        eventType:
+          newState === ACCOUNT_STATE.ARCHIVED
+            ? EventType.ARCHIVED
+            : EventType.STATUS_CHANGED,
+        payload: {
+          from: currentState,
+          to: newState,
+        },
+        actor,
+      });
+    }
 
-      return updated;
-    });
+    return updated;
   }
 }

@@ -92,7 +92,11 @@ export class PurchaseOrdersController {
     @Body('stateCode') stateCode: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseOrdersService.changeState(id, stateCode, user.username);
+    return this.purchaseOrdersService.changePurchaseOrderState(
+      id,
+      stateCode as any,
+      user.username,
+    );
   }
 
   @Post(':id/archive')

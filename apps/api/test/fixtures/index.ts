@@ -7,6 +7,8 @@ import {
   salesOrderLineItems,
   salesOrderReturns,
   salesOrderReturnLines,
+  salesOrderShipments,
+  salesOrderShipmentLines,
   purchaseOrders,
   purchaseOrderLineItems,
   glJournalEntries,
@@ -18,6 +20,12 @@ import {
   ReturnState,
   PurchaseOrderState,
   SalesInvoiceState,
+  ShipmentState,
+  SALES_ORDER_STATE,
+  RETURN_STATE,
+  PURCHASE_ORDER_STATE,
+  SALES_INVOICE_STATE,
+  SHIPMENT_STATE,
 } from '@modbm/shared';
 
 // Ensures random order numbers during test isolation
@@ -68,7 +76,7 @@ export async function createTestSalesOrder(
     orderNumber,
     customerId: opts.customerId,
     fulfillmentLocationId: opts.locationId,
-    stateCode: opts.state || 'draft',
+    stateCode: opts.state || SALES_ORDER_STATE.DRAFT,
     currencyCode: 'AUD',
     source: 'app',
   });
@@ -118,7 +126,7 @@ export async function createTestReturn(
     returnId,
     returnNumber,
     salesOrderId: opts.salesOrderId,
-    stateCode: opts.state || 'draft',
+    stateCode: opts.state || RETURN_STATE.DRAFT,
   });
 
   return { returnId, returnNumber };
@@ -178,7 +186,7 @@ export async function createTestPurchaseOrder(
     orderNumber,
     supplierId: opts.supplierId,
     receivingLocationId: opts.locationId,
-    stateCode: opts.state || 'draft',
+    stateCode: opts.state || PURCHASE_ORDER_STATE.DRAFT,
     currencyCode: 'AUD',
     source: 'app',
   });
@@ -223,8 +231,51 @@ export async function createTestInvoice(
     invoiceId,
     invoiceNumber,
     salesOrderId: opts.salesOrderId,
-    stateCode: opts.state || 'draft',
+    stateCode: opts.state || SALES_INVOICE_STATE.DRAFT,
   });
 
   return { invoiceId };
+}
+
+export async function createTestShipment(
+  db: PgliteDatabase<any>,
+  opts: {
+    salesOrderId: string;
+    locationId?: string;
+    state?: ShipmentState;
+  },
+) {
+  const shipmentId = uuidv4();
+  const shipmentNumber = `SHP-TEST-${++_sequence}`;
+
+  await db.insert(salesOrderShipments).values({
+    shipmentId,
+    shipmentNumber,
+    salesOrderId: opts.salesOrderId,
+    stateCode: opts.state || SHIPMENT_STATE.DISPATCHED,
+    fulfillmentLocationId:
+      opts.locationId || '10000000-0000-0000-0000-000000000001',
+  });
+
+  return { shipmentId, shipmentNumber };
+}
+
+export async function createTestShipmentLine(
+  db: PgliteDatabase<any>,
+  opts: {
+    shipmentId: string;
+    salesOrderLineId: string;
+    quantityShipped: number;
+  },
+) {
+  const shipmentLineId = uuidv4();
+
+  await db.insert(salesOrderShipmentLines).values({
+    shipmentLineId,
+    shipmentId: opts.shipmentId,
+    salesOrderLineId: opts.salesOrderLineId,
+    quantityShipped: opts.quantityShipped.toString(),
+  });
+
+  return { shipmentLineId };
 }

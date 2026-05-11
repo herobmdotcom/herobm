@@ -17,6 +17,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq } from 'drizzle-orm';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 jest.mock('../orders/order-lifecycle-rules', () => ({
   evaluateLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -109,7 +110,7 @@ describe('SalesInvoiceService', () => {
     await pg.db.delete(salesOrders);
   });
 
-  async function seedOrder(stateCode: string = 'shipped') {
+  async function seedOrder(stateCode: string = SALES_ORDER_STATE.SHIPPED) {
     await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-1',
@@ -145,7 +146,7 @@ describe('SalesInvoiceService', () => {
     });
 
     it('should reject if order is in draft state', async () => {
-      await seedOrder('draft');
+      await seedOrder(SALES_ORDER_STATE.DRAFT);
       await expect(
         service.createInvoice(ORDER_ID, {}, 'admin'),
       ).rejects.toThrow(BadRequestException);

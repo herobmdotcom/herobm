@@ -3,6 +3,7 @@
 import React from 'react';
 
 import Link from 'next/link';
+import { MATCH_STATUS } from '@modbm/shared';
 
 interface POAllocationCellProps {
   data: any;
@@ -15,7 +16,7 @@ interface POAllocationCellProps {
 export default function POAllocationCell({ data }: POAllocationCellProps) {
   if (!data) return null;
 
-  if (data.matchStatus === 'matched') {
+  if (data.matchStatus === MATCH_STATUS.MATCHED) {
     return (
       <div className="flex items-center justify-start h-full w-full">
         <Link 

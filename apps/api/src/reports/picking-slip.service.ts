@@ -1,6 +1,5 @@
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { eq, and, inArray, sql } from 'drizzle-orm';
-import { join } from 'path';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -14,7 +13,14 @@ import {
   bins,
   zones,
   locations,
+  transferOrders,
+  transferOrderLines,
+  transferOrderPicks,
 } from '../drizzle/modbm-core-schema';
+import {
+  SALES_ORDER_PICK_STATE,
+  TRANSFER_ORDER_PICK_STATE,
+} from '@modbm/shared';
 
 // ─── Data shapes ────────────────────────────────────────────────────────────
 
@@ -46,6 +52,28 @@ export interface PickingSlipData {
   generatedAt: string;
 }
 
+// Internal raw data shapes for shared processing
+interface RawOrderHeader {
+  orderNumber: string;
+  customerName: string;
+  customerOrderNumber: string;
+  createdOn: Date | null;
+  locationName: string;
+}
+
+interface RawLine {
+  lineId: string;
+  productId: string | null;
+  productNumber: string | null;
+  productDescription: string | null;
+  quantity: string;
+}
+
+interface RawPick {
+  lineId: string;
+  quantity: string;
+}
+
 @Injectable()
 export class PickingSlipService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
@@ -54,10 +82,40 @@ export class PickingSlipService {
 
   /**
    * Query all required data for the picking slip.
-   * Exported for testability.
+   * Dynamically routes to the correct data loader based on the order type.
    */
   async assembleData(orderId: string): Promise<PickingSlipData> {
-    // 1. Order header + customer name
+    // 1. Try to find as a Sales Order
+    const [salesOrder] = await this.db
+      .select({ id: salesOrders.salesOrderId })
+      .from(salesOrders)
+      .where(eq(salesOrders.salesOrderId, orderId))
+      .limit(1);
+
+    if (salesOrder) {
+      return this.assembleSalesOrderData(orderId);
+    }
+
+    // 2. Try to find as a Transfer Order
+    const [transferOrder] = await this.db
+      .select({ id: transferOrders.transferOrderId })
+      .from(transferOrders)
+      .where(eq(transferOrders.transferOrderId, orderId))
+      .limit(1);
+
+    if (transferOrder) {
+      return this.assembleTransferOrderData(orderId);
+    }
+
+    throw new NotFoundException(`Order '${orderId}' not found`);
+  }
+
+  /**
+   * Data loader for Sales Orders
+   */
+  private async assembleSalesOrderData(
+    orderId: string,
+  ): Promise<PickingSlipData> {
     const orderRows = await this.db
       .select({
         orderNumber: salesOrders.orderNumber,
@@ -78,21 +136,22 @@ export class PickingSlipService {
       .where(eq(salesOrders.salesOrderId, orderId))
       .limit(1);
 
-    if (orderRows.length === 0) {
-      throw new NotFoundException(`Order '${orderId}' not found`);
-    }
-    const order = orderRows[0];
+    if (orderRows.length === 0)
+      throw new NotFoundException(`Sales Order '${orderId}' not found`);
+    const order = {
+      ...orderRows[0],
+      customerName: orderRows[0].customerName ?? '',
+      locationName: orderRows[0].locationName ?? '',
+      customerOrderNumber: orderRows[0].customerOrderNumber ?? '',
+    };
 
-    // 2. Order lines with product numbers
     const lines = await this.db
       .select({
-        salesOrderLineId: salesOrderLineItems.salesOrderLineId,
+        lineId: salesOrderLineItems.salesOrderLineId,
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
-        quantityPicked: salesOrderLineItems.quantityPicked,
-        lineNumber: salesOrderLineItems.lineNumber,
       })
       .from(salesOrderLineItems)
       .leftJoin(
@@ -102,21 +161,104 @@ export class PickingSlipService {
       .where(eq(salesOrderLineItems.salesOrderId, orderId))
       .orderBy(salesOrderLineItems.lineNumber);
 
-    if (lines.length === 0) {
-      throw new NotFoundException(`Order '${orderId}' has no lines`);
-    }
+    const picks = await this.db
+      .select({
+        lineId: salesOrderPicks.salesOrderLineId,
+        quantity: salesOrderPicks.quantity,
+      })
+      .from(salesOrderPicks)
+      .where(
+        and(
+          eq(salesOrderPicks.salesOrderId, orderId),
+          sql`${salesOrderPicks.stateCode} != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
+        ),
+      );
 
-    // 3. Bin numbers from modbm_core (keyed by productId)
-    // Removed because defaultBinNumber was dropped during the ABM to Core inventory_levels migration.
+    return this.computePickingSlipData(order, lines, picks);
+  }
+
+  /**
+   * Data loader for Transfer Orders
+   */
+  private async assembleTransferOrderData(
+    orderId: string,
+  ): Promise<PickingSlipData> {
+    const orderRows = await this.db
+      .select({
+        orderNumber: transferOrders.orderNumber,
+        customerName: locations.name, // For transfers, destination is shown as "customer"
+        customerOrderNumber: sql<string>`''`,
+        createdOn: transferOrders.createdOn,
+        locationName: sql<string>`src.name`,
+      })
+      .from(transferOrders)
+      .leftJoin(
+        locations,
+        eq(transferOrders.destinationLocationId, locations.locationId),
+      )
+      .leftJoin(
+        sql`${locations} as src`,
+        eq(transferOrders.sourceLocationId, sql`src.location_id`),
+      )
+      .where(eq(transferOrders.transferOrderId, orderId))
+      .limit(1);
+
+    if (orderRows.length === 0)
+      throw new NotFoundException(`Transfer Order '${orderId}' not found`);
+    const order = {
+      ...orderRows[0],
+      customerName: orderRows[0].customerName ?? '',
+      locationName: orderRows[0].locationName ?? '',
+    };
+
+    const lines = await this.db
+      .select({
+        lineId: transferOrderLines.transferOrderLineId,
+        productId: transferOrderLines.productId,
+        productNumber: coreProducts.productNumber,
+        productDescription: coreProducts.name,
+        quantity: transferOrderLines.quantity,
+      })
+      .from(transferOrderLines)
+      .leftJoin(
+        coreProducts,
+        eq(transferOrderLines.productId, coreProducts.productId),
+      )
+      .where(eq(transferOrderLines.transferOrderId, orderId));
+
+    const picks = await this.db
+      .select({
+        lineId: transferOrderPicks.transferOrderLineId,
+        quantity: transferOrderPicks.quantity,
+      })
+      .from(transferOrderPicks)
+      .where(
+        and(
+          eq(transferOrderPicks.transferOrderId, orderId),
+          sql`${transferOrderPicks.stateCode} != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}`,
+        ),
+      );
+
+    return this.computePickingSlipData(order, lines, picks);
+  }
+
+  /**
+   * Shared business logic for computing picking lines and backorder logic
+   */
+  private async computePickingSlipData(
+    header: RawOrderHeader,
+    lines: RawLine[],
+    picks: RawPick[],
+  ): Promise<PickingSlipData> {
     const productIds = lines
       .map((l) => l.productId)
       .filter((id): id is string => id !== null && id !== undefined);
 
-    const lineIds = lines.map((l) => l.salesOrderLineId);
+    const lineIds = lines.map((l) => l.lineId);
 
+    // 1. Resolve Bins
     const binMap = new Map<string, string>();
     if (productIds.length > 0) {
-      // Find a valid bin for each product
       const binRows = await this.db
         .select({
           productId: binContents.productId,
@@ -141,31 +283,16 @@ export class PickingSlipService {
       }
     }
 
-    // 4. Get accurate picked quantities from the picks subledger
+    // 2. Resolve Picked Quantities
     const pickedMap = new Map<string, number>();
-    if (lineIds.length > 0) {
-      const picks = await this.db
-        .select({
-          salesOrderLineId: salesOrderPicks.salesOrderLineId,
-          quantity: salesOrderPicks.quantity,
-        })
-        .from(salesOrderPicks)
-        .where(
-          and(
-            inArray(salesOrderPicks.salesOrderLineId, lineIds),
-            sql`${salesOrderPicks.stateCode} != 'cancelled'`,
-          ),
-        );
-
-      for (const p of picks) {
-        pickedMap.set(
-          p.salesOrderLineId,
-          (pickedMap.get(p.salesOrderLineId) || 0) + parseFloat(p.quantity),
-        );
-      }
+    for (const p of picks) {
+      pickedMap.set(
+        p.lineId,
+        (pickedMap.get(p.lineId) || 0) + parseFloat(p.quantity),
+      );
     }
 
-    // 5. Get on-hand quantities from inventoryLevels for back-order logic
+    // 3. Resolve On-Hand Stock (for backorder logic)
     const onHandMap = new Map<string, number>();
     if (productIds.length > 0) {
       const invRows = await this.db
@@ -183,13 +310,13 @@ export class PickingSlipService {
       }
     }
 
-    // 6. Compute picking lines and back-order lines
+    // 4. Final computation
     const pickingLines: PickingLine[] = [];
     const backOrderLines: BackOrderLine[] = [];
 
     for (const line of lines) {
       const ordered = parseFloat(line.quantity);
-      const picked = pickedMap.get(line.salesOrderLineId) ?? 0;
+      const picked = pickedMap.get(line.lineId) ?? 0;
       const toPick = ordered - picked;
       const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
       const isCustomLine = line.productId === CUSTOM_LINE_ID;
@@ -207,30 +334,26 @@ export class PickingSlipService {
         });
       }
 
-      // Back-order: ordered qty exceeds on-hand stock
       const onHand = onHandMap.get(line.productId!) ?? 0;
       if (ordered > onHand) {
-        const qtyToOrder = ordered - onHand;
         backOrderLines.push({
           productCode,
           description,
-          qtyToOrder,
+          qtyToOrder: ordered - onHand,
         });
       }
     }
 
-    const header: PickingSlipHeader = {
-      orderNumber: order.orderNumber ?? '',
-      customerName: order.customerName ?? '',
-      customerOrderNumber: order.customerOrderNumber ?? '',
-      orderDate: order.createdOn
-        ? new Date(order.createdOn).toLocaleDateString('en-IE')
-        : '',
-      locationName: order.locationName ?? '',
-    };
-
     return {
-      header,
+      header: {
+        orderNumber: header.orderNumber ?? '',
+        customerName: header.customerName ?? '',
+        customerOrderNumber: header.customerOrderNumber ?? '',
+        orderDate: header.createdOn
+          ? new Date(header.createdOn).toLocaleDateString('en-IE')
+          : '',
+        locationName: header.locationName ?? '',
+      },
       pickingLines,
       backOrderLines,
       generatedAt:

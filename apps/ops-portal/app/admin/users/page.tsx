@@ -178,19 +178,6 @@ export default function UsersPage() {
     }
   };
 
-  // ── Role Badge ─────────────────────────────────────────────────────────────
-
-  const roleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin': return { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444', border: 'rgba(239, 68, 68, 0.25)' };
-      case 'finance': return { bg: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', border: 'rgba(59, 130, 246, 0.25)' };
-      case 'sales': return { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981', border: 'rgba(16, 185, 129, 0.25)' };
-      case 'warehouse': return { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', border: 'rgba(245, 158, 11, 0.25)' };
-      case 'procurement': return { bg: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6', border: 'rgba(139, 92, 246, 0.25)' };
-      default: return { bg: 'rgba(148, 163, 184, 0.12)', color: '#94a3b8', border: 'rgba(148, 163, 184, 0.25)' };
-    }
-  };
-
   // ── Row Renderer ───────────────────────────────────────────────────────────
 
   const isSelf = (userId: string) => currentUserId === userId;
@@ -252,14 +239,7 @@ export default function UsersPage() {
             ))}
           </select>
         ) : (
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-            style={{
-              background: roleBadgeColor(data.role).bg,
-              color: roleBadgeColor(data.role).color,
-              border: `1px solid ${roleBadgeColor(data.role).border}`,
-            }}
-          >
+          <span className="text-sm">
             {roleLabel(data.role)}
           </span>
         )}
@@ -268,18 +248,7 @@ export default function UsersPage() {
       {/* Status */}
       <td>
         {!isEdit && (
-          <span
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-            style={{
-              background: data.isActive ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              color: data.isActive ? '#10b981' : '#ef4444',
-              border: `1px solid ${data.isActive ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-            }}
-          >
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full"
-              style={{ background: data.isActive ? '#10b981' : '#ef4444' }}
-            />
+          <span className={`badge badge-sm ${data.isActive ? 'badge-active' : 'badge-inactive'}`}>
             {data.isActive ? t('status.active') : t('status.disabled')}
           </span>
         )}

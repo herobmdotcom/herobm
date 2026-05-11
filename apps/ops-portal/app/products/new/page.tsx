@@ -10,6 +10,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import GroupSelect from '@/components/shared/GroupSelect';
+import { PRODUCT_STATE } from '@modbm/shared';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -37,7 +38,7 @@ export default function NewProductPage() {
     purchaseTaxCategoryId: '',
     salesTaxCategoryId: '',
     alternateProductNumber: '',
-    stateCode: 'active',
+    stateCode: PRODUCT_STATE.ACTIVE,
     productGroupId: null,
     notes: '',
   });
@@ -171,9 +172,9 @@ export default function NewProductPage() {
                     onChange={(e) => updateField('stateCode', e.target.value)}
                     disabled={submitting}
                   >
-                    <option value="active">{t('common.states.active')}</option>
-                    <option value="inactive">{t('common.states.inactive')}</option>
-                    <option value="discontinued">{t('common.states.discontinued')}</option>
+                    <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
+                    <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
+                    <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
                   </select>
                 </div>
               </div>

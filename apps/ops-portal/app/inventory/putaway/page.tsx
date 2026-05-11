@@ -7,6 +7,7 @@ import Link from 'next/link';
 
 import { apiFetch, apiMutate } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
+import { PUTAWAY_STATUS } from '@modbm/shared';
 
 interface PutawayLine {
     goodsReceivedLineId: string;
@@ -75,7 +76,7 @@ export default function PutawayPage() {
         setSelectedLine(null);
         setContext(null);
 
-        apiFetch<any>(`/api/goods-received/lines?limit=1000&putawayStatus=pending_putaway&locationId=${selectedLocationId}`)
+        apiFetch<any>(`/api/goods-received/lines?limit=1000&putawayStatus=${PUTAWAY_STATUS.PENDING_PUTAWAY}&locationId=${selectedLocationId}`)
             .then(data => {
                 setPendingLines(data.data || []);
             })

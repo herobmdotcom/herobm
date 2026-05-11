@@ -9,6 +9,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { eq, ilike, or, sql, and, getTableColumns } from 'drizzle-orm';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { SUPPLIER_STATE } from '@modbm/shared';
 
 @Injectable()
 export class SuppliersService {
@@ -47,7 +48,9 @@ export class SuppliersService {
     }
 
     if (!includeArchived) {
-      conditions.push(sql`${coreSuppliers.stateCode} != 'archived'`);
+      conditions.push(
+        sql`${coreSuppliers.stateCode} != ${SUPPLIER_STATE.ARCHIVED}`,
+      );
     }
 
     if (conditions.length > 0) {

@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and, gte } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -13,6 +13,10 @@ import {
   paymentAllocations,
   salesInvoices,
   purchaseInvoices,
+  accounts,
+  accountGroups,
+  suppliers,
+  supplierGroups,
   glAccounts,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
@@ -20,6 +24,16 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { evaluateInvoiceLifecycleRules } from '../invoices/invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
+import {
+  PAYMENT_STATE,
+  PAYMENT_TRANSITIONS,
+  SALES_INVOICE_STATE,
+  PURCHASE_INVOICE_STATE,
+  getValidStates,
+} from '@modbm/shared';
+import type { PaymentState } from '@modbm/shared';
+
+const VALID_PAYMENT_STATES = getValidStates(PAYMENT_TRANSITIONS);
 
 @Injectable()
 export class PaymentsService {
@@ -30,18 +44,98 @@ export class PaymentsService {
     private readonly glService: GlService,
   ) {}
 
-  async findAll() {
-    const data = await this.db
-      .select()
+  // -------------------------------------------------------------------------
+  // Payment number generation: PAY-YYYYMMDD-NNNN
+  // -------------------------------------------------------------------------
+
+  private async generatePaymentNumber(
+    queryDb: DrizzleDB = this.db,
+  ): Promise<string> {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const prefix = `PAY-${today}-`;
+
+    const result = await queryDb
+      .select({ paymentNumber: paymentEntries.paymentNumber })
       .from(paymentEntries)
-      .orderBy(paymentEntries.createdOn);
+      .where(sql`${paymentEntries.paymentNumber} LIKE ${prefix + '%'}`)
+      .orderBy(sql`${paymentEntries.paymentNumber} DESC`)
+      .limit(1);
+
+    let nextNumber = 1;
+    if (result.length > 0 && result[0].paymentNumber) {
+      const lastNumberStr = result[0].paymentNumber.split('-').pop();
+      if (lastNumberStr) {
+        nextNumber = parseInt(lastNumberStr, 10) + 1;
+      }
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  async findAll(days?: string, allocation?: string) {
+    const whereClauses: any[] = [];
+
+    if (days && days !== '0') {
+      const dateLimit = new Date();
+      dateLimit.setDate(dateLimit.getDate() - parseInt(days, 10));
+      whereClauses.push(gte(paymentEntries.paymentDate, dateLimit));
+    }
+
+    if (allocation === 'unallocated') {
+      whereClauses.push(sql`${paymentEntries.unallocatedAmount} > 0`);
+    }
+
+    const whereClause =
+      whereClauses.length > 0 ? and(...whereClauses) : undefined;
+
+    const data = await this.db
+      .select({
+        paymentId: paymentEntries.paymentId,
+        paymentNumber: paymentEntries.paymentNumber,
+        paymentType: paymentEntries.paymentType,
+        partyType: paymentEntries.partyType,
+        partyId: paymentEntries.partyId,
+        paymentDate: paymentEntries.paymentDate,
+        modeOfPayment: paymentEntries.modeOfPayment,
+        totalAmount: paymentEntries.totalAmount,
+        unallocatedAmount: paymentEntries.unallocatedAmount,
+        stateCode: paymentEntries.stateCode,
+        currencyCode: paymentEntries.currencyCode,
+        createdOn: paymentEntries.createdOn,
+        createdBy: paymentEntries.createdBy,
+        partyName: sql<string>`COALESCE(${accounts.name}, ${suppliers.name})`,
+      })
+      .from(paymentEntries)
+      .leftJoin(accounts, eq(paymentEntries.partyId, accounts.accountId))
+      .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
+      .where(whereClause)
+      .orderBy(sql`${paymentEntries.createdOn} DESC`);
     return { data };
   }
 
   async findOne(paymentId: string) {
     const [payment] = await this.db
-      .select()
+      .select({
+        paymentId: paymentEntries.paymentId,
+        paymentNumber: paymentEntries.paymentNumber,
+        paymentType: paymentEntries.paymentType,
+        partyType: paymentEntries.partyType,
+        partyId: paymentEntries.partyId,
+        paymentDate: paymentEntries.paymentDate,
+        modeOfPayment: paymentEntries.modeOfPayment,
+        totalAmount: paymentEntries.totalAmount,
+        unallocatedAmount: paymentEntries.unallocatedAmount,
+        stateCode: paymentEntries.stateCode,
+        currencyCode: paymentEntries.currencyCode,
+        glAccountBank: paymentEntries.glAccountBank,
+        referenceNumber: paymentEntries.referenceNumber,
+        createdOn: paymentEntries.createdOn,
+        createdBy: paymentEntries.createdBy,
+        partyName: sql<string>`COALESCE(${accounts.name}, ${suppliers.name})`,
+      })
       .from(paymentEntries)
+      .leftJoin(accounts, eq(paymentEntries.partyId, accounts.accountId))
+      .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
       .where(eq(paymentEntries.paymentId, paymentId));
 
     if (!payment) {
@@ -49,41 +143,71 @@ export class PaymentsService {
     }
 
     const allocations = await this.db
-      .select()
+      .select({
+        allocationId: paymentAllocations.allocationId,
+        paymentId: paymentAllocations.paymentId,
+        referenceType: paymentAllocations.referenceType,
+        referenceId: paymentAllocations.referenceId,
+        allocatedAmount: paymentAllocations.allocatedAmount,
+        createdOn: paymentAllocations.createdOn,
+        invoiceNumber: sql<string>`COALESCE(${salesInvoices.invoiceNumber}, ${purchaseInvoices.invoiceNumber})`,
+      })
       .from(paymentAllocations)
+      .leftJoin(
+        salesInvoices,
+        eq(paymentAllocations.referenceId, salesInvoices.invoiceId),
+      )
+      .leftJoin(
+        purchaseInvoices,
+        eq(paymentAllocations.referenceId, purchaseInvoices.invoiceId),
+      )
       .where(eq(paymentAllocations.paymentId, paymentId));
 
     return { ...payment, allocations };
   }
 
   async createPaymentEntry(dto: CreatePaymentDto, actor: string) {
-    // Generate a simple payment number
-    const paymentNumber = `PAY-${Date.now()}`;
+    return await this.db.transaction(async (tx) => {
+      const paymentNumber = await this.generatePaymentNumber(tx as any);
 
-    const [payment] = await this.db
-      .insert(paymentEntries)
-      .values({
-        paymentNumber,
-        paymentType: dto.paymentType,
-        partyType: dto.partyType,
-        partyId: dto.partyId,
-        paymentDate: new Date(dto.paymentDate),
-        modeOfPayment: dto.modeOfPayment,
-        totalAmount: dto.totalAmount.toString(),
-        unallocatedAmount: dto.totalAmount.toString(),
-        glAccountBank: dto.glAccountBank,
-        referenceNumber: dto.referenceNumber,
-        currencyCode: dto.currencyCode,
-        createdBy: actor,
-      })
-      .returning();
+      const [payment] = await tx
+        .insert(paymentEntries)
+        .values({
+          paymentNumber,
+          paymentType: dto.paymentType,
+          partyType: dto.partyType,
+          partyId: dto.partyId,
+          paymentDate: new Date(dto.paymentDate),
+          modeOfPayment: dto.modeOfPayment,
+          totalAmount: dto.totalAmount.toString(),
+          unallocatedAmount: dto.totalAmount.toString(),
+          glAccountBank: dto.glAccountBank,
+          referenceNumber: dto.referenceNumber,
+          currencyCode: dto.currencyCode,
+          createdBy: actor,
+          stateCode: PAYMENT_STATE.DRAFT,
+        })
+        .returning();
 
-    return payment;
+      if (dto.submitImmediately) {
+        return await this.submitPaymentEntry(
+          payment.paymentId,
+          actor,
+          tx as any,
+        );
+      }
+
+      return payment;
+    });
   }
 
-  async submitPaymentEntry(paymentId: string, actor: string) {
-    return await this.db.transaction(async (tx) => {
-      // 1. Lock payment
+  async submitPaymentEntry(
+    paymentId: string,
+    actor: string,
+    providedTx?: DrizzleDB,
+  ) {
+    const execute = async (tx: DrizzleDB) => {
+      // 1. Lock and validate payment
       const [payment] = await tx
         .select()
         .from(paymentEntries)
@@ -94,83 +218,128 @@ export class PaymentsService {
         throw new NotFoundException(`Payment ${paymentId} not found`);
       }
 
-      if (payment.stateCode !== 'draft') {
-        throw new BadRequestException('Only draft payments can be submitted');
-      }
-
-      // 2. Fetch Control Accounts (simplified AR/AP fetching for MVP)
-      // Ideally this comes from appSettings or party settings. We'll find a generic AR/AP account.
-      const accountType =
-        payment.partyType === 'customer' ? 'asset' : 'liability'; // AR is asset, AP is liability
-
-      const [controlAccount] = await tx
-        .select()
-        .from(glAccounts)
-        .where(
-          sql`LOWER(${glAccounts.name}) LIKE ${payment.partyType === 'customer' ? '%receivable%' : '%payable%'}`,
-        )
-        .limit(1);
-
-      if (!controlAccount) {
+      if (payment.stateCode !== PAYMENT_STATE.DRAFT) {
         throw new BadRequestException(
-          `Could not resolve control account for party type ${payment.partyType}`,
+          `Only ${PAYMENT_STATE.DRAFT} payments can be submitted`,
         );
       }
 
-      // 3. Prepare GL Lines
+      // 2. Resolve Control Account (AR or AP)
+      // We look at the party's group to find the default control account
+      let controlAccountId: string | null = null;
+
+      if (payment.partyType === 'customer') {
+        const [custRow] = await tx
+          .select({
+            defaultArAccountId: accountGroups.defaultArAccountId,
+          })
+          .from(accounts)
+          .leftJoin(
+            accountGroups,
+            eq(accounts.accountGroupId, accountGroups.accountGroupId),
+          )
+          .where(eq(accounts.accountId, payment.partyId));
+        controlAccountId = custRow?.defaultArAccountId || null;
+      } else {
+        const [suppRow] = await tx
+          .select({
+            defaultApAccountId: supplierGroups.defaultApAccountId,
+          })
+          .from(suppliers)
+          .leftJoin(
+            supplierGroups,
+            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+          )
+          .where(eq(suppliers.vendorId, payment.partyId));
+        controlAccountId = suppRow?.defaultApAccountId || null;
+      }
+
+      // Fallback to global settings if not found on group
+      if (!controlAccountId) {
+        const settings = await this.glService.getSettings(tx);
+        controlAccountId =
+          payment.partyType === 'customer'
+            ? settings?.defaultArAccountId || null
+            : settings?.defaultApAccountId || null;
+      }
+
+      if (!controlAccountId) {
+        throw new BadRequestException(
+          `Could not resolve ${payment.partyType === 'customer' ? 'Receivable' : 'Payable'} control account. Please check Party Group or GL Settings.`,
+        );
+      }
+
+      // 3. Post GL Journal Entry
       const amount = parseFloat(payment.totalAmount);
       let lines = [];
 
       if (payment.paymentType === 'receive') {
         // Receipt: Debit Bank, Credit AR
         lines = [
-          { accountId: payment.glAccountBank, debit: amount, credit: 0 },
-          { accountId: controlAccount.glAccountId, debit: 0, credit: amount },
+          {
+            accountId: payment.glAccountBank,
+            debit: amount,
+            credit: 0,
+            memo: `Payment ${payment.paymentNumber}`,
+          },
+          {
+            accountId: controlAccountId,
+            debit: 0,
+            credit: amount,
+            memo: `Payment ${payment.paymentNumber}`,
+            partyType: 'customer' as const,
+            partyId: payment.partyId,
+          },
         ];
       } else {
         // Payment: Debit AP, Credit Bank
         lines = [
-          { accountId: controlAccount.glAccountId, debit: amount, credit: 0 },
-          { accountId: payment.glAccountBank, debit: 0, credit: amount },
+          {
+            accountId: controlAccountId,
+            debit: amount,
+            credit: 0,
+            memo: `Payment ${payment.paymentNumber}`,
+            partyType: 'supplier' as const,
+            partyId: payment.partyId,
+          },
+          {
+            accountId: payment.glAccountBank,
+            debit: 0,
+            credit: amount,
+            memo: `Payment ${payment.paymentNumber}`,
+          },
         ];
       }
 
-      // 4. Post Journal (Strict Atomic via tx)
       await this.glService.postJournalEntry(
         lines,
         {
           sourceId: payment.paymentId,
           sourceType: 'payment_entry',
           memo: `Payment ${payment.paymentNumber}`,
-          entryDate: payment.paymentDate
-            ? payment.paymentDate.toISOString()
-            : undefined,
+          entryDate: payment.paymentDate.toISOString().split('T')[0],
         },
         tx,
       );
 
-      // 5. Update State
-      const [updated] = await tx
-        .update(paymentEntries)
-        .set({ stateCode: 'submitted', modifiedOn: new Date() })
-        .where(eq(paymentEntries.paymentId, paymentId))
-        .returning();
-
-      // 6. Emit Outbox Event
-      await emitEvent(tx as any, {
-        aggregateType: AggregateType.PAYMENT,
-        aggregateId: paymentId,
-        eventType: EventType.PAYMENT_SUBMITTED,
-        payload: {
-          totalAmount: updated.totalAmount,
-          modeOfPayment: updated.modeOfPayment,
-          glAccountBank: updated.glAccountBank,
-        },
+      // 6. Update state
+      const updated = await this.changePaymentState(
+        paymentId,
+        PAYMENT_STATE.SUBMITTED,
         actor,
-      });
+        tx,
+      );
 
       return updated;
-    });
+    };
+
+    if (providedTx) {
+      return await execute(providedTx);
+    } else {
+      return await this.db.transaction(async (tx) => {
+        return await execute(tx);
+      });
+    }
   }
 
   async allocatePayment(
@@ -188,8 +357,10 @@ export class PaymentsService {
 
       if (!payment)
         throw new NotFoundException(`Payment ${paymentId} not found`);
-      if (payment.stateCode !== 'submitted')
-        throw new BadRequestException('Payment must be submitted to allocate');
+      if (payment.stateCode !== PAYMENT_STATE.SUBMITTED)
+        throw new BadRequestException(
+          `Payment must be ${PAYMENT_STATE.SUBMITTED} to allocate`,
+        );
 
       let unallocatedAmount = parseFloat(payment.unallocatedAmount);
 
@@ -198,7 +369,7 @@ export class PaymentsService {
         (sum, a) => sum + a.allocatedAmount,
         0,
       );
-      if (totalRequested > unallocatedAmount) {
+      if (totalRequested > unallocatedAmount + 0.001) {
         throw new BadRequestException(
           `Cannot allocate more than the unallocated amount (${unallocatedAmount})`,
         );
@@ -225,8 +396,8 @@ export class PaymentsService {
         if (!invoice)
           throw new NotFoundException(`Invoice ${alloc.referenceId} not found`);
         if (
-          invoice.stateCode === 'draft' ||
-          invoice.stateCode === 'cancelled'
+          invoice.stateCode === SALES_INVOICE_STATE.DRAFT ||
+          invoice.stateCode === SALES_INVOICE_STATE.CANCELLED
         ) {
           throw new BadRequestException(
             `Cannot allocate to invoice in state ${invoice.stateCode}`,
@@ -234,7 +405,7 @@ export class PaymentsService {
         }
 
         const outstanding = parseFloat(invoice.outstandingAmount);
-        if (alloc.allocatedAmount > outstanding) {
+        if (alloc.allocatedAmount > outstanding + 0.001) {
           throw new BadRequestException(
             `Cannot allocate more than outstanding amount on invoice ${invoice.invoiceNumber}`,
           );
@@ -300,5 +471,204 @@ export class PaymentsService {
 
       return updatedPayment;
     });
+  }
+
+  async cancelPayment(paymentId: string, actor: string) {
+    return await this.db.transaction(async (tx) => {
+      // 1. Lock payment
+      const [payment] = await tx
+        .select()
+        .from(paymentEntries)
+        .where(eq(paymentEntries.paymentId, paymentId))
+        .for('update');
+
+      if (!payment) {
+        throw new NotFoundException(`Payment ${paymentId} not found`);
+      }
+
+      if (payment.stateCode !== PAYMENT_STATE.SUBMITTED) {
+        throw new BadRequestException(
+          'Only submitted payments can be cancelled',
+        );
+      }
+
+      // 2. Check for existing allocations
+      const existingAllocations = await tx
+        .select({ allocationId: paymentAllocations.allocationId })
+        .from(paymentAllocations)
+        .where(eq(paymentAllocations.paymentId, paymentId));
+
+      if (existingAllocations.length > 0) {
+        throw new BadRequestException(
+          'Cannot cancel a payment that has allocations. Remove allocations first.',
+        );
+      }
+
+      // 3. Reverse the GL journal entry
+      const amount = parseFloat(payment.totalAmount);
+
+      // Resolve control account
+      let controlAccountId: string | null = null;
+
+      if (payment.partyType === 'customer') {
+        const [custRow] = await tx
+          .select({
+            defaultArAccountId: accountGroups.defaultArAccountId,
+          })
+          .from(accounts)
+          .leftJoin(
+            accountGroups,
+            eq(accounts.accountGroupId, accountGroups.accountGroupId),
+          )
+          .where(eq(accounts.accountId, payment.partyId));
+        controlAccountId = custRow?.defaultArAccountId || null;
+      } else {
+        const [suppRow] = await tx
+          .select({
+            defaultApAccountId: supplierGroups.defaultApAccountId,
+          })
+          .from(suppliers)
+          .leftJoin(
+            supplierGroups,
+            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
+          )
+          .where(eq(suppliers.vendorId, payment.partyId));
+        controlAccountId = suppRow?.defaultApAccountId || null;
+      }
+
+      if (!controlAccountId) {
+        const settings = await this.glService.getSettings(tx);
+        controlAccountId =
+          payment.partyType === 'customer'
+            ? settings?.defaultArAccountId || null
+            : settings?.defaultApAccountId || null;
+      }
+
+      if (!controlAccountId) {
+        throw new BadRequestException(
+          `Could not resolve control account for reversal.`,
+        );
+      }
+
+      // Reverse: swap debit/credit from original
+      let reversalLines: any[];
+      if (payment.paymentType === 'receive') {
+        reversalLines = [
+          {
+            accountId: payment.glAccountBank,
+            debit: 0,
+            credit: amount,
+            memo: `Reversal: ${payment.paymentNumber}`,
+          },
+          {
+            accountId: controlAccountId,
+            debit: amount,
+            credit: 0,
+            memo: `Reversal: ${payment.paymentNumber}`,
+            partyType: 'customer' as const,
+            partyId: payment.partyId,
+          },
+        ];
+      } else {
+        reversalLines = [
+          {
+            accountId: controlAccountId,
+            debit: 0,
+            credit: amount,
+            memo: `Reversal: ${payment.paymentNumber}`,
+            partyType: 'supplier' as const,
+            partyId: payment.partyId,
+          },
+          {
+            accountId: payment.glAccountBank,
+            debit: amount,
+            credit: 0,
+            memo: `Reversal: ${payment.paymentNumber}`,
+          },
+        ];
+      }
+
+      await this.glService.postJournalEntry(
+        reversalLines,
+        {
+          sourceId: payment.paymentId,
+          sourceType: 'payment_entry',
+          memo: `Cancellation of ${payment.paymentNumber}`,
+          entryDate: new Date().toISOString().slice(0, 10),
+        },
+        tx,
+      );
+
+      // 4. Update state
+      const updated = await this.changePaymentState(
+        paymentId,
+        PAYMENT_STATE.CANCELLED,
+        actor,
+        tx,
+      );
+
+      return updated;
+    });
+  }
+
+  /**
+   * Universal changeState for Payments
+   */
+  async changePaymentState(
+    paymentId: string,
+    newState: PaymentState,
+    actor: string,
+    tx: DrizzleDB,
+  ) {
+    if (!VALID_PAYMENT_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid payment state: '${newState}'`);
+    }
+
+    const [payment] = await tx
+      .select({
+        stateCode: paymentEntries.stateCode,
+        paymentNumber: paymentEntries.paymentNumber,
+        totalAmount: paymentEntries.totalAmount,
+        modeOfPayment: paymentEntries.modeOfPayment,
+        glAccountBank: paymentEntries.glAccountBank,
+      })
+      .from(paymentEntries)
+      .where(eq(paymentEntries.paymentId, paymentId));
+
+    if (!payment) {
+      throw new NotFoundException(`Payment ${paymentId} not found`);
+    }
+
+    const allowed = PAYMENT_TRANSITIONS[payment.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition payment from '${payment.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await tx
+      .update(paymentEntries)
+      .set({ stateCode: newState, modifiedOn: new Date() })
+      .where(eq(paymentEntries.paymentId, paymentId))
+      .returning();
+
+    await emitEvent(tx as any, {
+      aggregateType: AggregateType.PAYMENT,
+      aggregateId: paymentId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'payment',
+        entityId: paymentId,
+        paymentNumber: payment.paymentNumber,
+        totalAmount: payment.totalAmount,
+        modeOfPayment: payment.modeOfPayment,
+        glAccountBank: payment.glAccountBank,
+        from: payment.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 }

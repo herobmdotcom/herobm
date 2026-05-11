@@ -48,7 +48,6 @@ describe('Account Groups (e2e)', () => {
       .send({
         groupCode,
         name: 'E2E Test Account Group',
-        defaultDiscountPercentage: '10.5',
       });
     expect(createRes.status).toBe(201);
     expect(createRes.body.accountGroupId).toBeDefined();
@@ -101,11 +100,9 @@ describe('Account Groups (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Updated Account Group',
-        defaultDiscountPercentage: '15.0',
       });
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.name).toBe('Updated Account Group');
-    expect(updateRes.body.defaultDiscountPercentage).toBe('15.0');
 
     // 7. Delete the group (first cleanly un-assign the account to avoid FK errors)
     await request(app.getHttpServer())

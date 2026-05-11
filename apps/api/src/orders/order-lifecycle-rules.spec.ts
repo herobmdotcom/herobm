@@ -16,6 +16,7 @@ import {
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
+import { SALES_ORDER_STATE, SHIPMENT_STATE } from '@modbm/shared';
 
 // Mock emitEvent to avoid needing event emitter setup
 jest.mock('../common/emit-event', () => ({
@@ -99,14 +100,14 @@ describe('Order Lifecycle Rules', () => {
     };
 
     it('should transition order to shipped when all lines are fully shipped', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
-        stateCode: 'dispatched',
+        stateCode: SHIPMENT_STATE.DISPATCHED,
       });
       await pg.db.insert(salesOrderShipmentLines).values([
         {
@@ -128,12 +129,12 @@ describe('Order Lifecycle Rules', () => {
         'admin',
       );
 
-      expect(result?.to).toBe('shipped');
+      expect(result?.to).toBe(SALES_ORDER_STATE.SHIPPED);
       const [order] = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, ORDER_ID));
-      expect(order.stateCode).toBe('shipped');
+      expect(order.stateCode).toBe(SALES_ORDER_STATE.SHIPPED);
     });
 
     it('should do nothing if an order line is only partially shipped', async () => {
@@ -178,14 +179,14 @@ describe('Order Lifecycle Rules', () => {
     };
 
     it('should transition order to picking when lines are no longer fully shipped', async () => {
-      await seedOrder('shipped');
+      await seedOrder(SALES_ORDER_STATE.SHIPPED);
 
       const SHIP_ID = '00000000-0000-0000-0000-000000000055';
       await pg.db.insert(salesOrderShipments).values({
         shipmentId: SHIP_ID,
         salesOrderId: ORDER_ID,
         shipmentNumber: 'SHP-001',
-        stateCode: 'cancelled',
+        stateCode: SHIPMENT_STATE.CANCELLED,
       });
 
       const result = await revertToPickingOnShipmentCancel.evaluate(
@@ -195,7 +196,7 @@ describe('Order Lifecycle Rules', () => {
         'admin',
       );
 
-      expect(result?.to).toBe('picking');
+      expect(result?.to).toBe(SALES_ORDER_STATE.PICKING);
     });
   });
 

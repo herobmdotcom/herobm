@@ -34,8 +34,13 @@ import { AppConfigService } from '../settings/app-config.service';
 import {
   computeLinePriceForStorage,
   EXPENSE_ROUTING_PRECEDENCE,
+  PURCHASE_INVOICE_STATE,
   PURCHASE_INVOICE_TRANSITIONS,
+  MATCH_STATUS,
+  getValidStates,
 } from '@modbm/shared';
+
+const VALID_INVOICE_STATES = getValidStates(PURCHASE_INVOICE_TRANSITIONS);
 import { CreateStandaloneInvoiceDto } from './dto';
 
 @Injectable()
@@ -74,8 +79,9 @@ export class PurchaseInvoiceService {
   /**
    * Fetch a specific ModBM AP Bill with natively populated mappings structurally
    */
-  async findOne(invoiceId: string) {
-    const rows = await this.db
+  async findOne(invoiceId: string, tx?: DrizzleDB) {
+    const db = tx || this.db;
+    const rows = await db
       .select({
         invoice: purchaseInvoices,
         vendorName: suppliers.name,
@@ -93,7 +99,7 @@ export class PurchaseInvoiceService {
     const invoice = { ...invoiceEntity, vendorName: rows[0].vendorName };
 
     // Hydrate explicitly native ModBM line mapping structurally
-    const lines = await this.db
+    const lines = await db
       .select({
         lineId: purchaseInvoiceLines.invoiceLineId,
         matchStatus: purchaseInvoiceLines.matchStatus,
@@ -262,7 +268,7 @@ export class PurchaseInvoiceService {
           taxAmount: String(dto.taxAmount),
           receiptFilename: dto.receiptFilename,
           currencyCode: dto.currencyCode,
-          stateCode: 'draft',
+          stateCode: PURCHASE_INVOICE_STATE.DRAFT,
           notes: dto.notes,
           purchaseOrderId: dto.purchaseOrderId,
           createdBy: actor,
@@ -287,12 +293,27 @@ export class PurchaseInvoiceService {
             pricePerUnit: String(price),
             amount: pricing.amount,
             purchaseOrderLineId: l.purchaseOrderLineId,
-            matchStatus: l.purchaseOrderLineId ? 'matched' : 'unmatched',
+            matchStatus: l.purchaseOrderLineId
+              ? MATCH_STATUS.MATCHED
+              : MATCH_STATUS.UNMATCHED,
           };
         });
 
         await tx.insert(purchaseInvoiceLines).values(linesToInsert);
       }
+
+      await emitEvent(tx as any, {
+        aggregateType: AggregateType.PURCHASE_INVOICE,
+        aggregateId: invoice.invoiceId,
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'purchase_invoice',
+          entityId: invoice.invoiceId,
+          from: null,
+          to: PURCHASE_INVOICE_STATE.DRAFT,
+        },
+        actor,
+      });
 
       return invoice;
     });
@@ -333,7 +354,7 @@ export class PurchaseInvoiceService {
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
       if (!invoice) throw new NotFoundException('Invoice not found');
-      if (invoice.stateCode !== 'draft')
+      if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException('Only draft invoices can be updated');
 
       const updateData: any = {};
@@ -369,7 +390,7 @@ export class PurchaseInvoiceService {
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
       if (!invoice) throw new NotFoundException('Invoice not found');
-      if (invoice.stateCode !== 'draft')
+      if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException(
           'Only draft invoice lines can be updated',
         );
@@ -430,7 +451,7 @@ export class PurchaseInvoiceService {
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
       if (!invoice) throw new NotFoundException('Invoice not found');
-      if (invoice.stateCode !== 'draft')
+      if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException(
           'Only draft invoice lines can be removed',
         );
@@ -452,7 +473,7 @@ export class PurchaseInvoiceService {
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
       if (!invoice) throw new NotFoundException('Invoice not found');
-      if (invoice.stateCode !== 'draft')
+      if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException('Only draft invoice lines can be added');
 
       const qty = parseFloat(dto.quantityInvoiced || '1');
@@ -489,7 +510,7 @@ export class PurchaseInvoiceService {
         quantityInvoiced: String(qty),
         pricePerUnit: String(price),
         amount: pricing.amount,
-        matchStatus: 'unmatched',
+        matchStatus: MATCH_STATUS.UNMATCHED,
       });
 
       await this.recalculateInvoiceTotals(invoiceId, tx);
@@ -507,7 +528,7 @@ export class PurchaseInvoiceService {
       .from(purchaseInvoices)
       .where(eq(purchaseInvoices.invoiceId, invoiceId));
     if (!invoice) throw new NotFoundException('Invoice not found');
-    if (invoice.stateCode !== 'draft')
+    if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
       throw new BadRequestException('Only draft invoices can be posted');
 
     const lines = await this.db
@@ -531,7 +552,7 @@ export class PurchaseInvoiceService {
     let grniExpense = 0;
 
     for (const { line, poProductId } of lines) {
-      if (line.matchStatus !== 'matched' && !line.glAccountId) {
+      if (line.matchStatus !== MATCH_STATUS.MATCHED && !line.glAccountId) {
         throw new BadRequestException(
           `Line "${line.description}" is unmatched and must have a GL Account assigned before finalisation.`,
         );
@@ -544,7 +565,7 @@ export class PurchaseInvoiceService {
       if (acctId) {
         const current = expenseByAccountId.get(acctId) || 0;
         expenseByAccountId.set(acctId, current + amt);
-      } else if (line.matchStatus === 'matched' && poProductId) {
+      } else if (line.matchStatus === MATCH_STATUS.MATCHED && poProductId) {
         grniExpense += amt;
       } else {
         defaultExpense += amt;
@@ -715,13 +736,23 @@ export class PurchaseInvoiceService {
       }
 
       // Mark as invoiced (atomic with GL posting)
-      const [updated] = await tx
-        .update(purchaseInvoices)
-        .set({ stateCode: 'invoiced' })
-        .where(eq(purchaseInvoices.invoiceId, invoiceId))
-        .returning();
+      await this.changePurchaseInvoiceStateInternal(
+        invoiceId,
+        PURCHASE_INVOICE_STATE.INVOICED,
+        actor,
+        tx,
+      );
 
-      return updated;
+      if (invoice.purchaseOrderId) {
+        await evaluatePOLifecycleRules(
+          tx,
+          invoice.purchaseOrderId,
+          { entity: 'purchase_invoice', action: 'posted' },
+          actor,
+        );
+      }
+
+      return this.findOne(invoiceId, tx);
     });
 
     // Trigger lifecycle rules for affected POs (non-fatal side effect)
@@ -766,8 +797,9 @@ export class PurchaseInvoiceService {
     newState: string,
     actor: string,
     discrepanciesAcknowledged?: boolean,
+    tx?: DrizzleDB,
   ) {
-    const fullInvoice = await this.findOne(invoiceId);
+    const fullInvoice = await this.findOne(invoiceId, tx);
     if (!fullInvoice) throw new NotFoundException('Invoice not found');
     const invoice = fullInvoice as any; // Full invoice with lines
 
@@ -778,12 +810,16 @@ export class PurchaseInvoiceService {
       );
     }
 
+    const db = tx || this.db;
     // Check for discrepancies on forward transition
-    if (newState !== 'draft' && newState !== 'cancelled') {
+    if (
+      newState !== PURCHASE_INVOICE_STATE.DRAFT &&
+      newState !== PURCHASE_INVOICE_STATE.CANCELLED
+    ) {
       const discrepancies: any[] = [];
       invoice.lines.forEach((line: any, idx: number) => {
         if (
-          line.matchStatus !== 'matched' &&
+          line.matchStatus !== MATCH_STATUS.MATCHED &&
           !line.purchaseOrderLineId &&
           parseFloat(line.amount || '0') > 0
         ) {
@@ -792,7 +828,10 @@ export class PurchaseInvoiceService {
             message: `Line ${idx + 1} is unplanned.`,
           });
         }
-        if (line.matchStatus === 'matched' && line.purchaseOrderLineId) {
+        if (
+          line.matchStatus === MATCH_STATUS.MATCHED &&
+          line.purchaseOrderLineId
+        ) {
           const billedQty = parseFloat(line.quantityInvoiced || '0');
           const poReceived = parseFloat(line.poLineQuantityReceived || '0');
           const billedPrice = parseFloat(line.pricePerUnit || '0');
@@ -819,7 +858,7 @@ export class PurchaseInvoiceService {
         }
 
         // Log the approval of discrepancies
-        await this.db.insert(systemEvents).values({
+        await db.insert(systemEvents).values({
           eventType: 'invoice_discrepancy_approved',
           aggregateType: 'purchase_invoice',
           aggregateId: invoiceId,
@@ -832,17 +871,16 @@ export class PurchaseInvoiceService {
       }
     }
 
-    if (newState === 'invoiced') {
+    if (newState === PURCHASE_INVOICE_STATE.INVOICED) {
       return this.postInvoice(invoiceId, actor);
     }
 
-    const [updatedInvoice] = await this.db
-      .update(purchaseInvoices)
-      .set({ stateCode: newState })
-      .where(eq(purchaseInvoices.invoiceId, invoiceId))
-      .returning();
-
-    return updatedInvoice;
+    return this.changePurchaseInvoiceStateInternal(
+      invoiceId,
+      newState,
+      actor,
+      db,
+    );
   }
 
   /**
@@ -873,7 +911,7 @@ export class PurchaseInvoiceService {
         .set({
           purchaseOrderLineId,
           productId: poLine.productId,
-          matchStatus: 'matched',
+          matchStatus: MATCH_STATUS.MATCHED,
         })
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
@@ -907,7 +945,7 @@ export class PurchaseInvoiceService {
         .from(purchaseInvoices)
         .where(eq(purchaseInvoices.invoiceId, invoiceId));
       if (!invoice) throw new NotFoundException('Invoice not found');
-      if (invoice.stateCode !== 'draft')
+      if (invoice.stateCode !== PURCHASE_INVOICE_STATE.DRAFT)
         throw new BadRequestException(
           'Only draft invoices can be auto-matched',
         );
@@ -931,7 +969,8 @@ export class PurchaseInvoiceService {
         // Find if we already have an unmatched invoice line for this product
         const match = invLines.find(
           (l) =>
-            l.matchStatus === 'unmatched' && l.productId === poLine.productId,
+            l.matchStatus === MATCH_STATUS.UNMATCHED &&
+            l.productId === poLine.productId,
         );
 
         if (match) {
@@ -939,10 +978,10 @@ export class PurchaseInvoiceService {
             .update(purchaseInvoiceLines)
             .set({
               purchaseOrderLineId: poLine.purchaseOrderLineId,
-              matchStatus: 'matched',
+              matchStatus: MATCH_STATUS.MATCHED,
             })
             .where(eq(purchaseInvoiceLines.invoiceLineId, match.invoiceLineId));
-          match.matchStatus = 'matched'; // Prevent mapping to this line again
+          match.matchStatus = MATCH_STATUS.MATCHED; // Prevent mapping to this line again
           matchedCount++;
         } else {
           // Add it as a new matched line
@@ -963,7 +1002,7 @@ export class PurchaseInvoiceService {
             pricePerUnit: String(price),
             amount: pricing.amount,
             purchaseOrderLineId: poLine.purchaseOrderLineId,
-            matchStatus: 'matched',
+            matchStatus: MATCH_STATUS.MATCHED,
           });
           addedCount++;
         }
@@ -1022,7 +1061,7 @@ export class PurchaseInvoiceService {
         .update(purchaseInvoiceLines)
         .set({
           purchaseOrderLineId: null,
-          matchStatus: 'unmatched',
+          matchStatus: MATCH_STATUS.UNMATCHED,
         })
         .where(eq(purchaseInvoiceLines.invoiceLineId, invoiceLineId));
 
@@ -1084,6 +1123,7 @@ export class PurchaseInvoiceService {
         supplierInvoiceNumber: purchaseInvoices.supplierInvoiceNumber,
         totalAmount: purchaseInvoices.totalAmount,
         taxAmount: purchaseInvoices.taxAmount,
+        outstandingAmount: purchaseInvoices.outstandingAmount,
         currencyCode: purchaseInvoices.currencyCode,
         stateCode: purchaseInvoices.stateCode,
         createdOn: purchaseInvoices.createdOn,
@@ -1097,5 +1137,63 @@ export class PurchaseInvoiceService {
       return await dataQuery.limit(limit);
     }
     return await dataQuery;
+  }
+
+  private async changePurchaseInvoiceStateInternal(
+    invoiceId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    if (!VALID_INVOICE_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid invoice state: '${newState}'`);
+    }
+
+    const db = tx || this.db;
+    const [existing] = await db
+      .select({
+        stateCode: purchaseInvoices.stateCode,
+        invoiceNumber: purchaseInvoices.invoiceNumber,
+      })
+      .from(purchaseInvoices)
+      .where(eq(purchaseInvoices.invoiceId, invoiceId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Invoice ${invoiceId} not found`);
+    }
+
+    const allowed = PURCHASE_INVOICE_TRANSITIONS[existing.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition invoice from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(purchaseInvoices)
+      .set({
+        // eslint-disable-next-line no-restricted-syntax
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseInvoices.invoiceId, invoiceId))
+      .returning();
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.PURCHASE_INVOICE,
+      aggregateId: invoiceId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'purchase_invoice',
+        entityId: invoiceId,
+        invoiceNumber: existing.invoiceNumber,
+        from: existing.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 }

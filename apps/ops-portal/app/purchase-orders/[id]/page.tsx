@@ -3,7 +3,7 @@
 import { use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { calculateAvailableQuantity } from '@modbm/shared';
+import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@modbm/shared';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import { formatAmount } from '@/lib/currency';
@@ -228,7 +228,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tPurchase('labels.location')}
                   </label>
-                  {isHeaderEditable && order.stateCode === 'draft' ? (
+                  {isHeaderEditable && order.stateCode === PURCHASE_ORDER_STATE.DRAFT ? (
                     <LocationSelect
                       value={editLocationId || ''}
                       onChange={(loc) => setEditLocationId(loc)}
@@ -277,7 +277,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {tPurchase('lineItems')}
               </button>
               <button
-                className={`text-xs font-medium px-3 py-1.5 ${order.stateCode !== 'draft' ? '' : 'rounded-r-lg'}`}
+                className={`text-xs font-medium px-3 py-1.5 ${order.stateCode !== PURCHASE_ORDER_STATE.DRAFT ? '' : 'rounded-r-lg'}`}
                 style={{
                   color: activeTab === 'availability' ? 'var(--accent)' : 'var(--text-muted)',
                   background: activeTab === 'availability' ? 'rgba(59,130,246,0.1)' : 'transparent',
@@ -290,7 +290,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               >
                 {tPurchase('availability')}
               </button>
-              {order.stateCode !== 'draft' && (
+              {order.stateCode !== PURCHASE_ORDER_STATE.DRAFT && (
                 <button
                   className="text-xs font-medium px-3 py-1.5 rounded-r-lg"
                   style={{

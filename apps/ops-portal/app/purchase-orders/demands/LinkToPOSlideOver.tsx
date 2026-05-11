@@ -300,11 +300,11 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                             <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: 14 }}>
                               {group.orderNumber}
                             </span>
-                            <span className="badge">{group.stateCode}</span>
+                            <span className="badge badge-legacy">{group.stateCode}</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             {demand.locationName && group.locationName && demand.locationName !== group.locationName && (
-                              <span className="badge badge-warning text-[10px] px-1.5 py-0.5">Location Mismatch</span>
+                              <span className="badge badge-sm badge-warning">Location Mismatch</span>
                             )}
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                               <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>

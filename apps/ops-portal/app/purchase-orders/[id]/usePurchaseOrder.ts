@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import {
   PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   PURCHASE_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
+  PURCHASE_ORDER_STATE,
   isBackTransition as sharedIsBackTransition,
   cap,
   calculateUomPriceAdjustment,
@@ -85,8 +86,8 @@ export function usePurchaseOrder(id: string) {
   const [allocationsLoading, setAllocationsLoading] = useState(false);
 
   /* ── Derived flags ──────────────────────────────────────────── */
-  const isHeaderEditable = order?.stateCode !== 'cancelled' && order?.stateCode !== 'legacy';
-  const isLinesEditable = order?.stateCode === 'draft';
+  const isHeaderEditable = order?.stateCode !== PURCHASE_ORDER_STATE.CANCELLED && order?.stateCode !== PURCHASE_ORDER_STATE.LEGACY;
+  const isLinesEditable = order?.stateCode === PURCHASE_ORDER_STATE.DRAFT;
 
   const allowedTransitions = useMemo(() => {
     if (!order) return [];
@@ -100,10 +101,10 @@ export function usePurchaseOrder(id: string) {
       (l: any) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
-      .filter(state => !['received', 'partially_received'].includes(state))
+      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED].includes(state as any))
       .filter(state => {
-        if (state === 'cancelled' && anyReceived) return false;
-        if (state === 'closed_short' && !anyReceived) return false;
+        if (state === PURCHASE_ORDER_STATE.CANCELLED && anyReceived) return false;
+        if (state === PURCHASE_ORDER_STATE.CLOSED_SHORT && !anyReceived) return false;
         return true;
       })
       .sort((a, b) => {
@@ -114,9 +115,9 @@ export function usePurchaseOrder(id: string) {
       })
       .map(state => {
         const back = isBackTransition(order.stateCode, state);
-        const label = state === 'cancelled' ? tCommon('cancel') : state === 'closed_short' ? 'Close Short' : cap(state);
-        const isDanger = state === 'cancelled' || state === 'closed_short';
-        const icon = state === 'cancelled' ? 'close' : isDanger ? '✕ ' : back ? '← ' : '→ ';
+        const label = state === PURCHASE_ORDER_STATE.CANCELLED ? tCommon('cancel') : state === PURCHASE_ORDER_STATE.CLOSED_SHORT ? 'Close Short' : cap(state);
+        const isDanger = state === PURCHASE_ORDER_STATE.CANCELLED || state === PURCHASE_ORDER_STATE.CLOSED_SHORT;
+        const icon = state === PURCHASE_ORDER_STATE.CANCELLED ? 'close' : isDanger ? '✕ ' : back ? '← ' : '→ ';
         return { state, label, icon, isDanger, isBack: back };
       });
   }, [order, allowedTransitions]);
@@ -202,11 +203,18 @@ export function usePurchaseOrder(id: string) {
 
   // Load returns and invoices based on order state
   useEffect(() => {
-    if (['ordered', 'received', 'partially_received', 'billed', 'invoiced', 'legacy', 'archived'].includes(order?.stateCode || '')) {
+    if ([
+      PURCHASE_ORDER_STATE.ORDERED, 
+      PURCHASE_ORDER_STATE.RECEIVED, 
+      PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, 
+      PURCHASE_ORDER_STATE.INVOICED, 
+      PURCHASE_ORDER_STATE.LEGACY, 
+      PURCHASE_ORDER_STATE.ARCHIVED
+    ].includes(order?.stateCode as any || '')) {
       loadInvoices();
       loadAllocations();
     }
-    if (['billed', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
+    if ([PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.LEGACY].includes(order?.stateCode as any || '')) {
       loadReturns();
     }
   }, [order?.stateCode]);

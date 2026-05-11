@@ -1,200 +1,30 @@
 ﻿
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts-write.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts-write.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\accounts.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\credit-assessment.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\credit-assessment.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\credit-control.utils.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\accounts\credit-control.utils.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\auth.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\casbin.guard.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\auth\casbin.guard.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\all-exceptions.filter.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\all-exceptions.filter.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\audit.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\audit.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\emit-event.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\emit-event.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\pricing.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\common\pricing.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\dashboard\dashboard.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\coa-loader.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\coa-loader.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl-transaction-boundary.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl-transaction-boundary.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\gl\gl.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\goods-received\goods-received.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\goods-received\goods-received.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\goods-received\goods-received.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\goods-received\goods-received.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
 C:\Users\Marcel\volz\modbm\modbm\apps\api\src\goods-received\goods-received.service.ts
-  781:25  error  Replace `┬╖grLine.putawayStatus┬╖===┬╖'quarantined'┬╖?┬╖'quarantined'` with `ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖grLine.putawayStatus┬╖===┬╖'quarantined'ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖?┬╖'quarantined'ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖`        prettier/prettier
-  973:27  error  Replace `┬╖grLine.putawayStatus┬╖===┬╖'quarantined'┬╖?┬╖'quarantined'` with `ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖grLine.putawayStatus┬╖===┬╖'quarantined'ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖?┬╖'quarantined'ΓÉìΓÅÄ┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖┬╖`  prettier/prettier
+  1127:15  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+  1172:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+  1313:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory-accounting.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory-accounting.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\purchase-invoice.service.ts
+  1163:9  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory-math.utils.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory-math.utils.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\backorders.service.ts
+  1038:15  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking.service.ts
+  564:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+  869:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\inventory.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\transfers\transfers.service.ts
+  147:13  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+  512:18  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\uom.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\inventory\uom.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products-write.service.ts
+  292:16  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\invoices.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\invoices.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
+C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.ts
+   811:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+   845:11  error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
+  1102:9   error  ADV-050: Raw stateCode mutations are forbidden. You must use or create a change[Entity]State() helper method to ensure state machine validation  no-restricted-syntax
 
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\purchase-invoice.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\purchase-invoice.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\sales-invoice.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\invoices\sales-invoice.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\locations\locations.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\locations\locations.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\macros\macros.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\macros\macros.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\backorders.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\backorders.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-lifecycle-rules.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-lifecycle-rules.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-returns.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\order-returns.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders-write.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\orders.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking-math.utils.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking-math.utils.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\picking.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\projection-completeness.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\projection-completeness.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-math.utils.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-math.utils.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-write.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\returns-write.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment-math.utils.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment-math.utils.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\orders\shipment.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products-write.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products-write.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\products\products.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\purchase-orders\purchase-orders.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\picking-slip.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\picking-slip.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\reports.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-invoice.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-invoice.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-quote.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\reports\sales-quote.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\settings\app-config.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\settings\app-config.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\setup\setup.guard.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\setup\setup.guard.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\supplier-risk.domain.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\supplier-risk.domain.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers-write.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers-write.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\suppliers\suppliers.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\tax\tax-categories.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\tax\tax-categories.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\tax\tax-categories.service.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\tax\tax-categories.service.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\telemetry\telemetry.controller.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\telemetry\telemetry.controller.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\test-mock.spec.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\test-mock.spec.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-C:\Users\Marcel\volz\modbm\modbm\apps\api\src\test-utils\pglite-suite.ts
-  0:0  error  Parsing error: C:\Users\Marcel\volz\modbm\modbm\apps\api\src\test-utils\pglite-suite.ts was not found by the project service. Consider either including it in the tsconfig.json or including it in allowDefaultProject
-
-Γ£û 66 problems (66 errors, 0 warnings)
-  2 errors and 0 warnings potentially fixable with the `--fix` option.
+Γ£û 13 problems (13 errors, 0 warnings)
 

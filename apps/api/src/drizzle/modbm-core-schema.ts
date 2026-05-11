@@ -22,14 +22,35 @@ import {
   SALES_ORDER_TRANSITIONS,
   PURCHASE_ORDER_TRANSITIONS,
   SHIPMENT_TRANSITIONS,
+  PURCHASE_RETURN_TRANSITIONS,
   RETURN_TRANSITIONS,
   SALES_ORDER_PICK_TRANSITIONS,
   SalesOrderState,
   PurchaseOrderState,
   ShipmentState,
+  PurchaseReturnState,
   ReturnState,
   SalesOrderPickState,
   CurrencyDef,
+  SALES_ORDER_STATE,
+  PURCHASE_ORDER_STATE,
+  SHIPMENT_STATE,
+  RETURN_STATE,
+  SALES_ORDER_PICK_STATE,
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+  ACCOUNT_STATE,
+  MATCH_STATUS,
+  PUTAWAY_STATUS,
+  PURCHASE_INVOICE_STATE,
+  SALES_INVOICE_STATE,
+  SALES_CREDIT_NOTE_STATE,
+  GOODS_RECEIVED_STATE,
+  BACKORDER_STATE,
+  PURCHASE_RETURN_STATE,
+  PAYMENT_STATE,
+  TRANSFER_ORDER_STATE,
+  RECONCILIATION_STATE,
 } from '@modbm/shared';
 
 const validCurrencyCheck = (
@@ -111,7 +132,7 @@ export const salesOrders = modbmCore.table(
     stateCode: text('state_code')
       .$type<SalesOrderState>()
       .notNull()
-      .default('draft'),
+      .default(SALES_ORDER_STATE.DRAFT),
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
@@ -195,7 +216,7 @@ export const salesOrderPicks = modbmCore.table(
     stateCode: text('state_code')
       .$type<SalesOrderPickState>()
       .notNull()
-      .default('picked'),
+      .default(SALES_ORDER_PICK_STATE.PICKED),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -256,7 +277,7 @@ export const salesOrderReturns = modbmCore.table(
     stateCode: text('state_code')
       .$type<ReturnState>()
       .notNull()
-      .default('draft'),
+      .default(RETURN_STATE.DRAFT),
     notes: text('notes'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -294,6 +315,56 @@ export const salesOrderReturnLines = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
+// sales_credit_notes  (Credit Note header — reverses a sales invoice)
+// ---------------------------------------------------------------------------
+export const salesCreditNotes = modbmCore.table(
+  'sales_credit_notes',
+  {
+    creditNoteId: uuid('credit_note_id').primaryKey().defaultRandom(),
+    creditNoteNumber: text('credit_note_number').unique().notNull(),
+    returnId: uuid('return_id')
+      .notNull()
+      .references(() => salesOrderReturns.returnId),
+    salesOrderId: uuid('sales_order_id')
+      .notNull()
+      .references(() => salesOrders.salesOrderId),
+    invoiceId: uuid('invoice_id').references(() => salesInvoices.invoiceId),
+    totalAmount: numeric('total_amount').notNull(),
+    taxAmount: numeric('tax_amount').default('0'),
+    feeAmount: numeric('fee_amount').default('0'),
+    outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
+    currencyCode: text('currency_code').notNull(),
+    stateCode: text('state_code')
+      .notNull()
+      .default(SALES_CREDIT_NOTE_STATE.DRAFT),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('sales_credit_notes'),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// sales_credit_note_lines  (Per-line credit amounts)
+// ---------------------------------------------------------------------------
+export const salesCreditNoteLines = modbmCore.table('sales_credit_note_lines', {
+  creditNoteLineId: uuid('credit_note_line_id').primaryKey().defaultRandom(),
+  creditNoteId: uuid('credit_note_id')
+    .notNull()
+    .references(() => salesCreditNotes.creditNoteId),
+  salesOrderLineId: uuid('sales_order_line_id')
+    .notNull()
+    .references(() => salesOrderLineItems.salesOrderLineId),
+  quantityCredited: numeric('quantity_credited').notNull(),
+  pricePerUnit: numeric('price_per_unit').notNull(),
+  amount: numeric('amount').notNull(),
+  taxAmount: numeric('tax_amount').default('0'),
+});
+
+// ---------------------------------------------------------------------------
 // sales_order_shipments  (Shipment/delivery batch header)
 // ---------------------------------------------------------------------------
 export const salesOrderShipments = modbmCore.table(
@@ -307,7 +378,7 @@ export const salesOrderShipments = modbmCore.table(
     stateCode: text('state_code')
       .$type<ShipmentState>()
       .notNull()
-      .default('draft'),
+      .default(SHIPMENT_STATE.DISPATCHED),
     notes: text('notes'),
     trackingNumber: text('tracking_number'),
     fulfillmentLocationId: uuid('fulfillment_location_id').references(
@@ -363,7 +434,7 @@ export const purchaseOrders = modbmCore.table(
     stateCode: text('state_code')
       .$type<PurchaseOrderState>()
       .notNull()
-      .default('draft'),
+      .default(PURCHASE_ORDER_STATE.DRAFT),
     currencyCode: text('currency_code').notNull(),
     notes: text('notes'),
     customFields: jsonb('custom_fields'),
@@ -441,7 +512,7 @@ export const purchaseOrderReturns = modbmCore.table('purchase_order_returns', {
   purchaseOrderId: uuid('purchase_order_id')
     .notNull()
     .references(() => purchaseOrders.purchaseOrderId),
-  stateCode: text('state_code').notNull().default('draft'),
+  stateCode: text('state_code').notNull().default(RETURN_STATE.DRAFT),
   notes: text('notes'),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -468,6 +539,207 @@ export const purchaseOrderReturnLines = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
+// transfer_orders (Internal Stock Transfers)
+// ---------------------------------------------------------------------------
+export const transferOrders = modbmCore.table(
+  'transfer_orders',
+  {
+    transferOrderId: uuid('transfer_order_id').primaryKey().defaultRandom(),
+    orderNumber: text('order_number').unique().notNull(),
+    sourceLocationId: uuid('source_location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    destinationLocationId: uuid('destination_location_id')
+      .notNull()
+      .references(() => locations.locationId),
+    stateCode: text('state_code')
+      .notNull()
+      .default(TRANSFER_ORDER_STATE.CONFIRMED),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    sourceLocIdx: index('idx_transfer_orders_source_location').on(
+      t.sourceLocationId,
+    ),
+    destLocIdx: index('idx_transfer_orders_dest_location').on(
+      t.destinationLocationId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_lines
+// ---------------------------------------------------------------------------
+export const transferOrderLines = modbmCore.table(
+  'transfer_order_lines',
+  {
+    transferOrderLineId: uuid('transfer_order_line_id')
+      .primaryKey()
+      .defaultRandom(),
+    transferOrderId: uuid('transfer_order_id')
+      .notNull()
+      .references(() => transferOrders.transferOrderId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    quantity: numeric('quantity').notNull(),
+    quantityShipped: numeric('quantity_shipped').default('0'),
+    quantityReceived: numeric('quantity_received').default('0'),
+  },
+  (t) => ({
+    productIdx: index('idx_transfer_order_lines_product').on(t.productId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_picks
+// ---------------------------------------------------------------------------
+export const transferOrderPicks = modbmCore.table(
+  'transfer_order_picks',
+  {
+    pickId: uuid('pick_id').primaryKey().defaultRandom(),
+    transferOrderId: uuid('transfer_order_id')
+      .notNull()
+      .references(() => transferOrders.transferOrderId),
+    transferOrderLineId: uuid('transfer_order_line_id')
+      .notNull()
+      .references(() => transferOrderLines.transferOrderLineId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id').references(() => bins.binId),
+    quantity: numeric('quantity').notNull(),
+    stateCode: text('state_code')
+      .notNull()
+      .default(SALES_ORDER_PICK_STATE.PICKED),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    orderIdx: index('idx_transfer_order_picks_order').on(t.transferOrderId),
+    lineIdx: index('idx_transfer_order_picks_line').on(t.transferOrderLineId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_shipments
+// ---------------------------------------------------------------------------
+export const transferOrderShipments = modbmCore.table(
+  'transfer_order_shipments',
+  {
+    shipmentId: uuid('shipment_id').primaryKey().defaultRandom(),
+    transferOrderId: uuid('transfer_order_id')
+      .notNull()
+      .references(() => transferOrders.transferOrderId),
+    shipmentNumber: text('shipment_number').unique().notNull(),
+    trackingNumber: text('tracking_number'),
+    carrierId: uuid('carrier_id'), // if carriers exist
+    stateCode: text('state_code').notNull().default(SHIPMENT_STATE.DISPATCHED),
+    shippedBy: text('shipped_by'),
+    shippedOn: timestamp('shipped_on', { withTimezone: true }).defaultNow(),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    orderIdx: index('idx_transfer_order_shipments_order').on(t.transferOrderId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_shipment_lines
+// ---------------------------------------------------------------------------
+export const transferOrderShipmentLines = modbmCore.table(
+  'transfer_order_shipment_lines',
+  {
+    shipmentLineId: uuid('shipment_line_id').primaryKey().defaultRandom(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => transferOrderShipments.shipmentId),
+    transferOrderLineId: uuid('transfer_order_line_id')
+      .notNull()
+      .references(() => transferOrderLines.transferOrderLineId),
+    pickId: uuid('pick_id').references(() => transferOrderPicks.pickId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    quantity: numeric('quantity').notNull(),
+  },
+  (t) => ({
+    shipmentIdx: index('idx_transfer_order_shipment_lines_shipment').on(
+      t.shipmentId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_receipts
+// ---------------------------------------------------------------------------
+export const transferOrderReceipts = modbmCore.table(
+  'transfer_order_receipts',
+  {
+    receiptId: uuid('receipt_id').primaryKey().defaultRandom(),
+    transferOrderId: uuid('transfer_order_id')
+      .notNull()
+      .references(() => transferOrders.transferOrderId),
+    receiptNumber: text('receipt_number').unique().notNull(),
+    stateCode: text('state_code')
+      .notNull()
+      .default(GOODS_RECEIVED_STATE.RECEIVED),
+    receivedBy: text('received_by'),
+    receivedOn: timestamp('received_on', { withTimezone: true }).defaultNow(),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    orderIdx: index('idx_transfer_order_receipts_order').on(t.transferOrderId),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_receipt_lines
+// ---------------------------------------------------------------------------
+export const transferOrderReceiptLines = modbmCore.table(
+  'transfer_order_receipt_lines',
+  {
+    receiptLineId: uuid('receipt_line_id').primaryKey().defaultRandom(),
+    receiptId: uuid('receipt_id')
+      .notNull()
+      .references(() => transferOrderReceipts.receiptId),
+    transferOrderLineId: uuid('transfer_order_line_id')
+      .notNull()
+      .references(() => transferOrderLines.transferOrderLineId),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.productId),
+    binId: uuid('bin_id')
+      .notNull()
+      .references(() => bins.binId),
+    quantity: numeric('quantity').notNull(),
+  },
+  (t) => ({
+    receiptIdx: index('idx_transfer_order_receipt_lines_receipt').on(
+      t.receiptId,
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// transfer_order_events (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const transferOrderEvents = modbmCore.table('transfer_order_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  transferOrderId: uuid('transfer_order_id')
+    .notNull()
+    .references(() => transferOrders.transferOrderId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
 // backorders (Order Allocations for Cross-Dock/Picked bridging)
 // ---------------------------------------------------------------------------
 export const backorders = modbmCore.table(
@@ -489,8 +761,16 @@ export const backorders = modbmCore.table(
     purchaseOrderLineId: uuid('purchase_order_line_id').references(
       () => purchaseOrderLineItems.purchaseOrderLineId,
     ),
+    transferOrderId: uuid('transfer_order_id').references(
+      () => transferOrders.transferOrderId,
+    ),
+    transferOrderLineId: uuid('transfer_order_line_id').references(
+      () => transferOrderLines.transferOrderLineId,
+    ),
     quantity: numeric('quantity').notNull(),
-    stateCode: text('state_code').notNull().default('pending_supply'),
+    stateCode: text('state_code')
+      .notNull()
+      .default(BACKORDER_STATE.PENDING_SUPPLY),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },
@@ -557,6 +837,7 @@ export const binTypeEnum = pgEnum('bin_type_enum', [
   'receiving',
   'staging',
   'quarantine',
+  'in_transit',
 ]);
 
 export const bins = modbmCore.table(
@@ -921,7 +1202,7 @@ export const products = modbmCore.table('products', {
     () => taxCategories.taxCategoryId,
   ),
   alternateProductNumber: text('alternate_product_number'),
-  stateCode: text('state_code').notNull().default('active'),
+  stateCode: text('state_code').notNull().default(PRODUCT_STATE.ACTIVE),
   notes: text('notes'),
   sourceId: text('source_id').unique(),
   source: text('source').notNull().default('app'),
@@ -1000,7 +1281,7 @@ export const accounts = modbmCore.table(
     accountGroupId: uuid('account_group_id').references(
       () => accountGroups.accountGroupId,
     ),
-    stateCode: text('state_code').notNull().default('active'),
+    stateCode: text('state_code').notNull().default(ACCOUNT_STATE.ACTIVE),
     taxCategoryId: uuid('tax_category_id').references(
       () => taxCategories.taxCategoryId,
     ),
@@ -1083,7 +1364,7 @@ export const suppliers = modbmCore.table(
     }),
     blockNotes: text('block_notes'),
     currencyCode: text('currency_code').notNull(),
-    stateCode: text('state_code').notNull().default('active'),
+    stateCode: text('state_code').notNull().default(ACCOUNT_STATE.ACTIVE),
     externalId: text('external_id'),
     notes: text('notes'),
     sourceId: text('source_id').unique(),
@@ -1151,7 +1432,7 @@ export const productSuppliers = modbmCore.table(
     purchaseUnit: text('purchase_unit'),
     effectiveFrom: timestamp('effective_from', { withTimezone: true }),
     effectiveTo: timestamp('effective_to', { withTimezone: true }),
-    stateCode: text('state_code').notNull().default('active'),
+    stateCode: text('state_code').notNull().default(SUPPLIER_STATE.ACTIVE),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     createdBy: text('created_by'),
@@ -1228,7 +1509,7 @@ export const salesInvoices = modbmCore.table(
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
-    stateCode: text('state_code').notNull().default('draft'),
+    stateCode: text('state_code').notNull().default(SALES_INVOICE_STATE.DRAFT),
     notes: text('notes'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1275,7 +1556,9 @@ export const purchaseInvoices = modbmCore.table(
     outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
     taxAmount: numeric('tax_amount').default('0'),
     currencyCode: text('currency_code').notNull(),
-    stateCode: text('state_code').notNull().default('draft'),
+    stateCode: text('state_code')
+      .notNull()
+      .default(PURCHASE_INVOICE_STATE.DRAFT),
     notes: text('notes'),
     createdBy: text('created_by'),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1303,7 +1586,7 @@ export const purchaseInvoiceLines = modbmCore.table('purchase_invoice_lines', {
   quantityInvoiced: numeric('quantity_invoiced').notNull(),
   pricePerUnit: numeric('price_per_unit').notNull(),
   amount: numeric('amount').notNull(),
-  matchStatus: text('match_status').notNull().default('unmatched'),
+  matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED),
 });
 
 // ---------------------------------------------------------------------------
@@ -1340,7 +1623,7 @@ export const paymentEntries = modbmCore.table('payment_entries', {
     .notNull()
     .references(() => glAccounts.glAccountId),
   referenceNumber: text('reference_number'),
-  stateCode: text('state_code').notNull().default('draft'),
+  stateCode: text('state_code').notNull().default(PAYMENT_STATE.DRAFT),
   currencyCode: text('currency_code').notNull(),
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1358,6 +1641,20 @@ export const paymentAllocations = modbmCore.table('payment_allocations', {
   referenceType: text('reference_type').notNull(), // 'sales_invoice' | 'purchase_invoice'
   referenceId: uuid('reference_id').notNull(),
   allocatedAmount: numeric('allocated_amount').notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// payment_events  (Audit log + event sourcing)
+// ---------------------------------------------------------------------------
+export const paymentEvents = modbmCore.table('payment_events', {
+  eventId: uuid('event_id').primaryKey().defaultRandom(),
+  paymentId: uuid('payment_id')
+    .notNull()
+    .references(() => paymentEntries.paymentId),
+  eventType: text('event_type').notNull(),
+  payload: jsonb('payload'),
+  actor: text('actor'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
 });
 
@@ -1404,7 +1701,9 @@ export const glAccounts = modbmCore.table(
     parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
     isGroup: boolean('is_group').notNull().default(false),
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
+    isBankAccount: boolean('is_bank_account').notNull().default(false), // determines if it appears in payment/recon modules
     currencyCode: text('currency_code').notNull(), // GL accounts can have different currencies
+    metadata: jsonb('metadata').$type<Record<string, any>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   },
@@ -1439,7 +1738,7 @@ export const glReconciliations = modbmCore.table('gl_reconciliations', {
     .references(() => glAccounts.glAccountId),
   statementDate: date('statement_date').notNull(),
   statementBalance: numeric('statement_balance').notNull(),
-  status: text('status').notNull().default('draft'), // 'draft' | 'posted'
+  status: text('status').notNull().default(RECONCILIATION_STATE.DRAFT), // 'draft' | 'posted'
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   postedOn: timestamp('posted_on', { withTimezone: true }),
@@ -1536,6 +1835,9 @@ export const glSettings = modbmCore.table('gl_settings', {
   expenseRoutingPrecedence: text('expense_routing_precedence')
     .notNull()
     .default('product_first'), // 'product_first' | 'supplier_first'
+  defaultFeeRevenueAccountId: uuid('default_fee_revenue_account_id').references(
+    () => glAccounts.glAccountId,
+  ),
 });
 
 // ---------------------------------------------------------------------------
@@ -1630,7 +1932,9 @@ export const goodsReceived = modbmCore.table('goods_received', {
     .references(() => locations.locationId),
   packingSlipNumber: text('packing_slip_number'),
   notes: text('notes'),
-  stateCode: text('state_code').notNull().default('received'), // received | invoiced | archived
+  stateCode: text('state_code')
+    .notNull()
+    .default(GOODS_RECEIVED_STATE.RECEIVED), // received | invoiced | archived
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
@@ -1650,12 +1954,17 @@ export const goodsReceivedLines = modbmCore.table('goods_received_lines', {
     .notNull()
     .references(() => products.productId),
   quantityReceived: numeric('quantity_received').notNull(),
-  matchStatus: text('match_status').notNull().default('unmatched'), // matched | unmatched | ambiguous
+  matchStatus: text('match_status').notNull().default(MATCH_STATUS.UNMATCHED), // matched | unmatched | ambiguous
   putawayStatus: text('putaway_status', {
-    enum: ['awaiting_matching', 'pending_putaway', 'quarantined', 'completed'],
+    enum: [
+      PUTAWAY_STATUS.AWAITING_MATCHING,
+      PUTAWAY_STATUS.PENDING_PUTAWAY,
+      PUTAWAY_STATUS.QUARANTINED,
+      PUTAWAY_STATUS.COMPLETED,
+    ],
   })
     .notNull()
-    .default('pending_putaway'),
+    .default(PUTAWAY_STATUS.PENDING_PUTAWAY),
   purchaseOrderLineId: uuid('purchase_order_line_id').references(
     () => purchaseOrderLineItems.purchaseOrderLineId,
   ),

@@ -14,6 +14,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
+import { PURCHASE_ORDER_STATE, PURCHASE_RETURN_STATE } from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -136,7 +137,7 @@ describe('API E2E — Purchase Order Returns', () => {
     await request(app.getHttpServer())
       .patch(`/api/purchase-orders/${purchaseOrderId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'ordered' })
+      .send({ stateCode: PURCHASE_ORDER_STATE.ORDERED })
       .expect(200);
 
     // Get line IDs
@@ -200,7 +201,7 @@ describe('API E2E — Purchase Order Returns', () => {
         .expect(201);
 
       expect(res.body).toHaveProperty('returnId');
-      expect(res.body).toHaveProperty('stateCode', 'draft');
+      expect(res.body).toHaveProperty('stateCode', PURCHASE_RETURN_STATE.DRAFT);
       returnId = res.body.returnId;
     });
 
@@ -234,7 +235,7 @@ describe('API E2E — Purchase Order Returns', () => {
         .expect(201);
 
       expect(res.body.returnId).toBe(returnId);
-      expect(res.body.stateCode).toBe('processed'); // Returns flow immediately marks it as processed
+      expect(res.body.stateCode).toBe(PURCHASE_RETURN_STATE.PROCESSED); // Returns flow immediately marks it as processed
     });
   });
 

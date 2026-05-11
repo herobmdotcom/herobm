@@ -13,6 +13,8 @@ import {
   productSupplierEvents,
   systemEvents,
   shipmentEvents,
+  paymentEvents,
+  transferOrderEvents,
   outbox,
 } from '../drizzle/modbm-core-schema';
 
@@ -33,6 +35,14 @@ const EVENT_TABLE_MAP: Record<string, { table: any; fkField: string | null }> =
       fkField: 'productSupplierId',
     },
     shipment: { table: shipmentEvents, fkField: 'shipmentId' },
+    payment: { table: paymentEvents, fkField: 'paymentId' },
+    goods_receipt: { table: systemEvents, fkField: null },
+    sales_invoice: { table: systemEvents, fkField: null },
+    purchase_invoice: { table: systemEvents, fkField: null },
+    transfer_order: {
+      table: transferOrderEvents,
+      fkField: 'transferOrderId',
+    },
     system: { table: systemEvents, fkField: null },
   };
 

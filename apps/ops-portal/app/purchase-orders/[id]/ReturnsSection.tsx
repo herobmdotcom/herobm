@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
+import { PURCHASE_RETURN_STATE } from '@modbm/shared';
 
 interface ReturnLine {
   returnLineId: string;
@@ -31,12 +32,11 @@ interface Return {
   destination?: ReturnDestination;
 }
 
-function ReturnStateBadge({ state }: { state: string }) {
+function PurchaseReturnStateBadge({ state }: { state: string }) {
   const t = useTranslations('common.states');
   const colours: Record<string, string> = {
-    returned: 'var(--badge-shipped, #059669)',
-    archived: 'var(--badge-draft, #6b7280)',
-    cancelled: 'var(--badge-cancelled, #dc2626)',
+    [PURCHASE_RETURN_STATE.PROCESSED]: 'var(--badge-shipped, #059669)',
+    [PURCHASE_RETURN_STATE.CANCELLED]: 'var(--badge-cancelled, #dc2626)',
   };
   return (
     <span
@@ -77,7 +77,7 @@ function ReturnCard({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <strong style={{ fontSize: 13 }}>{r.returnNumber}</strong>
-          <ReturnStateBadge state={r.stateCode} />
+          <PurchaseReturnStateBadge state={r.stateCode} />
         </div>
       </div>
 

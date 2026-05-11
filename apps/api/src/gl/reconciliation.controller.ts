@@ -18,7 +18,7 @@ import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('GL Reconciliations')
 @Controller('gl/reconciliations')
-@CasbinResource('gl_reconciliation')
+@CasbinResource('gl')
 export class ReconciliationController {
   constructor(private readonly service: ReconciliationService) {}
 

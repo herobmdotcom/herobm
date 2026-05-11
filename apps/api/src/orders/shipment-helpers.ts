@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { SHIPMENT_STATE, SALES_ORDER_PICK_STATE } from '@modbm/shared';
 import { eq, sql, and } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -37,7 +38,7 @@ export async function getCommittedPerLine(
     .where(
       and(
         eq(salesOrderShipments.salesOrderId, salesOrderId),
-        sql`${salesOrderShipments.stateCode} != 'cancelled'`,
+        sql`${salesOrderShipments.stateCode} != ${SHIPMENT_STATE.CANCELLED}`,
       ),
     );
 
@@ -131,7 +132,7 @@ export async function assertShipmentQtyAvailable(
       .where(
         and(
           eq(salesOrderPicks.salesOrderLineId, salesOrderLineId),
-          sql`state_code != 'cancelled'`,
+          sql`state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
         ),
       );
     picked = parseFloat(String(pickSum?.sum ?? 0));

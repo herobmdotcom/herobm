@@ -23,13 +23,18 @@ import {
   inventoryLedger,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
+import {
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
+  SALES_ORDER_PICK_STATE,
+} from '@modbm/shared';
 import { setupTestModule } from '../../test/utils/test-module';
 
 // Shared test data
 const PICKING_ORDER = {
   salesOrderId: '00000000-0000-0000-0000-000000000001',
   orderNumber: 'ORD-20260316-0001',
-  stateCode: 'picking',
+  stateCode: SALES_ORDER_STATE.PICKING,
   customerId: 'c0000000-0000-0000-0000-000000000001',
   fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
   currencyCode: 'AUD',
@@ -52,7 +57,7 @@ const MOCK_SHIPMENT = {
   shipmentId: 'e0000000-0000-0000-0000-000000000001',
   shipmentNumber: 'SHP-20260316-0001',
   salesOrderId: '00000000-0000-0000-0000-000000000001',
-  stateCode: 'dispatched',
+  stateCode: SHIPMENT_STATE.DISPATCHED,
   notes: null,
   createdBy: 'admin',
 };
@@ -138,7 +143,7 @@ describe('ShipmentService', () => {
         salesOrderLineId: '00000000-0000-0000-0000-000000000002',
         productId: 'a0000000-0000-0000-0000-000000000001',
         quantity: '10',
-        stateCode: 'picked',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
       },
     ]);
     await pg.db.insert(salesOrderShipments).values([MOCK_SHIPMENT]);
@@ -268,7 +273,7 @@ describe('ShipmentService', () => {
     it('should reject if order is not in picking state', async () => {
       await pg.db
         .update(salesOrders)
-        .set({ stateCode: 'draft' })
+        .set({ stateCode: SALES_ORDER_STATE.DRAFT })
         .where(
           eq(salesOrders.salesOrderId, '00000000-0000-0000-0000-000000000001'),
         );
@@ -326,7 +331,7 @@ describe('ShipmentService', () => {
     it('should reject updating a cancelled shipment', async () => {
       await pg.db
         .update(salesOrderShipments)
-        .set({ stateCode: 'cancelled' })
+        .set({ stateCode: SHIPMENT_STATE.CANCELLED })
         .where(
           eq(
             salesOrderShipments.shipmentId,
@@ -397,7 +402,7 @@ describe('ShipmentService', () => {
       // Inventory is already seeded in the global beforeEach
     }
 
-    it.each([['dispatched', 'cancelled']])(
+    it.each([[SHIPMENT_STATE.DISPATCHED, SHIPMENT_STATE.CANCELLED]])(
       'should reject state-machine transition %s → %s in favor of dedicated endpoint',
       async (from, to) => {
         await setupWithState(from);
@@ -411,7 +416,7 @@ describe('ShipmentService', () => {
       },
     );
 
-    it.each([['cancelled', 'dispatched']])(
+    it.each([[SHIPMENT_STATE.CANCELLED, SHIPMENT_STATE.DISPATCHED]])(
       'should reject transition %s → %s',
       async (from, to) => {
         await setupWithState(from);

@@ -98,6 +98,76 @@ export function computeOrderTotals(
 }
 
 // ---------------------------------------------------------------------------
+// Return Credit Summary
+// ---------------------------------------------------------------------------
+
+export interface ReturnCreditLineInput {
+  /** Quantity being returned */
+  quantity: number;
+  /** Original unit price from the sales order line */
+  pricePerUnit: number;
+  /** Discount percentage from the original order line. Defaults to 0. */
+  discountPercentage?: number;
+  /** Tax rate as a percentage, e.g. 10 for 10% GST. Defaults to 0. */
+  taxRate?: number;
+  /** Restocking / return fee for this line. Defaults to 0. */
+  returnFee?: number;
+}
+
+export interface ReturnCreditSummary {
+  /** Sum of net line amounts (after discount, before tax) */
+  subtotal: number;
+  /** Total tax across all return lines */
+  totalTax: number;
+  /** Total restocking / return fees across all lines */
+  totalFees: number;
+  /** Net credit to the customer: subtotal + totalTax − totalFees */
+  netCredit: number;
+}
+
+/**
+ * Compute aggregate credit totals for a sales return.
+ *
+ * This is a **pure function** — no side-effects, no DB calls.
+ * All per-line inputs (price, discount, tax rate, fee) must be resolved
+ * before calling.
+ *
+ * Formula:  netCredit = subtotal + totalTax − totalFees
+ *
+ * Uses `computeLinePrice` internally so per-line rounding is consistent
+ * with invoices and order totals.
+ */
+export function computeReturnCreditSummary(
+  lines: ReturnCreditLineInput[],
+): ReturnCreditSummary {
+  let subtotalRaw = 0;
+  let totalTaxRaw = 0;
+  let totalFeesRaw = 0;
+
+  for (const line of lines) {
+    const pricing = computeLinePrice({
+      quantity: line.quantity,
+      pricePerUnit: line.pricePerUnit,
+      discountPercentage: line.discountPercentage,
+      taxRate: line.taxRate,
+    });
+    subtotalRaw += pricing.amount;
+    totalTaxRaw += pricing.tax;
+    totalFeesRaw += line.returnFee ?? 0;
+  }
+
+  const subtotal = Number(Math.round(Number(subtotalRaw + 'e2')) + 'e-2');
+  const totalTax = Number(Math.round(Number(totalTaxRaw + 'e2')) + 'e-2');
+  const totalFees = Number(Math.round(Number(totalFeesRaw + 'e2')) + 'e-2');
+  const netCredit = Number(
+    Math.round(Number((subtotal + totalTax - totalFees) + 'e2')) + 'e-2',
+  );
+
+  return { subtotal, totalTax, totalFees, netCredit };
+}
+
+
+// ---------------------------------------------------------------------------
 // Discount Matrix Resolution
 // ---------------------------------------------------------------------------
 

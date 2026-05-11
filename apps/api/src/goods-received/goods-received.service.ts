@@ -35,6 +35,23 @@ import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
+import { BackordersService } from '../orders/backorders.service';
+import { PurchaseOrdersService } from '../purchase-orders/purchase-orders.service';
+import {
+  RECEIPT_STATE,
+  RECEIPT_TRANSITIONS,
+  PURCHASE_ORDER_STATE,
+  PURCHASE_ORDER_TRANSITIONS,
+  BACKORDER_STATE,
+  BACKORDER_TRANSITIONS,
+  getValidStates,
+  PurchaseOrderState,
+  BackorderState,
+  PUTAWAY_STATUS,
+  MATCH_STATUS,
+} from '@modbm/shared';
+
+const VALID_GRN_STATES = getValidStates(RECEIPT_TRANSITIONS);
 
 @Injectable()
 export class GoodsReceivedService {
@@ -45,6 +62,8 @@ export class GoodsReceivedService {
     private readonly inventoryService: InventoryService,
     private readonly appConfig: AppConfigService,
     private readonly glService: GlService,
+    private readonly backordersService: BackordersService,
+    private readonly purchaseOrdersService: PurchaseOrdersService,
   ) {}
 
   /**
@@ -100,7 +119,7 @@ export class GoodsReceivedService {
           locationId: createDto.locationId,
           packingSlipNumber: createDto.packingSlipNumber,
           notes: createDto.notes,
-          stateCode: 'received',
+          stateCode: RECEIPT_STATE.RECEIVED as any,
           createdBy: userId,
         })
         .returning();
@@ -145,7 +164,7 @@ export class GoodsReceivedService {
                 eq(purchaseOrders.vendorId, createDto.vendorId),
                 eq(purchaseOrderLineItems.productId, line.productId),
                 eq(purchaseOrders.deliveryLocationId, createDto.locationId),
-                sql`${purchaseOrders.stateCode} IN ('ordered', 'partially_received')`,
+                sql`${purchaseOrders.stateCode} IN (${PURCHASE_ORDER_STATE.ORDERED}, ${PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED})`,
                 sql`CAST(${purchaseOrderLineItems.quantityReceived} AS NUMERIC) < CAST(${purchaseOrderLineItems.quantity} AS NUMERIC)`,
                 sql`CAST(${purchaseOrderLineItems.quantity} AS NUMERIC) - CAST(COALESCE(${purchaseOrderLineItems.quantityReceived}, '0') AS NUMERIC) >= CAST(${line.quantityReceived} AS NUMERIC)`,
               ),
@@ -156,13 +175,13 @@ export class GoodsReceivedService {
           let matchedPoId: string | null = null;
 
           if (openPoLines.length === 1) {
-            matchStatus = 'matched';
+            matchStatus = MATCH_STATUS.MATCHED;
             matchedPoLineId = openPoLines[0].purchaseOrderLineId;
             matchedPoId = openPoLines[0].purchaseOrderId;
           } else if (openPoLines.length > 1) {
-            matchStatus = 'ambiguous';
+            matchStatus = MATCH_STATUS.AMBIGUOUS;
           } else {
-            matchStatus = 'unmatched';
+            matchStatus = MATCH_STATUS.UNMATCHED;
           }
 
           const unitCost = matchedPoLineId ? openPoLines[0].pricePerUnit : null;
@@ -173,9 +192,9 @@ export class GoodsReceivedService {
             quantityReceived: line.quantityReceived.toString(),
             matchStatus,
             putawayStatus:
-              matchStatus === 'matched'
-                ? 'pending_putaway'
-                : 'awaiting_matching',
+              matchStatus === MATCH_STATUS.MATCHED
+                ? PUTAWAY_STATUS.PENDING_PUTAWAY
+                : PUTAWAY_STATUS.AWAITING_MATCHING,
             purchaseOrderLineId: matchedPoLineId,
             purchaseOrderId: matchedPoId,
             unitCost: unitCost, // Use for valuation, filtered out during insert
@@ -347,7 +366,7 @@ export class GoodsReceivedService {
 
         // --- 6. PO Update: Update matched PO lines ---
         const matchedLines = lineValues.filter(
-          (l) => l.matchStatus === 'matched',
+          (l) => l.matchStatus === MATCH_STATUS.MATCHED,
         );
         for (const ml of matchedLines) {
           await tx
@@ -373,7 +392,7 @@ export class GoodsReceivedService {
             .where(
               and(
                 eq(backorders.purchaseOrderLineId, ml.purchaseOrderLineId),
-                eq(backorders.stateCode, 'awaiting_receipt'),
+                eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
               ),
             );
 
@@ -385,10 +404,12 @@ export class GoodsReceivedService {
 
             if (receiptRemaining >= boQty) {
               // Fully fulfilled — transition entire backorder
-              await tx
-                .update(backorders)
-                .set({ stateCode: 'received_reserved', modifiedOn: new Date() })
-                .where(eq(backorders.backorderId, bo.backorderId));
+              await this.backordersService.changeBackorderState(
+                bo.backorderId,
+                BACKORDER_STATE.RECEIVED_RESERVED,
+                userId,
+                tx,
+              );
               receiptRemaining -= boQty;
             } else {
               // Partially fulfilled — split the backorder record
@@ -407,7 +428,7 @@ export class GoodsReceivedService {
                 purchaseOrderId: bo.purchaseOrderId,
                 purchaseOrderLineId: bo.purchaseOrderLineId,
                 quantity: receiptRemaining.toString(),
-                stateCode: 'received_reserved',
+                stateCode: BACKORDER_STATE.RECEIVED_RESERVED,
               });
               receiptRemaining = 0;
             }
@@ -487,7 +508,7 @@ export class GoodsReceivedService {
         );
       }
 
-      if (receipt.stateCode === 'cancelled') {
+      if (receipt.stateCode === RECEIPT_STATE.CANCELLED) {
         throw new BadRequestException('Receipt is already cancelled.');
       }
 
@@ -498,7 +519,7 @@ export class GoodsReceivedService {
 
       // 2. Validate states
       for (const line of receiptLines) {
-        if (line.putawayStatus === 'completed') {
+        if (line.putawayStatus === PUTAWAY_STATUS.COMPLETED) {
           throw new BadRequestException(
             `Line ${line.goodsReceivedLineId} has been putaway. Cannot cancel receipt directly. You must reverse the putaway first.`,
           );
@@ -606,7 +627,7 @@ export class GoodsReceivedService {
 
       for (const line of receiptLines) {
         if (
-          line.matchStatus === 'matched' &&
+          line.matchStatus === MATCH_STATUS.MATCHED &&
           line.purchaseOrderLineId &&
           line.purchaseOrderId
         ) {
@@ -633,25 +654,27 @@ export class GoodsReceivedService {
           0,
         );
 
-        let newPoState = 'ordered';
+        let newPoState: PurchaseOrderState = PURCHASE_ORDER_STATE.ORDERED;
         if (totalReceived > 0) {
           // If there are still received lines, it might be partially received
-          newPoState = 'partially_received';
+          newPoState = PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
         }
 
         // Just blindly revert state, assuming no invoice blocking. If the user wants to close short later they can.
-        await tx
-          .update(purchaseOrders)
-          .set({ stateCode: newPoState, modifiedOn: new Date() })
-          .where(eq(purchaseOrders.purchaseOrderId, poId));
+        await this.purchaseOrdersService.changePurchaseOrderState(
+          poId,
+          newPoState,
+          userId,
+          tx,
+        );
 
         await emitEvent(tx, {
           aggregateType: AggregateType.PURCHASE_ORDER,
           aggregateId: poId,
-          eventType: 'auto_status_changed',
+          eventType: EventType.AUTO_STATUS_CHANGED,
           payload: {
             rule: 'cancel_receipt_revert',
-            from: 'received',
+            from: PURCHASE_ORDER_STATE.RECEIVED,
             to: newPoState,
             reason: `Receipt ${receipt.receiptNumber} was cancelled.`,
           },
@@ -660,22 +683,12 @@ export class GoodsReceivedService {
       }
 
       // 6. Update GR state
-      await tx
-        .update(goodsReceived)
-        .set({ stateCode: 'cancelled', modifiedOn: new Date() })
-        .where(eq(goodsReceived.goodsReceivedId, goodsReceivedId));
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SYSTEM,
-        aggregateId: receipt.goodsReceivedId,
-        eventType: EventType.STOCK_RECEIVED, // You might want a different event, but sticking to existing
-        payload: {
-          goodsReceivedId: receipt.goodsReceivedId,
-          receiptNumber: receipt.receiptNumber,
-          action: 'cancelled',
-        },
-        actor: userId,
-      });
+      await this.changeReceiptState(
+        goodsReceivedId,
+        RECEIPT_STATE.CANCELLED,
+        userId,
+        tx,
+      );
 
       this.logger.log(
         `Goods received ${receipt.receiptNumber} cancelled by ${userId}`,
@@ -683,6 +696,63 @@ export class GoodsReceivedService {
 
       return { success: true };
     });
+  }
+
+  /**
+   * Universal changeState for Goods Receipt
+   */
+  async changeReceiptState(
+    receiptId: string,
+    newState: string,
+    actor: string,
+    tx: DrizzleDB,
+  ) {
+    if (!VALID_GRN_STATES.includes(newState)) {
+      throw new BadRequestException(
+        `Invalid goods receipt state: '${newState}'`,
+      );
+    }
+
+    const [receipt] = await tx
+      .select({
+        stateCode: goodsReceived.stateCode,
+        receiptNumber: goodsReceived.receiptNumber,
+      })
+      .from(goodsReceived)
+      .where(eq(goodsReceived.goodsReceivedId, receiptId));
+
+    if (!receipt) {
+      throw new NotFoundException(`Receipt ${receiptId} not found`);
+    }
+
+    const allowed = RECEIPT_TRANSITIONS[receipt.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition receipt from '${receipt.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await tx
+      .update(goodsReceived)
+      .set({ stateCode: newState, modifiedOn: new Date() })
+      .where(eq(goodsReceived.goodsReceivedId, receiptId))
+      .returning();
+
+    await emitEvent(tx as any, {
+      aggregateType: AggregateType.GOODS_RECEIPT,
+      aggregateId: receiptId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'goods_receipt',
+        entityId: receiptId,
+        receiptNumber: receipt.receiptNumber,
+        from: receipt.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 
   /**
@@ -958,7 +1028,7 @@ export class GoodsReceivedService {
         .limit(1);
 
       if (!grLine) throw new NotFoundException('Line not found');
-      if (grLine.matchStatus === 'matched')
+      if (grLine.matchStatus === MATCH_STATUS.MATCHED)
         throw new BadRequestException('Line already matched');
 
       const [poLine] = await tx
@@ -982,9 +1052,12 @@ export class GoodsReceivedService {
 
       if (!poLine) throw new NotFoundException('PO Line not found');
       if (
-        ['received', 'invoiced', 'cancelled', 'closed_short'].includes(
-          poLine.stateCode || '',
-        )
+        [
+          PURCHASE_ORDER_STATE.RECEIVED,
+          PURCHASE_ORDER_STATE.INVOICED,
+          PURCHASE_ORDER_STATE.CANCELLED,
+          PURCHASE_ORDER_STATE.CLOSED_SHORT,
+        ].includes(poLine.stateCode as any)
       ) {
         throw new BadRequestException(
           `Cannot match to a PO in '${poLine.stateCode}' state.`,
@@ -1004,12 +1077,12 @@ export class GoodsReceivedService {
       await tx
         .update(goodsReceivedLines)
         .set({
-          matchStatus: 'matched',
+          matchStatus: MATCH_STATUS.MATCHED,
           // ADV-086: Preserve quarantined status if set — matching doesn't clear quarantine
           putawayStatus:
-            grLine.putawayStatus === 'quarantined'
-              ? 'quarantined'
-              : 'pending_putaway',
+            grLine.putawayStatus === PUTAWAY_STATUS.QUARANTINED
+              ? PUTAWAY_STATUS.QUARANTINED
+              : PUTAWAY_STATUS.PENDING_PUTAWAY,
           purchaseOrderLineId: poLine.poLineId,
           purchaseOrderId: poLine.poId,
           quantityReceived: targetQuantity.toString(),
@@ -1026,8 +1099,8 @@ export class GoodsReceivedService {
             goodsReceivedId: grLine.goodsReceivedId,
             productId: grLine.productId,
             quantityReceived: remainder.toString(),
-            matchStatus: 'ambiguous',
-            putawayStatus: 'awaiting_matching',
+            matchStatus: MATCH_STATUS.AMBIGUOUS,
+            putawayStatus: PUTAWAY_STATUS.AWAITING_MATCHING,
           })
           .returning();
         splitLine = inserted;
@@ -1048,7 +1121,7 @@ export class GoodsReceivedService {
         .where(
           and(
             eq(backorders.purchaseOrderLineId, poLine.poLineId),
-            eq(backorders.stateCode, 'awaiting_receipt'),
+            eq(backorders.stateCode, BACKORDER_STATE.AWAITING_RECEIPT),
           ),
         );
 
@@ -1059,10 +1132,12 @@ export class GoodsReceivedService {
         const boQty = parseFloat(bo.quantity);
 
         if (receiptRemaining >= boQty) {
-          await tx
-            .update(backorders)
-            .set({ stateCode: 'received_reserved', modifiedOn: new Date() })
-            .where(eq(backorders.backorderId, bo.backorderId));
+          await this.backordersService.changeBackorderState(
+            bo.backorderId,
+            BACKORDER_STATE.RECEIVED_RESERVED,
+            userId,
+            tx,
+          );
           receiptRemaining -= boQty;
         } else {
           await tx
@@ -1080,7 +1155,7 @@ export class GoodsReceivedService {
             purchaseOrderId: bo.purchaseOrderId,
             purchaseOrderLineId: bo.purchaseOrderLineId,
             quantity: receiptRemaining.toString(),
-            stateCode: 'received_reserved',
+            stateCode: BACKORDER_STATE.RECEIVED_RESERVED,
           });
           receiptRemaining = 0;
         }
@@ -1101,12 +1176,16 @@ export class GoodsReceivedService {
           parseFloat(l.quantity || '0'),
       );
 
-      await tx
-        .update(purchaseOrders)
-        .set({
-          stateCode: allFullyReceived ? 'received' : 'partially_received',
-        })
-        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId));
+      const newState = allFullyReceived
+        ? PURCHASE_ORDER_STATE.RECEIVED
+        : PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
+
+      await this.purchaseOrdersService.changePurchaseOrderState(
+        poLine.poId,
+        newState as any,
+        userId,
+        tx,
+      );
 
       // Emit Event
       await emitEvent(tx, {
@@ -1138,7 +1217,10 @@ export class GoodsReceivedService {
         .limit(1);
 
       if (!grLine) throw new NotFoundException('Line not found');
-      if (grLine.matchStatus !== 'matched' || !grLine.purchaseOrderLineId) {
+      if (
+        grLine.matchStatus !== MATCH_STATUS.MATCHED ||
+        !grLine.purchaseOrderLineId
+      ) {
         throw new BadRequestException('Line is not matched to a PO');
       }
 
@@ -1168,7 +1250,7 @@ export class GoodsReceivedService {
           and(
             eq(goodsReceivedLines.goodsReceivedId, grLine.goodsReceivedId),
             eq(goodsReceivedLines.productId, grLine.productId),
-            sql`${goodsReceivedLines.matchStatus} != 'matched'`,
+            sql`${goodsReceivedLines.matchStatus} != ${MATCH_STATUS.MATCHED}`,
             sql`${goodsReceivedLines.goodsReceivedLineId} != ${grLine.goodsReceivedLineId}`,
           ),
         )
@@ -1200,11 +1282,11 @@ export class GoodsReceivedService {
         await tx
           .update(goodsReceivedLines)
           .set({
-            matchStatus: 'ambiguous',
+            matchStatus: MATCH_STATUS.AMBIGUOUS,
             putawayStatus:
-              grLine.putawayStatus === 'quarantined'
-                ? 'quarantined'
-                : 'awaiting_matching',
+              grLine.putawayStatus === PUTAWAY_STATUS.QUARANTINED
+                ? PUTAWAY_STATUS.QUARANTINED
+                : PUTAWAY_STATUS.AWAITING_MATCHING,
             purchaseOrderLineId: null,
             purchaseOrderId: null,
           })
@@ -1240,16 +1322,18 @@ export class GoodsReceivedService {
         (l) => parseFloat(l.quantityReceived || '0') > 0,
       );
 
-      await tx
-        .update(purchaseOrders)
-        .set({
-          stateCode: allFullyReceived
-            ? 'received'
-            : anyReceived
-              ? 'partially_received'
-              : 'ordered',
-        })
-        .where(eq(purchaseOrders.purchaseOrderId, poLine.poId));
+      const newState = allFullyReceived
+        ? PURCHASE_ORDER_STATE.RECEIVED
+        : anyReceived
+          ? PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED
+          : PURCHASE_ORDER_STATE.ORDERED;
+
+      await this.purchaseOrdersService.changePurchaseOrderState(
+        poLine.poId,
+        newState as any,
+        userId,
+        tx,
+      );
 
       // 4. Emit Event
       await emitEvent(tx, {
@@ -1291,7 +1375,7 @@ export class GoodsReceivedService {
       if (!grLine) throw new NotFoundException('Line not found');
 
       const currentStatus = grLine.line.putawayStatus;
-      if (currentStatus === 'completed') {
+      if (currentStatus === PUTAWAY_STATUS.COMPLETED) {
         throw new BadRequestException(
           'Cannot quarantine an already putaway line',
         );
@@ -1301,18 +1385,20 @@ export class GoodsReceivedService {
       // When un-quarantining, restore to 'pending_putaway' only if matched to a PO;
       // otherwise restore to 'awaiting_matching' to prevent unmatched items
       // from bypassing the allocation stage.
-      let newStatus: 'quarantined' | 'pending_putaway' | 'awaiting_matching';
-      if (currentStatus === 'quarantined') {
+      let newStatus: any;
+      if (currentStatus === PUTAWAY_STATUS.QUARANTINED) {
         newStatus = grLine.line.purchaseOrderLineId
-          ? 'pending_putaway'
-          : 'awaiting_matching';
+          ? PUTAWAY_STATUS.PENDING_PUTAWAY
+          : PUTAWAY_STATUS.AWAITING_MATCHING;
       } else {
-        newStatus = 'quarantined';
+        newStatus = PUTAWAY_STATUS.QUARANTINED;
       }
       const targetBinCode =
-        newStatus === 'quarantined' ? 'QUARANTINE' : 'RECEIVING';
+        newStatus === PUTAWAY_STATUS.QUARANTINED ? 'QUARANTINE' : 'RECEIVING';
       const currentBinCode =
-        currentStatus === 'quarantined' ? 'QUARANTINE' : 'RECEIVING';
+        currentStatus === PUTAWAY_STATUS.QUARANTINED
+          ? 'QUARANTINE'
+          : 'RECEIVING';
 
       // Find the zones/bins
       const [sourceBin] = await tx
@@ -1443,19 +1529,19 @@ export class GoodsReceivedService {
 
         if (!grLine)
           throw new NotFoundException(`Line ${lineDto.lineId} not found`);
-        if (grLine.line.matchStatus !== 'matched') {
+        if (grLine.line.matchStatus !== MATCH_STATUS.MATCHED) {
           throw new BadRequestException(
             `Cannot putaway unmatched line: ${lineDto.lineId}`,
           );
         }
-        if (grLine.line.putawayStatus === 'completed') {
+        if (grLine.line.putawayStatus === PUTAWAY_STATUS.COMPLETED) {
           throw new BadRequestException(
             `Line ${lineDto.lineId} is already putaway`,
           );
         }
 
         const sourceBinCode =
-          grLine.line.putawayStatus === 'quarantined'
+          grLine.line.putawayStatus === PUTAWAY_STATUS.QUARANTINED
             ? 'QUARANTINE'
             : 'RECEIVING';
 
@@ -1537,7 +1623,7 @@ export class GoodsReceivedService {
 
         await tx
           .update(goodsReceivedLines)
-          .set({ putawayStatus: 'completed' })
+          .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
           .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
       }
 

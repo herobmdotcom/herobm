@@ -16,6 +16,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
 import { CreateReconciliationDto, CreateAdjustmentDto } from './dto';
+import { RECONCILIATION_STATE } from '@modbm/shared';
 import { GlService, JournalMeta } from './gl.service';
 
 @Injectable()
@@ -120,7 +121,7 @@ export class ReconciliationService {
         glAccountId: data.glAccountId,
         statementDate: data.statementDate,
         statementBalance: String(data.statementBalance),
-        status: 'draft',
+        status: RECONCILIATION_STATE.DRAFT,
         createdBy: data.createdBy,
       })
       .returning({ reconciliationId: glReconciliations.reconciliationId });
@@ -255,7 +256,7 @@ export class ReconciliationService {
       .from(glReconciliations)
       .where(eq(glReconciliations.reconciliationId, reconciliationId));
     if (!recs.length) throw new NotFoundException('Reconciliation not found');
-    if (recs[0].status === 'posted')
+    if (recs[0].status === RECONCILIATION_STATE.POSTED)
       throw new BadRequestException('Reconciliation is already posted');
 
     // Fetch the target journal line
@@ -412,7 +413,7 @@ export class ReconciliationService {
 
   async postReconciliation(id: string) {
     const details = await this.getReconciliation(id);
-    if (details.status === 'posted') {
+    if (details.status === RECONCILIATION_STATE.POSTED) {
       throw new BadRequestException('Already posted');
     }
 
@@ -429,7 +430,7 @@ export class ReconciliationService {
     // Mark reconciliation as posted
     await this.db
       .update(glReconciliations)
-      .set({ status: 'posted', postedOn: new Date() })
+      .set({ status: RECONCILIATION_STATE.POSTED, postedOn: new Date() })
       .where(eq(glReconciliations.reconciliationId, id));
 
     return { success: true };
@@ -441,7 +442,7 @@ export class ReconciliationService {
       .from(glReconciliations)
       .where(eq(glReconciliations.reconciliationId, id));
     if (!recs.length) throw new NotFoundException('Reconciliation not found');
-    if (recs[0].status === 'posted')
+    if (recs[0].status === RECONCILIATION_STATE.POSTED)
       throw new BadRequestException('Cannot discard a posted reconciliation');
 
     await this.db.transaction(async (tx) => {
@@ -466,7 +467,7 @@ export class ReconciliationService {
       .from(glReconciliations)
       .where(eq(glReconciliations.reconciliationId, id));
     if (!recs.length) throw new NotFoundException('Reconciliation not found');
-    if (recs[0].status === 'posted')
+    if (recs[0].status === RECONCILIATION_STATE.POSTED)
       throw new BadRequestException('Reconciliation is already posted');
 
     const rec = recs[0];

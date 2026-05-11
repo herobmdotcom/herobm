@@ -5,7 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { apiFetch, apiMutate, reportError, ApiError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS } from '@modbm/shared';
+import { 
+    SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
+    SALES_ORDER_STATE
+} from '@modbm/shared';
 
 import type {
     OrderDetail, TaxCategory, InventoryLevel,
@@ -152,10 +155,20 @@ export function useOrder(id: string) {
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
-        if (['shipped', 'picking', 'invoiced', 'legacy'].includes(order?.stateCode || '')) {
+        if ([
+            SALES_ORDER_STATE.SHIPPED, 
+            SALES_ORDER_STATE.PICKING, 
+            SALES_ORDER_STATE.INVOICED, 
+            SALES_ORDER_STATE.LEGACY
+        ].includes(order?.stateCode as any || '')) {
             loadInvoices();
         }
-        if (order?.stateCode === 'invoiced' || order?.stateCode === 'legacy') {
+        if ([
+            SALES_ORDER_STATE.PICKING,
+            SALES_ORDER_STATE.SHIPPED,
+            SALES_ORDER_STATE.INVOICED, 
+            SALES_ORDER_STATE.LEGACY
+        ].includes(order?.stateCode as any || '')) {
             loadReturns();
         }
     }, [order?.stateCode]);
@@ -163,7 +176,7 @@ export function useOrder(id: string) {
     // Load inventory for highlighting shortages
     useEffect(() => {
         if (!order || order.lines.length === 0) return;
-        if (!['draft', 'quoted'].includes(order.stateCode)) return;
+        if (![SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.QUOTED].includes(order.stateCode as any)) return;
         const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
         if (productIds.length === 0) return;
         setInventoryLoading(true);
@@ -396,9 +409,9 @@ export function useOrder(id: string) {
     /* ── Computed values ─────────────────────────────────────────── */
 
     const isOrderDetailsEditable =
-        !['cancelled', 'legacy', 'archived'].includes(order?.stateCode ?? '');
+        ![SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED].includes(order?.stateCode as any ?? '');
 
-    const isOrderLinesEditable = order?.stateCode === 'draft';
+    const isOrderLinesEditable = order?.stateCode === SALES_ORDER_STATE.DRAFT;
 
     const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
 

@@ -8,6 +8,7 @@ interface SlideOverProps {
   title: string;
   subtitle?: React.ReactNode;
   children: React.ReactNode;
+  actions?: React.ReactNode;
   width?: string;
 }
 
@@ -17,6 +18,7 @@ export default function SlideOver({
   title,
   subtitle,
   children,
+  actions,
   width = 'max-w-xl'
 }: SlideOverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -75,14 +77,17 @@ export default function SlideOver({
                 </div>
               )}
             </div>
-            <button 
-              type="button" 
-              className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
-              onClick={onClose}
-            >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined text-[20px]">close</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {actions}
+              <button 
+                type="button" 
+                className="btn btn-sm btn-circle btn-ghost text-gray-500 hover:text-gray-800 hover:bg-gray-100" 
+                onClick={onClose}
+              >
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
           </div>
 
           {/* Body */}

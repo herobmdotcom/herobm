@@ -14,6 +14,11 @@ import {
   locations,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
+import {
+  SALES_ORDER_STATE,
+  SHIPMENT_STATE,
+  ACCOUNT_STATE,
+} from '@modbm/shared';
 
 describe('ShippingDocketService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -73,7 +78,7 @@ describe('ShippingDocketService', () => {
       address1PostalCode: '4000',
       address1Country: 'Australia',
       currencyCode: 'AUD',
-      stateCode: 'active',
+      stateCode: ACCOUNT_STATE.ACTIVE,
       source: 'app',
     });
 
@@ -98,7 +103,7 @@ describe('ShippingDocketService', () => {
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
       customerId: CUSTOMER_ID,
-      stateCode: 'confirmed',
+      stateCode: SALES_ORDER_STATE.CONFIRMED,
       currencyCode: 'AUD',
       fulfillmentLocationId: LOCATION_ID,
     });
@@ -136,7 +141,7 @@ describe('ShippingDocketService', () => {
       salesOrderId: ORDER_ID,
       trackingNumber: 'TRACK123',
       notes: 'Fragile items',
-      stateCode: 'dispatched',
+      stateCode: SHIPMENT_STATE.DISPATCHED,
     });
 
     // Seed Shipment Lines

@@ -22,6 +22,7 @@ interface UnifiedOrder {
     currencyCode: string | null;
     pickabilityStatus: 'ready' | 'partial' | 'blocked';
     hasAllocation?: boolean;
+    type?: 'sales_order' | 'transfer_order';
 }
 
 interface PickAllocation {
@@ -137,7 +138,10 @@ export default function PickingPage() {
 
         setLoadingSummary(true);
         setError(null);
-        apiFetch<PickingSummary>(`/api/sales-orders/${selectedOrder.id}/picking`)
+        
+        const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
+        
+        apiFetch<PickingSummary>(`${baseUrl}/${selectedOrder.id}/picking`)
             .then((data) => {
                 setPickingSummary(data);
                 
@@ -179,7 +183,8 @@ export default function PickingPage() {
         setError(null);
 
         try {
-            await apiMutate(`/api/sales-orders/${selectedOrder.id}/picking/lines/${lineId}`, 'POST', {
+            const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
+            await apiMutate(`${baseUrl}/${selectedOrder.id}/picking/lines/${lineId}`, 'POST', {
                 quantity: input.quantity,
                 binId: input.binId
             });
@@ -196,7 +201,8 @@ export default function PickingPage() {
         setIsSubmitting(true);
         setError(null);
         try {
-            await apiMutate(`/api/sales-orders/${selectedOrder.id}/picking/picks/${pickId}`, 'DELETE');
+            const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
+            await apiMutate(`${baseUrl}/${selectedOrder.id}/picking/picks/${pickId}`, 'DELETE');
             await loadSummary();
         } catch (err: any) {
             setError(err.message);
@@ -209,7 +215,10 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            const blob = await apiFetchBlob(`/api/reports/hooks/picking-slip/run?id=${selectedOrder.id}&context=picking-slip`, { method: 'POST' });
+            let reportName = 'picking-slip';
+            // Fallback for transfer orders without a dedicated slip yet
+            const urlStr = `/api/reports/hooks/${reportName}/run?id=${selectedOrder.id}&context=picking-slip`;
+            const blob = await apiFetchBlob(urlStr, { method: 'POST' });
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
         } catch (err: any) {
@@ -388,8 +397,8 @@ export default function PickingPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {itemsToPick.map(line => (
-                                                    <tr key={line.salesOrderLineId}>
+                                                {itemsToPick.map((line, idx) => (
+                                                    <tr key={`${line.salesOrderLineId}-${idx}`}>
                                                         <td>
                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="font-bold">{line.productNumber}</div>
@@ -488,8 +497,8 @@ export default function PickingPage() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {unavailableItems.map(line => (
-                                                        <tr key={line.salesOrderLineId}>
+                                                    {unavailableItems.map((line, idx) => (
+                                                        <tr key={`${line.salesOrderLineId}-${idx}`}>
                                                             <td>
                                                                 <div className="font-bold">{line.productNumber}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>

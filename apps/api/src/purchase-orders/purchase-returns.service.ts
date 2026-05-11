@@ -21,13 +21,21 @@ import {
   supplierGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 import { InventoryService } from '../inventory/inventory.service';
 import { CreatePurchaseReturnDto } from './dto';
+import {
+  PURCHASE_RETURN_STATE,
+  PURCHASE_RETURN_TRANSITIONS,
+  PURCHASE_ORDER_STATE,
+  getValidStates,
+} from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
 import { GlService } from '../gl/gl.service';
+
+const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);
 
 @Injectable()
 export class PurchaseReturnsService {
@@ -73,9 +81,9 @@ export class PurchaseReturnsService {
     if (!order) throw new NotFoundException('Purchase order not found');
 
     if (
-      order.stateCode !== 'received' &&
-      order.stateCode !== 'partially_received' &&
-      order.stateCode !== 'invoiced'
+      order.stateCode !== PURCHASE_ORDER_STATE.RECEIVED &&
+      order.stateCode !== PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED &&
+      order.stateCode !== PURCHASE_ORDER_STATE.INVOICED
     ) {
       throw new BadRequestException(
         'Cannot return against a PO that has no receptions.',
@@ -90,7 +98,7 @@ export class PurchaseReturnsService {
         .values({
           returnNumber,
           purchaseOrderId,
-          stateCode: 'draft',
+          stateCode: PURCHASE_RETURN_STATE.DRAFT,
           notes: dto.notes,
           createdBy: actor,
         })
@@ -110,7 +118,7 @@ export class PurchaseReturnsService {
 
       await tx.insert(purchaseOrderEvents).values({
         purchaseOrderId,
-        eventType: 'return_created',
+        eventType: EventType.RETURN_CREATED,
         actor,
         payload: { returnId: ret.returnId, returnNumber },
       });
@@ -165,7 +173,7 @@ export class PurchaseReturnsService {
       .limit(1);
 
     if (!ret) throw new NotFoundException('Return not found');
-    if (ret.stateCode === 'processed' || ret.stateCode === 'completed') {
+    if (ret.stateCode === PURCHASE_RETURN_STATE.PROCESSED) {
       throw new BadRequestException('Return is already processed');
     }
 
@@ -177,11 +185,12 @@ export class PurchaseReturnsService {
 
     // deduct inventory
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(purchaseOrderReturns)
-        .set({ stateCode: 'processed', modifiedOn: new Date() })
-        .where(eq(purchaseOrderReturns.returnId, returnId))
-        .returning();
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.PROCESSED,
+        actor,
+        tx,
+      );
 
       const returnLines = await tx
         .select()
@@ -335,16 +344,65 @@ export class PurchaseReturnsService {
         );
       }
 
-      await tx.insert(purchaseOrderEvents).values({
-        purchaseOrderId: po.purchaseOrderId,
-        eventType: 'return_processed',
+      await emitEvent(tx as any, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: po.purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          returnNumber: ret.returnNumber,
+          from: ret.stateCode,
+          to: PURCHASE_RETURN_STATE.PROCESSED,
+        },
         actor,
-        payload: { returnId, returnNumber: ret.returnNumber },
       });
 
       return updated;
     });
 
     return result;
+  }
+
+  /**
+   * Universal changeState for Purchase Returns
+   */
+  async changePurchaseReturnState(
+    returnId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+
+    if (!VALID_RETURN_STATES.includes(newState)) {
+      throw new BadRequestException(
+        `Invalid purchase return state: '${newState}'`,
+      );
+    }
+
+    const [ret] = await db
+      .select({ stateCode: purchaseOrderReturns.stateCode })
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId));
+
+    if (!ret) {
+      throw new NotFoundException(`Purchase Return ${returnId} not found`);
+    }
+
+    const allowed = PURCHASE_RETURN_TRANSITIONS[ret.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition purchase return from '${ret.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(purchaseOrderReturns)
+      .set({ stateCode: newState, modifiedOn: new Date() })
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .returning();
+
+    return updated;
   }
 }

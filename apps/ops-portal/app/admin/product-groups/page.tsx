@@ -74,7 +74,6 @@ export default function ProductGroupsAdmin() {
     setEditForm({
       groupCode: '',
       name: '',
-      defaultDiscountPercentage: '0',
       defaultExpenseAccountId: '',
       defaultRevenueAccountId: '',
       defaultCostCenterId: '',
@@ -146,7 +145,6 @@ export default function ProductGroupsAdmin() {
             <tr>
               <th style={{ width: 100 }}>{tc('code')}</th>
               <th>{tc('name')}</th>
-              <th style={{ width: 120 }}>{tc('defDiscount')}</th>
               <th style={{ width: 140 }}>{tc('defExpenseAccount')}</th>
               <th style={{ width: 140 }}>{tc('defRevAccount')}</th>
               <th style={{ width: 140 }}>{tc('defCostCenter')}</th>
@@ -162,9 +160,6 @@ export default function ProductGroupsAdmin() {
                 </td>
                 <td>
                   <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
-                </td>
-                <td>
-                  <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
@@ -225,9 +220,6 @@ export default function ProductGroupsAdmin() {
                     <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </td>
                   <td>
-                    <input className="input" value={editForm.defaultDiscountPercentage} onChange={e => setEditForm({...editForm, defaultDiscountPercentage: e.target.value})} type="number" step="0.01" />
-                  </td>
-                  <td>
                     <select className="input font-mono text-xs" value={editForm.defaultExpenseAccountId || ''} onChange={e => setEditForm({...editForm, defaultExpenseAccountId: e.target.value || null})}>
                       <option value="">{t_gen('selectNone')}</option>
                       {glAccounts.map((a: any) => (
@@ -270,7 +262,6 @@ export default function ProductGroupsAdmin() {
                 <tr key={g.productGroupId}>
                   <td className="font-mono text-xs">{g.groupCode}</td>
                   <td className="font-medium">{g.name}</td>
-                  <td>{parseFloat(g.defaultDiscountPercentage || '0').toFixed(2)}%</td>
                   <td>{renderGlAccountLabel(g.defaultExpenseAccountId)}</td>
                   <td>{renderGlAccountLabel(g.defaultRevenueAccountId)}</td>
                   <td>{renderDimensionLabel(g.defaultCostCenterId, costCenters, 'code')}</td>

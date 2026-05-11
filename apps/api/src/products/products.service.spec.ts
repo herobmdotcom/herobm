@@ -9,6 +9,8 @@ import {
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
+import { PRODUCT_STATE, SALES_ORDER_STATE, ACCOUNT_STATE } from '@modbm/shared';
+import { EventType } from '../common/event-types';
 
 describe('ProductsService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -41,14 +43,14 @@ describe('ProductsService', () => {
           productId: '11111111-1111-1111-1111-111111111111',
           productNumber: 'BOLT-M8',
           name: 'M8 Hex Bolt',
-          stateCode: 'active',
+          stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
         },
         {
           productId: '22222222-2222-2222-2222-222222222222',
           productNumber: 'NUT-M8',
           name: 'M8 Hex Nut',
-          stateCode: 'active',
+          stateCode: PRODUCT_STATE.ACTIVE,
           baseUom: 'EA',
         },
       ]);
@@ -82,13 +84,13 @@ describe('ProductsService', () => {
         productId: targetId,
         productNumber: 'BOLT-M8',
         name: 'M8 Hex Bolt',
-        stateCode: 'active',
+        stateCode: PRODUCT_STATE.ACTIVE,
         baseUom: 'EA',
       });
 
       await pg.db.insert(productEvents).values({
         productId: targetId,
-        eventType: 'created',
+        eventType: EventType.CREATED,
         payload: { name: 'M8 Hex Bolt' },
         actor: 'admin',
       });

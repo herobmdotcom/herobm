@@ -83,14 +83,14 @@ export class OrdersController {
 
   @Patch(':id/state')
   @CasbinAction('write')
-  changeState(
+  async changeState(
     @Param('id') id: string,
     @Body('stateCode') stateCode: string,
     @AuthUser() user: JwtUser,
     @Body('generateBackorders') generateBackorders?: boolean,
     @Body('discrepanciesAcknowledged') discrepanciesAcknowledged?: boolean,
   ) {
-    return this.ordersWriteService.changeState(
+    return this.ordersWriteService.changeSalesOrderState(
       id,
       stateCode,
       user.username,

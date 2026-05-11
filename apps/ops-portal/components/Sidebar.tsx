@@ -28,7 +28,8 @@ export default function Sidebar() {
             { href: '/inventory/bins', label: tInventory('tabs.binContents') },
             { href: '/inventory/movements', label: t('items.movements') },
             { href: '/inventory/ledger', label: tInventory('tabs.ledger', { fallback: 'Ledger' }) },
-            { href: '/inventory/locations', label: tInventory('tabs.locations', { defaultValue: 'Locations' }) }
+            { href: '/inventory/locations', label: tInventory('tabs.locations', { defaultValue: 'Locations' }) },
+            { href: '/inventory/transfers', label: t('items.transfers', { defaultValue: 'Transfers' }) }
           ]
         },
         { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },

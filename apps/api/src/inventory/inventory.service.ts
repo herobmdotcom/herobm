@@ -269,6 +269,7 @@ export class InventoryService {
         productName: products.name,
         actualQuantity: binContents.actualQuantity,
         baseUom: products.baseUom,
+        zoneCode: zones.code,
       })
       .from(binContents)
       .innerJoin(bins, eq(binContents.binId, bins.binId))

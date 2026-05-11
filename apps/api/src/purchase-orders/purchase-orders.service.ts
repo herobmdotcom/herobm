@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
   Logger,
+  forwardRef,
 } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -26,13 +27,19 @@ import { InventoryService } from '../inventory/inventory.service';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 import {
+  PURCHASE_ORDER_STATE,
   PURCHASE_ORDER_TRANSITIONS,
   getValidStates,
   getAllowedTransitions,
   computeLinePriceForStorage,
+  PURCHASE_INVOICE_STATE,
+  BACKORDER_TRANSITIONS,
+  BACKORDER_STATE,
+  OPEN_PURCHASE_ORDER_STATES,
 } from '@modbm/shared';
+import type { PurchaseOrderState } from '@modbm/shared';
 
 export interface UnifiedPurchaseOrderRow {
   id: string;
@@ -51,6 +58,7 @@ export interface UnifiedPurchaseOrderRow {
 import { SuppliersService } from '../suppliers/suppliers.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { BackordersService } from '../orders/backorders.service';
 
 @Injectable()
 export class PurchaseOrdersService {
@@ -60,6 +68,8 @@ export class PurchaseOrdersService {
     private readonly suppliersService: SuppliersService,
     private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    @Inject(forwardRef(() => BackordersService))
+    private readonly backordersService: BackordersService,
   ) {}
 
   private readonly logger = new Logger(PurchaseOrdersService.name);
@@ -161,7 +171,7 @@ export class PurchaseOrdersService {
               createDto.currencyCode || this.appConfig.homeCurrency(),
             notes: createDto.notes,
             createdBy: userId,
-            stateCode: 'draft',
+            stateCode: PURCHASE_ORDER_STATE.DRAFT,
             deliveryLocationId: createDto.deliveryLocationId,
             referenceNumber: createDto.referenceNumber,
           })
@@ -212,7 +222,7 @@ export class PurchaseOrdersService {
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: order.purchaseOrderId,
-        eventType: 'created',
+        eventType: EventType.CREATED,
         payload: {
           orderNumber: order.orderNumber,
           vendorId: createDto.vendorId,
@@ -265,7 +275,9 @@ export class PurchaseOrdersService {
     }
 
     if (!includeArchived) {
-      conditions.push(sql`${purchaseOrders.stateCode} != 'archived'`);
+      conditions.push(
+        sql`${purchaseOrders.stateCode} != ${PURCHASE_ORDER_STATE.ARCHIVED}`,
+      );
     }
 
     if (days && days > 0) {
@@ -305,7 +317,7 @@ export class PurchaseOrdersService {
         name: r.name ?? '',
         vendorName: r.vendorName ?? '',
         referenceNumber: r.referenceNumber ?? '',
-        stateCode: r.stateCode ?? 'draft',
+        stateCode: r.stateCode ?? PURCHASE_ORDER_STATE.DRAFT,
         createdBy: r.createdBy ?? '',
         createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,
         totalPrice: appTotalMap.get(r.id) ?? null,
@@ -417,7 +429,13 @@ export class PurchaseOrdersService {
     };
   }
 
-  async changeState(id: string, stateCode: string, actor: string = 'system') {
+  async changePurchaseOrderState(
+    id: string,
+    stateCode: PurchaseOrderState,
+    actor: string = 'system',
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
     const validStates = getValidStates(PURCHASE_ORDER_TRANSITIONS);
     if (!validStates.includes(stateCode)) {
       throw new BadRequestException(`Invalid state: '${stateCode}'`);
@@ -439,7 +457,10 @@ export class PurchaseOrdersService {
       );
     }
 
-    if (existing.stateCode === 'draft' && stateCode === 'ordered') {
+    if (
+      existing.stateCode === PURCHASE_ORDER_STATE.DRAFT &&
+      stateCode === PURCHASE_ORDER_STATE.ORDERED
+    ) {
       if (!existing.deliveryLocationId) {
         throw new BadRequestException(
           'Cannot order: A Delivery Location must be specified.',
@@ -454,7 +475,7 @@ export class PurchaseOrdersService {
       }
     }
 
-    if (stateCode === 'cancelled') {
+    if (stateCode === PURCHASE_ORDER_STATE.CANCELLED) {
       const anyReceived = existing.lines.some(
         (l: any) => parseFloat(l.quantityReceived || '0') > 0,
       );
@@ -477,7 +498,7 @@ export class PurchaseOrdersService {
       }
     }
 
-    if (stateCode === 'closed_short') {
+    if (stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT) {
       for (const line of existing.lines) {
         const received = parseFloat(line.quantityReceived || '0');
         if (received > 0) {
@@ -497,7 +518,7 @@ export class PurchaseOrdersService {
                   purchaseInvoiceLines.purchaseOrderLineId,
                   line.purchaseOrderLineId,
                 ),
-                eq(purchaseInvoices.stateCode, 'invoiced'),
+                eq(purchaseInvoices.stateCode, PURCHASE_INVOICE_STATE.INVOICED),
               ),
             );
           const invoiced = parseFloat(totalInvoiced || '0');
@@ -510,35 +531,37 @@ export class PurchaseOrdersService {
       }
     }
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      await tx
-        .update(purchaseOrders)
-        .set({ stateCode, modifiedOn: new Date() })
-        .where(eq(purchaseOrders.purchaseOrderId, id));
+    return await db.transaction(async (tx: DrizzleDB) => {
+      const updated = await this.updateStateInternal(id, stateCode, actor, tx);
 
-      if (stateCode === 'cancelled' || stateCode === 'closed_short') {
+      if (
+        stateCode === PURCHASE_ORDER_STATE.CANCELLED ||
+        stateCode === PURCHASE_ORDER_STATE.CLOSED_SHORT
+      ) {
+        const affected = await tx
+          .select({ id: backorders.backorderId })
+          .from(backorders)
+          .where(eq(backorders.purchaseOrderId, id));
+        for (const b of affected) {
+          await this.backordersService.changeBackorderState(
+            b.id,
+            BACKORDER_STATE.PENDING_SUPPLY,
+            actor,
+            tx,
+          );
+        }
+
         await tx
           .update(backorders)
           .set({
             purchaseOrderId: null,
             purchaseOrderLineId: null,
-            stateCode: 'pending_supply',
+            modifiedOn: new Date(),
           })
           .where(eq(backorders.purchaseOrderId, id));
       }
 
-      await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: id,
-        eventType: 'status_changed',
-        payload: {
-          from: existing.stateCode,
-          to: stateCode,
-        },
-        actor,
-      });
-
-      return this.findOne(id, tx);
+      return updated;
     });
   }
 
@@ -549,34 +572,19 @@ export class PurchaseOrdersService {
     const existing = await this.findOne(id);
 
     if (
-      existing.stateCode !== 'received' &&
-      existing.stateCode !== 'cancelled'
+      existing.stateCode !== PURCHASE_ORDER_STATE.RECEIVED &&
+      existing.stateCode !== PURCHASE_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
         `Purchase Order must be 'received' or 'cancelled' to be archived (current state: '${existing.stateCode}')`,
       );
     }
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(purchaseOrders)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
-        .where(eq(purchaseOrders.purchaseOrderId, id))
-        .returning();
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: id,
-        eventType: 'archived',
-        payload: {
-          from: existing.stateCode,
-          to: 'archived',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changePurchaseOrderState(
+      id,
+      PURCHASE_ORDER_STATE.ARCHIVED,
+      actor,
+    );
   }
 
   /**
@@ -585,37 +593,22 @@ export class PurchaseOrdersService {
   async unarchive(id: string, actor: string) {
     const existing = await this.findOne(id);
 
-    if (existing.stateCode !== 'archived') {
+    if (existing.stateCode !== PURCHASE_ORDER_STATE.ARCHIVED) {
       throw new BadRequestException(`Purchase Order is not archived`);
     }
 
     // Default to cancelled since no event store exists for POs yet
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(purchaseOrders)
-        .set({ stateCode: 'cancelled', modifiedOn: new Date() })
-        .where(eq(purchaseOrders.purchaseOrderId, id))
-        .returning();
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: id,
-        eventType: 'unarchived',
-        payload: {
-          from: 'archived',
-          to: 'cancelled',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changePurchaseOrderState(
+      id,
+      PURCHASE_ORDER_STATE.CANCELLED,
+      actor,
+    );
   }
 
   async addLine(orderId: string, lineDto: any, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
-      if (existing.stateCode !== 'draft') {
+      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
         throw new BadRequestException(
           'Can only add lines to draft purchase orders',
         );
@@ -659,7 +652,7 @@ export class PurchaseOrdersService {
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: orderId,
-        eventType: 'line_added',
+        eventType: EventType.LINE_ADDED,
         payload: {
           productId: lineDto.productId,
           quantity: lineDto.quantity,
@@ -680,7 +673,7 @@ export class PurchaseOrdersService {
   ) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
-      if (existing.stateCode !== 'draft') {
+      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
         throw new BadRequestException(
           'Can only update lines on draft purchase orders',
         );
@@ -753,7 +746,7 @@ export class PurchaseOrdersService {
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: orderId,
-        eventType: 'line_updated',
+        eventType: EventType.LINE_UPDATED,
         payload: {
           lineId,
           changes: updateFields,
@@ -768,7 +761,7 @@ export class PurchaseOrdersService {
   async removeLine(orderId: string, lineId: string, actor: string = 'system') {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(orderId, tx);
-      if (existing.stateCode !== 'draft') {
+      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
         throw new BadRequestException(
           'Can only remove lines from draft purchase orders',
         );
@@ -780,7 +773,8 @@ export class PurchaseOrdersService {
         .set({
           purchaseOrderId: null,
           purchaseOrderLineId: null,
-          stateCode: 'pending_supply',
+          // eslint-disable-next-line no-restricted-syntax
+          stateCode: BACKORDER_STATE.PENDING_SUPPLY,
         })
         .where(eq(backorders.purchaseOrderLineId, lineId));
 
@@ -791,7 +785,7 @@ export class PurchaseOrdersService {
       await emitEvent(tx, {
         aggregateType: AggregateType.PURCHASE_ORDER,
         aggregateId: orderId,
-        eventType: 'line_removed',
+        eventType: EventType.LINE_REMOVED,
         payload: { lineId },
         actor,
       });
@@ -803,7 +797,7 @@ export class PurchaseOrdersService {
   async update(id: string, updateDto: any, userId: string) {
     return await this.db.transaction(async (tx) => {
       const existing = await this.findOne(id, tx);
-      if (existing.stateCode !== 'draft') {
+      if (existing.stateCode !== PURCHASE_ORDER_STATE.DRAFT) {
         throw new BadRequestException('Can only update draft purchase orders');
       }
 
@@ -814,6 +808,7 @@ export class PurchaseOrdersService {
           vendorId: updateDto.vendorId,
           currencyCode: updateDto.currencyCode,
           notes: updateDto.notes,
+          // eslint-disable-next-line no-restricted-syntax
           stateCode: updateDto.stateCode, // allow transition to 'ordered'
           deliveryLocationId: updateDto.deliveryLocationId,
           referenceNumber: updateDto.referenceNumber,
@@ -870,7 +865,7 @@ export class PurchaseOrdersService {
           await emitEvent(tx, {
             aggregateType: AggregateType.PURCHASE_ORDER,
             aggregateId: id,
-            eventType: 'updated',
+            eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -894,10 +889,10 @@ export class PurchaseOrdersService {
 
     const conditions = [
       inArray(purchaseOrders.stateCode, [
-        'ordered',
-        'partially_received',
-        'received',
-        'legacy',
+        PURCHASE_ORDER_STATE.ORDERED,
+        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+        PURCHASE_ORDER_STATE.RECEIVED,
+        PURCHASE_ORDER_STATE.LEGACY,
       ]),
     ];
 
@@ -1025,12 +1020,73 @@ export class PurchaseOrdersService {
         and(
           eq(purchaseOrderLineItems.productId, productId),
           inArray(purchaseOrders.stateCode, [
-            'received',
-            'partially_received',
-            'invoiced',
+            PURCHASE_ORDER_STATE.RECEIVED,
+            PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+            PURCHASE_ORDER_STATE.INVOICED,
           ]),
           sql`${purchaseOrderLineItems.quantityReceived} > 0`,
         ),
       );
+  }
+
+  private async updateStateInternal(
+    purchaseOrderId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const VALID_STATES = getValidStates(PURCHASE_ORDER_TRANSITIONS);
+    if (!VALID_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid PO state: '${newState}'`);
+    }
+
+    const db = tx || this.db;
+    const [existing] = await db
+      .select({
+        stateCode: purchaseOrders.stateCode,
+        orderNumber: purchaseOrders.orderNumber,
+      })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(
+        `Purchase Order ${purchaseOrderId} not found`,
+      );
+    }
+
+    const allowed = PURCHASE_ORDER_TRANSITIONS[existing.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition PO from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(purchaseOrders)
+      .set({
+        // eslint-disable-next-line no-restricted-syntax
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseOrders.purchaseOrderId, purchaseOrderId))
+      .returning();
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.PURCHASE_ORDER,
+      aggregateId: purchaseOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'purchase_order',
+        entityId: purchaseOrderId,
+        orderNumber: existing.orderNumber,
+        from: existing.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 }

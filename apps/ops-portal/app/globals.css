@@ -15,23 +15,42 @@
   white-space: nowrap;
 }
 
-.badge-draft { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
-.badge-quoted { background: rgba(238, 127, 0, 0.2); color: #F59E42; }
-.badge-confirmed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-.badge-ordered { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-.badge-picking { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-.badge-shipped { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-partially_received { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-.badge-received { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-dispatched { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-processed { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-invoiced { background: rgba(16, 185, 129, 0.3); color: #10b981; }
-.badge-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-.badge-legacy { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
-.badge-abm { background: rgba(100, 116, 139, 0.15); color: #64748b; }
-.badge-app { background: rgba(238, 127, 0, 0.15); color: #F59E42; }
-.badge-active { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-.badge-inactive { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+.badge-draft { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-quoted { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-confirmed { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-ordered { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-picking { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-shipped { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-partially_received { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-received { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-dispatched { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-processed { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-invoiced { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-submitted { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-paid { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-partially_paid { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-cancelled { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-discontinued { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-archived { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-legacy { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-abm { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+.badge-app { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-active { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-inactive { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+/* Semantic Badges mapped to the new natural palette */
+.badge-success { background: rgba(0, 107, 92, 0.1); color: #006b5c; }
+.badge-warning { background: rgba(101, 163, 13, 0.1); color: #4d7c0f; }
+.badge-danger { background: rgba(71, 85, 105, 0.1); color: #475569; }
+.badge-info { background: rgba(13, 148, 136, 0.1); color: #0f766e; }
+.badge-secondary { background: rgba(100, 116, 139, 0.1); color: #64748b; }
+
+/* Utility Modifiers */
+.badge-sm {
+  padding: 1px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+}
 
 /* Form inputs & Selects */
 .input, .select {
@@ -455,15 +474,6 @@ h2 {
   background-color: var(--bg-secondary) !important;
 }
 
-/* Override state badges to match Mock */
-.badge-active {
-  background: #68fadd !important;
-  color: #005145 !important;
-}
-.badge-inactive {
-  background: #e6e8ea !important;
-  color: #44474c !important;
-}
 
 /* ── Utility: hide elements in print ─────────────────────────────────── */
 .print-hidden {

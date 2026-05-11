@@ -61,6 +61,11 @@ export default tseslint.config(
         {
           selector: ":matches(JSXElement, JSXFragment) > JSXExpressionContainer > LogicalExpression > Literal[value=/[a-zA-Z]/]",
           message: "ADV-071: Do not use hardcoded string literals inside JSX logical expressions. Use useTranslations() instead."
+        },
+        {
+          // ADV-051: No Raw State Strings
+          selector: "Literal[value=/^(active|inactive|archived|discontinued|draft|pending_putaway|awaiting_matching|quarantined|matched|unmatched|ambiguous)$/]:not(ImportDeclaration > Literal):not(TSLiteralType > Literal):not(CallExpression[callee.name=/^(describe|it|test|t|tCommon)$/] > Literal):not(JSXAttribute > Literal)",
+          message: "ADV-051: Do not use raw string literals for state machine statuses. Import and use the appropriate constant from @modbm/shared."
         }
       ]
     },

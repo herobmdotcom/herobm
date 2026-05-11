@@ -11,7 +11,8 @@ import {
   binContents as coreBinContents,
   salesOrderLineItems as coreSalesOrderLines,
 } from '../drizzle/modbm-core-schema';
-
+import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@modbm/shared';
+import { AggregateType, EventType } from '../common/event-types';
 export interface SearchResult {
   id: string;
   type: 'product' | 'account' | 'sales_order' | 'supplier' | 'purchase_order';
@@ -198,50 +199,50 @@ export class DashboardService {
 
     if (types.includes('so_created')) {
       conditions.push(
-        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'created')`,
+        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREATED})`,
       );
     }
     if (types.includes('so_confirmed')) {
       conditions.push(
-        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'confirmed')`,
+        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.CONFIRMED})`,
       );
     }
     if (types.includes('so_shipped')) {
       conditions.push(
-        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'shipped')`,
+        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.SHIPPED})`,
       );
     }
     if (types.includes('so_invoiced')) {
       conditions.push(
-        sql`(e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'invoiced')`,
+        sql`(e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.INVOICED})`,
       );
     }
 
     if (types.includes('po_created')) {
       conditions.push(
-        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'created')`,
+        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED})`,
       );
     }
     if (types.includes('po_ordered')) {
       conditions.push(
-        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'ordered')`,
+        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED})`,
       );
     }
     if (types.includes('po_received')) {
       conditions.push(
-        sql`(e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'fulfilled')`,
+        sql`(e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED})`,
       );
     }
 
     if (types.includes('account_created')) {
       conditions.push(
-        sql`(e.aggregate_type = 'account' AND e.event_type = 'created')`,
+        sql`(e.aggregate_type = ${AggregateType.ACCOUNT} AND e.event_type = ${EventType.CREATED})`,
       );
     }
 
     if (types.includes('supplier_created')) {
       conditions.push(
-        sql`(e.aggregate_type = 'supplier' AND e.event_type = 'created')`,
+        sql`(e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED})`,
       );
     }
 
@@ -258,15 +259,15 @@ export class DashboardService {
       SELECT 
         e.event_id as "eventId", 
         CASE 
-          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'created' THEN 'so_created'
-          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'confirmed' THEN 'so_confirmed'
-          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'shipped' THEN 'so_shipped'
-          WHEN e.aggregate_type = 'sales_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'invoiced' THEN 'so_invoiced'
-          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'created' THEN 'po_created'
-          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'ordered' THEN 'po_ordered'
-          WHEN e.aggregate_type = 'purchase_order' AND e.event_type = 'status_changed' AND e.payload->>'to' = 'fulfilled' THEN 'po_received'
-          WHEN e.aggregate_type = 'account' AND e.event_type = 'created' THEN 'account_created'
-          WHEN e.aggregate_type = 'supplier' AND e.event_type = 'created' THEN 'supplier_created'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.CREATED} THEN 'so_created'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.CONFIRMED} THEN 'so_confirmed'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.SHIPPED} THEN 'so_shipped'
+          WHEN e.aggregate_type = ${AggregateType.SALES_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${SALES_ORDER_STATE.INVOICED} THEN 'so_invoiced'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED} THEN 'po_created'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED} THEN 'po_ordered'
+          WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED} THEN 'po_received'
+          WHEN e.aggregate_type = ${AggregateType.ACCOUNT} AND e.event_type = ${EventType.CREATED} THEN 'account_created'
+          WHEN e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED} THEN 'supplier_created'
         END as "eventType",
         e.aggregate_id as "entityId", 
         COALESCE(so.order_number, po.order_number, a.name, s.name, e.aggregate_id::text) as "entityDisplay", 

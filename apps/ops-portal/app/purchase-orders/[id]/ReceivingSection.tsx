@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
+import { GOODS_RECEIVED_STATE } from '@modbm/shared';
 
 interface ReceptionLine {
   receptionLineId: string;
@@ -34,9 +35,9 @@ interface Reception {
 function ReceptionStateBadge({ state }: { state: string }) {
   const t = useTranslations('common.states');
   const colours: Record<string, string> = {
-    received: 'var(--badge-shipped, #059669)',
+    [GOODS_RECEIVED_STATE.RECEIVED]: 'var(--badge-shipped, #059669)',
     archived: 'var(--badge-draft, #6b7280)',
-    cancelled: 'var(--badge-cancelled, #dc2626)',
+    [GOODS_RECEIVED_STATE.CANCELLED]: 'var(--badge-cancelled, #dc2626)',
   };
   return (
     <span

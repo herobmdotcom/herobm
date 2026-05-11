@@ -50,9 +50,14 @@ import {
 } from './dto';
 
 import {
+  SHIPMENT_STATE,
   SHIPMENT_TRANSITIONS as SHIPMENT_STATE_TRANSITIONS,
+  SALES_ORDER_STATE,
+  SALES_ORDER_PICK_STATE,
+  SALES_ORDER_PICK_TRANSITIONS,
   getValidStates,
 } from '@modbm/shared';
+import type { SalesOrderPickState } from '@modbm/shared';
 
 const VALID_SHIPMENT_STATES = getValidStates(SHIPMENT_STATE_TRANSITIONS);
 
@@ -117,9 +122,9 @@ export class ShipmentService {
     const result = await (tx || this.db).transaction(
       async (innerTx: DrizzleDB) => {
         const order = await findOrder(innerTx, salesOrderId);
-        if (order.stateCode !== 'picking') {
+        if (order.stateCode !== SALES_ORDER_STATE.PICKING) {
           throw new BadRequestException(
-            `Cannot create shipment for order in state '${order.stateCode}'. Order must be in 'picking'.`,
+            `Cannot create shipment for order in state '${order.stateCode}'. Order must be in ${SALES_ORDER_STATE.PICKING}.`,
           );
         }
 
@@ -161,7 +166,7 @@ export class ShipmentService {
           .values({
             shipmentNumber,
             salesOrderId,
-            stateCode: 'dispatched',
+            stateCode: SHIPMENT_STATE.DRAFT, // Create as draft first, then transition to dispatched
             notes: dto.notes,
             trackingNumber: dto.trackingNumber,
             fulfillmentLocationId: shipmentLocationId,
@@ -210,6 +215,15 @@ export class ShipmentService {
           actor,
         );
 
+        // Transition to dispatched — MUST happen after lines are inserted so lifecycle rules see the shipped qty
+        const updatedShipment = await this.changeShipmentState(
+          shipment.shipmentId,
+          SHIPMENT_STATE.DISPATCHED,
+          actor,
+          innerTx,
+          true,
+        );
+
         await emitEvent(innerTx, {
           aggregateType: AggregateType.SHIPMENT,
           aggregateId: shipment.shipmentId,
@@ -222,14 +236,7 @@ export class ShipmentService {
           actor,
         });
 
-        const autoTransitions = await evaluateLifecycleRules(
-          innerTx,
-          salesOrderId,
-          { entity: 'shipment', id: shipment.shipmentId, action: 'dispatched' },
-          actor,
-        );
-
-        return { ...shipment, _autoTransitions: autoTransitions };
+        return updatedShipment;
       },
     );
 
@@ -252,7 +259,7 @@ export class ShipmentService {
       async (innerTx: DrizzleDB) => {
         const shipment = await findShipment(innerTx, shipmentId);
 
-        if (shipment.stateCode === 'cancelled') {
+        if (shipment.stateCode === SHIPMENT_STATE.CANCELLED) {
           throw new BadRequestException(`Cannot update a cancelled shipment.`);
         }
 
@@ -294,6 +301,7 @@ export class ShipmentService {
     newState: string,
     actor: string,
     tx?: DrizzleDB,
+    allowCancel = false,
   ) {
     if (!VALID_SHIPMENT_STATES.includes(newState)) {
       throw new BadRequestException(`Invalid shipment state: '${newState}'`);
@@ -311,7 +319,7 @@ export class ShipmentService {
           );
         }
 
-        if (newState === 'cancelled') {
+        if (newState === SHIPMENT_STATE.CANCELLED && !allowCancel) {
           throw new BadRequestException(
             'Please use the dedicated POST /cancel endpoint to cancel a shipment.',
           );
@@ -319,21 +327,19 @@ export class ShipmentService {
 
         const [updated] = await innerTx
           .update(salesOrderShipments)
-          .set({ stateCode: newState, modifiedOn: new Date() })
+          .set({ stateCode: newState as any, modifiedOn: new Date() })
           .where(eq(salesOrderShipments.shipmentId, shipmentId))
           .returning();
 
-        const eventType =
-          newState === 'dispatched'
-            ? 'shipment_dispatched'
-            : 'shipment_status_changed';
+        const eventType = EventType.STATUS_CHANGED;
 
         await emitEvent(innerTx, {
           aggregateType: AggregateType.SHIPMENT,
           aggregateId: shipmentId,
           eventType,
           payload: {
-            shipmentId,
+            entity: 'shipment',
+            entityId: shipmentId,
             shipmentNumber: shipment.shipmentNumber,
             from: shipment.stateCode,
             to: newState,
@@ -368,14 +374,14 @@ export class ShipmentService {
       async (innerTx: DrizzleDB) => {
         const shipment = await findShipment(innerTx, shipmentId);
 
-        if (shipment.stateCode === 'cancelled') {
+        if (shipment.stateCode === SHIPMENT_STATE.CANCELLED) {
           throw new BadRequestException('Shipment is already cancelled.');
         }
 
         const allowed = SHIPMENT_STATE_TRANSITIONS[shipment.stateCode];
-        if (!allowed || !allowed.includes('cancelled')) {
+        if (!allowed || !allowed.includes(SHIPMENT_STATE.CANCELLED)) {
           throw new BadRequestException(
-            `Cannot transition shipment from '${shipment.stateCode}' to 'cancelled'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+            `Cannot transition shipment from '${shipment.stateCode}' to '${SHIPMENT_STATE.CANCELLED}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
           );
         }
 
@@ -411,7 +417,7 @@ export class ShipmentService {
 
         const physicalStockLines = stockLines.filter((l) => l.isPhysical);
 
-        if (shipment.stateCode === 'dispatched') {
+        if (shipment.stateCode === SHIPMENT_STATE.DISPATCHED) {
           const invoicedMap = await getInvoicedPerLine(
             innerTx,
             shipment.salesOrderId,
@@ -507,7 +513,7 @@ export class ShipmentService {
               .where(
                 and(
                   eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
-                  eq(salesOrderPicks.stateCode, 'shipped'),
+                  eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.SHIPPED),
                 ),
               );
 
@@ -517,10 +523,12 @@ export class ShipmentService {
               const take = Math.min(remainingToRevert, pickQty);
 
               if (take === pickQty) {
-                await innerTx
-                  .update(salesOrderPicks)
-                  .set({ stateCode: 'picked', modifiedOn: new Date() })
-                  .where(eq(salesOrderPicks.pickId, pick.pickId));
+                await this.changePickState(
+                  pick.pickId,
+                  SALES_ORDER_PICK_STATE.PICKED,
+                  actor,
+                  innerTx,
+                );
               } else {
                 // Partial pick reversal - split the pick
                 await innerTx
@@ -537,7 +545,7 @@ export class ShipmentService {
                   productId: pick.productId,
                   binId: pick.binId,
                   quantity: String(take),
-                  stateCode: 'picked',
+                  stateCode: SALES_ORDER_PICK_STATE.PICKED,
                   createdBy: actor,
                 });
               }
@@ -648,37 +656,15 @@ export class ShipmentService {
           });
         }
 
-        const [updated] = await innerTx
-          .update(salesOrderShipments)
-          .set({ stateCode: 'cancelled', modifiedOn: new Date() })
-          .where(eq(salesOrderShipments.shipmentId, shipmentId))
-          .returning();
-
-        await emitEvent(innerTx, {
-          aggregateType: AggregateType.SHIPMENT,
-          aggregateId: shipmentId,
-          eventType: 'shipment_status_changed',
-          payload: {
-            shipmentId,
-            shipmentNumber: shipment.shipmentNumber,
-            from: shipment.stateCode,
-            to: 'cancelled',
-          },
+        const updated = await this.changeShipmentState(
+          shipmentId,
+          SHIPMENT_STATE.CANCELLED,
           actor,
-        });
-
-        const autoTransitions = await evaluateLifecycleRules(
           innerTx,
-          shipment.salesOrderId,
-          { entity: 'shipment', id: shipmentId, action: 'cancelled' },
-          actor,
+          true,
         );
 
-        this.logger.log(
-          `Shipment ${shipment.shipmentNumber} state: ${shipment.stateCode} → cancelled by ${actor}`,
-        );
-
-        return { ...updated, _autoTransitions: autoTransitions };
+        return updated;
       },
     );
 
@@ -698,7 +684,7 @@ export class ShipmentService {
       async (innerTx: DrizzleDB) => {
         const shipment = await findShipment(innerTx, shipmentId);
 
-        if (shipment.stateCode !== 'draft') {
+        if (shipment.stateCode !== SHIPMENT_STATE.DRAFT) {
           throw new BadRequestException(
             `Cannot add lines to shipment in state '${shipment.stateCode}'`,
           );
@@ -765,7 +751,7 @@ export class ShipmentService {
       async (innerTx: DrizzleDB) => {
         const shipment = await findShipment(innerTx, shipmentId);
 
-        if (shipment.stateCode !== 'draft') {
+        if (shipment.stateCode !== SHIPMENT_STATE.DRAFT) {
           throw new BadRequestException(
             `Cannot update lines for shipment in state '${shipment.stateCode}'`,
           );
@@ -839,7 +825,7 @@ export class ShipmentService {
     await (tx || this.db).transaction(async (innerTx: DrizzleDB) => {
       const shipment = await findShipment(innerTx, shipmentId);
 
-      if (shipment.stateCode !== 'draft') {
+      if (shipment.stateCode !== SHIPMENT_STATE.DRAFT) {
         throw new BadRequestException(
           `Cannot remove lines from shipment in state '${shipment.stateCode}'`,
         );
@@ -1160,7 +1146,7 @@ export class ShipmentService {
         .where(
           and(
             eq(salesOrderPicks.salesOrderLineId, sl.salesOrderLineId),
-            eq(salesOrderPicks.stateCode, 'picked'),
+            eq(salesOrderPicks.stateCode, SALES_ORDER_PICK_STATE.PICKED),
           ),
         );
 
@@ -1169,10 +1155,12 @@ export class ShipmentService {
         const pickQty = parseFloat(pick.quantity);
         const take = Math.min(remainingToShip, pickQty);
         if (take === pickQty) {
-          await innerTx
-            .update(salesOrderPicks)
-            .set({ stateCode: 'shipped', modifiedOn: new Date() })
-            .where(eq(salesOrderPicks.pickId, pick.pickId));
+          await this.changePickState(
+            pick.pickId,
+            SALES_ORDER_PICK_STATE.SHIPPED,
+            actor,
+            innerTx,
+          );
         } else {
           // Partial pick shipped - split the pick
           await innerTx
@@ -1188,7 +1176,7 @@ export class ShipmentService {
             productId: pick.productId,
             binId: pick.binId,
             quantity: String(take),
-            stateCode: 'shipped',
+            stateCode: SALES_ORDER_PICK_STATE.SHIPPED,
             createdBy: pick.createdBy,
           });
         }
@@ -1303,6 +1291,49 @@ export class ShipmentService {
         shipmentNumber: shipment.shipmentNumber,
         salesOrderId: shipment.salesOrderId,
         cogsDetails,
+      },
+      actor,
+    });
+  }
+  private async changePickState(
+    pickId: string,
+    newState: SalesOrderPickState,
+    actor: string,
+    tx: DrizzleDB,
+  ) {
+    const [existing] = await tx
+      .select({
+        stateCode: salesOrderPicks.stateCode,
+        salesOrderId: salesOrderPicks.salesOrderId,
+      })
+      .from(salesOrderPicks)
+      .where(eq(salesOrderPicks.pickId, pickId))
+      .limit(1);
+
+    if (!existing) return;
+    if (existing.stateCode === newState) return;
+
+    const allowed = SALES_ORDER_PICK_TRANSITIONS[existing.stateCode as string];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition sales order pick from '${existing.stateCode}' to '${newState}'.`,
+      );
+    }
+
+    await tx
+      .update(salesOrderPicks)
+      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .where(eq(salesOrderPicks.pickId, pickId));
+
+    await emitEvent(tx, {
+      aggregateType: AggregateType.SALES_ORDER,
+      aggregateId: existing.salesOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'pick',
+        entityId: pickId,
+        from: existing.stateCode,
+        to: newState,
       },
       actor,
     });

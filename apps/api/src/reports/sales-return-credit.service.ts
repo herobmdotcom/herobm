@@ -3,11 +3,12 @@ import { eq } from 'drizzle-orm';
 import { OrdersService } from '../orders/orders.service';
 import { OrdersWriteService } from '../orders/orders-write.service';
 import { ReturnsWriteService } from '../orders/returns-write.service';
+import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { resolveOrderDetail } from './report-data.helper';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { taxCategories } from '../drizzle/modbm-core-schema';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, computeReturnCreditSummary } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class SalesReturnCreditService {
     private readonly ordersService: OrdersService,
     private readonly ordersWriteService: OrdersWriteService,
     private readonly returnsWriteService: ReturnsWriteService,
+    private readonly creditNoteService: SalesCreditNoteService,
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly appConfig: AppConfigService,
   ) {}
@@ -50,10 +52,15 @@ export class SalesReturnCreditService {
     );
 
     const lines = [];
-    let subtotal = 0;
-    let totalTax = 0;
-    let totalCredit = 0;
-    let totalFees = 0;
+
+    // Collect per-line data for the report AND for the summary function
+    const creditLineInputs: Array<{
+      quantity: number;
+      pricePerUnit: number;
+      discountPercentage: number;
+      taxRate: number;
+      returnFee: number;
+    }> = [];
 
     for (const rl of ret.lines) {
       const orderLine = orderLineMap.get(rl.salesOrderLineId);
@@ -82,10 +89,13 @@ export class SalesReturnCreditService {
         taxRate,
       });
 
-      subtotal += pricing.amount;
-      totalTax += pricing.tax;
-      totalCredit += pricing.totalAmount;
-      totalFees += fee;
+      creditLineInputs.push({
+        quantity: qty,
+        pricePerUnit: unitPrice,
+        discountPercentage: disc,
+        taxRate,
+        returnFee: fee,
+      });
 
       const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
       const isCustomLine = orderLine.productId === CUSTOM_LINE_ID;
@@ -111,6 +121,27 @@ export class SalesReturnCreditService {
       });
     }
 
+    // Resolve the credit note (if the return has been processed)
+    let creditNoteNumber: string | null = null;
+    let creditNoteState: string | null = null;
+    try {
+      const creditNotes = await this.creditNoteService.findByOrder(
+        ret.salesOrderId,
+      );
+      const matchingCn = creditNotes.find(
+        (cn: any) => cn.returnId === returnId,
+      );
+      if (matchingCn) {
+        creditNoteNumber = matchingCn.creditNoteNumber;
+        creditNoteState = matchingCn.stateCode;
+      }
+    } catch {
+      // Credit note may not exist yet
+    }
+
+    // Centralised return credit summary
+    const creditSummary = computeReturnCreditSummary(creditLineInputs);
+
     return {
       header: {
         orderNumber: orderDetail.orderNumber || '',
@@ -125,15 +156,19 @@ export class SalesReturnCreditService {
       returnMeta: {
         returnNumber: ret.returnNumber,
         state: ret.stateCode,
+        creditNoteNumber,
+        creditNoteState,
         notes: ret.notes || '',
       },
       lines,
       summary: {
-        subtotal: subtotal.toFixed(2),
-        totalTax: totalTax.toFixed(2),
-        totalCredit: totalCredit.toFixed(2),
-        totalFees: totalFees.toFixed(2),
-        netCredit: (totalCredit - totalFees).toFixed(2),
+        subtotal: creditSummary.subtotal.toFixed(2),
+        totalTax: creditSummary.totalTax.toFixed(2),
+        totalCredit: (creditSummary.subtotal + creditSummary.totalTax).toFixed(
+          2,
+        ),
+        totalFees: creditSummary.totalFees.toFixed(2),
+        netCredit: creditSummary.netCredit.toFixed(2),
       },
       generatedAt:
         new Date().toLocaleDateString('en-IE') +

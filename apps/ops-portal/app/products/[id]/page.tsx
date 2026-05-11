@@ -16,6 +16,7 @@ import DataGrid from '@/components/DataGrid';
 import AddSupplierModal from '@/components/products/AddSupplierModal';
 import GroupSelect from '@/components/shared/GroupSelect';
 import { formatLocationDisplay } from '@/lib/formatters';
+import { PRODUCT_STATE } from '@modbm/shared';
 
 const formatMoney = (val: string | number | undefined | null) => {
   if (!val) return '0.00';
@@ -58,6 +59,7 @@ export default function ProductDetailPage() {
   const [inventoryLevels, setInventoryLevels] = useState<any[]>([]);
 
   const [dto, setDto] = useState<any>({
+    productNumber: '',
     name: '',
     barcode: '',
     listPrice: '0',
@@ -69,7 +71,7 @@ export default function ProductDetailPage() {
     salesTaxCategoryId: '',
     alternateProductNumber: '',
     notes: '',
-    stateCode: 'active',
+    stateCode: PRODUCT_STATE.ACTIVE,
     productGroupId: null,
   });
 
@@ -81,6 +83,7 @@ export default function ProductDetailPage() {
       const data = await apiFetch<any>(`/api/products/${id}`);
       setProduct(data);
       setDto({
+        productNumber: data.productNumber || '',
         name: data.name || '',
         barcode: data.barcode || '',
         listPrice: formatMoney(data.listPrice),
@@ -92,7 +95,7 @@ export default function ProductDetailPage() {
         salesTaxCategoryId: data.salesTaxCategoryId || '',
         alternateProductNumber: data.alternateProductNumber || '',
         notes: data.notes || '',
-        stateCode: data.stateCode || 'active',
+        stateCode: data.stateCode || PRODUCT_STATE.ACTIVE,
         productGroupId: data.productGroupId || null,
       });
 
@@ -298,7 +301,7 @@ export default function ProductDetailPage() {
   if (loading) return <><div className="flex justify-center py-20"><span className="loading loading-spinner loading-lg" /></div></>;
   if (!product) return <><div className="text-center py-20">{t('common.noMatchingResults')}</div></>;
 
-  const isEditable = product.stateCode !== 'archived';
+  const isEditable = product.stateCode !== PRODUCT_STATE.ARCHIVED;
 
   const visibleSections = [
     {
@@ -354,7 +357,7 @@ export default function ProductDetailPage() {
     }
   >
 
-      {product.stateCode === 'archived' && (
+      {product.stateCode === PRODUCT_STATE.ARCHIVED && (
         <div
           className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
@@ -718,19 +721,35 @@ export default function ProductDetailPage() {
               {t('products.generalInfo')}
             </h3>
             <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.productName')}
-                </label>
-                <input
-                  className="input"
-                  required
-                  disabled={!isEditable || saving}
-                  value={dto.name}
-                  onChange={(e) => setDto({ ...dto, name: e.target.value })}
-                  onBlur={(e) => handleBlur('name', e.target.value)}
-                  placeholder={t('products.placeholders.productDisplayName')}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('common.columns.number')}
+                  </label>
+                  <input
+                    className="input"
+                    required
+                    disabled={!isEditable || saving}
+                    value={dto.productNumber}
+                    onChange={(e) => setDto({ ...dto, productNumber: e.target.value })}
+                    onBlur={(e) => handleBlur('productNumber', e.target.value)}
+                    placeholder={t('common.placeholders.number')}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {t('products.productName')}
+                  </label>
+                  <input
+                    className="input w-full"
+                    required
+                    disabled={!isEditable || saving}
+                    value={dto.name}
+                    onChange={(e) => setDto({ ...dto, name: e.target.value })}
+                    onBlur={(e) => handleBlur('name', e.target.value)}
+                    placeholder={t('products.placeholders.productDisplayName')}
+                  />
+                </div>
               </div>
               <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
@@ -772,9 +791,9 @@ export default function ProductDetailPage() {
                     value={dto.stateCode}
                     onChange={(e) => handleSelectChange('stateCode', e.target.value)}
                   >
-                    <option value="active">{t('common.states.active')}</option>
-                    <option value="inactive">{t('common.states.inactive')}</option>
-                    <option value="discontinued">{t('common.states.discontinued')}</option>
+                    <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
+                    <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
+                    <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
                   </select>
                 </div>
               </div>
@@ -1196,7 +1215,7 @@ export default function ProductDetailPage() {
 
         {/* Bottom Actions */}
         <div className="flex justify-end mt-4">
-            {product.stateCode === 'archived' ? (
+            {product.stateCode === PRODUCT_STATE.ARCHIVED ? (
               <button
                 className="btn btn-secondary btn-sm"
                 onClick={unarchiveProduct}

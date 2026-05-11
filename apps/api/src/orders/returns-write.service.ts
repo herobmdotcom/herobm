@@ -6,7 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
-import { inArray, eq, sql, and, desc, isNull, sum } from 'drizzle-orm';
+import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
+import { eq, sql, and, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -14,9 +15,9 @@ import {
   salesOrderLineItems,
   salesOrderReturns,
   salesOrderReturnLines,
+  salesCreditNotes,
   orderEvents,
   outbox,
-  glAccounts,
   bins,
   zones,
   products as coreProducts,
@@ -24,18 +25,20 @@ import {
   accountGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
-import { TaxCategoriesService } from '../tax/tax-categories.service';
-import { computeLinePrice } from '@modbm/shared';
+
 import {
   findOrder as sharedFindOrder,
   findOrderLine as sharedFindOrderLine,
+  getCommittedPerLine,
 } from './shipment-helpers';
 
 import {
+  RETURN_STATE,
+  SALES_ORDER_STATE,
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
 } from '@modbm/shared';
@@ -59,8 +62,8 @@ export class ReturnsWriteService {
     @Inject(DRIZZLE) private db: DrizzleDB,
     private readonly inventoryService: InventoryService,
     private readonly glService: GlService,
-    private readonly taxService: TaxCategoriesService,
     private readonly appConfig: AppConfigService,
+    private readonly creditNoteService: SalesCreditNoteService,
   ) {}
 
   private readonly logger = new Logger(ReturnsWriteService.name);
@@ -107,7 +110,7 @@ export class ReturnsWriteService {
       .where(
         and(
           eq(salesOrderReturnLines.salesOrderLineId, salesOrderLineId),
-          sql`${salesOrderReturns.stateCode} != 'cancelled'`,
+          sql`${salesOrderReturns.stateCode} != ${RETURN_STATE.CANCELLED}`,
           excludeReturnId
             ? sql`${salesOrderReturns.returnId} != ${excludeReturnId}`
             : undefined,
@@ -122,8 +125,16 @@ export class ReturnsWriteService {
   // CRUD Operations
   // -------------------------------------------------------------------------
 
+  /** Allowed order states for creating a return (goods must be shipping or shipped). */
+  private static readonly RETURNABLE_ORDER_STATES = [
+    SALES_ORDER_STATE.PICKING,
+    SALES_ORDER_STATE.SHIPPED,
+    SALES_ORDER_STATE.INVOICED,
+    SALES_ORDER_STATE.LEGACY,
+  ];
+
   /**
-   * Create a new return against an invoiced order.
+   * Create a new return against an order that has been at least partially shipped.
    */
   async createReturn(
     salesOrderId: string,
@@ -133,13 +144,20 @@ export class ReturnsWriteService {
   ) {
     const result = await (tx || this.db).transaction(
       async (innerTx: DrizzleDB) => {
-        // Validate the order exists and is invoiced
         const order = await this.findOrder(salesOrderId, innerTx);
-        if (order.stateCode !== 'invoiced') {
+        if (
+          !ReturnsWriteService.RETURNABLE_ORDER_STATES.includes(
+            order.stateCode as any,
+          )
+        ) {
           throw new BadRequestException(
-            `Cannot create a return against order in state '${order.stateCode}'. Order must be invoiced.`,
+            `Cannot create a return against order in state '${order.stateCode}'. ` +
+              `Order must be in one of: ${ReturnsWriteService.RETURNABLE_ORDER_STATES.join(', ')}.`,
           );
         }
+
+        // Build shipped quantity map once (for all lines)
+        const shippedMap = await getCommittedPerLine(innerTx, salesOrderId);
 
         // Validate all lines belong to this order and quantities are valid
         for (const line of dto.lines) {
@@ -154,9 +172,11 @@ export class ReturnsWriteService {
             innerTx,
           );
 
+          // Validate against shipped qty (not ordered qty)
+          const shippedQty = shippedMap.get(line.salesOrderLineId) ?? 0;
           validateReturnQuantity(
             line.quantityReturned,
-            orderLine.quantity,
+            shippedQty,
             alreadyReturned,
             orderLine.lineNumber,
           );
@@ -176,7 +196,7 @@ export class ReturnsWriteService {
           .values({
             returnNumber,
             salesOrderId,
-            stateCode: 'draft',
+            stateCode: RETURN_STATE.DRAFT,
             notes: dto.notes,
             createdBy: actor,
           })
@@ -198,7 +218,7 @@ export class ReturnsWriteService {
         await emitEvent(innerTx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: salesOrderId,
-          eventType: 'return_created',
+          eventType: EventType.RETURN_CREATED,
           payload: {
             returnId: ret.returnId,
             returnNumber,
@@ -228,7 +248,7 @@ export class ReturnsWriteService {
   ) {
     const existing = await this.findReturn(returnId, tx);
 
-    if (existing.stateCode !== 'draft') {
+    if (existing.stateCode !== RETURN_STATE.DRAFT) {
       throw new BadRequestException(
         `Cannot update return in state '${existing.stateCode}'. Must be draft.`,
       );
@@ -296,12 +316,18 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const [updated] = await innerTx
           .update(salesOrderReturns)
-          .set({ stateCode: newState, modifiedOn: new Date() })
+          .set({ stateCode: newState as any, modifiedOn: new Date() })
           .where(eq(salesOrderReturns.returnId, returnId))
           .returning();
 
-        // ── Inventory hook: return processed → restore on-hand ──
-        if (newState === 'processed') {
+        // ── RECEIVED: Inventory receive-back into RETURNS bin ──
+        if (newState === RETURN_STATE.RECEIVED) {
+          if (!locationId) {
+            throw new BadRequestException(
+              'A location context is required to receive returned items into inventory.',
+            );
+          }
+
           const returnLines = await innerTx
             .select()
             .from(salesOrderReturnLines)
@@ -326,33 +352,28 @@ export class ReturnsWriteService {
             }
           }
 
-          if (!locationId) {
-            throw new BadRequestException(
-              'A location context is required to process a return and receive items into inventory.',
-            );
-          }
-
-          const [dockBin] = await innerTx
+          // Receive into the RETURNS bin (HANDLING zone)
+          const [returnsBin] = await innerTx
             .select({ binId: bins.binId })
             .from(bins)
             .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
             .where(
               and(
-                eq(bins.binNumber, 'RECEIVING'),
+                eq(bins.binNumber, 'RETURNS'),
                 eq(zones.locationId, locationId),
               ),
             )
             .limit(1);
 
-          if (!dockBin) {
+          if (!returnsBin) {
             throw new BadRequestException(
-              `No RECEIVING bin found for location '${locationId}'.`,
+              `No RETURNS bin found for location '${locationId}'.`,
             );
           }
 
           const receiveLines = stockLines.map((line) => ({
             productId: line.productId,
-            binId: dockBin.binId,
+            binId: returnsBin.binId,
             quantity: parseFloat(line.quantity),
           }));
 
@@ -365,16 +386,13 @@ export class ReturnsWriteService {
                 Date.now().toString().slice(-4),
               sourceType: 'SO_RETURN',
               sourceId: returnId,
-              memo: 'RMA Received to Dock',
+              memo: `RMA Received to Returns Bin`,
               userId: actor,
               lines: receiveLines,
             });
           }
 
-          // Note: WAC is unaffected by sales returns, and quantityOnHand is no longer cached on the products table.
-          // The dynamic inventory_levels view will automatically reflect the stock returned to the dock bin.
-
-          // --- Financial Integration: Post Inventory/COGS reversal via Accounting Strategy ---
+          // Post Inventory/COGS GL reversal via Accounting Strategy
           const valuationStrategy = getValuationStrategy(
             this.appConfig.valuationMethod(),
           );
@@ -410,7 +428,6 @@ export class ReturnsWriteService {
             },
           );
 
-          // Resolve customer account group dimensions for return posting
           const [retOrder] = await innerTx
             .select({
               costCenterId: accountGroups.defaultCostCenterId,
@@ -452,28 +469,28 @@ export class ReturnsWriteService {
           }
         }
 
-        const eventType =
-          newState === 'processed'
-            ? 'return_processed'
-            : 'return_status_changed';
+        // ── PROCESSED: Create Credit Note document + Revenue/AR GL ──
+        if (newState === RETURN_STATE.PROCESSED) {
+          await this.creditNoteService.createCreditNote(
+            returnId,
+            actor,
+            innerTx,
+          );
+        }
 
         await emitEvent(innerTx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: existing.salesOrderId,
-          eventType,
+          eventType: EventType.STATUS_CHANGED,
           payload: {
-            returnId,
-            returnNumber: existing.returnNumber,
+            entity: 'return',
+            entityId: returnId,
             from: existing.stateCode,
             to: newState,
+            returnNumber: existing.returnNumber,
           },
           actor,
         });
-
-        // GL Credit Note: post journal entry when return is processed (atomic)
-        if (newState === 'processed') {
-          await this.postCreditNoteGl(returnId, existing, actor, innerTx);
-        }
 
         return updated;
       },
@@ -499,7 +516,7 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const ret = await this.findReturn(returnId, innerTx);
 
-        if (ret.stateCode !== 'draft') {
+        if (ret.stateCode !== RETURN_STATE.DRAFT) {
           throw new BadRequestException(
             `Cannot add lines to return in state '${ret.stateCode}'`,
           );
@@ -515,7 +532,10 @@ export class ReturnsWriteService {
           undefined,
           innerTx,
         );
-        const originalQty = parseFloat(orderLine.quantity);
+
+        // Validate against shipped qty (not ordered qty)
+        const shippedMap = await getCommittedPerLine(innerTx, ret.salesOrderId);
+        const shippedQty = shippedMap.get(dto.salesOrderLineId) ?? 0;
         const requestedQty = parseFloat(dto.quantityReturned);
 
         if (requestedQty <= 0) {
@@ -524,9 +544,9 @@ export class ReturnsWriteService {
           );
         }
 
-        if (requestedQty > originalQty - alreadyReturned) {
+        if (requestedQty > shippedQty - alreadyReturned) {
           throw new BadRequestException(
-            `Cannot return ${requestedQty}. Remaining returnable: ${originalQty - alreadyReturned}`,
+            `Cannot return ${requestedQty}. Shipped: ${shippedQty}, already returned: ${alreadyReturned}, remaining returnable: ${shippedQty - alreadyReturned}`,
           );
         }
 
@@ -587,7 +607,7 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const ret = await this.findReturn(returnId, innerTx);
 
-        if (ret.stateCode !== 'draft') {
+        if (ret.stateCode !== RETURN_STATE.DRAFT) {
           throw new BadRequestException(
             `Cannot update lines on return in state '${ret.stateCode}'`,
           );
@@ -618,11 +638,17 @@ export class ReturnsWriteService {
             returnId,
             innerTx,
           );
-          const originalQty = parseFloat(orderLine.quantity);
 
-          if (requestedQty > originalQty - alreadyReturned) {
+          // Validate against shipped qty (not ordered qty)
+          const shippedMap = await getCommittedPerLine(
+            innerTx,
+            ret.salesOrderId,
+          );
+          const shippedQty = shippedMap.get(existingLine.salesOrderLineId) ?? 0;
+
+          if (requestedQty > shippedQty - alreadyReturned) {
             throw new BadRequestException(
-              `Cannot return ${requestedQty}. Remaining returnable: ${originalQty - alreadyReturned}`,
+              `Cannot return ${requestedQty}. Shipped: ${shippedQty}, already returned: ${alreadyReturned}, remaining returnable: ${shippedQty - alreadyReturned}`,
             );
           }
         }
@@ -683,7 +709,7 @@ export class ReturnsWriteService {
     await (tx || this.db).transaction(async (innerTx: DrizzleDB) => {
       const ret = await this.findReturn(returnId, innerTx);
 
-      if (ret.stateCode !== 'draft') {
+      if (ret.stateCode !== RETURN_STATE.DRAFT) {
         throw new BadRequestException(
           `Cannot remove lines from return in state '${ret.stateCode}'`,
         );
@@ -739,14 +765,26 @@ export class ReturnsWriteService {
       .where(eq(salesOrderReturns.salesOrderId, salesOrderId))
       .orderBy(salesOrderReturns.createdOn);
 
-    // Fetch lines for each return
+    // Fetch lines and credit note number for each return
     const result = [];
     for (const ret of returns) {
       const lines = await this.db
         .select()
         .from(salesOrderReturnLines)
         .where(eq(salesOrderReturnLines.returnId, ret.returnId));
-      result.push({ ...ret, lines });
+
+      // Look up associated credit note (if return is processed)
+      const [creditNote] = await this.db
+        .select({ creditNoteNumber: salesCreditNotes.creditNoteNumber })
+        .from(salesCreditNotes)
+        .where(eq(salesCreditNotes.returnId, ret.returnId))
+        .limit(1);
+
+      result.push({
+        ...ret,
+        lines,
+        creditNoteNumber: creditNote?.creditNoteNumber ?? null,
+      });
     }
 
     return result;
@@ -805,244 +843,5 @@ export class ReturnsWriteService {
     }
 
     return rows[0];
-  }
-
-  // ---------------------------------------------------------------------------
-  // GL Credit Note posting
-  // ---------------------------------------------------------------------------
-
-  private async postCreditNoteGl(
-    returnId: string,
-    existing: { returnNumber: string; salesOrderId: string },
-    actor: string,
-    tx?: DrizzleDB,
-  ) {
-    const queryDb = tx || this.db;
-    const settings = await this.glService.getSettings(tx);
-    if (!settings?.defaultArAccountId || !settings?.defaultRevenueAccountId) {
-      this.logger.warn(
-        'GL settings incomplete — skipping credit note GL posting',
-      );
-      return;
-    }
-
-    // Resolve account codes from settings IDs
-    const settingsIds = [
-      settings.defaultArAccountId,
-      settings.defaultRevenueAccountId,
-      settings.defaultTaxAccountId,
-    ].filter((id): id is string => !!id);
-
-    const acctRows = await queryDb
-      .select({
-        glAccountId: glAccounts.glAccountId,
-        accountCode: glAccounts.accountCode,
-      })
-      .from(glAccounts)
-      .where(inArray(glAccounts.glAccountId, settingsIds));
-
-    console.log('acctRows', acctRows);
-    console.log('settingsIds', settingsIds);
-
-    const idToCode = new Map(
-      acctRows.map((a) => [a.glAccountId, a.accountCode]),
-    );
-    const arCode = idToCode.get(settings.defaultArAccountId);
-    const revCode = settings.defaultRevenueAccountId
-      ? idToCode.get(settings.defaultRevenueAccountId)
-      : null;
-    const taxCode = settings.defaultTaxAccountId
-      ? idToCode.get(settings.defaultTaxAccountId)
-      : null;
-
-    if (!arCode || !revCode) {
-      this.logger.warn(
-        'AR or Revenue account code not found — skipping credit note GL',
-      );
-      return;
-    }
-
-    // Other Revenue account for fees (4900 by convention)
-    const feeAccountCode = '4900';
-
-    // Fetch order for customer info
-    const order = await sharedFindOrder(queryDb, existing.salesOrderId);
-
-    let customerCostCenterId: string | undefined;
-    let customerActivityId: string | undefined;
-
-    if (order.customerId) {
-      const [custInfo] = await queryDb
-        .select({
-          costCenterId: accountGroups.defaultCostCenterId,
-          activityId: accountGroups.defaultActivityId,
-        })
-        .from(coreAccounts)
-        .leftJoin(
-          accountGroups,
-          eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
-        )
-        .where(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-            order.customerId,
-          )
-            ? eq(coreAccounts.accountId, order.customerId)
-            : eq(coreAccounts.externalId, order.customerId),
-        );
-
-      if (custInfo) {
-        customerCostCenterId = custInfo.costCenterId || undefined;
-        customerActivityId = custInfo.activityId || undefined;
-      }
-    }
-
-    // Fetch return lines + join to order lines for pricing + GST
-    const returnLines = await queryDb
-      .select()
-      .from(salesOrderReturnLines)
-      .where(eq(salesOrderReturnLines.returnId, returnId));
-
-    let totalCreditAmount = 0;
-    let totalTaxAmount = 0;
-    let totalFees = 0;
-    const outboxLineDetails: any[] = [];
-
-    for (const rl of returnLines) {
-      const orderLine = await queryDb
-        .select()
-        .from(salesOrderLineItems)
-        .where(eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId))
-        .limit(1)
-        .then((r: any[]) => r[0]);
-
-      if (!orderLine) continue;
-
-      const unitPrice = parseFloat(orderLine.pricePerUnit || '0');
-      const disc = parseFloat(orderLine.discountPercentage || '0');
-      const qty = parseFloat(rl.quantityReturned || '0');
-      const fee = parseFloat(rl.returnFee || '0');
-
-      // Resolve per-line GST rate from the line's taxCategoryId
-      let taxRate = 0;
-      if (orderLine.taxCategoryId) {
-        try {
-          const cat = await this.taxService.getById(orderLine.taxCategoryId);
-          taxRate = parseFloat(cat.rate ?? '0');
-        } catch {
-          // Category not found — fall back to 0%
-        }
-      }
-
-      const pricing = computeLinePrice({
-        quantity: qty,
-        pricePerUnit: unitPrice,
-        discountPercentage: disc,
-        taxRate: taxRate,
-      });
-
-      totalCreditAmount += pricing.amount;
-      totalTaxAmount += pricing.tax;
-      totalFees += fee;
-
-      outboxLineDetails.push({
-        salesOrderLineId: rl.salesOrderLineId,
-        productId: orderLine.productId,
-        quantity: qty,
-        amount: pricing.amount,
-        tax: pricing.tax,
-        fee,
-      });
-    }
-
-    if (totalCreditAmount <= 0) {
-      this.logger.warn('No credit amount to post — skipping credit note GL');
-      return;
-    }
-
-    // Net AR credit = credit amount + tax - fees
-    const netArCredit = totalCreditAmount + totalTaxAmount - totalFees;
-
-    // Build balanced journal lines (reverse of sales invoice):
-    //   Debit Revenue
-    //   Credit AR
-    //   Credit Other Revenue (restocking fee income, if any)
-    const glLines: any[] = [
-      {
-        accountCode: revCode,
-        debit: totalCreditAmount,
-        credit: 0,
-        memo: `Sales return: ${existing.returnNumber}`,
-        costCenterId: customerCostCenterId,
-        activityId: customerActivityId,
-      },
-      {
-        accountCode: arCode,
-        debit: 0,
-        credit: netArCredit,
-        memo: `Credit note: ${existing.returnNumber}`,
-        partyType: 'customer',
-        partyId: order.customerId,
-        costCenterId: customerCostCenterId,
-        activityId: customerActivityId,
-      },
-    ];
-
-    if (taxCode && totalTaxAmount > 0) {
-      glLines.push({
-        accountCode: taxCode,
-        debit: totalTaxAmount,
-        credit: 0,
-        memo: `GST reversal: ${existing.returnNumber}`,
-        costCenterId: customerCostCenterId,
-        activityId: customerActivityId,
-      });
-    }
-
-    if (totalFees > 0) {
-      glLines.push({
-        accountCode: feeAccountCode,
-        debit: 0,
-        credit: totalFees,
-        memo: `Restocking fee: ${existing.returnNumber}`,
-        costCenterId: customerCostCenterId,
-        activityId: customerActivityId,
-      });
-    }
-
-    await this.glService.postJournalEntry(
-      glLines,
-      {
-        sourceType: 'sales_credit_note',
-        sourceId: returnId,
-        memo: `Credit note for return ${existing.returnNumber} on order ${order.orderNumber}`,
-        actor,
-      },
-      tx,
-    );
-
-    // Write outbox event for downstream consumers (mirrors sales_invoiced pattern)
-    await emitEvent(queryDb as any, {
-      aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: existing.salesOrderId,
-      eventType: 'credit_note_posted',
-      payload: {
-        returnId,
-        returnNumber: existing.returnNumber,
-        salesOrderId: existing.salesOrderId,
-        orderNumber: order.orderNumber,
-        customerId: order.customerId,
-        totalCredit: totalCreditAmount,
-        totalTax: totalTaxAmount,
-        totalFees,
-        netCredit: netArCredit,
-        currency: order.currencyCode,
-        lines: outboxLineDetails,
-      },
-      actor,
-    });
-
-    this.logger.log(
-      `GL credit note posted for return ${existing.returnNumber}: credit=${totalCreditAmount}, tax=${totalTaxAmount}, fees=${totalFees}, netAR=${netArCredit}`,
-    );
   }
 }

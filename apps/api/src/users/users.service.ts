@@ -11,7 +11,9 @@ import * as bcrypt from 'bcrypt';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users, userEvents } from '../drizzle/modbm-core-schema';
+import { EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';
+import { ACCOUNT_STATE } from '@modbm/shared';
 
 /**
  * Whitelisted columns for public responses — passwordHash is NEVER returned.
@@ -90,7 +92,7 @@ export class UsersService {
 
         await tx.insert(userEvents).values({
           userId: created.userId,
-          eventType: 'created',
+          eventType: EventType.CREATED,
           payload: {
             username: created.username,
             role: dto.role,
@@ -182,7 +184,7 @@ export class UsersService {
 
       await tx.insert(userEvents).values({
         userId: id,
-        eventType: 'updated',
+        eventType: EventType.UPDATED,
         payload: auditChanges,
         actor,
       });
@@ -221,11 +223,11 @@ export class UsersService {
 
       await tx.insert(userEvents).values({
         userId: id,
-        eventType: 'status_changed',
+        eventType: EventType.STATUS_CHANGED,
         payload: {
           username: target.username,
-          from: target.isActive ? 'active' : 'disabled',
-          to: newStatus ? 'active' : 'disabled',
+          from: target.isActive ? ACCOUNT_STATE.ACTIVE : ACCOUNT_STATE.INACTIVE,
+          to: newStatus ? ACCOUNT_STATE.ACTIVE : ACCOUNT_STATE.INACTIVE,
         },
         actor,
       });
@@ -256,7 +258,7 @@ export class UsersService {
     // Emit the deletion event BEFORE deleting the user (FK constraint)
     await this.db.insert(userEvents).values({
       userId: id,
-      eventType: 'deleted',
+      eventType: EventType.DELETED,
       payload: {
         username: target.username,
         role: target.role,

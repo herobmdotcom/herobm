@@ -10,6 +10,8 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 
+import { ACCOUNT_STATE } from '@modbm/shared';
+
 @Injectable()
 export class AccountsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
@@ -25,13 +27,12 @@ export class AccountsService {
         or(
           ilike(accounts.name, searchTerm),
           ilike(accounts.accountNumber, searchTerm),
-          ilike(accounts.emailAddress1, searchTerm),
         ),
       );
     }
 
     if (!includeArchived) {
-      conditions.push(sql`${accounts.stateCode} != 'archived'`);
+      conditions.push(sql`${accounts.stateCode} != ${ACCOUNT_STATE.ARCHIVED}`);
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

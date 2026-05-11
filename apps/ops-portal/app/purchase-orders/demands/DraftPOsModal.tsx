@@ -159,7 +159,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                   <span className="material-symbols-outlined text-[16px] text-gray-400">location_on</span>
                   <span className="font-normal text-gray-600 ml-1">Deliver to: {group.locationName || 'Unknown'}</span>
                 </h3>
-                <span className="badge">
+                <span className="badge badge-legacy">
                   {group.demands.length} items
                 </span>
               </div>

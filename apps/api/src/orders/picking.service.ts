@@ -20,6 +20,9 @@ import {
   salesOrderShipmentLines,
   backorders,
   accounts as coreAccounts,
+  transferOrders,
+  transferOrderLines,
+  transferOrderPicks,
 } from '../drizzle/modbm-core-schema';
 import { InventoryService } from '../inventory/inventory.service';
 import {
@@ -28,7 +31,7 @@ import {
   getCommittedPerLine,
 } from './shipment-helpers';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
 import { ShipmentService } from './shipment.service';
 import { calculatePickAllocations } from './picking-math.utils';
 import { evaluateLifecycleRules } from './order-lifecycle-rules';
@@ -36,6 +39,17 @@ import {
   filterPickableBins,
   calculatePickableOnHand,
 } from '../inventory/inventory-math.utils';
+import {
+  SALES_ORDER_PICK_STATE,
+  SALES_ORDER_PICK_TRANSITIONS,
+  SALES_ORDER_STATE,
+  TRANSFER_ORDER_STATE,
+  TRANSFER_ORDER_PICK_STATE,
+  BACKORDER_STATE,
+  getValidStates,
+} from '@modbm/shared';
+
+const VALID_PICK_STATES = getValidStates(SALES_ORDER_PICK_TRANSITIONS);
 
 @Injectable()
 export class PickingService {
@@ -96,7 +110,7 @@ export class PickingService {
             .where(
               and(
                 inArray(backorders.salesOrderLineId, lineIds),
-                eq(backorders.stateCode, 'received_reserved'),
+                eq(backorders.stateCode, BACKORDER_STATE.RECEIVED_RESERVED),
               ),
             )
             .groupBy(backorders.salesOrderLineId)
@@ -143,7 +157,7 @@ export class PickingService {
 
     const pickedMap = new Map<string, number>();
     for (const pick of picks) {
-      if (pick.stateCode !== 'cancelled') {
+      if (pick.stateCode !== SALES_ORDER_PICK_STATE.CANCELLED) {
         const current = pickedMap.get(pick.salesOrderLineId) || 0;
         pickedMap.set(
           pick.salesOrderLineId,
@@ -224,9 +238,12 @@ export class PickingService {
     actor: string,
   ) {
     const order = await findOrder(this.db, orderId);
-    if (order.stateCode !== 'picking' && order.stateCode !== 'confirmed') {
+    if (
+      order.stateCode !== SALES_ORDER_STATE.PICKING &&
+      order.stateCode !== SALES_ORDER_STATE.CONFIRMED
+    ) {
       throw new BadRequestException(
-        `Cannot pick lines on order in state '${order.stateCode}'. Order must be in 'confirmed' or 'picking'.`,
+        `Cannot pick lines on order in state '${order.stateCode}'. Order must be in '${SALES_ORDER_STATE.CONFIRMED}' or '${SALES_ORDER_STATE.PICKING}'.`,
       );
     }
 
@@ -245,7 +262,7 @@ export class PickingService {
       .where(
         and(
           eq(salesOrderPicks.salesOrderLineId, lineId),
-          sql`state_code != 'cancelled'`,
+          sql`state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
         ),
       );
 
@@ -322,10 +339,13 @@ export class PickingService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
-        eventType: 'picking_line_picked',
+        eventType: EventType.STATUS_CHANGED,
         payload: {
+          entity: 'pick',
+          entityId: newPick.pickId,
+          from: null,
+          to: SALES_ORDER_PICK_STATE.PICKED,
           lineId,
-          pickId: newPick.pickId,
           quantityPicked: quantity,
           binId,
         },
@@ -368,7 +388,7 @@ export class PickingService {
           `line ${l.lineNumber}: picked ${l.quantityPicked ?? '0'} of ${l.quantity}`,
       );
       throw new BadRequestException(
-        `Cannot transition to 'shipped' - ${unpicked.length} line(s) not fully picked: ${details.join('; ')}`,
+        `Cannot transition to '${SALES_ORDER_STATE.SHIPPED}' - ${unpicked.length} line(s) not fully picked: ${details.join('; ')}`,
       );
     }
   }
@@ -392,7 +412,7 @@ export class PickingService {
           `line ${l.lineNumber}: shipped ${l.quantityShipped ?? '0'} of ${l.quantity}`,
       );
       throw new BadRequestException(
-        `Cannot transition to 'shipped' - ${unshipped.length} line(s) not fully shipped: ${details.join('; ')}`,
+        `Cannot transition to '${SALES_ORDER_STATE.SHIPPED}' - ${unshipped.length} line(s) not fully shipped: ${details.join('; ')}`,
       );
     }
   }
@@ -435,12 +455,12 @@ export class PickingService {
           SELECT SUM(quantity) 
           FROM modbm_core.sales_order_picks 
           WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
-            AND state_code != 'cancelled'
+            AND state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
         hasAllocation: sql<boolean>`EXISTS(
           SELECT 1 FROM modbm_core.backorders bo
           WHERE bo.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
-            AND bo.state_code = 'received_reserved'
+            AND bo.state_code = ${BACKORDER_STATE.RECEIVED_RESERVED}
         )`,
       })
       .from(salesOrders)
@@ -458,7 +478,10 @@ export class PickingService {
       )
       .where(
         and(
-          inArray(salesOrders.stateCode, ['confirmed', 'picking']),
+          inArray(salesOrders.stateCode, [
+            SALES_ORDER_STATE.CONFIRMED,
+            SALES_ORDER_STATE.PICKING,
+          ]),
           locationId
             ? eq(salesOrderLineItems.fulfillmentLocationId, locationId)
             : undefined,
@@ -466,9 +489,73 @@ export class PickingService {
       )
       .orderBy(salesOrders.createdOn);
 
+    const rawTransferLines = await this.db
+      .select({
+        id: transferOrders.transferOrderId,
+        orderNumber: transferOrders.orderNumber,
+        name: sql<string>`'Internal Transfer'`,
+        customerName: locations.name,
+        customerOrderNumber: sql<string>`'N/A'`,
+        stateCode: transferOrders.stateCode,
+        createdOn: transferOrders.createdOn,
+        createdBy: transferOrders.createdBy,
+        currencyCode: sql<string>`'N/A'`,
+        lineId: transferOrderLines.transferOrderLineId,
+        lineQuantity: transferOrderLines.quantity,
+        isPhysical: sql<boolean>`CASE WHEN ${coreProducts.productType} = 'inventory' THEN true ELSE false END`,
+        onHand: sql<number>`COALESCE((
+          SELECT sum(bc.actual_quantity)
+          FROM modbm_core.bin_contents bc
+          JOIN modbm_core.bins b ON b.bin_id = bc.bin_id
+          JOIN modbm_core.zones z ON z.zone_id = b.zone_id
+          WHERE bc.product_id = ${transferOrderLines.productId}
+            AND z.location_id = ${transferOrders.sourceLocationId}
+            AND b.bin_type IN ('storage', 'pick', 'bulk')
+            AND b.is_unavailable = false
+            AND b.is_bonded = false
+        ), 0)`,
+        pickedQty: sql<number>`COALESCE((
+          SELECT SUM(quantity) 
+          FROM modbm_core.transfer_order_picks 
+          WHERE transfer_order_line_id = ${transferOrderLines.transferOrderLineId}
+            AND state_code != ${TRANSFER_ORDER_PICK_STATE.CANCELLED}
+        ), 0)`,
+        hasAllocation: sql<boolean>`false`,
+        type: sql<string>`'transfer_order'`,
+      })
+      .from(transferOrders)
+      .innerJoin(
+        transferOrderLines,
+        eq(transferOrders.transferOrderId, transferOrderLines.transferOrderId),
+      )
+      .leftJoin(
+        locations,
+        eq(transferOrders.destinationLocationId, locations.locationId),
+      )
+      .leftJoin(
+        coreProducts,
+        eq(transferOrderLines.productId, coreProducts.productId),
+      )
+      .where(
+        and(
+          inArray(transferOrders.stateCode, [
+            TRANSFER_ORDER_STATE.CONFIRMED,
+            TRANSFER_ORDER_STATE.PICKING,
+          ]),
+          locationId
+            ? eq(transferOrders.sourceLocationId, locationId)
+            : undefined,
+        ),
+      );
+
+    const allLines = [
+      ...rawLines.map((r) => ({ ...r, type: 'sales_order' })),
+      ...rawTransferLines,
+    ];
+
     const orderMap = new Map<string, any>();
 
-    for (const row of rawLines) {
+    for (const row of allLines) {
       if (!orderMap.has(row.id)) {
         orderMap.set(row.id, {
           id: row.id,
@@ -476,6 +563,7 @@ export class PickingService {
           name: row.name,
           customerName: row.customerName,
           customerOrderNumber: row.customerOrderNumber,
+          // eslint-disable-next-line no-restricted-syntax
           stateCode: row.stateCode,
           createdOn: row.createdOn,
           createdBy: row.createdBy,
@@ -485,6 +573,7 @@ export class PickingService {
           _linesFullyPickable: 0,
           _linesPartiallyPickable: 0,
           _hasAllocation: false,
+          type: row.type,
         });
       }
 
@@ -580,7 +669,7 @@ export class PickingService {
 
     const { pick, locationId } = pickRows[0];
 
-    if (pick.stateCode !== 'picked') {
+    if (pick.stateCode !== SALES_ORDER_PICK_STATE.PICKED) {
       throw new BadRequestException(
         `Cannot cancel pick in state '${pick.stateCode}'. Only 'picked' lines can be cancelled.`,
       );
@@ -629,10 +718,12 @@ export class PickingService {
       });
 
       // 2. Update sales_order_picks
-      await tx
-        .update(salesOrderPicks)
-        .set({ stateCode: 'cancelled', modifiedOn: new Date() })
-        .where(eq(salesOrderPicks.pickId, pickId));
+      const updatedPick = await this.changeSalesPickState(
+        pickId,
+        SALES_ORDER_PICK_STATE.CANCELLED,
+        actor,
+        tx,
+      );
 
       // 3. Update order modifiedOn
       await tx
@@ -640,23 +731,72 @@ export class PickingService {
         .set({ modifiedOn: new Date() })
         .where(eq(salesOrders.salesOrderId, orderId));
 
-      return pick;
+      return updatedPick;
     });
 
-    await emitEvent(this.db as any, {
+    return result;
+  }
+
+  /**
+   * Universal changeState for Sales Order Picks
+   */
+  async changeSalesPickState(
+    pickId: string,
+    newState: string,
+    actor: string,
+    tx: DrizzleDB,
+  ) {
+    if (!VALID_PICK_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid pick state: '${newState}'`);
+    }
+
+    const [pick] = await tx
+      .select({
+        stateCode: salesOrderPicks.stateCode,
+        salesOrderLineId: salesOrderPicks.salesOrderLineId,
+        productId: salesOrderPicks.productId,
+        quantity: salesOrderPicks.quantity,
+        binId: salesOrderPicks.binId,
+        salesOrderId: salesOrderPicks.salesOrderId,
+      })
+      .from(salesOrderPicks)
+      .where(eq(salesOrderPicks.pickId, pickId));
+
+    if (!pick) {
+      throw new BadRequestException(`Pick ${pickId} not found`);
+    }
+
+    const allowed = SALES_ORDER_PICK_TRANSITIONS[pick.stateCode as string];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition pick from '${pick.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await tx
+      .update(salesOrderPicks)
+      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .where(eq(salesOrderPicks.pickId, pickId))
+      .returning();
+
+    await emitEvent(tx as any, {
       aggregateType: AggregateType.SALES_ORDER,
-      aggregateId: orderId,
-      eventType: 'sales_order_pick_cancelled',
+      aggregateId: pick.salesOrderId,
+      eventType: EventType.STATUS_CHANGED,
       payload: {
+        entity: 'pick',
+        entityId: pickId,
         salesOrderLineId: pick.salesOrderLineId,
         productId: pick.productId,
         quantity: pick.quantity,
         binId: pick.binId,
+        from: pick.stateCode,
+        to: newState,
       },
       actor,
     });
 
-    return result;
+    return updated;
   }
 
   // -------------------------------------------------------------------------
@@ -686,14 +826,14 @@ export class PickingService {
           SELECT SUM(quantity)
           FROM modbm_core.sales_order_picks
           WHERE sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
-            AND state_code != 'cancelled'
+            AND state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
         shippedQty: sql<number>`COALESCE((
           SELECT SUM(sl.quantity_shipped)
           FROM modbm_core.sales_order_shipment_lines sl
           JOIN modbm_core.sales_order_shipments s ON s.shipment_id = sl.shipment_id
           WHERE sl.sales_order_line_id = ${salesOrderLineItems.salesOrderLineId}
-            AND s.state_code != 'cancelled'
+             AND s.state_code != ${SALES_ORDER_PICK_STATE.CANCELLED}
         ), 0)`,
       })
       .from(salesOrders)
@@ -711,7 +851,7 @@ export class PickingService {
       )
       .where(
         and(
-          eq(salesOrders.stateCode, 'picking'),
+          eq(salesOrders.stateCode, SALES_ORDER_STATE.PICKING),
           locationId
             ? eq(salesOrderLineItems.fulfillmentLocationId, locationId)
             : undefined,
@@ -729,6 +869,7 @@ export class PickingService {
           name: row.name,
           customerName: row.customerName,
           customerOrderNumber: row.customerOrderNumber,
+          // eslint-disable-next-line no-restricted-syntax
           stateCode: row.stateCode,
           createdOn: row.createdOn,
           createdBy: row.createdBy,
@@ -830,7 +971,7 @@ export class PickingService {
         .where(
           and(
             inArray(salesOrderPicks.salesOrderLineId, lineIds),
-            sql`${salesOrderPicks.stateCode} != 'cancelled'`,
+            sql`${salesOrderPicks.stateCode} != ${SALES_ORDER_PICK_STATE.CANCELLED}`,
           ),
         )
         .groupBy(salesOrderPicks.salesOrderLineId);
@@ -883,7 +1024,7 @@ export class PickingService {
       .where(
         and(
           eq(salesOrderShipments.salesOrderId, orderId),
-          sql`${salesOrderShipments.stateCode} != 'cancelled'`,
+          sql`${salesOrderShipments.stateCode} != ${SALES_ORDER_STATE.CANCELLED}`,
         ),
       )
       .orderBy(desc(salesOrderShipments.createdOn));

@@ -21,6 +21,11 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { eq, sql } from 'drizzle-orm';
+import {
+  PURCHASE_ORDER_STATE,
+  MATCH_STATUS,
+  PUTAWAY_STATUS,
+} from '@modbm/shared';
 
 jest.mock('../purchase-orders/purchase-order-lifecycle-rules', () => ({
   evaluatePOLifecycleRules: jest.fn().mockResolvedValue([]),
@@ -151,7 +156,7 @@ describe('GoodsReceivedService', () => {
         vendorId: VENDOR_ID,
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
-        stateCode: 'ordered',
+        stateCode: PURCHASE_ORDER_STATE.ORDERED,
       });
       await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderId: PO_ID,
@@ -177,7 +182,7 @@ describe('GoodsReceivedService', () => {
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
       expect(lines).toHaveLength(1);
-      expect(lines[0].matchStatus).toBe('matched');
+      expect(lines[0].matchStatus).toBe(MATCH_STATUS.MATCHED);
       expect(lines[0].quantityReceived).toBe('5');
     });
 
@@ -194,7 +199,7 @@ describe('GoodsReceivedService', () => {
           vendorId: VENDOR_ID,
           deliveryLocationId: LOCATION_ID,
           currencyCode: 'EUR',
-          stateCode: 'ordered',
+          stateCode: PURCHASE_ORDER_STATE.ORDERED,
         },
         {
           purchaseOrderId: PO2_ID,
@@ -202,7 +207,7 @@ describe('GoodsReceivedService', () => {
           vendorId: VENDOR_ID,
           deliveryLocationId: LOCATION_ID,
           currencyCode: 'EUR',
-          stateCode: 'ordered',
+          stateCode: PURCHASE_ORDER_STATE.ORDERED,
         },
       ]);
       await pg.db.insert(purchaseOrderLineItems).values([
@@ -239,7 +244,7 @@ describe('GoodsReceivedService', () => {
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
-      expect(line.matchStatus).toBe('ambiguous');
+      expect(line.matchStatus).toBe(MATCH_STATUS.AMBIGUOUS);
     });
 
     it('should set match_status to "unmatched" when no open PO lines exist', async () => {
@@ -258,7 +263,7 @@ describe('GoodsReceivedService', () => {
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedId, result.goodsReceivedId));
-      expect(line.matchStatus).toBe('unmatched');
+      expect(line.matchStatus).toBe(MATCH_STATUS.UNMATCHED);
     });
   });
 
@@ -330,8 +335,8 @@ describe('GoodsReceivedService', () => {
           goodsReceivedId: gr.goodsReceivedId,
           productId: PROD_ID,
           quantityReceived: '50',
-          matchStatus: 'ambiguous',
-          putawayStatus: 'awaiting_matching',
+          matchStatus: MATCH_STATUS.AMBIGUOUS,
+          putawayStatus: PUTAWAY_STATUS.AWAITING_MATCHING,
         })
         .returning();
       return line.goodsReceivedLineId;
@@ -347,7 +352,7 @@ describe('GoodsReceivedService', () => {
         vendorId: VENDOR_ID,
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
-        stateCode: 'ordered',
+        stateCode: PURCHASE_ORDER_STATE.ORDERED,
       });
       await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderLineId: PO_LINE_ID,
@@ -373,8 +378,8 @@ describe('GoodsReceivedService', () => {
           goodsReceivedId: gr.goodsReceivedId,
           productId: PROD_ID,
           quantityReceived: '50',
-          matchStatus: 'matched',
-          putawayStatus: 'pending_putaway',
+          matchStatus: MATCH_STATUS.MATCHED,
+          putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
           purchaseOrderLineId: PO_LINE_ID,
           purchaseOrderId: PO_ID,
         })
@@ -389,18 +394,18 @@ describe('GoodsReceivedService', () => {
 
       // Quarantine it
       const qResult = await service.toggleQuarantine(lineId, 'admin');
-      expect(qResult.putawayStatus).toBe('quarantined');
+      expect(qResult.putawayStatus).toBe(PUTAWAY_STATUS.QUARANTINED);
 
       // Un-quarantine it: should go back to awaiting_matching, NOT pending_putaway
       const uResult = await service.toggleQuarantine(lineId, 'admin');
-      expect(uResult.putawayStatus).toBe('awaiting_matching');
+      expect(uResult.putawayStatus).toBe(PUTAWAY_STATUS.AWAITING_MATCHING);
 
       // Verify in DB
       const [dbLine] = await pg.db
         .select()
         .from(goodsReceivedLines)
         .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId));
-      expect(dbLine.putawayStatus).toBe('awaiting_matching');
+      expect(dbLine.putawayStatus).toBe(PUTAWAY_STATUS.AWAITING_MATCHING);
     });
 
     it('should restore pending_putaway when un-quarantining a matched line', async () => {
@@ -410,11 +415,11 @@ describe('GoodsReceivedService', () => {
 
       // Quarantine it
       const qResult = await service.toggleQuarantine(lineId, 'admin');
-      expect(qResult.putawayStatus).toBe('quarantined');
+      expect(qResult.putawayStatus).toBe(PUTAWAY_STATUS.QUARANTINED);
 
       // Un-quarantine it: should go to pending_putaway because it has a PO link
       const uResult = await service.toggleQuarantine(lineId, 'admin');
-      expect(uResult.putawayStatus).toBe('pending_putaway');
+      expect(uResult.putawayStatus).toBe(PUTAWAY_STATUS.PENDING_PUTAWAY);
     });
 
     it('should throw when source bin is missing', async () => {
@@ -476,7 +481,7 @@ describe('GoodsReceivedService', () => {
         vendorId: VENDOR_ID,
         deliveryLocationId: LOCATION_ID,
         currencyCode: 'EUR',
-        stateCode: 'ordered',
+        stateCode: PURCHASE_ORDER_STATE.ORDERED,
       });
       await pg.db.insert(purchaseOrderLineItems).values({
         purchaseOrderLineId: PO_LINE_ID,
@@ -504,8 +509,8 @@ describe('GoodsReceivedService', () => {
           goodsReceivedId: gr.goodsReceivedId,
           productId: PROD_ID,
           quantityReceived: '50',
-          matchStatus: 'ambiguous',
-          putawayStatus: 'quarantined',
+          matchStatus: MATCH_STATUS.AMBIGUOUS,
+          putawayStatus: PUTAWAY_STATUS.QUARANTINED,
         })
         .returning();
 
@@ -523,8 +528,8 @@ describe('GoodsReceivedService', () => {
           eq(goodsReceivedLines.goodsReceivedLineId, line.goodsReceivedLineId),
         );
 
-      expect(dbLine.matchStatus).toBe('matched');
-      expect(dbLine.putawayStatus).toBe('quarantined');
+      expect(dbLine.matchStatus).toBe(MATCH_STATUS.MATCHED);
+      expect(dbLine.putawayStatus).toBe(PUTAWAY_STATUS.QUARANTINED);
     });
   });
 });

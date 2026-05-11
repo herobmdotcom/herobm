@@ -23,6 +23,7 @@ import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
 import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 import SupplierExpiries from '@/components/suppliers/SupplierExpiries';
 import { useSettings } from '@/components/SettingsProvider';
+import { SUPPLIER_STATE } from '@modbm/shared';
 
 interface Supplier {
   vendorId: string;
@@ -163,7 +164,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   /** Toggle state code (active/inactive) */
   const toggleState = async () => {
     if (!supplier || saving) return;
-    const newState = supplier.stateCode === 'active' ? 'inactive' : 'active';
+    const newState = supplier.stateCode === SUPPLIER_STATE.ACTIVE ? SUPPLIER_STATE.INACTIVE : SUPPLIER_STATE.ACTIVE;
     setSaving(true);
     setError('');
     try {
@@ -237,7 +238,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     );
   }
 
-  const isEditable = supplier.stateCode !== 'archived';
+  const isEditable = supplier.stateCode !== SUPPLIER_STATE.ARCHIVED;
 
 
 
@@ -290,7 +291,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           />
         }
       >
-      {supplier.stateCode === 'archived' && (
+      {supplier.stateCode === SUPPLIER_STATE.ARCHIVED && (
         <div
           className="px-4 mb-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
@@ -471,7 +472,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                         width: 40,
                         height: 22,
                         borderRadius: 11,
-                        background: supplier.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
+                        background: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 'var(--accent)' : 'var(--border)',
                         position: 'relative',
                         transition: 'background 0.2s ease',
                         opacity: !isEditable || saving ? 0.5 : 1,
@@ -485,7 +486,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                           background: '#fff',
                           position: 'absolute',
                           top: 3,
-                          left: supplier.stateCode === 'active' ? 21 : 3,
+                          left: supplier.stateCode === SUPPLIER_STATE.ACTIVE ? 21 : 3,
                           transition: 'left 0.2s ease',
                         }}
                       />
@@ -622,7 +623,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         </div>
 
         <div className="flex justify-end pt-2">
-          {supplier.stateCode === 'archived' ? (
+          {supplier.stateCode === SUPPLIER_STATE.ARCHIVED ? (
             <button className="btn btn-secondary" onClick={unarchiveSupplier} disabled={saving}>
               📦 {tSales('buttons.unarchive')}
             </button>

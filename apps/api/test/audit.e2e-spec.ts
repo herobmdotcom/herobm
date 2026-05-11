@@ -5,6 +5,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { ACCOUNT_STATE, PRODUCT_STATE, SALES_ORDER_STATE } from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -141,7 +142,7 @@ describe('Audit Events (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/accounts/${accountId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'inactive' });
+        .send({ stateCode: ACCOUNT_STATE.INACTIVE });
 
       const res = await request(app.getHttpServer())
         .get(`/api/accounts/${accountId}`)
@@ -151,7 +152,10 @@ describe('Audit Events (e2e)', () => {
         (e: any) => e.eventType === 'status_changed',
       );
       expect(statusEvent).toBeDefined();
-      expect(statusEvent.payload).toEqual({ from: 'active', to: 'inactive' });
+      expect(statusEvent.payload).toEqual({
+        from: ACCOUNT_STATE.ACTIVE,
+        to: ACCOUNT_STATE.INACTIVE,
+      });
     });
   });
 
@@ -208,7 +212,7 @@ describe('Audit Events (e2e)', () => {
         .get('/api/sales-orders?limit=50')
         .set('Authorization', `Bearer ${adminToken}`);
       const invoicedOrder = orderRes.body.data.find(
-        (o: any) => o.stateCode === 'invoiced',
+        (o: any) => o.stateCode === SALES_ORDER_STATE.INVOICED,
       );
 
       if (!invoicedOrder) {
@@ -289,7 +293,7 @@ describe('Audit Events (e2e)', () => {
       await request(app.getHttpServer())
         .patch(`/api/products/${productId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'inactive' });
+        .send({ stateCode: PRODUCT_STATE.INACTIVE });
 
       // 2. Verify event
       const res = await request(app.getHttpServer())
@@ -300,7 +304,10 @@ describe('Audit Events (e2e)', () => {
         (e: any) => e.eventType === 'status_changed',
       );
       expect(statusEvent).toBeDefined();
-      expect(statusEvent.payload).toEqual({ from: 'active', to: 'inactive' });
+      expect(statusEvent.payload).toEqual({
+        from: PRODUCT_STATE.ACTIVE,
+        to: PRODUCT_STATE.INACTIVE,
+      });
     });
   });
 });

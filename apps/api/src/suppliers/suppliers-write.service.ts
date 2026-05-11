@@ -14,7 +14,12 @@ import {
   supplierExpiries,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
+import {
+  SUPPLIER_TRANSITIONS,
+  SUPPLIER_STATE,
+  SupplierState,
+} from '@modbm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   CreateSupplierDto,
@@ -50,7 +55,7 @@ export class SuppliersWriteService {
 
       await tx.insert(supplierEvents).values({
         vendorId: supplier.vendorId,
-        eventType: 'created',
+        eventType: EventType.CREATED,
         payload: dto,
         actor,
       });
@@ -97,7 +102,7 @@ export class SuppliersWriteService {
         ) {
           await tx.insert(supplierEvents).values({
             vendorId: id,
-            eventType: 'status_changed',
+            eventType: EventType.STATUS_CHANGED,
             payload: {
               from: existing[0].stateCode,
               to: audit.changes.stateCode,
@@ -107,7 +112,7 @@ export class SuppliersWriteService {
         } else {
           await tx.insert(supplierEvents).values({
             vendorId: id,
-            eventType: 'updated',
+            eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -128,39 +133,7 @@ export class SuppliersWriteService {
    * Archive a supplier.
    */
   async archive(id: string, actor: string) {
-    const existing = await this.db
-      .select()
-      .from(coreSuppliers)
-      .where(eq(coreSuppliers.vendorId, id))
-      .limit(1);
-
-    if (existing.length === 0) {
-      throw new NotFoundException(`Supplier '${id}' not found`);
-    }
-
-    if (existing[0].stateCode === 'archived') {
-      throw new BadRequestException(`Supplier '${id}' is already archived`);
-    }
-
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreSuppliers)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
-        .where(eq(coreSuppliers.vendorId, id))
-        .returning();
-
-      await tx.insert(supplierEvents).values({
-        vendorId: id,
-        eventType: 'archived',
-        payload: {
-          from: existing[0].stateCode,
-          to: 'archived',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changeSupplierState(id, SUPPLIER_STATE.ARCHIVED, actor);
   }
 
   /**
@@ -177,7 +150,7 @@ export class SuppliersWriteService {
       throw new NotFoundException(`Supplier '${id}' not found`);
     }
 
-    if (existing[0].stateCode !== 'archived') {
+    if (existing[0].stateCode !== SUPPLIER_STATE.ARCHIVED) {
       throw new BadRequestException(`Supplier '${id}' is not archived`);
     }
 
@@ -185,34 +158,78 @@ export class SuppliersWriteService {
       .select()
       .from(supplierEvents)
       .where(
-        sql`${supplierEvents.vendorId} = ${id} AND ${supplierEvents.eventType} = 'archived'`,
+        sql`${supplierEvents.vendorId} = ${id} AND ${supplierEvents.eventType} = ${EventType.ARCHIVED}`,
       )
       .orderBy(sql`${supplierEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
-      'active';
+      SUPPLIER_STATE.ACTIVE;
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreSuppliers)
-        .set({ stateCode: previousState, modifiedOn: new Date() })
-        .where(eq(coreSuppliers.vendorId, id))
-        .returning();
+    return await this.changeSupplierState(
+      id,
+      previousState as SupplierState,
+      actor,
+    );
+  }
 
-      await tx.insert(supplierEvents).values({
-        vendorId: id,
-        eventType: 'unarchived',
-        payload: {
-          from: 'archived',
-          to: previousState,
-        },
-        actor,
-      });
+  /**
+   * Centralised state transition logic for suppliers.
+   */
+  async changeSupplierState(
+    vendorId: string,
+    newState: SupplierState,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
 
-      return updated;
+    const [existing] = await db
+      .select()
+      .from(coreSuppliers)
+      .where(eq(coreSuppliers.vendorId, vendorId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Supplier '${vendorId}' not found`);
+    }
+
+    const currentState = existing.stateCode as SupplierState;
+
+    if (currentState === newState) {
+      return existing;
+    }
+
+    // Validation
+    const allowed = SUPPLIER_TRANSITIONS[currentState] || [];
+    if (!allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Invalid supplier state transition: '${currentState}' -> '${newState}'. Valid next states: ${allowed.join(', ') || 'None'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(coreSuppliers)
+      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .where(eq(coreSuppliers.vendorId, vendorId))
+      .returning();
+
+    const targetTx = tx || this.db;
+    await targetTx.insert(supplierEvents).values({
+      vendorId,
+      eventType:
+        newState === SUPPLIER_STATE.ARCHIVED
+          ? EventType.ARCHIVED
+          : EventType.STATUS_CHANGED,
+      payload: {
+        from: currentState,
+        to: newState,
+      },
+      actor,
     });
+
+    return updated;
   }
 
   // --- Expiries Methods ---
@@ -242,7 +259,7 @@ export class SuppliersWriteService {
 
     await this.db.insert(supplierEvents).values({
       vendorId,
-      eventType: `added_expiry`,
+      eventType: EventType.ADDED_EXPIRY,
       payload: { expiryType: dto.expiryType },
       actor,
     });
@@ -278,7 +295,7 @@ export class SuppliersWriteService {
 
     await this.db.insert(supplierEvents).values({
       vendorId,
-      eventType: `updated_expiry`,
+      eventType: EventType.UPDATED_EXPIRY,
       payload: { expiryId },
       actor,
     });
@@ -303,7 +320,7 @@ export class SuppliersWriteService {
 
     await this.db.insert(supplierEvents).values({
       vendorId,
-      eventType: `deleted_expiry`,
+      eventType: EventType.DELETED_EXPIRY,
       payload: { type },
       actor,
     });

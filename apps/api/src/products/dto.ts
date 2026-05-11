@@ -97,6 +97,10 @@ export class CreateProductDto {
 export class UpdateProductDto {
   @IsOptional()
   @IsString()
+  productNumber?: string;
+
+  @IsOptional()
+  @IsString()
   name?: string;
 
   @IsOptional()

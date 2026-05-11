@@ -9,7 +9,8 @@ import {
   PURCHASE_INVOICE_TRANSITIONS, 
   PURCHASE_INVOICE_LIFECYCLE, 
   getAllowedTransitions, 
-  isBackTransition 
+  isBackTransition,
+  MATCH_STATUS
 } from '@modbm/shared';
 
 export interface PurchaseInvoiceDetails {
@@ -175,7 +176,7 @@ export function useSupplierInvoice(id: string) {
       await apiMutate(`/api/purchase-invoices/lines/${invoiceLineId}/resolve`, 'POST', { purchaseOrderLineId });
       loadInvoice();
       const nextUnmatched = invoice?.lines.find(
-        (l) => l.lineId !== invoiceLineId && l.matchStatus !== 'matched'
+        (l) => l.lineId !== invoiceLineId && l.matchStatus !== MATCH_STATUS.MATCHED
       );
       setSelectedInvoiceLineId(nextUnmatched?.lineId || null);
     } catch (err: any) {
@@ -270,7 +271,7 @@ export function useSupplierInvoice(id: string) {
     const issues: { lineId: string; type: string; message: string; severity: 'warning' | 'error' }[] = [];
     
     invoice.lines.forEach((line, idx) => {
-      if (line.matchStatus !== 'matched' && !line.purchaseOrderLineId && parseFloat(line.amount || '0') > 0) {
+      if (line.matchStatus !== MATCH_STATUS.MATCHED && !line.purchaseOrderLineId && parseFloat(line.amount || '0') > 0) {
         issues.push({
           lineId: line.lineId,
           type: 'unplanned_line',
@@ -279,7 +280,7 @@ export function useSupplierInvoice(id: string) {
         });
       }
 
-      if (line.matchStatus === 'matched' && line.purchaseOrderLineId) {
+      if (line.matchStatus === MATCH_STATUS.MATCHED && line.purchaseOrderLineId) {
         const billedQty = parseFloat(line.quantityInvoiced || '0');
         const poReceived = parseFloat(line.poLineQuantityReceived || '0');
         const billedPrice = parseFloat(line.pricePerUnit || '0');

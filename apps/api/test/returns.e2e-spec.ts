@@ -16,6 +16,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { RETURN_STATE, SALES_ORDER_STATE } from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -154,7 +155,11 @@ describe('API E2E — Sales Order Returns', () => {
     const orderId = res.body.salesOrderId;
 
     // Advance: draft → quoted → confirmed → picking → shipped → invoiced
-    for (const state of ['quoted', 'confirmed', 'picking']) {
+    for (const state of [
+      SALES_ORDER_STATE.QUOTED,
+      SALES_ORDER_STATE.CONFIRMED,
+      SALES_ORDER_STATE.PICKING,
+    ]) {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
@@ -200,7 +205,10 @@ describe('API E2E — Sales Order Returns', () => {
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${orderId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'invoiced', generateBackorders: false })
+      .send({
+        stateCode: SALES_ORDER_STATE.INVOICED,
+        generateBackorders: false,
+      })
       .expect(200);
 
     // Get line IDs
@@ -247,7 +255,7 @@ describe('API E2E — Sales Order Returns', () => {
 
       expect(res.body).toHaveProperty('returnId');
       expect(res.body).toHaveProperty('returnNumber');
-      expect(res.body.stateCode).toBe('draft');
+      expect(res.body.stateCode).toBe(RETURN_STATE.DRAFT);
 
       returnId = res.body.returnId;
     });
@@ -328,20 +336,25 @@ describe('API E2E — Sales Order Returns', () => {
     });
 
     it('PATCH /returns/:returnId/state — confirms then processes the return', async () => {
-      // Return state machine: draft → confirmed → processed
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'confirmed', generateBackorders: false })
+        .send({ stateCode: RETURN_STATE.CONFIRMED, generateBackorders: false })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ stateCode: RETURN_STATE.RECEIVED, locationId: mainLocationId })
         .expect(200);
 
       const res = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/returns/${returnId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'processed', locationId: mainLocationId })
+        .send({ stateCode: RETURN_STATE.PROCESSED, locationId: mainLocationId })
         .expect(200);
 
-      expect(res.body.stateCode).toBe('processed');
+      expect(res.body.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 

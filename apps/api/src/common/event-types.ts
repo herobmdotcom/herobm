@@ -15,11 +15,21 @@ export const AggregateType = {
   SUPPLIER: 'supplier',
   PRODUCT_SUPPLIER: 'product_supplier',
   PAYMENT: 'payment',
+  GOODS_RECEIPT: 'goods_receipt',
+  SALES_INVOICE: 'sales_invoice',
+  PURCHASE_INVOICE: 'purchase_invoice',
+  TRANSFER_ORDER: 'transfer_order',
   SYSTEM: 'system',
 } as const;
 
 export type AggregateTypeValue =
   (typeof AggregateType)[keyof typeof AggregateType];
+
+import {
+  SALES_ORDER_STATE,
+  ACCOUNT_STATE,
+  PURCHASE_ORDER_STATE,
+} from '@modbm/shared';
 
 /**
  * All known event types across the platform.
@@ -30,13 +40,17 @@ export const EventType = {
   CREATED: 'created',
   UPDATED: 'updated',
   STATUS_CHANGED: 'status_changed',
-  ARCHIVED: 'archived',
+  AUTO_STATUS_CHANGED: 'auto_status_changed',
+  ARCHIVED: SALES_ORDER_STATE.ARCHIVED,
   UNARCHIVED: 'unarchived',
+  RELEASED: 'released',
+  DELETED: 'deleted',
 
   // ── Line operations ─────────────────────────────────────────────────
   LINE_ADDED: 'line_added',
   LINE_UPDATED: 'line_updated',
   LINE_REMOVED: 'line_removed',
+  LINE_PICKED: 'line_picked',
   POST_CONFIRMATION_LINE_ADDED: 'post_confirmation_line_added',
 
   // ── Sales domain ────────────────────────────────────────────────────
@@ -51,6 +65,7 @@ export const EventType = {
   STOCK_RECEIVED: 'stock_received',
   DEMAND_ALLOCATED: 'demand_allocated',
   DEMAND_UNALLOCATED: 'demand_unallocated',
+  DEMAND_REALLOCATED: 'demand_reallocated',
   RECEIPT_MATCHED: 'receipt_matched',
   RECEIPT_UNMATCHED: 'receipt_unmatched',
   INVOICE_MATCHED: 'invoice_matched',

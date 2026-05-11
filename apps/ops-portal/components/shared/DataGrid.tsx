@@ -82,7 +82,9 @@ export function loadScrollState(gridKey: string): ScrollState | null {
 
 export interface DataGridProps<T> {
   /** API endpoint to fetch data from (appended with ?page=&limit=&search= params) */
-  endpoint: string;
+  endpoint?: string;
+  /** Local static row data array (mutually exclusive with endpoint) */
+  rowData?: T[];
   /** AG Grid column definitions */
   columns: ColDef<T>[];
   /** Stable key for persisting column layout to localStorage (e.g. "ops-products") */
@@ -125,6 +127,10 @@ export interface DataGridProps<T> {
   context?: any;
   /** Callback to determine if a row is selectable */
   isRowSelectable?: (node: import('ag-grid-community').IRowNode<T>) => boolean;
+  /** Callback when data is successfully loaded */
+  onDataLoaded?: (data: T[]) => void;
+  /** AG Grid domLayout — use 'autoHeight' when the grid is inside a container without a resolved pixel height (e.g. slideovers) */
+  domLayout?: 'normal' | 'autoHeight' | 'print';
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -142,6 +148,7 @@ export function numericFormatter(params: { value: unknown }) {
 
 export default function DataGrid<T>({
   endpoint,
+  rowData,
   columns,
   gridKey,
   searchPlaceholder,
@@ -160,6 +167,8 @@ export default function DataGrid<T>({
   refreshTrigger = 0,
   context,
   isRowSelectable,
+  onDataLoaded,
+  domLayout,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
@@ -179,6 +188,15 @@ export default function DataGrid<T>({
   }, [gridKey]);
 
   const [data, setData] = useState<T[] | undefined>(undefined);
+  const [internalRefresh, setInternalRefresh] = useState(0);
+
+  useEffect(() => {
+    if (!gridKey) return;
+    const handler = () => setInternalRefresh((prev) => prev + 1);
+    window.addEventListener(`grid-refresh-${gridKey}`, handler);
+    return () => window.removeEventListener(`grid-refresh-${gridKey}`, handler);
+  }, [gridKey]);
+
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch ?? "");
@@ -251,6 +269,15 @@ export default function DataGrid<T>({
   );
 
   useEffect(() => {
+    if (rowData) {
+      setData(rowData);
+      setDisplayedRowCount(rowData.length);
+      setLoading(false);
+      return;
+    }
+
+    if (!endpoint) return;
+
     setLoading(true);
     const params = new URLSearchParams();
     params.set("page", String(page));
@@ -263,10 +290,11 @@ export default function DataGrid<T>({
       .then((res) => {
         setData(res.data);
         setDisplayedRowCount(res.data.length);
+        onDataLoaded?.(res.data);
       })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
-  }, [endpoint, search, includeArchived, page, apiFetch, onError, refreshTrigger]);
+  }, [endpoint, rowData, search, includeArchived, page, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
@@ -701,6 +729,7 @@ export default function DataGrid<T>({
           onRowClicked={onRowClicked ? handleRowClicked : undefined}
           onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged(e.api.getSelectedRows()) : undefined}
           tooltipShowDelay={300}
+          {...(domLayout ? { domLayout } : {})}
           {...(fetchAll ? { quickFilterText: search } : {})}
         />
       </div>

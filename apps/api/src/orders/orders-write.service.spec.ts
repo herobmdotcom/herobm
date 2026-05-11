@@ -14,6 +14,7 @@ import {
 import { AccountsService } from '../accounts/accounts.service';
 import { CreditAssessmentService } from '../accounts/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 import { PGlite } from '@electric-sql/pglite';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
@@ -88,7 +89,6 @@ describe('OrdersWriteService', () => {
     mockAccountsService = {
       findOne: jest.fn().mockResolvedValue({
         accountId: 'c0000000-0000-0000-0000-000000000001',
-        customerDiscount: '0',
         currencyCode: 'EUR',
         taxCategoryId: TAX_DEFAULT.taxCategoryId,
       }),
@@ -210,7 +210,6 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       mockAccountsService.findOne.mockResolvedValue({
         accountId: customer.accountId,
-        customerDiscount: disc,
         currencyCode: currency,
         taxCategoryId: gstId,
       });
@@ -242,13 +241,13 @@ describe('OrdersWriteService', () => {
       const { validDto } = await setupCreate();
       const result = await service.create(validDto, 'admin');
       expect(result).toHaveProperty('salesOrderId');
-      expect(result).toHaveProperty('stateCode', 'draft');
+      expect(result).toHaveProperty('stateCode', SALES_ORDER_STATE.DRAFT);
 
       const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, result.salesOrderId));
-      expect(saved[0].stateCode).toBe('draft');
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.DRAFT);
     });
 
     it('should default to 0% discount when no discount is provided (frontend-authoritative)', async () => {
@@ -315,7 +314,6 @@ describe('OrdersWriteService', () => {
       const { customer, validDto } = await setupCreate();
       mockAccountsService.findOne.mockResolvedValue({
         accountId: customer.accountId,
-        customerDiscount: '0',
         currencyCode: 'EUR',
         taxCategoryId: TAX_EXEMPT.taxCategoryId,
       });
@@ -393,7 +391,7 @@ describe('OrdersWriteService', () => {
         customerId: validDto.customerId,
         fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
         currencyCode: 'EUR',
-        stateCode: 'draft',
+        stateCode: SALES_ORDER_STATE.DRAFT,
       });
 
       // Mock generateOrderNumber to return the same number
@@ -427,7 +425,7 @@ describe('OrdersWriteService', () => {
     }
 
     it('should update header fields on a draft order', async () => {
-      const { order } = await setupForUpdate('draft');
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.DRAFT);
       const result = await service.update(
         order.salesOrderId,
         { name: 'New Name' },
@@ -443,7 +441,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should update header fields on a quoted order', async () => {
-      const { order } = await setupForUpdate('quoted');
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.QUOTED);
       const result = await service.update(
         order.salesOrderId,
         { name: 'New Name' },
@@ -453,14 +451,14 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject update on invoiced order', async () => {
-      const { order } = await setupForUpdate('invoiced');
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.INVOICED);
       await expect(
         service.update(order.salesOrderId, { name: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on cancelled order', async () => {
-      const { order } = await setupForUpdate('cancelled');
+      const { order } = await setupForUpdate(SALES_ORDER_STATE.CANCELLED);
       await expect(
         service.update(order.salesOrderId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -489,78 +487,98 @@ describe('OrdersWriteService', () => {
     }
 
     it.each([
-      ['draft', 'quoted'],
-      ['draft', 'cancelled'],
-      ['quoted', 'confirmed'],
-      ['quoted', 'draft'],
-      ['quoted', 'cancelled'],
-      ['confirmed', 'picking'],
-      ['confirmed', 'cancelled'],
-      ['picking', 'shipped'],
-      ['picking', 'confirmed'],
-      ['shipped', 'invoiced'],
-      ['cancelled', 'draft'],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.QUOTED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.PICKING],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.CANCELLED],
+      [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.SHIPPED],
+      [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.INVOICED],
+      [SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.DRAFT],
     ])('should allow transition %s → %s', async (from, to) => {
       const { order } = await setupWithState(from);
       await expect(
-        service.changeState(order.salesOrderId, to, 'admin'),
+        service.changeSalesOrderState(order.salesOrderId, to, 'admin'),
       ).resolves.toBeDefined();
     });
 
     it.each([
-      ['draft', 'shipped'],
-      ['draft', 'invoiced'],
-      ['draft', 'picking'],
-      ['draft', 'confirmed'],
-      ['confirmed', 'quoted'],
-      ['shipped', 'draft'],
-      ['invoiced', 'draft'],
-      ['invoiced', 'cancelled'],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.SHIPPED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.INVOICED],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.PICKING],
+      [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.CONFIRMED],
+      [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.QUOTED],
+      [SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.DRAFT],
+      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED],
     ])('should reject transition %s → %s', async (from, to) => {
       const { order } = await setupWithState(from);
       await expect(
-        service.changeState(order.salesOrderId, to, 'admin'),
+        service.changeSalesOrderState(order.salesOrderId, to, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject unknown state name', async () => {
-      const { order } = await setupWithState('draft');
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
       await expect(
-        service.changeState(order.salesOrderId, 'nonexistent_state', 'admin'),
+        service.changeSalesOrderState(
+          order.salesOrderId,
+          'nonexistent_state',
+          'admin',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
     // ── Inventory integration tests ──
 
     it('should transition quoted → confirmed', async () => {
-      const { order } = await setupWithState('quoted');
-      await service.changeState(order.salesOrderId, 'confirmed', 'admin');
+      const { order } = await setupWithState(SALES_ORDER_STATE.QUOTED);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CONFIRMED,
+        'admin',
+      );
       const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, order.salesOrderId));
-      expect(saved[0].stateCode).toBe('confirmed');
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.CONFIRMED);
     });
 
     it('should transition confirmed → cancelled', async () => {
-      const { order } = await setupWithState('confirmed');
-      await service.changeState(order.salesOrderId, 'cancelled', 'admin');
+      const { order } = await setupWithState(SALES_ORDER_STATE.CONFIRMED);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CANCELLED,
+        'admin',
+      );
       const saved = await pg.db
         .select()
         .from(salesOrders)
         .where(eq(salesOrders.salesOrderId, order.salesOrderId));
-      expect(saved[0].stateCode).toBe('cancelled');
+      expect(saved[0].stateCode).toBe(SALES_ORDER_STATE.CANCELLED);
     });
 
     it('should transition draft → quoted without inventory side-effects', async () => {
-      const { order } = await setupWithState('draft');
-      await service.changeState(order.salesOrderId, 'quoted', 'admin');
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.QUOTED,
+        'admin',
+      );
     });
 
     it('should transition draft → cancelled without inventory side-effects', async () => {
-      const { order } = await setupWithState('draft');
+      const { order } = await setupWithState(SALES_ORDER_STATE.DRAFT);
 
-      await service.changeState(order.salesOrderId, 'cancelled', 'admin');
+      await service.changeSalesOrderState(
+        order.salesOrderId,
+        SALES_ORDER_STATE.CANCELLED,
+        'admin',
+      );
       expect(
         mockInventoryService.recordInventoryMovement,
       ).not.toHaveBeenCalled();
@@ -616,7 +634,10 @@ describe('OrdersWriteService', () => {
     }
 
     it('should add a line to a draft order', async () => {
-      const { order, product } = await setupForAddLine('draft', 2);
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.DRAFT,
+        2,
+      );
       const result = await service.addLine(
         order.salesOrderId,
         { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
@@ -627,7 +648,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should resolve GST via product category', async () => {
-      const { order, product } = await setupForAddLine('draft');
+      const { order, product } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
       await service.addLine(
         order.salesOrderId,
         { productId: product.productId, quantity: '5', pricePerUnit: '12.00' },
@@ -640,7 +661,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should use per-line GST override when provided', async () => {
-      const { order, product } = await setupForAddLine('draft');
+      const { order, product } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
       await service.addLine(
         order.salesOrderId,
         {
@@ -658,7 +679,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject adding to an invoiced order', async () => {
-      const { order, product } = await setupForAddLine('invoiced');
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
       await expect(
         service.addLine(
           order.salesOrderId,
@@ -673,7 +696,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject adding to a shipped order', async () => {
-      const { order, product } = await setupForAddLine('shipped');
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
       await expect(
         service.addLine(
           order.salesOrderId,
@@ -688,7 +713,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject adding to a cancelled order', async () => {
-      const { order, product } = await setupForAddLine('cancelled');
+      const { order, product } = await setupForAddLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
       await expect(
         service.addLine(
           order.salesOrderId,
@@ -703,7 +730,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should use zero-rate for zero-rated product', async () => {
-      const { order } = await setupForAddLine('draft');
+      const { order } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
       const zeroProduct = await createTestProduct(pg.db, {
         sku: 'PROD-ZR',
         name: 'Zero Prod',
@@ -766,7 +793,7 @@ describe('OrdersWriteService', () => {
     }
 
     it('should update line quantity on a draft order', async () => {
-      const { order, line } = await setupForUpdateLine('draft');
+      const { order, line } = await setupForUpdateLine(SALES_ORDER_STATE.DRAFT);
       const result = await service.updateLine(
         order.salesOrderId,
         line.salesOrderLineId,
@@ -783,7 +810,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should resolve GST category for recomputation', async () => {
-      const { order, line } = await setupForUpdateLine('draft');
+      const { order, line } = await setupForUpdateLine(SALES_ORDER_STATE.DRAFT);
       await service.updateLine(
         order.salesOrderId,
         line.salesOrderLineId,
@@ -796,7 +823,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject update on invoiced order', async () => {
-      const { order, line } = await setupForUpdateLine('invoiced');
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
       await expect(
         service.updateLine(
           order.salesOrderId,
@@ -808,7 +837,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject update on shipped order', async () => {
-      const { order, line } = await setupForUpdateLine('shipped');
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
       await expect(
         service.updateLine(
           order.salesOrderId,
@@ -820,7 +851,9 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject update on cancelled order', async () => {
-      const { order, line } = await setupForUpdateLine('cancelled');
+      const { order, line } = await setupForUpdateLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
       await expect(
         service.updateLine(
           order.salesOrderId,
@@ -867,7 +900,7 @@ describe('OrdersWriteService', () => {
     }
 
     it('should remove a line from a draft order', async () => {
-      const { order, line } = await setupForRemoveLine('draft');
+      const { order, line } = await setupForRemoveLine(SALES_ORDER_STATE.DRAFT);
       await expect(
         service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).resolves.toBeUndefined();
@@ -880,7 +913,7 @@ describe('OrdersWriteService', () => {
     });
 
     it('should call transaction for removal', async () => {
-      const { order, line } = await setupForRemoveLine('draft');
+      const { order, line } = await setupForRemoveLine(SALES_ORDER_STATE.DRAFT);
       await service.removeLine(
         order.salesOrderId,
         line.salesOrderLineId,
@@ -890,21 +923,27 @@ describe('OrdersWriteService', () => {
     });
 
     it('should reject removal from invoiced order', async () => {
-      const { order, line } = await setupForRemoveLine('invoiced');
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.INVOICED,
+      );
       await expect(
         service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from shipped order', async () => {
-      const { order, line } = await setupForRemoveLine('shipped');
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.SHIPPED,
+      );
       await expect(
         service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from cancelled order', async () => {
-      const { order, line } = await setupForRemoveLine('cancelled');
+      const { order, line } = await setupForRemoveLine(
+        SALES_ORDER_STATE.CANCELLED,
+      );
       await expect(
         service.removeLine(order.salesOrderId, line.salesOrderLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -922,7 +961,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
-        state: 'draft',
+        state: SALES_ORDER_STATE.DRAFT,
       });
 
       await pg.db.insert(salesOrderLineItems).values({
@@ -965,7 +1004,7 @@ describe('OrdersWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId: customer.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
-        state: 'draft',
+        state: SALES_ORDER_STATE.DRAFT,
       });
 
       await expect(

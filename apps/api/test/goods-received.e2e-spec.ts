@@ -14,6 +14,12 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
+import {
+  PURCHASE_ORDER_STATE,
+  GOODS_RECEIVED_STATE,
+  MATCH_STATUS,
+  PUTAWAY_STATUS,
+} from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -126,7 +132,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     await request(app.getHttpServer())
       .patch(`/api/purchase-orders/${poRes.body.purchaseOrderId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'ordered' })
+      .send({ stateCode: PURCHASE_ORDER_STATE.ORDERED })
       .expect(200);
   }, 120_000);
 
@@ -166,7 +172,11 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
       // Auto-match status should be one of the valid values
       const lineStatus = res.body.lines[0].matchStatus;
-      expect(['matched', 'unmatched', 'ambiguous']).toContain(lineStatus);
+      expect([
+        MATCH_STATUS.MATCHED,
+        MATCH_STATUS.UNMATCHED,
+        MATCH_STATUS.AMBIGUOUS,
+      ]).toContain(lineStatus);
 
       goodsReceivedId = res.body.goodsReceivedId;
     });
@@ -337,7 +347,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     it('fetches pending putaway lines', async () => {
       const res = await request(app.getHttpServer())
         .get(
-          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+          `/api/goods-received/lines?putawayStatus=${PUTAWAY_STATUS.PENDING_PUTAWAY}&locationId=${validLocationId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -352,7 +362,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       );
       expect(targetLine).toBeDefined();
       // Verify it was auto-matched to the PO we created in beforeAll
-      expect(targetLine.matchStatus).toBe('matched');
+      expect(targetLine.matchStatus).toBe(MATCH_STATUS.MATCHED);
       putawayGoodsReceivedLineId = targetLine.goodsReceivedLineId;
     });
 
@@ -418,7 +428,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
     it('line is removed from pending putaway list', async () => {
       const res = await request(app.getHttpServer())
         .get(
-          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+          `/api/goods-received/lines?putawayStatus=${PUTAWAY_STATUS.PENDING_PUTAWAY}&locationId=${validLocationId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -444,7 +454,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       // Find the new pending line
       const linesRes = await request(app.getHttpServer())
         .get(
-          `/api/goods-received/lines?putawayStatus=pending_putaway&locationId=${validLocationId}`,
+          `/api/goods-received/lines?putawayStatus=${PUTAWAY_STATUS.PENDING_PUTAWAY}&locationId=${validLocationId}`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
@@ -453,7 +463,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         (l: any) => l.goodsReceivedId === grRes.body.goodsReceivedId,
       );
       expect(targetLine).toBeDefined();
-      expect(targetLine.matchStatus).toBe('matched');
+      expect(targetLine.matchStatus).toBe(MATCH_STATUS.MATCHED);
 
       const putawayRes = await request(app.getHttpServer())
         .post('/api/goods-received/putaway')
@@ -537,7 +547,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       await request(app.getHttpServer())
         .patch(`/api/purchase-orders/${cancelPoId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'ordered' })
+        .send({ stateCode: PURCHASE_ORDER_STATE.ORDERED })
         .expect(200);
 
       // 2. Receive 10 units against the PO
@@ -555,7 +565,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       cancelGrId = grRes.body.goodsReceivedId;
 
       // Ensure it was matched
-      expect(grRes.body.lines[0].matchStatus).toBe('matched');
+      expect(grRes.body.lines[0].matchStatus).toBe(MATCH_STATUS.MATCHED);
       expect(grRes.body.lines[0].purchaseOrderId).toBe(cancelPoId);
     });
 
@@ -565,7 +575,9 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(poRes.body.stateCode).toBe('partially_received');
+      expect(poRes.body.stateCode).toBe(
+        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+      );
       expect(poRes.body.lines[0].quantityReceived).toBe('10');
     });
 
@@ -586,7 +598,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(poRes.body.stateCode).toBe('ordered');
+      expect(poRes.body.stateCode).toBe(PURCHASE_ORDER_STATE.ORDERED);
       expect(poRes.body.lines[0].quantityReceived).toBe('0');
     });
 
@@ -596,7 +608,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(grRes.body.stateCode).toBe('cancelled');
+      expect(grRes.body.stateCode).toBe(GOODS_RECEIVED_STATE.CANCELLED);
     });
   });
 });

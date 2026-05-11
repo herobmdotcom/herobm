@@ -9,17 +9,15 @@ interface Props {
 }
 
 import { useTranslations } from 'next-intl';
+import { SUPPLIER_STATE } from '@modbm/shared';
 
 export default function SupplierStatusBadges({ profile, stateCode, mode = 'grid' }: Props) {
   const tSupplier = useTranslations('suppliers');
   if (!profile) {
     // Fallback to basic state badge if no risk profile available
-    if (stateCode === 'inactive') {
+    if (stateCode === SUPPLIER_STATE.INACTIVE) {
       return (
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-          <span className="text-xs font-bold text-red-700 uppercase tracking-wider">{tSupplier('statusBadges.inactive')}</span>
-        </div>
+        <span className="badge badge-sm badge-inactive">{tSupplier('statusBadges.inactive')}</span>
       );
     }
     
@@ -27,54 +25,45 @@ export default function SupplierStatusBadges({ profile, stateCode, mode = 'grid'
     if (mode === 'header') return null;
 
     return (
-      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tSupplier('statusBadges.active')}</span>
-      </div>
+      <span className="badge badge-sm badge-active">{tSupplier('statusBadges.active')}</span>
     );
   }
 
   const badges = [];
 
   // 1. Inactive State trumps all as it means the entity is functionally archived
-  if (stateCode === 'inactive') {
+  if (stateCode === SUPPLIER_STATE.INACTIVE) {
     badges.push(
-        <div key="inactive" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-          <span className="text-xs font-bold text-red-700 uppercase tracking-wider">{tSupplier('statusBadges.inactive')}</span>
-        </div>
+      <span key="inactive" className="badge badge-sm badge-inactive">{tSupplier('statusBadges.inactive')}</span>
     );
   }
 
   // 2. Payment Blocked
   if (profile.isPaymentBlocked) {
     badges.push(
-      <div key="payment-blocked" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200">
+      <span key="payment-blocked" className="badge badge-sm badge-warning flex items-center gap-1">
         {/* eslint-disable-next-line i18next/no-literal-string */}
-        <span className="material-symbols-outlined text-[14px] text-amber-600">block</span>
-        <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">{tSupplier('statusBadges.paymentBlocked')}</span>
-      </div>
+        <span className="material-symbols-outlined text-[14px]">block</span>
+        {tSupplier('statusBadges.paymentBlocked')}
+      </span>
     );
   }
 
   // 3. Purchase Blocked
   if (profile.isPurchasingBlocked) {
     badges.push(
-      <div key="purchase-blocked" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
+      <span key="purchase-blocked" className="badge badge-sm badge-danger flex items-center gap-1">
         {/* eslint-disable-next-line i18next/no-literal-string */}
-        <span className="material-symbols-outlined text-[14px] text-red-600">block</span>
-        <span className="text-xs font-bold text-red-700 uppercase tracking-wider">{tSupplier('statusBadges.purchaseBlocked')}</span>
-      </div>
+        <span className="material-symbols-outlined text-[14px]">block</span>
+        {tSupplier('statusBadges.purchaseBlocked')}
+      </span>
     );
   }
 
   // 4. Default "Active" badge if no blocks AND entity is active
-  if (badges.length === 0 && stateCode === 'active' && mode === 'grid') {
+  if (badges.length === 0 && stateCode === SUPPLIER_STATE.ACTIVE && mode === 'grid') {
     badges.push(
-      <div key="active" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{tSupplier('statusBadges.active')}</span>
-      </div>
+      <span key="active" className="badge badge-sm badge-active">{tSupplier('statusBadges.active')}</span>
     );
   }
 

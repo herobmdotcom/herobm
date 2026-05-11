@@ -15,6 +15,7 @@ import {
   salesInvoices,
   salesOrderShipments,
   accounts as coreAccounts,
+  transferOrders,
 } from '../drizzle/modbm-core-schema';
 import { ConfigModule } from '@nestjs/config';
 import { OrdersController } from './orders.controller';
@@ -29,12 +30,15 @@ import { ReturnsWriteService } from './returns-write.service';
 import { PickingService } from './picking.service';
 import { ShipmentService } from './shipment.service';
 import { AllocationsController } from './allocations.controller';
+import { TransfersController } from './transfers/transfers.controller';
+import { TransferService } from './transfers/transfers.service';
 import { TaxModule } from '../tax/tax.module';
 import { InventoryModule } from '../inventory/inventory.module';
 import { AccountsModule } from '../accounts/accounts.module';
 import { ProductsModule } from '../products/products.module';
 import { GlModule } from '../gl/gl.module';
 import { SettingsModule } from '../settings/settings.module';
+import { InvoicesModule } from '../invoices/invoices.module';
 import { PickingSlipService } from '../reports/picking-slip.service';
 import { SalesInvoiceService as ReportSalesInvoiceService } from '../reports/sales-invoice.service';
 import { SalesQuoteService } from '../reports/sales-quote.service';
@@ -52,6 +56,7 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
     GlModule,
     SettingsModule,
     ReportsModule,
+    InvoicesModule,
   ],
   controllers: [
     OrderPickingController,
@@ -60,6 +65,7 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
     OrderShipmentsController,
     GlobalShipmentsController,
     AllocationsController,
+    TransfersController,
   ],
   providers: [
     OrdersService,
@@ -73,6 +79,7 @@ import { ShippingDocketService } from '../reports/shipping-docket.service';
     SalesQuoteService,
     SalesReturnCreditService,
     ShippingDocketService,
+    TransferService,
   ],
   exports: [OrdersService, OrdersWriteService, BackordersService],
 })
@@ -116,12 +123,20 @@ export class OrdersModule implements OnModuleInit {
         )) as unknown as Record<string, any>;
       },
       getRandomId: async () => {
+        // Prefer sales orders, but fallback to transfer orders if none found
         const rows = await this.db
           .select({ id: salesOrders.salesOrderId })
           .from(salesOrders)
           .orderBy(sql`RANDOM()`)
           .limit(1);
-        return rows.length > 0 ? rows[0].id : undefined;
+        if (rows.length > 0) return rows[0].id;
+
+        const tRows = await this.db
+          .select({ id: transferOrders.transferOrderId })
+          .from(transferOrders)
+          .orderBy(sql`RANDOM()`)
+          .limit(1);
+        return tRows.length > 0 ? tRows[0].id : undefined;
       },
     });
 

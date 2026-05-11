@@ -6,6 +6,7 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
+import { PURCHASE_ORDER_STATE, MATCH_STATUS } from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -121,7 +122,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
     await request(app.getHttpServer())
       .patch(`/api/purchase-orders/${poId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ stateCode: 'ordered' })
+      .send({ stateCode: PURCHASE_ORDER_STATE.ORDERED })
       .expect(200);
 
     // Get line ID
@@ -177,7 +178,7 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
 
     expect(invDetail.body.lines.length).toBe(1);
     expect(invDetail.body.lines[0].purchaseOrderLineId).toBe(poLineId);
-    expect(invDetail.body.lines[0].matchStatus).toBe('matched');
+    expect(invDetail.body.lines[0].matchStatus).toBe(MATCH_STATUS.MATCHED);
 
     // 6. Post the draft invoice
     await request(app.getHttpServer())
@@ -198,7 +199,9 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     expect(unlinkedDetail.body.lines[0].purchaseOrderLineId).toBeNull();
-    expect(unlinkedDetail.body.lines[0].matchStatus).toBe('unmatched');
+    expect(unlinkedDetail.body.lines[0].matchStatus).toBe(
+      MATCH_STATUS.UNMATCHED,
+    );
 
     // 8. Relink the invoice line
     await request(app.getHttpServer())
@@ -213,6 +216,6 @@ describe('API E2E — 3-Way Matching (Standalone AP Flow)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
     expect(relinkedDetail.body.lines[0].purchaseOrderLineId).toBe(poLineId);
-    expect(relinkedDetail.body.lines[0].matchStatus).toBe('matched');
+    expect(relinkedDetail.body.lines[0].matchStatus).toBe(MATCH_STATUS.MATCHED);
   });
 });

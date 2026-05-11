@@ -349,21 +349,63 @@
       "idx": 49,
       "version": "7",
       "when": 1778141441754,
-      "tag": "0049_cooing_owl",
+      "tag": "0050_add_fulfillment_location_to_shipments",
       "breakpoints": true
     },
     {
       "idx": 50,
       "version": "7",
       "when": 1778142148993,
-      "tag": "0050_past_mongoose",
+      "tag": "0051_create_discount_matrix",
       "breakpoints": true
     },
     {
       "idx": 51,
       "version": "7",
       "when": 1778149332304,
-      "tag": "0051_soft_mongu",
+      "tag": "0052_drop_legacy_discount_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1778485029705,
+      "tag": "0052_melted_warbound",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1778485096689,
+      "tag": "0053_perpetual_scalphunter",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1778485882059,
+      "tag": "0054_perfect_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1778487539599,
+      "tag": "0055_purple_iron_patriot",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1778491925633,
+      "tag": "0056_glamorous_catseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1778528513532,
+      "tag": "0057_naive_mariko_yashida",
       "breakpoints": true
     }
   ]

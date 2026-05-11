@@ -133,6 +133,11 @@ export class AppConfigService implements OnModuleInit {
     return this.getGl().defaultCogsAccountId;
   }
 
+  /** Default Fee Revenue account UUID (e.g. restocking fees). */
+  defaultFeeRevenueAccountId(): string | null {
+    return this.getGl().defaultFeeRevenueAccountId ?? null;
+  }
+
   // ---------------------------------------------------------------------------
   // App Settings Getters
   // ---------------------------------------------------------------------------

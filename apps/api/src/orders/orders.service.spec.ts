@@ -12,6 +12,7 @@ import {
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 describe('OrdersService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -63,7 +64,7 @@ describe('OrdersService', () => {
       name: 'Test Order',
       customerId: ACCOUNT_ID,
       customerOrderNumber: 'PO-123',
-      stateCode: 'draft',
+      stateCode: SALES_ORDER_STATE.DRAFT,
       source: 'app',
       createdBy: 'admin',
       createdOn: new Date('2026-03-12'),

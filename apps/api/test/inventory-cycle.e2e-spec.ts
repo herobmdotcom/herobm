@@ -326,6 +326,12 @@ describe('Inventory Cycle (e2e)', () => {
     await request(app.getHttpServer())
       .patch(`/api/sales-orders/${soId}/returns/${returnId}/state`)
       .set('Authorization', `Bearer ${adminToken}`)
+      .send({ stateCode: 'received', locationId })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/api/sales-orders/${soId}/returns/${returnId}/state`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ stateCode: 'processed', locationId })
       .expect(200);
 

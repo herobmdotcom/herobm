@@ -30,6 +30,7 @@ jest.mock('@/lib/api', () => ({
 
 import { useOrder } from '../useOrder';
 import type { OrderDetail } from '../types';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 // ── Fixtures ─────────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
         customerId: 'cust-1',
         customerName: 'ACME',
         customerOrderNumber: 'PO-123',
-        stateCode: 'draft',
+        stateCode: SALES_ORDER_STATE.DRAFT,
         currencyCode: 'AUD',
         notes: 'Some notes',
         createdBy: 'admin',
@@ -123,7 +124,7 @@ describe('useOrder — computed values', () => {
     });
 
     it('isOrderDetailsEditable is true for app source + editable state', async () => {
-        const order = makeOrder({ stateCode: 'draft' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.DRAFT });
         setupMocks(order);
 
         const { result } = renderHook(() => useOrder('so-001'));
@@ -132,7 +133,7 @@ describe('useOrder — computed values', () => {
         expect(result.current.isOrderDetailsEditable).toBe(true);
     });
 
-    it.each(['cancelled', 'legacy', 'archived'])(
+    it.each([SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED])(
         'isOrderDetailsEditable is false for %s state',
         async (state) => {
             const order = makeOrder({ stateCode: state });
@@ -146,47 +147,47 @@ describe('useOrder — computed values', () => {
     );
 
     it('isOrderDetailsEditable is true for editable state', async () => {
-        const order = makeOrder({ stateCode: 'draft' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.DRAFT });
         setupMocks(order);
-
+ 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-
+ 
         expect(result.current.isOrderDetailsEditable).toBe(true);
     });
-
+ 
     it('isOrderLinesEditable is true only for app + draft', async () => {
-        const order = makeOrder({ stateCode: 'draft' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.DRAFT });
         setupMocks(order);
-
+ 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-
+ 
         expect(result.current.isOrderLinesEditable).toBe(true);
     });
 
     it('isOrderLinesEditable is false for confirmed state', async () => {
-        const order = makeOrder({ stateCode: 'confirmed' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.CONFIRMED });
         setupMocks(order);
-
+ 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-
+ 
         expect(result.current.isOrderLinesEditable).toBe(false);
     });
-
+ 
     it('allowedTransitions returns correct transitions for app source', async () => {
-        const order = makeOrder({ stateCode: 'draft' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.DRAFT });
         setupMocks(order);
-
+ 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-
-        expect(result.current.allowedTransitions).toEqual(['quoted', 'cancelled']);
+ 
+        expect(result.current.allowedTransitions).toEqual([SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CANCELLED]);
     });
-
+ 
     it('allowedTransitions reflects state transitions', async () => {
-        const order = makeOrder({ stateCode: 'draft' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.DRAFT });
         setupMocks(order);
 
         const { result } = renderHook(() => useOrder('so-001'));
@@ -196,7 +197,7 @@ describe('useOrder — computed values', () => {
     });
 
     it('allowedTransitions is empty for terminal states', async () => {
-        const order = makeOrder({ stateCode: 'invoiced' });
+        const order = makeOrder({ stateCode: SALES_ORDER_STATE.INVOICED });
         setupMocks(order);
 
         const { result } = renderHook(() => useOrder('so-001'));
@@ -232,13 +233,13 @@ describe('useOrder — mutations', () => {
     it('changeState calls PATCH with stateCode', async () => {
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-
-        await act(async () => { await result.current.changeState('quoted'); });
-
+ 
+        await act(async () => { await result.current.changeState(SALES_ORDER_STATE.QUOTED); });
+ 
         expect(mockApiMutate).toHaveBeenCalledWith(
             '/api/sales-orders/so-001/state',
             'PATCH',
-            { stateCode: 'quoted' },
+            { stateCode: SALES_ORDER_STATE.QUOTED },
         );
     });
 

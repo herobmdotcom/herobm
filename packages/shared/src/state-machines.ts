@@ -14,82 +14,327 @@
 // Transition maps  (from → allowed next states)
 // ============================================================================
 
+
+export const SALES_ORDER_STATE = {
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled',
+  CONFIRMED: 'confirmed',
+  DRAFT: 'draft',
+  INVOICED: 'invoiced',
+  LEGACY: 'legacy',
+  PICKING: 'picking',
+  QUOTED: 'quoted',
+  SHIPPED: 'shipped',
+} as const;
+
 export const SALES_ORDER_TRANSITIONS: Record<string, string[]> = {
-  draft: ['quoted', 'cancelled'],
-  quoted: ['confirmed', 'draft', 'cancelled'],
-  confirmed: ['picking', 'cancelled'],
-  picking: ['shipped', 'confirmed'],
-  shipped: ['invoiced'],
-  invoiced: [],
-  cancelled: ['draft'],
-  archived: [],
-  legacy: [],
+  [SALES_ORDER_STATE.DRAFT]: [SALES_ORDER_STATE.QUOTED, SALES_ORDER_STATE.CANCELLED],
+  [SALES_ORDER_STATE.QUOTED]: [SALES_ORDER_STATE.CONFIRMED, SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.CANCELLED],
+  [SALES_ORDER_STATE.CONFIRMED]: [SALES_ORDER_STATE.PICKING, SALES_ORDER_STATE.CANCELLED],
+  [SALES_ORDER_STATE.PICKING]: [SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.CONFIRMED],
+  [SALES_ORDER_STATE.SHIPPED]: [SALES_ORDER_STATE.INVOICED],
+  [SALES_ORDER_STATE.INVOICED]: [],
+  [SALES_ORDER_STATE.CANCELLED]: [SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.ARCHIVED],
+  [SALES_ORDER_STATE.ARCHIVED]: [SALES_ORDER_STATE.CANCELLED],
+  [SALES_ORDER_STATE.LEGACY]: [],
 };
+
+export const PURCHASE_ORDER_STATE = {
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled',
+  CLOSED_SHORT: 'closed_short',
+  DRAFT: 'draft',
+  INVOICED: 'invoiced',
+  LEGACY: 'legacy',
+  ORDERED: 'ordered',
+  PARTIALLY_RECEIVED: 'partially_received',
+  RECEIVED: 'received',
+} as const;
 
 export const PURCHASE_ORDER_TRANSITIONS: Record<string, string[]> = {
-  draft: ['ordered', 'cancelled'],
-  ordered: ['partially_received', 'received', 'cancelled', 'closed_short'],
-  partially_received: ['received', 'closed_short'],
-  received: ['invoiced'],
-  invoiced: [],
-  cancelled: ['draft'],
-  closed_short: [],
-  legacy: [],
-  archived: [],
+  [PURCHASE_ORDER_STATE.DRAFT]: [PURCHASE_ORDER_STATE.ORDERED, PURCHASE_ORDER_STATE.CANCELLED],
+  [PURCHASE_ORDER_STATE.ORDERED]: [PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.CLOSED_SHORT],
+  [PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED]: [PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.ORDERED],
+  [PURCHASE_ORDER_STATE.RECEIVED]: [PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED, PURCHASE_ORDER_STATE.ORDERED],
+  [PURCHASE_ORDER_STATE.INVOICED]: [],
+  [PURCHASE_ORDER_STATE.CANCELLED]: [PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.ARCHIVED],
+  [PURCHASE_ORDER_STATE.CLOSED_SHORT]: [PURCHASE_ORDER_STATE.ARCHIVED],
+  [PURCHASE_ORDER_STATE.LEGACY]: [],
+  [PURCHASE_ORDER_STATE.ARCHIVED]: [PURCHASE_ORDER_STATE.CANCELLED],
 };
+
+export const PURCHASE_INVOICE_STATE = {
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled',
+  DRAFT: 'draft',
+  INVOICED: 'invoiced',
+  LEGACY: 'legacy',
+  PAID: 'paid',
+  PARTIALLY_PAID: 'partially_paid',
+} as const;
 
 export const PURCHASE_INVOICE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['invoiced', 'cancelled'],
-  invoiced: ['partially_paid', 'paid'],
-  partially_paid: ['invoiced', 'paid'],
-  paid: ['partially_paid', 'invoiced'],
-  cancelled: ['draft'],
-  legacy: [],
-  archived: [],
+  [PURCHASE_INVOICE_STATE.DRAFT]: [PURCHASE_INVOICE_STATE.INVOICED, PURCHASE_INVOICE_STATE.CANCELLED],
+  [PURCHASE_INVOICE_STATE.INVOICED]: [PURCHASE_INVOICE_STATE.PARTIALLY_PAID, PURCHASE_INVOICE_STATE.PAID],
+  [PURCHASE_INVOICE_STATE.PARTIALLY_PAID]: [PURCHASE_INVOICE_STATE.INVOICED, PURCHASE_INVOICE_STATE.PAID],
+  [PURCHASE_INVOICE_STATE.PAID]: [PURCHASE_INVOICE_STATE.PARTIALLY_PAID, PURCHASE_INVOICE_STATE.INVOICED],
+  [PURCHASE_INVOICE_STATE.CANCELLED]: [PURCHASE_INVOICE_STATE.DRAFT],
+  [PURCHASE_INVOICE_STATE.LEGACY]: [],
+  [PURCHASE_INVOICE_STATE.ARCHIVED]: [],
 };
 
+export const SALES_INVOICE_STATE = {
+  ARCHIVED: 'archived',
+  CANCELLED: 'cancelled',
+  DRAFT: 'draft',
+  INVOICED: 'invoiced',
+  LEGACY: 'legacy',
+  PAID: 'paid',
+  PARTIALLY_PAID: 'partially_paid',
+} as const;
+
 export const SALES_INVOICE_TRANSITIONS: Record<string, string[]> = {
-  draft: ['invoiced', 'cancelled'],
-  invoiced: ['partially_paid', 'paid'],
-  partially_paid: ['invoiced', 'paid'],
-  paid: ['partially_paid', 'invoiced'],
-  cancelled: ['draft'],
-  legacy: [],
-  archived: [],
+  [SALES_INVOICE_STATE.DRAFT]: [SALES_INVOICE_STATE.INVOICED, SALES_INVOICE_STATE.CANCELLED],
+  [SALES_INVOICE_STATE.INVOICED]: [SALES_INVOICE_STATE.PARTIALLY_PAID, SALES_INVOICE_STATE.PAID],
+  [SALES_INVOICE_STATE.PARTIALLY_PAID]: [SALES_INVOICE_STATE.INVOICED, SALES_INVOICE_STATE.PAID],
+  [SALES_INVOICE_STATE.PAID]: [SALES_INVOICE_STATE.PARTIALLY_PAID, SALES_INVOICE_STATE.INVOICED],
+  [SALES_INVOICE_STATE.CANCELLED]: [SALES_INVOICE_STATE.DRAFT],
+  [SALES_INVOICE_STATE.LEGACY]: [],
+  [SALES_INVOICE_STATE.ARCHIVED]: [],
+};
+
+export const SHIPMENT_STATE = {
+  CANCELLED: 'cancelled',
+  DISPATCHED: 'dispatched',
+  DRAFT: 'draft',
+  SHIPPED: 'shipped',
+} as const;
+
+export const RECONCILIATION_STATE = {
+  DRAFT: 'draft',
+  POSTED: 'posted',
+} as const;
+
+export const RECONCILIATION_TRANSITIONS: Record<string, string[]> = {
+  [RECONCILIATION_STATE.DRAFT]: [RECONCILIATION_STATE.POSTED],
+  [RECONCILIATION_STATE.POSTED]: [],
 };
 
 export const SHIPMENT_TRANSITIONS: Record<string, string[]> = {
-  draft: ['dispatched', 'cancelled'],
-  dispatched: ['cancelled'],
-  cancelled: [],
+  [SHIPMENT_STATE.DRAFT]: [SHIPMENT_STATE.DISPATCHED, SHIPMENT_STATE.CANCELLED],
+  [SHIPMENT_STATE.DISPATCHED]: [SHIPMENT_STATE.CANCELLED],
+  [SHIPMENT_STATE.CANCELLED]: [],
 };
+
+export const GOODS_RECEIVED_STATE = {
+  CANCELLED: 'cancelled',
+  RECEIVED: 'received',
+} as const;
+
+export const RECEIPT_STATE = GOODS_RECEIVED_STATE;
 
 export const GOODS_RECEIVED_TRANSITIONS: Record<string, string[]> = {
-  received: ['cancelled'],
-  cancelled: [],
+  [GOODS_RECEIVED_STATE.RECEIVED]: [GOODS_RECEIVED_STATE.CANCELLED],
+  [GOODS_RECEIVED_STATE.CANCELLED]: [],
 };
+
+export const RECEIPT_TRANSITIONS = GOODS_RECEIVED_TRANSITIONS;
+
+export const SALES_ORDER_PICK_STATE = {
+  CANCELLED: 'cancelled',
+  PICKED: 'picked',
+  SHIPPED: 'shipped',
+} as const;
 
 export const SALES_ORDER_PICK_TRANSITIONS: Record<string, string[]> = {
-  picked: ['shipped', 'cancelled'],
-  shipped: [],
-  cancelled: [],
+  [SALES_ORDER_PICK_STATE.PICKED]: [SALES_ORDER_PICK_STATE.SHIPPED, SALES_ORDER_PICK_STATE.CANCELLED],
+  [SALES_ORDER_PICK_STATE.SHIPPED]: [SALES_ORDER_PICK_STATE.PICKED, SALES_ORDER_PICK_STATE.CANCELLED],
+  [SALES_ORDER_PICK_STATE.CANCELLED]: [],
 };
+
+export const PUTAWAY_STATUS = {
+  AWAITING_MATCHING: 'awaiting_matching',
+  PENDING_PUTAWAY: 'pending_putaway',
+  QUARANTINED: 'quarantined',
+  COMPLETED: 'completed',
+} as const;
+
+export const MATCH_STATUS = {
+  MATCHED: 'matched',
+  UNMATCHED: 'unmatched',
+  AMBIGUOUS: 'ambiguous',
+} as const;
+
+export const TRANSFER_ORDER_PICK_STATE = {
+  CANCELLED: 'cancelled',
+  PICKED: 'picked',
+  SHIPPED: 'shipped',
+} as const;
+
+export const TRANSFER_ORDER_PICK_TRANSITIONS: Record<string, string[]> = {
+  [TRANSFER_ORDER_PICK_STATE.PICKED]: [TRANSFER_ORDER_PICK_STATE.SHIPPED, TRANSFER_ORDER_PICK_STATE.CANCELLED],
+  [TRANSFER_ORDER_PICK_STATE.SHIPPED]: [TRANSFER_ORDER_PICK_STATE.PICKED],
+  [TRANSFER_ORDER_PICK_STATE.CANCELLED]: [],
+};
+
+
+export const PURCHASE_RETURN_STATE = {
+  CANCELLED: 'cancelled',
+  DRAFT: 'draft',
+  PROCESSED: 'processed',
+} as const;
+
+export const PURCHASE_RETURN_TRANSITIONS: Record<string, string[]> = {
+  [PURCHASE_RETURN_STATE.DRAFT]: [PURCHASE_RETURN_STATE.PROCESSED, PURCHASE_RETURN_STATE.CANCELLED],
+  [PURCHASE_RETURN_STATE.PROCESSED]: [PURCHASE_RETURN_STATE.CANCELLED],
+  [PURCHASE_RETURN_STATE.CANCELLED]: [],
+};
+
+
+export const RETURN_STATE = {
+  CANCELLED: 'cancelled',
+  CONFIRMED: 'confirmed',
+  DRAFT: 'draft',
+  RECEIVED: 'received',
+  PROCESSED: 'processed',
+} as const;
 
 export const RETURN_TRANSITIONS: Record<string, string[]> = {
-  draft: ['confirmed', 'cancelled'],
-  confirmed: ['processed', 'draft'],
-  processed: [],
-  cancelled: [],
+  [RETURN_STATE.DRAFT]: [RETURN_STATE.CONFIRMED, RETURN_STATE.CANCELLED],
+  [RETURN_STATE.CONFIRMED]: [RETURN_STATE.RECEIVED, RETURN_STATE.DRAFT, RETURN_STATE.CANCELLED],
+  [RETURN_STATE.RECEIVED]: [RETURN_STATE.PROCESSED, RETURN_STATE.CONFIRMED],
+  [RETURN_STATE.PROCESSED]: [],
+  [RETURN_STATE.CANCELLED]: [],
 };
 
-export type SalesOrderState = keyof typeof SALES_ORDER_TRANSITIONS;
-export type PurchaseOrderState = keyof typeof PURCHASE_ORDER_TRANSITIONS;
-export type PurchaseInvoiceState = keyof typeof PURCHASE_INVOICE_TRANSITIONS;
-export type SalesInvoiceState = keyof typeof SALES_INVOICE_TRANSITIONS;
-export type ShipmentState = keyof typeof SHIPMENT_TRANSITIONS;
-export type GoodsReceivedState = keyof typeof GOODS_RECEIVED_TRANSITIONS;
-export type ReturnState = keyof typeof RETURN_TRANSITIONS;
-export type SalesOrderPickState = keyof typeof SALES_ORDER_PICK_TRANSITIONS;
+export const SALES_CREDIT_NOTE_STATE = {
+  CANCELLED: 'cancelled',
+  DRAFT: 'draft',
+  POSTED: 'posted',
+} as const;
+
+export const SALES_CREDIT_NOTE_TRANSITIONS: Record<string, string[]> = {
+  [SALES_CREDIT_NOTE_STATE.DRAFT]: [SALES_CREDIT_NOTE_STATE.POSTED, SALES_CREDIT_NOTE_STATE.CANCELLED],
+  [SALES_CREDIT_NOTE_STATE.POSTED]: [],
+  [SALES_CREDIT_NOTE_STATE.CANCELLED]: [],
+};
+
+
+export const BACKORDER_STATE = {
+  PENDING_SUPPLY: 'pending_supply',
+  AWAITING_RECEIPT: 'awaiting_receipt',
+  RECEIVED_RESERVED: 'received_reserved',
+  FULFILLED: 'fulfilled',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const BACKORDER_TRANSITIONS: Record<string, string[]> = {
+  [BACKORDER_STATE.PENDING_SUPPLY]: [BACKORDER_STATE.AWAITING_RECEIPT, BACKORDER_STATE.CANCELLED],
+  [BACKORDER_STATE.AWAITING_RECEIPT]: [BACKORDER_STATE.PENDING_SUPPLY, BACKORDER_STATE.RECEIVED_RESERVED, BACKORDER_STATE.CANCELLED],
+  [BACKORDER_STATE.RECEIVED_RESERVED]: [BACKORDER_STATE.AWAITING_RECEIPT, BACKORDER_STATE.FULFILLED, BACKORDER_STATE.CANCELLED],
+  [BACKORDER_STATE.FULFILLED]: [],
+  [BACKORDER_STATE.CANCELLED]: [BACKORDER_STATE.PENDING_SUPPLY],
+};
+
+export const TRANSFER_ORDER_STATE = {
+  CONFIRMED: 'confirmed',
+  PICKING: 'picking',
+  SHIPPED: 'shipped',
+  RECEIVED: 'received',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const TRANSFER_ORDER_TRANSITIONS: Record<string, string[]> = {
+  [TRANSFER_ORDER_STATE.CONFIRMED]: [TRANSFER_ORDER_STATE.PICKING, TRANSFER_ORDER_STATE.CANCELLED],
+  [TRANSFER_ORDER_STATE.PICKING]: [TRANSFER_ORDER_STATE.SHIPPED, TRANSFER_ORDER_STATE.CANCELLED],
+  [TRANSFER_ORDER_STATE.SHIPPED]: [TRANSFER_ORDER_STATE.RECEIVED, TRANSFER_ORDER_STATE.PICKING, TRANSFER_ORDER_STATE.CANCELLED],
+  [TRANSFER_ORDER_STATE.RECEIVED]: [],
+  [TRANSFER_ORDER_STATE.CANCELLED]: [],
+};
+
+export const PAYMENT_STATE = {
+  DRAFT: 'draft',
+  SUBMITTED: 'submitted',
+  CANCELLED: 'cancelled',
+} as const;
+
+export const PAYMENT_TRANSITIONS: Record<string, string[]> = {
+  [PAYMENT_STATE.DRAFT]: [PAYMENT_STATE.SUBMITTED, PAYMENT_STATE.CANCELLED],
+  [PAYMENT_STATE.SUBMITTED]: [PAYMENT_STATE.CANCELLED],
+  [PAYMENT_STATE.CANCELLED]: [],
+};
+
+export const ACCOUNT_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  ARCHIVED: 'archived',
+} as const;
+
+export const ACCOUNT_TRANSITIONS: Record<string, string[]> = {
+  [ACCOUNT_STATE.ACTIVE]: [ACCOUNT_STATE.INACTIVE, ACCOUNT_STATE.ARCHIVED],
+  [ACCOUNT_STATE.INACTIVE]: [ACCOUNT_STATE.ACTIVE, ACCOUNT_STATE.ARCHIVED],
+  [ACCOUNT_STATE.ARCHIVED]: [ACCOUNT_STATE.ACTIVE],
+};
+
+export const SUPPLIER_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  ARCHIVED: 'archived',
+} as const;
+
+export const SUPPLIER_TRANSITIONS: Record<string, string[]> = {
+  [SUPPLIER_STATE.ACTIVE]: [SUPPLIER_STATE.INACTIVE, SUPPLIER_STATE.ARCHIVED],
+  [SUPPLIER_STATE.INACTIVE]: [SUPPLIER_STATE.ACTIVE, SUPPLIER_STATE.ARCHIVED],
+  [SUPPLIER_STATE.ARCHIVED]: [SUPPLIER_STATE.ACTIVE],
+};
+
+export const PRODUCT_STATE = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  DISCONTINUED: 'discontinued',
+  ARCHIVED: 'archived',
+  DRAFT: 'draft',
+} as const;
+
+export const PRODUCT_TRANSITIONS: Record<string, string[]> = {
+  [PRODUCT_STATE.DRAFT]: [PRODUCT_STATE.ACTIVE, PRODUCT_STATE.ARCHIVED],
+  [PRODUCT_STATE.ACTIVE]: [
+    PRODUCT_STATE.INACTIVE,
+    PRODUCT_STATE.DISCONTINUED,
+    PRODUCT_STATE.ARCHIVED,
+    PRODUCT_STATE.DRAFT,
+  ],
+  [PRODUCT_STATE.INACTIVE]: [
+    PRODUCT_STATE.ACTIVE,
+    PRODUCT_STATE.DISCONTINUED,
+    PRODUCT_STATE.ARCHIVED,
+  ],
+  [PRODUCT_STATE.DISCONTINUED]: [
+    PRODUCT_STATE.ACTIVE,
+    PRODUCT_STATE.INACTIVE,
+    PRODUCT_STATE.ARCHIVED,
+  ],
+  [PRODUCT_STATE.ARCHIVED]: [PRODUCT_STATE.ACTIVE],
+};
+
+export type SalesOrderState = typeof SALES_ORDER_STATE[keyof typeof SALES_ORDER_STATE];
+export type PurchaseOrderState = typeof PURCHASE_ORDER_STATE[keyof typeof PURCHASE_ORDER_STATE];
+export type PurchaseInvoiceState = typeof PURCHASE_INVOICE_STATE[keyof typeof PURCHASE_INVOICE_STATE];
+export type SalesInvoiceState = typeof SALES_INVOICE_STATE[keyof typeof SALES_INVOICE_STATE];
+export type ShipmentState = typeof SHIPMENT_STATE[keyof typeof SHIPMENT_STATE];
+export type GoodsReceivedState = typeof GOODS_RECEIVED_STATE[keyof typeof GOODS_RECEIVED_STATE];
+export type PurchaseReturnState = typeof PURCHASE_RETURN_STATE[keyof typeof PURCHASE_RETURN_STATE];
+export type ReturnState = typeof RETURN_STATE[keyof typeof RETURN_STATE];
+export type SalesCreditNoteState = typeof SALES_CREDIT_NOTE_STATE[keyof typeof SALES_CREDIT_NOTE_STATE];
+export type SalesOrderPickState = typeof SALES_ORDER_PICK_STATE[keyof typeof SALES_ORDER_PICK_STATE];
+export type BackorderState = typeof BACKORDER_STATE[keyof typeof BACKORDER_STATE];
+export type TransferOrderState = typeof TRANSFER_ORDER_STATE[keyof typeof TRANSFER_ORDER_STATE];
+export type TransferOrderPickState = typeof TRANSFER_ORDER_PICK_STATE[keyof typeof TRANSFER_ORDER_PICK_STATE];
+export type PaymentState = typeof PAYMENT_STATE[keyof typeof PAYMENT_STATE];
+export type AccountState = typeof ACCOUNT_STATE[keyof typeof ACCOUNT_STATE];
+export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
+export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
+export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];
 
 // ============================================================================
 // Lifecycle ordinals  (higher = further along the happy path)
@@ -99,39 +344,113 @@ export type SalesOrderPickState = keyof typeof SALES_ORDER_PICK_TRANSITIONS;
 // ============================================================================
 
 export const SALES_ORDER_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, quoted: 2, confirmed: 3,
-  picking: 4, shipped: 5, invoiced: 6, legacy: 7, archived: 8,
+  [SALES_ORDER_STATE.CANCELLED]: 0,
+  [SALES_ORDER_STATE.DRAFT]: 1,
+  [SALES_ORDER_STATE.QUOTED]: 2,
+  [SALES_ORDER_STATE.CONFIRMED]: 3,
+  [SALES_ORDER_STATE.PICKING]: 4,
+  [SALES_ORDER_STATE.SHIPPED]: 5,
+  [SALES_ORDER_STATE.INVOICED]: 6,
+  [SALES_ORDER_STATE.LEGACY]: 7,
+  [SALES_ORDER_STATE.ARCHIVED]: 8,
 };
 
 export const PURCHASE_ORDER_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, closed_short: 0, draft: 1, ordered: 2, partially_received: 3, received: 4, invoiced: 5, legacy: 6, archived: 7,
+  [PURCHASE_ORDER_STATE.CANCELLED]: 0,
+  [PURCHASE_ORDER_STATE.CLOSED_SHORT]: 0,
+  [PURCHASE_ORDER_STATE.DRAFT]: 1,
+  [PURCHASE_ORDER_STATE.ORDERED]: 2,
+  [PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED]: 3,
+  [PURCHASE_ORDER_STATE.RECEIVED]: 4,
+  [PURCHASE_ORDER_STATE.INVOICED]: 5,
+  [PURCHASE_ORDER_STATE.LEGACY]: 6,
+  [PURCHASE_ORDER_STATE.ARCHIVED]: 7,
 };
 
-export const OPEN_PURCHASE_ORDER_STATES: PurchaseOrderState[] = ['draft', 'ordered', 'partially_received'];
+export const OPEN_PURCHASE_ORDER_STATES: PurchaseOrderState[] = [
+  PURCHASE_ORDER_STATE.DRAFT,
+  PURCHASE_ORDER_STATE.ORDERED,
+  PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+];
 
 
 export const PURCHASE_INVOICE_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, invoiced: 2, partially_paid: 3, paid: 4, legacy: 5, archived: 6,
+  [PURCHASE_INVOICE_STATE.CANCELLED]: 0,
+  [PURCHASE_INVOICE_STATE.DRAFT]: 1,
+  [PURCHASE_INVOICE_STATE.INVOICED]: 2,
+  [PURCHASE_INVOICE_STATE.PARTIALLY_PAID]: 3,
+  [PURCHASE_INVOICE_STATE.PAID]: 4,
+  [PURCHASE_INVOICE_STATE.LEGACY]: 5,
+  [PURCHASE_INVOICE_STATE.ARCHIVED]: 6,
 };
 
 export const SALES_INVOICE_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, invoiced: 2, partially_paid: 3, paid: 4, legacy: 5, archived: 6,
+  [SALES_INVOICE_STATE.CANCELLED]: 0,
+  [SALES_INVOICE_STATE.DRAFT]: 1,
+  [SALES_INVOICE_STATE.INVOICED]: 2,
+  [SALES_INVOICE_STATE.PARTIALLY_PAID]: 3,
+  [SALES_INVOICE_STATE.PAID]: 4,
+  [SALES_INVOICE_STATE.LEGACY]: 5,
+  [SALES_INVOICE_STATE.ARCHIVED]: 6,
 };
 
 export const SHIPMENT_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, dispatched: 1,
+  [SHIPMENT_STATE.CANCELLED]: 0,
+  [SHIPMENT_STATE.DISPATCHED]: 1,
+  [SHIPMENT_STATE.SHIPPED]: 2,
+};
+
+export const RECONCILIATION_LIFECYCLE: Record<string, number> = {
+  [RECONCILIATION_STATE.DRAFT]: 1,
+  [RECONCILIATION_STATE.POSTED]: 2,
 };
 
 export const GOODS_RECEIVED_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, received: 1,
+  [GOODS_RECEIVED_STATE.CANCELLED]: 0,
+  [GOODS_RECEIVED_STATE.RECEIVED]: 1,
+};
+
+export const RECEIPT_LIFECYCLE = GOODS_RECEIVED_LIFECYCLE;
+
+export const PURCHASE_RETURN_LIFECYCLE: Record<string, number> = {
+  [PURCHASE_RETURN_STATE.CANCELLED]: 0,
+  [PURCHASE_RETURN_STATE.DRAFT]: 1,
+  [PURCHASE_RETURN_STATE.PROCESSED]: 2,
 };
 
 export const RETURN_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, draft: 1, confirmed: 2, processed: 3,
+  [RETURN_STATE.CANCELLED]: 0,
+  [RETURN_STATE.DRAFT]: 1,
+  [RETURN_STATE.CONFIRMED]: 2,
+  [RETURN_STATE.RECEIVED]: 3,
+  [RETURN_STATE.PROCESSED]: 4,
+};
+
+export const SALES_CREDIT_NOTE_LIFECYCLE: Record<string, number> = {
+  [SALES_CREDIT_NOTE_STATE.CANCELLED]: 0,
+  [SALES_CREDIT_NOTE_STATE.DRAFT]: 1,
+  [SALES_CREDIT_NOTE_STATE.POSTED]: 2,
 };
 
 export const SALES_ORDER_PICK_LIFECYCLE: Record<string, number> = {
-  cancelled: 0, picked: 1, shipped: 2,
+  [SALES_ORDER_PICK_STATE.CANCELLED]: 0,
+  [SALES_ORDER_PICK_STATE.PICKED]: 1,
+  [SALES_ORDER_PICK_STATE.SHIPPED]: 2,
+};
+
+export const TRANSFER_ORDER_PICK_LIFECYCLE: Record<string, number> = {
+  [TRANSFER_ORDER_PICK_STATE.CANCELLED]: 0,
+  [TRANSFER_ORDER_PICK_STATE.PICKED]: 1,
+  [TRANSFER_ORDER_PICK_STATE.SHIPPED]: 2,
+};
+
+
+export const BACKORDER_LIFECYCLE: Record<string, number> = {
+  [BACKORDER_STATE.CANCELLED]: 0,
+  [BACKORDER_STATE.PENDING_SUPPLY]: 1,
+  [BACKORDER_STATE.AWAITING_RECEIPT]: 2,
+  [BACKORDER_STATE.RECEIVED_RESERVED]: 3,
+  [BACKORDER_STATE.FULFILLED]: 4,
 };
 
 // ============================================================================
@@ -161,7 +480,7 @@ export function isBackTransition(
   from: string,
   to: string,
 ): boolean {
-  return (lifecycle[to] ?? 99) < (lifecycle[from] ?? 99) && to !== 'cancelled';
+  return (lifecycle[to] ?? 99) < (lifecycle[from] ?? 99) && to !== SALES_ORDER_STATE.CANCELLED;
 }
 
 /** Capitalise the first letter of a string. */

@@ -6,6 +6,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
+import AccountSelect from '@/components/shared/AccountSelect';
+import SupplierSelect from '@/components/shared/SupplierSelect';
 
 interface GlAccount {
   accountCode: string;
@@ -15,10 +17,7 @@ interface GlAccount {
   accountType: string;
 }
 
-interface Party {
-  id: string;
-  name: string;
-}
+
 
 interface JournalLineForm {
   id: string;
@@ -48,8 +47,6 @@ export default function NewJournalEntryPage() {
   ]);
 
   const [accounts, setAccounts] = useState<GlAccount[]>([]);
-  const [customers, setCustomers] = useState<Party[]>([]);
-  const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -57,14 +54,6 @@ export default function NewJournalEntryPage() {
     apiFetch<GlAccount[]>('/api/gl/accounts?format=flat')
       .then((res) => setAccounts(res.filter(a => !a.isGroup && a.isActive)))
       .catch((err) => reportError(err, 'NewJournalEntryPage - accounts'));
-
-    apiFetch<{ data: any[] }>('/api/accounts?limit=1000') // Customers
-      .then((res) => setCustomers(res.data.map(c => ({ id: c.accountId, name: c.name }))))
-      .catch((err) => reportError(err, 'NewJournalEntryPage - customers'));
-
-    apiFetch<{ data: any[] }>('/api/suppliers?limit=1000') // Suppliers
-      .then((res) => setSuppliers(res.data.map(s => ({ id: s.vendorId, name: s.name }))))
-      .catch((err) => reportError(err, 'NewJournalEntryPage - suppliers'));
   }, []);
 
   const totalDebit = useMemo(() => {
@@ -229,21 +218,25 @@ export default function NewJournalEntryPage() {
                         </select>
                       </td>
                       <td className="p-2 align-top w-48">
-                        <select
-                          value={line.partyId}
-                          onChange={(e) => updateLine(line.id, 'partyId', e.target.value)}
-                          disabled={line.partyType === 'none'}
-                          className="w-full text-sm px-2 py-1.5 rounded border focus:outline-none disabled:opacity-50 disabled:bg-gray-100"
-                          style={{ borderColor: 'var(--border)' }}
-                        >
-                          <option value="">{line.partyType === 'none' ? '—' : t('placeholders.selectParty')}</option>
-                          {line.partyType === 'customer' && customers.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                          {line.partyType === 'supplier' && suppliers.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                          ))}
-                        </select>
+                        {line.partyType === 'none' && (
+                          <div className="w-full text-sm px-2 py-1.5 rounded border bg-gray-100 text-gray-400" style={{ borderColor: 'var(--border)' }}>
+                            —
+                          </div>
+                        )}
+                        {line.partyType === 'customer' && (
+                          <AccountSelect
+                            value={line.partyId}
+                            onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.accountId : '')}
+                            placeholder={t('placeholders.selectParty')}
+                          />
+                        )}
+                        {line.partyType === 'supplier' && (
+                          <SupplierSelect
+                            value={line.partyId}
+                            onChange={(sup) => updateLine(line.id, 'partyId', sup ? sup.vendorId : '')}
+                            placeholder={t('placeholders.selectParty')}
+                          />
+                        )}
                       </td>
                       <td className="p-2 align-top">
                         <input

@@ -15,6 +15,13 @@ import { createE2eModule } from './utils/e2e-module';
 import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
+import {
+  ACCOUNT_STATE,
+  PRODUCT_STATE,
+  SUPPLIER_STATE,
+  SALES_ORDER_STATE,
+  PURCHASE_ORDER_STATE,
+} from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -126,7 +133,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .expect(201);
 
       accountId = res.body.accountId;
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
     });
 
     it('viewer cannot archive (403)', async () => {
@@ -142,7 +149,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('archived');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('archived account is excluded from default list', async () => {
@@ -163,7 +170,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((a: any) => a.accountId === accountId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe('archived');
+      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('admin can unarchive the account', async () => {
@@ -172,7 +179,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
     });
 
     it('unarchived account reappears in default list', async () => {
@@ -219,7 +226,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${orderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'cancelled' })
+        .send({ stateCode: SALES_ORDER_STATE.CANCELLED })
         .expect(200);
     });
 
@@ -255,7 +262,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('archived');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('archived order is excluded from default list', async () => {
@@ -276,7 +283,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((o: any) => o.id === orderId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe('archived');
+      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('admin can unarchive — restores to cancelled', async () => {
@@ -286,7 +293,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .expect(201);
 
       // Should restore to the state it was in before archiving (cancelled)
-      expect(res.body.stateCode).toBe('cancelled');
+      expect(res.body.stateCode).toBe(SALES_ORDER_STATE.CANCELLED);
     });
   });
 
@@ -328,7 +335,7 @@ describe('Archive E2E — Full Round-Trip', () => {
       await request(app.getHttpServer())
         .patch(`/api/purchase-orders/${poId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'cancelled' })
+        .send({ stateCode: PURCHASE_ORDER_STATE.CANCELLED })
         .expect(200);
     });
 
@@ -369,7 +376,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('archived');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('archived PO is excluded from default list', async () => {
@@ -390,7 +397,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((o: any) => o.id === poId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe('archived');
+      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
     });
 
     it('unarchive defaults PO to cancelled (no event store)', async () => {
@@ -400,7 +407,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .expect(201);
 
       // PO unarchive always defaults to 'cancelled' since there is no event log
-      expect(res.body.stateCode).toBe('cancelled');
+      expect(res.body.stateCode).toBe(PURCHASE_ORDER_STATE.CANCELLED);
     });
 
     it('unarchived PO reappears in default list', async () => {
@@ -433,7 +440,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .expect(201);
 
       productId = res.body.productId;
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(PRODUCT_STATE.ACTIVE);
     });
 
     it('admin can archive the product', async () => {
@@ -442,7 +449,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('archived');
+      expect(res.body.stateCode).toBe(PRODUCT_STATE.ARCHIVED);
     });
 
     it('archived product is excluded from default list', async () => {
@@ -465,7 +472,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((p: any) => p.productId === productId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe('archived');
+      expect(found.stateCode).toBe(PRODUCT_STATE.ARCHIVED);
     });
 
     it('admin can unarchive the product', async () => {
@@ -474,7 +481,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(PRODUCT_STATE.ACTIVE);
     });
   });
 
@@ -496,7 +503,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .expect(201);
 
       vendorId = res.body.vendorId;
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(SUPPLIER_STATE.ACTIVE);
     });
 
     it('admin can archive the supplier', async () => {
@@ -505,7 +512,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('archived');
+      expect(res.body.stateCode).toBe(SUPPLIER_STATE.ARCHIVED);
     });
 
     it('archived supplier is excluded from default list', async () => {
@@ -524,7 +531,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe('active');
+      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
     });
   });
 });

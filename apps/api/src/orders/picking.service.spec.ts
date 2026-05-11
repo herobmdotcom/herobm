@@ -21,6 +21,12 @@ import {
   outbox,
 } from '../drizzle/modbm-core-schema';
 import { eq, and } from 'drizzle-orm';
+import {
+  SALES_ORDER_STATE,
+  SALES_ORDER_PICK_STATE,
+  PRODUCT_STATE,
+  ACCOUNT_STATE,
+} from '@modbm/shared';
 
 describe('PickingService', () => {
   const pg = setupPgliteSuite({ skipSeeds: true });
@@ -94,7 +100,7 @@ describe('PickingService', () => {
       accountNumber: 'CUST01',
       name: 'Acme Corp',
       currencyCode: 'AUD',
-      stateCode: 'active',
+      stateCode: ACCOUNT_STATE.ACTIVE,
       source: 'app',
     });
     await pg.db.insert(products).values({
@@ -125,7 +131,7 @@ describe('PickingService', () => {
     service = module.get<PickingService>(PickingService);
   });
 
-  async function seedOrder(state: any = 'picking') {
+  async function seedOrder(state: any = SALES_ORDER_STATE.PICKING) {
     await pg.db.insert(salesOrders).values({
       salesOrderId: ORDER_ID,
       orderNumber: 'ORD-001',
@@ -149,7 +155,7 @@ describe('PickingService', () => {
 
   describe('pickLine', () => {
     it('should create a pick record and verify DB state', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
 
       const result = await service.pickLine(
         ORDER_ID,
@@ -172,14 +178,14 @@ describe('PickingService', () => {
     });
 
     it('should reject pick on non-picking state order', async () => {
-      await seedOrder('draft');
+      await seedOrder(SALES_ORDER_STATE.DRAFT);
       await expect(
         service.pickLine(ORDER_ID, LINE_ID, STORAGE_BIN_ID, '5', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject quantity exceeding ordered', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
       await expect(
         service.pickLine(ORDER_ID, LINE_ID, STORAGE_BIN_ID, '15', 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -188,7 +194,7 @@ describe('PickingService', () => {
 
   describe('cancelPick', () => {
     it('should cancel an existing pick and reverse physical movement', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
 
       const pick = await service.pickLine(
         ORDER_ID,
@@ -203,7 +209,7 @@ describe('PickingService', () => {
         .select()
         .from(salesOrderPicks)
         .where(eq(salesOrderPicks.pickId, pick.pickId));
-      expect(beforePicks[0].stateCode).toBe('picked');
+      expect(beforePicks[0].stateCode).toBe(SALES_ORDER_PICK_STATE.PICKED);
 
       // Now cancel it
       await service.cancelPick(ORDER_ID, pick.pickId, 'admin');
@@ -213,7 +219,7 @@ describe('PickingService', () => {
         .select()
         .from(salesOrderPicks)
         .where(eq(salesOrderPicks.pickId, pick.pickId));
-      expect(afterPicks[0].stateCode).toBe('cancelled');
+      expect(afterPicks[0].stateCode).toBe(SALES_ORDER_PICK_STATE.CANCELLED);
 
       // Verify physical movement was reversed (mock was called)
       expect(
@@ -222,7 +228,7 @@ describe('PickingService', () => {
     });
 
     it('should reject cancelling a pick that is not in picked state', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
 
       // Seed a shipped pick
       const [shippedPick] = await pg.db
@@ -233,7 +239,7 @@ describe('PickingService', () => {
           productId: PROD_ID,
           binId: STORAGE_BIN_ID,
           quantity: '5',
-          stateCode: 'shipped', // Invalid state for cancellation
+          stateCode: SALES_ORDER_PICK_STATE.SHIPPED, // Invalid state for cancellation
         })
         .returning();
 
@@ -245,14 +251,14 @@ describe('PickingService', () => {
 
   describe('getPickingSummary', () => {
     it('should calculate picked quantities from picks table', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
       await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,
         binId: STORAGE_BIN_ID,
         quantity: '4',
-        stateCode: 'picked',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
       });
 
       const summary = await service.getPickingSummary(ORDER_ID);
@@ -265,14 +271,14 @@ describe('PickingService', () => {
 
   describe('assertFullyPicked', () => {
     it('should pass when all lines fully picked', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
       await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,
         binId: STORAGE_BIN_ID,
         quantity: '10',
-        stateCode: 'picked',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
       });
 
       await expect(
@@ -281,14 +287,14 @@ describe('PickingService', () => {
     });
 
     it('should throw when lines not fully picked', async () => {
-      await seedOrder('picking');
+      await seedOrder(SALES_ORDER_STATE.PICKING);
       await pg.db.insert(salesOrderPicks).values({
         salesOrderId: ORDER_ID,
         salesOrderLineId: LINE_ID,
         productId: PROD_ID,
         binId: STORAGE_BIN_ID,
         quantity: '7',
-        stateCode: 'picked',
+        stateCode: SALES_ORDER_PICK_STATE.PICKED,
       });
 
       await expect(service.assertFullyPicked(ORDER_ID)).rejects.toThrow(

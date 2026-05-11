@@ -28,9 +28,13 @@ import { useOrder } from './useOrder';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import {
-    RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
-    SALES_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
+    RETURN_STATE,
+    RETURN_TRANSITIONS,
     RETURN_LIFECYCLE,
+    SALES_ORDER_STATE,
+    SALES_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
+    PURCHASE_ORDER_STATE,
+    BACKORDER_STATE,
     isBackTransition as sharedIsBackTransition,
     cap,
     calculateUomPriceAdjustment,
@@ -83,7 +87,7 @@ function EventIcon({ type }: { type: string }) {
     return <span className="mr-2" style={{ fontSize: '1.2rem', lineHeight: 1 }} title={t(type as any)}>{icons[type] || '📌'}</span>;
 }
 
-function ReturnStateBadge({ state }: { state: ValidState }) {
+function PurchaseReturnStateBadge({ state }: { state: ValidState }) {
     const t = useTranslations('common.states');
     return <span className={`badge badge-return-${state}`}>{t(state)}</span>;
 }
@@ -167,11 +171,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     } = o;
 
     const handleStateClick = async (state: string) => {
-        if (state === 'confirmed' && gaps.length > 0 && !discrepanciesAcknowledged) {
+        if (state === SALES_ORDER_STATE.CONFIRMED && gaps.length > 0 && !discrepanciesAcknowledged) {
             setShowDiscrepancyModal(true);
             return;
         }
-        await changeState(state, state === 'confirmed', discrepanciesAcknowledged);
+        await changeState(state, state === SALES_ORDER_STATE.CONFIRMED, discrepanciesAcknowledged);
     };
 
     const handleGenerateQuote = async (text: string) => {
@@ -193,7 +197,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
     };
 
     /* ── Centralised section visibility rules ──────────────────────── */
-    const PICKING_INVOICE_STATES = ['picking', 'shipped', 'invoiced', 'legacy', 'archived'];
+    const PICKING_INVOICE_STATES: string[] = [
+        SALES_ORDER_STATE.PICKING, 
+        SALES_ORDER_STATE.SHIPPED, 
+        SALES_ORDER_STATE.INVOICED, 
+        SALES_ORDER_STATE.LEGACY, 
+        SALES_ORDER_STATE.ARCHIVED
+    ];
     const sections = {
         details:      { id: 'details-section',      label: 'Details',      show: true },
         lines:        { id: 'lines-section',        label: 'Lines',        show: true },
@@ -250,11 +260,11 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         return (
                                             <button
                                                 key={state}
-                                                className={`btn btn-sm ${state === 'cancelled' ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'
+                                                className={`btn btn-sm ${state === SALES_ORDER_STATE.CANCELLED ? 'btn-danger' : back ? 'btn-secondary' : 'btn-primary'
                                                     }`}
                                                 onClick={() => handleStateClick(state)}
                                             >
-                                                {state === 'cancelled' ? (
+                                                {state === SALES_ORDER_STATE.CANCELLED ? (
                                                     <>
                                                         <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                                                         {tCommon('cancel')}
@@ -275,7 +285,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
 
 
-            {order.stateCode === 'archived' && (
+            {order.stateCode === SALES_ORDER_STATE.ARCHIVED && (
                 <div
                     className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
                     style={{
@@ -301,7 +311,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 {tSales('orderDetails')}
                             </h3>
                             <div className="flex items-center gap-2">
-                                {(order.stateCode === 'draft' || order.stateCode === 'quoted') && (
+                                {(order.stateCode === SALES_ORDER_STATE.DRAFT || order.stateCode === SALES_ORDER_STATE.QUOTED) && (
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={() => setShowQuoteDialog(true)}
@@ -309,7 +319,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         {tSales('buttons.createQuote')}
                                     </button>
                                 )}
-                                {(order.stateCode !== 'draft' && order.stateCode !== 'quoted') && (
+                                {(order.stateCode !== SALES_ORDER_STATE.DRAFT && order.stateCode !== SALES_ORDER_STATE.QUOTED) && (
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={async () => {
@@ -327,7 +337,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         {tSales('buttons.confirmationPdf')}
                                     </button>
                                 )}
-                                {(order.stateCode === 'confirmed' || order.stateCode === 'picking') && (
+                                {(order.stateCode === SALES_ORDER_STATE.CONFIRMED || order.stateCode === SALES_ORDER_STATE.PICKING) && (
                                     <button
                                         className="btn btn-secondary btn-sm"
                                         onClick={async () => {
@@ -568,7 +578,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                 line.productNumber || line.productId?.substring(0, 8) || '—'
                                             )}
                                             {line.isPostConfirmation && (
-                                                <span className="ml-2 badge" style={{ fontSize: 10, padding: '2px 4px', background: 'var(--accent)', color: 'white', borderRadius: 4 }}>
+                                                <span className="ml-2 badge badge-sm badge-accent">
                                                     {tSales('columns.postConfirmation')}
                                                 </span>
                                             )}
@@ -878,7 +888,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     </td>
                                                     <td>
                                                         {line.productDescription || '—'}
-                                                        <span className="ml-2 badge badge-draft" style={{ fontSize: 10, padding: '1px 4px' }}>
+                                                        <span className="ml-2 badge badge-sm badge-draft">
                                                             {/* eslint-disable-next-line no-restricted-syntax */}
                                                             {line.productType || 'custom'}
                                                         </span>
@@ -984,7 +994,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                         {order.backorders.map((bo: any, bo_idx: number) => {
                                             const isPo = !!bo.purchaseOrderId;
                                             const displayOrderNumber = isPo ? bo.purchaseOrderNumber || '—' : '—';
-                                            const displayStatus = isPo ? bo.purchaseOrderState || 'draft' : bo.stateCode || 'pending_supply';
+                                            const displayStatus = isPo ? bo.purchaseOrderState || PURCHASE_ORDER_STATE.DRAFT : bo.stateCode || BACKORDER_STATE.PENDING_SUPPLY;
                                             
                                             return (
                                                 <tr 
@@ -1007,7 +1017,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     <td>
                                                         {isPo ? (
                                                             <div className="flex flex-col gap-1 items-start">
-                                                                <span className="badge badge-confirm" style={{ fontSize: '10px' }}>Allocated</span>
+                                                                <span className="badge badge-sm badge-success">Allocated</span>
                                                                 <StateBadge state={bo.purchaseOrderState as ValidState} />
                                                             </div>
                                                         ) : (
@@ -1136,7 +1146,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     onClick={async () => {
                                         setDiscrepanciesAcknowledged(true);
                                         setShowDiscrepancyModal(false);
-                                        await changeState('confirmed', true, true);
+                                        await changeState(SALES_ORDER_STATE.CONFIRMED, true, true);
                                     }}
                                 >
                                     {tCommon('confirm')}

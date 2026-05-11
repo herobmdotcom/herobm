@@ -17,6 +17,7 @@
     "tax": "Tax",
     "total": "Total",
     "cancel": "Cancel",
+    "submit": "Submit",
     "delete": "Delete",
     "dismiss": "dismiss",
     "loading": "Loading…",
@@ -71,7 +72,8 @@
       "untitledOrder": "Untitled order"
     },
     "placeholders": {
-      "quantity": "0"
+      "quantity": "0",
+      "number": "e.g., P-1000"
     },
     "states": {
       "draft": "Draft",
@@ -90,7 +92,11 @@
       "active": "Active",
       "inactive": "Inactive",
       "discontinued": "Discontinued",
-      "archived": "Archived"
+      "archived": "Archived",
+      "submitted": "Submitted",
+      "posted": "Posted",
+      "partially_paid": "Partial",
+      "paid": "Paid"
     },
     "sources": {
       "abm": "ABM",
@@ -225,6 +231,8 @@
       "return_updated": "Return Updated",
       "return_status_changed": "Return Status Changed",
       "return_processed": "Return Processed",
+      "return_received": "Return Received",
+      "credit_note_posted": "Credit Note Posted",
       "return_line_added": "Return Line Added",
       "return_line_updated": "Return Line Updated",
       "return_line_removed": "Return Line Removed",
@@ -656,7 +664,8 @@
     "returns": {
       "totalCredit": "Total Credit",
       "totalFees": "Total Fees",
-      "netCredit": "Net Credit"
+      "netCredit": "Net Credit",
+      "creditNote": "Credit Note"
     },
     "timeline": {
       "by": "by {actor}"
@@ -720,6 +729,43 @@
     "cancelShipment": "Cancel Shipment",
     "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
     "cancelFailed": "Failed to cancel shipment"
+  },
+  "transfers": {
+    "title": "Transfer Orders",
+    "subtitle": "Manage internal inventory transfers",
+    "lineItems": "Line items",
+    "buttons": {
+      "createTransfer": "+ Create Transfer",
+      "save": "💾 Save",
+      "customLine": "Custom Line",
+      "addLines": "Add Lines"
+    },
+    "placeholders": {
+      "searchTransfer": "Search or scan transfers...",
+      "notes": "Transfer notes...",
+      "selectSourceLocation": "Select Source Location",
+      "selectDestinationLocation": "Select Destination Location"
+    },
+    "columns": {
+      "orderNumber": "Order Number",
+      "sourceLocation": "Source Location",
+      "destinationLocation": "Destination Location",
+      "notes": "Notes",
+      "status": "Status",
+      "createdBy": "Created By",
+      "createdOn": "Created On"
+    },
+    "createSlideOver": {
+      "title": "New Transfer Order",
+      "subtitle": "Create an internal transfer between locations"
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "picking": "Picking",
+      "shipped": "Shipped",
+      "received": "Received",
+      "cancelled": "Cancelled"
+    }
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
@@ -969,6 +1015,7 @@
     },
     "columns": {
       "bin": "Bin",
+      "zone": "Zone",
       "binType": "Type",
       "locationNo": "Location No",
       "productNumber": "Product #",
@@ -1282,6 +1329,7 @@
       "receiving": "Receiving",
       "picking": "Picking",
       "shipping": "Shipping",
+      "transfers": "Transfers",
       "users": "Users",
       "settings": "Settings",
       "system": "System",
@@ -1968,6 +2016,24 @@
     "removeShipmentLine": "Remove this shipment line?",
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
     "enterSupplierBill": "Enter invoice? This will publish AP ledger entries."
+  },
+  "payments": {
+    "title": "Payments",
+    "subtitle": "Manage customer receipts and supplier payments",
+    "newPayment": "New Payment",
+    "paymentNumber": "Payment #",
+    "type": "Type",
+    "party": "Party",
+    "mode": "Mode",
+    "date": "Date",
+    "status": "Status",
+    "total": "Total",
+    "unallocated": "Unallocated",
+    "records": "Records",
+    "loadingEllipsis": "Loading...",
+    "noPayments": "No payments found",
+    "receipt": "Receipt",
+    "payment": "Payment"
   },
   "goodsReceived": {
     "title": "Goods Received",

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderReturnsController } from './order-returns.controller';
 import { ReturnsWriteService } from './returns-write.service';
+import { RETURN_STATE } from '@modbm/shared';
 
 describe('OrderReturnsController', () => {
   let controller: OrderReturnsController;
@@ -10,7 +11,7 @@ describe('OrderReturnsController', () => {
     returnId: 'ret-uuid-1',
     returnNumber: 'RET-20260315-0001',
     salesOrderId: 'uuid-1',
-    stateCode: 'draft',
+    stateCode: RETURN_STATE.DRAFT,
     lines: [],
   };
 
@@ -31,9 +32,10 @@ describe('OrderReturnsController', () => {
       findByOrder: jest.fn().mockResolvedValue([mockReturn]),
       findOne: jest.fn().mockResolvedValue(mockReturn),
       updateReturn: jest.fn().mockResolvedValue(mockReturn),
-      changeReturnState: jest
-        .fn()
-        .mockResolvedValue({ ...mockReturn, stateCode: 'confirmed' }),
+      changeReturnState: jest.fn().mockResolvedValue({
+        ...mockReturn,
+        stateCode: RETURN_STATE.CONFIRMED,
+      }),
       addReturnLine: jest.fn().mockResolvedValue(mockReturnLine),
       updateReturnLine: jest.fn().mockResolvedValue(mockReturnLine),
       removeReturnLine: jest.fn().mockResolvedValue(undefined),
@@ -114,14 +116,14 @@ describe('OrderReturnsController', () => {
       const result = await controller.changeReturnState(
         'uuid-1',
         'ret-uuid-1',
-        'confirmed',
+        RETURN_STATE.CONFIRMED,
         undefined,
         mockUser as any,
       );
-      expect(result.stateCode).toBe('confirmed');
+      expect(result.stateCode).toBe(RETURN_STATE.CONFIRMED);
       expect(returnsService.changeReturnState).toHaveBeenCalledWith(
         'ret-uuid-1',
-        'confirmed',
+        RETURN_STATE.CONFIRMED,
         'admin',
         undefined,
       );

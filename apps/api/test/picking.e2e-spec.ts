@@ -293,11 +293,12 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     });
 
     it('picks are recorded in the sales_order_picks sub-ledger', async () => {
-      const picks = await db.execute(sql`
+      const res = await db.execute(sql`
         SELECT * FROM modbm_core.sales_order_picks 
         WHERE sales_order_id = ${orderId}
         ORDER BY created_on
       `);
+      const picks = res.rows || res;
 
       // 3 picks total: 7 + 3 for line 1, 5 for line 2
       expect(picks.length).toBe(3);
@@ -305,10 +306,11 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     });
 
     it('inventory ledger entries created for each pick', async () => {
-      const entries = await db.execute(sql`
+      const res = await db.execute(sql`
         SELECT * FROM modbm_core.inventory_entries 
         WHERE source_id = ${orderId} AND source_type = 'SO_PICK'
       `);
+      const entries = res.rows || res;
 
       expect(entries.length).toBeGreaterThan(0);
       expect(entries[0].memo).toContain('Sales Order Pick');
@@ -592,6 +594,9 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
       const res = await request(app.getHttpServer())
         .post(`/api/sales-orders/${orderId}/shipments/${shipmentId}/cancel`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .expect((r: any) => {
+          if (r.status !== 201) console.error(r.body);
+        })
         .expect(201);
 
       expect(res.body.stateCode).toBe('cancelled');

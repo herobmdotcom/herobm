@@ -3,11 +3,12 @@ import { eq, ilike, or, sql, inArray, and, asc, desc } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
-  salesOrders,
   salesOrderLineItems,
   accounts as coreAccounts,
+  salesOrders,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 export interface UnifiedOrderRow {
   id: string;
@@ -53,7 +54,9 @@ export class OrdersService {
     }
 
     if (!includeArchived) {
-      conditions.push(sql`${salesOrders.stateCode} != 'archived'`);
+      conditions.push(
+        sql`${salesOrders.stateCode} != ${SALES_ORDER_STATE.ARCHIVED}`,
+      );
     }
 
     if (accountId) {
@@ -73,9 +76,9 @@ export class OrdersService {
 
     if (states && states.length > 0) {
       if (states.length === 1) {
-        conditions.push(eq(salesOrders.stateCode, states[0]));
+        conditions.push(eq(salesOrders.stateCode, states[0] as any));
       } else {
-        conditions.push(inArray(salesOrders.stateCode, states));
+        conditions.push(inArray(salesOrders.stateCode, states as any[]));
       }
     }
 
@@ -139,7 +142,7 @@ export class OrdersService {
       name: r.name ?? '',
       customerName: r.customerName ?? '',
       customerOrderNumber: r.customerOrderNumber ?? '',
-      stateCode: r.stateCode ?? 'draft',
+      stateCode: r.stateCode ?? SALES_ORDER_STATE.DRAFT,
       source: r.source ?? 'app',
       createdBy: r.createdBy ?? '',
       createdOn: r.createdOn ? new Date(r.createdOn).toISOString() : null,

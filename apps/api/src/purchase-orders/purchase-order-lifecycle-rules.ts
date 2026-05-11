@@ -7,7 +7,8 @@ import {
   purchaseInvoiceLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
+import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 
 export interface POLifecycleTrigger {
   entity: 'goods_receipt' | 'purchase_invoice';
@@ -44,7 +45,10 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
     'Transitions a PO from ordered/partially_received to received when all lines are fully received',
   enabled: true,
   evaluate: async (db, poId, trigger, actor) => {
-    if (trigger.entity !== 'goods_receipt' || trigger.action !== 'created')
+    if (
+      trigger.entity !== 'goods_receipt' ||
+      trigger.action !== EventType.CREATED
+    )
       return null;
 
     const [order] = await db
@@ -54,7 +58,11 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
 
     if (
       !order ||
-      !['ordered', 'partially_received', 'draft'].includes(order.stateCode)
+      ![
+        PURCHASE_ORDER_STATE.ORDERED,
+        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+        PURCHASE_ORDER_STATE.DRAFT,
+      ].includes(order.stateCode as any)
     )
       return null;
 
@@ -79,18 +87,18 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
     // Execute transition
     await db
       .update(purchaseOrders)
-      .set({ stateCode: 'received', modifiedOn: new Date() })
+      .set({ stateCode: PURCHASE_ORDER_STATE.RECEIVED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
       aggregateType: AggregateType.PURCHASE_ORDER,
       aggregateId: poId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-receive-when-fully-received',
         trigger,
         from: order.stateCode,
-        to: 'received',
+        to: PURCHASE_ORDER_STATE.RECEIVED,
         reason: 'All lines fully received',
       },
       actor,
@@ -99,7 +107,7 @@ export const autoReceiveWhenFullyReceived: POLifecycleRule = {
     return {
       ruleName: 'auto-receive-when-fully-received',
       from: order.stateCode,
-      to: 'received',
+      to: PURCHASE_ORDER_STATE.RECEIVED,
       reason: 'All lines fully received',
     };
   },
@@ -111,7 +119,10 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
     'Transitions a PO from ordered/draft to partially_received when some lines are received',
   enabled: true,
   evaluate: async (db, poId, trigger, actor) => {
-    if (trigger.entity !== 'goods_receipt' || trigger.action !== 'created')
+    if (
+      trigger.entity !== 'goods_receipt' ||
+      trigger.action !== EventType.CREATED
+    )
       return null;
 
     const [order] = await db
@@ -119,7 +130,13 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
       .from(purchaseOrders)
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
-    if (!order || !['ordered', 'draft'].includes(order.stateCode)) return null;
+    if (
+      !order ||
+      ![PURCHASE_ORDER_STATE.ORDERED, PURCHASE_ORDER_STATE.DRAFT].includes(
+        order.stateCode as any,
+      )
+    )
+      return null;
 
     const lines = await db
       .select({
@@ -148,18 +165,21 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
     // Execute transition
     await db
       .update(purchaseOrders)
-      .set({ stateCode: 'partially_received', modifiedOn: new Date() })
+      .set({
+        stateCode: PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+        modifiedOn: new Date(),
+      })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
       aggregateType: AggregateType.PURCHASE_ORDER,
       aggregateId: poId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-partially-receive-when-some-received',
         trigger,
         from: order.stateCode,
-        to: 'partially_received',
+        to: PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
         reason: 'Some lines received',
       },
       actor,
@@ -168,7 +188,7 @@ export const autoPartiallyReceiveWhenSomeReceived: POLifecycleRule = {
     return {
       ruleName: 'auto-partially-receive-when-some-received',
       from: order.stateCode,
-      to: 'partially_received',
+      to: PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
       reason: 'Some lines received',
     };
   },
@@ -191,7 +211,11 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
 
     if (
       !order ||
-      ['invoiced', 'cancelled', 'closed_short'].includes(order.stateCode)
+      [
+        PURCHASE_ORDER_STATE.INVOICED,
+        PURCHASE_ORDER_STATE.CANCELLED,
+        PURCHASE_ORDER_STATE.CLOSED_SHORT,
+      ].includes(order.stateCode as any)
     )
       return null;
 
@@ -235,7 +259,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
         .where(
           and(
             eq(purchaseInvoiceLines.purchaseOrderLineId, line.poLineId),
-            eq(purchaseInvoices.stateCode, 'invoiced'),
+            eq(purchaseInvoices.stateCode, PURCHASE_ORDER_STATE.INVOICED),
           ),
         );
 
@@ -253,18 +277,18 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
     // 4. Execute transition
     await db
       .update(purchaseOrders)
-      .set({ stateCode: 'invoiced', modifiedOn: new Date() })
+      .set({ stateCode: PURCHASE_ORDER_STATE.INVOICED, modifiedOn: new Date() })
       .where(eq(purchaseOrders.purchaseOrderId, poId));
 
     await emitEvent(db as any, {
       aggregateType: AggregateType.PURCHASE_ORDER,
       aggregateId: poId,
-      eventType: 'auto_status_changed',
+      eventType: EventType.STATUS_CHANGED,
       payload: {
         rule: 'auto-invoice-when-fully-invoiced-and-received',
         trigger,
         from: order.stateCode,
-        to: 'invoiced',
+        to: PURCHASE_ORDER_STATE.INVOICED,
         reason: 'All lines fully invoiced and received',
       },
       actor,
@@ -273,7 +297,7 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
     return {
       ruleName: 'auto-invoice-when-fully-invoiced-and-received',
       from: order.stateCode,
-      to: 'invoiced',
+      to: PURCHASE_ORDER_STATE.INVOICED,
       reason: 'All lines fully invoiced and received',
     };
   },

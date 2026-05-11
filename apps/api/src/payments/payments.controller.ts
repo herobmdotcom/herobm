@@ -6,6 +6,7 @@ import {
   Param,
   UseGuards,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PaymentsService } from './payments.service';
@@ -25,8 +26,11 @@ export class PaymentsController {
 
   @Get()
   @CasbinAction('read')
-  findAll() {
-    return this.paymentsService.findAll();
+  findAll(
+    @Query('days') days?: string,
+    @Query('allocation') allocation?: string,
+  ) {
+    return this.paymentsService.findAll(days, allocation);
   }
 
   @Get(':id')
@@ -55,5 +59,11 @@ export class PaymentsController {
     @AuthUser() user: any,
   ) {
     return this.paymentsService.allocatePayment(id, dto, user.username);
+  }
+
+  @Patch(':id/cancel')
+  @CasbinAction('write')
+  async cancel(@Param('id') id: string, @AuthUser() user: any) {
+    return this.paymentsService.cancelPayment(id, user.username);
   }
 }

@@ -8,6 +8,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ReturnsSection from '../ReturnsSection';
 import type { OrderDetail, OrderReturn } from '../types';
+import { RETURN_STATE, RETURN_TRANSITIONS, RETURN_LIFECYCLE, SALES_ORDER_STATE } from '@modbm/shared';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 jest.mock('next-intl', () => ({
@@ -23,22 +24,24 @@ jest.mock('@/lib/currency', () => ({
     formatAmount: (v: number, cc: string) => `${cc} ${v.toFixed(2)}`,
 }));
 
-jest.mock('@modbm/shared', () => ({
-    RETURN_TRANSITIONS: {
-        draft: ['confirmed', 'cancelled'],
-        confirmed: ['processed', 'draft'],
-        processed: [],
-        cancelled: [],
-    },
-    RETURN_LIFECYCLE: {
-        cancelled: 0, draft: 1, confirmed: 2, processed: 3,
-    },
-    isBackTransition: (lifecycle: any, from: string, to: string) =>
-        (lifecycle[to] ?? 99) < (lifecycle[from] ?? 99) && to !== 'cancelled',
-    computeLinePrice: ({ quantity, pricePerUnit }: { quantity: number; pricePerUnit: number }) => ({
-        amount: quantity * pricePerUnit,
-    }),
-}));
+jest.mock('@modbm/shared', () => {
+    const actual = jest.requireActual('@modbm/shared');
+    return {
+        ...actual,
+        RETURN_TRANSITIONS: {
+            [actual.RETURN_STATE.DRAFT]: [actual.RETURN_STATE.CONFIRMED, actual.RETURN_STATE.CANCELLED],
+            [actual.RETURN_STATE.CONFIRMED]: [actual.RETURN_STATE.PROCESSED, actual.RETURN_STATE.DRAFT],
+            [actual.RETURN_STATE.PROCESSED]: [],
+            [actual.RETURN_STATE.CANCELLED]: [],
+        },
+        RETURN_LIFECYCLE: {
+            [actual.RETURN_STATE.CANCELLED]: 0, 
+            [actual.RETURN_STATE.DRAFT]: 1, 
+            [actual.RETURN_STATE.CONFIRMED]: 2, 
+            [actual.RETURN_STATE.PROCESSED]: 3,
+        },
+    };
+});
 
 jest.mock('@/components/StateBadge', () => {
     const StateName = ({ state }: { state: string }) => <span>{state}</span>;
@@ -58,7 +61,7 @@ const baseOrder: OrderDetail = {
     customerId: 'cust-1',
     customerName: 'ACME',
     customerOrderNumber: null,
-    stateCode: 'invoiced',
+    stateCode: SALES_ORDER_STATE.INVOICED,
     currencyCode: 'AUD',
     notes: null,
     createdBy: 'admin',
@@ -86,7 +89,7 @@ const draftReturn: OrderReturn = {
     returnId: 'ret-1',
     returnNumber: 'RET-001',
     salesOrderId: 'so-001',
-    stateCode: 'draft',
+    stateCode: RETURN_STATE.DRAFT,
     notes: 'Damaged goods',
     createdBy: 'admin',
     createdOn: '2024-02-01',
@@ -104,7 +107,7 @@ const confirmedReturn: OrderReturn = {
     ...draftReturn,
     returnId: 'ret-2',
     returnNumber: 'RET-002',
-    stateCode: 'confirmed',
+    stateCode: RETURN_STATE.CONFIRMED,
     notes: null,
 };
 
@@ -217,7 +220,7 @@ describe('ReturnsSection — state transitions', () => {
             expect(mockApiMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/state',
                 'PATCH',
-                { stateCode: 'confirmed' },
+                { stateCode: RETURN_STATE.CONFIRMED },
             );
         });
         await waitFor(() => expect(loadReturns).toHaveBeenCalled());

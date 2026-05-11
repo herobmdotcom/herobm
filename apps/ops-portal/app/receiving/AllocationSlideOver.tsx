@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { apiFetch, apiMutate } from '@/lib/api';
+import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
 
 interface AllocationSlideOverProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     if (isOpen) {
       // Only take lines that are currently unmatched AND not quarantined
       // ADV-086: Quarantined items must be cleared before matching
-      const initialUnmatched = grLines.filter((l) => l.matchStatus !== 'matched' && l.putawayStatus !== 'quarantined');
+      const initialUnmatched = grLines.filter((l) => l.matchStatus !== MATCH_STATUS.MATCHED && l.putawayStatus !== PUTAWAY_STATUS.QUARANTINED);
       setLocalLines(initialUnmatched);
       if (initialUnmatched.length > 0) {
         setActiveLineId(initialUnmatched[0].goodsReceivedLineId);
@@ -322,7 +323,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
-                              <span className="badge badge-warning text-[10px] px-1.5 py-0.5">Location Mismatch</span>
+                              <span className="badge badge-sm badge-warning">Location Mismatch</span>
                             )}
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                               {/* eslint-disable-next-line i18next/no-literal-string */}

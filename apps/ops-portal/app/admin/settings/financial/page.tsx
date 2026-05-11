@@ -353,7 +353,7 @@ export default function FinancialSettingsPage() {
     if (!acct) return <span className="text-muted italic text-xs font-mono">{glAccountId}</span>;
     return (
       <span className="font-medium text-sm flex items-center gap-2">
-        <span className="badge badge-secondary font-mono !py-0 !px-1.5">{acct.accountCode}</span>
+        <span className="badge badge-sm badge-secondary font-mono">{acct.accountCode}</span>
         {acct.name}
       </span>
     );

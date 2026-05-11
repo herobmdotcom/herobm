@@ -11,6 +11,15 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+export const MODES_OF_PAYMENT = [
+  'Cash',
+  'EFT',
+  'Credit Card',
+  'Cheque',
+] as const;
+
+export type ModeOfPayment = (typeof MODES_OF_PAYMENT)[number];
+
 export class CreatePaymentDto {
   @IsEnum(['receive', 'pay'])
   paymentType: 'receive' | 'pay';
@@ -25,9 +34,10 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   paymentDate: string;
 
-  @IsString()
-  @IsNotEmpty()
-  modeOfPayment: string;
+  @IsEnum(MODES_OF_PAYMENT, {
+    message: `modeOfPayment must be one of: ${MODES_OF_PAYMENT.join(', ')}`,
+  })
+  modeOfPayment: ModeOfPayment;
 
   @IsNumber()
   @Min(0.01)
@@ -42,6 +52,9 @@ export class CreatePaymentDto {
 
   @IsString()
   currencyCode: string;
+
+  @IsOptional()
+  submitImmediately?: boolean;
 }
 
 export class AllocationDto {

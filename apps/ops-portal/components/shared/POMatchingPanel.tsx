@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { apiFetch } from '../../lib/api';
 import { formatAmount } from '../../lib/currency';
+import { MATCH_STATUS } from '@modbm/shared';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -103,7 +104,7 @@ export default function POMatchingPanel({
   const alreadyMatchedPoLineIds = useMemo(() => {
     return new Set(
       invoiceLines
-        .filter((il) => il.matchStatus === 'matched' && il.purchaseOrderLineId)
+        .filter((il) => il.matchStatus === MATCH_STATUS.MATCHED && il.purchaseOrderLineId)
         .map((il) => il.purchaseOrderLineId!),
     );
   }, [invoiceLines]);

@@ -9,6 +9,7 @@ import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
 import AllocationSlideOver from './AllocationSlideOver';
+import { GOODS_RECEIVED_STATE, PUTAWAY_STATUS, MATCH_STATUS } from '@modbm/shared';
 
 export default function GoodsReceivedListPage() {
     const t = useTranslations('goodsReceived');
@@ -54,7 +55,7 @@ export default function GoodsReceivedListPage() {
             const reason = window.prompt('Reason for quarantine', '') || undefined;
 
             // Toggle for all selected that are not completed
-            const eligible = selectedRows.filter(r => r.putawayStatus !== 'completed');
+            const eligible = selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED);
             const errors: string[] = [];
             for (const row of eligible) {
                 try {
@@ -141,16 +142,16 @@ export default function GoodsReceivedListPage() {
             width: 140,
             cellRenderer: (p: any) => {
                 if (!p.value) return null;
-                let bg = 'bg-gray-100 text-gray-700';
+                let badgeClass = 'badge-secondary';
                 let label = p.value;
-                if (p.data?.stateCode === 'cancelled') { bg = 'bg-gray-200 text-gray-500'; label = 'Cancelled'; }
-                else if (p.value === 'completed') { bg = 'bg-green-100 text-green-800'; label = 'Completed'; }
-                else if (p.value === 'quarantined') { bg = 'bg-red-100 text-red-800'; label = 'Quarantined'; }
-                else if (p.value === 'pending_putaway') { bg = 'bg-blue-100 text-blue-800'; label = 'Pending'; }
-                else if (p.value === 'awaiting_matching') { bg = 'bg-amber-100 text-amber-800 border border-amber-200'; label = 'Awaiting Match'; }
+                if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) { badgeClass = 'badge-cancelled'; label = 'Cancelled'; }
+                else if (p.value === PUTAWAY_STATUS.COMPLETED) { badgeClass = 'badge-success'; label = 'Completed'; }
+                else if (p.value === PUTAWAY_STATUS.QUARANTINED) { badgeClass = 'badge-danger'; label = 'Quarantined'; }
+                else if (p.value === PUTAWAY_STATUS.PENDING_PUTAWAY) { badgeClass = 'badge-info'; label = 'Pending'; }
+                else if (p.value === PUTAWAY_STATUS.AWAITING_MATCHING) { badgeClass = 'badge-warning'; label = 'Awaiting Match'; }
                 
                 return (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${bg}`}>
+                    <span className={`badge badge-sm ${badgeClass}`}>
                         {label}
                     </span>
                 );
@@ -161,8 +162,8 @@ export default function GoodsReceivedListPage() {
     ], [t, tCommon]);
 
     // Count unmatched (and not quarantined) in selection — quarantined items cannot be matched
-    const matchableCount = selectedRows.filter((r) => r.matchStatus !== 'matched' && r.putawayStatus !== 'quarantined').length;
-    const hasQuarantinedSelected = selectedRows.some((r) => r.putawayStatus === 'quarantined');
+    const matchableCount = selectedRows.filter((r) => r.matchStatus !== MATCH_STATUS.MATCHED && r.putawayStatus !== PUTAWAY_STATUS.QUARANTINED).length;
+    const hasQuarantinedSelected = selectedRows.some((r) => r.putawayStatus === PUTAWAY_STATUS.QUARANTINED);
 
     return (
         <>
@@ -245,14 +246,14 @@ export default function GoodsReceivedListPage() {
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={handleToggleQuarantine}
-                                            disabled={selectedRows.filter(r => r.putawayStatus !== 'completed').length === 0}
+                                            disabled={selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length === 0}
                                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                         >
                                             Quarantine
                                         </button>
                                         <button
                                             onClick={handleCancelReceipt}
-                                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === 'completed')}
+                                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === PUTAWAY_STATUS.COMPLETED)}
                                             className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                                             title="Cancel the entire receipt for the selected lines"
                                         >

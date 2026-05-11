@@ -308,7 +308,19 @@ export class GlService {
   }
 
   async getAccountsList() {
-    return this.db.select().from(glAccounts).orderBy(glAccounts.accountCode);
+    return this.db
+      .select({
+        glAccountId: glAccounts.glAccountId,
+        accountCode: glAccounts.accountCode,
+        name: glAccounts.name,
+        accountType: glAccounts.accountType,
+        isGroup: glAccounts.isGroup,
+        isBankAccount: glAccounts.isBankAccount,
+        currencyCode: glAccounts.currencyCode,
+        isActive: glAccounts.isActive,
+      })
+      .from(glAccounts)
+      .orderBy(glAccounts.accountCode);
   }
 
   async createAccount(data: {
@@ -317,7 +329,9 @@ export class GlService {
     accountType: string;
     parentAccountId?: string;
     isGroup?: boolean;
+    isBankAccount?: boolean;
     currencyCode?: string;
+    metadata?: Record<string, any>;
   }) {
     // Validate account type
     const validTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -353,7 +367,9 @@ export class GlService {
         accountType: data.accountType,
         parentAccountId: data.parentAccountId,
         isGroup: data.isGroup ?? false,
+        isBankAccount: data.isBankAccount ?? false,
         currencyCode: data.currencyCode ?? this.appConfig.homeCurrency(),
+        metadata: data.metadata ?? {},
       })
       .returning();
 
@@ -362,7 +378,12 @@ export class GlService {
 
   async updateAccount(
     glAccountId: string,
-    data: { name?: string; isActive?: boolean },
+    data: {
+      name?: string;
+      isActive?: boolean;
+      isBankAccount?: boolean;
+      metadata?: Record<string, any>;
+    },
   ) {
     // Don't allow deactivating system accounts
     const [existing] = await this.db
@@ -699,6 +720,22 @@ export class GlService {
     }));
 
     return { ...entry, lines: mappedLines };
+  }
+
+  async findJournalEntryBySource(sourceType: string, sourceId: string) {
+    const [entry] = await this.db
+      .select({ journalEntryId: glJournalEntries.journalEntryId })
+      .from(glJournalEntries)
+      .where(
+        and(
+          eq(glJournalEntries.sourceType, sourceType),
+          eq(glJournalEntries.sourceId, sourceId),
+        ),
+      )
+      .limit(1);
+
+    if (!entry) return null;
+    return this.getJournalEntry(entry.journalEntryId);
   }
 
   // -------------------------------------------------------------------------

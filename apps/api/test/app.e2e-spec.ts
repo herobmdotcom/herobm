@@ -21,6 +21,7 @@ import {
   binContents,
   products,
 } from '../src/drizzle/modbm-core-schema';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
 
@@ -77,7 +78,7 @@ describe('API E2E — Data Pipeline Verification', () => {
               customerId: '20000000-0000-0000-0000-000000000001',
               fulfillmentLocationId: '10000000-0000-0000-0000-000000000001',
               currencyCode: 'AUD',
-              stateCode: 'draft',
+              stateCode: SALES_ORDER_STATE.DRAFT,
             })
             .onConflictDoNothing();
 

@@ -15,6 +15,7 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -199,7 +200,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       expect(res.body).toHaveProperty('salesOrderId');
       expect(res.body).toHaveProperty('orderNumber');
-      expect(res.body.stateCode).toBe('draft');
+      expect(res.body.stateCode).toBe(SALES_ORDER_STATE.DRAFT);
       expect(res.body.name).toBe('E2E-OW Test Order');
 
       orderId = res.body.salesOrderId;
@@ -293,11 +294,11 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
     it('PATCH /api/sales-orders/:id/state — transitions through the full lifecycle', async () => {
       const transitions = [
-        'quoted',
-        'confirmed',
-        'picking',
-        'shipped',
-        'invoiced',
+        SALES_ORDER_STATE.QUOTED,
+        SALES_ORDER_STATE.CONFIRMED,
+        SALES_ORDER_STATE.PICKING,
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.INVOICED,
       ];
 
       // Helper: resolve first bin and pick all lines then ship
@@ -340,7 +341,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       }
 
       for (const nextState of transitions) {
-        if (nextState === 'shipped') {
+        if (nextState === SALES_ORDER_STATE.SHIPPED) {
           await pickAndShipOrder(orderId);
           // shipped is handled by auto-transition on dispatch
           continue;
@@ -449,7 +450,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       const res = await request(app.getHttpServer())
         .patch(`/api/sales-orders/${draftOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'shipped' })
+        .send({ stateCode: SALES_ORDER_STATE.SHIPPED })
         .expect(400);
 
       expect(res.body.message).toContain('Cannot transition');
@@ -486,13 +487,13 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
 
       // Move through lifecycle to invoiced
       for (const state of [
-        'quoted',
-        'confirmed',
-        'picking',
-        'shipped',
-        'invoiced',
+        SALES_ORDER_STATE.QUOTED,
+        SALES_ORDER_STATE.CONFIRMED,
+        SALES_ORDER_STATE.PICKING,
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.INVOICED,
       ]) {
-        if (state === 'shipped') {
+        if (state === SALES_ORDER_STATE.SHIPPED) {
           // Pick all lines and create + dispatch shipment
           const binsRes = await request(app.getHttpServer())
             .get('/api/inventory/bins')
@@ -569,7 +570,7 @@ describe('API E2E — Sales Portal Write Endpoints', () => {
       await request(app.getHttpServer())
         .patch(`/api/sales-orders/${res.body.salesOrderId}/state`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: 'cancelled' })
+        .send({ stateCode: SALES_ORDER_STATE.CANCELLED })
         .expect(200);
 
       // Try adding a line — should fail

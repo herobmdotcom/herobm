@@ -17,7 +17,12 @@ import {
   productDefaultBins,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
-import { AggregateType } from '../common/event-types';
+import { AggregateType, EventType } from '../common/event-types';
+import {
+  PRODUCT_TRANSITIONS,
+  PRODUCT_STATE,
+  ProductState,
+} from '@modbm/shared';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import {
   CreateProductDto,
@@ -48,7 +53,7 @@ export class ProductsWriteService {
 
       await tx.insert(productEvents).values({
         productId: product.productId,
-        eventType: 'created',
+        eventType: EventType.CREATED,
         payload: dto,
         actor,
       });
@@ -96,7 +101,7 @@ export class ProductsWriteService {
         ) {
           await tx.insert(productEvents).values({
             productId: id,
-            eventType: 'status_changed',
+            eventType: EventType.STATUS_CHANGED,
             payload: {
               from: existing[0].stateCode,
               to: audit.changes.stateCode,
@@ -106,7 +111,7 @@ export class ProductsWriteService {
         } else {
           await tx.insert(productEvents).values({
             productId: id,
-            eventType: 'updated',
+            eventType: EventType.UPDATED,
             payload: {
               changes: audit.changes,
               previousValues: audit.previousValues,
@@ -127,39 +132,7 @@ export class ProductsWriteService {
    * Archive a product.
    */
   async archive(id: string, actor: string) {
-    const existing = await this.db
-      .select()
-      .from(coreProducts)
-      .where(eq(coreProducts.productId, id))
-      .limit(1);
-
-    if (existing.length === 0) {
-      throw new NotFoundException(`Product '${id}' not found`);
-    }
-
-    if (existing[0].stateCode === 'archived') {
-      throw new BadRequestException(`Product '${id}' is already archived`);
-    }
-
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreProducts)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
-        .where(eq(coreProducts.productId, id))
-        .returning();
-
-      await tx.insert(productEvents).values({
-        productId: id,
-        eventType: 'archived',
-        payload: {
-          from: existing[0].stateCode,
-          to: 'archived',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changeProductState(id, PRODUCT_STATE.ARCHIVED, actor);
   }
 
   /**
@@ -176,7 +149,7 @@ export class ProductsWriteService {
       throw new NotFoundException(`Product '${id}' not found`);
     }
 
-    if (existing[0].stateCode !== 'archived') {
+    if (existing[0].stateCode !== PRODUCT_STATE.ARCHIVED) {
       throw new BadRequestException(`Product '${id}' is not archived`);
     }
 
@@ -184,34 +157,78 @@ export class ProductsWriteService {
       .select()
       .from(productEvents)
       .where(
-        sql`${productEvents.productId} = ${id} AND ${productEvents.eventType} = 'archived'`,
+        sql`${productEvents.productId} = ${id} AND ${productEvents.eventType} = ${EventType.ARCHIVED}`,
       )
       .orderBy(sql`${productEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
-      'active';
+      PRODUCT_STATE.ACTIVE;
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(coreProducts)
-        .set({ stateCode: previousState, modifiedOn: new Date() })
-        .where(eq(coreProducts.productId, id))
-        .returning();
+    return await this.changeProductState(
+      id,
+      previousState as ProductState,
+      actor,
+    );
+  }
 
-      await tx.insert(productEvents).values({
-        productId: id,
-        eventType: 'unarchived',
-        payload: {
-          from: 'archived',
-          to: previousState,
-        },
-        actor,
-      });
+  /**
+   * Centralised state transition logic for products.
+   */
+  async changeProductState(
+    productId: string,
+    newState: ProductState,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
 
-      return updated;
+    const [existing] = await db
+      .select()
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Product '${productId}' not found`);
+    }
+
+    const currentState = existing.stateCode as ProductState;
+
+    if (currentState === newState) {
+      return existing;
+    }
+
+    // Validation
+    const allowed = PRODUCT_TRANSITIONS[currentState] || [];
+    if (!allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Invalid product state transition: '${currentState}' -> '${newState}'. Valid next states: ${allowed.join(', ') || 'None'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(coreProducts)
+      .set({ stateCode: newState as any, modifiedOn: new Date() })
+      .where(eq(coreProducts.productId, productId))
+      .returning();
+
+    const targetTx = tx || this.db;
+    await targetTx.insert(productEvents).values({
+      productId,
+      eventType:
+        newState === PRODUCT_STATE.ARCHIVED
+          ? EventType.ARCHIVED
+          : EventType.STATUS_CHANGED,
+      payload: {
+        from: currentState,
+        to: newState,
+      },
+      actor,
     });
+
+    return updated;
   }
 
   /**
@@ -236,7 +253,7 @@ export class ProductsWriteService {
       costPrice: dto.costPrice ? dto.costPrice.toString() : '0',
       effectiveFrom: dto.effectiveFrom ? new Date(dto.effectiveFrom) : null,
       effectiveTo: dto.effectiveTo ? new Date(dto.effectiveTo) : null,
-      stateCode: 'active',
+      stateCode: PRODUCT_STATE.ACTIVE,
       modifiedOn: new Date(),
     };
 
@@ -258,7 +275,7 @@ export class ProductsWriteService {
 
       await tx.insert(productSupplierEvents).values({
         productSupplierId: mapping.productSupplierId,
-        eventType: 'linked',
+        eventType: EventType.LINKED,
         payload: dto,
         actor,
       });
@@ -274,7 +291,8 @@ export class ProductsWriteService {
     return await this.db.transaction(async (tx) => {
       const [mapping] = await tx
         .update(productSuppliers)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
+        // eslint-disable-next-line no-restricted-syntax
+        .set({ stateCode: PRODUCT_STATE.ARCHIVED, modifiedOn: new Date() })
         .where(
           sql`${productSuppliers.productId} = ${productId} AND ${productSuppliers.vendorId} = ${vendorId}`,
         )
@@ -286,8 +304,8 @@ export class ProductsWriteService {
 
       await tx.insert(productSupplierEvents).values({
         productSupplierId: mapping.productSupplierId,
-        eventType: 'unlinked',
-        payload: { stateCode: 'archived' },
+        eventType: EventType.UNLINKED,
+        payload: { stateCode: PRODUCT_STATE.ARCHIVED },
         actor,
       });
 
@@ -432,7 +450,7 @@ export class ProductsWriteService {
 
       await tx.insert(productEvents).values({
         productId,
-        eventType: 'updated',
+        eventType: EventType.UPDATED,
         payload: {
           action: 'linked_default_bin',
           binId: dto.binId,
@@ -466,7 +484,7 @@ export class ProductsWriteService {
 
       await tx.insert(productEvents).values({
         productId: existing[0].productId,
-        eventType: 'updated',
+        eventType: EventType.UPDATED,
         payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
         actor,
       });

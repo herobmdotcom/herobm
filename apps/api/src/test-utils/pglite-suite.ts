@@ -47,6 +47,7 @@ const TRANSACTIONAL_TABLES = [
   'modbm_core.accounts',
   'modbm_core.suppliers',
   'modbm_core.products',
+  'modbm_core.payment_events',
   'modbm_core.payment_allocations',
   'modbm_core.payment_entries',
 ];
@@ -137,15 +138,13 @@ export function setupPgliteSuite(opts?: {
   afterEach(async () => {
     // Truncate transactional tables to restore seed-only state.
     // Using CASCADE handles any FK dependencies we may have missed.
-    // Filter out tables that don't exist yet (e.g., payment_entries).
-    const existing = TRANSACTIONAL_TABLES.filter(
-      (t) => !t.includes('payment_'),
-    );
     try {
-      await context._client.exec(`TRUNCATE ${existing.join(', ')} CASCADE`);
+      await context._client.exec(
+        `TRUNCATE ${TRANSACTIONAL_TABLES.join(', ')} CASCADE`,
+      );
     } catch (e: any) {
       // Fallback: truncate tables one-by-one if the batch fails
-      for (const table of existing) {
+      for (const table of TRANSACTIONAL_TABLES) {
         try {
           await context._client.exec(`TRUNCATE ${table} CASCADE`);
         } catch {

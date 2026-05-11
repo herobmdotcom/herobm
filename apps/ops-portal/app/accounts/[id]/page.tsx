@@ -16,6 +16,7 @@ import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 import { useSettings } from '@/components/SettingsProvider';
+import { ACCOUNT_STATE } from '@modbm/shared';
 import { useAccount } from './useAccount';
 
 export default function AccountDetailPage({ params: paramsPromise }: { params: Promise<{ id: string }> }) {
@@ -148,7 +149,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         }
       >
 
-      {account.stateCode === 'archived' && (
+      {account.stateCode === ACCOUNT_STATE.ARCHIVED && (
         <div
           className="mb-4 px-4 py-3 rounded-lg flex items-center gap-3 shadow-sm"
           style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#b45309' }}
@@ -373,7 +374,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                   style={{ paddingTop: 6, cursor: !isEditable || saving ? 'not-allowed' : 'pointer' }}
                   onClick={() => {
                     if (!isEditable || saving) return;
-                    const newState = dto.stateCode === 'active' ? 'inactive' : 'active';
+                    const newState = dto.stateCode === ACCOUNT_STATE.ACTIVE ? ACCOUNT_STATE.INACTIVE : ACCOUNT_STATE.ACTIVE;
                     updateField('stateCode', newState);
                     saveField('stateCode', newState);
                   }}
@@ -383,7 +384,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                       width: 40,
                       height: 22,
                       borderRadius: 11,
-                      background: dto.stateCode === 'active' ? 'var(--accent)' : 'var(--border)',
+                      background: dto.stateCode === ACCOUNT_STATE.ACTIVE ? 'var(--accent)' : 'var(--border)',
                       position: 'relative',
                       transition: 'background 0.2s ease',
                       opacity: !isEditable || saving ? 0.5 : 1,
@@ -397,7 +398,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                         background: '#fff',
                         position: 'absolute',
                         top: 3,
-                        left: dto.stateCode === 'active' ? 21 : 3,
+                        left: dto.stateCode === ACCOUNT_STATE.ACTIVE ? 21 : 3,
                         transition: 'left 0.2s ease',
                       }}
                     />
@@ -569,7 +570,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
 
           {/* Bottom Actions */}
           <div className="flex justify-end mt-4">
-              {account.stateCode === 'archived' ? (
+              {account.stateCode === ACCOUNT_STATE.ARCHIVED ? (
                 <button
                   className="btn btn-secondary btn-sm"
                   onClick={unarchiveAccount}

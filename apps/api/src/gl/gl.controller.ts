@@ -52,7 +52,9 @@ export class GlController {
       accountType: string;
       parentAccountId?: string;
       isGroup?: boolean;
+      isBankAccount?: boolean;
       currencyCode?: string;
+      metadata?: Record<string, any>;
     },
   ) {
     return this.glService.createAccount(body);
@@ -62,7 +64,13 @@ export class GlController {
   @CasbinAction('write')
   async updateAccount(
     @Param('id') id: string,
-    @Body() body: { name?: string; isActive?: boolean },
+    @Body()
+    body: {
+      name?: string;
+      isActive?: boolean;
+      isBankAccount?: boolean;
+      metadata?: Record<string, any>;
+    },
   ) {
     return this.glService.updateAccount(id, body);
   }
@@ -97,6 +105,15 @@ export class GlController {
   @CasbinAction('read')
   async getJournalEntry(@Param('id') id: string) {
     return this.glService.getJournalEntry(id);
+  }
+
+  @Get('journal-entries/source/:type/:id')
+  @CasbinAction('read')
+  async getJournalEntryBySource(
+    @Param('type') type: string,
+    @Param('id') id: string,
+  ) {
+    return this.glService.findJournalEntryBySource(type, id);
   }
 
   @Post('journal-entries')

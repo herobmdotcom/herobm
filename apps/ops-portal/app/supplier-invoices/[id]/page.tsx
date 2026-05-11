@@ -12,7 +12,7 @@ import { ValidState } from '@/types/states';
 import POMatchingPanel from '@/components/shared/POMatchingPanel';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
-import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE } from '@modbm/shared';
+import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@modbm/shared';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
 
 export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,7 +56,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   // Auto-select first unmatched line when entering matching mode
   useEffect(() => {
     if (isMatchingMode && !selectedInvoiceLineId) {
-      const first = invoice?.lines.find((l) => l.matchStatus !== 'matched');
+      const first = invoice?.lines.find((l) => l.matchStatus !== MATCH_STATUS.MATCHED);
       if (first) setSelectedInvoiceLineId(first.lineId);
     }
     if (!isMatchingMode) setSelectedInvoiceLineId(null);
@@ -70,12 +70,12 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
     return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">Invoice not found.</div>;
   }
 
-  const isEditable = invoice.stateCode === 'draft';
+  const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
   const canEditLines = isEditable && !isMatchingMode;
   const isBack = (from: string, to: string) => isBackTransition(PURCHASE_INVOICE_LIFECYCLE, from, to);
 
   const InvoiceAllocationCell = ({ line }: { line: PurchaseInvoiceDetails['lines'][0] }) => {
-    if (line.matchStatus === 'matched') {
+    if (line.matchStatus === MATCH_STATUS.MATCHED) {
       return (
         <div className="flex items-center justify-between gap-2 h-full w-full">
           <div className="flex flex-col gap-1">
@@ -142,6 +142,28 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               {headerDirty && isEditable && (
                 <button className="btn btn-primary btn-sm" onClick={() => saveHeader()} disabled={saving}>
                   {tCommon('save', { defaultValue: 'Save' })}
+                </button>
+              )}
+              {!headerDirty && allowedTransitions.includes(PURCHASE_INVOICE_STATE.CANCELLED) && (
+                <button 
+                  className="btn btn-danger btn-sm" 
+                  onClick={() => {
+                    if (confirm('Are you sure you want to cancel this invoice?')) {
+                      changeState(PURCHASE_INVOICE_STATE.CANCELLED);
+                    }
+                  }} 
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              )}
+              {!headerDirty && allowedTransitions.includes(PURCHASE_INVOICE_STATE.INVOICED) && (
+                <button 
+                  className="btn btn-primary btn-sm" 
+                  onClick={() => changeState(PURCHASE_INVOICE_STATE.INVOICED)} 
+                  disabled={saving}
+                >
+                  Approve Invoice
                 </button>
               )}
             </>
@@ -310,7 +332,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             <tbody>
               {invoice.lines?.map((line, idx) => {
                 const isSelected = isMatchingMode && selectedInvoiceLineId === line.lineId;
-                const isUnmatched = line.matchStatus !== 'matched';
+                const isUnmatched = line.matchStatus !== MATCH_STATUS.MATCHED;
                 return (
                 <tr
                   key={line.lineId}
@@ -421,7 +443,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   )}
                   {isMatchingMode && (
                     <td style={{ textAlign: 'center' }}>
-                      {line.matchStatus === 'matched' ? (
+                      {line.matchStatus === MATCH_STATUS.MATCHED ? (
                         <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--badge-shipped)' }}>✓</span>
                       ) : (
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersWriteService } from './orders-write.service';
+import { SALES_ORDER_STATE } from '@modbm/shared';
 
 describe('OrdersController', () => {
   let controller: OrdersController;
@@ -20,7 +21,7 @@ describe('OrdersController', () => {
     salesOrderId: 'uuid-1',
     orderNumber: 'ORD-001',
     customerId: 'c0000000-0000-0000-0000-000000000001',
-    stateCode: 'draft',
+    stateCode: SALES_ORDER_STATE.DRAFT,
     lines: [],
     events: [],
   };
@@ -44,9 +45,10 @@ describe('OrdersController', () => {
       findOne: jest.fn().mockResolvedValue(mockOrder),
       create: jest.fn().mockResolvedValue(mockOrder),
       update: jest.fn().mockResolvedValue(mockOrder),
-      changeState: jest
-        .fn()
-        .mockResolvedValue({ ...mockOrder, stateCode: 'quoted' }),
+      changeSalesOrderState: jest.fn().mockResolvedValue({
+        ...mockOrder,
+        stateCode: SALES_ORDER_STATE.QUOTED,
+      }),
       addLine: jest.fn().mockResolvedValue(mockLine),
       updateLine: jest.fn().mockResolvedValue(mockLine),
       removeLine: jest.fn().mockResolvedValue(undefined),
@@ -124,11 +126,15 @@ describe('OrdersController', () => {
 
   describe('changeState', () => {
     it('should call writeService.changeState with id, stateCode, and actor', async () => {
-      const result = await controller.changeState('uuid-1', 'quoted', mockUser);
-      expect(result.stateCode).toBe('quoted');
-      expect(writeService.changeState).toHaveBeenCalledWith(
+      const result = await controller.changeState(
         'uuid-1',
-        'quoted',
+        SALES_ORDER_STATE.QUOTED,
+        mockUser,
+      );
+      expect(result.stateCode).toBe(SALES_ORDER_STATE.QUOTED);
+      expect(writeService.changeSalesOrderState).toHaveBeenCalledWith(
+        'uuid-1',
+        SALES_ORDER_STATE.QUOTED,
         'admin',
         undefined,
         undefined,

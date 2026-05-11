@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { PurchaseInvoiceService } from './purchase-invoice.service';
+import { SalesCreditNoteService } from './sales-credit-note.service';
 import {
   SalesInvoiceController,
   PurchaseInvoiceController,
@@ -18,7 +19,15 @@ import { TaxModule } from '../tax/tax.module';
     InvoiceDetailController,
     ExternalSyncController,
   ],
-  providers: [SalesInvoiceService, PurchaseInvoiceService],
-  exports: [SalesInvoiceService, PurchaseInvoiceService],
+  providers: [
+    SalesInvoiceService,
+    PurchaseInvoiceService,
+    SalesCreditNoteService,
+  ],
+  exports: [
+    SalesInvoiceService,
+    PurchaseInvoiceService,
+    SalesCreditNoteService,
+  ],
 })
 export class InvoicesModule {}

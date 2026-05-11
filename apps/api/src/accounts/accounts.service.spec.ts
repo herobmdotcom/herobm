@@ -108,13 +108,13 @@ describe('AccountsService', () => {
           name: 'Active',
           accountNumber: 'ACT',
           currencyCode: 'USD',
-          stateCode: 'active',
+          stateCode: ACCOUNT_STATE.ACTIVE,
         },
         {
           name: 'Archived',
           accountNumber: 'ARC',
           currencyCode: 'USD',
-          stateCode: 'archived',
+          stateCode: ACCOUNT_STATE.ARCHIVED,
         },
       ]);
 

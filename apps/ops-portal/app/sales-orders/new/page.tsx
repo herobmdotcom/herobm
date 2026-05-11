@@ -13,6 +13,7 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
+import AccountSelect from '@/components/shared/AccountSelect';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
 import type { DiscountRule } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -22,10 +23,10 @@ interface Account {
   accountId: string;
   accountNumber: string;
   name: string;
-  accountGroupId: string | null;
-  customerDiscount: string | null;
-  currencyCode: string | null;
-  taxPosition: string | null;
+  accountGroupId?: string | null;
+  customerDiscount?: string | null;
+  currencyCode?: string | null;
+  taxPosition?: string | null;
 }
 
 interface Location {
@@ -96,7 +97,6 @@ export default function NewOrderPage() {
   useDocumentTitle('New Sales Order');
   const tSales = useTranslations();
   const router = useRouter();
-  const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([]);
 
   const [customerId, setCustomerId] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
@@ -104,7 +104,6 @@ export default function NewOrderPage() {
   const [discountRules, setDiscountRules] = useState<DiscountRule[]>([]);
   const [currencyCode, setCurrencyCode] = useState('');
   const [customerTaxPosition, setCustomerTaxPosition] = useState<string | null>(null);
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [name, setName] = useState('');
   const [customerOrderNumber, setCustomerOrderNumber] = useState('');
   const [notes, setNotes] = useState('');
@@ -153,25 +152,10 @@ export default function NewOrderPage() {
     );
   }, [effectivetaxCategoryId]);
 
-  // Debounced server-side search for customers (300ms)
-  const searchAccounts = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setFilteredAccounts([]); return; }
-    try {
-      const data = await apiFetch<{ data: Account[] }>(
-        `/api/accounts?q=${encodeURIComponent(term)}&limit=10`,
-      );
-      setFilteredAccounts(data.data);
-    } catch { setFilteredAccounts([]); }
-  }, []);
-
-  const debouncedAccountSearch = useDebounce(
-    (term: unknown) => searchAccounts(term as string), 300,
-  );
-
+  // Select customer logic
   const selectCustomer = async (a: Account) => {
     setCustomerId(a.accountId);
     setCustomerSearch(`${a.accountNumber} — ${a.name}`);
-    setShowCustomerDropdown(false);
     
     // Fetch discount rules for this customer
     let rules: DiscountRule[] = [];
@@ -189,7 +173,7 @@ export default function NewOrderPage() {
     
     const resolvedCurrency = a.currencyCode || '';
     setCurrencyCode(resolvedCurrency);
-    setCustomerTaxPosition(a.taxPosition);
+    setCustomerTaxPosition(a.taxPosition ?? null);
 
     // Resolve the GST category: exempt customers force all lines to exempt
     const custExempt = a.taxPosition?.toLowerCase() === 'exempt';
@@ -424,51 +408,19 @@ export default function NewOrderPage() {
                     </span>
                 )}
               </label>
-              <input
-                id="order-customer"
-                className="input"
-                autoComplete="off"
-                placeholder={tSales('salesOrders.placeholders.searchCustomers')}
-                value={customerSearch}
-                onChange={(e) => {
-                  setCustomerSearch(e.target.value);
-                  setShowCustomerDropdown(true);
-                  setCustomerId('');
-                  debouncedAccountSearch(e.target.value);
+              <AccountSelect
+                value={customerId}
+                onChange={(acc) => {
+                  if (acc) {
+                    selectCustomer(acc);
+                  } else {
+                    setCustomerId('');
+                    setCustomerSearch('');
+                  }
                 }}
-                onFocus={() => setShowCustomerDropdown(true)}
+                placeholder={tSales('salesOrders.placeholders.searchCustomers')}
+                required
               />
-              {showCustomerDropdown && customerSearch && (
-                <div
-                  className="absolute z-50 w-full mt-1 rounded-lg overflow-hidden max-h-48 scroll-area"
-                  style={{
-                    background: 'var(--bg-card)',
-                    border: '1px solid var(--border)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-                  }}
-                >
-                  {filteredAccounts.slice(0, 10).map((a) => (
-                    <div
-                      key={a.accountId}
-                      className="px-3 py-2 cursor-pointer text-sm"
-                      style={{ borderBottom: '1px solid rgba(30,58,95,0.3)' }}
-                      onMouseDown={() => selectCustomer(a)}
-                    >
-                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                        {a.accountNumber}
-                      </span>
-                      <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                        {a.name}
-                      </span>
-                    </div>
-                  ))}
-                  {filteredAccounts.length === 0 && (
-                    <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                      {tSales('common.noMatchingResults')}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
              <div>

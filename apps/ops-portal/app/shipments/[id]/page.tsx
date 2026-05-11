@@ -11,6 +11,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import ActivityTimeline, { TimelineEvent } from '@/components/shared/ActivityTimeline';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import { SHIPMENT_STATE } from '@modbm/shared';
 
 interface ShipmentLine {
   shipmentLineId: string;
@@ -108,7 +109,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
           onBack={() => router.push('/shipments')}
           badges={<StateBadge state={shipment.stateCode as ValidState} />}
           actions={
-            shipment.stateCode === 'dispatched' && (
+            shipment.stateCode === SHIPMENT_STATE.DISPATCHED && (
               <button
                 className="btn btn-danger btn-sm"
                 onClick={handleCancel}

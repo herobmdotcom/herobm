@@ -4,6 +4,7 @@ import { ReturnsWriteService } from './returns-write.service';
 import { InventoryService } from '../inventory/inventory.service';
 import { GlService } from '../gl/gl.service';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
+import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { emitEvent } from '../common/emit-event';
@@ -13,7 +14,6 @@ import {
   taxCategories,
   bins,
   zones,
-  glAccounts,
 } from '../drizzle/modbm-core-schema';
 
 jest.mock('../common/emit-event', () => ({
@@ -29,20 +29,24 @@ import {
   createTestSalesOrderLine,
   createTestReturn,
   createTestReturnLine,
+  createTestShipment,
+  createTestShipmentLine,
 } from '../../test/fixtures';
+import { SALES_ORDER_STATE, RETURN_STATE } from '@modbm/shared';
+import type { ReturnState, SalesOrderState } from '@modbm/shared';
 
 // Shared test data
 const INVOICED_ORDER = {
   salesOrderId: 'order-001',
   orderNumber: 'ORD-20260315-0001',
-  stateCode: 'invoiced',
+  stateCode: SALES_ORDER_STATE.INVOICED,
   customerId: 'c0000000-0000-0000-0000-000000000001',
 };
 
 const DRAFT_ORDER = {
   salesOrderId: 'order-002',
   orderNumber: 'ORD-20260315-0002',
-  stateCode: 'draft',
+  stateCode: SALES_ORDER_STATE.DRAFT,
   customerId: 'c0000000-0000-0000-0000-000000000001',
 };
 
@@ -60,7 +64,7 @@ const MOCK_RETURN = {
   returnId: 'ret-001',
   returnNumber: 'RET-20260315-0001',
   salesOrderId: 'order-001',
-  stateCode: 'draft',
+  stateCode: RETURN_STATE.DRAFT,
   notes: null,
   createdBy: 'admin',
 };
@@ -87,6 +91,8 @@ describe('ReturnsWriteService', () => {
     await pg.client.exec(`
       TRUNCATE modbm_core.sales_order_return_lines CASCADE;
       TRUNCATE modbm_core.sales_order_returns CASCADE;
+      TRUNCATE modbm_core.sales_order_shipment_lines CASCADE;
+      TRUNCATE modbm_core.sales_order_shipments CASCADE;
       TRUNCATE modbm_core.sales_order_lines CASCADE;
       TRUNCATE modbm_core.sales_orders CASCADE;
       TRUNCATE modbm_core.accounts CASCADE;
@@ -128,6 +134,15 @@ describe('ReturnsWriteService', () => {
         { provide: InventoryService, useValue: mockInventoryService },
         { provide: GlService, useValue: mockGlService },
         { provide: TaxCategoriesService, useValue: mocktaxService },
+        {
+          provide: SalesCreditNoteService,
+          useValue: {
+            createCreditNote: jest.fn().mockResolvedValue({
+              creditNoteId: 'cn-001',
+              creditNoteNumber: 'CN-TEST-0001',
+            }),
+          },
+        },
       ],
     }).compile();
 
@@ -166,6 +181,7 @@ describe('ReturnsWriteService', () => {
       orderState?: SalesOrderState;
       alreadyReturned?: number;
       originalQty?: number;
+      shippedQty?: number;
     }) {
       const cust = await createTestCustomer(pg.db);
       customerId = cust.accountId;
@@ -187,7 +203,7 @@ describe('ReturnsWriteService', () => {
       const order = await createTestSalesOrder(pg.db, {
         customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
-        state: opts?.orderState ?? 'invoiced',
+        state: opts?.orderState ?? SALES_ORDER_STATE.INVOICED,
       });
       orderId = order.salesOrderId;
 
@@ -206,10 +222,23 @@ describe('ReturnsWriteService', () => {
       });
       lineId = line.salesOrderLineId;
 
+      // Create a dispatched shipment so shipped qty is non-zero
+      const shipped = opts?.shippedQty ?? opts?.originalQty ?? 10;
+      if (shipped > 0) {
+        const shipment = await createTestShipment(pg.db, {
+          salesOrderId: orderId,
+        });
+        await createTestShipmentLine(pg.db, {
+          shipmentId: shipment.shipmentId,
+          salesOrderLineId: lineId,
+          quantityShipped: shipped,
+        });
+      }
+
       if (opts?.alreadyReturned) {
         const ret = await createTestReturn(pg.db, {
           salesOrderId: orderId,
-          state: 'draft',
+          state: RETURN_STATE.DRAFT,
         });
         await createTestReturnLine(pg.db, {
           returnId: ret.returnId,
@@ -234,11 +263,11 @@ describe('ReturnsWriteService', () => {
       };
       const result = await service.createReturn(orderId, validDto, 'admin');
       expect(result).toHaveProperty('returnId');
-      expect(result).toHaveProperty('stateCode', 'draft');
+      expect(result).toHaveProperty('stateCode', RETURN_STATE.DRAFT);
     });
 
     it('should reject return against a non-invoiced order', async () => {
-      await setupCreate({ orderState: 'draft' });
+      await setupCreate({ orderState: SALES_ORDER_STATE.DRAFT });
       const validDto = {
         lines: [
           {
@@ -254,7 +283,7 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject return against a confirmed order', async () => {
-      await setupCreate({ orderState: 'confirmed' });
+      await setupCreate({ orderState: SALES_ORDER_STATE.CONFIRMED });
       const validDto = {
         lines: [
           {
@@ -269,8 +298,8 @@ describe('ReturnsWriteService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should reject return against a shipped order', async () => {
-      await setupCreate({ orderState: 'shipped' });
+    it('should accept return against a shipped order', async () => {
+      await setupCreate({ orderState: SALES_ORDER_STATE.SHIPPED });
       const validDto = {
         lines: [
           {
@@ -280,9 +309,9 @@ describe('ReturnsWriteService', () => {
           },
         ],
       };
-      await expect(
-        service.createReturn(orderId, validDto, 'admin'),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.createReturn(orderId, validDto, 'admin');
+      expect(result).toHaveProperty('returnId');
+      expect(result).toHaveProperty('stateCode', RETURN_STATE.DRAFT);
     });
 
     it('should reject return when quantity exceeds original', async () => {
@@ -378,7 +407,7 @@ describe('ReturnsWriteService', () => {
     }
 
     it('should update notes on a draft return', async () => {
-      await setupForUpdate('draft');
+      await setupForUpdate(RETURN_STATE.DRAFT);
       const result = await service.updateReturn(
         returnId,
         { notes: 'Updated notes' },
@@ -388,14 +417,14 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject update on confirmed return', async () => {
-      await setupForUpdate('confirmed');
+      await setupForUpdate(RETURN_STATE.CONFIRMED);
       await expect(
         service.updateReturn(returnId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject update on processed return', async () => {
-      await setupForUpdate('processed');
+      await setupForUpdate(RETURN_STATE.PROCESSED);
       await expect(
         service.updateReturn(returnId, { notes: 'Test' }, 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -429,14 +458,14 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      // Need a receiving bin for processing
+      // HANDLING zone with RETURNS bin (for received transition)
       await pg.db
         .insert(zones)
         .values({
           zoneId: '30000000-0000-0000-0000-000000000001',
           locationId: '10000000-0000-0000-0000-000000000001',
-          code: 'RECV',
-          name: 'Receiving',
+          code: 'HANDLING',
+          name: 'Handling',
         })
         .onConflictDoNothing();
       await pg.db
@@ -444,8 +473,8 @@ describe('ReturnsWriteService', () => {
         .values({
           binId: '20000000-0000-0000-0000-000000000001',
           zoneId: '30000000-0000-0000-0000-000000000001',
-          binNumber: 'RECEIVING',
-          binType: 'receiving',
+          binNumber: 'RETURNS',
+          binType: 'staging',
         })
         .onConflictDoNothing();
 
@@ -485,10 +514,13 @@ describe('ReturnsWriteService', () => {
     }
 
     it.each([
-      ['draft', 'confirmed'],
-      ['draft', 'cancelled'],
-      ['confirmed', 'processed'],
-      ['confirmed', 'draft'],
+      [RETURN_STATE.DRAFT, RETURN_STATE.CONFIRMED],
+      [RETURN_STATE.DRAFT, RETURN_STATE.CANCELLED],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.RECEIVED],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.DRAFT],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.CANCELLED],
+      [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
+      [RETURN_STATE.RECEIVED, RETURN_STATE.CONFIRMED],
     ])('should allow transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
@@ -496,7 +528,7 @@ describe('ReturnsWriteService', () => {
           returnId,
           to,
           'admin',
-          to === 'processed'
+          to === RETURN_STATE.RECEIVED
             ? '10000000-0000-0000-0000-000000000001'
             : undefined,
         ),
@@ -504,101 +536,66 @@ describe('ReturnsWriteService', () => {
     });
 
     it.each([
-      ['draft', 'processed'],
-      ['confirmed', 'cancelled'],
-      ['processed', 'draft'],
-      ['processed', 'confirmed'],
-      ['cancelled', 'draft'],
+      [RETURN_STATE.DRAFT, RETURN_STATE.PROCESSED],
+      [RETURN_STATE.DRAFT, RETURN_STATE.RECEIVED],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.PROCESSED],
+      [RETURN_STATE.PROCESSED, RETURN_STATE.DRAFT],
+      [RETURN_STATE.PROCESSED, RETURN_STATE.CONFIRMED],
+      [RETURN_STATE.CANCELLED, RETURN_STATE.DRAFT],
     ])('should reject transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
-        service.changeReturnState(
-          returnId,
-          to,
-          'admin',
-          to === 'processed'
-            ? '10000000-0000-0000-0000-000000000001'
-            : undefined,
-        ),
+        service.changeReturnState(returnId, to, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject unknown state name', async () => {
-      await setupWithState('draft');
+      await setupWithState(RETURN_STATE.DRAFT);
       await expect(
         service.changeReturnState(returnId, 'nonexistent', 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should emit return_processed event when transitioning to processed', async () => {
-      await setupWithState('confirmed');
+    it('should emit event when transitioning to received', async () => {
+      await setupWithState(RETURN_STATE.CONFIRMED);
       await service.changeReturnState(
         returnId,
-        'processed',
+        RETURN_STATE.RECEIVED,
         'admin',
         '10000000-0000-0000-0000-000000000001',
       );
-      // Verify the event was emitted by checking outbox? Actually we don't mock outbox here,
-      // PGLite will just execute the transaction. We can check if state is updated.
       const updated = await pg.db.query.salesOrderReturns.findFirst({
         where: (r, { eq }) => eq(r.returnId, returnId),
       });
-      expect(updated?.stateCode).toBe('processed');
+      expect(updated?.stateCode).toBe(RETURN_STATE.RECEIVED);
+    });
+
+    it('should emit event when transitioning to processed', async () => {
+      await setupWithState(RETURN_STATE.RECEIVED);
+      await service.changeReturnState(
+        returnId,
+        RETURN_STATE.PROCESSED,
+        'admin',
+      );
+      const updated = await pg.db.query.salesOrderReturns.findFirst({
+        where: (r, { eq }) => eq(r.returnId, returnId),
+      });
+      expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 
   // =========================================================================
-  // GL Credit Note posting (via changeReturnState → processed)
+  // GL posting via changeReturnState
   //
-  // postCreditNoteGl is private, tested indirectly through changeReturnState.
-  // After the transaction, the method makes additional DB calls:
-  //   1. glAccounts select (resolve account codes from settings IDs)
-  //   2. sharedFindOrder (fetch order for customer info)
-  //   3. salesOrderReturnLines select (fetch return lines)
-  //   4. salesOrderLineItems select per return line (fetch pricing + GST)
-  //   5. outbox insert (write credit_note_posted event)
+  // RECEIVED: inventory/COGS GL reversal (via accounting strategy)
+  // PROCESSED: delegates to SalesCreditNoteService.createCreditNote()
   // =========================================================================
 
-  describe('GL Credit Note posting', () => {
-    const GL_ACCOUNT_ROWS = [
-      { glAccountId: 'ar-acct-id', accountCode: '1100' },
-      { glAccountId: 'rev-acct-id', accountCode: '4100' },
-      { glAccountId: 'tax-acct-id', accountCode: '2200' },
-    ];
-
-    async function setupGlTest(opts: {
-      settings?: any;
-      returnFee?: string;
-      taxRate?: string;
-    }) {
-      const ar = await pg.db
-        .select()
-        .from(glAccounts)
-        .where(eq(glAccounts.accountCode, '1100'));
-      const rev = await pg.db
-        .select()
-        .from(glAccounts)
-        .where(eq(glAccounts.accountCode, '4100'));
-      const tax = await pg.db
-        .select()
-        .from(glAccounts)
-        .where(eq(glAccounts.accountCode, '2200'));
-
-      const GL_SETTINGS = {
-        defaultArAccountId: ar[0]?.glAccountId,
-        defaultRevenueAccountId: rev[0]?.glAccountId,
-        defaultTaxAccountId: tax[0]?.glAccountId,
-      };
-
-      const settings =
-        opts.settings !== undefined ? opts.settings : GL_SETTINGS;
-      const taxRate = opts.taxRate ?? '10';
-      const returnFee = opts.returnFee ?? '10.00';
-
-      mockGlService.getSettings.mockResolvedValue(settings);
-      mocktaxService.getById.mockResolvedValue({ rate: taxRate });
-
+  describe('GL posting on state transitions', () => {
+    async function setupGlTransitionTest(startState: ReturnState) {
       const cust = await createTestCustomer(pg.db);
+      const prod = await createTestProduct(pg.db);
+
       await pg.db
         .insert(locations)
         .values({
@@ -609,22 +606,24 @@ describe('ReturnsWriteService', () => {
         })
         .onConflictDoNothing()
         .returning();
+
+      // HANDLING zone with RETURNS bin
       await pg.db
         .insert(zones)
         .values({
           zoneId: '10000000-0000-0000-0000-000000000003',
           locationId: '10000000-0000-0000-0000-000000000001',
-          code: 'Z1',
-          name: 'Z1',
+          code: 'HANDLING',
+          name: 'Handling',
         })
         .onConflictDoNothing();
       await pg.db
         .insert(bins)
         .values({
           binId: '10000000-0000-0000-0000-000000000002',
-          binNumber: 'RECEIVING',
+          binNumber: 'RETURNS',
           zoneId: '10000000-0000-0000-0000-000000000003',
-          binType: 'receiving',
+          binType: 'staging',
         })
         .onConflictDoNothing();
 
@@ -632,30 +631,12 @@ describe('ReturnsWriteService', () => {
         customerId: cust.accountId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
-      const prod = await createTestProduct(pg.db);
 
-      let taxId = null;
-      if (taxRate !== '0') {
-        const taxRes = await pg.db
-          .select()
-          .from(taxCategories)
-          .where(eq(taxCategories.code, 'GST'));
-        taxId = taxRes[0].taxCategoryId;
-      } else {
-        const [exemptTax] = await pg.db
-          .insert(taxCategories)
-          .values({
-            taxCategoryId: '10000000-0000-0000-0000-000000000004',
-            code: 'ZERO',
-            title: 'Zero Tax',
-            type: 'zero_rated',
-            rate: '0',
-          })
-          .onConflictDoNothing()
-          .returning();
-        taxId =
-          exemptTax?.taxCategoryId || '10000000-0000-0000-0000-000000000004';
-      }
+      const taxRes = await pg.db
+        .select()
+        .from(taxCategories)
+        .where(eq(taxCategories.code, 'GST'));
+      const taxId = taxRes[0].taxCategoryId;
 
       const orderLine = await createTestSalesOrderLine(pg.db, {
         salesOrderId: order.salesOrderId,
@@ -667,228 +648,45 @@ describe('ReturnsWriteService', () => {
 
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'confirmed',
+        state: startState,
       });
 
       await createTestReturnLine(pg.db, {
         returnId: ret.returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,
-        returnFee: returnFee,
+        returnFee: 10,
       });
 
-      return {
-        retId: ret.returnId,
-        customerId: cust.accountId,
-        productId: prod.productId,
-        taxId,
-      };
+      return { retId: ret.returnId };
     }
 
-    it('should post GL journal with correct lines (revenue + GST + fees)', async () => {
-      const { retId, customerId } = await setupGlTest({ taxRate: '10' });
+    it('should post inventory GL reversal on RECEIVED transition', async () => {
+      const { retId } = await setupGlTransitionTest(RETURN_STATE.CONFIRMED);
 
       await service.changeReturnState(
         retId,
-        'processed',
+        RETURN_STATE.RECEIVED,
         'admin',
         '10000000-0000-0000-0000-000000000001',
       );
 
+      // Inventory receive + COGS GL reversal should have been posted
       expect(mockGlService.postJournalEntry).toHaveBeenCalledTimes(1);
-
-      const [glLines, meta] = mockGlService.postJournalEntry.mock.calls[0];
-
-      expect(meta.sourceType).toBe('sales_credit_note');
-      expect(meta.sourceId).toBe(retId);
-
-      // Revenue debit
-      const revLine = glLines.find((l: any) => l.accountCode === '4100');
-      expect(revLine).toBeDefined();
-      expect(revLine.debit).toBe(250);
-      expect(revLine.credit).toBe(0);
-
-      // AR credit with customer partyId
-      const arLine = glLines.find((l: any) => l.accountCode === '1100');
-      expect(arLine).toBeDefined();
-      expect(arLine.debit).toBe(0);
-      expect(arLine.credit).toBe(265); // 250 + 25 - 10
-      expect(arLine.partyType).toBe('customer');
-      expect(arLine.partyId).toBe(customerId);
-
-      // GST debit
-      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
-      expect(taxLine).toBeDefined();
-      expect(taxLine.debit).toBe(25);
-      expect(taxLine.credit).toBe(0);
-
-      // Fee credit
-      const feeLine = glLines.find((l: any) => l.accountCode === '4900');
-      expect(feeLine).toBeDefined();
-      expect(feeLine.debit).toBe(0);
-      expect(feeLine.credit).toBe(10);
-
-      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
-      expect(totalDebit).toBeCloseTo(totalCredit, 2);
+      expect(
+        mockInventoryService.recordInventoryMovement,
+      ).toHaveBeenCalledTimes(1);
     });
 
-    it('should omit fee line when no fees', async () => {
-      const { retId } = await setupGlTest({ returnFee: '0', taxRate: '10' });
+    it('should call creditNoteService.createCreditNote on PROCESSED transition', async () => {
+      const { retId } = await setupGlTransitionTest(RETURN_STATE.RECEIVED);
 
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
+      await service.changeReturnState(retId, RETURN_STATE.PROCESSED, 'admin');
 
-      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
-
-      const feeLine = glLines.find((l: any) => l.accountCode === '4900');
-      expect(feeLine).toBeUndefined();
-
-      const arLine = glLines.find((l: any) => l.accountCode === '1100');
-      expect(arLine.credit).toBe(275);
-
-      expect(glLines).toHaveLength(3);
-
-      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
-      expect(totalDebit).toBeCloseTo(totalCredit, 2);
-    });
-
-    it('should omit GST line when no tax applies', async () => {
-      const { retId } = await setupGlTest({ taxRate: '0' });
-
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
-
-      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
-
-      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
-      expect(taxLine).toBeUndefined();
-
-      const arLine = glLines.find((l: any) => l.accountCode === '1100');
-      expect(arLine.credit).toBe(240);
-
-      const totalDebit = glLines.reduce((s: number, l: any) => s + l.debit, 0);
-      const totalCredit = glLines.reduce(
-        (s: number, l: any) => s + l.credit,
-        0,
-      );
-      expect(totalDebit).toBeCloseTo(totalCredit, 2);
-    });
-
-    it('should skip GL posting when settings are incomplete', async () => {
-      const { retId } = await setupGlTest({ settings: null });
-
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
-
-      expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
-    });
-
-    it('should skip GL posting when AR account ID is missing', async () => {
-      const { retId } = await setupGlTest({
-        settings: {
-          defaultRevenueAccountId: '10000000-0000-0000-0000-100000000002',
-          defaultTaxAccountId: '10000000-0000-0000-0000-100000000003',
-        },
+      const updated = await pg.db.query.salesOrderReturns.findFirst({
+        where: (r, { eq }) => eq(r.returnId, retId),
       });
-
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
-
-      expect(mockGlService.postJournalEntry).not.toHaveBeenCalled();
-    });
-
-    it('should not throw when GL posting fails (non-fatal)', async () => {
-      const { retId } = await setupGlTest({});
-      mockGlService.postJournalEntry.mockRejectedValue(
-        new Error('GL service unavailable'),
-      );
-
-      await expect(
-        service.changeReturnState(
-          retId,
-          'processed',
-          'admin',
-          '10000000-0000-0000-0000-000000000001',
-        ),
-      ).rejects.toThrow('GL service unavailable');
-    });
-
-    it('should write outbox event with correct payload', async () => {
-      const { retId, customerId, productId } = await setupGlTest({
-        taxRate: '10',
-      });
-
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
-
-      expect(emitEvent).toHaveBeenCalled();
-
-      const emitCall = (emitEvent as jest.Mock).mock.calls.find(
-        (call) => call[1].eventType === 'credit_note_posted',
-      );
-
-      expect(emitCall).toBeDefined();
-      const payload = emitCall[1].payload;
-
-      expect(emitCall[1].aggregateType).toBe(AggregateType.SALES_ORDER);
-      expect(emitCall[1].eventType).toBe('credit_note_posted');
-      expect(payload.returnId).toBe(retId);
-      expect(payload.customerId).toBe(customerId);
-      expect(payload.totalCredit).toBe(250);
-      expect(payload.totalTax).toBe(25);
-      expect(payload.totalFees).toBe(10);
-      expect(payload.netCredit).toBe(265);
-      expect(payload.lines).toHaveLength(1);
-      expect(payload.lines[0].productId).toBe(productId);
-    });
-
-    it('should use per-line GST from taxCategoryId', async () => {
-      const { retId, taxId } = await setupGlTest({ taxRate: '15' });
-
-      await service.changeReturnState(
-        retId,
-        'processed',
-        'admin',
-        '10000000-0000-0000-0000-000000000001',
-      );
-
-      expect(mocktaxService.getById).toHaveBeenCalledWith(taxId);
-
-      const [glLines] = mockGlService.postJournalEntry.mock.calls[0];
-
-      const taxLine = glLines.find((l: any) => l.accountCode === '2200');
-      expect(taxLine.debit).toBe(37.5);
-
-      const arLine = glLines.find((l: any) => l.accountCode === '1100');
-      expect(arLine.credit).toBe(277.5);
+      expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
 
@@ -943,6 +741,16 @@ describe('ReturnsWriteService', () => {
       });
       lineId = line.salesOrderLineId;
 
+      // Create shipment so shipped qty validation passes
+      const shipment = await createTestShipment(pg.db, {
+        salesOrderId: orderId,
+      });
+      await createTestShipmentLine(pg.db, {
+        shipmentId: shipment.shipmentId,
+        salesOrderLineId: lineId,
+        quantityShipped: 10,
+      });
+
       const ret = await createTestReturn(pg.db, {
         salesOrderId: orderId,
         state: returnState,
@@ -959,7 +767,7 @@ describe('ReturnsWriteService', () => {
     }
 
     it('should add a line to a draft return', async () => {
-      await setupForAddLine('draft');
+      await setupForAddLine(RETURN_STATE.DRAFT);
       const dto = {
         salesOrderLineId: lineId,
         quantityReturned: '3',
@@ -971,7 +779,7 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject negative return fee', async () => {
-      await setupForAddLine('draft');
+      await setupForAddLine(RETURN_STATE.DRAFT);
       const dto = {
         salesOrderLineId: lineId,
         quantityReturned: '3',
@@ -1022,6 +830,16 @@ describe('ReturnsWriteService', () => {
         taxCategoryId: taxRes[0].taxCategoryId,
       });
 
+      // Create shipment so shipped qty validation passes
+      const shipment = await createTestShipment(pg.db, {
+        salesOrderId: order.salesOrderId,
+      });
+      await createTestShipmentLine(pg.db, {
+        shipmentId: shipment.shipmentId,
+        salesOrderLineId: orderLine.salesOrderLineId,
+        quantityShipped: 10,
+      });
+
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
         state: stateCode,
@@ -1037,7 +855,7 @@ describe('ReturnsWriteService', () => {
     }
 
     it('should update return line on a draft return', async () => {
-      await setupForUpdateLine('draft');
+      await setupForUpdateLine(RETURN_STATE.DRAFT);
       const result = await service.updateReturnLine(
         returnId,
         returnLineId,
@@ -1048,7 +866,7 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject update on confirmed return', async () => {
-      await setupForUpdateLine('confirmed');
+      await setupForUpdateLine(RETURN_STATE.CONFIRMED);
       await expect(
         service.updateReturnLine(
           returnId,
@@ -1060,7 +878,7 @@ describe('ReturnsWriteService', () => {
     });
 
     it('should reject negative return fee', async () => {
-      await setupForUpdateLine('draft');
+      await setupForUpdateLine(RETURN_STATE.DRAFT);
       await expect(
         service.updateReturnLine(
           returnId,
@@ -1125,21 +943,21 @@ describe('ReturnsWriteService', () => {
     }
 
     it('should remove a line from a draft return', async () => {
-      await setupForRemoveLine('draft');
+      await setupForRemoveLine(RETURN_STATE.DRAFT);
       await expect(
         service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).resolves.toBeUndefined();
     });
 
     it('should reject removal from confirmed return', async () => {
-      await setupForRemoveLine('confirmed');
+      await setupForRemoveLine(RETURN_STATE.CONFIRMED);
       await expect(
         service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should reject removal from processed return', async () => {
-      await setupForRemoveLine('processed');
+      await setupForRemoveLine(RETURN_STATE.PROCESSED);
       await expect(
         service.removeReturnLine(returnId, returnLineId, 'admin'),
       ).rejects.toThrow(BadRequestException);
@@ -1171,7 +989,7 @@ describe('ReturnsWriteService', () => {
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'draft',
+        state: RETURN_STATE.DRAFT,
       });
       const taxRes = await pg.db
         .select()
@@ -1222,7 +1040,7 @@ describe('ReturnsWriteService', () => {
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'draft',
+        state: RETURN_STATE.DRAFT,
       });
 
       const result = await service.findByOrder(order.salesOrderId);
@@ -1266,7 +1084,7 @@ describe('ReturnsWriteService', () => {
       });
       const ret = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'draft',
+        state: RETURN_STATE.DRAFT,
       });
 
       await expect(
@@ -1310,11 +1128,11 @@ describe('ReturnsWriteService', () => {
 
       const ret1 = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'draft',
+        state: RETURN_STATE.DRAFT,
       });
       const ret2 = await createTestReturn(pg.db, {
         salesOrderId: order.salesOrderId,
-        state: 'draft',
+        state: RETURN_STATE.DRAFT,
       });
 
       const retLine = await createTestReturnLine(pg.db, {

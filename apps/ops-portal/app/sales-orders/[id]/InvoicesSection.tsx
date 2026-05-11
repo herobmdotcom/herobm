@@ -7,7 +7,7 @@ import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, SALES_ORDER_STATE } from '@modbm/shared';
 import type { NewInvoiceLine } from './useOrder';
 import { calculateInvoiceableQuantities } from '@/lib/sales-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
@@ -89,7 +89,7 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
-                {['shipped', 'picking'].includes(order.stateCode) && !showCreateInvoice && (
+                {[SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.PICKING].includes(order.stateCode as any) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={(() => {

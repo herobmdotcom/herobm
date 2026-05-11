@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BackordersService } from './backorders.service';
-import { InventoryGap } from '@modbm/shared';
+import { InventoryGap, SALES_ORDER_STATE, ACCOUNT_STATE } from '@modbm/shared';
 import {
   Injectable,
   Inject,
@@ -224,7 +224,10 @@ export class OrdersWriteService {
     const account = await this.accountsService.findOne(customerId, tx);
 
     // 1. Strict State Block
-    if (account.stateCode === 'inactive' || account.stateCode === 'archived') {
+    if (
+      account.stateCode === ACCOUNT_STATE.INACTIVE ||
+      account.stateCode === ACCOUNT_STATE.ARCHIVED
+    ) {
       throw new BadRequestException(
         `Cannot ${operation} order: Account '${account.name}' is ${account.stateCode}.`,
       );
@@ -376,7 +379,7 @@ export class OrdersWriteService {
           customerId: dto.customerId,
           customerOrderNumber: dto.customerOrderNumber,
           fulfillmentLocationId: fallbackLocId,
-          stateCode: 'draft',
+          stateCode: SALES_ORDER_STATE.DRAFT,
           currencyCode: customer.currencyCode,
           notes: dto.notes,
           createdBy: actor,
@@ -460,8 +463,8 @@ export class OrdersWriteService {
     const existing = await this.findOrder(id);
 
     if (
-      existing.stateCode === 'invoiced' ||
-      existing.stateCode === 'cancelled'
+      existing.stateCode === SALES_ORDER_STATE.INVOICED ||
+      existing.stateCode === SALES_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
         `Cannot update order in state '${existing.stateCode}'`,
@@ -484,7 +487,7 @@ export class OrdersWriteService {
         await emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: id,
-          eventType: 'updated',
+          eventType: EventType.UPDATED,
           payload: {
             changes: audit.changes,
             previousValues: audit.previousValues,
@@ -502,7 +505,7 @@ export class OrdersWriteService {
   /**
    * Transition order state (e.g. draft → quoted → confirmed).
    */
-  async changeState(
+  async changeSalesOrderState(
     id: string,
     newState: string,
     actor: string,
@@ -524,7 +527,10 @@ export class OrdersWriteService {
     }
 
     // Gate: picking → shipped requires all lines fully shipped
-    if (existing.stateCode === 'picking' && newState === 'shipped') {
+    if (
+      existing.stateCode === SALES_ORDER_STATE.PICKING &&
+      newState === SALES_ORDER_STATE.SHIPPED
+    ) {
       await this.pickingService.assertFullyShipped(id);
     }
 
@@ -535,9 +541,9 @@ export class OrdersWriteService {
 
     // Assert Credit / State Safety for forward progressions
     if (
-      newState === 'confirmed' ||
-      newState === 'allocated' ||
-      newState === 'picking'
+      newState === SALES_ORDER_STATE.CONFIRMED ||
+      newState === ('allocated' as any) ||
+      newState === SALES_ORDER_STATE.PICKING
     ) {
       if (!existing.customerId) {
         throw new BadRequestException(
@@ -558,7 +564,7 @@ export class OrdersWriteService {
 
     // INVENTORY GAP CHECK - Ensure we evaluate backorders upon Sales confirmation
     let gaps: InventoryGap[] = [];
-    if (newState === 'confirmed') {
+    if (newState === SALES_ORDER_STATE.CONFIRMED) {
       gaps = await this.backordersService.evaluateGaps(id);
 
       if (
@@ -579,23 +585,26 @@ export class OrdersWriteService {
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       if (
-        newState === 'confirmed' &&
+        newState === SALES_ORDER_STATE.CONFIRMED &&
         generateBackorders === true &&
         gaps.length > 0
       ) {
         await this.backordersService.generateDemand(id, gaps, actor, tx);
       }
-      if (newState === 'cancelled') {
+      if (newState === SALES_ORDER_STATE.CANCELLED) {
         await tx
           .update(backorders)
-          .set({ stateCode: 'cancelled', modifiedOn: new Date() })
+          .set({
+            stateCode: SALES_ORDER_STATE.CANCELLED as any,
+            modifiedOn: new Date(),
+          })
           .where(eq(backorders.salesOrderId, id));
       }
 
       const [updated] = await tx
         .update(salesOrders)
         .set({
-          stateCode: newState,
+          stateCode: newState as any,
           discrepanciesAcknowledged:
             discrepanciesAcknowledged !== undefined
               ? discrepanciesAcknowledged
@@ -608,7 +617,7 @@ export class OrdersWriteService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: id,
-        eventType: 'status_changed',
+        eventType: EventType.STATUS_CHANGED,
         payload: {
           from: existing.stateCode,
           to: newState,
@@ -625,7 +634,7 @@ export class OrdersWriteService {
     );
 
     if (
-      newState === 'confirmed' &&
+      newState === SALES_ORDER_STATE.CONFIRMED &&
       generateBackorders === true &&
       gaps.length > 0
     ) {
@@ -642,34 +651,19 @@ export class OrdersWriteService {
     const existing = await this.findOrder(id);
 
     if (
-      existing.stateCode !== 'invoiced' &&
-      existing.stateCode !== 'cancelled'
+      existing.stateCode !== SALES_ORDER_STATE.INVOICED &&
+      existing.stateCode !== SALES_ORDER_STATE.CANCELLED
     ) {
       throw new BadRequestException(
-        `Order must be 'invoiced' or 'cancelled' to be archived (current state: '${existing.stateCode}')`,
+        `Order must be '${SALES_ORDER_STATE.INVOICED}' or '${SALES_ORDER_STATE.CANCELLED}' to be archived (current state: '${existing.stateCode}')`,
       );
     }
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(salesOrders)
-        .set({ stateCode: 'archived', modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, id))
-        .returning();
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: id,
-        eventType: 'archived',
-        payload: {
-          from: existing.stateCode,
-          to: 'archived',
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changeSalesOrderState(
+      id,
+      SALES_ORDER_STATE.ARCHIVED,
+      actor,
+    );
   }
 
   /**
@@ -678,7 +672,7 @@ export class OrdersWriteService {
   async unarchive(id: string, actor: string) {
     const existing = await this.findOrder(id);
 
-    if (existing.stateCode !== 'archived') {
+    if (existing.stateCode !== SALES_ORDER_STATE.ARCHIVED) {
       throw new BadRequestException(`Order is not archived`);
     }
 
@@ -686,35 +680,16 @@ export class OrdersWriteService {
       .select()
       .from(orderEvents)
       .where(
-        sql`${orderEvents.salesOrderId} = ${id} AND ${orderEvents.eventType} = 'archived'`,
+        sql`${orderEvents.salesOrderId} = ${id} AND ${orderEvents.eventType} = ${EventType.ARCHIVED}`,
       )
       .orderBy(sql`${orderEvents.createdOn} DESC`)
       .limit(1);
 
     const previousState =
       ((lastEvent[0]?.payload as Record<string, unknown>)?.from as string) ||
-      'cancelled';
+      (SALES_ORDER_STATE.CANCELLED as any);
 
-    return await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(salesOrders)
-        .set({ stateCode: previousState, modifiedOn: new Date() })
-        .where(eq(salesOrders.salesOrderId, id))
-        .returning();
-
-      await emitEvent(tx, {
-        aggregateType: AggregateType.SALES_ORDER,
-        aggregateId: id,
-        eventType: 'unarchived',
-        payload: {
-          from: 'archived',
-          to: previousState,
-        },
-        actor,
-      });
-
-      return updated;
-    });
+    return await this.changeSalesOrderState(id, previousState, actor);
   }
 
   /**
@@ -723,7 +698,13 @@ export class OrdersWriteService {
   async addLine(orderId: string, dto: AddLineDto, actor: string) {
     const order = await this.findOrder(orderId);
 
-    if (['invoiced', 'shipped', 'cancelled'].includes(order.stateCode)) {
+    if (
+      [
+        SALES_ORDER_STATE.INVOICED,
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.CANCELLED,
+      ].includes(order.stateCode as any)
+    ) {
       throw new BadRequestException(
         `Cannot add lines to order in state '${order.stateCode}'`,
       );
@@ -807,7 +788,7 @@ export class OrdersWriteService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
-        eventType: 'line_added',
+        eventType: EventType.LINE_ADDED,
         payload: {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
@@ -833,7 +814,11 @@ export class OrdersWriteService {
   ) {
     const order = await this.findOrder(orderId);
 
-    if (['invoiced', 'cancelled'].includes(order.stateCode)) {
+    if (
+      [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
+        order.stateCode as any,
+      )
+    ) {
       throw new BadRequestException(
         `Cannot add post-confirmation lines to order in state '${order.stateCode}'`,
       );
@@ -918,7 +903,7 @@ export class OrdersWriteService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
-        eventType: 'post_confirmation_line_added',
+        eventType: EventType.POST_CONFIRMATION_LINE_ADDED,
         payload: {
           lineId: line.salesOrderLineId,
           productId: dto.productId,
@@ -947,11 +932,19 @@ export class OrdersWriteService {
     const order = await this.findOrder(orderId);
     const existingLine = await this.findLine(lineId, orderId);
 
-    if (['invoiced', 'shipped', 'cancelled'].includes(order.stateCode)) {
+    if (
+      [
+        SALES_ORDER_STATE.INVOICED,
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.CANCELLED,
+      ].includes(order.stateCode as any)
+    ) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
       if (
         !isPostConfLine ||
-        ['invoiced', 'cancelled'].includes(order.stateCode)
+        [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
+          order.stateCode as any,
+        )
       ) {
         throw new BadRequestException(
           `Cannot update normal lines on order in state '${order.stateCode}'`,
@@ -1017,7 +1010,7 @@ export class OrdersWriteService {
         await emitEvent(tx, {
           aggregateType: AggregateType.SALES_ORDER,
           aggregateId: orderId,
-          eventType: 'line_updated',
+          eventType: EventType.LINE_UPDATED,
           payload: {
             lineId,
             changes: audit.changes,
@@ -1040,11 +1033,19 @@ export class OrdersWriteService {
     const order = await this.findOrder(orderId);
     const existingLine = await this.findLine(lineId, orderId);
 
-    if (['invoiced', 'shipped', 'cancelled'].includes(order.stateCode)) {
+    if (
+      [
+        SALES_ORDER_STATE.INVOICED,
+        SALES_ORDER_STATE.SHIPPED,
+        SALES_ORDER_STATE.CANCELLED,
+      ].includes(order.stateCode as any)
+    ) {
       const isPostConfLine = existingLine.isPostConfirmation === true;
       if (
         !isPostConfLine ||
-        ['invoiced', 'cancelled'].includes(order.stateCode)
+        [SALES_ORDER_STATE.INVOICED, SALES_ORDER_STATE.CANCELLED].includes(
+          order.stateCode as any,
+        )
       ) {
         throw new BadRequestException(
           `Cannot remove normal lines from order in state '${order.stateCode}'`,
@@ -1070,7 +1071,7 @@ export class OrdersWriteService {
       await emitEvent(tx, {
         aggregateType: AggregateType.SALES_ORDER,
         aggregateId: orderId,
-        eventType: 'line_removed',
+        eventType: EventType.LINE_REMOVED,
         payload: {
           lineId,
           productId: existingLine.productId,

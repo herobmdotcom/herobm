@@ -1,10 +1,11 @@
 import { calculateAuditTrail, AuditMode } from './audit';
+import { ACCOUNT_STATE } from '@modbm/shared';
 
 describe('calculateAuditTrail', () => {
   const existing = {
     name: 'Old Name',
     notes: 'Old Notes',
-    status: 'active',
+    status: ACCOUNT_STATE.ACTIVE,
   };
 
   it('should return no changes when values are identical', () => {
@@ -17,7 +18,7 @@ describe('calculateAuditTrail', () => {
   });
 
   it('should detect differences in DIFF mode', () => {
-    const dto = { name: 'New Name', status: 'active' };
+    const dto = { name: 'New Name', status: ACCOUNT_STATE.ACTIVE };
     const result = calculateAuditTrail(dto, existing, AuditMode.DIFF);
 
     expect(result.hasChanges).toBe(true);

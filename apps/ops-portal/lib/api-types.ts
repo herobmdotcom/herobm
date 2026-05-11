@@ -577,7 +577,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["OrderReturnsController_changeReturnState"];
+        patch: operations["OrderReturnsController_changePurchasePurchasePurchasePurchaseReturnState"];
         trace?: never;
     };
     "/api/sales-orders/{id}/returns/{returnId}/lines": {
@@ -3033,7 +3033,7 @@ export interface operations {
             };
         };
     };
-    OrderReturnsController_changeReturnState: {
+    OrderReturnsController_changePurchasePurchasePurchasePurchaseReturnState: {
         parameters: {
             query?: never;
             header?: never;
