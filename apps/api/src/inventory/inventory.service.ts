@@ -390,7 +390,7 @@ export class InventoryService {
    * Location → Zone[] → Bin[]
    * Used by the Ops-Portal Topography read-only view.
    */
-  async findAllLocations() {
+  async findAllLocations(productId?: string) {
     const locRows = await this.db
       .select({
         locationId: locations.locationId,
@@ -402,6 +402,36 @@ export class InventoryService {
       })
       .from(locations)
       .orderBy(locations.code);
+
+    // -------------------------------------------------------------------
+    // Optionally enrich each location with per-product available quantity.
+    //
+    // When a productId is supplied, we pull rows from the inventory_levels
+    // view (indexed on product_id) and compute availability via the shared
+    // `calculateAvailableQuantity` helper to keep the formula in exactly
+    // one place per conventions §27.
+    // -------------------------------------------------------------------
+    const availabilityByLocation = new Map<string, number>();
+    if (productId) {
+      const invRows = await this.db
+        .select({
+          locationId: inventoryLevels.locationId,
+          quantityOnHand: inventoryLevels.quantityOnHand,
+          quantityCommitted: inventoryLevels.quantityCommitted,
+          quantityReserved: inventoryLevels.quantityReserved,
+        })
+        .from(inventoryLevels)
+        .where(eq(inventoryLevels.productId, productId));
+      for (const r of invRows) {
+        if (!r.locationId) continue;
+        const available = calculateAvailableQuantity(
+          r.quantityOnHand,
+          r.quantityCommitted,
+          r.quantityReserved,
+        );
+        availabilityByLocation.set(r.locationId, available);
+      }
+    }
 
     const zoneRows = await this.db
       .select({
@@ -449,6 +479,13 @@ export class InventoryService {
     const data = locRows.map((loc) => ({
       ...loc,
       zones: zonesByLocation.get(loc.locationId) ?? [],
+      // When productId is supplied, surface per-location availability so
+      // the UI can render "Warehouse X - N available". Property is absent
+      // (undefined) when productId is not supplied — callers that need
+      // availability should always pass productId.
+      ...(productId
+        ? { availableQty: availabilityByLocation.get(loc.locationId) ?? 0 }
+        : {}),
     }));
 
     const defaultLocationId = this.appConfig.defaultFulfillmentLocationId();

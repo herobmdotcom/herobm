@@ -18,7 +18,7 @@ import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 import { BackordersService } from './backorders.service';
 import { Inject } from '@nestjs/common';
-import { BACKORDER_STATE } from '@modbm/shared';
+import { BACKORDER_STATE, calculateAvailableQuantity } from '@modbm/shared';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -29,8 +29,9 @@ import {
   productSuppliers,
   suppliers,
   locations,
+  inventoryLevels,
 } from '../drizzle/modbm-core-schema';
-import { sql, eq, and } from 'drizzle-orm';
+import { sql, eq, and, inArray } from 'drizzle-orm';
 
 @Controller('allocations')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -90,7 +91,90 @@ export class AllocationsController {
           eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
         ),
       );
-    return { data: openDemands };
+
+    // -------------------------------------------------------------------
+    // Enrich each row with cross-location inventory availability.
+    //
+    // We do a single batched lookup against the `inventory_levels` view
+    // scoped by productId (indexed column) for all distinct products in
+    // the open demand list, then bucket the results in-memory.
+    //
+    // Availability is derived from the shared `calculateAvailableQuantity`
+    // helper (on-hand minus committed minus reserved) — never inlined SQL
+    // arithmetic — to keep us consistent with the rest of the system per
+    // conventions §27.
+    // -------------------------------------------------------------------
+    const productIds = Array.from(
+      new Set(
+        openDemands.map((d) => d.productId).filter((id): id is string => !!id),
+      ),
+    );
+
+    let inventoryRows: Array<{
+      productId: string | null;
+      locationId: string | null;
+      locationName: string | null;
+      quantityOnHand: string | null;
+      quantityCommitted: string | null;
+      quantityReserved: string | null;
+    }> = [];
+
+    if (productIds.length > 0) {
+      inventoryRows = await this.db
+        .select({
+          productId: inventoryLevels.productId,
+          locationId: inventoryLevels.locationId,
+          locationName: locations.name,
+          quantityOnHand: inventoryLevels.quantityOnHand,
+          quantityCommitted: inventoryLevels.quantityCommitted,
+          quantityReserved: inventoryLevels.quantityReserved,
+        })
+        .from(inventoryLevels)
+        .leftJoin(
+          locations,
+          eq(inventoryLevels.locationId, locations.locationId),
+        )
+        .where(inArray(inventoryLevels.productId, productIds));
+    }
+
+    // Bucket inventory rows by productId for fast lookup.
+    const inventoryByProduct = new Map<
+      string,
+      Array<{
+        locationId: string;
+        locationName: string;
+        availableQty: number;
+      }>
+    >();
+    for (const row of inventoryRows) {
+      if (!row.productId || !row.locationId) continue;
+      const availableQty = calculateAvailableQuantity(
+        row.quantityOnHand,
+        row.quantityCommitted,
+        row.quantityReserved,
+      );
+      if (availableQty <= 0) continue; // Exclude zero-stock locations
+      const bucket = inventoryByProduct.get(row.productId) ?? [];
+      bucket.push({
+        locationId: row.locationId,
+        locationName: row.locationName ?? '',
+        availableQty,
+      });
+      inventoryByProduct.set(row.productId, bucket);
+    }
+
+    const enriched = openDemands.map((d) => {
+      const bucket = d.productId
+        ? (inventoryByProduct.get(d.productId) ?? [])
+        : [];
+      // Exclude the demand's own destination location
+      const availableElsewhere = bucket.filter(
+        (b) => b.locationId !== d.locationId,
+      );
+      return { ...d, availableElsewhere };
+    });
+
+    return { data: enriched };
   }
 
   @Get('by-po/:poId')

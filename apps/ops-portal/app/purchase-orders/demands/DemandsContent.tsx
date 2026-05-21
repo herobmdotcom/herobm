@@ -6,12 +6,19 @@ import DraftPOsModal from './DraftPOsModal';
 import LinkToPOSlideOver from './LinkToPOSlideOver';
 import ReallocateModal from './ReallocateModal';
 import InternalTransferModal from './InternalTransferModal';
-import type { ColDef } from 'ag-grid-community';
+import StockElsewhereCell from './StockElsewhereCell';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 
-interface DemandRow {
+export interface AvailableElsewhereEntry {
+  locationId: string;
+  locationName: string;
+  availableQty: number;
+}
+
+export interface DemandRow {
   id: string;
   salesOrderId: string;
   orderNumber: string;
@@ -26,6 +33,13 @@ interface DemandRow {
   currencyCode?: string;
   locationId: string;
   locationName: string;
+  /**
+   * Inventory available at other locations for this demand's product,
+   * excluding the demand's own destination location. Locations with zero
+   * available qty are omitted server-side. Sorted ascending by API; the
+   * cell renderer sorts by qty descending for display.
+   */
+  availableElsewhere: AvailableElsewhereEntry[];
 }
 
 export default function DemandsContent() {
@@ -56,9 +70,22 @@ export default function DemandsContent() {
       flex: 1,
     },
     { field: 'quantity', headerName: 'Required Qty', width: 140, cellDataType: 'number' },
-    { 
-      field: 'vendorName', 
-      headerName: 'Preferred Supplier', 
+    {
+      headerName: 'Stock Elsewhere',
+      width: 200,
+      // Disable sort/filter on this synthetic column (derived array — no comparable scalar)
+      sortable: false,
+      filter: false,
+      cellRenderer: (params: ICellRendererParams<DemandRow>) => (
+        <StockElsewhereCell
+          availableElsewhere={params.data?.availableElsewhere ?? []}
+          requiredQty={Number(params.data?.quantity ?? 0)}
+        />
+      ),
+    },
+    {
+      field: 'vendorName',
+      headerName: 'Preferred Supplier',
       width: 180,
       valueFormatter: (params: { value: unknown }) => params.value ? String(params.value) : '—'
     },
@@ -117,37 +144,37 @@ export default function DemandsContent() {
                       {gridLoading ? '...' : rowCount.toLocaleString()}
                     </span>
                   </div>
-                  
+
                   <div className="flex-1 ml-4 max-w-[280px]">
                     {searchInput}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {optionsButton}
-                  <button 
-                    onClick={() => setIsLinkSlideOverOpen(true)} 
+                  <button
+                    onClick={() => setIsLinkSlideOverOpen(true)}
                     disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     Allocate to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
-                  <button 
-                    onClick={handleDraftPOs} 
+                  <button
+                    onClick={handleDraftPOs}
                     disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     Draft POs {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
-                  <button 
-                    onClick={() => setIsReallocateModalOpen(true)} 
+                  <button
+                    onClick={() => setIsReallocateModalOpen(true)}
                     disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
                     Reallocate {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
                   </button>
-                  <button 
-                    onClick={() => setIsInternalTransferModalOpen(true)} 
+                  <button
+                    onClick={() => setIsInternalTransferModalOpen(true)}
                     disabled={selectedRows.length === 0}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                   >
@@ -159,11 +186,11 @@ export default function DemandsContent() {
           />
         </div>
       </div>
-      <DraftPOsModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        selectedDemands={selectedRows} 
-        onSuccess={handleModalSuccess} 
+      <DraftPOsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDemands={selectedRows}
+        onSuccess={handleModalSuccess}
       />
       <LinkToPOSlideOver
         isOpen={isLinkSlideOverOpen}

@@ -68,8 +68,8 @@ export class InventoryController {
 
   @Get('locations')
   @CasbinAction('read')
-  findAllLocations() {
-    return this.inventoryService.findAllLocations();
+  findAllLocations(@Query('productId') productId?: string) {
+    return this.inventoryService.findAllLocations(productId);
   }
 
   @Get('movements')

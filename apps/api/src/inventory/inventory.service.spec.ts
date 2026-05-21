@@ -205,4 +205,55 @@ describe('InventoryService', () => {
       expect(result.data[0].quantityAvailable).toBe(100);
     });
   });
+
+  describe('findAllLocations', () => {
+    it('omits availableQty when no productId is supplied', async () => {
+      const result = await service.findAllLocations();
+      expect(result.data.length).toBeGreaterThan(0);
+      for (const loc of result.data) {
+        expect((loc as any).availableQty).toBeUndefined();
+      }
+    });
+
+    it('returns availableQty per location when productId is supplied', async () => {
+      // Seed some stock so the inventory_levels view has rows
+      const entryId = '00000000-0000-0000-0000-0000000000f1';
+      await pg.db.insert(inventoryEntries).values({
+        entryId,
+        entryNumber: 'E-LOC-1',
+        sourceType: 'INIT',
+        entryDate: new Date(),
+      });
+      await pg.db.insert(inventoryLedger).values({
+        entryId,
+        productId: PRODUCT_ID,
+        locationId: LOCATION_ID,
+        binId: BIN_ID,
+        zoneId: ZONE_ID,
+        quantity: '42',
+      });
+      await pg.db.insert(binContents).values({
+        binId: BIN_ID,
+        productId: PRODUCT_ID,
+        actualQuantity: '42',
+      });
+
+      const result = await service.findAllLocations(PRODUCT_ID);
+      const main = (result.data as any[]).find(
+        (l) => l.locationId === LOCATION_ID,
+      );
+      expect(main).toBeDefined();
+      expect(main.availableQty).toBe(42);
+    });
+
+    it('returns 0 availableQty for locations with no stock of the product', async () => {
+      const result = await service.findAllLocations(PRODUCT_ID);
+      // The seeded LOCATION_ID has nothing in bin_contents for this product
+      const main = (result.data as any[]).find(
+        (l) => l.locationId === LOCATION_ID,
+      );
+      expect(main).toBeDefined();
+      expect(main.availableQty).toBe(0);
+    });
+  });
 });

@@ -1,14 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import {
+  buildReallocateLocationOptions,
+  type ReallocateLocationOption,
+} from './reallocate-utils';
+import type { AvailableElsewhereEntry } from './stock-elsewhere-utils';
+
+interface SelectedDemandLike {
+  id: string;
+  productId?: string;
+  locationId?: string;
+  availableElsewhere?: AvailableElsewhereEntry[];
+}
 
 interface ReallocateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedDemands: any[];
+  selectedDemands: SelectedDemandLike[];
   onSuccess: () => void;
+}
+
+interface RawLocation {
+  locationId: string;
+  code?: string;
+  name: string;
 }
 
 export default function ReallocateModal({
@@ -17,22 +35,45 @@ export default function ReallocateModal({
   selectedDemands,
   onSuccess,
 }: ReallocateModalProps) {
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<RawLocation[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      apiFetch<any>('/api/inventory/locations')
+      apiFetch<{ data: RawLocation[] }>('/api/inventory/locations')
         .then((res) => {
           setLocations(res.data || []);
-          if (res.data?.length > 0) {
-            setSelectedLocationId(res.data[0].locationId);
-          }
         })
         .catch((err) => reportError(err, 'Failed to load locations'));
     }
   }, [isOpen]);
+
+  // Merge fetched locations with `availableElsewhere` from the first
+  // selected demand. `availableElsewhere` omits zero-stock locations
+  // server-side, so we backfill those with 0 to keep them clickable
+  // (acceptance criteria: zero-stock locations are shown, not disabled).
+  const options = useMemo<ReallocateLocationOption[]>(() => {
+    const availability = selectedDemands[0]?.availableElsewhere ?? [];
+    return buildReallocateLocationOptions(locations, availability);
+  }, [locations, selectedDemands]);
+
+  // Whenever options change, pre-select the entry with the highest
+  // available qty, falling back to the first location.
+  useEffect(() => {
+    if (options.length === 0) {
+      setSelectedLocationId('');
+      return;
+    }
+    const best = [...options].sort(
+      (a, b) => b.availableQty - a.availableQty,
+    )[0];
+    if (best && best.availableQty > 0) {
+      setSelectedLocationId(best.locationId);
+    } else {
+      setSelectedLocationId(options[0].locationId);
+    }
+  }, [options]);
 
   if (!isOpen) return null;
 
@@ -74,7 +115,7 @@ export default function ReallocateModal({
 
         <div className="p-4 flex flex-col gap-4">
           <p className="text-sm text-[var(--text-secondary)]">
-            You are reallocating <strong>{selectedDemands.length}</strong> demand line(s). 
+            You are reallocating <strong>{selectedDemands.length}</strong> demand line(s).
             This will update the Sales Order line's fulfillment location and reset any existing PO allocations for these lines.
           </p>
 
@@ -88,9 +129,9 @@ export default function ReallocateModal({
               className="input w-full"
               disabled={isSubmitting}
             >
-              {locations.map((loc) => (
-                <option key={loc.locationId} value={loc.locationId}>
-                  {loc.code} - {loc.name}
+              {options.map((opt) => (
+                <option key={opt.locationId} value={opt.locationId}>
+                  {opt.label}
                 </option>
               ))}
             </select>

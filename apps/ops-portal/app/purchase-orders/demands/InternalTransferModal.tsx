@@ -1,14 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import {
+  buildInternalTransferSourceOptions,
+  type InternalTransferSourceOption,
+} from './internal-transfer-utils';
+
+interface SelectedDemandLike {
+  id: string;
+  productId?: string;
+  locationId?: string;
+}
 
 interface InternalTransferModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedDemands: any[];
+  selectedDemands: SelectedDemandLike[];
   onSuccess: () => void;
+}
+
+interface RawLocationWithAvailability {
+  locationId: string;
+  code?: string;
+  name: string;
+  /** Only present when the endpoint is called with a productId. */
+  availableQty?: number;
 }
 
 export default function InternalTransferModal({
@@ -17,32 +35,58 @@ export default function InternalTransferModal({
   selectedDemands,
   onSuccess,
 }: InternalTransferModalProps) {
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<RawLocationWithAvailability[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Fetch locations with availability when the modal opens. The API
+  // returns `availableQty` per location when `productId` is supplied —
+  // unlike Reallocate we cannot use the demand row's `availableElsewhere`
+  // here because the source dropdown must include every location, not
+  // just those with stock (zero-stock sources are still pickable so a
+  // user can pre-empt an inbound receipt).
   useEffect(() => {
-    if (isOpen) {
-      apiFetch<any>('/api/inventory/locations')
-        .then((res) => {
-          // Exclude destination location (assuming all selected demands are for the same location)
-          const destLocId = selectedDemands[0]?.locationId;
-          const validLocations = (res.data || []).filter((loc: any) => loc.locationId !== destLocId);
-          setLocations(validLocations);
-          if (validLocations.length > 0) {
-            setSelectedLocationId(validLocations[0].locationId);
-          }
-        })
-        .catch((err) => reportError(err, 'InternalTransferModal'));
-    }
+    if (!isOpen) return;
+    const productId = selectedDemands[0]?.productId;
+    const url = productId
+      ? `/api/inventory/locations?productId=${encodeURIComponent(productId)}`
+      : `/api/inventory/locations`;
+    apiFetch<{ data: RawLocationWithAvailability[] }>(url)
+      .then((res) => {
+        setLocations(res.data || []);
+      })
+      .catch((err) => reportError(err, 'InternalTransferModal'));
   }, [isOpen, selectedDemands]);
+
+  const destLocId = selectedDemands[0]?.locationId;
+
+  const options = useMemo<InternalTransferSourceOption[]>(() => {
+    return buildInternalTransferSourceOptions(locations, destLocId);
+  }, [locations, destLocId]);
+
+  // Pre-select the source with the highest available qty. If all sources
+  // are at zero stock, fall back to the first in the list (per AC).
+  useEffect(() => {
+    if (options.length === 0) {
+      setSelectedLocationId('');
+      return;
+    }
+    const best = [...options].sort(
+      (a, b) => b.availableQty - a.availableQty,
+    )[0];
+    if (best && best.availableQty > 0) {
+      setSelectedLocationId(best.locationId);
+    } else {
+      setSelectedLocationId(options[0].locationId);
+    }
+  }, [options]);
 
   const handleSubmit = async () => {
     if (!selectedLocationId) return;
 
     // Verify all demands are for the same destination
-    const destLocId = selectedDemands[0]?.locationId;
-    if (!selectedDemands.every(d => d.locationId === destLocId)) {
+    const expectedDest = selectedDemands[0]?.locationId;
+    if (!selectedDemands.every(d => d.locationId === expectedDest)) {
       toast.error('All demands must be for the same destination location');
       return;
     }
@@ -96,15 +140,15 @@ export default function InternalTransferModal({
               value={selectedLocationId}
               onChange={(e) => setSelectedLocationId(e.target.value)}
               className="w-full h-10 px-3 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-              disabled={isSubmitting || locations.length === 0}
+              disabled={isSubmitting || options.length === 0}
             >
-              {locations.map((loc) => (
-                <option key={loc.locationId} value={loc.locationId}>
-                  {loc.name}
+              {options.map((opt) => (
+                <option key={opt.locationId} value={opt.locationId}>
+                  {opt.label}
                 </option>
               ))}
             </select>
-            {locations.length === 0 && (
+            {options.length === 0 && (
               <p className="text-sm text-[var(--danger)] mt-1">No other locations available.</p>
             )}
           </div>
@@ -120,7 +164,7 @@ export default function InternalTransferModal({
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSubmitting || locations.length === 0}
+            disabled={isSubmitting || options.length === 0}
             className="px-4 py-2 text-sm font-medium bg-[var(--accent)] text-white rounded-md hover:brightness-110 disabled:opacity-50 transition-all flex items-center gap-2"
           >
             {isSubmitting ? (
