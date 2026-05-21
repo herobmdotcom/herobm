@@ -39,7 +39,7 @@ def psql(sql: str, capture: bool = False) -> str | None:
     return None
 
 
-def psql_file(filepath: str) -> None:
+def psql_file(filepath: str, record_migration: str | None = None) -> bool:
     """Execute a SQL file via docker exec psql."""
     with open(filepath, "r", encoding="utf-8-sig") as f:
         sql = f.read()
@@ -48,6 +48,10 @@ def psql_file(filepath: str) -> None:
         "psql", "-U", DB_USER, "-d", DB_NAME,
         "-v", "ON_ERROR_STOP=1",
     ]
+    if record_migration:
+        cmd.append("-1")  # wrap in a single transaction
+        sql += f"\nINSERT INTO modbm_core.schema_migrations (filename) VALUES ('{record_migration}');\n"
+
     # Pass known env vars as psql variables for migration seeding
     for env_key in [
         "DEV_ADMIN_PASSWORD", "DEV_SALES_PASSWORD",
@@ -58,10 +62,11 @@ def psql_file(filepath: str) -> None:
             cmd.extend(["-v", f"{env_key}={val}"])
     result = subprocess.run(cmd, input=sql, capture_output=True, text=True, encoding='utf-8')
     if result.returncode != 0:
-        print(f"ERROR applying migration:\n{result.stderr.strip()}", file=sys.stderr)
-        sys.exit(1)
+        print(f"\nERROR applying migration:\n{result.stderr.strip()}", file=sys.stderr)
+        return False
     if result.stdout.strip():
         print(f"  {result.stdout.strip()}")
+    return True
 
 
 def ensure_tracking_table() -> None:
@@ -110,6 +115,7 @@ def get_pending(applied: set[str]) -> list[str]:
 def main() -> None:
     dry_run = "--dry-run" in sys.argv
     status_only = "--status" in sys.argv
+    mark_all = "--mark-all-applied" in sys.argv
 
     ensure_tracking_table()
     applied = get_applied()
@@ -127,6 +133,19 @@ def main() -> None:
         print(f"\n{len(applied)} applied, {len(pending)} pending")
         return
 
+    if mark_all:
+        if not pending:
+            print("No pending migrations to mark as applied.")
+            return
+        print(f"Marking {len(pending)} migration(s) as applied without executing them:")
+        for filepath in pending:
+            basename = os.path.basename(filepath)
+            print(f"  Marking: {basename} ...", end=" ", flush=True)
+            psql(f"INSERT INTO modbm_core.schema_migrations (filename) VALUES ('{basename}');")
+            print("OK")
+        print("\nDone. Migration history synced.")
+        return
+
     if not pending:
         print("All migrations are up to date.")
         apply_extensions(dry_run)
@@ -139,9 +158,25 @@ def main() -> None:
             print(f"  [DRY RUN] Would apply: {basename}")
         else:
             print(f"  Applying: {basename} ...", end=" ", flush=True)
-            psql_file(filepath)
-            psql(f"INSERT INTO modbm_core.schema_migrations (filename) VALUES ('{basename}');")
-            print("OK")
+            success = psql_file(filepath, record_migration=basename)
+            if success:
+                print("OK")
+            else:
+                if not sys.stdin.isatty():
+                    print("Non-interactive terminal detected. Aborting.", file=sys.stderr)
+                    sys.exit(1)
+                
+                try:
+                    choice = input(f"Migration {basename} failed. Mark it as applied and continue to the next? (y/N): ").strip().lower()
+                except EOFError:
+                    choice = 'n'
+                    
+                if choice == 'y':
+                    psql(f"INSERT INTO modbm_core.schema_migrations (filename) VALUES ('{basename}');")
+                    print("  -> Marked as applied. Continuing...")
+                else:
+                    print("Aborting.")
+                    sys.exit(1)
 
     if dry_run:
         print("\nDry run complete — no changes made.")
