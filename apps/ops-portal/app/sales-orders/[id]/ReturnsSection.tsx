@@ -365,7 +365,10 @@ export default function ReturnsSection({
             ) : (
                 <div className="space-y-3">
                     {returns.map((ret) => {
-                        const allowedRetTransitions = RETURN_TRANSITIONS[ret.stateCode] || [];
+                        let allowedRetTransitions = RETURN_TRANSITIONS[ret.stateCode] || [];
+                        if (ret.stateCode === RETURN_STATE.CONFIRMED || ret.stateCode === RETURN_STATE.PARTIALLY_RECEIVED) {
+                            allowedRetTransitions = allowedRetTransitions.filter((s: string) => s !== RETURN_STATE.RECEIVED && s !== RETURN_STATE.PARTIALLY_RECEIVED);
+                        }
                         const isRetEditable = ret.stateCode === RETURN_STATE.DRAFT;
                         return (
                             <div
@@ -387,19 +390,6 @@ export default function ReturnsSection({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {ret.stateCode === RETURN_STATE.CONFIRMED && (
-                                            <select
-                                                className="input"
-                                                style={{ width: 140, fontSize: 12, padding: '2px 8px', height: 28 }}
-                                                value={returnLocations[ret.returnId] !== undefined ? returnLocations[ret.returnId] : (order.fulfillmentLocationId || '')}
-                                                onChange={(e) => setReturnLocations({ ...returnLocations, [ret.returnId]: e.target.value })}
-                                            >
-                                                <option value="">{t('salesOrders.selectLocation')}</option>
-                                                {locations.map(loc => (
-                                                    <option key={loc.locationId} value={loc.locationId}>{formatLocationDisplay(loc)}</option>
-                                                ))}
-                                            </select>
-                                        )}
                                         <div className="flex gap-2">
                                         {allowedRetTransitions.map((s: string) => (
                                             <button
@@ -408,8 +398,7 @@ export default function ReturnsSection({
                                                 onClick={async () => {
                                                     try {
                                                         await apiMutate(`/api/sales-orders/${orderId}/returns/${ret.returnId}/state`, 'PATCH', {
-                                                            stateCode: s,
-                                                            locationId: returnLocations[ret.returnId] !== undefined ? returnLocations[ret.returnId] : (order.fulfillmentLocationId || undefined)
+                                                            stateCode: s
                                                         });
                                                         await loadReturns();
                                                         await loadOrder(undefined, false);
@@ -460,7 +449,8 @@ export default function ReturnsSection({
                                 <table className="table-lines">
                                     <thead>
                                         <tr>
-                                            <th>{tSales('columns.product')}</th>
+                                            <th style={{ width: 150 }}>{tSales('columns.product')}</th>
+                                            <th>{tSales('columns.description')}</th>
                                             <th style={{ width: 90, textAlign: 'right' }}>{tSales('columns.returnQty')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
                                             <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
@@ -490,8 +480,10 @@ export default function ReturnsSection({
                                                         <span style={{ fontWeight: 600, fontSize: 12 }}>
                                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
                                                         </span>
-                                                        <span style={{ marginLeft: 8, fontSize: 12, color: 'var(--text-secondary)' }}>
-                                                            {origLine?.productDescription || ''}
+                                                    </td>
+                                                    <td>
+                                                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                                            {origLine?.productDescription || '—'}
                                                         </span>
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
@@ -647,7 +639,7 @@ export default function ReturnsSection({
                                             return (
                                                 <>
                                                     <tr style={{ borderTop: '2px solid var(--border)' }}>
-                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
                                                             {t('salesOrders.returns.totalCredit')}
                                                         </td>
                                                         <td></td>
@@ -657,7 +649,7 @@ export default function ReturnsSection({
                                                         {isRetEditable && <td></td>}
                                                     </tr>
                                                     <tr>
-                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
                                                             {tSales('columns.tax')}
                                                         </td>
                                                         <td></td>
@@ -667,7 +659,7 @@ export default function ReturnsSection({
                                                         {isRetEditable && <td></td>}
                                                     </tr>
                                                     <tr>
-                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
+                                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>
                                                             {t('salesOrders.returns.totalFees')}
                                                         </td>
                                                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
@@ -677,7 +669,7 @@ export default function ReturnsSection({
                                                         {isRetEditable && <td></td>}
                                                     </tr>
                                                     <tr>
-                                                        <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
+                                                        <td colSpan={7} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>
                                                             {t('salesOrders.returns.netCredit')}
                                                         </td>
                                                         <td></td>

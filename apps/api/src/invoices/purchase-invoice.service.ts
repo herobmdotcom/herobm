@@ -485,7 +485,7 @@ export class PurchaseInvoiceService {
 
       let defaultGlAccountId = dto.glAccountId || null;
       if (!defaultGlAccountId) {
-        const settings = await this.glService.getSettings();
+        const settings = await this.glService.getSettings(tx);
         if (settings?.defaultExpenseAccountId) {
           defaultGlAccountId = settings.defaultExpenseAccountId;
         } else {
@@ -604,7 +604,7 @@ export class PurchaseInvoiceService {
 
     // GL Posting + State Update (atomic transaction)
     const updatedInvoice = await this.db.transaction(async (tx: DrizzleDB) => {
-      const settings = await this.glService.getSettings();
+      const settings = await this.glService.getSettings(tx);
       const effectiveApAccountId =
         supplierApAccountId || settings?.defaultApAccountId;
 

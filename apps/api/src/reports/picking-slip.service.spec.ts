@@ -146,7 +146,7 @@ describe('PickingSlipService', () => {
       orderNumber: 'TRF-001',
       sourceLocationId: LOCATION_SRC_ID,
       destinationLocationId: LOCATION_DEST_ID,
-      stateCode: TRANSFER_ORDER_STATE.RELEASED,
+      stateCode: TRANSFER_ORDER_STATE.CONFIRMED,
     });
     await pg.db.insert(transferOrderLines).values({
       transferOrderLineId: '00000000-0000-0000-0000-000000000012',

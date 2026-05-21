@@ -8,6 +8,7 @@ import { ValidState } from '@/types/states';
 
 import { apiFetch, apiMutate, apiFetchBlob } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
+import { SALES_ORDER_PICK_STATE } from '@modbm/shared';
 
 interface UnifiedOrder {
     id: string;
@@ -234,12 +235,12 @@ export default function PickingPage() {
         const toPick = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) > 0 && l.isPhysical);
         const unavailable = pickingSummary.lines.filter(l => parseFloat(l.remaining) > 0 && parseFloat(l.onHand) <= 0 && l.isPhysical);
         
-        const picked = pickingSummary.picks.filter(p => p.stateCode === 'picked').map(p => {
+        const picked = pickingSummary.picks.filter(p => p.stateCode === SALES_ORDER_PICK_STATE.PICKED).map(p => {
             const line = pickingSummary.lines.find(l => l.salesOrderLineId === p.salesOrderLineId);
             return { ...p, line };
         });
         
-        const shipped = pickingSummary.picks.filter(p => p.stateCode === 'shipped').map(p => {
+        const shipped = pickingSummary.picks.filter(p => p.stateCode === SALES_ORDER_PICK_STATE.SHIPPED).map(p => {
             const line = pickingSummary.lines.find(l => l.salesOrderLineId === p.salesOrderLineId);
             return { ...p, line };
         });

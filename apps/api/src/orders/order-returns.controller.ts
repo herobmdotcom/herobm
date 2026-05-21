@@ -20,6 +20,7 @@ import {
   UpdateReturnDto,
   AddReturnLineDto,
   UpdateReturnLineDto,
+  ReceiveReturnDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -107,6 +108,21 @@ export class OrderReturnsController {
     return this.returnsWriteService.updateReturnLine(
       returnId,
       lineId,
+      body,
+      user.username,
+    );
+  }
+
+  @Post(':id/returns/:returnId/receive')
+  @CasbinAction('write')
+  receiveReturn(
+    @Param('id') _id: string,
+    @Param('returnId') returnId: string,
+    @Body() body: ReceiveReturnDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.returnsWriteService.receiveReturnLines(
+      returnId,
       body,
       user.username,
     );

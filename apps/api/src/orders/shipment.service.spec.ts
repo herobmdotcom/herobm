@@ -11,7 +11,6 @@ import {
   salesOrderPicks,
   salesOrderShipments,
   salesOrderShipmentLines,
-  inventoryBinEntries,
   products,
   zones,
   bins,
@@ -138,7 +137,7 @@ describe('ShipmentService', () => {
     await pg.db.insert(salesOrderLineItems).values([ORDER_LINE]);
     await pg.db.insert(salesOrderPicks).values([
       {
-        salesOrderPickId: 'b0000000-0000-0000-0000-000000000001',
+        pickId: 'b0000000-0000-0000-0000-000000000001',
         salesOrderId: '00000000-0000-0000-0000-000000000001',
         salesOrderLineId: '00000000-0000-0000-0000-000000000002',
         productId: 'a0000000-0000-0000-0000-000000000001',

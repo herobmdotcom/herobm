@@ -391,12 +391,13 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
 
     it('executes putaway without discrepancy', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/goods-received/putaway')
+        .post('/api/inventory/putaway')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           putaways: [
             {
               lineId: putawayGoodsReceivedLineId,
+              sourceType: 'goods_receipt',
               destinationBinId: destinationBinId,
               quantity: '100',
               newTotalQuantity: '100',
@@ -466,12 +467,13 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
       expect(targetLine.matchStatus).toBe(MATCH_STATUS.MATCHED);
 
       const putawayRes = await request(app.getHttpServer())
-        .post('/api/goods-received/putaway')
+        .post('/api/inventory/putaway')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           putaways: [
             {
               lineId: targetLine.goodsReceivedLineId,
+              sourceType: 'goods_receipt',
               destinationBinId: destinationBinId,
               quantity: '50',
               newTotalQuantity: '140',

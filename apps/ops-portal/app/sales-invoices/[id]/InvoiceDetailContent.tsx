@@ -47,7 +47,18 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
                 Customer
               </label>
-              <div className="text-sm">{invoice.customerName || 'Unknown Customer'}</div>
+              <div className="text-sm">
+                {invoice.customerId ? (
+                  <Link 
+                    href={`/accounts/${invoice.customerId}`} 
+                    className="text-[var(--accent)] hover:underline font-medium"
+                  >
+                    {invoice.customerName || 'Unknown Customer'}
+                  </Link>
+                ) : (
+                  invoice.customerName || 'Unknown Customer'
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>

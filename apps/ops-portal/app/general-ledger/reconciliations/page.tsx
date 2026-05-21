@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -6,17 +5,20 @@ import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
+import { useTranslations } from 'next-intl';
 
 export default function ReconciliationsPage() {
-  useDocumentTitle('Bank Reconciliations');
+  const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('title'));
   const router = useRouter();
 
   const columns = useMemo<ColDef[]>(() => [
-    { field: 'statementDate', headerName: 'Statement Date', width: 140 },
-    { field: 'accountName', headerName: 'Account', flex: 1 },
+    { field: 'statementDate', headerName: t('columns.statementDate'), width: 140 },
+    { field: 'accountName', headerName: t('columns.account'), flex: 1 },
     { 
       field: 'statementBalance', 
-      headerName: 'Statement Balance', 
+      headerName: t('columns.statementBalance'), 
       width: 180,
       valueFormatter: (params) => {
         if (params.value == null) return '';
@@ -25,7 +27,7 @@ export default function ReconciliationsPage() {
     },
     { 
       field: 'status', 
-      headerName: 'Status', 
+      headerName: t('columns.status'), 
       width: 120,
       cellRenderer: (params: any) => {
         if (!params.value) return '';
@@ -36,12 +38,12 @@ export default function ReconciliationsPage() {
               ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
               : 'bg-amber-50 text-[var(--warning)] border-amber-200'
           }`}>
-            {isPosted ? 'Posted' : 'Draft'}
+            {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
           </span>
         );
       }
     }
-  ], []);
+  ], [t, tCommon]);
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -55,9 +57,9 @@ export default function ReconciliationsPage() {
             <div className="flex flex-col bg-white border-b border-gray-200">
               <div className="flex items-center px-6 py-4 gap-6">
                 <div className="flex items-center gap-3 shrink-0">
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">Bank Reconciliations</h1>
+                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">{t('title')}</h1>
                   <div className="flex items-center bg-[#f0f8f6] rounded px-2 py-0.5 mt-0.5">
-                    <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">ROWS</span>
+                    <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">{t('rows')}</span>
                     <span className="text-[11px] font-bold text-[#006b5c]">
                       {loading ? '...' : rowCount.toLocaleString()}
                     </span>
@@ -74,7 +76,7 @@ export default function ReconciliationsPage() {
                     onClick={() => router.push('/general-ledger/reconciliations/new')}
                     className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 shadow-sm whitespace-nowrap"
                   >
-                    + New Reconciliation
+                    + {t('newReconciliation')}
                   </button>
                 </div>
               </div>

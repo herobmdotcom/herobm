@@ -309,8 +309,19 @@ export const salesOrderReturnLines = modbmCore.table(
       .notNull()
       .references(() => salesOrderLineItems.salesOrderLineId),
     quantityReturned: numeric('quantity_returned').notNull(),
+    quantityReceived: numeric('quantity_received').default('0'),
     reason: text('reason'),
     returnFee: numeric('return_fee').default('0'), // absolute fee in order currency
+    putawayStatus: text('putaway_status', {
+      enum: [
+        PUTAWAY_STATUS.AWAITING_MATCHING,
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+        PUTAWAY_STATUS.COMPLETED,
+      ],
+    })
+      .notNull()
+      .default(PUTAWAY_STATUS.PENDING_PUTAWAY),
   },
 );
 
@@ -1800,6 +1811,9 @@ export const organization = modbmCore.table('organization', {
 // ---------------------------------------------------------------------------
 export const glSettings = modbmCore.table('gl_settings', {
   settingsId: uuid('settings_id').primaryKey().defaultRandom(),
+  accountMetadataSchema: jsonb('account_metadata_schema')
+    .$type<any[]>()
+    .default([]),
   fiscalYearStartMonth: integer('fiscal_year_start_month').notNull(), // Sourced from settings JSON
   defaultArAccountId: uuid('default_ar_account_id').references(
     () => glAccounts.glAccountId,

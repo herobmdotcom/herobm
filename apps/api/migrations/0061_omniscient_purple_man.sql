@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."gl_settings" ADD COLUMN "account_metadata_schema" jsonb DEFAULT '[]'::jsonb;

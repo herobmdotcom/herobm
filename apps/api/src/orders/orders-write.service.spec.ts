@@ -608,7 +608,6 @@ describe('OrdersWriteService', () => {
 
       if (maxLineNumber > 0) {
         const dummyProduct = await createTestProduct(pg.db, {
-          sku: 'DUMMY',
           name: 'Dummy',
         });
         const lineValues = [];
@@ -732,7 +731,6 @@ describe('OrdersWriteService', () => {
     it('should use zero-rate for zero-rated product', async () => {
       const { order } = await setupForAddLine(SALES_ORDER_STATE.DRAFT);
       const zeroProduct = await createTestProduct(pg.db, {
-        sku: 'PROD-ZR',
         name: 'Zero Prod',
       });
       // Mock the product service since the service layer uses it for lookup

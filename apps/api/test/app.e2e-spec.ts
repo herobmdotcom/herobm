@@ -487,7 +487,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const systemBins = Array.isArray(systemBinsRaw)
         ? systemBinsRaw
-        : systemBinsRaw.rows || [];
+        : (systemBinsRaw as any).rows || [];
 
       // Verify that the system-defined staging bins are present
       expect(systemBins.length).toBeGreaterThanOrEqual(2);
@@ -506,7 +506,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
       const magicProducts = Array.isArray(magicProductsRaw)
         ? magicProductsRaw
-        : magicProductsRaw.rows || [];
+        : (magicProductsRaw as any).rows || [];
 
       expect(magicProducts.length).toBe(1);
       expect(magicProducts[0].product_number).toBe('SYSTEM-CUSTOM-LINE');

@@ -377,7 +377,7 @@ describe('GlService', () => {
         .insert(glJournalEntries)
         .values({
           entryNumber: 'JE-TB-001',
-          entryDate: new Date(),
+          entryDate: new Date().toISOString(),
           sourceType: 'manual',
         })
         .returning();

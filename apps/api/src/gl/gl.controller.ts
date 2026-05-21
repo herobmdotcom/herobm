@@ -176,6 +176,15 @@ export class GlController {
     return this.glService.getSettings();
   }
 
+  @Patch('settings')
+  @CasbinAction('write')
+  async updateSettings(@Body() body: any) {
+    const updated = await this.glService.updateSettings(body);
+    // Automatically reload app config cache since settings changed
+    await this.appConfig.reload();
+    return updated;
+  }
+
   @Post('settings/reload')
   @CasbinAction('write')
   async reloadSettings() {

@@ -124,7 +124,11 @@ describe('LocationsService', () => {
         .insert(zones)
         .values({ locationId: loc.locationId, code: 'Z1', name: 'Z1' })
         .returning();
-      const dto = { zoneId: zone.zoneId, binNumber: 'B1', binType: 'storage' };
+      const dto = {
+        zoneId: zone.zoneId,
+        binNumber: 'B1',
+        binType: 'storage' as any,
+      };
       const result = await service.createBin(dto, 'admin');
       expect(result.binNumber).toBe('B1');
     });

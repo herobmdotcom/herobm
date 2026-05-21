@@ -432,7 +432,7 @@ export class SalesInvoiceService {
       });
 
       // E. Post GL journal entry (atomic with invoice creation)
-      const settings = await this.glService.getSettings();
+      const settings = await this.glService.getSettings(tx);
       const effectiveArAccountId =
         customerArAccountId || settings?.defaultArAccountId;
 

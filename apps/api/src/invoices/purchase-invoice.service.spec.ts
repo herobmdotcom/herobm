@@ -125,6 +125,7 @@ describe('PurchaseInvoiceService', () => {
       purchaseOrderId: PO_ID,
       lineNumber: 1,
       productId: PRODUCT_ID,
+      taxCategoryId: TAX_CAT_ID,
       quantity: '10',
       quantityReceived: '10',
       pricePerUnit: '15.00',

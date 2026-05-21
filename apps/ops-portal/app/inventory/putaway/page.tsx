@@ -10,14 +10,12 @@ import { useSettings } from '@/components/SettingsProvider';
 import { PUTAWAY_STATUS } from '@modbm/shared';
 
 interface PutawayLine {
-    goodsReceivedLineId: string;
-    goodsReceivedId: string;
-    receiptNumber: string;
-    vendorName: string;
+    id: string;
+    sourceType: 'goods_receipt' | 'sales_return';
+    referenceNumber: string;
     productId: string;
-    productNumber: string;
     productName: string;
-    quantityReceived: string;
+    quantity: string;
     createdOn: string;
 }
 
@@ -76,7 +74,7 @@ export default function PutawayPage() {
         setSelectedLine(null);
         setContext(null);
 
-        apiFetch<any>(`/api/goods-received/lines?limit=1000&putawayStatus=${PUTAWAY_STATUS.PENDING_PUTAWAY}&locationId=${selectedLocationId}`)
+        apiFetch<any>(`/api/inventory/pending-putaway?locationId=${selectedLocationId}`)
             .then(data => {
                 setPendingLines(data.data || []);
             })
@@ -103,7 +101,7 @@ export default function PutawayPage() {
                     setSelectedBinId('');
                     setBinSearch('');
                 }
-                const expectedTotal = data.currentQuantity + parseFloat(selectedLine.quantityReceived);
+                const expectedTotal = data.currentQuantity + parseFloat(selectedLine.quantity);
                 setNewTotalQuantity(expectedTotal.toString());
             })
             .catch(err => setError(err.message))
@@ -118,19 +116,20 @@ export default function PutawayPage() {
         setError(null);
 
         try {
-            await apiMutate('/api/goods-received/putaway', 'POST', {
+            await apiMutate('/api/inventory/putaway', 'POST', {
                 putaways: [
                     {
-                        lineId: selectedLine.goodsReceivedLineId,
+                        lineId: selectedLine.id,
+                        sourceType: selectedLine.sourceType,
                         destinationBinId: selectedBinId,
-                        quantity: selectedLine.quantityReceived,
+                        quantity: selectedLine.quantity,
                         newTotalQuantity
                     }
                 ]
             });
 
             // Remove from list and reset
-            setPendingLines(prev => prev.filter(l => l.goodsReceivedLineId !== selectedLine.goodsReceivedLineId));
+            setPendingLines(prev => prev.filter(l => l.id !== selectedLine.id));
             setSelectedLine(null);
             setContext(null);
         } catch (err: any) {
@@ -189,18 +188,23 @@ export default function PutawayPage() {
                             <div className="flex flex-col gap-2">
                                 {pendingLines.map(line => (
                                     <div 
-                                        key={line.goodsReceivedLineId}
+                                        key={line.id}
                                         onClick={() => setSelectedLine(line)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedLine?.goodsReceivedLineId === line.goodsReceivedLineId ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
+                                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${selectedLine?.id === line.id ? 'bg-[var(--bg-secondary-hover)] border-[var(--accent)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'}`}
                                     >
                                         <div className="flex justify-between items-start mb-1">
-                                            <div className="font-bold text-[var(--text-primary)] text-sm">{line.productNumber}</div>
-                                            <div className="font-bold text-[var(--brand-blue)] text-sm">{parseFloat(line.quantityReceived).toLocaleString()}</div>
+                                            <div className="font-bold text-[var(--text-primary)] text-sm">{line.productName}</div>
+                                            <div className="font-bold text-[var(--text-primary)] text-sm">{parseFloat(line.quantity).toLocaleString()}</div>
                                         </div>
-                                        <div className="text-xs text-[var(--text-muted)] mb-2">{line.productName}</div>
                                         <div className="flex items-center justify-between text-[11px] text-[var(--text-secondary)]">
-                                            <span>Receipt: {line.receiptNumber}</span>
-                                            <span>{line.vendorName}</span>
+                                            <span>
+                                                {line.sourceType === 'sales_return' ? (
+                                                    <span className="font-bold mr-2">RETURN</span>
+                                                ) : (
+                                                    <span className="font-bold mr-2">RECEIPT</span>
+                                                )}
+                                                Ref: {line.referenceNumber}
+                                            </span>
                                         </div>
                                     </div>
                                 ))}
@@ -228,11 +232,11 @@ export default function PutawayPage() {
                             <form onSubmit={handleSubmit} className="flex flex-col h-full max-w-md mx-auto">
                                 <div className="mb-6 pb-4 border-b border-[var(--border)] flex justify-between items-start">
                                     <div>
-                                        <h3 className="text-lg font-bold text-[var(--accent)]">{selectedLine.productNumber}</h3>
-                                        <p className="text-sm text-[var(--text-secondary)] mt-1">{selectedLine.productName}</p>
+                                        <h3 className="text-lg font-bold text-[var(--accent)]">{selectedLine.productName}</h3>
+                                        <p className="text-sm text-[var(--text-secondary)] mt-1">Ref: {selectedLine.referenceNumber}</p>
                                     </div>
                                     <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
-                                        {parseFloat(selectedLine.quantityReceived).toLocaleString()}
+                                        {parseFloat(selectedLine.quantity).toLocaleString()}
                                     </div>
                                 </div>
 

@@ -130,56 +130,72 @@ export default function DemandsContent() {
             rowSelection="multiple"
             onSelectionChanged={setSelectedRows}
             renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4 flex-1">
-                  <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                    {tPurchase('demandTitle')}
-                  </h2>
-                  <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                    <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {tCommon('grid.rowCountLabel')}
-                    </span>
-                    <span className="text-[11px] font-bold text-[#006b5c]">
-                      {gridLoading ? '...' : rowCount.toLocaleString()}
-                    </span>
+              <div className="flex flex-col gap-3 px-6 py-4">
+                {/* First Row: Title, Filters, Search, Options */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      {tPurchase('demandTitle')}
+                    </h2>
+                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        {tCommon('grid.rowCountLabel')}
+                      </span>
+                      <span className="text-[11px] font-bold text-[#006b5c]">
+                        {gridLoading ? '...' : rowCount.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 ml-4 max-w-[280px]">
+                      {searchInput}
+                    </div>
                   </div>
 
-                  <div className="flex-1 ml-4 max-w-[280px]">
-                    {searchInput}
+                  <div className="flex items-center gap-3 shrink-0 ml-4">
+                    {optionsButton}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0 ml-4">
-                  {optionsButton}
-                  <button
-                    onClick={() => setIsLinkSlideOverOpen(true)}
-                    disabled={selectedRows.length === 0}
-                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    Allocate to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
-                  </button>
-                  <button
-                    onClick={handleDraftPOs}
-                    disabled={selectedRows.length === 0}
-                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    Draft POs {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
-                  </button>
-                  <button
-                    onClick={() => setIsReallocateModalOpen(true)}
-                    disabled={selectedRows.length === 0}
-                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    Reallocate {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
-                  </button>
-                  <button
-                    onClick={() => setIsInternalTransferModalOpen(true)}
-                    disabled={selectedRows.length === 0}
-                    className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                  >
-                    Internal Transfer {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
-                  </button>
+                {/* Second Row: Action Buttons */}
+                <div className="flex items-center justify-end gap-4 pt-1">
+                  {/* Group 1: PO Allocation */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsLinkSlideOverOpen(true)}
+                      disabled={selectedRows.length === 0}
+                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      Allocate to PO {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                    </button>
+                    <button
+                      onClick={handleDraftPOs}
+                      disabled={selectedRows.length === 0}
+                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      Draft POs {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                    </button>
+                  </div>
+
+                  <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+
+                  {/* Group 2: Location Management */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setIsReallocateModalOpen(true)}
+                      disabled={selectedRows.length === 0}
+                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      Change Location {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                    </button>
+                    <button
+                      onClick={() => setIsInternalTransferModalOpen(true)}
+                      disabled={selectedRows.length === 0}
+                      className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#1A467F] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    >
+                      Internal Transfer {selectedRows.length > 0 ? `(${selectedRows.length})` : ''}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

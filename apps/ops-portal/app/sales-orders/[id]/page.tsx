@@ -386,11 +386,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                     )}
                                 </label>
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                                    {order.customerName
-                                        ? order.customerName
-                                        : order.customerId
-                                            ? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{tSales('unnamedCustomer')}</span>
-                                            : '—'}
+                                    {order.customerName || order.customerId ? (
+                                        <Link 
+                                            href={`/accounts/${order.customerId}`} 
+                                            style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                                            className="hover:underline"
+                                        >
+                                            {order.customerName || <span style={{ fontStyle: 'italic' }}>{tSales('unnamedCustomer')}</span>}
+                                        </Link>
+                                    ) : (
+                                        '—'
+                                    )}
                                 </p>
                             </div>
                             <div>
@@ -941,17 +947,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                                 <td rowSpan={lineInventory.length} style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{line.quantity}</td>
                                                                 <td rowSpan={lineInventory.length}>
                                                                     {(() => {
-                                                                        const req = parseFloat(line.quantity || '0');
-                                                                        const localInv = lineInventory.find((i: any) => i.locationId === order.fulfillmentLocationId);
-                                                                        const localAvail = localInv ? parseFloat(localInv.quantityAvailable || '0') : 0;
-                                                                        
-                                                                        if (localAvail >= req) {
+                                                                        if (canFulfil) {
                                                                             return <span className="text-emerald-600 font-medium flex items-center gap-1">✅ {tSales('availabilityStatus.local')}</span>;
-                                                                        } else if (totalAvail >= req) {
-                                                                            return <span className="text-amber-600 font-medium flex items-center gap-1">🚚 {tSales('availabilityStatus.others')}</span>;
-                                                                        } else {
-                                                                            return <span className="text-rose-600 font-medium flex items-center gap-1">❌ {tSales('availabilityStatus.shortage')}</span>;
                                                                         }
+                                                                        if (gap && totalAvail >= gap.orderedQuantity) {
+                                                                            return <span className="text-amber-600 font-medium flex items-center gap-1">🚚 {tSales('availabilityStatus.others')}</span>;
+                                                                        }
+                                                                        return <span className="text-rose-600 font-medium flex items-center gap-1">❌ {tSales('availabilityStatus.shortage')}</span>;
                                                                     })()}
                                                                 </td>
                                                             </>
@@ -966,7 +968,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                             {parseFloat(inv.quantityAvailable || '0')}
                                                         </td>
                                                         <td style={{ textAlign: 'center' }}>
-                                                            {parseFloat(inv.quantityAvailable || '0') >= parseFloat(line.quantity || '0') ? '✅' : '⚠️'}
+                                                            {parseFloat(inv.quantityAvailable || '0') >= Number(line.quantity) ? '✅' : '⚠️'}
                                                         </td>
                                                     </tr>
                                                 ))}

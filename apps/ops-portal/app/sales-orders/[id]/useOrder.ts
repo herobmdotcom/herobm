@@ -176,12 +176,15 @@ export function useOrder(id: string) {
     // Load inventory for highlighting shortages
     useEffect(() => {
         if (!order || order.lines.length === 0) return;
-        if (![SALES_ORDER_STATE.DRAFT, SALES_ORDER_STATE.QUOTED].includes(order.stateCode as any)) return;
+        
         const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
         if (productIds.length === 0) return;
+        
         setInventoryLoading(true);
-        apiFetch<{ data: InventoryLevel[] }>(
-            `/api/inventory/by-products?productIds=${productIds.join(',')}`,
+        apiMutate<{ data: InventoryLevel[] }>(
+            `/api/inventory/by-products-bulk`,
+            'POST',
+            { productIds }
         )
             .then((res) => setInventoryData(res.data))
             .catch((err) => reportError(err, 'OrderDetailPage'))

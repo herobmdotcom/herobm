@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import React, { use, useState, useEffect, useMemo, useCallback } from 'react';
@@ -10,8 +9,10 @@ import SplitEntryModal from './SplitEntryModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { apiFetch } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 const ToggleCell = (p: any) => {
+  const t = useTranslations('gl.reconciliations');
   const data = p.data;
   const context = p.context;
   
@@ -33,7 +34,7 @@ const ToggleCell = (p: any) => {
         } ${isPosted ? 'opacity-50 cursor-not-allowed' : ''}`}
         aria-checked={data.isCleared}
         role="switch"
-        title={data.isCleared ? "Click to unclear" : "Click to clear"}
+        title={data.isCleared ? t('tooltips.clickToUnclear') : t('tooltips.clickToClear')}
       >
         <span
           aria-hidden="true"
@@ -48,7 +49,9 @@ const ToggleCell = (p: any) => {
 
 export default function ReconciliationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  useDocumentTitle('Reconciliation Details');
+  const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('detailsTitle'));
   const router = useRouter();
   
   const [reconciliation, setReconciliation] = useState<any>(null);
@@ -90,41 +93,41 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       }
     } catch (err) {
       console.error(err);
-      toast.error('Failed to toggle line');
+      toast.error(t('toggleError'));
     }
   };
 
   const handlePost = async () => {
-    if (!confirm('Are you sure you want to post this reconciliation? This cannot be undone.')) return;
+    if (!confirm(t('confirmPost'))) return;
     
     setPosting(true);
     try {
       await apiFetch(`/api/gl/reconciliations/${id}/post`, {
         method: 'POST'
       });
-      toast.success('Reconciliation posted successfully');
+      toast.success(t('postSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to post reconciliation');
+      toast.error(t('postError'));
     } finally {
       setPosting(false);
     }
   };
 
   const handleDiscard = async () => {
-    if (!confirm('Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.')) return;
+    if (!confirm(t('confirmDiscard'))) return;
     
     setPosting(true);
     try {
       await apiFetch(`/api/gl/reconciliations/${id}`, {
         method: 'DELETE'
       });
-      toast.success('Reconciliation discarded successfully');
+      toast.success(t('discardSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'Failed to discard reconciliation');
+      toast.error(err.message || t('discardError'));
       setPosting(false);
     }
   };
@@ -135,7 +138,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     return [
       { 
         field: 'entryDate', 
-        headerName: 'Date', 
+        headerName: t('columns.date'), 
         width: 140,
         comparator: (valueA, valueB, nodeA, nodeB, isDescending) => {
           if (valueA === valueB) {
@@ -165,28 +168,28 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
           return (valueA || '').localeCompare(valueB || '');
         }
       },
-      { field: 'entryNumber', headerName: 'Entry No.', width: 150 },
+      { field: 'entryNumber', headerName: t('columns.entryNo'), width: 150 },
       { 
         field: 'partyName', 
-        headerName: 'Party', 
+        headerName: t('columns.party'), 
         width: 150,
         valueGetter: (p: any) => p.data?.partyName || p.data?.partyId || ''
       },
-      { field: 'memo', headerName: 'Memo', flex: 1 },
+      { field: 'memo', headerName: t('columns.memo'), flex: 1 },
       { 
         field: 'debit', 
-        headerName: 'Debit', 
+        headerName: t('columns.debit'), 
         width: 120,
         valueFormatter: (p) => p.value ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(p.value) : ''
       },
       { 
         field: 'credit', 
-        headerName: 'Credit', 
+        headerName: t('columns.credit'), 
         width: 120,
         valueFormatter: (p) => p.value ? new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(p.value) : ''
       },
       {
-        headerName: 'Cleared?',
+        headerName: t('columns.cleared'),
         cellRenderer: ToggleCell,
         width: 100,
         suppressSizeToFit: true,
@@ -194,10 +197,10 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         filter: false,
       }
     ];
-  }, [reconciliation?.status]);
+  }, [reconciliation?.status, t]);
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (!reconciliation) return <div className="p-4">Reconciliation not found</div>;
+  if (loading) return <div className="p-4">{t('loading')}</div>;
+  if (!reconciliation) return <div className="p-4">{t('notFound')}</div>;
 
   const isPosted = reconciliation.status === 'posted';
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(val);
@@ -223,25 +226,25 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                       onClick={() => router.back()} 
                       className="btn btn-secondary btn-sm"
                       aria-label="Go back"
-                      title="Back"
+                      title={t('tooltips.back')}
                     >
                       ←
                     </button>
                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-                      Reconciliation: {reconciliation.accountName}
+                      {t('reconciliationLabel', { account: reconciliation.accountName })}
                     </h1>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
                       isPosted 
                         ? 'bg-emerald-50 text-[var(--success)] border-emerald-200' 
                         : 'bg-amber-50 text-[var(--warning)] border-amber-200'
                     }`}>
-                      {isPosted ? 'Posted' : 'Draft'}
+                      {isPosted ? tCommon('states.posted') : tCommon('states.draft')}
                     </span>
                     <span className="text-sm text-gray-500 font-medium ml-2">
-                      Statement Date: {reconciliation.statementDate}
+                      {t('statementDateLabel', { date: reconciliation.statementDate })}
                     </span>
                     <div className="flex items-center bg-[#f0f8f6] rounded px-2 py-0.5 ml-2">
-                      <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">ROWS</span>
+                      <span className="text-[10px] font-bold text-[#006b5c] uppercase tracking-wider mr-1.5">{t('rows')}</span>
                       <span className="text-[11px] font-bold text-[#006b5c]">
                         {gridLoading ? '...' : rowCount.toLocaleString()}
                       </span>
@@ -255,15 +258,15 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                           disabled={posting}
                           className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Discard
+                          {t('discard')}
                         </button>
                         <button
                           onClick={handlePost}
                           disabled={posting || Math.abs(reconciliation.variance) > 0.001}
                           className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 shadow-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                          title={Math.abs(reconciliation.variance) > 0.001 ? "Variance must be zero to post" : ""}
+                          title={Math.abs(reconciliation.variance) > 0.001 ? t('varianceMustBeZero') : ''}
                         >
-                          {posting ? 'Posting...' : 'Post Reconciliation'}
+                          {posting ? t('posting') : t('postReconciliation')}
                         </button>
                       </>
                     )}
@@ -272,26 +275,26 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
 
                 <div className="grid grid-cols-4 gap-4">
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Opening Balance</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('openingBalance')}</div>
                     <div className="text-xl font-bold mt-0.5 text-gray-900">
                       {formatCurrency(reconciliation.openingBalance)}
                     </div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Cleared Balance</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('clearedBalance')}</div>
                     <div className="text-xl font-bold mt-0.5 text-gray-900">
                       {formatCurrency(reconciliation.clearedBalance)}
                     </div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Statement Balance</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('statementBalance')}</div>
                     <div className="text-xl font-bold mt-0.5 text-gray-900">
                       {formatCurrency(reconciliation.statementBalance)}
                     </div>
                   </div>
                   <div className={`p-3 rounded-lg border ${Math.abs(reconciliation.variance) < 0.001 ? 'bg-[#f0f8f6] border-[#006b5c]/30' : 'bg-red-50 border-red-200'}`}>
                     <div className={`text-[10px] uppercase tracking-wider font-bold ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
-                      Variance
+                      {t('variance')}
                     </div>
                     <div className={`text-xl font-bold mt-0.5 ${Math.abs(reconciliation.variance) < 0.001 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
                       {formatCurrency(reconciliation.variance)}
@@ -310,16 +313,16 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         className="btn btn-secondary btn-sm flex items-center gap-2"
                       >
                         <span className="material-symbols-outlined text-[18px]">add</span>
-                        Quick Adjustment
+                        {t('quickAdjustment')}
                       </button>
                       <button
                         onClick={() => setSplitModalOpen(true)}
                         disabled={!selectedRow || selectedRow.isCleared}
                         className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={!selectedRow ? "Select a row to split" : selectedRow.isCleared ? "Cannot split an already cleared row" : ""}
+                        title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
                       >
                         <span className="material-symbols-outlined text-[18px]">call_split</span>
-                        Split Entry
+                        {t('splitEntry')}
                       </button>
                     </>
                   )}

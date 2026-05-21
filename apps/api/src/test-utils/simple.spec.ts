@@ -15,13 +15,13 @@ describe('Simple PGLite Test', () => {
   it('should run a simple query', async () => {
     const db = drizzle(client);
     const result = await client.query('SELECT 1 as val');
-    expect(result.rows[0].val).toBe(1);
+    expect((result.rows[0] as any).val).toBe(1);
   });
 
   it('should run many simple queries', async () => {
     for (let i = 0; i < 100; i++) {
       const result = await client.query('SELECT 1 as val');
-      expect(result.rows[0].val).toBe(1);
+      expect((result.rows[0] as any).val).toBe(1);
     }
   });
 });

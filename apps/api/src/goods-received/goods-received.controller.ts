@@ -15,11 +15,7 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import {
-  CreateGoodsReceivedDto,
-  ResolveAllocationDto,
-  ToggleQuarantineDto,
-} from './dto';
+import { CreateGoodsReceivedDto, ResolveAllocationDto } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
@@ -94,28 +90,5 @@ export class GoodsReceivedController {
     @AuthUser() user: JwtUser,
   ) {
     return this.goodsReceivedService.unresolveAllocation(lineId, user.username);
-  }
-
-  @Post('putaway')
-  @CasbinAction('write')
-  async putaway(
-    @Body() dto: import('./dto').PutawayBulkDto,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.goodsReceivedService.putaway(dto, user.username);
-  }
-
-  @Post('lines/:lineId/quarantine')
-  @CasbinAction('write')
-  async toggleQuarantine(
-    @Param('lineId') lineId: string,
-    @Body() dto: ToggleQuarantineDto,
-    @AuthUser() user: JwtUser,
-  ) {
-    return this.goodsReceivedService.toggleQuarantine(
-      lineId,
-      user.username,
-      dto.reason,
-    );
   }
 }

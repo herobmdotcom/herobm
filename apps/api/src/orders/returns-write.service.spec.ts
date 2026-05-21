@@ -11,6 +11,7 @@ import { emitEvent } from '../common/emit-event';
 import { AggregateType } from '../common/event-types';
 import {
   locations,
+  salesOrderReturns,
   taxCategories,
   bins,
   zones,
@@ -195,7 +196,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -391,7 +391,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -453,7 +452,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -516,11 +514,11 @@ describe('ReturnsWriteService', () => {
     it.each([
       [RETURN_STATE.DRAFT, RETURN_STATE.CONFIRMED],
       [RETURN_STATE.DRAFT, RETURN_STATE.CANCELLED],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.PARTIALLY_RECEIVED],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.RECEIVED],
-      [RETURN_STATE.CONFIRMED, RETURN_STATE.DRAFT],
       [RETURN_STATE.CONFIRMED, RETURN_STATE.CANCELLED],
+      [RETURN_STATE.PARTIALLY_RECEIVED, RETURN_STATE.RECEIVED],
       [RETURN_STATE.RECEIVED, RETURN_STATE.PROCESSED],
-      [RETURN_STATE.RECEIVED, RETURN_STATE.CONFIRMED],
     ])('should allow transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
@@ -542,6 +540,8 @@ describe('ReturnsWriteService', () => {
       [RETURN_STATE.PROCESSED, RETURN_STATE.DRAFT],
       [RETURN_STATE.PROCESSED, RETURN_STATE.CONFIRMED],
       [RETURN_STATE.CANCELLED, RETURN_STATE.DRAFT],
+      [RETURN_STATE.CONFIRMED, RETURN_STATE.DRAFT],
+      [RETURN_STATE.RECEIVED, RETURN_STATE.CONFIRMED],
     ])('should reject transition %s → %s', async (from, to) => {
       await setupWithState(from as ReturnState);
       await expect(
@@ -564,9 +564,10 @@ describe('ReturnsWriteService', () => {
         'admin',
         '10000000-0000-0000-0000-000000000001',
       );
-      const updated = await pg.db.query.salesOrderReturns.findFirst({
-        where: (r, { eq }) => eq(r.returnId, returnId),
-      });
+      const [updated] = await pg.db
+        .select()
+        .from(salesOrderReturns)
+        .where(eq(salesOrderReturns.returnId, returnId));
       expect(updated?.stateCode).toBe(RETURN_STATE.RECEIVED);
     });
 
@@ -577,9 +578,10 @@ describe('ReturnsWriteService', () => {
         RETURN_STATE.PROCESSED,
         'admin',
       );
-      const updated = await pg.db.query.salesOrderReturns.findFirst({
-        where: (r, { eq }) => eq(r.returnId, returnId),
-      });
+      const [updated] = await pg.db
+        .select()
+        .from(salesOrderReturns)
+        .where(eq(salesOrderReturns.returnId, returnId));
       expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
@@ -602,7 +604,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -651,24 +652,28 @@ describe('ReturnsWriteService', () => {
         state: startState,
       });
 
-      await createTestReturnLine(pg.db, {
+      const retLine = await createTestReturnLine(pg.db, {
         returnId: ret.returnId,
         salesOrderLineId: orderLine.salesOrderLineId,
         quantity: 5,
         returnFee: 10,
       });
 
-      return { retId: ret.returnId };
+      return { retId: ret.returnId, retLineId: retLine.returnLineId };
     }
 
     it('should post inventory GL reversal on RECEIVED transition', async () => {
-      const { retId } = await setupGlTransitionTest(RETURN_STATE.CONFIRMED);
+      const { retId, retLineId } = await setupGlTransitionTest(
+        RETURN_STATE.CONFIRMED,
+      );
 
-      await service.changeReturnState(
+      await service.receiveReturnLines(
         retId,
-        RETURN_STATE.RECEIVED,
+        {
+          locationId: '10000000-0000-0000-0000-000000000001',
+          lines: [{ returnLineId: retLineId, quantityReceived: '5' }],
+        },
         'admin',
-        '10000000-0000-0000-0000-000000000001',
       );
 
       // Inventory receive + COGS GL reversal should have been posted
@@ -683,9 +688,10 @@ describe('ReturnsWriteService', () => {
 
       await service.changeReturnState(retId, RETURN_STATE.PROCESSED, 'admin');
 
-      const updated = await pg.db.query.salesOrderReturns.findFirst({
-        where: (r, { eq }) => eq(r.returnId, retId),
-      });
+      const [updated] = await pg.db
+        .select()
+        .from(salesOrderReturns)
+        .where(eq(salesOrderReturns.returnId, retId));
       expect(updated?.stateCode).toBe(RETURN_STATE.PROCESSED);
     });
   });
@@ -717,7 +723,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -809,7 +814,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -865,16 +869,15 @@ describe('ReturnsWriteService', () => {
       expect(result).toBeDefined();
     });
 
-    it('should reject update on confirmed return', async () => {
+    it('should allow update on confirmed return', async () => {
       await setupForUpdateLine(RETURN_STATE.CONFIRMED);
-      await expect(
-        service.updateReturnLine(
-          returnId,
-          returnLineId,
-          { reason: 'Test' },
-          'admin',
-        ),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.updateReturnLine(
+        returnId,
+        returnLineId,
+        { reason: 'Test' },
+        'admin',
+      );
+      expect(result).toBeDefined();
     });
 
     it('should reject negative return fee', async () => {
@@ -907,7 +910,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -949,11 +951,11 @@ describe('ReturnsWriteService', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('should reject removal from confirmed return', async () => {
+    it('should allow removal from confirmed return', async () => {
       await setupForRemoveLine(RETURN_STATE.CONFIRMED);
       await expect(
         service.removeReturnLine(returnId, returnLineId, 'admin'),
-      ).rejects.toThrow(BadRequestException);
+      ).resolves.toBeUndefined();
     });
 
     it('should reject removal from processed return', async () => {
@@ -978,7 +980,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -1029,7 +1030,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -1074,7 +1074,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();
@@ -1106,7 +1105,6 @@ describe('ReturnsWriteService', () => {
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'LOC1',
           name: 'Loc 1',
-          type: 'warehouse',
         })
         .onConflictDoNothing()
         .returning();

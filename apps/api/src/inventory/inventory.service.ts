@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ilike, or, eq, inArray, sql, and, isNull, desc } from 'drizzle-orm';
 import { AppConfigService } from '../settings/app-config.service';
@@ -21,16 +22,25 @@ import {
   salesOrders,
   salesOrderShipments,
   salesOrderReturns,
+  salesOrderReturnLines,
+  salesOrderLineItems,
   accounts,
   purchaseOrders,
   suppliers,
   productUoms,
   productDefaultBins,
+  goodsReceived,
+  goodsReceivedLines,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
 import { PaginationQuery, parsePagination } from '../common/pagination';
-import { calculateAvailableQuantity } from '@modbm/shared';
+import {
+  calculateAvailableQuantity,
+  MATCH_STATUS,
+  PUTAWAY_STATUS,
+  RETURN_STATE,
+} from '@modbm/shared';
 import { UomService } from './uom.service';
 import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from './valuation';
@@ -42,6 +52,8 @@ import {
 
 @Injectable()
 export class InventoryService {
+  private readonly logger = new Logger(InventoryService.name);
+
   constructor(
     @Inject(DRIZZLE) private db: DrizzleDB,
     private appConfig: AppConfigService,
@@ -901,5 +913,524 @@ export class InventoryService {
       eventType: EventType.STOCK_ADJUSTED,
       payload: { header: params, lines: ledgerPayload },
     });
+  }
+
+  // ── Putaway Queue (Polymorphic) ──────────────────────────────────────
+
+  async getPendingPutaway(locationId?: string) {
+    // 1. Goods Receipts
+    let grQb = this.db
+      .select({
+        id: goodsReceivedLines.goodsReceivedLineId,
+        sourceType: sql<'goods_receipt'>`'goods_receipt'`,
+        referenceNumber: goodsReceived.receiptNumber,
+        productId: goodsReceivedLines.productId,
+        productName: products.name,
+        quantity: goodsReceivedLines.quantityReceived,
+        putawayStatus: goodsReceivedLines.putawayStatus,
+        locationId: goodsReceived.locationId,
+        createdOn: goodsReceived.createdOn,
+        sourceBinCode: sql`CASE WHEN ${goodsReceivedLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RECEIVING' END`,
+      })
+      .from(goodsReceivedLines)
+      .innerJoin(
+        goodsReceived,
+        eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+      )
+      .innerJoin(products, eq(goodsReceivedLines.productId, products.productId))
+      .where(
+        inArray(goodsReceivedLines.putawayStatus, [
+          PUTAWAY_STATUS.PENDING_PUTAWAY,
+          PUTAWAY_STATUS.QUARANTINED,
+        ]),
+      )
+      .$dynamic();
+
+    if (locationId) {
+      grQb = grQb.where(eq(goodsReceived.locationId, locationId));
+    }
+
+    // 2. Sales Returns
+    let retQb = this.db
+      .select({
+        id: salesOrderReturnLines.returnLineId,
+        sourceType: sql<'sales_return'>`'sales_return'`,
+        referenceNumber: salesOrderReturns.returnNumber,
+        productId: salesOrderLineItems.productId,
+        productName: products.name,
+        quantity: salesOrderReturnLines.quantityReturned,
+        putawayStatus: salesOrderReturnLines.putawayStatus,
+        locationId: salesOrders.fulfillmentLocationId,
+        createdOn: salesOrderReturns.createdOn,
+        sourceBinCode: sql`CASE WHEN ${salesOrderReturnLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RETURNS' END`,
+      })
+      .from(salesOrderReturnLines)
+      .innerJoin(
+        salesOrderReturns,
+        eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+      )
+      .innerJoin(
+        salesOrders,
+        eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+      )
+      .innerJoin(
+        salesOrderLineItems,
+        eq(
+          salesOrderReturnLines.salesOrderLineId,
+          salesOrderLineItems.salesOrderLineId,
+        ),
+      )
+      .innerJoin(
+        products,
+        eq(salesOrderLineItems.productId, products.productId),
+      )
+      .where(
+        inArray(salesOrderReturnLines.putawayStatus, [
+          PUTAWAY_STATUS.PENDING_PUTAWAY,
+          PUTAWAY_STATUS.QUARANTINED,
+        ]),
+      )
+      .$dynamic();
+
+    if (locationId) {
+      retQb = retQb.where(eq(salesOrders.fulfillmentLocationId, locationId));
+    }
+
+    const [grLines, retLines] = await Promise.all([grQb, retQb]);
+
+    const combined = [...grLines, ...retLines].sort((a, b) => {
+      const dateA = a.createdOn ? new Date(a.createdOn).getTime() : 0;
+      const dateB = b.createdOn ? new Date(b.createdOn).getTime() : 0;
+      return dateB - dateA; // descending
+    });
+
+    return { data: combined };
+  }
+
+  async putaway(dto: import('./dto').PutawayBulkDto, userId: string) {
+    return await this.db.transaction(async (tx) => {
+      for (const lineDto of dto.putaways) {
+        let locationId: string;
+        let productId: string;
+        let putawayStatus: string;
+        let sourceBinCode: string;
+        let referenceNumber: string;
+        let recordSourceType: string;
+        let recordSourceId: string;
+        let linePrefix: string;
+
+        if (lineDto.sourceType === 'goods_receipt') {
+          const [grLine] = await tx
+            .select({
+              line: goodsReceivedLines,
+              locationId: goodsReceived.locationId,
+              receiptNumber: goodsReceived.receiptNumber,
+            })
+            .from(goodsReceivedLines)
+            .innerJoin(
+              goodsReceived,
+              eq(
+                goodsReceivedLines.goodsReceivedId,
+                goodsReceived.goodsReceivedId,
+              ),
+            )
+            .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId))
+            .limit(1);
+
+          if (!grLine)
+            throw new NotFoundException(`Line ${lineDto.lineId} not found`);
+          if (grLine.line.matchStatus !== MATCH_STATUS.MATCHED) {
+            throw new BadRequestException(
+              `Cannot putaway unmatched line: ${lineDto.lineId}`,
+            );
+          }
+
+          locationId = grLine.locationId;
+          productId = grLine.line.productId;
+          putawayStatus = grLine.line.putawayStatus;
+          referenceNumber = grLine.receiptNumber;
+          recordSourceType = 'PO_RECEIPT';
+          recordSourceId = grLine.line.goodsReceivedId;
+          linePrefix = grLine.line.goodsReceivedLineId.substring(0, 4);
+          sourceBinCode =
+            putawayStatus === PUTAWAY_STATUS.QUARANTINED
+              ? 'QUARANTINE'
+              : 'RECEIVING';
+        } else {
+          // sales_return
+          const [retLine] = await tx
+            .select({
+              line: salesOrderReturnLines,
+              locationId: salesOrders.fulfillmentLocationId,
+              returnNumber: salesOrderReturns.returnNumber,
+              productId: salesOrderLineItems.productId,
+            })
+            .from(salesOrderReturnLines)
+            .innerJoin(
+              salesOrderReturns,
+              eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+            )
+            .innerJoin(
+              salesOrders,
+              eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+            )
+            .innerJoin(
+              salesOrderLineItems,
+              eq(
+                salesOrderReturnLines.salesOrderLineId,
+                salesOrderLineItems.salesOrderLineId,
+              ),
+            )
+            .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId))
+            .limit(1);
+
+          if (!retLine)
+            throw new NotFoundException(
+              `Return line ${lineDto.lineId} not found`,
+            );
+
+          locationId = retLine.locationId;
+          productId = retLine.productId!;
+          putawayStatus = retLine.line.putawayStatus;
+          referenceNumber = retLine.returnNumber;
+          recordSourceType = 'SO_RETURN';
+          recordSourceId = retLine.line.returnId;
+          linePrefix = retLine.line.returnLineId.substring(0, 4);
+          sourceBinCode =
+            putawayStatus === PUTAWAY_STATUS.QUARANTINED
+              ? 'QUARANTINE'
+              : 'RETURNS';
+        }
+
+        if (putawayStatus === PUTAWAY_STATUS.COMPLETED) {
+          throw new BadRequestException(
+            `Line ${lineDto.lineId} is already putaway`,
+          );
+        }
+
+        const [sourceBin] = await tx
+          .select({ binId: bins.binId })
+          .from(bins)
+          .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+          .where(
+            and(
+              eq(zones.locationId, locationId),
+              eq(bins.binNumber, sourceBinCode),
+            ),
+          )
+          .limit(1);
+
+        if (!sourceBin) {
+          throw new BadRequestException(
+            `Source bin ${sourceBinCode} not found for line ${lineDto.lineId}`,
+          );
+        }
+
+        const qty = parseFloat(lineDto.quantity);
+
+        const movements: any[] = [
+          { productId, binId: sourceBin.binId, quantity: -qty },
+          { productId, binId: lineDto.destinationBinId, quantity: qty },
+        ];
+
+        // Handle discrepancies
+        if (lineDto.newTotalQuantity !== undefined) {
+          const newTotal = parseFloat(lineDto.newTotalQuantity);
+          const [destBinContent] = await tx
+            .select({ actualQuantity: binContents.actualQuantity })
+            .from(binContents)
+            .where(
+              and(
+                eq(binContents.productId, productId),
+                eq(binContents.binId, lineDto.destinationBinId),
+              ),
+            )
+            .limit(1);
+
+          const currentDbQty = destBinContent
+            ? parseFloat(destBinContent.actualQuantity)
+            : 0;
+          const expectedTotal = currentDbQty + qty;
+          const discrepancy = newTotal - expectedTotal;
+
+          if (Math.abs(discrepancy) > 0.001) {
+            movements.push({
+              productId,
+              binId: lineDto.destinationBinId,
+              quantity: discrepancy,
+            });
+            this.logger.warn(
+              `Putaway discrepancy adjustment created. Expected: ${expectedTotal}, Counted: ${newTotal}, Adj: ${discrepancy}`,
+            );
+          }
+        }
+
+        await this.recordInventoryMovement(tx, {
+          entryNumber: `PUT-${referenceNumber}-${linePrefix}`,
+          sourceType: recordSourceType,
+          sourceId: recordSourceId,
+          memo: `Putaway to ${lineDto.destinationBinId}`,
+          userId,
+          lines: movements,
+        });
+
+        // Mark line as completed
+        if (lineDto.sourceType === 'goods_receipt') {
+          await tx
+            .update(goodsReceivedLines)
+            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
+            .where(eq(goodsReceivedLines.goodsReceivedLineId, lineDto.lineId));
+        } else {
+          await tx
+            .update(salesOrderReturnLines)
+            .set({ putawayStatus: PUTAWAY_STATUS.COMPLETED })
+            .where(eq(salesOrderReturnLines.returnLineId, lineDto.lineId));
+        }
+      }
+
+      // Check if any returns should be transitioned to RECEIVED automatically
+      const affectedReturnIds = Array.from(
+        new Set(
+          dto.putaways
+            .filter((p) => p.sourceType === 'sales_return')
+            .map((p) => p.lineId),
+        ),
+      );
+
+      if (affectedReturnIds.length > 0) {
+        for (const lineId of affectedReturnIds) {
+          const [rl] = await tx
+            .select({ returnId: salesOrderReturnLines.returnId })
+            .from(salesOrderReturnLines)
+            .where(eq(salesOrderReturnLines.returnLineId, lineId));
+
+          if (rl) {
+            const lines = await tx
+              .select({ putawayStatus: salesOrderReturnLines.putawayStatus })
+              .from(salesOrderReturnLines)
+              .where(eq(salesOrderReturnLines.returnId, rl.returnId));
+
+            const allCompleted =
+              lines.length > 0 &&
+              lines.every((l) => l.putawayStatus === PUTAWAY_STATUS.COMPLETED);
+
+            if (allCompleted) {
+              const [ret] = await tx
+                .select({
+                  stateCode: salesOrderReturns.stateCode,
+                  salesOrderId: salesOrderReturns.salesOrderId,
+                  returnNumber: salesOrderReturns.returnNumber,
+                })
+                .from(salesOrderReturns)
+                .where(eq(salesOrderReturns.returnId, rl.returnId));
+
+              if (
+                ret &&
+                ret.stateCode !== RETURN_STATE.RECEIVED &&
+                ret.stateCode !== RETURN_STATE.PROCESSED
+              ) {
+                await this.changeReturnState(
+                  tx,
+                  rl.returnId,
+                  RETURN_STATE.RECEIVED,
+                );
+
+                await emitEvent(tx, {
+                  aggregateType: AggregateType.SALES_ORDER,
+                  aggregateId: ret.salesOrderId,
+                  eventType: EventType.AUTO_STATUS_CHANGED,
+                  payload: {
+                    entity: 'return',
+                    entityId: rl.returnId,
+                    from: ret.stateCode,
+                    to: RETURN_STATE.RECEIVED,
+                    returnNumber: ret.returnNumber,
+                    reason: 'Auto-transition from complete putaway',
+                  },
+                  actor: userId,
+                });
+              }
+            }
+          }
+        }
+      }
+
+      return { success: true };
+    });
+  }
+
+  async toggleQuarantine(
+    lineId: string,
+    sourceType: 'goods_receipt' | 'sales_return',
+    userId: string,
+    reason?: string,
+  ) {
+    return await this.db.transaction(async (tx) => {
+      let locationId: string;
+      let productId: string;
+      let currentPutawayStatus: string;
+      let referenceNumber: string;
+      let recordSourceType: string;
+      let recordSourceId: string;
+      let linePrefix: string;
+      let quantityToMove: number;
+      let defaultBinCode: string;
+
+      if (sourceType === 'goods_receipt') {
+        const [grLine] = await tx
+          .select({
+            line: goodsReceivedLines,
+            locationId: goodsReceived.locationId,
+            receiptNumber: goodsReceived.receiptNumber,
+          })
+          .from(goodsReceivedLines)
+          .innerJoin(
+            goodsReceived,
+            eq(
+              goodsReceivedLines.goodsReceivedId,
+              goodsReceived.goodsReceivedId,
+            ),
+          )
+          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId))
+          .limit(1);
+
+        if (!grLine) throw new NotFoundException('Line not found');
+
+        locationId = grLine.locationId;
+        productId = grLine.line.productId;
+        currentPutawayStatus = grLine.line.putawayStatus;
+        referenceNumber = grLine.receiptNumber;
+        recordSourceType = 'PO_RECEIPT';
+        recordSourceId = grLine.line.goodsReceivedId;
+        linePrefix = grLine.line.goodsReceivedLineId.substring(0, 4);
+        quantityToMove = parseFloat(grLine.line.quantityReceived);
+        defaultBinCode = 'RECEIVING';
+      } else {
+        // sales_return
+        const [retLine] = await tx
+          .select({
+            line: salesOrderReturnLines,
+            locationId: salesOrders.fulfillmentLocationId,
+            returnNumber: salesOrderReturns.returnNumber,
+            productId: salesOrderLineItems.productId,
+          })
+          .from(salesOrderReturnLines)
+          .innerJoin(
+            salesOrderReturns,
+            eq(salesOrderReturnLines.returnId, salesOrderReturns.returnId),
+          )
+          .innerJoin(
+            salesOrders,
+            eq(salesOrderReturns.salesOrderId, salesOrders.salesOrderId),
+          )
+          .innerJoin(
+            salesOrderLineItems,
+            eq(
+              salesOrderReturnLines.salesOrderLineId,
+              salesOrderLineItems.salesOrderLineId,
+            ),
+          )
+          .where(eq(salesOrderReturnLines.returnLineId, lineId))
+          .limit(1);
+
+        if (!retLine) throw new NotFoundException('Line not found');
+
+        locationId = retLine.locationId;
+        productId = retLine.productId!;
+        currentPutawayStatus = retLine.line.putawayStatus;
+        referenceNumber = retLine.returnNumber;
+        recordSourceType = 'SO_RETURN';
+        recordSourceId = retLine.line.returnId;
+        linePrefix = retLine.line.returnLineId.substring(0, 4);
+        quantityToMove = parseFloat(retLine.line.quantityReturned);
+        defaultBinCode = 'RETURNS';
+      }
+
+      if (currentPutawayStatus === PUTAWAY_STATUS.COMPLETED) {
+        throw new BadRequestException(
+          'Cannot quarantine an already putaway line',
+        );
+      }
+
+      const isCurrentlyQuarantined =
+        currentPutawayStatus === PUTAWAY_STATUS.QUARANTINED;
+      const newStatus = isCurrentlyQuarantined
+        ? PUTAWAY_STATUS.PENDING_PUTAWAY
+        : PUTAWAY_STATUS.QUARANTINED;
+
+      const sourceBinCode = isCurrentlyQuarantined
+        ? 'QUARANTINE'
+        : defaultBinCode;
+      const targetBinCode = isCurrentlyQuarantined
+        ? defaultBinCode
+        : 'QUARANTINE';
+
+      const [sourceBin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(zones.locationId, locationId),
+            eq(bins.binNumber, sourceBinCode),
+          ),
+        )
+        .limit(1);
+
+      const [targetBin] = await tx
+        .select({ binId: bins.binId })
+        .from(bins)
+        .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+        .where(
+          and(
+            eq(zones.locationId, locationId),
+            eq(bins.binNumber, targetBinCode),
+          ),
+        )
+        .limit(1);
+
+      if (!sourceBin || !targetBin) {
+        throw new BadRequestException(
+          `Source or target bin for quarantine operation not found in this location (${sourceBinCode} -> ${targetBinCode}).`,
+        );
+      }
+
+      await this.recordInventoryMovement(tx, {
+        entryNumber: `${isCurrentlyQuarantined ? 'UN' : ''}QUAR-${referenceNumber}-${linePrefix}`,
+        sourceType: recordSourceType,
+        sourceId: recordSourceId,
+        memo: `${isCurrentlyQuarantined ? 'Un-quarantine' : 'Quarantine'} item. Reason: ${reason || 'None'}`,
+        userId,
+        lines: [
+          { productId, binId: sourceBin.binId, quantity: -quantityToMove },
+          { productId, binId: targetBin.binId, quantity: quantityToMove },
+        ],
+      });
+
+      if (sourceType === 'goods_receipt') {
+        await tx
+          .update(goodsReceivedLines)
+          .set({ putawayStatus: newStatus })
+          .where(eq(goodsReceivedLines.goodsReceivedLineId, lineId));
+      } else {
+        await tx
+          .update(salesOrderReturnLines)
+          .set({ putawayStatus: newStatus })
+          .where(eq(salesOrderReturnLines.returnLineId, lineId));
+      }
+
+      return { success: true, putawayStatus: newStatus };
+    });
+  }
+
+  private async changeReturnState(
+    tx: DrizzleDB,
+    returnId: string,
+    stateCode: (typeof RETURN_STATE)[keyof typeof RETURN_STATE],
+  ) {
+    await tx
+      .update(salesOrderReturns)
+      .set({ stateCode })
+      .where(eq(salesOrderReturns.returnId, returnId));
   }
 }

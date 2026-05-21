@@ -186,6 +186,26 @@ export class UpdateReturnLineDto {
   returnFee?: string;
 }
 
+export class ReceiveReturnLineDto {
+  @IsString()
+  @IsNotEmpty()
+  returnLineId!: string;
+
+  @IsNumberString()
+  quantityReceived!: string;
+}
+
+export class ReceiveReturnDto {
+  @IsString()
+  @IsNotEmpty()
+  locationId!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ReceiveReturnLineDto)
+  lines!: ReceiveReturnLineDto[];
+}
+
 // ── Shipment DTOs ──
 
 export class CreateShipmentLineDto {

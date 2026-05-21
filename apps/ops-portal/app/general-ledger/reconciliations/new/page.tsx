@@ -1,13 +1,15 @@
-/* eslint-disable i18next/no-literal-string */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { apiFetch } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 export default function NewReconciliationPage() {
-  useDocumentTitle('New Bank Reconciliation');
+  const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
+  useDocumentTitle(t('newReconciliation'));
   const router = useRouter();
   
   const [glAccountId, setGlAccountId] = useState('');
@@ -46,7 +48,7 @@ export default function NewReconciliationPage() {
       router.push(`/general-ledger/reconciliations/${data.reconciliationId}`);
     } catch (err) {
       console.error(err);
-      alert('Error creating reconciliation');
+      alert(t('createError'));
     } finally {
       setLoading(false);
     }
@@ -54,13 +56,13 @@ export default function NewReconciliationPage() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto h-[calc(100vh-64px)] flex flex-col">
-      <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">New Bank Reconciliation</h1>
+      <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">{t('newReconciliation')}</h1>
 
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-md shadow-sm p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Account
+              {t('account')}
             </label>
             <select
               value={glAccountId}
@@ -68,7 +70,7 @@ export default function NewReconciliationPage() {
               required
               className="w-full p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--accent)] text-sm"
             >
-              <option value="">Select Account...</option>
+              <option value="">{t('selectAccount')}</option>
               {Array.isArray(accounts) && accounts.map(acc => (
                 <option key={acc.glAccountId} value={acc.glAccountId}>
                   {acc.accountCode} - {acc.name}
@@ -79,7 +81,7 @@ export default function NewReconciliationPage() {
 
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Statement Date
+              {t('statementDate')}
             </label>
             <input
               type="date"
@@ -92,7 +94,7 @@ export default function NewReconciliationPage() {
 
           <div>
             <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-              Statement Balance
+              {t('statementBalance')}
             </label>
             <input
               type="number"
@@ -110,14 +112,14 @@ export default function NewReconciliationPage() {
               onClick={() => router.back()}
               className="px-4 py-2 border border-[var(--border)] text-[var(--text-secondary)] rounded-md hover:bg-[var(--bg-secondary)] transition-colors text-sm font-medium"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               disabled={loading}
               className="px-4 py-2 bg-[var(--accent)] text-white rounded-md shadow-sm hover:bg-orange-600 font-medium transition-colors text-sm disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Start Reconciling'}
+              {loading ? t('creating') : t('create')}
             </button>
           </div>
         </form>

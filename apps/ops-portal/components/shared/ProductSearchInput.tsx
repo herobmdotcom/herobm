@@ -23,17 +23,7 @@ interface Product {
   productGroupId?: string | null;
 }
 
-interface InventoryLevel {
-  productId: string;
-  quantityOnHand: string;
-  quantityAvailable: string;
-}
 
-/** Aggregated stock for display in the dropdown */
-interface ProductStock {
-  onHand: number;
-  available: number;
-}
 
 interface ProductSearchInputProps {
   /** Called when a product is selected from the dropdown */
@@ -65,39 +55,17 @@ export default function ProductSearchInput({
   const t = useTranslations('common.productSearch');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<Product[]>([]);
-  const [stockMap, setStockMap] = useState<Record<string, ProductStock>>({});
   const [showDropdown, setShowDropdown] = useState(false);
 
   const searchProducts = useCallback(async (term: string) => {
-    if (!term || term.length < 2) { setResults([]); setStockMap({}); return; }
+    if (!term || term.length < 2) { setResults([]); return; }
     try {
       const data = await apiFetch<{ data: Product[] }>(
         `/api/products?q=${encodeURIComponent(term)}&limit=10`,
       );
       setResults(data.data);
-
-      // Fetch stock from inventory for these products
-      const ids = data.data.map((p) => p.productId).filter(Boolean);
-      if (ids.length > 0) {
-        try {
-          const locQuery = fulfillmentLocationId ? `&locationId=${fulfillmentLocationId}` : '';
-          const inv = await apiFetch<{ data: InventoryLevel[] }>(
-            `/api/inventory/by-products?productIds=${ids.join(',')}${locQuery}`,
-          );
-          // Aggregate per product (sum across locations)
-          const map: Record<string, ProductStock> = {};
-          for (const row of inv.data) {
-            if (!map[row.productId]) map[row.productId] = { onHand: 0, available: 0 };
-            map[row.productId].onHand += parseFloat(row.quantityOnHand || '0');
-            map[row.productId].available += parseFloat(row.quantityAvailable || '0');
-          }
-          setStockMap(map);
-        } catch {
-          setStockMap({});
-        }
-      }
-    } catch { setResults([]); setStockMap({}); }
-  }, [fulfillmentLocationId]);
+    } catch { setResults([]); }
+  }, []);
 
   const debouncedSearch = useDebounce(
     (term: unknown) => searchProducts(term as string), 300,
@@ -107,7 +75,6 @@ export default function ProductSearchInput({
     setShowDropdown(false);
     setSearch('');
     setResults([]);
-    setStockMap({});
     try {
       // Fetch full details (including productUoms) from findOne before yielding
       const details = await apiFetch<Product>(`/api/products/${p.productId}`);
@@ -143,9 +110,6 @@ export default function ProductSearchInput({
           }}
         >
           {results.map((p) => {
-            const stock = stockMap[p.productId];
-            const onHand = stock?.onHand ?? 0;
-            const avail = stock?.available ?? 0;
             return (
             <div
               key={p.productId}
@@ -161,38 +125,6 @@ export default function ProductSearchInput({
                   <span style={{ color: 'var(--text-secondary)', marginLeft: 8, fontSize: 13 }}>
                     {p.name}
                   </span>
-                </div>
-                <div className="flex gap-2" style={{ flexShrink: 0 }}>
-                  <div
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.01em',
-                      whiteSpace: 'nowrap',
-                      backgroundColor: onHand > 0 ? 'rgba(74,222,128,0.15)' : 'rgba(245,158,11,0.15)',
-                      color: onHand > 0 ? '#16a34a' : '#d97706',
-                      border: `1px solid ${onHand > 0 ? 'rgba(74,222,128,0.3)' : 'rgba(245,158,11,0.3)'}`
-                    }}
-                  >
-                    {t('onHandShort')}: {onHand}
-                  </div>
-                  <div
-                    style={{
-                      padding: '2px 8px',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.01em',
-                      whiteSpace: 'nowrap',
-                      backgroundColor: avail > 0 ? 'rgba(74,222,128,0.15)' : 'rgba(239,68,68,0.15)',
-                      color: avail > 0 ? '#16a34a' : '#dc2626',
-                      border: `1px solid ${avail > 0 ? 'rgba(74,222,128,0.3)' : 'rgba(239,68,68,0.3)'}`
-                    }}
-                  >
-                    {t('availableShort')}: {avail}
-                  </div>
                 </div>
               </div>
             </div>

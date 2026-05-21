@@ -31,10 +31,7 @@ import {
 // Ensures random order numbers during test isolation
 let _sequence = 0;
 
-export async function createTestCustomer(
-  db: PgliteDatabase<any>,
-  opts?: { name?: string },
-) {
+export async function createTestCustomer(db: any, opts?: { name?: string }) {
   const accountId = uuidv4();
   await db.insert(accounts).values({
     accountId,
@@ -46,7 +43,7 @@ export async function createTestCustomer(
 }
 
 export async function createTestProduct(
-  db: PgliteDatabase<any>,
+  db: any,
   opts?: {
     type?: 'inventory' | 'non-stock';
     name?: string;
@@ -68,7 +65,7 @@ export async function createTestProduct(
 }
 
 export async function createTestSalesOrder(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     customerId: string;
     locationId: string;
@@ -92,7 +89,7 @@ export async function createTestSalesOrder(
 }
 
 export async function createTestSalesOrderLine(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     salesOrderId: string;
     productId: string;
@@ -120,7 +117,7 @@ export async function createTestSalesOrderLine(
 }
 
 export async function createTestReturn(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     salesOrderId: string;
     state?: ReturnState;
@@ -140,7 +137,7 @@ export async function createTestReturn(
 }
 
 export async function createTestReturnLine(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     returnId: string;
     salesOrderLineId: string;
@@ -162,10 +159,7 @@ export async function createTestReturnLine(
   return { returnLineId };
 }
 
-export async function createTestSupplier(
-  db: PgliteDatabase<any>,
-  opts?: { name?: string },
-) {
+export async function createTestSupplier(db: any, opts?: { name?: string }) {
   // Uses the same `accounts` table as customers, but conceptually a supplier.
   const accountId = uuidv4();
   await db.insert(accounts).values({
@@ -178,7 +172,7 @@ export async function createTestSupplier(
 }
 
 export async function createTestPurchaseOrder(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     supplierId: string;
     locationId: string;
@@ -191,8 +185,8 @@ export async function createTestPurchaseOrder(
   await db.insert(purchaseOrders).values({
     purchaseOrderId,
     orderNumber,
-    supplierId: opts.supplierId,
-    receivingLocationId: opts.locationId,
+    vendorId: opts.supplierId,
+    deliveryLocationId: opts.locationId,
     stateCode: opts.state || PURCHASE_ORDER_STATE.DRAFT,
     currencyCode: 'AUD',
     source: 'app',
@@ -202,7 +196,7 @@ export async function createTestPurchaseOrder(
 }
 
 export async function createTestGlEntry(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     sourceId: string;
     sourceType: string;
@@ -216,16 +210,15 @@ export async function createTestGlEntry(
     entryNumber,
     sourceId: opts.sourceId,
     sourceType: opts.sourceType,
-    currencyCode: 'AUD',
     status: 'posted',
-    entryDate: new Date(),
+    entryDate: new Date().toISOString(),
   });
 
   return { journalEntryId };
 }
 
 export async function createTestInvoice(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     salesOrderId: string;
     state?: SalesInvoiceState;
@@ -239,13 +232,15 @@ export async function createTestInvoice(
     invoiceNumber,
     salesOrderId: opts.salesOrderId,
     stateCode: opts.state || SALES_INVOICE_STATE.DRAFT,
+    totalAmount: '100.00',
+    currencyCode: 'AUD',
   });
 
   return { invoiceId };
 }
 
 export async function createTestShipment(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     salesOrderId: string;
     locationId?: string;
@@ -268,7 +263,7 @@ export async function createTestShipment(
 }
 
 export async function createTestShipmentLine(
-  db: PgliteDatabase<any>,
+  db: any,
   opts: {
     shipmentId: string;
     salesOrderLineId: string;

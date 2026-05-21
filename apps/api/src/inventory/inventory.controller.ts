@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Query,
   UseGuards,
   Param,
@@ -14,6 +16,8 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { PaginationQuery } from '../common/pagination';
+import { AuthUser, type JwtUser } from '../auth/auth-user.decorator';
+import { PutawayBulkDto, ToggleQuarantineDto } from './dto';
 
 @Controller('inventory')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -43,6 +47,17 @@ export class InventoryController {
           .filter(Boolean)
       : [];
     return this.inventoryService.findByProductIds(ids, locationId);
+  }
+
+  @Post('by-products-bulk')
+  @CasbinAction('read')
+  findByProductIdsBulk(
+    @Body() dto: { productIds: string[]; locationId?: string },
+  ) {
+    return this.inventoryService.findByProductIds(
+      dto.productIds || [],
+      dto.locationId,
+    );
   }
 
   @Get('bins')
@@ -90,5 +105,32 @@ export class InventoryController {
   @CasbinAction('read')
   getEntryDetails(@Param('id') id: string) {
     return this.inventoryService.getEntryDetails(id);
+  }
+
+  @Get('pending-putaway')
+  @CasbinAction('read')
+  async getPendingPutaway(@Query('locationId') locationId?: string) {
+    return this.inventoryService.getPendingPutaway(locationId);
+  }
+
+  @Post('putaway')
+  @CasbinAction('write')
+  async putaway(@Body() dto: PutawayBulkDto, @AuthUser() user: JwtUser) {
+    return this.inventoryService.putaway(dto, user.username);
+  }
+
+  @Post('quarantine/:lineId')
+  @CasbinAction('write')
+  async toggleQuarantine(
+    @Param('lineId') lineId: string,
+    @Body() dto: ToggleQuarantineDto,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.inventoryService.toggleQuarantine(
+      lineId,
+      dto.sourceType,
+      user.username,
+      dto.reason,
+    );
   }
 }

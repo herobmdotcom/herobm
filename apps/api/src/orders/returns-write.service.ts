@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { AppConfigService } from '../settings/app-config.service';
 import { SalesCreditNoteService } from '../invoices/sales-credit-note.service';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -41,6 +41,7 @@ import {
   SALES_ORDER_STATE,
   RETURN_TRANSITIONS as RETURN_STATE_TRANSITIONS,
   getValidStates,
+  PUTAWAY_STATUS,
 } from '@modbm/shared';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
@@ -50,6 +51,7 @@ import {
   UpdateReturnDto,
   AddReturnLineDto,
   UpdateReturnLineDto,
+  ReceiveReturnDto,
 } from './dto';
 
 const VALID_RETURN_STATES = getValidStates(RETURN_STATE_TRANSITIONS);
@@ -320,155 +322,6 @@ export class ReturnsWriteService {
           .where(eq(salesOrderReturns.returnId, returnId))
           .returning();
 
-        // ── RECEIVED: Inventory receive-back into RETURNS bin ──
-        if (newState === RETURN_STATE.RECEIVED) {
-          if (!locationId) {
-            throw new BadRequestException(
-              'A location context is required to receive returned items into inventory.',
-            );
-          }
-
-          const returnLines = await innerTx
-            .select()
-            .from(salesOrderReturnLines)
-            .where(eq(salesOrderReturnLines.returnId, returnId));
-
-          // Resolve productIds from order lines
-          const stockLines = [];
-          for (const rl of returnLines) {
-            const orderLine = await innerTx
-              .select()
-              .from(salesOrderLineItems)
-              .where(
-                eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
-              )
-              .limit(1)
-              .then((r: any[]) => r[0]);
-            if (orderLine) {
-              stockLines.push({
-                productId: orderLine.productId,
-                quantity: rl.quantityReturned,
-              });
-            }
-          }
-
-          // Receive into the RETURNS bin (HANDLING zone)
-          const [returnsBin] = await innerTx
-            .select({ binId: bins.binId })
-            .from(bins)
-            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
-            .where(
-              and(
-                eq(bins.binNumber, 'RETURNS'),
-                eq(zones.locationId, locationId),
-              ),
-            )
-            .limit(1);
-
-          if (!returnsBin) {
-            throw new BadRequestException(
-              `No RETURNS bin found for location '${locationId}'.`,
-            );
-          }
-
-          const receiveLines = stockLines.map((line) => ({
-            productId: line.productId,
-            binId: returnsBin.binId,
-            quantity: parseFloat(line.quantity),
-          }));
-
-          if (receiveLines.length > 0) {
-            await this.inventoryService.recordInventoryMovement(innerTx, {
-              entryNumber:
-                'RET-' +
-                existing.returnNumber +
-                '-' +
-                Date.now().toString().slice(-4),
-              sourceType: 'SO_RETURN',
-              sourceId: returnId,
-              memo: `RMA Received to Returns Bin`,
-              userId: actor,
-              lines: receiveLines,
-            });
-          }
-
-          // Post Inventory/COGS GL reversal via Accounting Strategy
-          const valuationStrategy = getValuationStrategy(
-            this.appConfig.valuationMethod(),
-          );
-          let totalReturnCost = 0;
-
-          for (const line of stockLines) {
-            if (!line.productId) continue;
-            const [product] = await innerTx
-              .select()
-              .from(coreProducts)
-              .where(eq(coreProducts.productId, line.productId));
-
-            if (product) {
-              const cost = valuationStrategy.getCogs(
-                {
-                  productId: product.productId,
-                  standardCost: product.standardCost || '0',
-                  weightedAverageCost: product.weightedAverageCost || '0',
-                },
-                parseFloat(line.quantity),
-              );
-              totalReturnCost += parseFloat(cost);
-            }
-          }
-
-          const accountingStrategy = getAccountingStrategy(
-            this.appConfig.inventoryAccountingMode(),
-            {
-              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
-              grniAccountId: this.appConfig.defaultGrniAccountId(),
-              cogsAccountId: this.appConfig.defaultCogsAccountId(),
-              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
-            },
-          );
-
-          const [retOrder] = await innerTx
-            .select({
-              costCenterId: accountGroups.defaultCostCenterId,
-              activityId: accountGroups.defaultActivityId,
-            })
-            .from(salesOrders)
-            .leftJoin(
-              coreAccounts,
-              eq(salesOrders.customerId, coreAccounts.accountId),
-            )
-            .leftJoin(
-              accountGroups,
-              eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
-            )
-            .where(eq(salesOrders.salesOrderId, existing.salesOrderId));
-
-          const retCostCenterId = retOrder?.costCenterId || undefined;
-          const retActivityId = retOrder?.activityId || undefined;
-
-          const returnGlWithDims = accountingStrategy.onSalesReturn({
-            amount: Number(totalReturnCost.toFixed(2)),
-            memo: `Sales Return ${existing.returnNumber}`,
-            costCenterId: retCostCenterId,
-            activityId: retActivityId,
-          });
-
-          if (returnGlWithDims) {
-            await this.glService.postJournalEntry(
-              returnGlWithDims.lines as any,
-              {
-                actor,
-                entryDate: new Date().toISOString().slice(0, 10),
-                sourceType: returnGlWithDims.sourceType,
-                sourceId: returnId,
-                memo: `Sales Return ${existing.returnNumber}`,
-              },
-              innerTx,
-            );
-          }
-        }
-
         // ── PROCESSED: Create Credit Note document + Revenue/AR GL ──
         if (newState === RETURN_STATE.PROCESSED) {
           await this.creditNoteService.createCreditNote(
@@ -594,6 +447,234 @@ export class ReturnsWriteService {
   }
 
   /**
+   * Receive return lines (partial or full)
+   */
+  async receiveReturnLines(
+    returnId: string,
+    dto: ReceiveReturnDto,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    const result = await (tx || this.db).transaction(
+      async (innerTx: DrizzleDB) => {
+        const ret = await this.findReturn(returnId, innerTx);
+
+        if (
+          ret.stateCode !== RETURN_STATE.CONFIRMED &&
+          ret.stateCode !== RETURN_STATE.PARTIALLY_RECEIVED
+        ) {
+          throw new BadRequestException(
+            `Cannot receive lines for return in state '${ret.stateCode}'`,
+          );
+        }
+
+        const returnLines = await innerTx
+          .select()
+          .from(salesOrderReturnLines)
+          .where(eq(salesOrderReturnLines.returnId, returnId));
+
+        const linesToReceive = new Map<string, number>();
+        for (const line of dto.lines) {
+          const qty = parseFloat(line.quantityReceived);
+          if (qty > 0) {
+            linesToReceive.set(line.returnLineId, qty);
+          }
+        }
+
+        if (linesToReceive.size === 0) {
+          throw new BadRequestException('No quantities provided for receipt.');
+        }
+
+        const stockLines = [];
+        let totalReturnCost = 0;
+        const valuationStrategy = getValuationStrategy(
+          this.appConfig.valuationMethod(),
+        );
+
+        for (const rl of returnLines) {
+          const newlyReceived = linesToReceive.get(rl.returnLineId) || 0;
+          if (newlyReceived > 0) {
+            const expected = parseFloat(rl.quantityReturned);
+            const previouslyReceived = parseFloat(rl.quantityReceived || '0');
+
+            if (previouslyReceived + newlyReceived > expected) {
+              throw new BadRequestException(
+                `Cannot receive more than expected. Expected: ${expected}, Previously Received: ${previouslyReceived}, Attempting to Receive: ${newlyReceived}`,
+              );
+            }
+
+            const orderLine = await innerTx
+              .select()
+              .from(salesOrderLineItems)
+              .where(
+                eq(salesOrderLineItems.salesOrderLineId, rl.salesOrderLineId),
+              )
+              .limit(1)
+              .then((r: any[]) => r[0]);
+
+            if (orderLine) {
+              stockLines.push({
+                productId: orderLine.productId,
+                quantity: newlyReceived,
+              });
+
+              // Calculate COGS
+              const [product] = await innerTx
+                .select()
+                .from(coreProducts)
+                .where(eq(coreProducts.productId, orderLine.productId));
+
+              if (product) {
+                const cost = valuationStrategy.getCogs(
+                  {
+                    productId: product.productId,
+                    standardCost: product.standardCost || '0',
+                    weightedAverageCost: product.weightedAverageCost || '0',
+                  },
+                  newlyReceived,
+                );
+                totalReturnCost += parseFloat(cost);
+              }
+            }
+
+            // Update quantity_received on the return line
+            await innerTx
+              .update(salesOrderReturnLines)
+              .set({
+                quantityReceived: sql`${salesOrderReturnLines.quantityReceived} + ${newlyReceived}`,
+                putawayStatus: PUTAWAY_STATUS.PENDING_PUTAWAY,
+              })
+              .where(eq(salesOrderReturnLines.returnLineId, rl.returnLineId));
+          }
+        }
+
+        if (stockLines.length > 0) {
+          // Receive into the RETURNS bin (HANDLING zone)
+          const [returnsBin] = await innerTx
+            .select({ binId: bins.binId })
+            .from(bins)
+            .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
+            .where(
+              and(
+                eq(bins.binNumber, 'RETURNS'),
+                eq(zones.locationId, dto.locationId),
+              ),
+            )
+            .limit(1);
+
+          if (!returnsBin) {
+            throw new BadRequestException(
+              `No RETURNS bin found for location '${dto.locationId}'.`,
+            );
+          }
+
+          const receiveLines = stockLines.map((line) => ({
+            productId: line.productId,
+            binId: returnsBin.binId,
+            quantity: line.quantity,
+          }));
+
+          await this.inventoryService.recordInventoryMovement(innerTx, {
+            entryNumber:
+              'RET-' + ret.returnNumber + '-' + Date.now().toString().slice(-4),
+            sourceType: 'SO_RETURN',
+            sourceId: returnId,
+            memo: `RMA Received to Returns Bin (Partial)`,
+            userId: actor,
+            lines: receiveLines,
+          });
+
+          // Post Inventory/COGS GL reversal via Accounting Strategy
+          const accountingStrategy = getAccountingStrategy(
+            this.appConfig.inventoryAccountingMode(),
+            {
+              inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+              grniAccountId: this.appConfig.defaultGrniAccountId(),
+              cogsAccountId: this.appConfig.defaultCogsAccountId(),
+              shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
+            },
+          );
+
+          const [retOrder] = await innerTx
+            .select({
+              costCenterId: accountGroups.defaultCostCenterId,
+              activityId: accountGroups.defaultActivityId,
+            })
+            .from(salesOrders)
+            .leftJoin(
+              coreAccounts,
+              eq(salesOrders.customerId, coreAccounts.accountId),
+            )
+            .leftJoin(
+              accountGroups,
+              eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+            )
+            .where(eq(salesOrders.salesOrderId, ret.salesOrderId));
+
+          const retCostCenterId = retOrder?.costCenterId || undefined;
+          const retActivityId = retOrder?.activityId || undefined;
+
+          const returnGlWithDims = accountingStrategy.onSalesReturn({
+            amount: Number(totalReturnCost.toFixed(2)),
+            memo: `Sales Return ${ret.returnNumber} (Partial)`,
+            costCenterId: retCostCenterId,
+            activityId: retActivityId,
+          });
+
+          if (returnGlWithDims) {
+            await this.glService.postJournalEntry(
+              returnGlWithDims.lines as any,
+              {
+                actor,
+                entryDate: new Date().toISOString().slice(0, 10),
+                sourceType: returnGlWithDims.sourceType,
+                sourceId: returnId,
+                memo: `Sales Return ${ret.returnNumber} (Partial)`,
+              },
+              innerTx,
+            );
+          }
+        }
+
+        // Check if fully received
+        const updatedReturnLines = await innerTx
+          .select()
+          .from(salesOrderReturnLines)
+          .where(eq(salesOrderReturnLines.returnId, returnId));
+
+        let fullyReceived = true;
+        for (const rl of updatedReturnLines) {
+          if (
+            parseFloat(rl.quantityReceived || '0') <
+            parseFloat(rl.quantityReturned)
+          ) {
+            fullyReceived = false;
+            break;
+          }
+        }
+
+        const newState = fullyReceived
+          ? RETURN_STATE.RECEIVED
+          : RETURN_STATE.PARTIALLY_RECEIVED;
+
+        if (ret.stateCode !== newState) {
+          await this.changeReturnState(
+            returnId,
+            newState,
+            actor,
+            undefined,
+            innerTx,
+          );
+        }
+
+        return await this.findReturn(returnId, innerTx);
+      },
+    );
+
+    return result;
+  }
+
+  /**
    * Update a return line.
    */
   async updateReturnLine(
@@ -607,7 +688,10 @@ export class ReturnsWriteService {
       async (innerTx: DrizzleDB) => {
         const ret = await this.findReturn(returnId, innerTx);
 
-        if (ret.stateCode !== RETURN_STATE.DRAFT) {
+        if (
+          ret.stateCode !== RETURN_STATE.DRAFT &&
+          ret.stateCode !== RETURN_STATE.CONFIRMED
+        ) {
           throw new BadRequestException(
             `Cannot update lines on return in state '${ret.stateCode}'`,
           );
@@ -709,7 +793,10 @@ export class ReturnsWriteService {
     await (tx || this.db).transaction(async (innerTx: DrizzleDB) => {
       const ret = await this.findReturn(returnId, innerTx);
 
-      if (ret.stateCode !== RETURN_STATE.DRAFT) {
+      if (
+        ret.stateCode !== RETURN_STATE.DRAFT &&
+        ret.stateCode !== RETURN_STATE.CONFIRMED
+      ) {
         throw new BadRequestException(
           `Cannot remove lines from return in state '${ret.stateCode}'`,
         );
@@ -784,6 +871,75 @@ export class ReturnsWriteService {
         ...ret,
         lines,
         creditNoteNumber: creditNote?.creditNoteNumber ?? null,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * List all returns globally, optionally filtered by state.
+   */
+  async findGlobal(stateCode?: string) {
+    let q = this.db.select().from(salesOrderReturns).$dynamic();
+
+    if (stateCode) {
+      const states = stateCode.split(',');
+      if (states.length === 1) {
+        q = q.where(eq(salesOrderReturns.stateCode, stateCode as any));
+      } else {
+        q = q.where(inArray(salesOrderReturns.stateCode, states as any[]));
+      }
+    }
+
+    const returns = await q.orderBy(salesOrderReturns.createdOn);
+
+    // Fetch lines and credit note number for each return
+    const result = [];
+    for (const ret of returns) {
+      const linesQuery = await this.db
+        .select({
+          line: salesOrderReturnLines,
+          productId: coreProducts.productId,
+          productNumber: coreProducts.productNumber,
+          productDescription: salesOrderLineItems.productDescription,
+        })
+        .from(salesOrderReturnLines)
+        .leftJoin(
+          salesOrderLineItems,
+          eq(
+            salesOrderReturnLines.salesOrderLineId,
+            salesOrderLineItems.salesOrderLineId,
+          ),
+        )
+        .leftJoin(
+          coreProducts,
+          eq(salesOrderLineItems.productId, coreProducts.productId),
+        )
+        .where(eq(salesOrderReturnLines.returnId, ret.returnId));
+
+      const lines = linesQuery.map((l) => ({
+        ...l.line,
+        productId: l.productId,
+        productNumber: l.productNumber,
+        productDescription: l.productDescription,
+      }));
+
+      // Join with sales order to get location and order number
+      const [orderInfo] = await this.db
+        .select({
+          orderNumber: salesOrders.orderNumber,
+          locationId: salesOrders.fulfillmentLocationId,
+        })
+        .from(salesOrders)
+        .where(eq(salesOrders.salesOrderId, ret.salesOrderId))
+        .limit(1);
+
+      result.push({
+        ...ret,
+        orderNumber: orderInfo?.orderNumber,
+        locationId: orderInfo?.locationId,
+        lines,
       });
     }
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,9 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import CsvImportButton from '@/components/shared/CsvImportButton';
+import SlideOver from '@/components/shared/SlideOver';
+import { SchemaBuilder } from '@/components/SchemaBuilder';
+import { DynamicForm } from '@/components/DynamicForm';
 
 import { getCurrency } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
@@ -99,8 +102,35 @@ export default function FinancialSettingsPage() {
   const [glSettings, setGlSettings] = useState<any>(null);
   const [glAccounts, setGlAccounts] = useState<any[]>([]);
   const [glLoading, setGlLoading] = useState(true);
+  const [schemaObj, setSchemaObj] = useState<any>({ type: 'object', properties: {} });
+  const [schemaEditorOpen, setSchemaEditorOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
+  // ── CoA state ──────────────────────────────────────────────────────────────
+  const [coaForm, setCoaForm] = useState<any>({});
+  const [coaCreating, setCoaCreating] = useState(false);
+  const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
+
+  const coaTree = useMemo(() => {
+    const map = new Map<string | null, any[]>();
+    for (const acct of glAccounts) {
+      const parentId = acct.parentAccountId || null;
+      if (!map.has(parentId)) map.set(parentId, []);
+      map.get(parentId)!.push(acct);
+    }
+    const build = (parentId: string | null, depth: number = 0): any[] => {
+      const children = map.get(parentId) || [];
+      const result: any[] = [];
+      for (const acct of children) {
+        result.push({ ...acct, depth });
+        if (acct.isGroup) {
+          result.push(...build(acct.glAccountId, depth + 1));
+        }
+      }
+      return result;
+    };
+    return build(null);
+  }, [glAccounts]);
 
   const areaMap: Record<string, string> = {
     gl: tSettings('sections.gl'),
@@ -121,11 +151,62 @@ export default function FinancialSettingsPage() {
       ]);
       setGlSettings(settingsRes || {});
       setGlAccounts(accountsRes || []);
+      setSchemaObj(settingsRes?.accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
     } finally {
       setGlLoading(false);
     }
+  };
+
+  const updateGlSetting = async (field: string, value: any) => {
+    try {
+      const payload = { [field]: value };
+      const updated = await apiMutate<any>('/api/gl/settings', 'PATCH', payload);
+      setGlSettings(Object.assign({}, glSettings || {}, updated || {}));
+      toast.success('Settings updated');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const saveSchema = async () => {
+    try {
+      await updateGlSetting('accountMetadataSchema', schemaObj);
+      // Update local settings so the UI updates immediately after save
+      setGlSettings({ ...glSettings, accountMetadataSchema: schemaObj });
+      setSchemaEditorOpen(false);
+    } catch (err) {
+      toast.error('Failed to save schema');
+    }
+  };
+
+  const openSchemaEditor = () => {
+    setSchemaObj(glSettings?.accountMetadataSchema || { type: 'object', properties: {} });
+    setSchemaEditorOpen(true);
+  };
+
+  const coaEdit = (acct: any) => { setCoaEditingId(acct.glAccountId); setCoaForm({ ...acct }); setCoaCreating(false); };
+  const coaCreate = (parentId?: string) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: 'expense', parentAccountId: parentId || null, isGroup: false, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
+  const coaCancel = () => { setCoaEditingId(null); setCoaCreating(false); };
+
+  const coaSave = async () => {
+    if (!coaForm.accountCode || !coaForm.name || !coaForm.accountType) { toast.error(tCommon('errors.typeAndDateRequired') || 'Required fields missing'); return; }
+    try {
+      const payload = { ...coaForm };
+      if (coaEditingId) {
+        await apiMutate(`/api/gl/accounts/${coaEditingId}`, 'PATCH', {
+          name: payload.name,
+          isActive: payload.isActive,
+          isBankAccount: payload.isBankAccount
+        });
+        toast.success('Saved');
+      } else {
+        await apiMutate('/api/gl/accounts', 'POST', payload);
+        toast.success('Saved');
+      }
+      coaCancel(); loadGl();
+    } catch (err: any) { toast.error(err.message); }
   };
 
   // ── Tax data ───────────────────────────────────────────────────────────────
@@ -361,6 +442,110 @@ export default function FinancialSettingsPage() {
 
   // ── Row Renderers ─────────────────────────────────────────────────────────
 
+  const renderGlAccountSelect = (field: string, value?: string) => {
+    return (
+      <select 
+        className="input" 
+        value={value || ''} 
+        onChange={(e) => updateGlSetting(field, e.target.value)}
+      >
+        <option value="">{tCommon('notConfigured') || 'Not Configured'}</option>
+        {glAccounts.filter(a => !a.isGroup).map(a => (
+          <option key={a.glAccountId} value={a.glAccountId}>
+            {a.accountCode} - {a.name}
+          </option>
+        ))}
+      </select>
+    );
+  };
+
+  const renderCoaRow = (isEdit: boolean, data: any, key: string) => (
+    <Fragment key={key}>
+      <tr style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
+        <td style={{ paddingLeft: `${(data.depth || 0) * 20 + 8}px` }}>
+          {isEdit && coaCreating
+            ? <input className="input" value={coaForm.accountCode} onChange={e => setCoaForm({ ...coaForm, accountCode: e.target.value })} placeholder="Code" style={{ width: 100 }} />
+            : <span className={`font-mono text-xs ${data.isGroup ? 'font-bold' : ''}`}>{data.accountCode}</span>}
+        </td>
+        <td>
+          {isEdit
+            ? <input className="input" value={coaForm.name} onChange={e => setCoaForm({ ...coaForm, name: e.target.value })} placeholder="Name" />
+            : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
+                {data.isGroup ? <span className="material-symbols-outlined text-[16px]">folder</span> : <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>}
+                {data.name}
+              </span>}
+        </td>
+        <td>
+          {isEdit && coaCreating ? (
+            <select className="input" value={coaForm.accountType} onChange={e => setCoaForm({ ...coaForm, accountType: e.target.value })}>
+              {['asset', 'liability', 'equity', 'revenue', 'expense'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            </select>
+          ) : data.accountType}
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          {isEdit && coaCreating ? (
+            <input type="checkbox" checked={coaForm.isGroup} onChange={e => setCoaForm({ ...coaForm, isGroup: e.target.checked })} />
+          ) : data.isGroup ? (
+            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+          ) : null}
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          {isEdit ? (
+            <input type="checkbox" checked={coaForm.isBankAccount} onChange={e => setCoaForm({ ...coaForm, isBankAccount: e.target.checked })} />
+          ) : data.isBankAccount ? (
+            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+          ) : null}
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          {isEdit ? (
+            <input className="input text-center px-1 py-1 h-7" value={coaForm.currencyCode || ''} onChange={e => setCoaForm({ ...coaForm, currencyCode: e.target.value.toUpperCase() })} placeholder="AUD" style={{ width: 60 }} />
+          ) : (
+            <span className="font-mono text-xs text-muted">{data.currencyCode}</span>
+          )}
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          {isEdit ? (
+            <label className="switch" title={coaForm.isActive ? tSettings('labels.active') : tSettings('labels.inactive')}>
+              <input type="checkbox" checked={coaForm.isActive} onChange={e => setCoaForm({ ...coaForm, isActive: e.target.checked })} />
+              <span className="switch-slider"></span>
+            </label>
+          ) : (
+            <span style={{ color: data.isActive ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
+              {data.isActive ? 'ACTIVE' : 'INACTIVE'}
+            </span>
+          )}
+        </td>
+        <td style={{ textAlign: 'right' }}>
+          {isEdit ? (
+            <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
+              <button className="btn btn-secondary btn-xs" onClick={coaCancel}>{tSettings('actions.cancel') || 'Cancel'}</button>
+              <button className="btn btn-primary btn-xs" onClick={coaSave}>{tSettings('actions.save') || 'Save'}</button>
+            </div>
+          ) : (
+            <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
+              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId)}>+ Child</button>}
+              <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit') || 'Edit'}</button>
+              {data.isSystem && <span className="text-xs text-muted italic px-2">System</span>}
+            </div>
+          )}
+        </td>
+      </tr>
+      {isEdit && glSettings?.accountMetadataSchema?.type === 'object' && (
+        <tr style={{ background: 'var(--bg-secondary)' }}>
+          <td colSpan={6} style={{ padding: '16px 24px', borderTop: 'none' }}>
+            <div className="card bg-[var(--bg-primary)] p-4 shadow-sm border border-[var(--border)]">
+              <DynamicForm 
+                schema={glSettings.accountMetadataSchema} 
+                data={coaForm.metadata || {}} 
+                onChange={(data) => setCoaForm({...coaForm, metadata: data})} 
+              />
+            </div>
+          </td>
+        </tr>
+      )}
+    </Fragment>
+  );
+
   const renderTaxRow = (isEdit: boolean, data: any, key: string) => (
     <tr key={key} style={isEdit ? { background: 'var(--bg-secondary)' } : undefined}>
       <td>
@@ -577,7 +762,6 @@ export default function FinancialSettingsPage() {
             <h3 className="section-heading !mb-0">
               {tSettings('sections.gl')}
             </h3>
-            <span className="badge badge-secondary">Read-Only</span>
           </div>
 
           {glLoading ? (
@@ -589,76 +773,132 @@ export default function FinancialSettingsPage() {
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAr')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultArAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultArAccountId', glSettings?.defaultArAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultRevenue')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultRevenueAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultRevenueAccountId', glSettings?.defaultRevenueAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultAp')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultApAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultApAccountId', glSettings?.defaultApAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultTax')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultTaxAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultTaxAccountId', glSettings?.defaultTaxAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultCogs')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultCogsAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultCogsAccountId', glSettings?.defaultCogsAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.defaultExpense')}
                   </label>
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-md">
-                    {renderGlAccountLabel(glSettings?.defaultExpenseAccountId)}
-                  </div>
+                  {renderGlAccountSelect('defaultExpenseAccountId', glSettings?.defaultExpenseAccountId)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Inventory
+                  </label>
+                  {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default GRNI
+                  </label>
+                  {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Shrinkage
+                  </label>
+                  {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId)}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Default Fee Revenue
+                  </label>
+                  {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId)}
                 </div>
               </div>
               
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.revenueRouting')}
                   </label>
-                  <p className="text-sm font-medium mt-1">
-                    {glSettings?.revenueRoutingPrecedence === 'customer_first'
-                      ? tSettings('gl.customerFirst')
-                      : tSettings('gl.productFirst')}
-                  </p>
+                  <select 
+                    className="input max-w-sm" 
+                    value={glSettings?.revenueRoutingPrecedence || ''} 
+                    onChange={(e) => updateGlSetting('revenueRoutingPrecedence', e.target.value)}
+                  >
+                    <option value="customer_first">{tSettings('gl.customerFirst')}</option>
+                    <option value="product_first">{tSettings('gl.productFirst')}</option>
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.expenseRouting')}
                   </label>
-                  <p className="text-sm font-medium mt-1">
-                    {glSettings?.expenseRoutingPrecedence === 'supplier_first'
-                      ? tSettings('gl.supplierFirst')
-                      : tSettings('gl.productFirst')}
-                  </p>
+                  <select 
+                    className="input max-w-sm" 
+                    value={glSettings?.expenseRoutingPrecedence || ''} 
+                    onChange={(e) => updateGlSetting('expenseRoutingPrecedence', e.target.value)}
+                  >
+                    <option value="supplier_first">{tSettings('gl.supplierFirst')}</option>
+                    <option value="product_first">{tSettings('gl.productFirst')}</option>
+                  </select>
                 </div>
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── Chart of Accounts ────────────────────────────────────────── */}
+        <div id="coa-section" className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-heading !mb-0">Chart of Accounts</h3>
+            <div className="flex gap-2">
+              <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>Configure Metadata</button>
+              <button className="btn btn-primary btn-sm" onClick={() => coaCreate()}>+ Add Root Group</button>
+            </div>
+          </div>
+
+          <table className="table-lines w-full">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 180 }}>{tSettings('labels.code')}</th>
+                      <th>{tSettings('labels.name')}</th>
+                      <th style={{ width: 140 }}>Type</th>
+                      <th style={{ width: 60, textAlign: 'center' }}>Group</th>
+                      <th style={{ width: 60, textAlign: 'center' }}>Bank</th>
+                      <th style={{ width: 80, textAlign: 'center' }}>Curr</th>
+                      <th style={{ width: 100, textAlign: 'center' }}>Status</th>
+                      <th style={{ width: 260, textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coaCreating && !coaForm.parentAccountId && renderCoaRow(true, coaForm, 'new-root')}
+                    {coaTree.map(acct =>
+                      <Fragment key={acct.glAccountId}>
+                        {coaEditingId === acct.glAccountId
+                          ? renderCoaRow(true, acct, acct.glAccountId)
+                          : renderCoaRow(false, acct, acct.glAccountId)
+                        }
+                        {coaCreating && coaForm.parentAccountId === acct.glAccountId && renderCoaRow(true, coaForm, 'new-child')}
+                      </Fragment>
+                    )}
+                  </tbody>
+                </table>
         </div>
 
         {/* ── Tax Categories ─────────────────────────────────────────────── */}
@@ -821,6 +1061,25 @@ export default function FinancialSettingsPage() {
           </table>
         </div>
       </div>
+
+      <SlideOver
+        isOpen={schemaEditorOpen}
+        onClose={() => setSchemaEditorOpen(false)}
+        title="Configure Metadata Schema"
+        width="max-w-2xl"
+      >
+        <div className="p-4 flex flex-col gap-6">
+          <SchemaBuilder 
+            value={schemaObj} 
+            onChange={setSchemaObj} 
+          />
+
+          <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
+            <button className="btn btn-secondary" onClick={() => setSchemaEditorOpen(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={saveSchema}>Save Schema</button>
+          </div>
+        </div>
+      </SlideOver>
     </DetailsLayout>
   );
 }

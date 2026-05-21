@@ -1,0 +1,2 @@
+ALTER TABLE "modbm_core"."sales_order_returns" DROP CONSTRAINT "return_state_check";--> statement-breakpoint
+ALTER TABLE "modbm_core"."sales_order_returns" ADD CONSTRAINT "return_state_check" CHECK (state_code IN ('draft', 'confirmed', 'partially_received', 'received', 'processed', 'cancelled'));

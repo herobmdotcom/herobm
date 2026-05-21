@@ -1,0 +1,1 @@
+ALTER TABLE "modbm_core"."sales_order_return_lines" ADD COLUMN "quantity_received" numeric DEFAULT '0';

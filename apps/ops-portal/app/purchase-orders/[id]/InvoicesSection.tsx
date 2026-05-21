@@ -8,7 +8,7 @@ import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
 import type { OrderDetail, TaxCategory } from './types';
-import { computeLinePrice } from '@modbm/shared';
+import { computeLinePrice, PURCHASE_ORDER_STATE } from '@modbm/shared';
 import { PurchaseInvoice } from '@/lib/purchase-order-utils';
 import { useSettings } from '@/components/SettingsProvider';
 import { useRouter } from 'next/navigation';
@@ -54,10 +54,10 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Supplier Invoices
                 </h3>
-                {['ordered', 'received', 'partially_received', 'legacy'].includes(order.stateCode) && (
+                {![PURCHASE_ORDER_STATE.DRAFT, PURCHASE_ORDER_STATE.CANCELLED, PURCHASE_ORDER_STATE.ARCHIVED, PURCHASE_ORDER_STATE.CLOSED_SHORT, PURCHASE_ORDER_STATE.INVOICED].includes(order.stateCode as any) && (
                     <button
                         className="btn btn-secondary btn-sm"
-                        disabled={totalReceived === 0 && order.stateCode !== 'ordered'}
+                        disabled={totalReceived === 0 && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED}
                         onClick={() => router.push(`/supplier-invoices/new?purchaseOrderId=${orderId}`)}
                     >
                         {tPurchase('buttons.enterSupplierBill')}

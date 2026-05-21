@@ -407,6 +407,34 @@
       "when": 1778528513532,
       "tag": "0059_naive_mariko_yashida",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1779351589656,
+      "tag": "0060_bouncy_beyonder",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1779374078363,
+      "tag": "0059_gifted_human_fly",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1779374621905,
+      "tag": "0060_chubby_pride",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1779378099152,
+      "tag": "0061_omniscient_purple_man",
+      "breakpoints": true
     }
   ]
 }

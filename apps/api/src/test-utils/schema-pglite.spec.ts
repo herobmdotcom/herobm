@@ -7,8 +7,8 @@ describe('Schema PGLite Test', () => {
     const result = await pg.client.query(
       'SELECT count(*) as count FROM modbm_core.tax_categories',
     );
-    console.log('Tax categories count:', result.rows[0].count);
-    expect(Number(result.rows[0].count)).toBeGreaterThan(0);
+    console.log('Tax categories count:', (result.rows[0] as any).count);
+    expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
   });
 
   it('should run many queries on a seeded table', async () => {
@@ -16,7 +16,7 @@ describe('Schema PGLite Test', () => {
       const result = await pg.client.query(
         'SELECT count(*) as count FROM modbm_core.tax_categories',
       );
-      expect(Number(result.rows[0].count)).toBeGreaterThan(0);
+      expect(Number((result.rows[0] as any).count)).toBeGreaterThan(0);
     }
   });
 });

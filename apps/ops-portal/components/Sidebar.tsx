@@ -32,7 +32,15 @@ export default function Sidebar() {
             { href: '/inventory/transfers', label: t('items.transfers', { defaultValue: 'Transfers' }) }
           ]
         },
-        { href: '/receiving', label: t('items.receiving', { defaultValue: 'Receiving' }), icon: 'move_to_inbox' },
+        { 
+          href: '/receiving', 
+          label: t('items.receiving', { defaultValue: 'Receiving' }), 
+          icon: 'move_to_inbox',
+          subItems: [
+            { href: '/receiving', label: 'Supplier Receipts' },
+            { href: '/receiving/returns', label: 'Customer Returns' }
+          ]
+        },
         { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },
         { href: '/inventory/picking', label: t('items.picking', { defaultValue: 'Picking' }), icon: 'inventory' },
         { href: '/inventory/shipping', label: t('items.shipping', { defaultValue: 'Shipping' }), icon: 'local_shipping' },

@@ -25,6 +25,9 @@ p, admin, purchase-orders, write
 p, admin, suppliers, write
 p, admin, receptions, write
 p, admin, goods-received, write
+p, admin, inventory, write
+
+# admin — full access to everything
 p, admin, users, read
 p, admin, users, write
 p, admin, accounts, archive
@@ -34,6 +37,7 @@ p, admin, purchase-orders, archive
 p, admin, suppliers, archive
 p, admin, receptions, archive
 p, admin, goods-received, archive
+p, admin, inventory, archive
 p, admin, settings, write
 p, admin, gl, read
 p, admin, gl, write
@@ -62,6 +66,7 @@ p, warehouse, sales-orders, write
 p, warehouse, purchase-orders, write
 p, warehouse, receptions, write
 p, warehouse, goods-received, write
+p, warehouse, inventory, write
 
 # procurement — viewer + supplier/PO writes
 p, procurement, suppliers, write

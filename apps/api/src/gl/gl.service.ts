@@ -752,6 +752,31 @@ export class GlService {
     };
   }
 
+  async updateSettings(
+    data: Partial<typeof glSettings.$inferInsert>,
+    tx?: DrizzleDB,
+  ) {
+    const db = tx || this.db;
+    const [existing] = await db.select().from(glSettings).limit(1);
+
+    if (!existing) {
+      // If no settings exist, create them (should be rare, but safe fallback)
+      const [newSettings] = await db
+        .insert(glSettings)
+        .values(data as any)
+        .returning();
+      return newSettings;
+    }
+
+    const [updated] = await db
+      .update(glSettings)
+      .set(data)
+      .where(eq(glSettings.settingsId, existing.settingsId))
+      .returning();
+
+    return updated;
+  }
+
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------

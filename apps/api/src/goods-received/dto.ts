@@ -49,33 +49,3 @@ export class ResolveAllocationDto {
   @IsNumberString()
   allocatedQuantity?: string;
 }
-
-export class PutawayLineDto {
-  @IsString()
-  @IsNotEmpty()
-  lineId!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  destinationBinId!: string;
-
-  @IsNumberString()
-  quantity!: string;
-
-  @IsOptional()
-  @IsNumberString()
-  newTotalQuantity?: string;
-}
-
-export class PutawayBulkDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PutawayLineDto)
-  putaways!: PutawayLineDto[];
-}
-
-export class ToggleQuarantineDto {
-  @IsOptional()
-  @IsString()
-  reason?: string;
-}

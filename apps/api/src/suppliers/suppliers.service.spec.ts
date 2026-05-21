@@ -27,7 +27,7 @@ describe('SuppliersService', () => {
         { vendorNumber: 'V2', name: 'Vendor 2', currencyCode: 'USD' },
       ]);
 
-      const result = await service.findAll();
+      const result = await service.findAll({});
       expect(result.data).toHaveLength(2);
       expect(result.total).toBe(2);
     });
