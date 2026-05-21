@@ -34,8 +34,8 @@ export default function StockElsewhereCell({
 
   const colorClass =
     signal === 'green'
-      ? 'text-[#006b5c]' // matches existing green accent in the portal
-      : 'text-[#b45309]'; // amber-700
+      ? 'text-[var(--success)]'
+      : 'text-[var(--warning)]';
 
   return (
     <span className={`font-medium ${colorClass}`}>
