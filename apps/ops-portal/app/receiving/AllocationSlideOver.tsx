@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
 
 interface AllocationSlideOverProps {
@@ -23,6 +24,7 @@ interface LineState {
 }
 
 export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefresh }: AllocationSlideOverProps) {
+  const t = useTranslations('goodsReceived');
   const [lineStates, setLineStates] = useState<Map<string, LineState>>(new Map());
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
   const [localLines, setLocalLines] = useState<any[]>([]);
@@ -93,7 +95,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
           });
         })
         .catch((err) => {
-          console.error('Failed to load pending POs for', line.goodsReceivedLineId, err);
+          reportError(err, 'AllocationSlideOver.pendingPOs');
           setLineStates((prev) => {
             const next = new Map(prev);
             next.set(line.goodsReceivedLineId, {
@@ -162,7 +164,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     const originalQuantity = parseFloat(grLine.quantityReceived || '0');
     const qty = parseFloat(qtyStr);
     if (isNaN(qty) || qty <= 0 || qty > originalQuantity) {
-      alert(`Please enter a valid quantity between 0.01 and ${originalQuantity}`);
+      alert(t('allocation.quantityValidationError', { max: originalQuantity }));
       return;
     }
 
@@ -195,9 +197,9 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
       markAllocated(grLine.goodsReceivedLineId, qtyStr, splitLine);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Failed to match receipt');
+      alert(err.message || t('allocation.matchError'));
     }
-  }, [onRefresh, markAllocated]);
+  }, [onRefresh, markAllocated, t]);
 
   if (!isOpen || unmatchedLines.length === 0) return null;
 
@@ -284,7 +286,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                 
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="text-xs ml-4 text-[var(--text-secondary)]">
-                  Received at: <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || 'Unknown'}</span>
+                  Received at: <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || t('allocation.unknown')}</span>
                 </span>
 
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
@@ -326,8 +328,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                               <span className="badge badge-sm badge-warning">Location Mismatch</span>
                             )}
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                              {/* eslint-disable-next-line i18next/no-literal-string */}
-                              Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                              {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
                             </div>
                           </div>
                         </button>
@@ -372,6 +373,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
 }
 
 function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
+  const t = useTranslations('goodsReceived');
   const ordered = parseFloat(line.quantity || '0');
   const received = parseFloat(line.quantityReceived || '0');
   const remaining = Math.max(0, ordered - received);
@@ -407,8 +409,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             className="btn btn-primary btn-sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            {isAllocating ? '...' : 'Match'}
+            {isAllocating ? '...' : t('allocation.match')}
           </button>
         </div>
       </td>

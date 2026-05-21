@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -60,7 +60,7 @@ interface ShippingContext {
 export default function ShippingPage() {
     const t = useTranslations('shipping');
     const tCommon = useTranslations('common');
-    useDocumentTitle('Shipping');
+    useDocumentTitle(t('title'));
     const { app } = useSettings();
 
     // Location
@@ -96,7 +96,7 @@ export default function ShippingPage() {
                     setSelectedLocationId(defaultLocId);
                 }
             })
-            .catch(err => console.error('Failed to load locations', err));
+            .catch(err => reportError(err, 'Failed to load locations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     // ── Queue ────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ export default function ShippingPage() {
         apiFetch<ShippingOrder[]>(endpoint)
             .then(data => setOrders(data || []))
             .catch(err => {
-                console.error(t('errors.failedToLoadOrders'), err);
+                reportError(err, t('errors.failedToLoadOrdersError'));
                 setOrders([]);
             })
             .finally(() => setLoadingOrders(false));
@@ -173,7 +173,7 @@ export default function ShippingPage() {
             }));
 
         if (lines.length === 0) {
-            setError(t('errors.atLeastOneLine'));
+            setError(t('errors.atLeastOneLineError'));
             return;
         }
 
@@ -190,7 +190,7 @@ export default function ShippingPage() {
             await loadContext();
             loadOrders();
         } catch (err: any) {
-            setError(err.message || t('errors.failedToCreate'));
+            setError(err.message || t('errors.failedToCreateError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -218,7 +218,7 @@ export default function ShippingPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-[var(--text-muted)]">Location:</span>
+                    <span className="text-sm font-semibold text-[var(--text-muted)]">{tCommon('location')}:</span>
                     <select
                         value={selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
@@ -310,7 +310,7 @@ export default function ShippingPage() {
                                         {selectedOrder.orderNumber}
                                     </Link>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
-                                    <span className="truncate">{selectedOrder.name || 'No Name'}</span>
+                                    <span className="truncate">{selectedOrder.name || t('noName')}</span>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
                                     <span className="truncate">{selectedOrder.customerName}</span>
                                 </h2>
@@ -423,7 +423,7 @@ export default function ShippingPage() {
                                                     {context.lines.filter(l => l.isPhysical).length === 0 && (
                                                         <tr>
                                                             <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                                                No physical lines on this order.
+                                                                {t('noPhysicalLines')}
                                                             </td>
                                                         </tr>
                                                     )}
@@ -474,17 +474,17 @@ export default function ShippingPage() {
                                                                     className="btn btn-secondary btn-sm flex items-center"
                                                                     onClick={async () => {
                                                                         try {
-                                                                            const { apiFetchBlob } = await import('@/lib/api');
+                                                                            const { apiFetchBlob, reportError } = await import('@/lib/api');
                                                                             const blob = await apiFetchBlob(`/api/reports/hooks/shipping-docket/run?id=${shipment.shipmentId}&context=shipment`, { method: 'POST' });
                                                                             const url = URL.createObjectURL(blob);
                                                                             window.open(url, '_blank');
                                                                         } catch (err) {
-                                                                            console.error('Failed to generate shipping docket', err);
-                                                                            toast.error('Failed to generate shipping docket.');
+                                                                            reportError(err, 'Failed to generate shipping docket');
+                                                                            toast.error(t('errors.failedToGenerateDocketError'));
                                                                         }
                                                                     }}
                                                                 >
-                                                                    <span className="font-medium">Docket PDF</span>
+                                                                    <span className="font-medium">{t('docketPdf')}</span>
                                                                 </button>
                                                             </div>
                                                         </div>

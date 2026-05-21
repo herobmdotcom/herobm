@@ -75,7 +75,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
         return (
             <div id="shipping-section" className="card">
                 <div className="text-center py-6 text-sm" style={{ color: 'var(--danger)' }}>
-                    {error || tShipping('errors.failedToLoadContext')}
+                    {error || tShipping('errors.failedToLoadContextError')}
                 </div>
             </div>
         );
@@ -99,7 +99,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                     {isFullyShipped && (
                         <span className="text-xs font-bold text-[var(--success)]">
                             <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
-                            Fully Shipped
+                            {tShipping('fullyShipped')}
                         </span>
                     )}
                 </div>
@@ -114,7 +114,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                         <th style={{ textAlign: 'right' }}>{tShipping('columns.picked')}</th>
                         <th style={{ textAlign: 'right' }}>{tShipping('columns.shipped')}</th>
                         <th style={{ textAlign: 'right' }}>{tShipping('columns.available')}</th>
-                        <th style={{ textAlign: 'center' }}>Status</th>
+                        <th style={{ textAlign: 'center' }}>{tCommon('columns.status')}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -165,7 +165,7 @@ export default function ShippingStatusSection({ orderId }: Props) {
                     {physicalLines.length === 0 && (
                         <tr>
                             <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                No physical lines.
+                                {tShipping('noPhysicalLines')}
                             </td>
                         </tr>
                     )}

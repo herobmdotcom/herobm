@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
 export default function NewReconciliationPage() {
@@ -24,7 +24,7 @@ export default function NewReconciliationPage() {
         const data = await apiFetch<any>('/api/gl/accounts');
         setAccounts(data.data || data);
       } catch (err) {
-        console.error(err);
+        reportError(err, 'NewReconciliationFetchAccounts');
       }
     }
     fetchAccounts();
@@ -47,7 +47,7 @@ export default function NewReconciliationPage() {
       
       router.push(`/general-ledger/reconciliations/${data.reconciliationId}`);
     } catch (err) {
-      console.error(err);
+      reportError(err, 'NewReconciliationSubmit');
       alert(t('createError'));
     } finally {
       setLoading(false);

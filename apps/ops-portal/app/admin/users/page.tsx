@@ -140,7 +140,7 @@ export default function UsersPage() {
 
       if (creating) {
         if (!form.username || !form.password) {
-          toast.error('Username and password are required');
+          toast.error(t('toasts.requiredFieldsError'));
           return;
         }
         payload.username = form.username;
@@ -232,7 +232,7 @@ export default function UsersPage() {
             value={form.role}
             onChange={e => setForm({ ...form, role: e.target.value })}
             disabled={!creating && isSelf(data.userId)}
-            title={!creating && isSelf(data.userId) ? 'Cannot change your own role' : undefined}
+            title={!creating && isSelf(data.userId) ? t('cannotChangeOwnRoleError') : undefined}
           >
             {ROLES.map(r => (
               <option key={r} value={r}>{roleLabel(r)}</option>
@@ -295,10 +295,10 @@ export default function UsersPage() {
               className="btn btn-secondary btn-xs"
               onClick={() => toggleActive(data)}
               disabled={isSelf(data.userId)}
-              title={isSelf(data.userId) ? 'Cannot disable your own account' : undefined}
+              title={isSelf(data.userId) ? t('cannotDisableSelfError') : undefined}
               style={isSelf(data.userId) ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
             >
-              {data.isActive ? 'Disable' : 'Enable'}
+              {data.isActive ? t('disable') : t('enable')}
             </button>
 
             {/* Edit */}
@@ -317,7 +317,7 @@ export default function UsersPage() {
               }}
               onClick={() => deleteUser(data)}
               disabled={isSelf(data.userId)}
-              title={isSelf(data.userId) ? 'Cannot delete your own account' : undefined}
+              title={isSelf(data.userId) ? t('cannotDeleteSelfError') : undefined}
             >
               {tCommon('delete')}
             </button>
@@ -358,7 +358,7 @@ export default function UsersPage() {
 
           {loading ? (
             <div className="p-6 text-center" style={{ color: 'var(--text-muted)' }}>
-              Loading…
+              {t('loading')}
             </div>
           ) : (
             <table className="table-lines w-full">
@@ -384,7 +384,7 @@ export default function UsersPage() {
                 {users.length === 0 && !creating && (
                   <tr>
                     <td colSpan={8} className="text-center p-6" style={{ color: 'var(--text-muted)' }}>
-                      No users found.
+                      {t('noneFound')}
                     </td>
                   </tr>
                 )}

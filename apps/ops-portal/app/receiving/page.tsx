@@ -4,7 +4,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSettings } from '@/components/SettingsProvider';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
@@ -31,7 +31,7 @@ export default function GoodsReceivedListPage() {
                 const defaultLocId = app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : '');
                 setSelectedLocationId(defaultLocId);
             })
-            .catch(err => console.error('Failed to load locations', err));
+            .catch(err => reportError(err, 'GoodsReceivedListPage.loadLocations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);

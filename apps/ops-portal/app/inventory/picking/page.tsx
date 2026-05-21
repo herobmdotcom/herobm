@@ -6,7 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
-import { apiFetch, apiMutate, apiFetchBlob } from '@/lib/api';
+import { apiFetch, apiMutate, apiFetchBlob, reportError } from '@/lib/api';
 import { useSettings } from '@/components/SettingsProvider';
 import { SALES_ORDER_PICK_STATE } from '@modbm/shared';
 
@@ -66,8 +66,9 @@ interface PickingSummary {
 }
 
 export default function PickingPage() {
-    const t = useTranslations('inventory');
-    useDocumentTitle('Picking');
+    const t = useTranslations('picking');
+    const tCommon = useTranslations('common');
+    useDocumentTitle(t('title'));
     const { app } = useSettings();
 
     const [locations, setLocations] = useState<any[]>([]);
@@ -98,7 +99,7 @@ export default function PickingPage() {
                     setSelectedLocationId(defaultLocId);
                 }
             })
-            .catch(err => console.error('Failed to load locations', err));
+            .catch(err => reportError(err, 'Failed to load locations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     // Fetch Pending Orders
@@ -112,7 +113,7 @@ export default function PickingPage() {
             .then(data => {
                 setPendingOrders(data || []);
             })
-            .catch(err => console.error('Failed to load pending orders', err))
+            .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
     }, [selectedLocationId]);
 
@@ -216,7 +217,7 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            let reportName = 'picking-slip';
+            const reportName = 'picking-slip';
             // Fallback for transfer orders without a dedicated slip yet
             const urlStr = `/api/reports/hooks/${reportName}/run?id=${selectedOrder.id}&context=picking-slip`;
             const blob = await apiFetchBlob(urlStr, { method: 'POST' });
@@ -258,7 +259,7 @@ export default function PickingPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-[var(--text-muted)]">Location:</span>
+                    <span className="text-sm font-semibold text-[var(--text-muted)]">{t('locationLabel')}</span>
                     <select
                         value={selectedLocationId}
                         onChange={(e) => setSelectedLocationId(e.target.value)}
@@ -281,31 +282,31 @@ export default function PickingPage() {
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'ready' ? 'border-[var(--success)] text-[var(--success)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('ready')}
                         >
-                            Ready <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'ready').length})</span>
+                            {t('tabs.ready')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'ready').length})</span>
                         </button>
                         <button 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'partial' ? 'border-[var(--warning)] text-[var(--warning)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('partial')}
                         >
-                            Partial <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'partial').length})</span>
+                            {t('tabs.partial')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'partial').length})</span>
                         </button>
                         <button 
                             className={`flex-1 py-2.5 px-2 text-center border-b-2 rounded-t-md transition-colors ${activeTab === 'blocked' ? 'border-[var(--danger)] text-[var(--danger)] bg-[var(--bg-card)]' : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'}`}
                             onClick={() => setActiveTab('blocked')}
                         >
-                            Blocked <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'blocked').length})</span>
+                            {t('tabs.blocked')} <span className="ml-1 opacity-75 font-normal">({pendingOrders.filter(o => o.pickabilityStatus === 'blocked').length})</span>
                         </button>
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-2">
                         {loadingOrders ? (
                             <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-                                Loading...
+                                {tCommon('loading')}
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
-                                No {activeTab} orders pending.
+                                {t('noOrders', { tab: activeTab })}
                             </div>
                         ) : (
                             <div className="flex flex-col gap-2">
@@ -340,11 +341,11 @@ export default function PickingPage() {
                     {!selectedOrder ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">pallet</span>
-                            Select an order from the list to pick items.
+                            {t('selectOrder')}
                         </div>
                     ) : loadingSummary ? (
                         <div className="flex items-center justify-center h-full text-[var(--text-muted)] text-sm">
-                            Loading order context...
+                            {t('loadingOrder')}
                         </div>
                     ) : pickingSummary ? (
                         <>
@@ -353,7 +354,7 @@ export default function PickingPage() {
                                 <h2 className="text-sm text-[var(--text-primary)] uppercase tracking-wider truncate mr-4 flex items-center gap-4">
                                     <span className="font-bold shrink-0">{selectedOrder.orderNumber}</span>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
-                                    <span className="truncate">{selectedOrder.name || 'No Name'}</span>
+                                    <span className="truncate">{selectedOrder.name || t('noName')}</span>
                                     <span className="text-[var(--text-muted)] opacity-50">&middot;</span>
                                     <span className="truncate">{selectedOrder.customerName}</span>
                                 </h2>
@@ -364,7 +365,7 @@ export default function PickingPage() {
                                         className="btn btn-secondary btn-sm flex items-center gap-1.5"
                                     >
                                         {isGeneratingPdf && <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>}
-                                        Picking Slip PDF
+                                        {t('pickingSlipPdf')}
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                         {pickingSummary.fullyPickedLines} / {pickingSummary.totalLines}
@@ -384,17 +385,17 @@ export default function PickingPage() {
                                 <div className="space-y-8">
                                     {/* To Pick Table */}
                                     <div>
-                                        <h4 className="section-heading !mb-4">To Pick</h4>
+                                        <h4 className="section-heading !mb-4">{t('toPick')}</h4>
                                         <table className="table-lines">
                                             <thead>
                                                 <tr>
-                                                    <th>Product</th>
-                                                    <th>Bin Location</th>
-                                                    <th style={{ textAlign: 'right' }}>Ordered</th>
-                                                    <th style={{ textAlign: 'right' }}>Remaining</th>
-                                                    <th style={{ textAlign: 'right' }}>On Hand</th>
-                                                    <th style={{ textAlign: 'right' }}>Pick Qty</th>
-                                                    <th>Action / Status</th>
+                                                    <th>{t('columns.product')}</th>
+                                                    <th>{t('columns.binLocation')}</th>
+                                                    <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                    <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
+                                                    <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
+                                                    <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                    <th>{t('columns.action')}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -421,7 +422,7 @@ export default function PickingPage() {
                                                                     }
                                                                 }))}
                                                             >
-                                                                <option value="" disabled>Select Bin...</option>
+                                                                <option value="" disabled>{t('selectBin')}</option>
                                                                 {line.availableBins.map(b => (
                                                                     <option key={b.binId} value={b.binId}>{b.binName} (qty: {parseFloat(b.onHand)})</option>
                                                                 ))}
@@ -465,7 +466,7 @@ export default function PickingPage() {
                                                                 disabled={isSubmitting || !pickInputs[line.salesOrderLineId]?.quantity || !pickInputs[line.salesOrderLineId]?.binId}
                                                                 className="btn btn-secondary btn-sm"
                                                             >
-                                                                Pick
+                                                                {t('buttons.pick')}
                                                             </button>
                                                         </td>
                                                     </tr>
@@ -473,7 +474,7 @@ export default function PickingPage() {
                                                 {itemsToPick.length === 0 && (
                                                     <tr>
                                                         <td colSpan={7} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                                            No items available to pick.
+                                                            {t('noItemsToPick')}
                                                         </td>
                                                     </tr>
                                                 )}
@@ -484,17 +485,17 @@ export default function PickingPage() {
                                     {/* Unavailable Table */}
                                     {unavailableItems.length > 0 && (
                                         <div>
-                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">Unavailable</h4>
+                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('unavailable')}</h4>
                                             <table className="table-lines opacity-70">
                                                 <thead>
                                                     <tr>
-                                                        <th>Product</th>
-                                                        <th>Bin Location</th>
-                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
-                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
-                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
-                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
-                                                        <th>Action / Status</th>
+                                                        <th>{t('columns.product')}</th>
+                                                        <th>{t('columns.binLocation')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                        <th>{t('columns.action')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -518,7 +519,7 @@ export default function PickingPage() {
                                                             </td>
                                                             <td style={{ textAlign: 'right' }} className="text-[var(--text-muted)]">-</td>
                                                             <td>
-                                                                <span className="text-xs italic text-[var(--text-muted)]">Out of Stock</span>
+                                                                <span className="text-xs italic text-[var(--text-muted)]">{t('outOfStock')}</span>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -530,24 +531,24 @@ export default function PickingPage() {
                                     {/* Picked Table */}
                                     {pickedItems.length > 0 && (
                                         <div>
-                                            <h4 className="section-heading !mb-4">Picked</h4>
+                                            <h4 className="section-heading !mb-4">{t('picked')}</h4>
                                             <table className="table-lines">
                                                 <thead>
                                                     <tr>
-                                                        <th>Product</th>
-                                                        <th>Bin Location</th>
-                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
-                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
-                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
-                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
-                                                        <th>Action / Status</th>
+                                                        <th>{t('columns.product')}</th>
+                                                        <th>{t('columns.binLocation')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                        <th>{t('columns.action')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {pickedItems.map(pick => (
                                                         <tr key={pick.pickId}>
                                                             <td>
-                                                                <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
+                                                                <div className="font-bold">{pick.line?.productNumber || tCommon('unknown')}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
                                                             </td>
                                                             <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
@@ -571,14 +572,14 @@ export default function PickingPage() {
                                                             <td>
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="ml-2 text-xs font-bold text-[var(--success)] inline-flex items-center bg-green-50 px-2 py-1 rounded-full">
-                                                                        Picked
+                                                                        {t('statuses.picked')}
                                                                     </span>
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => handleCancelPick(pick.pickId)}
                                                                         disabled={isSubmitting}
                                                                         className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
-                                                                        title="Cancel Pick"
+                                                                        title={t('tooltips.cancelPick')}
                                                                     >
                                                                         <span className="material-symbols-outlined text-[18px]">close</span>
                                                                     </button>
@@ -594,24 +595,24 @@ export default function PickingPage() {
                                     {/* Shipped Table */}
                                     {shippedItems.length > 0 && (
                                         <div>
-                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">Shipped</h4>
+                                            <h4 className="section-heading !mb-4 !text-[var(--text-muted)]">{t('shipped')}</h4>
                                             <table className="table-lines opacity-70">
                                                 <thead>
                                                     <tr>
-                                                        <th>Product</th>
-                                                        <th>Bin Location</th>
-                                                        <th style={{ textAlign: 'right' }}>Ordered</th>
-                                                        <th style={{ textAlign: 'right' }}>Remaining</th>
-                                                        <th style={{ textAlign: 'right' }}>On Hand</th>
-                                                        <th style={{ textAlign: 'right' }}>Pick Qty</th>
-                                                        <th>Action / Status</th>
+                                                        <th>{t('columns.product')}</th>
+                                                        <th>{t('columns.binLocation')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.remaining')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
+                                                        <th style={{ textAlign: 'right' }}>{t('columns.pickQty')}</th>
+                                                        <th>{t('columns.action')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     {shippedItems.map(pick => (
                                                         <tr key={pick.pickId}>
                                                             <td>
-                                                                <div className="font-bold">{pick.line?.productNumber || 'Unknown'}</div>
+                                                                <div className="font-bold">{pick.line?.productNumber || tCommon('unknown')}</div>
                                                                 <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{pick.line?.productDescription || ''}</div>
                                                             </td>
                                                             <td className="text-[var(--text-muted)]">{pick.binName || '-'}</td>
@@ -630,7 +631,7 @@ export default function PickingPage() {
                                                             <td>
                                                                 <span className="ml-2 text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
-                                                                    Dispatched
+                                                                    {t('statuses.dispatched')}
                                                                 </span>
                                                             </td>
                                                         </tr>

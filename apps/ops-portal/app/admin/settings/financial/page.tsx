@@ -14,6 +14,7 @@ import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { DynamicForm } from '@/components/DynamicForm';
 
 import { getCurrency } from '@/lib/currency';
+import { CURRENCIES } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -449,7 +450,7 @@ export default function FinancialSettingsPage() {
         value={value || ''} 
         onChange={(e) => updateGlSetting(field, e.target.value)}
       >
-        <option value="">{tCommon('notConfigured') || 'Not Configured'}</option>
+        <option value="">{tCommon('notConfigured')}</option>
         {glAccounts.filter(a => !a.isGroup).map(a => (
           <option key={a.glAccountId} value={a.glAccountId}>
             {a.accountCode} - {a.name}
@@ -498,7 +499,17 @@ export default function FinancialSettingsPage() {
         </td>
         <td style={{ textAlign: 'center' }}>
           {isEdit ? (
-            <input className="input text-center px-1 py-1 h-7" value={coaForm.currencyCode || ''} onChange={e => setCoaForm({ ...coaForm, currencyCode: e.target.value.toUpperCase() })} placeholder="AUD" style={{ width: 60 }} />
+            <select 
+              className="select" 
+              value={coaForm.currencyCode || ''} 
+              onChange={e => setCoaForm({ ...coaForm, currencyCode: e.target.value })}
+              style={{ width: 90 }}
+            >
+              <option value="">-</option>
+              {CURRENCIES.map(c => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </select>
           ) : (
             <span className="font-mono text-xs text-muted">{data.currencyCode}</span>
           )}
@@ -511,21 +522,21 @@ export default function FinancialSettingsPage() {
             </label>
           ) : (
             <span style={{ color: data.isActive ? 'var(--success, #22c55e)' : 'var(--danger, #ef4444)', fontWeight: 'bold', fontSize: '0.75rem' }}>
-              {data.isActive ? 'ACTIVE' : 'INACTIVE'}
+              {data.isActive ? tSettings('labels.active').toUpperCase() : tSettings('labels.inactive').toUpperCase()}
             </span>
           )}
         </td>
         <td style={{ textAlign: 'right' }}>
           {isEdit ? (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
-              <button className="btn btn-secondary btn-xs" onClick={coaCancel}>{tSettings('actions.cancel') || 'Cancel'}</button>
-              <button className="btn btn-primary btn-xs" onClick={coaSave}>{tSettings('actions.save') || 'Save'}</button>
+              <button className="btn btn-secondary btn-xs" onClick={coaCancel}>{tSettings('actions.cancel')}</button>
+              <button className="btn btn-primary btn-xs" onClick={coaSave}>{tSettings('actions.save')}</button>
             </div>
           ) : (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
-              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId)}>+ Child</button>}
-              <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit') || 'Edit'}</button>
-              {data.isSystem && <span className="text-xs text-muted italic px-2">System</span>}
+              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId)}>{tSettings('actions.addChild')}</button>}
+              <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</button>
+              {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
             </div>
           )}
         </td>
@@ -678,7 +689,7 @@ export default function FinancialSettingsPage() {
                 <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => ccDelete(data.costCenterId)}>{tSettings('actions.delete')}</button>
               </>
             )}
-            {data.isSystem && <span className="text-xs text-muted italic px-2">System</span>}
+            {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
           </div>
         )}
       </td>
@@ -724,7 +735,7 @@ export default function FinancialSettingsPage() {
                 <button className="btn btn-secondary btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => activityDelete(data.activityId)}>{tSettings('actions.delete')}</button>
               </>
             )}
-            {data.isSystem && <span className="text-xs text-muted italic px-2">System</span>}
+            {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
           </div>
         )}
       </td>
@@ -807,25 +818,25 @@ export default function FinancialSettingsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Inventory
+                    {tSettings('labels.defaultInventory')}
                   </label>
                   {renderGlAccountSelect('defaultInventoryAccountId', glSettings?.defaultInventoryAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default GRNI
+                    {tSettings('labels.defaultGrni')}
                   </label>
                   {renderGlAccountSelect('defaultGrniAccountId', glSettings?.defaultGrniAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Shrinkage
+                    {tSettings('labels.defaultShrinkage')}
                   </label>
                   {renderGlAccountSelect('defaultShrinkageAccountId', glSettings?.defaultShrinkageAccountId)}
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Default Fee Revenue
+                    {tSettings('labels.defaultFeeRevenue')}
                   </label>
                   {renderGlAccountSelect('defaultFeeRevenueAccountId', glSettings?.defaultFeeRevenueAccountId)}
                 </div>
@@ -866,10 +877,10 @@ export default function FinancialSettingsPage() {
         {/* ── Chart of Accounts ────────────────────────────────────────── */}
         <div id="coa-section" className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="section-heading !mb-0">Chart of Accounts</h3>
+            <h3 className="section-heading !mb-0">{tSettings('labels.chartOfAccounts')}</h3>
             <div className="flex gap-2">
-              <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>Configure Metadata</button>
-              <button className="btn btn-primary btn-sm" onClick={() => coaCreate()}>+ Add Root Group</button>
+              <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</button>
+              <button className="btn btn-primary btn-sm" onClick={() => coaCreate()}>{tSettings('actions.addRootGroup')}</button>
             </div>
           </div>
 
@@ -878,12 +889,12 @@ export default function FinancialSettingsPage() {
                     <tr>
                       <th style={{ width: 180 }}>{tSettings('labels.code')}</th>
                       <th>{tSettings('labels.name')}</th>
-                      <th style={{ width: 140 }}>Type</th>
-                      <th style={{ width: 60, textAlign: 'center' }}>Group</th>
-                      <th style={{ width: 60, textAlign: 'center' }}>Bank</th>
-                      <th style={{ width: 80, textAlign: 'center' }}>Curr</th>
-                      <th style={{ width: 100, textAlign: 'center' }}>Status</th>
-                      <th style={{ width: 260, textAlign: 'right' }}>Actions</th>
+                      <th style={{ width: 140 }}>{tSettings('labels.type')}</th>
+                      <th style={{ width: 60, textAlign: 'center' }}>{tSettings('labels.group')}</th>
+                      <th style={{ width: 60, textAlign: 'center' }}>{tSettings('labels.bank')}</th>
+                      <th style={{ width: 90, textAlign: 'center' }}>{tSettings('labels.currency')}</th>
+                      <th style={{ width: 100, textAlign: 'center' }}>{tSettings('labels.status')}</th>
+                      <th style={{ width: 260, textAlign: 'right' }}>{tSettings('actions.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -968,9 +979,9 @@ export default function FinancialSettingsPage() {
                 <td>{glSettings?.baseCurrency ? getCurrency(glSettings.baseCurrency).name : '—'}</td>
                 <td>1.0000</td>
                 <td>1.0000</td>
-                <td><span className="text-xs italic text-muted">System Base</span></td>
+                <td><span className="text-xs italic text-muted">{tSettings('labels.systemBase')}</span></td>
                 <td style={{ textAlign: 'right' }}>
-                  <span className="text-xs text-muted italic">Fixed</span>
+                  <span className="text-xs text-muted italic">{tSettings('labels.fixed')}</span>
                 </td>
               </tr>
 
@@ -1065,7 +1076,7 @@ export default function FinancialSettingsPage() {
       <SlideOver
         isOpen={schemaEditorOpen}
         onClose={() => setSchemaEditorOpen(false)}
-        title="Configure Metadata Schema"
+        title={tSettings('labels.configureMetadataSchema')}
         width="max-w-2xl"
       >
         <div className="p-4 flex flex-col gap-6">
@@ -1075,8 +1086,8 @@ export default function FinancialSettingsPage() {
           />
 
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-[var(--border)]">
-            <button className="btn btn-secondary" onClick={() => setSchemaEditorOpen(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={saveSchema}>Save Schema</button>
+            <button className="btn btn-secondary" onClick={() => setSchemaEditorOpen(false)}>{tSettings('actions.cancel')}</button>
+            <button className="btn btn-primary" onClick={saveSchema}>{tSettings('actions.saveSchema')}</button>
           </div>
         </div>
       </SlideOver>

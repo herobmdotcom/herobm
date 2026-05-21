@@ -16,6 +16,7 @@ export default function ReceiveReturnSlideOver({
     onRefresh: () => void;
 }) {
     const tCommon = useTranslations('common');
+    const t = useTranslations('goodsReceived');
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [lineQuantities, setLineQuantities] = useState<Record<string, string>>({});
@@ -144,7 +145,7 @@ export default function ReceiveReturnSlideOver({
                             return val < 0 || val > max || isNaN(val);
                         }) || Object.values(lineQuantities).every(v => !v || parseFloat(v) === 0)}
                     >
-                        {saving ? 'Receiving...' : 'Confirm Receipt'}
+                        {saving ? t('returns.receiving') : t('returns.confirmReceipt')}
                     </button>
                 </div>
             </div>

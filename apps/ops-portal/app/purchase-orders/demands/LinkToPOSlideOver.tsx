@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface DemandState {
 }
 
 export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh }: LinkToPOSlideOverProps) {
+  const t = useTranslations('purchaseOrders');
   const [demandStates, setDemandStates] = useState<Map<string, DemandState>>(new Map());
   const [activeDemandId, setActiveDemandId] = useState<string | null>(null);
   const [localDemands, setLocalDemands] = useState<any[]>([]);
@@ -83,7 +85,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
           });
         })
         .catch((err) => {
-          console.error('Failed to load pending POs for', demand.id, err);
+          reportError(err, 'LinkToPOSlideOver.availablePOLines');
           setDemandStates((prev) => {
             const next = new Map(prev);
             next.set(demand.id, {
@@ -149,7 +151,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
     const originalQuantity = parseFloat(demand.quantity || '0');
     const qty = parseFloat(qtyStr);
     if (isNaN(qty) || qty <= 0 || qty > originalQuantity) {
-      alert(`Please enter a valid quantity between 0.01 and ${originalQuantity}`);
+      alert(t('demands.quantityValidationError', { max: originalQuantity }));
       return;
     }
 
@@ -175,9 +177,9 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
       markAllocated(demand.id, splitDemand);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || 'Failed to allocate demand');
+      alert(err.message || t('demands.allocationError'));
     }
-  }, [onRefresh, markAllocated]);
+  }, [onRefresh, markAllocated, t]);
 
   if (!isOpen || unmatchedDemands.length === 0) return null;
 
@@ -264,7 +266,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                 
                 {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="text-xs ml-4 text-[var(--text-secondary)]">
-                  Required at: <span className="font-medium text-[var(--text-primary)]">{demand.locationName || 'Unknown'}</span>
+                  Required at: <span className="font-medium text-[var(--text-primary)]">{demand.locationName || t('demands.unknown')}</span>
                 </span>
 
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
@@ -309,7 +311,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                               <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>
                               {' • '}
-                              Destination: <span className="font-medium text-[var(--text-primary)]">{group.locationName || 'Unknown'}</span>
+                              {t('demands.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('demands.unknown')}</span>
                             </div>
                           </div>
                         </button>
@@ -353,6 +355,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 }
 
 function POLineRow({ line, originalQuantity, onAllocate }: { line: any; originalQuantity: number; onAllocate: (qty: string) => void }) {
+  const t = useTranslations('purchaseOrders');
   const ordered = parseFloat(line.quantity || '0');
   const available = parseFloat(line.availableQty || '0');
 
@@ -386,8 +389,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             className="btn btn-primary btn-sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            {isAllocating ? '...' : 'Allocate'}
+            {isAllocating ? '...' : t('demands.allocate')}
           </button>
         </div>
       </td>

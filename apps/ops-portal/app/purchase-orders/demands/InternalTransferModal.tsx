@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
@@ -35,6 +36,7 @@ export default function InternalTransferModal({
   selectedDemands,
   onSuccess,
 }: InternalTransferModalProps) {
+  const t = useTranslations('purchaseOrders');
   const [locations, setLocations] = useState<RawLocationWithAvailability[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -170,10 +172,10 @@ export default function InternalTransferModal({
             {isSubmitting ? (
               <>
                 <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                Creating...
+                {t('demands.creating')}
               </>
             ) : (
-              'Create Transfer'
+              t('demands.createTransfer')
             )}
           </button>
         </div>

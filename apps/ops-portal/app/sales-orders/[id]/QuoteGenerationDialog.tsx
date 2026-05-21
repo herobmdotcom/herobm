@@ -82,7 +82,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-          <h2 className="text-xl font-bold text-gray-900">{t('generateQuoteTitle') || 'Generate Quote'}</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('generateQuoteTitle')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -97,7 +97,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
 
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              {t('labels.quoteMacro') || 'Quote Introduction Template'}
+              {t('labels.quoteMacro')}
             </label>
             {loading ? (
               <div className="text-sm text-gray-500">{tCommon('loading')}</div>
@@ -107,7 +107,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
                 value={selectedMacroId}
                 onChange={handleMacroChange}
               >
-                <option value="">{t('placeholders.selectMacro') || '-- Select a template (optional) --'}</option>
+                <option value="">{t('placeholders.selectMacro')}</option>
                 {macros.map(m => (
                   <option key={m.macroId} value={m.macroId}>
                     {m.name}
@@ -119,7 +119,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
 
           <div>
             <label className="block text-sm font-medium mb-1 text-gray-700">
-              {t('labels.quoteText') || 'Introduction Text'}
+              {t('labels.quoteText')}
             </label>
             <textarea
               className="input w-full font-sans text-sm"
@@ -144,7 +144,7 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
               disabled={generating}
             >
               {generating && <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>}
-              {t('buttons.generate') || 'Generate PDF'}
+              {t('buttons.generate')}
             </button>
           </div>
         </div>

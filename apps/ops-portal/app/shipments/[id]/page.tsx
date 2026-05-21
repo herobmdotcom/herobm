@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -56,7 +56,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         setLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load shipment:', err);
+        reportError(err, 'ShipmentDetailPage.loadShipment');
         setLoading(false);
       });
   };
@@ -74,7 +74,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
       await apiMutate(`/api/sales-orders/${shipment.salesOrderId}/shipments/${shipment.shipmentId}/cancel`, 'POST', {});
       loadShipment();
     } catch (err: any) {
-      console.error('Failed to cancel shipment:', err);
+      reportError(err, 'ShipmentDetailPage.handleCancel');
       alert(err.message || t('cancelFailed'));
     } finally {
       setIsCancelling(false);
@@ -146,7 +146,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 } catch (err) {
-                  console.error('Failed to generate shipping docket', err);
+                  reportError(err, 'ShipmentDetailPage.generateDocket');
                   toast.error('Failed to generate shipping docket.');
                 }
               }}
@@ -179,7 +179,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                 {t('columns.date')}
               </label>
               <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
-                {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || 'System'}
+                {new Date(shipment.createdOn).toLocaleString()} {tCommon('by')} {shipment.createdBy || tCommon('system')}
               </p>
             </div>
 

@@ -33,7 +33,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     cancelOrder,
   } = useTransferOrder(id);
 
-  useDocumentTitle(order ? `Transfer ${order.orderNumber}` : null);
+  useDocumentTitle(order ? tTransfers('transferTitle', { number: order.orderNumber }) : null);
 
   if (loading) {
     return (
@@ -47,10 +47,10 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     return (
       <div className="flex flex-col items-center justify-center flex-1">
         <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-          {error || 'Transfer order not found'}
+          {error || tTransfers('notFound')}
         </p>
         <button className="btn btn-secondary" onClick={() => router.push('/inventory/transfers')}>
-          Back to Transfers
+          {tTransfers('backToTransfers')}
         </button>
       </div>
     );
@@ -65,7 +65,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
   const headerDirty = order.notes !== editNotes;
 
   const handleCancel = async () => {
-    if (window.confirm('Are you sure you want to cancel this transfer order?')) {
+    if (window.confirm(tTransfers('cancelConfirm'))) {
       await cancelOrder();
     }
   };
@@ -75,7 +75,10 @@ export default function TransferDetailsClient({ id }: { id: string }) {
       header={
         <EntityHeader
           title={order.orderNumber}
-          subtitle={`From ${order.sourceLocationName} to ${order.destinationLocationName}`}
+          subtitle={tTransfers('subtitleFlow', {
+            source: order.sourceLocationName || order.sourceLocationId || '',
+            destination: order.destinationLocationName || order.destinationLocationId || ''
+          })}
           onBack={() => router.push('/inventory/transfers')}
           isSaving={saving}
           badges={<StateBadge state={order.stateCode as ValidState} />}
@@ -162,7 +165,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
             {isEditable && (
               <ProductSearchInput
                 onSelect={(p: any) => addLine(p.productId, 1)}
-                placeholder="Add product… (search)"
+                placeholder={tTransfers('placeholders.searchProduct')}
                 style={{ width: 240 }}
               />
             )}
@@ -171,11 +174,11 @@ export default function TransferDetailsClient({ id }: { id: string }) {
           <table className="table-lines">
             <thead>
               <tr>
-                <th>Product</th>
-                <th>Description</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Ordered</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Shipped</th>
-                <th style={{ width: 120, textAlign: 'right' }}>Received</th>
+                <th>{tTransfers('columns.product')}</th>
+                <th>{tTransfers('columns.description')}</th>
+                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.ordered')}</th>
+                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.shipped')}</th>
+                <th style={{ width: 120, textAlign: 'right' }}>{tTransfers('columns.received')}</th>
                 {isEditable && <th style={{ width: 50 }}></th>}
               </tr>
             </thead>
@@ -219,7 +222,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                       <button
                         className="btn btn-danger btn-sm"
                         onClick={() => removeLine(line.transferOrderLineId)}
-                        title="Remove line"
+                        title={tTransfers('removeLine')}
                       >
                         <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
                       </button>
@@ -233,7 +236,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                     colSpan={isEditable ? 6 : 5}
                     style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
                   >
-                    No line items
+                    {tTransfers('noLineItems')}
                   </td>
                 </tr>
               )}

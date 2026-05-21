@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 interface SplitEntryModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface SplitEntryModalProps {
 export default function SplitEntryModal({ isOpen, onClose, reconciliationId, selectedLine, onSuccess }: SplitEntryModalProps) {
   const [amount, setAmount] = useState<number | string>('');
   const [submitting, setSubmitting] = useState(false);
+  const t = useTranslations('gl.reconciliations');
+  const tCommon = useTranslations('common');
 
   // When modal opens or selected line changes, reset the amount
   useEffect(() => {
@@ -34,7 +37,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
     
     const val = Number(amount);
     if (isNaN(val) || val <= 0 || val >= lineTotal) {
-      toast.error('Split amount must be greater than 0 and less than the total line amount.');
+      toast.error(t('splitEntryForm.invalidAmountError'));
       return;
     }
 
@@ -45,12 +48,12 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isCleared: true, amount: val })
       });
-      toast.success('Entry successfully split and cleared!');
+      toast.success(t('splitEntryForm.splitSuccess'));
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to split entry');
+      reportError(err, 'SplitEntryModal_submit');
+      toast.error(err.message || t('splitEntryForm.failedToSplitError'));
     } finally {
       setSubmitting(false);
     }
@@ -68,7 +71,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-[var(--bg-card)] rounded-xl shadow-xl max-w-md w-full border border-[var(--border)] overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
-          <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Split Entry</h2>
+          <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">{t('splitEntryForm.title')}</h2>
           <button 
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors p-1"
@@ -80,28 +83,28 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5">
           <div className="border border-[var(--border)] rounded-lg overflow-hidden text-sm">
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">Date</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.date')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)]">{selectedLine.entryDate || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">Party</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.party')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)]">{selectedLine.partyName || selectedLine.partyId || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr] border-b border-[var(--border)]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">Memo</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.memo')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)] truncate" title={selectedLine.memo || '-'}>{selectedLine.memo || '-'}</div>
             </div>
             <div className="grid grid-cols-[100px_1fr]">
-              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">Total</div>
+              <div className="bg-[var(--bg-secondary)] px-3 py-2 font-bold text-[var(--text-secondary)]">{t('splitEntryForm.total')}</div>
               <div className="px-3 py-2 text-[var(--text-primary)] bg-[var(--bg-card)] font-bold">
-                ${lineTotal.toFixed(2)} <span className="font-normal text-[var(--text-muted)] text-xs ml-1">({isDebit ? 'Debit' : 'Credit'})</span>
+                ${lineTotal.toFixed(2)} <span className="font-normal text-[var(--text-muted)] text-xs ml-1">({isDebit ? t('splitEntryForm.debit') : t('splitEntryForm.credit')})</span>
               </div>
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold text-[var(--text-secondary)] mb-2">
-              Amount to Clear Now
+              {t('splitEntryForm.amountToClear')}
             </label>
             <input
               type="number"
@@ -137,14 +140,14 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
               onClick={onClose}
               className="btn btn-secondary flex-1 flex items-center justify-center"
             >
-              Cancel
+              {tCommon('cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 shadow-sm flex-1 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Splitting...' : 'Confirm Split'}
+              {submitting ? t('splitEntryForm.splitting') : t('splitEntryForm.confirmSplit')}
             </button>
           </div>
         </form>

@@ -121,12 +121,14 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         ) : (
           <div className="text-xs truncate">
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            {glAccounts.find(a => a.glAccountId === line.glAccountId)?.name || 'Default Expense'}
+            {glAccounts.find(a => a.glAccountId === line.glAccountId)?.name || t('defaultExpense')}
           </div>
         )}
       </div>
     );
   };
+
+  const matchIcon = isMatchingMode ? 'check' : 'link';
 
   return (
     <DetailsLayout
@@ -286,9 +288,8 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   onClick={() => setIsMatchingMode(!isMatchingMode)}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined" style={{ fontSize: 16, verticalAlign: 'middle', marginRight: 4 }}>
-                    {isMatchingMode ? 'check' : 'link'}
+                    {matchIcon}
                   </span>
                   {isMatchingMode ? t('matching.panelTitle') : t('matching.panelTitle')}
                 </button>

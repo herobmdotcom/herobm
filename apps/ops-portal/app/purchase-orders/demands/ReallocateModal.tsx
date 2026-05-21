@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import {
@@ -35,6 +36,7 @@ export default function ReallocateModal({
   selectedDemands,
   onSuccess,
 }: ReallocateModalProps) {
+  const t = useTranslations('purchaseOrders');
   const [locations, setLocations] = useState<RawLocation[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,7 +153,7 @@ export default function ReallocateModal({
             disabled={isSubmitting || !selectedLocationId}
             className="px-4 py-2 text-sm font-bold bg-[var(--accent)] text-white rounded hover:brightness-110 transition-all disabled:opacity-50 flex items-center gap-2"
           >
-            {isSubmitting ? 'Reallocating...' : 'Confirm Reallocation'}
+            {isSubmitting ? t('demands.reallocating') : t('demands.confirmReallocation')}
           </button>
         </div>
       </div>

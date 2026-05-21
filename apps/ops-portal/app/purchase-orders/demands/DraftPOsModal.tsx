@@ -31,6 +31,7 @@ interface DraftPOsModalProps {
 }
 
 export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSuccess }: DraftPOsModalProps) {
+  const t = useTranslations('purchaseOrders');
   const [loading, setLoading] = useState(false);
 
   // Local state to track which vendor each line is assigned to
@@ -152,12 +153,12 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
               <div className="flex justify-between items-center mb-4">
                 <h3 className={`section-heading ${!group.vendorId ? 'text-red-700' : ''}`}>
                   <span className="material-symbols-outlined">
-                    {!group.vendorId ? 'warning' : 'storefront'}
+                    {!group.vendorId ? t('demands.iconWarning') : t('demands.iconStorefront')}
                   </span>
-                  {group.vendorId ? `Supplier: ${group.vendorName}` : 'Unassigned (Action Required)'}
+                  {group.vendorId ? `Supplier: ${group.vendorName}` : t('demands.unassignedActionRequired')}
                   <span className="mx-2 text-gray-300">|</span>
                   <span className="material-symbols-outlined text-[16px] text-gray-400">location_on</span>
-                  <span className="font-normal text-gray-600 ml-1">Deliver to: {group.locationName || 'Unknown'}</span>
+                  <span className="font-normal text-gray-600 ml-1">Deliver to: {group.locationName || t('demands.unknown')}</span>
                 </h3>
                 <span className="badge badge-legacy">
                   {group.demands.length} items

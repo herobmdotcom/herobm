@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 
 export interface SalesInvoiceDetails {
   invoiceId: string;
@@ -42,7 +42,7 @@ export function useSalesInvoice(id: string) {
         setInvoice(data);
       })
       .catch((err) => {
-        console.error('Failed to load sales invoice:', err);
+        reportError(err, 'useSalesInvoice');
         setError(err);
       })
       .finally(() => setLoading(false));

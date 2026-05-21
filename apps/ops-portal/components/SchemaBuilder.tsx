@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { FormField } from './shared/FormField';
 
 export interface SchemaBuilderProps {
@@ -18,6 +19,7 @@ interface FieldDef {
 }
 
 export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange }) => {
+  const t = useTranslations('schemaBuilder');
   const [fields, setFields] = useState<FieldDef[]>([]);
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [editingSnapshot, setEditingSnapshot] = useState<FieldDef | null>(null);
@@ -178,7 +180,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
               return (
                 <div key={field.id} className="card bg-[var(--bg-primary)] border border-[var(--border)] p-4 -mx-4 flex flex-col gap-4 relative">
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-semibold text-sm">Edit: {field.title || 'New Field'}</h4>
+                    <h4 className="font-semibold text-sm">{t('editFieldTitle', { title: field.title || t('newField') })}</h4>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
@@ -258,7 +260,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                 <div className="flex-1 pointer-events-none">
                   <FormField
                     type={field.type}
-                    title={field.title || 'Untitled Field'}
+                    title={field.title || t('untitledField')}
                     value={field.type === 'boolean' ? false : ''}
                     onChange={() => {}}
                     required={field.required}

@@ -20,6 +20,7 @@
     "submit": "Submit",
     "delete": "Delete",
     "dismiss": "dismiss",
+    "system": "System",
     "loading": "Loading…",
     "noMatchingResults": "No matching results",
     "resolving": "Resolving...",
@@ -286,7 +287,8 @@
       "tryAgain": "Try Again",
       "contactSupport": "If the problem persists, please contact support."
     },
-    "unknownProduct": "Unknown Product"
+    "unknownProduct": "Unknown Product",
+    "unknown": "Unknown"
   },
   "accounts": {
     "title": "Accounts",
@@ -704,6 +706,13 @@
     },
     "createTitle": "Create Sales Order"
   },
+  "salesInvoices": {
+    "loading": "Loading Invoice...",
+    "loadingEllipsis": "Loading...",
+    "errorLoading": "Error loading invoice: {message}",
+    "notFound": "Invoice not found.",
+    "unknownCustomer": "Unknown Customer"
+  },
   "shipments": {
     "title": "Shipments",
     "subtitle": "Track Sales Order shipments and deliveries",
@@ -734,6 +743,13 @@
     "title": "Transfer Orders",
     "subtitle": "Manage internal inventory transfers",
     "lineItems": "Line items",
+    "transferTitle": "Transfer {number}",
+    "notFound": "Transfer order not found",
+    "backToTransfers": "Back to Transfers",
+    "cancelConfirm": "Are you sure you want to cancel this transfer order?",
+    "subtitleFlow": "From {source} to {destination}",
+    "removeLine": "Remove line",
+    "noLineItems": "No line items",
     "buttons": {
       "createTransfer": "+ Create Transfer",
       "save": "💾 Save",
@@ -744,7 +760,8 @@
       "searchTransfer": "Search or scan transfers...",
       "notes": "Transfer notes...",
       "selectSourceLocation": "Select Source Location",
-      "selectDestinationLocation": "Select Destination Location"
+      "selectDestinationLocation": "Select Destination Location",
+      "searchProduct": "Add product… (search)"
     },
     "columns": {
       "orderNumber": "Order Number",
@@ -753,7 +770,12 @@
       "notes": "Notes",
       "status": "Status",
       "createdBy": "Created By",
-      "createdOn": "Created On"
+      "createdOn": "Created On",
+      "product": "Product",
+      "description": "Description",
+      "ordered": "Ordered",
+      "shipped": "Shipped",
+      "received": "Received"
     },
     "createSlideOver": {
       "title": "New Transfer Order",
@@ -769,7 +791,22 @@
   },
   "purchaseOrders": {
     "title": "Purchase Orders",
+    "defaultExpense": "Default Expense",
     "demandTitle": "Open Demand",
+    "demands": {
+      "iconWarning": "warning",
+      "iconStorefront": "storefront",
+      "unassignedActionRequired": "Unassigned (Action Required)",
+      "unknown": "Unknown",
+      "createTransfer": "Create Transfer",
+      "creating": "Creating...",
+      "confirmReallocation": "Confirm Reallocation",
+      "reallocating": "Reallocating...",
+      "allocate": "Allocate",
+      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
+      "allocationError": "Failed to allocate demand",
+      "destination": "Destination:"
+    },
     "subtitle": "Manage purchase orders",
     "supplierInvoicesCardHeading": "Supplier Invoices",
     "lineItems": "Line items",
@@ -1006,6 +1043,26 @@
       },
       "noLines": "No ledger entries found.",
       "loadFailed": "Failed to load ledger entries"
+    },
+    "putaway": {
+      "title": "Putaway",
+      "pendingPutaway": "Pending Putaway",
+      "noItemsPending": "No items pending putaway in this location.",
+      "return": "RETURN",
+      "receipt": "RECEIPT",
+      "ref": "Ref: {ref}",
+      "action": "Putaway Action",
+      "selectItemToPutaway": "Select an item from the list to putaway.",
+      "loadingBinContext": "Loading bin context...",
+      "destinationBin": "Destination Bin",
+      "searchBins": "Search bins...",
+      "primaryLabel": "(Primary)",
+      "warningNotPrimary": "Warning: You are not placing this in the primary bin ({bin}).",
+      "newTotalQuantity": "New Total Quantity in Bin",
+      "currentStock": "Current stock: {count}",
+      "verifyCountDescription": "Verify the physical count. An inventory adjustment will be generated if this differs from system expectations.",
+      "confirmPutaway": "Confirm Putaway",
+      "processing": "Processing..."
     }
   },
   "bins": {
@@ -1038,6 +1095,24 @@
     "clickToEdit": "Click to edit",
     "createdOnBy": "Created {date} by {user}",
     "createdOn": "Created {date}",
+    "locationLabel": "Location:",
+    "noOrders": "No {tab} orders pending.",
+    "selectOrder": "Select an order from the list to pick items.",
+    "loadingOrder": "Loading order context...",
+    "noName": "No Name",
+    "pickingSlipPdf": "Picking Slip PDF",
+    "toPick": "To Pick",
+    "picked": "Picked",
+    "unavailable": "Unavailable",
+    "outOfStock": "Out of Stock",
+    "shipped": "Shipped",
+    "noItemsToPick": "No items available to pick.",
+    "selectBin": "Select Bin...",
+    "tabs": {
+      "ready": "Ready",
+      "partial": "Partial",
+      "blocked": "Blocked"
+    },
     "columns": {
       "lineNumber": "#",
       "product": "Product",
@@ -1052,11 +1127,15 @@
       "qtyToShip": "Qty to Ship",
       "notes": "Notes",
       "trackingNumber": "Tracking Number",
-      "status": "Status"
+      "status": "Status",
+      "binLocation": "Bin Location",
+      "pickQty": "Pick Qty"
     },
     "statuses": {
       "done": "Fully Picked",
-      "partial": "Partially Picked"
+      "partial": "Partially Picked",
+      "picked": "Picked",
+      "dispatched": "Dispatched"
     },
     "actions": {
       "pickAll": "Pick All",
@@ -1065,6 +1144,12 @@
     "placeholders": {
       "notes": "Shipment notes",
       "tracking": "Tracking #"
+    },
+    "buttons": {
+      "pick": "Pick"
+    },
+    "tooltips": {
+      "cancelPick": "Cancel Pick"
     },
     "errors": {
       "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
@@ -1131,14 +1216,19 @@
     "existingShipments": "Existing Shipments",
     "noShipmentsYet": "No shipments created yet.",
     "shipmentLines": "{count} lines",
+    "noName": "No Name",
+    "noPhysicalLines": "No physical lines on this order.",
+    "fullyShipped": "Fully Shipped",
+    "docketPdf": "Docket PDF",
     "toasts": {
       "shipmentCreated": "Shipment created successfully!"
     },
     "errors": {
-      "atLeastOneLine": "At least one line with a quantity is required",
-      "failedToCreate": "Failed to create shipment",
-      "failedToLoadOrders": "Failed to load shipping queue",
-      "failedToLoadContext": "Failed to load order context"
+      "atLeastOneLineError": "At least one line with a quantity is required",
+      "failedToCreateError": "Failed to create shipment",
+      "failedToLoadOrdersError": "Failed to load shipping queue",
+      "failedToLoadContextError": "Failed to load order context",
+      "failedToGenerateDocketError": "Failed to generate shipping docket."
     }
   },
   "gl": {
@@ -1293,6 +1383,37 @@
         "back": "Back",
         "splitRowDisabled": "Cannot split an already cleared row",
         "selectRowToSplit": "Select a row to split"
+      },
+      "quickAdjustmentForm": {
+        "title": "Quick Adjustment",
+        "date": "Date",
+        "type": "Type",
+        "moneyOut": "Money Out (e.g. Bank Fee)",
+        "moneyIn": "Money In (e.g. Interest)",
+        "amount": "Amount",
+        "offsetAccount": "Offset Account",
+        "selectAccount": "Select an account...",
+        "memo": "Memo",
+        "memoPlaceholder": "e.g., Monthly Account Keeping Fee",
+        "creating": "Creating...",
+        "createAndReconcile": "Create & Reconcile",
+        "requiredFieldsError": "Please fill out all required fields",
+        "failedToCreateError": "Failed to create adjustment"
+      },
+      "splitEntryForm": {
+        "title": "Split Entry",
+        "date": "Date",
+        "party": "Party",
+        "memo": "Memo",
+        "total": "Total",
+        "amountToClear": "Amount to Clear Now",
+        "splitting": "Splitting...",
+        "confirmSplit": "Confirm Split",
+        "debit": "Debit",
+        "credit": "Credit",
+        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
+        "splitSuccess": "Entry successfully split and cleared!",
+        "failedToSplitError": "Failed to split entry"
       }
     }
   },
@@ -1681,7 +1802,11 @@
         "cancel": "Cancel",
         "create": "Create",
         "importCsv": "Import CSV",
-        "actions": "Actions"
+        "actions": "Actions",
+        "addChild": "+ Child",
+        "configureMetadata": "Configure Metadata",
+        "addRootGroup": "+ Add Root Group",
+        "saveSchema": "Save Schema"
       },
       "title": "System Settings",
       "taxTypes": {
@@ -1774,7 +1899,18 @@
         "description": "Description",
         "status": "Status",
         "active": "Active",
-        "inactive": "Inactive"
+        "inactive": "Inactive",
+        "defaultInventory": "Default Inventory",
+        "defaultGrni": "Default GRNI",
+        "defaultShrinkage": "Default Shrinkage",
+        "defaultFeeRevenue": "Default Fee Revenue",
+        "chartOfAccounts": "Chart of Accounts",
+        "group": "Group",
+        "bank": "Bank",
+        "currency": "Curr",
+        "systemBase": "System Base",
+        "fixed": "Fixed",
+        "configureMetadataSchema": "Configure Metadata Schema"
       },
       "placeholders": {
         "uomCode": "e.g. EA",
@@ -1869,10 +2005,18 @@
         "updated": "User updated",
         "deleted": "User deleted",
         "toggled": "User status updated",
-        "loadFailed": "Failed to load users"
+        "loadFailed": "Failed to load users",
+        "requiredFieldsError": "Username and password are required"
       },
       "confirmDelete": "Are you sure you want to delete user \"{username}\"? This action is permanent.",
-      "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires."
+      "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires.",
+      "disable": "Disable",
+      "enable": "Enable",
+      "loading": "Loading…",
+      "noneFound": "No users found.",
+      "cannotDisableSelfError": "Cannot disable your own account",
+      "cannotDeleteSelfError": "Cannot delete your own account",
+      "cannotChangeOwnRoleError": "Cannot change your own role"
     }
   },
   "setup": {
@@ -2088,7 +2232,17 @@
     "loadingEllipsis": "Loading...",
     "noPayments": "No payments found",
     "receipt": "Receipt",
-    "payment": "Payment"
+    "payment": "Payment",
+    "view": "View",
+    "allocate": "Allocate",
+    "customer": "Customer",
+    "supplier": "Supplier",
+    "saving": "Saving...",
+    "createEntry": "Create Entry",
+    "salesInv": "Sales Inv",
+    "purchInv": "Purch Inv",
+    "submitting": "Submitting...",
+    "submit": "Submit"
   },
   "goodsReceived": {
     "title": "Goods Received",
@@ -2140,6 +2294,22 @@
       "subtitle": "The packing slip has been recorded. Items are held on dock pending invoice entry.",
       "backToList": "Back to Receiving",
       "newReception": "New Reception"
+    },
+    "allocation": {
+      "unknown": "Unknown",
+      "match": "Match",
+      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
+      "matchError": "Failed to match receipt",
+      "destination": "Destination:"
+    },
+    "returns": {
+      "receiving": "Receiving...",
+      "confirmReceipt": "Confirm Receipt"
     }
+  },
+  "schemaBuilder": {
+    "newField": "New Field",
+    "editFieldTitle": "Edit: {title}",
+    "untitledField": "Untitled Field"
   }
 }

@@ -15,13 +15,14 @@ import { useSalesInvoice } from './useSalesInvoice';
 export default function InvoiceDetailContent({ id }: { id: string }) {
   const router = useRouter();
   const tCommon = useTranslations('common');
+  const t = useTranslations('salesInvoices');
   const { invoice, loading, error } = useSalesInvoice(id);
 
-  useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : 'Loading Invoice...');
+  useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : t('loading'));
 
-  if (loading) return <div className="p-8">Loading...</div>;
-  if (error) return <div className="p-8 text-red-500">Error loading invoice: {error.message}</div>;
-  if (!invoice) return <div className="p-8 text-red-500">Invoice not found.</div>;
+  if (loading) return <div className="p-8">{t('loadingEllipsis')}</div>;
+  if (error) return <div className="p-8 text-red-500">{t('errorLoading', { message: error.message })}</div>;
+  if (!invoice) return <div className="p-8 text-red-500">{t('notFound')}</div>;
 
   return (
     <DetailsLayout
@@ -53,10 +54,10 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
                     href={`/accounts/${invoice.customerId}`} 
                     className="text-[var(--accent)] hover:underline font-medium"
                   >
-                    {invoice.customerName || 'Unknown Customer'}
+                    {invoice.customerName || t('unknownCustomer')}
                   </Link>
                 ) : (
-                  invoice.customerName || 'Unknown Customer'
+                  invoice.customerName || t('unknownCustomer')
                 )}
               </div>
             </div>

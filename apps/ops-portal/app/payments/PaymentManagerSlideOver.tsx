@@ -140,7 +140,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         setLoadingJournal(true);
         apiFetch<any>(`/api/gl/journal-entries/source/payment_entry/${paymentId}`)
           .then(jrnl => setJournalEntry(jrnl))
-          .catch(err => console.error('Failed to load ledger impact', err))
+          .catch(err => reportError(err, 'PaymentManagerSlideOver.loadLedgerImpact'))
           .finally(() => setLoadingJournal(false));
       } else {
         setJournalEntry(null);
@@ -415,7 +415,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               onClick={() => setIsAllocating(!isAllocating)}
               className={`btn btn-sm ${isAllocating ? 'btn-secondary' : 'btn-primary'}`}
             >
-              {isAllocating ? 'View' : 'Allocate'}
+              {isAllocating ? t('view') : t('allocate')}
             </button>
           )}
         </div>
@@ -524,7 +524,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div>
                   <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
-                    {form.paymentType === 'receive' ? 'Customer' : 'Supplier'}
+                    {form.paymentType === 'receive' ? t('customer') : t('supplier')}
                   </label>
                   {form.paymentType === 'receive' ? (
                     <AccountSelect 
@@ -593,7 +593,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 <div className="pt-4 flex justify-end gap-3">
                   <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Cancel</button>
                   <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? 'Saving...' : 'Create Entry'}
+                    {submitting ? t('saving') : t('createEntry')}
                   </button>
                 </div>
               </form>            ) : (
@@ -715,7 +715,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                   </td>
                                   <td className="px-5 py-3">
                                     <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 border border-gray-200 rounded text-gray-600 uppercase font-bold tracking-wider">
-                                      {a.referenceType.includes('sales') ? 'Sales Inv' : 'Purch Inv'}
+                                      {a.referenceType.includes('sales') ? t('salesInv') : t('purchInv')}
                                     </span>
                                   </td>
                                   <td className="px-5 py-3 text-right font-mono font-medium text-[#041627]">
@@ -801,7 +801,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                       className="btn btn-primary btn-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                       title={remainingToAllocate < 0 ? "Cannot allocate more than the payment amount" : ""}
                                     >
-                                      {submitting ? 'Submitting...' : 'Submit'}
+                                      {submitting ? t('submitting') : t('submit')}
                                     </button>
                                   </div>
                                 </div>

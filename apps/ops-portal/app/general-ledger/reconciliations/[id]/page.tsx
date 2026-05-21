@@ -7,7 +7,7 @@ import type { ColDef } from 'ag-grid-community';
 import QuickAdjustmentModal from './QuickAdjustmentModal';
 import SplitEntryModal from './SplitEntryModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -67,7 +67,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       const recRes = await apiFetch<any>(`/api/gl/reconciliations/${id}`);
       setReconciliation(recRes);
     } catch (err) {
-      console.error(err);
+      reportError(err, 'ReconciliationDetails');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
         setSelectedRow({ ...selectedRow, isCleared });
       }
     } catch (err) {
-      console.error(err);
+      reportError(err, 'ReconciliationToggle');
       toast.error(t('toggleError'));
     }
   };
@@ -108,7 +108,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       toast.success(t('postSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err) {
-      console.error(err);
+      reportError(err, 'ReconciliationPost');
       toast.error(t('postError'));
     } finally {
       setPosting(false);
@@ -126,7 +126,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
       toast.success(t('discardSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err: any) {
-      console.error(err);
+      reportError(err, 'ReconciliationDiscard');
       toast.error(err.message || t('discardError'));
       setPosting(false);
     }
