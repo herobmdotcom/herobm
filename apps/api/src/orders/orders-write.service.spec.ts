@@ -11,8 +11,8 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { AccountsService } from '../accounts/accounts.service';
-import { CreditAssessmentService } from '../accounts/credit-assessment.service';
+import { AccountsService } from '../customers/customers.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 
@@ -29,6 +29,7 @@ import {
   salesOrders,
   salesOrderLineItems,
   products as coreProducts,
+  productComponents,
 } from '../drizzle/modbm-core-schema';
 
 import { taxCategories } from '../drizzle/modbm-core-schema';
@@ -88,7 +89,7 @@ describe('OrdersWriteService', () => {
     };
     mockAccountsService = {
       findOne: jest.fn().mockResolvedValue({
-        accountId: 'c0000000-0000-0000-0000-000000000001',
+        customerId: 'c0000000-0000-0000-0000-000000000001',
         currencyCode: 'EUR',
         taxCategoryId: TAX_DEFAULT.taxCategoryId,
       }),
@@ -209,7 +210,7 @@ describe('OrdersWriteService', () => {
 
       const customer = await createTestCustomer(pg.db);
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: customer.accountId,
+        customerId: customer.customerId,
         currencyCode: currency,
         taxCategoryId: gstId,
       });
@@ -225,7 +226,7 @@ describe('OrdersWriteService', () => {
         customer,
         product,
         validDto: {
-          customerId: customer.accountId,
+          customerId: customer.customerId,
           lines: [
             {
               productId: product.productId,
@@ -265,7 +266,7 @@ describe('OrdersWriteService', () => {
       const { customer, product } = await setupCreate();
       const result = await service.create(
         {
-          customerId: customer.accountId,
+          customerId: customer.customerId,
           lines: [
             {
               productId: product.productId,
@@ -313,7 +314,7 @@ describe('OrdersWriteService', () => {
     it('should use exempt GST for exempt customer (regardless of product)', async () => {
       const { customer, validDto } = await setupCreate();
       mockAccountsService.findOne.mockResolvedValue({
-        accountId: customer.accountId,
+        customerId: customer.customerId,
         currencyCode: 'EUR',
         taxCategoryId: TAX_EXEMPT.taxCategoryId,
       });
@@ -341,7 +342,7 @@ describe('OrdersWriteService', () => {
     it('should create order with no lines', async () => {
       const { customer } = await setupCreate();
       const dto = {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         lines: [],
       };
       const result = await service.create(dto, 'admin');
@@ -417,7 +418,7 @@ describe('OrdersWriteService', () => {
     async function setupForUpdate(stateCode: string) {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: stateCode as any,
       });
@@ -479,7 +480,7 @@ describe('OrdersWriteService', () => {
     async function setupWithState(currentState: string) {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: currentState as any,
       });
@@ -592,7 +593,7 @@ describe('OrdersWriteService', () => {
   //   1. findOrder → order row (with customerId)
   //   2. validateProduct → lookupProduct
   //   3. max line number query
-  //   4. resolveTaxForLine → accounts.taxCategoryId
+  //   4. resolveTaxForLine → customers.taxCategoryId
   //   5. resolveTaxForLine → lookupProduct (for product gstCategory)
   // =========================================================================
 
@@ -601,7 +602,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: stateCode as any,
       });
@@ -765,7 +766,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: orderState as any,
       });
@@ -872,7 +873,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: orderState as any,
       });
@@ -957,7 +958,7 @@ describe('OrdersWriteService', () => {
       const customer = await createTestCustomer(pg.db);
       const product = await createTestProduct(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: SALES_ORDER_STATE.DRAFT,
       });
@@ -1000,7 +1001,7 @@ describe('OrdersWriteService', () => {
     it('should throw NotFoundException when line does not exist', async () => {
       const customer = await createTestCustomer(pg.db);
       const order = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
         state: SALES_ORDER_STATE.DRAFT,
       });
@@ -1020,11 +1021,11 @@ describe('OrdersWriteService', () => {
       const product = await createTestProduct(pg.db);
 
       const order1 = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const order2 = await createTestSalesOrder(pg.db, {
-        customerId: customer.accountId,
+        customerId: customer.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
 
@@ -1053,6 +1054,243 @@ describe('OrdersWriteService', () => {
           'admin',
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // =========================================================================
+  // Product Kits & BOM Explosion
+  // =========================================================================
+
+  describe('Product Kits & BOM Explosion', () => {
+    let kitProduct: any;
+    let comp1: any;
+    let comp2: any;
+    let customer: any;
+
+    beforeEach(async () => {
+      // Allow the service to resolve products from the actual DB instead of the generic mock
+      mockProductsService.findOne.mockImplementation(
+        async (id: string, txArg?: any) => {
+          const db = txArg || pg.db;
+          const rows = await db
+            .select()
+            .from(coreProducts)
+            .where(eq(coreProducts.productId, id));
+          if (rows.length > 0) return rows[0];
+          throw new NotFoundException();
+        },
+      );
+
+      customer = await createTestCustomer(pg.db);
+
+      // Create child components
+      comp1 = await createTestProduct(pg.db, {
+        name: 'Child Component 1',
+        productType: 'inventory',
+        listPrice: '10.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+      comp2 = await createTestProduct(pg.db, {
+        name: 'Child Component 2',
+        productType: 'inventory',
+        listPrice: '15.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+
+      // Create Parent Kit Product
+      kitProduct = await createTestProduct(pg.db, {
+        name: 'Parent Kit',
+        productType: 'kit',
+        listPrice: '50.00',
+        salesTaxCategoryId: TAX_DEFAULT.taxCategoryId,
+      });
+
+      // Link them in product_components
+      await pg.db.insert(productComponents).values([
+        {
+          parentProductId: kitProduct.productId,
+          childProductId: comp1.productId,
+          quantity: '2',
+          sequenceNumber: 1,
+        },
+        {
+          parentProductId: kitProduct.productId,
+          childProductId: comp2.productId,
+          quantity: '1',
+          sequenceNumber: 2,
+        },
+      ]);
+    });
+
+    it('should explode kit on order create (Parent Price > 0)', async () => {
+      // When parent price > 0, children are $0
+      const dto = {
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '3',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+
+      const result = await service.create(dto as any, 'admin');
+
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      expect(lines).toHaveLength(3);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.productId).toBe(kitProduct.productId);
+      expect(parentLine.quantity).toBe('3');
+      expect(parseFloat(parentLine.pricePerUnit)).toBe(50);
+      expect(parentLine.parentLineId).toBeNull();
+
+      expect(childLine1.productId).toBe(comp1.productId);
+      // parent qty (3) * component qty (2) = 6
+      expect(childLine1.quantity).toBe('6');
+      expect(childLine1.pricePerUnit).toBe('0');
+      expect(childLine1.parentLineId).toBe(parentLine.salesOrderLineId);
+
+      expect(childLine2.productId).toBe(comp2.productId);
+      // parent qty (3) * component qty (1) = 3
+      expect(childLine2.quantity).toBe('3');
+      expect(childLine2.pricePerUnit).toBe('0');
+      expect(childLine2.parentLineId).toBe(parentLine.salesOrderLineId);
+    });
+
+    it('should explode kit on order create (Parent Price = 0)', async () => {
+      // When parent price = 0, children use standard listPrice
+      const dto = {
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '2',
+            pricePerUnit: '0',
+          },
+        ],
+      };
+
+      const result = await service.create(dto as any, 'admin');
+
+      const lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, result.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      expect(lines).toHaveLength(3);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.pricePerUnit).toBe('0');
+
+      expect(childLine1.productId).toBe(comp1.productId);
+      expect(childLine1.quantity).toBe('4'); // 2 * 2
+      expect(parseFloat(childLine1.pricePerUnit)).toBe(10); // comp1 listPrice
+
+      expect(childLine2.productId).toBe(comp2.productId);
+      expect(childLine2.quantity).toBe('2'); // 2 * 1
+      expect(parseFloat(childLine2.pricePerUnit)).toBe(15); // comp2 listPrice
+    });
+
+    it('should scale child quantities and toggle prices on parent line update', async () => {
+      // Create initial order with parent price > 0
+      const createDto = {
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '1',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+      const order = await service.create(createDto as any, 'admin');
+
+      let lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      const parentLineId = lines[0].salesOrderLineId;
+
+      // Update parent line: change quantity from 1 to 5, and change price from 50 to 0
+      await service.updateLine(
+        order.salesOrderId,
+        parentLineId,
+        { quantity: '5', pricePerUnit: '0' },
+        'admin',
+      );
+
+      lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId))
+        .orderBy(salesOrderLineItems.lineNumber);
+
+      const parentLine = lines[0];
+      const childLine1 = lines[1];
+      const childLine2 = lines[2];
+
+      expect(parentLine.quantity).toBe('5');
+      expect(parentLine.pricePerUnit).toBe('0');
+
+      // Quantities should scale by 5x (since newQty/oldQty = 5/1)
+      expect(childLine1.quantity).toBe('10'); // 5 * 2
+      // Because new parent price is 0, it should toggle to standard listPrice
+      expect(parseFloat(childLine1.pricePerUnit)).toBe(10);
+
+      expect(childLine2.quantity).toBe('5'); // 5 * 1
+      expect(parseFloat(childLine2.pricePerUnit)).toBe(15);
+    });
+
+    it('should cascade deletion to child lines when parent kit is removed', async () => {
+      const createDto = {
+        customerId: customer.customerId,
+        lines: [
+          {
+            productId: kitProduct.productId,
+            quantity: '1',
+            pricePerUnit: '50.00',
+          },
+        ],
+      };
+      const order = await service.create(createDto as any, 'admin');
+
+      let lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+
+      expect(lines).toHaveLength(3);
+      const parentLine = lines.find((l) => l.parentLineId === null)!;
+
+      // Remove the parent line
+      await service.removeLine(
+        order.salesOrderId,
+        parentLine.salesOrderLineId,
+        'admin',
+      );
+
+      lines = await pg.db
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.salesOrderId, order.salesOrderId));
+
+      expect(lines).toHaveLength(0); // Children should be deleted too
     });
   });
 });

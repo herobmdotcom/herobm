@@ -9,7 +9,11 @@ import {
   uomDictionary,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
-import { PRODUCT_STATE, SALES_ORDER_STATE, ACCOUNT_STATE } from '@modbm/shared';
+import {
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+  CUSTOMER_STATE,
+} from '@modbm/shared';
 import { EventType } from '../common/event-types';
 
 describe('ProductsService', () => {

@@ -96,7 +96,7 @@ describe('ReturnsWriteService', () => {
       TRUNCATE modbm_core.sales_order_shipments CASCADE;
       TRUNCATE modbm_core.sales_order_lines CASCADE;
       TRUNCATE modbm_core.sales_orders CASCADE;
-      TRUNCATE modbm_core.accounts CASCADE;
+      TRUNCATE modbm_core.customers CASCADE;
       TRUNCATE modbm_core.products CASCADE;
       TRUNCATE modbm_core.outbox CASCADE;
     `);
@@ -185,7 +185,7 @@ describe('ReturnsWriteService', () => {
       shippedQty?: number;
     }) {
       const cust = await createTestCustomer(pg.db);
-      customerId = cust.accountId;
+      customerId = cust.customerId;
 
       const prod = await createTestProduct(pg.db);
       productId = prod.productId;
@@ -395,7 +395,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
@@ -477,7 +477,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       orderId = order.salesOrderId;
@@ -629,7 +629,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
 
@@ -727,7 +727,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       orderId = order.salesOrderId;
@@ -819,7 +819,7 @@ describe('ReturnsWriteService', () => {
         .returning();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const taxRes = await pg.db
@@ -915,7 +915,7 @@ describe('ReturnsWriteService', () => {
         .returning();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const taxRes = await pg.db
@@ -985,7 +985,7 @@ describe('ReturnsWriteService', () => {
         .returning();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
@@ -1035,7 +1035,7 @@ describe('ReturnsWriteService', () => {
         .returning();
 
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
@@ -1078,7 +1078,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const ret = await createTestReturn(pg.db, {
@@ -1109,7 +1109,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
       const order = await createTestSalesOrder(pg.db, {
-        customerId: cust.accountId,
+        customerId: cust.customerId,
         locationId: '10000000-0000-0000-0000-000000000001',
       });
       const taxRes = await pg.db

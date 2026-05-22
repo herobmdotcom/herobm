@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
-import AccountSelect from '@/components/shared/AccountSelect';
+import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 
 interface GlAccount {
@@ -178,7 +178,7 @@ export default function NewJournalEntryPage() {
               <table className="w-full text-sm">
                 <thead style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                   <tr>
-                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.account')}</th>
+                    <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.customer')}</th>
                     <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.partyType')}</th>
                     <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.party')}</th>
                     <th className="text-left px-3 py-2 font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.memo')}</th>
@@ -224,9 +224,9 @@ export default function NewJournalEntryPage() {
                           </div>
                         )}
                         {line.partyType === 'customer' && (
-                          <AccountSelect
+                          <CustomerSelect
                             value={line.partyId}
-                            onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.accountId : '')}
+                            onChange={(acc) => updateLine(line.id, 'partyId', acc ? acc.customerId : '')}
                             placeholder={t('placeholders.selectParty')}
                           />
                         )}

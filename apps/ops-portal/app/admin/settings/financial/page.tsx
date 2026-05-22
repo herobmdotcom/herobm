@@ -14,7 +14,7 @@ import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { DynamicForm } from '@/components/DynamicForm';
 
 import { getCurrency } from '@/lib/currency';
-import { CURRENCIES } from '@modbm/shared';
+import { CURRENCIES, GL_ACCOUNT_TYPE } from '@modbm/shared';
 import { useTranslations } from 'next-intl';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -188,7 +188,7 @@ export default function FinancialSettingsPage() {
   };
 
   const coaEdit = (acct: any) => { setCoaEditingId(acct.glAccountId); setCoaForm({ ...acct }); setCoaCreating(false); };
-  const coaCreate = (parentId?: string) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: 'expense', parentAccountId: parentId || null, isGroup: false, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
+  const coaCreate = (parentId?: string, parentAccountType?: string) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, parentAccountId: parentId || null, isGroup: false, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
   const coaCancel = () => { setCoaEditingId(null); setCoaCreating(false); };
 
   const coaSave = async () => {
@@ -478,8 +478,8 @@ export default function FinancialSettingsPage() {
         </td>
         <td>
           {isEdit && coaCreating ? (
-            <select className="input" value={coaForm.accountType} onChange={e => setCoaForm({ ...coaForm, accountType: e.target.value })}>
-              {['asset', 'liability', 'equity', 'revenue', 'expense'].map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+            <select className="input" disabled={!!coaForm.parentAccountId} value={coaForm.accountType} onChange={e => setCoaForm({ ...coaForm, accountType: e.target.value })}>
+              {Object.values(GL_ACCOUNT_TYPE).map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
             </select>
           ) : data.accountType}
         </td>
@@ -534,7 +534,7 @@ export default function FinancialSettingsPage() {
             </div>
           ) : (
             <div className="flex justify-end gap-2 flex-nowrap whitespace-nowrap">
-              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId)}>{tSettings('actions.addChild')}</button>}
+              {data.isGroup && <button className="btn btn-secondary btn-xs" onClick={() => coaCreate(data.glAccountId, data.accountType)}>{tSettings('actions.addChild')}</button>}
               <button className="btn btn-secondary btn-xs" onClick={() => coaEdit(data)}>{tSettings('actions.edit')}</button>
               {data.isSystem && <span className="text-xs text-muted italic px-2">{tCommon('system')}</span>}
             </div>
@@ -874,7 +874,7 @@ export default function FinancialSettingsPage() {
           )}
         </div>
 
-        {/* ── Chart of Accounts ────────────────────────────────────────── */}
+        {/* ── Chart of Customers ────────────────────────────────────────── */}
         <div id="coa-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">{tSettings('labels.chartOfAccounts')}</h3>

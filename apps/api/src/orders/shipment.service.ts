@@ -17,8 +17,8 @@ import {
   bins,
   inventoryEntries,
   inventoryLedger,
-  accounts as coreAccounts,
-  accountGroups,
+  customers as coreAccounts,
+  customerGroups,
   backorders,
   purchaseOrders,
   systemEvents,
@@ -597,22 +597,25 @@ export class ShipmentService {
               },
             );
 
-            // Resolve customer account group dimensions for reversal posting
+            // Resolve customer customer group dimensions for reversal posting
             let revCostCenterId: string | undefined;
             let revActivityId: string | undefined;
             const [revOrder] = await innerTx
               .select({
-                costCenterId: accountGroups.defaultCostCenterId,
-                activityId: accountGroups.defaultActivityId,
+                costCenterId: customerGroups.defaultCostCenterId,
+                activityId: customerGroups.defaultActivityId,
               })
               .from(salesOrders)
               .leftJoin(
                 coreAccounts,
-                eq(salesOrders.customerId, coreAccounts.accountId),
+                eq(salesOrders.customerId, coreAccounts.customerId),
               )
               .leftJoin(
-                accountGroups,
-                eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+                customerGroups,
+                eq(
+                  coreAccounts.customerGroupId,
+                  customerGroups.customerGroupId,
+                ),
               )
               .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
             if (revOrder) {
@@ -884,7 +887,7 @@ export class ShipmentService {
       )
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);
@@ -1018,7 +1021,7 @@ export class ShipmentService {
       )
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(and(...conditions))
       .orderBy(desc(salesOrderShipments.createdOn))
@@ -1237,23 +1240,23 @@ export class ShipmentService {
       },
     );
 
-    // Resolve customer account group dimensions for COGS posting
+    // Resolve customer customer group dimensions for COGS posting
     let customerCostCenterId: string | undefined;
     let customerActivityId: string | undefined;
     const [order] = await innerTx
       .select({
         customerId: salesOrders.customerId,
-        costCenterId: accountGroups.defaultCostCenterId,
-        activityId: accountGroups.defaultActivityId,
+        costCenterId: customerGroups.defaultCostCenterId,
+        activityId: customerGroups.defaultActivityId,
       })
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .leftJoin(
-        accountGroups,
-        eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+        customerGroups,
+        eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
       )
       .where(eq(salesOrders.salesOrderId, shipment.salesOrderId));
     if (order) {

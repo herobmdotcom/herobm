@@ -22,7 +22,7 @@ async function main() {
 
   // Let's find an order that is picking! Or just make one
   const accts = await request(app.getHttpServer())
-    .get('/api/accounts?limit=1')
+    .get('/api/customers?limit=1')
     .set('Authorization', `Bearer ${token}`);
   const prods = await request(app.getHttpServer())
     .get('/api/products?limit=1')
@@ -32,7 +32,7 @@ async function main() {
     .post('/api/sales-orders')
     .set('Authorization', `Bearer ${token}`)
     .send({
-      customerId: accts.body.data[0].accountId,
+      customerId: accts.body.data[0].customerId,
       lines: [
         {
           productId: prods.body.data[0].productId,

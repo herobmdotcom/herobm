@@ -14,8 +14,8 @@ interface ProductGroup {
 
 interface DiscountRule {
   discountMatrixId: string;
-  accountGroupId: string | null;
-  accountId: string | null;
+  customerGroupId: string | null;
+  customerId: string | null;
   productGroupId: string | null;
   discountPercentage: string;
 }
@@ -24,16 +24,16 @@ interface DiscountMatrixSlideOverProps {
   open: boolean;
   onClose: () => void;
   ownerLabel: string;
-  accountGroupId?: string;
-  accountId?: string;
+  customerGroupId?: string;
+  customerId?: string;
 }
 
 export default function DiscountMatrixSlideOver({
   open,
   onClose,
   ownerLabel,
-  accountGroupId,
-  accountId,
+  customerGroupId,
+  customerId,
 }: DiscountMatrixSlideOverProps) {
   const t = useTranslations('admin.discountMatrix');
   const tCommon = useTranslations('common');
@@ -46,10 +46,10 @@ export default function DiscountMatrixSlideOver({
   const [newProductGroupId, setNewProductGroupId] = useState('');
   const [newDiscount, setNewDiscount] = useState('');
 
-  const ownerId = accountGroupId || accountId || '';
-  const ownerParam = accountGroupId
-    ? `accountGroupId=${accountGroupId}`
-    : `accountId=${accountId}`;
+  const ownerId = customerGroupId || customerId || '';
+  const ownerParam = customerGroupId
+    ? `customerGroupId=${customerGroupId}`
+    : `customerId=${customerId}`;
 
   const loadData = useCallback(async () => {
     if (!ownerId) return;
@@ -92,8 +92,8 @@ export default function DiscountMatrixSlideOver({
         );
       } else {
         await apiMutate('/api/discount-matrix', 'POST', {
-          accountGroupId: accountGroupId || undefined,
-          accountId: accountId || undefined,
+          customerGroupId: customerGroupId || undefined,
+          customerId: customerId || undefined,
           discountPercentage: value,
         });
       }
@@ -120,8 +120,8 @@ export default function DiscountMatrixSlideOver({
     if (!newDiscount) return;
     try {
       await apiMutate('/api/discount-matrix', 'POST', {
-        accountGroupId: accountGroupId || undefined,
-        accountId: accountId || undefined,
+        customerGroupId: customerGroupId || undefined,
+        customerId: customerId || undefined,
         productGroupId: newProductGroupId || undefined,
         discountPercentage: newDiscount,
       });

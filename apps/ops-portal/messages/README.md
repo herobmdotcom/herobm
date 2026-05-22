@@ -19,7 +19,7 @@ If this fails with `TS2345` errors referencing `NamespacedMessageKeys`, it means
 | Namespace | Scope | Example Keys |
 |---|---|---|
 | `common` | Shared across all pages — buttons, columns, states, errors, filters | `common.save`, `common.columns.name`, `common.states.active` |
-| `accounts` | Customer accounts module | `accounts.title`, `accounts.columns.accountNumber` |
+| `customers` | Customer customers module | `customers.title`, `customers.columns.customerNumber` |
 | `suppliers` | Supplier management | `suppliers.title`, `suppliers.compliance.reason` |
 | `products` | Product catalogue & storage | `products.generalInfo`, `products.storage.addBinLink` |
 | `salesOrders` | Sales order workflow | `salesOrders.lineItems`, `salesOrders.buttons.copyOrder` |
@@ -41,7 +41,7 @@ The `admin` namespace has deep structure:
 
 ```
 admin
-├── accountGroups    # Customer account group CRUD
+├── customerGroups    # Customer customer group CRUD
 ├── productGroups    # Product group CRUD
 ├── supplierGroups   # Supplier group CRUD
 ├── common           # Shared admin strings (notConfigured, defDiscount, etc.)

@@ -5,7 +5,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
-  accounts,
+  customers,
   locations,
   taxCategories,
   products,
@@ -44,9 +44,9 @@ describe('OrdersService', () => {
       name: 'Main Warehouse',
     });
 
-    await pg.db.insert(accounts).values({
-      accountId: ACCOUNT_ID,
-      accountNumber: 'ACC001',
+    await pg.db.insert(customers).values({
+      customerId: ACCOUNT_ID,
+      customerNumber: 'ACC001',
       name: 'Acme Corp',
       currencyCode: 'EUR',
     });

@@ -6,7 +6,7 @@ import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
   salesOrders,
   salesOrderLineItems,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   products as coreProducts,
   uomDictionary,
   locations,
@@ -22,7 +22,7 @@ import {
 import {
   SALES_ORDER_STATE,
   TRANSFER_ORDER_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
 } from '@modbm/shared';
 
 describe('PickingSlipService', () => {
@@ -95,11 +95,11 @@ describe('PickingSlipService', () => {
 
     // Seed Customer
     await pg.db.insert(coreAccounts).values({
-      accountId: CUSTOMER_ID,
-      accountNumber: 'CUST01',
+      customerId: CUSTOMER_ID,
+      customerNumber: 'CUST01',
       name: 'Acme Corp',
       currencyCode: 'AUD',
-      stateCode: ACCOUNT_STATE.ACTIVE,
+      stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
     });
 

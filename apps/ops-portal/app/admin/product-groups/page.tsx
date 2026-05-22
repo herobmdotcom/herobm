@@ -39,7 +39,7 @@ export default function ProductGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, accounts, cc, act] = await Promise.all([
+      const [data, customers, cc, act] = await Promise.all([
         apiFetch<any[]>('/api/product-groups'),
         apiFetch<any[]>('/api/gl/accounts'),
         apiFetch<any[]>('/api/settings/cost-centers'),
@@ -49,7 +49,7 @@ export default function ProductGroupsAdmin() {
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
-      setGlAccounts(accounts || []);
+      setGlAccounts(customers || []);
       setCostCenters(cc || []);
       setActivities(act || []);
     } catch(err: any) {

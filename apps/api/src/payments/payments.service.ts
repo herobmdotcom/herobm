@@ -13,8 +13,8 @@ import {
   paymentAllocations,
   salesInvoices,
   purchaseInvoices,
-  accounts,
-  accountGroups,
+  customers,
+  customerGroups,
   suppliers,
   supplierGroups,
   glAccounts,
@@ -103,10 +103,10 @@ export class PaymentsService {
         currencyCode: paymentEntries.currencyCode,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: sql<string>`COALESCE(${accounts.name}, ${suppliers.name})`,
+        partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
       })
       .from(paymentEntries)
-      .leftJoin(accounts, eq(paymentEntries.partyId, accounts.accountId))
+      .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
       .where(whereClause)
       .orderBy(sql`${paymentEntries.createdOn} DESC`);
@@ -131,10 +131,10 @@ export class PaymentsService {
         referenceNumber: paymentEntries.referenceNumber,
         createdOn: paymentEntries.createdOn,
         createdBy: paymentEntries.createdBy,
-        partyName: sql<string>`COALESCE(${accounts.name}, ${suppliers.name})`,
+        partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
       })
       .from(paymentEntries)
-      .leftJoin(accounts, eq(paymentEntries.partyId, accounts.accountId))
+      .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
       .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
       .where(eq(paymentEntries.paymentId, paymentId));
 
@@ -224,21 +224,21 @@ export class PaymentsService {
         );
       }
 
-      // 2. Resolve Control Account (AR or AP)
-      // We look at the party's group to find the default control account
+      // 2. Resolve Control Customer (AR or AP)
+      // We look at the party's group to find the default control customer
       let controlAccountId: string | null = null;
 
       if (payment.partyType === 'customer') {
         const [custRow] = await tx
           .select({
-            defaultArAccountId: accountGroups.defaultArAccountId,
+            defaultArAccountId: customerGroups.defaultArAccountId,
           })
-          .from(accounts)
+          .from(customers)
           .leftJoin(
-            accountGroups,
-            eq(accounts.accountGroupId, accountGroups.accountGroupId),
+            customerGroups,
+            eq(customers.customerGroupId, customerGroups.customerGroupId),
           )
-          .where(eq(accounts.accountId, payment.partyId));
+          .where(eq(customers.customerId, payment.partyId));
         controlAccountId = custRow?.defaultArAccountId || null;
       } else {
         const [suppRow] = await tx
@@ -265,7 +265,7 @@ export class PaymentsService {
 
       if (!controlAccountId) {
         throw new BadRequestException(
-          `Could not resolve ${payment.partyType === 'customer' ? 'Receivable' : 'Payable'} control account. Please check Party Group or GL Settings.`,
+          `Could not resolve ${payment.partyType === 'customer' ? 'Receivable' : 'Payable'} control customer. Please check Party Group or GL Settings.`,
         );
       }
 
@@ -507,20 +507,20 @@ export class PaymentsService {
       // 3. Reverse the GL journal entry
       const amount = parseFloat(payment.totalAmount);
 
-      // Resolve control account
+      // Resolve control customer
       let controlAccountId: string | null = null;
 
       if (payment.partyType === 'customer') {
         const [custRow] = await tx
           .select({
-            defaultArAccountId: accountGroups.defaultArAccountId,
+            defaultArAccountId: customerGroups.defaultArAccountId,
           })
-          .from(accounts)
+          .from(customers)
           .leftJoin(
-            accountGroups,
-            eq(accounts.accountGroupId, accountGroups.accountGroupId),
+            customerGroups,
+            eq(customers.customerGroupId, customerGroups.customerGroupId),
           )
-          .where(eq(accounts.accountId, payment.partyId));
+          .where(eq(customers.customerId, payment.partyId));
         controlAccountId = custRow?.defaultArAccountId || null;
       } else {
         const [suppRow] = await tx
@@ -546,7 +546,7 @@ export class PaymentsService {
 
       if (!controlAccountId) {
         throw new BadRequestException(
-          `Could not resolve control account for reversal.`,
+          `Could not resolve control customer for reversal.`,
         );
       }
 

@@ -233,10 +233,10 @@ describe('CasbinGuard', () => {
 
     // --- New role tests ---
 
-    it('should allow sales role to write accounts', async () => {
+    it('should allow sales role to write customers', async () => {
       const ctx = createMockContext({
         metadata: {
-          [CASBIN_RESOURCE]: 'accounts',
+          [CASBIN_RESOURCE]: 'customers',
           [CASBIN_ACTION]: 'write',
         },
         user: { userId: '3', username: 'sales', role: 'sales' },
@@ -308,10 +308,10 @@ describe('CasbinGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should deny procurement role from writing accounts', async () => {
+    it('should deny procurement role from writing customers', async () => {
       const ctx = createMockContext({
         metadata: {
-          [CASBIN_RESOURCE]: 'accounts',
+          [CASBIN_RESOURCE]: 'customers',
           [CASBIN_ACTION]: 'write',
         },
         user: { userId: '5', username: 'procurement', role: 'procurement' },

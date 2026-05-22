@@ -8,7 +8,7 @@ import {
   orderEvents,
   purchaseOrderEvents,
   productEvents,
-  accountEvents,
+  customerEvents,
   supplierEvents,
   productSupplierEvents,
   systemEvents,
@@ -28,7 +28,7 @@ const EVENT_TABLE_MAP: Record<string, { table: any; fkField: string | null }> =
     sales_order: { table: orderEvents, fkField: 'salesOrderId' },
     purchase_order: { table: purchaseOrderEvents, fkField: 'purchaseOrderId' },
     product: { table: productEvents, fkField: 'productId' },
-    account: { table: accountEvents, fkField: 'accountId' },
+    customer: { table: customerEvents, fkField: 'customerId' },
     supplier: { table: supplierEvents, fkField: 'vendorId' },
     product_supplier: {
       table: productSupplierEvents,

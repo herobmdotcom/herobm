@@ -9,11 +9,11 @@ import {
 export class CreateDiscountMatrixDto {
   @IsOptional()
   @IsUUID()
-  accountGroupId?: string;
+  customerGroupId?: string;
 
   @IsOptional()
   @IsUUID()
-  accountId?: string;
+  customerId?: string;
 
   @IsOptional()
   @IsUUID()

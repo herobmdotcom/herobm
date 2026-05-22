@@ -23,7 +23,7 @@ import {
   locations,
   zones,
   bins,
-  accounts,
+  customers,
   suppliers,
 } from '../drizzle/modbm-core-schema';
 import { eq } from 'drizzle-orm';
@@ -403,14 +403,14 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
 
   if (dryRun) {
     console.log(
-      '  [DRY RUN] Would seed Chart of Accounts from au_standard.json',
+      '  [DRY RUN] Would seed Chart of Customers from au_standard.json',
     );
     return;
   }
 
   const existing = await db.select().from(glAccounts).limit(1);
   if (existing.length > 0) {
-    console.log('  SKIP: GL accounts already exist');
+    console.log('  SKIP: GL customers already exist');
     return;
   }
 
@@ -478,7 +478,7 @@ async function seedCoaAccounts(db: any, dryRun: boolean) {
   }
 
   console.log(
-    `  Seeded ${insertRows.length} GL accounts from au_standard.json`,
+    `  Seeded ${insertRows.length} GL customers from au_standard.json`,
   );
 }
 
@@ -692,15 +692,15 @@ async function seedAccounts(db: any, dryRun: boolean) {
 
   // Seed customer
   await db
-    .insert(accounts)
+    .insert(customers)
     .values({
-      accountId: '20000000-0000-0000-0000-000000000001',
-      accountNumber: 'CUST-E2E-001',
+      customerId: '20000000-0000-0000-0000-000000000001',
+      customerNumber: 'CUST-E2E-001',
       name: 'E2E Default Customer',
       currencyCode: 'AUD',
     })
     .onConflictDoUpdate({
-      target: accounts.accountId,
+      target: customers.customerId,
       set: { name: 'E2E Default Customer' },
     });
 

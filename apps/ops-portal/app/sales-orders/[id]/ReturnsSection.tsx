@@ -396,6 +396,9 @@ export default function ReturnsSection({
                                                 key={s}
                                                 className={`btn btn-sm ${s === 'cancelled' ? 'btn-danger' : 'btn-primary'}`}
                                                 onClick={async () => {
+                                                    if (s === RETURN_STATE.PROCESSED) {
+                                                        if (!confirm(tConfirm('processReturn'))) return;
+                                                    }
                                                     try {
                                                         await apiMutate(`/api/sales-orders/${orderId}/returns/${ret.returnId}/state`, 'PATCH', {
                                                             stateCode: s
@@ -410,6 +413,21 @@ export default function ReturnsSection({
                                                 → <StateName state={s as ValidState} />
                                             </button>
                                         ))}
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            onClick={async () => {
+                                                try {
+                                                    const { apiFetchBlob } = await import('@/lib/api');
+                                                    const blob = await apiFetchBlob(`/api/reports/hooks/return-slip/run?id=${ret.returnId}&context=sales-return`, { method: 'POST' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    window.open(url, '_blank');
+                                                } catch (err) {
+                                                    setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateReport'));
+                                                }
+                                            }}
+                                        >
+                                            {tSales('buttons.returnSlip')}
+                                        </button>
                                         {ret.stateCode === RETURN_STATE.PROCESSED && (
                                             <button
                                                 className="btn btn-secondary btn-sm"

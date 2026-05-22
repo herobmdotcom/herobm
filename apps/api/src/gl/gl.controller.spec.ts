@@ -3,6 +3,7 @@ import { GlController } from './gl.controller';
 import { GlService } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { AppConfigService } from '../settings/app-config.service';
+import { GLAccountType } from '@modbm/shared';
 
 /**
  * Unit tests for the GL Controller.
@@ -77,13 +78,28 @@ describe('GlController', () => {
 
   describe('POST /gl/accounts', () => {
     it('should delegate to createAccount with body', async () => {
-      const body = { accountCode: '9000', name: 'Test', accountType: 'asset' };
+      const body: {
+        accountCode: string;
+        name: string;
+        accountType: GLAccountType;
+      } = {
+        accountCode: '9000',
+        name: 'Test',
+        accountType: 'asset',
+      };
       await controller.createAccount(body);
       expect(glService.createAccount).toHaveBeenCalledWith(body);
     });
 
     it('should pass parentAccountId and isGroup when provided', async () => {
-      const body = {
+      const body: {
+        accountCode: string;
+        name: string;
+        accountType: GLAccountType;
+        parentAccountId: string;
+        isGroup: boolean;
+        currencyCode: string;
+      } = {
         accountCode: '9001',
         name: 'Child',
         accountType: 'expense',

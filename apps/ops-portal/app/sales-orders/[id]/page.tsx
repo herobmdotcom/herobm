@@ -388,7 +388,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                 <p className="text-sm" style={{ fontWeight: 500, paddingTop: 6 }}>
                                     {order.customerName || order.customerId ? (
                                         <Link 
-                                            href={`/accounts/${order.customerId}`} 
+                                            href={`/customers/${order.customerId}`} 
                                             style={{ color: 'var(--accent)', textDecoration: 'none' }}
                                             className="hover:underline"
                                         >

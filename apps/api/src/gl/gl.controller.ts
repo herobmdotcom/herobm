@@ -18,6 +18,7 @@ import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
 import { JournalLineDto } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
+import { GLAccountType } from '@modbm/shared';
 
 @Controller('gl')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -49,7 +50,7 @@ export class GlController {
     body: {
       accountCode: string;
       name: string;
-      accountType: string;
+      accountType: GLAccountType;
       parentAccountId?: string;
       isGroup?: boolean;
       isBankAccount?: boolean;

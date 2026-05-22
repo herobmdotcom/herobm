@@ -47,15 +47,15 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
   it('POST /api/reports/hooks/:hookSlug/run — handles sparse data (App Orders) without crashing Typst', async () => {
     // 1. Fetch valid foreign keys required for minimal creation
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`);
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=1')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    if (!accounts.body.data?.length || !products.body.data?.length) {
+    if (!customers.body.data?.length || !products.body.data?.length) {
       console.warn('Missing test data for sparse order generation.');
       return;
     }
@@ -67,7 +67,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .send({
         fulfillmentLocationId: locationId,
 
-        customerId: accounts.body.data[0].accountId,
+        customerId: customers.body.data[0].customerId,
         lines: [
           {
             productId: products.body.data[0].productId,
@@ -98,15 +98,15 @@ describe('Dynamic Reports Engine (e2e)', () => {
 
   it('POST /api/reports/hooks/:hookSlug/run — handles rich data seamlessly', async () => {
     // 1. Fetch valid foreign keys required for creation
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`);
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=2')
       .set('Authorization', `Bearer ${adminToken}`);
 
-    if (!accounts.body.data?.length || products.body.data?.length < 2) {
+    if (!customers.body.data?.length || products.body.data?.length < 2) {
       console.warn('Missing test data for rich order generation.');
       return;
     }
@@ -118,7 +118,7 @@ describe('Dynamic Reports Engine (e2e)', () => {
       .send({
         fulfillmentLocationId: locationId,
 
-        customerId: accounts.body.data[0].accountId,
+        customerId: customers.body.data[0].customerId,
         name: 'Super Rich Demo Order',
         customerOrderNumber: 'PO-999-XYZ',
         notes: 'Please expedite shipping via air freight.',

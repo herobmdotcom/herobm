@@ -16,7 +16,7 @@ import { INestApplication } from '@nestjs/common';
 import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import {
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
   SALES_ORDER_STATE,
@@ -75,11 +75,11 @@ describe('Archive E2E — Full Round-Trip', () => {
     viewerToken = viewerLogin.body.access_token;
 
     // Fetch real IDs from mart data
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validCustomerId = accounts.body.data[0].accountId;
+    validCustomerId = customers.body.data[0].customerId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=1')
@@ -120,76 +120,76 @@ describe('Archive E2E — Full Round-Trip', () => {
   // ===========================================================================
 
   describe('Accounts — archive round-trip', () => {
-    let accountId: string;
+    let customerId: string;
 
     it('create a test account', async () => {
       const res = await request(app.getHttpServer())
-        .post('/api/accounts')
+        .post('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          accountNumber: `E2E-ARCH-ACCT-${Date.now()}`,
+          customerNumber: `E2E-ARCH-ACCT-${Date.now()}`,
           name: 'E2E Archive Test Account',
         })
         .expect(201);
 
-      accountId = res.body.accountId;
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
+      customerId = res.body.customerId;
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ACTIVE);
     });
 
     it('viewer cannot archive (403)', async () => {
       await request(app.getHttpServer())
-        .post(`/api/accounts/${accountId}/archive`)
+        .post(`/api/customers/${customerId}/archive`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .expect(403);
     });
 
     it('admin can archive the account', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/api/accounts/${accountId}/archive`)
+        .post(`/api/customers/${customerId}/archive`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('archived account is excluded from default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts')
+        .get('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const ids = res.body.data.map((a: any) => a.accountId);
-      expect(ids).not.toContain(accountId);
+      const ids = res.body.data.map((a: any) => a.customerId);
+      expect(ids).not.toContain(customerId);
     });
 
     it('archived account appears with ?includeArchived=true', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts?includeArchived=true&limit=100000')
+        .get('/api/customers?includeArchived=true&limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const found = res.body.data.find((a: any) => a.accountId === accountId);
+      const found = res.body.data.find((a: any) => a.customerId === customerId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('admin can unarchive the account', async () => {
       const res = await request(app.getHttpServer())
-        .post(`/api/accounts/${accountId}/unarchive`)
+        .post(`/api/customers/${customerId}/unarchive`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ACTIVE);
     });
 
     it('unarchived account reappears in default list', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts?limit=100000')
+        .get('/api/customers?limit=100000')
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const ids = res.body.data.map((a: any) => a.accountId);
-      expect(ids).toContain(accountId);
+      const ids = res.body.data.map((a: any) => a.customerId);
+      expect(ids).toContain(customerId);
     });
   });
 
@@ -262,7 +262,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('archived order is excluded from default list', async () => {
@@ -283,7 +283,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((o: any) => o.id === orderId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('admin can unarchive — restores to cancelled', async () => {
@@ -376,7 +376,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('archived PO is excluded from default list', async () => {
@@ -397,7 +397,7 @@ describe('Archive E2E — Full Round-Trip', () => {
 
       const found = res.body.data.find((o: any) => o.id === poId);
       expect(found).toBeDefined();
-      expect(found.stateCode).toBe(ACCOUNT_STATE.ARCHIVED);
+      expect(found.stateCode).toBe(CUSTOMER_STATE.ARCHIVED);
     });
 
     it('unarchive defaults PO to cancelled (no event store)', async () => {
@@ -531,7 +531,7 @@ describe('Archive E2E — Full Round-Trip', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(201);
 
-      expect(res.body.stateCode).toBe(ACCOUNT_STATE.ACTIVE);
+      expect(res.body.stateCode).toBe(CUSTOMER_STATE.ACTIVE);
     });
   });
 });

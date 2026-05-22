@@ -19,7 +19,7 @@ import {
   salesOrderShipments,
   salesOrderShipmentLines,
   backorders,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   transferOrders,
   transferOrderLines,
   transferOrderPicks,
@@ -470,7 +470,7 @@ export class PickingService {
       )
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .leftJoin(
         coreProducts,
@@ -843,7 +843,7 @@ export class PickingService {
       )
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .leftJoin(
         coreProducts,

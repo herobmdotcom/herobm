@@ -6,7 +6,7 @@ describe('DashboardController', () => {
   let controller: DashboardController;
 
   const mockSummary = {
-    accounts: 17,
+    customers: 17,
     products: 14896,
     inventoryLevels: 500,
     orderLines: 5,
@@ -23,10 +23,10 @@ describe('DashboardController', () => {
       },
       {
         id: 'a1',
-        type: 'account',
+        type: 'customer',
         label: 'Acme',
         subtitle: 'ACC-001',
-        href: '/accounts/a1',
+        href: '/customers/a1',
       },
     ],
   };

@@ -54,7 +54,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       .limit(1);
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('Account disabled or not found');
+      throw new UnauthorizedException('Customer disabled or not found');
     }
 
     return {

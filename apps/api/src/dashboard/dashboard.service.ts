@@ -4,7 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   products as coreProducts,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   salesOrders as coreSalesOrders,
   suppliers as coreSuppliers,
   purchaseOrders as corePurchaseOrders,
@@ -15,7 +15,7 @@ import { SALES_ORDER_STATE, PURCHASE_ORDER_STATE } from '@modbm/shared';
 import { AggregateType, EventType } from '../common/event-types';
 export interface SearchResult {
   id: string;
-  type: 'product' | 'account' | 'sales_order' | 'supplier' | 'purchase_order';
+  type: 'product' | 'customer' | 'sales_order' | 'supplier' | 'purchase_order';
   label: string;
   subtitle: string;
   href: string;
@@ -48,7 +48,7 @@ export class DashboardService {
       .from(coreSalesOrderLines);
 
     return {
-      accounts: accountCount.count,
+      customers: accountCount.count,
       products: productCount.count,
       orderLines: orderLineCount.count,
     };
@@ -78,18 +78,18 @@ export class DashboardService {
           )
           .limit(5),
 
-        // Accounts
+        // Customers
         this.db
           .select({
-            id: coreAccounts.accountId,
+            id: coreAccounts.customerId,
             label: coreAccounts.name,
-            subtitle: coreAccounts.accountNumber,
+            subtitle: coreAccounts.customerNumber,
           })
           .from(coreAccounts)
           .where(
             or(
               ilike(coreAccounts.name, term),
-              ilike(coreAccounts.accountNumber, term),
+              ilike(coreAccounts.customerNumber, term),
               ilike(coreAccounts.emailAddress1, term),
             ),
           )
@@ -156,10 +156,10 @@ export class DashboardService {
       })),
       ...accountRows.map((r) => ({
         id: r.id,
-        type: 'account' as const,
+        type: 'customer' as const,
         label: r.label,
         subtitle: r.subtitle,
-        href: `/accounts/${r.id}`,
+        href: `/customers/${r.id}`,
       })),
       ...soRows.map((r) => ({
         id: r.id,
@@ -234,9 +234,9 @@ export class DashboardService {
       );
     }
 
-    if (types.includes('account_created')) {
+    if (types.includes('customer_created')) {
       conditions.push(
-        sql`(e.aggregate_type = ${AggregateType.ACCOUNT} AND e.event_type = ${EventType.CREATED})`,
+        sql`(e.aggregate_type = ${AggregateType.CUSTOMER} AND e.event_type = ${EventType.CREATED})`,
       );
     }
 
@@ -266,7 +266,7 @@ export class DashboardService {
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.CREATED} THEN 'po_created'
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.ORDERED} THEN 'po_ordered'
           WHEN e.aggregate_type = ${AggregateType.PURCHASE_ORDER} AND e.event_type = ${EventType.STATUS_CHANGED} AND e.payload->>'to' = ${PURCHASE_ORDER_STATE.RECEIVED} THEN 'po_received'
-          WHEN e.aggregate_type = ${AggregateType.ACCOUNT} AND e.event_type = ${EventType.CREATED} THEN 'account_created'
+          WHEN e.aggregate_type = ${AggregateType.CUSTOMER} AND e.event_type = ${EventType.CREATED} THEN 'customer_created'
           WHEN e.aggregate_type = ${AggregateType.SUPPLIER} AND e.event_type = ${EventType.CREATED} THEN 'supplier_created'
         END as "eventType",
         e.aggregate_id as "entityId", 
@@ -276,7 +276,7 @@ export class DashboardService {
       FROM modbm_core.dashboard_timeline e
       LEFT JOIN modbm_core.sales_orders so ON e.aggregate_type = 'sales_order' AND e.aggregate_id = so.sales_order_id
       LEFT JOIN modbm_core.purchase_orders po ON e.aggregate_type = 'purchase_order' AND e.aggregate_id = po.purchase_order_id
-      LEFT JOIN modbm_core.accounts a ON e.aggregate_type = 'account' AND e.aggregate_id = a.account_id
+      LEFT JOIN modbm_core.customers a ON e.aggregate_type = 'customer' AND e.aggregate_id = a.customer_id
       LEFT JOIN modbm_core.suppliers s ON e.aggregate_type = 'supplier' AND e.aggregate_id = s.vendor_id
       WHERE ${whereClause}
       ORDER BY e.created_on DESC

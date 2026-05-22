@@ -52,7 +52,7 @@ const ToggleCell = (p: any) => {
     </div>
   );
 };
-import AccountSelect from '@/components/shared/AccountSelect';
+import CustomerSelect from '@/components/shared/CustomerSelect';
 import GLAccountSelect from '@/components/shared/GLAccountSelect';
 
 interface Props {
@@ -185,7 +185,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     setLoadingInvoices(true);
     try {
       const endpoint = data.partyType === 'customer' 
-        ? `/api/sales-invoices?accountId=${data.partyId}` 
+        ? `/api/sales-invoices?customerId=${data.partyId}` 
         : `/api/purchase-invoices?vendorId=${data.partyId}`;
       
       const res = await apiFetch<{ data: any[] }>(endpoint);
@@ -502,7 +502,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">GL Bank Account</label>
+                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">GL Bank Customer</label>
                   <GLAccountSelect 
                     value={form.glAccountBank}
                     onChange={(val, acc) => setForm({
@@ -527,11 +527,11 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     {form.paymentType === 'receive' ? t('customer') : t('supplier')}
                   </label>
                   {form.paymentType === 'receive' ? (
-                    <AccountSelect 
+                    <CustomerSelect 
                       value={form.partyId}
                       onChange={(acc) => setForm({
                         ...form, 
-                        partyId: acc?.accountId || '', 
+                        partyId: acc?.customerId || '', 
                         currencyCode: form.glAccountBank ? form.currencyCode : (acc?.currencyCode || baseCurrency)
                       })}
                       required
@@ -638,7 +638,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                             <table className="w-full text-sm text-left">
                               <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                                 <tr>
-                                  <th className="px-5 py-3">Account</th>
+                                  <th className="px-5 py-3">Customer</th>
                                   <th className="px-5 py-3 text-right">Debit</th>
                                   <th className="px-5 py-3 text-right">Credit</th>
                                   <th className="px-5 py-3">Memo</th>

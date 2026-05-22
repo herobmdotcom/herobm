@@ -3,7 +3,7 @@ import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
 interface GroupSelectProps {
-  type: 'account' | 'supplier' | 'product';
+  type: 'customer' | 'supplier' | 'product';
   value: string | null;
   onChange: (value: string | null) => void;
   disabled?: boolean;

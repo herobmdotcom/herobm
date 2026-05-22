@@ -51,7 +51,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
               <div className="text-sm">
                 {invoice.customerId ? (
                   <Link 
-                    href={`/accounts/${invoice.customerId}`} 
+                    href={`/customers/${invoice.customerId}`} 
                     className="text-[var(--accent)] hover:underline font-medium"
                   >
                     {invoice.customerName || t('unknownCustomer')}

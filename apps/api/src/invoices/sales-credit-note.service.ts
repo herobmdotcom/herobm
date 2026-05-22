@@ -17,8 +17,8 @@ import {
   salesOrders,
   salesInvoices,
   glAccounts,
-  accounts as coreAccounts,
-  accountGroups,
+  customers as coreAccounts,
+  customerGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -101,7 +101,7 @@ export class SalesCreditNoteService {
         return null;
       }
 
-      // Resolve account codes from settings IDs
+      // Resolve customer codes from settings IDs
       const settingsIds = [
         settings.defaultArAccountId,
         settings.defaultRevenueAccountId,
@@ -138,7 +138,7 @@ export class SalesCreditNoteService {
 
       if (!arCode || !revCode) {
         this.logger.warn(
-          'AR or Revenue account code not found — skipping credit note GL',
+          'AR or Revenue customer code not found — skipping credit note GL',
         );
         return null;
       }
@@ -150,19 +150,19 @@ export class SalesCreditNoteService {
       if (order.customerId) {
         const [custInfo] = await innerTx
           .select({
-            costCenterId: accountGroups.defaultCostCenterId,
-            activityId: accountGroups.defaultActivityId,
+            costCenterId: customerGroups.defaultCostCenterId,
+            activityId: customerGroups.defaultActivityId,
           })
           .from(coreAccounts)
           .leftJoin(
-            accountGroups,
-            eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+            customerGroups,
+            eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
           )
           .where(
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
               order.customerId,
             )
-              ? eq(coreAccounts.accountId, order.customerId)
+              ? eq(coreAccounts.customerId, order.customerId)
               : eq(coreAccounts.externalId, order.customerId),
           );
 

@@ -3,7 +3,7 @@ import { DashboardService } from './dashboard.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import { setupPgliteSuite } from '../test-utils/pglite-suite';
 import {
-  accounts,
+  customers,
   products,
   salesOrderLineItems,
   salesOrders,
@@ -82,7 +82,7 @@ describe('DashboardService', () => {
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
     await pg.db.delete(purchaseOrders);
-    await pg.db.delete(accounts);
+    await pg.db.delete(customers);
     await pg.db.delete(products);
     await pg.db.delete(suppliers);
   });
@@ -90,10 +90,10 @@ describe('DashboardService', () => {
   describe('getSummary', () => {
     it('should return counts for all entities', async () => {
       const [acc] = await pg.db
-        .insert(accounts)
+        .insert(customers)
         .values({
-          name: 'Test Account',
-          accountNumber: 'ACC1',
+          name: 'Test Customer',
+          customerNumber: 'ACC1',
           currencyCode: 'USD',
         })
         .returning();
@@ -108,7 +108,7 @@ describe('DashboardService', () => {
         .values({
           orderNumber: 'SO1',
           name: 'Order 1',
-          customerId: acc.accountId,
+          customerId: acc.customerId,
           fulfillmentLocationId: testLocationId,
           currencyCode: 'USD',
         })
@@ -124,7 +124,7 @@ describe('DashboardService', () => {
       });
 
       const result = await service.getSummary();
-      expect(result.accounts).toBe(1);
+      expect(result.customers).toBe(1);
       expect(result.products).toBe(1);
       expect(result.orderLines).toBe(1);
     });
@@ -142,10 +142,10 @@ describe('DashboardService', () => {
         .values({ name: 'Widget Alpha', productNumber: 'WA-01' })
         .returning();
       const [a] = await pg.db
-        .insert(accounts)
+        .insert(customers)
         .values({
           name: 'Alpha Corp',
-          accountNumber: 'AC-01',
+          customerNumber: 'AC-01',
           currencyCode: 'USD',
         })
         .returning();
@@ -162,8 +162,8 @@ describe('DashboardService', () => {
       );
       expect(result.results).toContainEqual(
         expect.objectContaining({
-          id: a.accountId,
-          type: 'account',
+          id: a.customerId,
+          type: 'customer',
           label: 'Alpha Corp',
         }),
       );
@@ -171,10 +171,10 @@ describe('DashboardService', () => {
 
     it('should return correct href for each entity type', async () => {
       const [acc] = await pg.db
-        .insert(accounts)
+        .insert(customers)
         .values({
           name: 'Search Acc',
-          accountNumber: 'SA1',
+          customerNumber: 'SA1',
           currencyCode: 'USD',
         })
         .returning();
@@ -184,7 +184,7 @@ describe('DashboardService', () => {
         .values({
           orderNumber: 'SO-999',
           name: 'Special Order',
-          customerId: acc.accountId,
+          customerId: acc.customerId,
           fulfillmentLocationId: testLocationId,
           currencyCode: 'USD',
         })
@@ -200,27 +200,27 @@ describe('DashboardService', () => {
 
   describe('getTimeline', () => {
     it('should return chronological events from system_events', async () => {
-      const accountId = '00000000-0000-0000-0000-00000000000a';
-      await pg.db.insert(accounts).values({
-        accountId,
-        name: 'Timeline Account',
-        accountNumber: 'TACC',
+      const customerId = '00000000-0000-0000-0000-00000000000a';
+      await pg.db.insert(customers).values({
+        customerId,
+        name: 'Timeline Customer',
+        customerNumber: 'TACC',
         currencyCode: 'USD',
       });
 
       await pg.db.insert(systemEvents).values({
-        aggregateType: 'account',
-        aggregateId: accountId,
+        aggregateType: 'customer',
+        aggregateId: customerId,
         eventType: 'created',
         actor: 'system',
         createdOn: new Date(),
       });
 
-      const result = await service.getTimeline(['account_created']);
+      const result = await service.getTimeline(['customer_created']);
       expect(result.events.length).toBe(1);
       expect(result.events[0]).toMatchObject({
-        eventType: 'account_created',
-        entityDisplay: 'Timeline Account',
+        eventType: 'customer_created',
+        entityDisplay: 'Timeline Customer',
         actor: 'system',
       });
     });

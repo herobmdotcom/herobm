@@ -98,42 +98,42 @@ export class AppConfigService implements OnModuleInit {
     return this.getGl().expenseRoutingPrecedence as ExpenseRoutingStrategy;
   }
 
-  /** Default AR account UUID. */
+  /** Default AR customer UUID. */
   defaultArAccountId(): string | null {
     return this.getGl().defaultArAccountId;
   }
 
-  /** Default Revenue account UUID. */
+  /** Default Revenue customer UUID. */
   defaultRevenueAccountId(): string | null {
     return this.getGl().defaultRevenueAccountId;
   }
 
-  /** Default Tax account UUID. */
+  /** Default Tax customer UUID. */
   defaultTaxAccountId(): string | null {
     return this.getGl().defaultTaxAccountId;
   }
 
-  /** Default Inventory Asset account UUID. */
+  /** Default Inventory Asset customer UUID. */
   defaultInventoryAccountId(): string | null {
     return this.getGl().defaultInventoryAccountId;
   }
 
-  /** Default GRNI (Goods Received Not Invoiced) liability account UUID. */
+  /** Default GRNI (Goods Received Not Invoiced) liability customer UUID. */
   defaultGrniAccountId(): string | null {
     return this.getGl().defaultGrniAccountId;
   }
 
-  /** Default Inventory Shrinkage (Expense) account UUID. */
+  /** Default Inventory Shrinkage (Expense) customer UUID. */
   defaultShrinkageAccountId(): string | null {
     return this.getGl().defaultShrinkageAccountId;
   }
 
-  /** Default Cost of Goods Sold (COGS) expense account UUID. */
+  /** Default Cost of Goods Sold (COGS) expense customer UUID. */
   defaultCogsAccountId(): string | null {
     return this.getGl().defaultCogsAccountId;
   }
 
-  /** Default Fee Revenue account UUID (e.g. restocking fees). */
+  /** Default Fee Revenue customer UUID (e.g. restocking fees). */
   defaultFeeRevenueAccountId(): string | null {
     return this.getGl().defaultFeeRevenueAccountId ?? null;
   }

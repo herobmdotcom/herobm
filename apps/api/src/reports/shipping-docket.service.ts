@@ -8,7 +8,7 @@ import {
   salesOrderShipmentLines,
   salesOrderLineItems,
   products as coreProducts,
-  accounts as coreAccounts,
+  customers as coreAccounts,
 } from '../drizzle/modbm-core-schema';
 
 export interface ShippingDocketData {
@@ -58,7 +58,7 @@ export class ShippingDocketService {
       )
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(eq(salesOrderShipments.shipmentId, shipmentId))
       .limit(1);

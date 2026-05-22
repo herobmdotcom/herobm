@@ -13,7 +13,7 @@ import {
   glJournalEntries,
   glJournalLines,
   glSettings,
-  accounts,
+  customers,
   suppliers,
   costCenters,
   activities,
@@ -24,6 +24,8 @@ import { AggregateType, EventType } from '../common/event-types';
 import {
   REVENUE_ROUTING_PRECEDENCE,
   EXPENSE_ROUTING_PRECEDENCE,
+  GL_ACCOUNT_TYPE,
+  GLAccountType,
 } from '@modbm/shared';
 import { JournalLineDto } from './dto';
 
@@ -326,7 +328,7 @@ export class GlService {
   async createAccount(data: {
     accountCode: string;
     name: string;
-    accountType: string;
+    accountType: GLAccountType;
     parentAccountId?: string;
     isGroup?: boolean;
     isBankAccount?: boolean;
@@ -334,7 +336,7 @@ export class GlService {
     metadata?: Record<string, any>;
   }) {
     // Validate account type
-    const validTypes = ['asset', 'liability', 'equity', 'revenue', 'expense'];
+    const validTypes = Object.values(GL_ACCOUNT_TYPE) as string[];
     if (!validTypes.includes(data.accountType)) {
       throw new BadRequestException(
         `Invalid account type '${data.accountType}'. Must be one of: ${validTypes.join(', ')}`,
@@ -355,6 +357,11 @@ export class GlService {
       if (!parent[0].isGroup) {
         throw new BadRequestException(
           'Parent account must be a group account.',
+        );
+      }
+      if (parent[0].accountType !== data.accountType) {
+        throw new BadRequestException(
+          'Child account type must match parent account type.',
         );
       }
     }
@@ -600,7 +607,7 @@ export class GlService {
         COALESCE(si.invoice_number, pi.invoice_number, sor.return_number) as "sourceNumber"
       FROM modbm_core.gl_journal_entries je
       LEFT JOIN first_line_parties flp ON flp.journal_entry_id = je.journal_entry_id
-      LEFT JOIN modbm_core.accounts acc ON acc.account_id = flp.party_id::uuid AND flp.party_type = 'customer'
+      LEFT JOIN modbm_core.customers acc ON acc.customer_id = flp.party_id::uuid AND flp.party_type = 'customer'
       LEFT JOIN modbm_core.suppliers supp ON supp.vendor_id = flp.party_id::uuid AND flp.party_type = 'supplier'
       LEFT JOIN modbm_core.sales_invoices si ON si.invoice_id = je.source_id AND je.source_type = 'sales_invoice'
       LEFT JOIN modbm_core.purchase_invoices pi ON pi.invoice_id = je.source_id AND je.source_type = 'purchase_invoice'
@@ -675,7 +682,7 @@ export class GlService {
         memo: glJournalLines.memo,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
-        customerName: accounts.name,
+        customerName: customers.name,
         supplierName: suppliers.name,
         accountCode: glAccounts.accountCode,
         accountName: glAccounts.name,
@@ -690,9 +697,9 @@ export class GlService {
         eq(glJournalLines.glAccountId, glAccounts.glAccountId),
       )
       .leftJoin(
-        accounts,
+        customers,
         and(
-          sql`${glJournalLines.partyId}::uuid = ${accounts.accountId}`,
+          sql`${glJournalLines.partyId}::uuid = ${customers.customerId}`,
           eq(glJournalLines.partyType, 'customer'),
         ),
       )

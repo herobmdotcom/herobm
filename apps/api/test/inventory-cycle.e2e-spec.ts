@@ -32,7 +32,7 @@ describe('Inventory Cycle (e2e)', () => {
   let adminToken: string;
   let productId: string;
   let productNumber: string;
-  let accountId: string;
+  let customerId: string;
   let vendorId: string;
   let locationId: string;
 
@@ -61,11 +61,11 @@ describe('Inventory Cycle (e2e)', () => {
     adminToken = loginRes.body.access_token;
 
     // Fetch dependencies
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    accountId = accounts.body.data[0].accountId;
+    customerId = customers.body.data[0].customerId;
 
     const suppliers = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
@@ -195,7 +195,7 @@ describe('Inventory Cycle (e2e)', () => {
       .send({
         fulfillmentLocationId: locationId,
 
-        customerId: accountId,
+        customerId: customerId,
         name: 'SO Cycle Test',
         lines: [{ productId, quantity: '4', pricePerUnit: '50.00' }],
       });

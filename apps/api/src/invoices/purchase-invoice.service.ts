@@ -489,7 +489,7 @@ export class PurchaseInvoiceService {
         if (settings?.defaultExpenseAccountId) {
           defaultGlAccountId = settings.defaultExpenseAccountId;
         } else {
-          // Fallback to the first expense account if no default is configured
+          // Fallback to the first expense customer if no default is configured
           const fallbackRows = await tx
             .select({ id: glAccounts.glAccountId })
             .from(glAccounts)
@@ -554,7 +554,7 @@ export class PurchaseInvoiceService {
     for (const { line, poProductId } of lines) {
       if (line.matchStatus !== MATCH_STATUS.MATCHED && !line.glAccountId) {
         throw new BadRequestException(
-          `Line "${line.description}" is unmatched and must have a GL Account assigned before finalisation.`,
+          `Line "${line.description}" is unmatched and must have a GL Customer assigned before finalisation.`,
         );
       }
 
@@ -582,7 +582,7 @@ export class PurchaseInvoiceService {
       );
     }
 
-    // Verify Vendor default AP / Expense Accounts + Dimensions
+    // Verify Vendor default AP / Expense Customers + Dimensions
     const [supp] = await this.db
       .select({
         vendorId: suppliers.vendorId,
@@ -714,7 +714,7 @@ export class PurchaseInvoiceService {
               accountCode: apCode,
               debit: 0,
               credit: totalDebits,
-              memo: `Accounts Payable: ${invoice.invoiceNumber}`,
+              memo: `Customers Payable: ${invoice.invoiceNumber}`,
               partyId: invoice.vendorId,
               partyType: 'supplier',
               costCenterId: supplierCostCenterId || undefined,
@@ -1084,7 +1084,7 @@ export class PurchaseInvoiceService {
 
   /**
    * Fetch a flattened, global list of Purchase Invoices spanning multiple orders.
-   * Useful for the "All Invoices" page and Account Detail tabs.
+   * Useful for the "All Invoices" page and Customer Detail tabs.
    */
   async findActiveInvoices(query: {
     days?: number;

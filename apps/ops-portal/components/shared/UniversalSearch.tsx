@@ -7,7 +7,7 @@ import { apiFetch } from '../../lib/api';
 
 interface SearchResult {
   id: string;
-  type: 'product' | 'account' | 'sales_order' | 'supplier' | 'purchase_order';
+  type: 'product' | 'customer' | 'sales_order' | 'supplier' | 'purchase_order';
   label: string;
   subtitle: string;
   href: string;
@@ -15,7 +15,7 @@ interface SearchResult {
 
 const TYPE_ORDER: SearchResult['type'][] = [
   'product',
-  'account',
+  'customer',
   'sales_order',
   'supplier',
   'purchase_order',
@@ -23,7 +23,7 @@ const TYPE_ORDER: SearchResult['type'][] = [
 
 const TYPE_ICONS: Record<SearchResult['type'], string> = {
   product: 'category',
-  account: 'storefront',
+  customer: 'storefront',
   sales_order: 'receipt_long',
   supplier: 'factory',
   purchase_order: 'local_shipping',

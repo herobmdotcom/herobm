@@ -27,48 +27,48 @@ export class DiscountMatrixController {
 
   /**
    * List discount rules, filtered by query params.
-   * GET /api/discount-matrix?accountGroupId=...
-   * GET /api/discount-matrix?accountId=...
+   * GET /api/discount-matrix?customerGroupId=...
+   * GET /api/discount-matrix?customerId=...
    */
   @Get()
   @CasbinAction('read')
   async list(
-    @Query('accountGroupId') accountGroupId?: string,
-    @Query('accountId') accountId?: string,
-    @Query('ownerType') ownerType?: 'account' | 'account_group',
+    @Query('customerGroupId') customerGroupId?: string,
+    @Query('customerId') customerId?: string,
+    @Query('ownerType') ownerType?: 'customer' | 'account_group',
   ) {
-    if (accountGroupId) {
-      return this.service.findByAccountGroup(accountGroupId);
+    if (customerGroupId) {
+      return this.service.findByAccountGroup(customerGroupId);
     }
-    if (accountId) {
-      return this.service.findByAccount(accountId);
+    if (customerId) {
+      return this.service.findByAccount(customerId);
     }
     if (ownerType === 'account_group') {
       return this.service.findAllAccountGroupRules();
     }
-    if (ownerType === 'account') {
+    if (ownerType === 'customer') {
       return this.service.findAllAccountRules();
     }
     return this.service.findAll();
   }
 
   /**
-   * Get the fully resolved discount rules for a specific account
-   * (includes account-level AND group-level rules, tagged with ownerType).
-   * GET /api/discount-matrix/resolve?accountId=...&accountGroupId=...
+   * Get the fully resolved discount rules for a specific customer
+   * (includes customer-level AND group-level rules, tagged with ownerType).
+   * GET /api/discount-matrix/resolve?customerId=...&customerGroupId=...
    */
   @Get('resolve')
   @CasbinAction('read')
   async resolve(
-    @Query('accountId') accountId: string,
-    @Query('accountGroupId') accountGroupId?: string,
+    @Query('customerId') customerId: string,
+    @Query('customerGroupId') customerGroupId?: string,
   ) {
-    if (!accountId) {
-      throw new BadRequestException('accountId query parameter is required.');
+    if (!customerId) {
+      throw new BadRequestException('customerId query parameter is required.');
     }
     return this.service.resolveRulesForAccount(
-      accountId,
-      accountGroupId || null,
+      customerId,
+      customerGroupId || null,
     );
   }
 

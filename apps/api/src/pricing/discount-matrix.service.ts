@@ -19,37 +19,37 @@ export class DiscountMatrixService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   /**
-   * List all discount rules for a given account group.
+   * List all discount rules for a given customer group.
    */
-  async findByAccountGroup(accountGroupId: string) {
+  async findByAccountGroup(customerGroupId: string) {
     return this.db
       .select()
       .from(discountMatrix)
-      .where(eq(discountMatrix.accountGroupId, accountGroupId));
+      .where(eq(discountMatrix.customerGroupId, customerGroupId));
   }
 
   /**
-   * List all discount rules for a given account.
+   * List all discount rules for a given customer.
    */
-  async findByAccount(accountId: string) {
+  async findByAccount(customerId: string) {
     return this.db
       .select()
       .from(discountMatrix)
-      .where(eq(discountMatrix.accountId, accountId));
+      .where(eq(discountMatrix.customerId, customerId));
   }
 
   async findAllAccountGroupRules() {
     return this.db
       .select()
       .from(discountMatrix)
-      .where(isNull(discountMatrix.accountId));
+      .where(isNull(discountMatrix.customerId));
   }
 
   async findAllAccountRules() {
     return this.db
       .select()
       .from(discountMatrix)
-      .where(isNull(discountMatrix.accountGroupId));
+      .where(isNull(discountMatrix.customerGroupId));
   }
 
   async findAll() {
@@ -57,19 +57,19 @@ export class DiscountMatrixService {
   }
 
   /**
-   * Get all discount rules relevant to a specific account, including
-   * the account's own rules AND its account group's rules.
+   * Get all discount rules relevant to a specific customer, including
+   * the customer's own rules AND its customer group's rules.
    * Returns DiscountRule[] tagged with ownerType for the shared pricing function.
    */
   async resolveRulesForAccount(
-    accountId: string,
-    accountGroupId: string | null,
+    customerId: string,
+    customerGroupId: string | null,
     tx?: DrizzleDB,
   ): Promise<DiscountRule[]> {
     const db = tx || this.db;
-    const conditions = [eq(discountMatrix.accountId, accountId)];
-    if (accountGroupId) {
-      conditions.push(eq(discountMatrix.accountGroupId, accountGroupId));
+    const conditions = [eq(discountMatrix.customerId, customerId)];
+    if (customerGroupId) {
+      conditions.push(eq(discountMatrix.customerGroupId, customerGroupId));
     }
 
     const rows = await db
@@ -78,7 +78,7 @@ export class DiscountMatrixService {
       .where(or(...conditions));
 
     return rows.map((r) => ({
-      ownerType: r.accountId ? 'account' : 'account_group',
+      ownerType: r.customerId ? 'customer' : 'customer_group',
       productGroupId: r.productGroupId,
       discountPercentage: r.discountPercentage,
     }));
@@ -89,22 +89,22 @@ export class DiscountMatrixService {
    */
   async create(dto: CreateDiscountMatrixDto) {
     // Validate exactly one owner
-    if (dto.accountGroupId && dto.accountId) {
+    if (dto.customerGroupId && dto.customerId) {
       throw new BadRequestException(
-        'Exactly one of accountGroupId or accountId must be provided.',
+        'Exactly one of customerGroupId or customerId must be provided.',
       );
     }
-    if (!dto.accountGroupId && !dto.accountId) {
+    if (!dto.customerGroupId && !dto.customerId) {
       throw new BadRequestException(
-        'Either accountGroupId or accountId must be provided.',
+        'Either customerGroupId or customerId must be provided.',
       );
     }
 
     const rows = await this.db
       .insert(discountMatrix)
       .values({
-        accountGroupId: dto.accountGroupId || null,
-        accountId: dto.accountId || null,
+        customerGroupId: dto.customerGroupId || null,
+        customerId: dto.customerId || null,
         productGroupId: dto.productGroupId || null,
         discountPercentage: dto.discountPercentage,
       })

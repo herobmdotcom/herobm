@@ -22,13 +22,13 @@ const db = drizzle(queryClient);
 const loader = new CoaLoaderService(db as any);
 
 async function seed() {
-  Logger.log('Seeding Chart of Accounts and GL Settings...');
+  Logger.log('Seeding Chart of Customers and GL Settings...');
   try {
     const result = await loader.loadFromFile('au_standard.json');
     if (result.skipped) {
       Logger.log('COA already seeded, skipping.');
     } else {
-      Logger.log(`✅ COA seeded successfully (${result.created} accounts).`);
+      Logger.log(`✅ COA seeded successfully (${result.created} customers).`);
     }
   } catch (error) {
     Logger.error('Error seeding COA:', error);

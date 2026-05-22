@@ -109,7 +109,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             onChange={(e) => updateLine(line.lineId, 'glAccountId', e.target.value)}
           >
             {/* eslint-disable-next-line i18next/no-literal-string */}
-            <option value="" disabled>Select GL Account...</option>
+            <option value="" disabled>Select GL Customer...</option>
             {glAccounts
               .filter(a => a.accountType === 'expense' || a.accountType === 'asset' || a.accountType === 'liability')
               .map((acc) => (

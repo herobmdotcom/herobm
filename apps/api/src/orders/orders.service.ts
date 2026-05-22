@@ -4,7 +4,7 @@ import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
   salesOrderLineItems,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   salesOrders,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
@@ -35,7 +35,7 @@ export class OrdersService {
       offset,
       searchTerm,
       includeArchived,
-      accountId,
+      customerId,
       days,
       states,
     } = parsePagination(query);
@@ -59,11 +59,11 @@ export class OrdersService {
       );
     }
 
-    if (accountId) {
+    if (customerId) {
       conditions.push(
         or(
-          eq(salesOrders.customerId, accountId),
-          eq(coreAccounts.sourceId, accountId),
+          eq(salesOrders.customerId, customerId),
+          eq(coreAccounts.sourceId, customerId),
         ),
       );
     }
@@ -90,7 +90,7 @@ export class OrdersService {
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(whereClause);
 
@@ -111,7 +111,7 @@ export class OrdersService {
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(whereClause)
       .orderBy(desc(salesOrders.createdOn))

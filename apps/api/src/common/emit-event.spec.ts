@@ -48,7 +48,7 @@ import {
   orderEvents,
   purchaseOrderEvents,
   productEvents,
-  accountEvents,
+  customerEvents,
   supplierEvents,
   productSupplierEvents,
   systemEvents,
@@ -110,18 +110,18 @@ describe('emitEvent', () => {
       expect(calls[0].values.productId).toBe('prod-001');
     });
 
-    it('should route account events to accountEvents with accountId FK', async () => {
+    it('should route customer events to customerEvents with customerId FK', async () => {
       const { tx, calls } = createMockTx();
       await emitEvent(tx, {
-        aggregateType: AggregateType.ACCOUNT,
+        aggregateType: AggregateType.CUSTOMER,
         aggregateId: 'acc-001',
         eventType: EventType.UPDATED,
         payload: {},
         actor: 'admin',
       });
 
-      expect(calls[0].table).toBe(accountEvents);
-      expect(calls[0].values.accountId).toBe('acc-001');
+      expect(calls[0].table).toBe(customerEvents);
+      expect(calls[0].values.customerId).toBe('acc-001');
     });
 
     it('should route supplier events to supplierEvents with vendorId FK', async () => {

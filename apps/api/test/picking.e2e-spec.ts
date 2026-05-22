@@ -92,11 +92,11 @@ describe('API E2E — Picking & Shipments (Sub-Ledger)', () => {
     locationId = locRes.body.data[0].locationId;
 
     // Fetch real IDs from mart data
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validCustomerId = accounts.body.data[0].accountId;
+    validCustomerId = customers.body.data[0].customerId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=2')

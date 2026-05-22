@@ -182,8 +182,8 @@ export class SetupService {
   async initializeSystem(dto: ExecuteSetupDto) {
     this.logger.log('--- Initializing Base System ---');
 
-    // Step 1: Load Chart of Accounts
-    this.logger.log(`Loading Chart of Accounts: ${dto.coaPreset}`);
+    // Step 1: Load Chart of Customers
+    this.logger.log(`Loading Chart of Customers: ${dto.coaPreset}`);
     await this.coaLoader.loadFromFile(dto.coaPreset);
 
     // Step 2: Configure GL settings

@@ -14,6 +14,7 @@ import {
   index,
   check,
   pgEnum,
+  foreignKey,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import {
@@ -39,7 +40,7 @@ import {
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
   SUPPLIER_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
   MATCH_STATUS,
   PUTAWAY_STATUS,
   PURCHASE_INVOICE_STATE,
@@ -69,7 +70,7 @@ const validCurrencyCheck = (
  *
  * Column naming follows Microsoft CDM conventions (snake_case in Postgres).
  * All tables use UUID primary keys with gen_random_uuid() defaults.
- * Foreign keys reference other modbm_core tables (e.g. customer_id → accounts).
+ * Foreign keys reference other modbm_core tables (e.g. customer_id → customers).
  * Schema is managed via migrations in apps/api/migrations/.
  */
 export const modbmCore = pgSchema('modbm_core');
@@ -124,7 +125,7 @@ export const salesOrders = modbmCore.table(
     salesOrderId: uuid('sales_order_id').primaryKey().defaultRandom(),
     orderNumber: text('order_number').unique().notNull(),
     name: text('name'),
-    customerId: uuid('customer_id').references(() => accounts.accountId),
+    customerId: uuid('customer_id').references(() => customers.customerId),
     customerOrderNumber: text('customer_order_number'),
     fulfillmentLocationId: uuid('fulfillment_location_id')
       .notNull()
@@ -186,12 +187,17 @@ export const salesOrderLineItems = modbmCore.table(
       .notNull()
       .references(() => locations.locationId),
     isPostConfirmation: boolean('is_post_confirmation').default(false),
+    parentLineId: uuid('parent_line_id'),
   },
   (t) => ({
     productLocationIdx: index('idx_sales_order_lines_product_location').on(
       t.productId,
       t.fulfillmentLocationId,
     ),
+    parentLineFk: foreignKey({
+      columns: [t.parentLineId],
+      foreignColumns: [t.salesOrderLineId],
+    }),
   }),
 );
 
@@ -1035,8 +1041,8 @@ export const macros = modbmCore.table('macros', {
 // ---------------------------------------------------------------------------
 // account_groups  (Administrative grouping and GL routing)
 // ---------------------------------------------------------------------------
-export const accountGroups = modbmCore.table('account_groups', {
-  accountGroupId: uuid('account_group_id').primaryKey().defaultRandom(),
+export const customerGroups = modbmCore.table('customer_groups', {
+  customerGroupId: uuid('customer_group_id').primaryKey().defaultRandom(),
   groupCode: text('group_code').unique().notNull(),
   name: text('name').notNull(),
 
@@ -1135,10 +1141,10 @@ export const discountMatrix = modbmCore.table(
   'discount_matrix',
   {
     discountMatrixId: uuid('discount_matrix_id').primaryKey().defaultRandom(),
-    accountGroupId: uuid('account_group_id').references(
-      () => accountGroups.accountGroupId,
+    customerGroupId: uuid('customer_group_id').references(
+      () => customerGroups.customerGroupId,
     ),
-    accountId: uuid('account_id').references(() => accounts.accountId),
+    customerId: uuid('customer_id').references(() => customers.customerId),
     productGroupId: uuid('product_group_id').references(
       () => productGroups.productGroupId,
     ), // NULL = wildcard (all product groups)
@@ -1147,26 +1153,26 @@ export const discountMatrix = modbmCore.table(
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },
   (t) => ({
-    // Exactly one of account_group_id or account_id must be set
+    // Exactly one of customer_group_id or customer_id must be set
     exactlyOneOwner: check(
       'discount_matrix_owner_check',
-      sql`(account_group_id IS NOT NULL AND account_id IS NULL) OR
-          (account_group_id IS NULL AND account_id IS NOT NULL)`,
+      sql`(customer_group_id IS NOT NULL AND customer_id IS NULL) OR
+          (customer_group_id IS NULL AND customer_id IS NOT NULL)`,
     ),
     // Unique per intersection
     unqGroup: unique('discount_matrix_group_product_unq').on(
-      t.accountGroupId,
+      t.customerGroupId,
       t.productGroupId,
     ),
-    unqAccount: unique('discount_matrix_account_product_unq').on(
-      t.accountId,
+    unqCustomer: unique('discount_matrix_customer_product_unq').on(
+      t.customerId,
       t.productGroupId,
     ),
     // Indexes for lookup performance
-    accountGroupIdx: index('idx_discount_matrix_account_group').on(
-      t.accountGroupId,
+    customerGroupIdx: index('idx_discount_matrix_customer_group').on(
+      t.customerGroupId,
     ),
-    accountIdx: index('idx_discount_matrix_account').on(t.accountId),
+    customerIdx: index('idx_discount_matrix_customer').on(t.customerId),
   }),
 );
 
@@ -1178,7 +1184,7 @@ export const products = modbmCore.table('products', {
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
   productType: text('product_type', {
-    enum: ['inventory', 'non-stock', 'service'],
+    enum: ['inventory', 'non-stock', 'service', 'kit'],
   })
     .notNull()
     .default('inventory'),
@@ -1220,6 +1226,21 @@ export const products = modbmCore.table('products', {
   createdBy: text('created_by'),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// product_components  (Master Bill of Materials / Kits)
+// ---------------------------------------------------------------------------
+export const productComponents = modbmCore.table('product_components', {
+  componentId: uuid('component_id').primaryKey().defaultRandom(),
+  parentProductId: uuid('parent_product_id')
+    .notNull()
+    .references(() => products.productId),
+  childProductId: uuid('child_product_id')
+    .notNull()
+    .references(() => products.productId),
+  quantity: numeric('quantity', { precision: 14, scale: 4 }).notNull(),
+  sequenceNumber: integer('sequence_number').default(0),
 });
 
 // ---------------------------------------------------------------------------
@@ -1269,13 +1290,13 @@ export const productEvents = modbmCore.table('product_events', {
 });
 
 // ---------------------------------------------------------------------------
-// accounts  (CDM: Account)
+// customers  (CDM: Account)
 // ---------------------------------------------------------------------------
-export const accounts = modbmCore.table(
-  'accounts',
+export const customers = modbmCore.table(
+  'customers',
   {
-    accountId: uuid('account_id').primaryKey().defaultRandom(),
-    accountNumber: text('account_number').unique().notNull(),
+    customerId: uuid('customer_id').primaryKey().defaultRandom(),
+    customerNumber: text('customer_number').unique().notNull(),
     name: text('name').notNull(),
     address1Line1: text('address1_line1'),
     address1Line2: text('address1_line2'),
@@ -1289,10 +1310,10 @@ export const accounts = modbmCore.table(
     primaryContactName: text('primary_contact_name'),
     primaryContactEmail: text('primary_contact_email'),
     primaryContactPhone: text('primary_contact_phone'),
-    accountGroupId: uuid('account_group_id').references(
-      () => accountGroups.accountGroupId,
+    customerGroupId: uuid('customer_group_id').references(
+      () => customerGroups.customerGroupId,
     ),
-    stateCode: text('state_code').notNull().default(ACCOUNT_STATE.ACTIVE),
+    stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
     taxCategoryId: uuid('tax_category_id').references(
       () => taxCategories.taxCategoryId,
     ),
@@ -1313,18 +1334,18 @@ export const accounts = modbmCore.table(
     modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
   },
   (t) => ({
-    currencyCheck: validCurrencyCheck('accounts'),
+    currencyCheck: validCurrencyCheck('customers'),
   }),
 );
 
 // ---------------------------------------------------------------------------
 // account_events  (Audit log + event sourcing)
 // ---------------------------------------------------------------------------
-export const accountEvents = modbmCore.table('account_events', {
+export const customerEvents = modbmCore.table('customer_events', {
   eventId: uuid('event_id').primaryKey().defaultRandom(),
-  accountId: uuid('account_id')
+  customerId: uuid('customer_id')
     .notNull()
-    .references(() => accounts.accountId),
+    .references(() => customers.customerId),
   eventType: text('event_type').notNull(),
   payload: jsonb('payload'),
   actor: text('actor'),
@@ -1375,7 +1396,7 @@ export const suppliers = modbmCore.table(
     }),
     blockNotes: text('block_notes'),
     currencyCode: text('currency_code').notNull(),
-    stateCode: text('state_code').notNull().default(ACCOUNT_STATE.ACTIVE),
+    stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
     externalId: text('external_id'),
     notes: text('notes'),
     sourceId: text('source_id').unique(),
@@ -1708,12 +1729,14 @@ export const glAccounts = modbmCore.table(
     glAccountId: uuid('gl_account_id').primaryKey().defaultRandom(),
     accountCode: text('account_code').unique().notNull(),
     name: text('name').notNull(),
-    accountType: text('account_type').notNull(), // asset | liability | equity | revenue | expense
+    accountType: text('account_type', {
+      enum: ['asset', 'liability', 'equity', 'revenue', 'expense'],
+    }).notNull(),
     parentAccountId: uuid('parent_account_id'), // self-ref for hierarchy
     isGroup: boolean('is_group').notNull().default(false),
     isSystem: boolean('is_system').notNull().default(false), // prevents deletion
     isBankAccount: boolean('is_bank_account').notNull().default(false), // determines if it appears in payment/recon modules
-    currencyCode: text('currency_code').notNull(), // GL accounts can have different currencies
+    currencyCode: text('currency_code').notNull(), // GL customers can have different currencies
     metadata: jsonb('metadata').$type<Record<string, any>>().default({}), // stores bank numbers, BSBs, routing, SWIFT, etc.
     isActive: boolean('is_active').notNull().default(true),
     createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
@@ -1767,7 +1790,7 @@ export const glJournalLines = modbmCore.table('gl_journal_lines', {
     .notNull()
     .references(() => glAccounts.glAccountId),
   partyType: text('party_type'), // 'customer' | 'supplier'
-  partyId: text('party_id'), // generic reference to accounts/suppliers
+  partyId: text('party_id'), // generic reference to customers/suppliers
   debit: numeric('debit').notNull().default('0'),
   credit: numeric('credit').notNull().default('0'),
   memo: text('memo'),

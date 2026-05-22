@@ -39,10 +39,10 @@ export class PaginationQuery {
   @Transform(({ value }) => value === 'true' || value === true)
   includeArchived?: boolean;
 
-  /** Optional filter by account/customer ID */
+  /** Optional filter by customer/customer ID */
   @IsOptional()
   @IsString()
-  accountId?: string;
+  customerId?: string;
 
   @IsOptional()
   @Transform(({ value }) => (value ? Number(value) : undefined))
@@ -76,7 +76,7 @@ export function parsePagination(query?: PaginationQuery) {
   const offset = (page - 1) * limit;
   const searchTerm = query?.q ? `%${query.q}%` : null;
   const includeArchived = query?.includeArchived ?? false;
-  const accountId = query?.accountId;
+  const customerId = query?.customerId;
   const days = query?.days;
   const purchaseOrderId = query?.purchaseOrderId;
   const states = query?.state
@@ -88,7 +88,7 @@ export function parsePagination(query?: PaginationQuery) {
     offset,
     searchTerm,
     includeArchived,
-    accountId,
+    customerId,
     days,
     purchaseOrderId,
     states,

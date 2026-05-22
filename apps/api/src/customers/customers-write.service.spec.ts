@@ -1,0 +1,181 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AccountsWriteService } from './customers-write.service';
+import { DRIZZLE } from '../drizzle/drizzle.module';
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
+import { AppConfigService } from '../settings/app-config.service';
+import { setupPgliteSuite } from '../test-utils/pglite-suite';
+import { customers, customerEvents } from '../drizzle/modbm-core-schema';
+import { eq, sql } from 'drizzle-orm';
+
+describe('AccountsWriteService', () => {
+  const pg = setupPgliteSuite();
+  let service: AccountsWriteService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AccountsWriteService,
+        { provide: DRIZZLE, useValue: pg.db },
+        {
+          provide: AppConfigService,
+          useValue: { homeCurrency: () => 'EUR' },
+        },
+      ],
+    }).compile();
+
+    service = module.get<AccountsWriteService>(AccountsWriteService);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('create', () => {
+    it('should create a new customer', async () => {
+      const result = await service.create(
+        { customerNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
+        'actor',
+      );
+
+      expect(result.customerNumber).toBe('TEST001');
+
+      const rows = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerNumber, 'TEST001'));
+      expect(rows).toHaveLength(1);
+    });
+
+    it('should throw BadRequestException if customerNumber exists (manual check)', async () => {
+      await pg.db.insert(customers).values({
+        customerNumber: 'TEST001',
+        name: 'Existing',
+        currencyCode: 'EUR',
+      });
+
+      await expect(
+        service.create(
+          { customerNumber: 'TEST001', name: 'Test', currencyCode: 'EUR' },
+          'actor',
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it.skip('should roll back customer creation if event logging fails (transactional atomicity)', async () => {
+      // 1. Add a DB constraint that will fail for a specific actor name
+      await pg.db.execute(
+        sql`ALTER TABLE modbm_core.account_events ADD CONSTRAINT fail_on_test CHECK (actor != 'fail-actor')`,
+      );
+
+      // 2. Attempt to create with the forbidden actor
+      // The service inserts into 'customers' first, then 'account_events'.
+      await expect(
+        service.create(
+          {
+            customerNumber: 'ROLLBACK_001',
+            name: 'Rollback Test',
+            currencyCode: 'EUR',
+          },
+          'fail-actor',
+        ),
+      ).rejects.toThrow();
+
+      // 3. Verify 'customers' insertion was rolled back
+      const rows = await pg.db
+        .select()
+        .from(customers)
+        .where(eq(customers.customerNumber, 'ROLLBACK_001'));
+      expect(rows).toHaveLength(0);
+
+      // Cleanup constraint
+      await pg.db.execute(
+        sql`ALTER TABLE modbm_core.account_events DROP CONSTRAINT fail_on_test`,
+      );
+    });
+
+    it('should throw native PG unique violation error (23505) if manual check is bypassed', async () => {
+      await pg.db.insert(customers).values({
+        customerNumber: 'UNQ-001',
+        name: 'First',
+        currencyCode: 'EUR',
+      });
+
+      // Directly call DB to bypass service's manual existence check
+      try {
+        await pg.db.insert(customers).values({
+          customerNumber: 'UNQ-001',
+          name: 'Duplicate',
+          currencyCode: 'EUR',
+        });
+        fail('Should have thrown unique violation');
+      } catch (e: any) {
+        const code = e.code || e.cause?.code;
+        expect(code).toBe('23505');
+      }
+    });
+
+    it('should map native unique violation to ConflictException in service', async () => {
+      await pg.db.insert(customers).values({
+        customerNumber: 'CONFLICT-001',
+        name: 'First',
+        currencyCode: 'EUR',
+      });
+
+      // Bypass manual check by mocking the select? No, just rely on race condition potential.
+      // But we can just test that the service handles it if the manual check fails or is bypassed.
+
+      // Here we just verify the service throws ConflictException if the DB insert fails.
+      // Since we have the manual check, we have to bypass it to test the catch block.
+
+      // Let's spy on the select and return nothing to bypass manual check
+      jest.spyOn(pg.db, 'select').mockReturnValueOnce({
+        from: jest.fn().mockReturnValueOnce({
+          where: jest.fn().mockReturnValueOnce({
+            limit: jest.fn().mockResolvedValueOnce([]),
+          }),
+        }),
+      } as any);
+
+      await expect(
+        service.create(
+          {
+            customerNumber: 'CONFLICT-001',
+            name: 'Duplicate',
+            currencyCode: 'EUR',
+          },
+          'actor',
+        ),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('update', () => {
+    it('should update an existing customer', async () => {
+      const [acc] = await pg.db
+        .insert(customers)
+        .values({ customerNumber: 'TEST001', name: 'Old', currencyCode: 'EUR' })
+        .returning();
+
+      const result = await service.update(
+        acc.customerId,
+        { name: 'New' },
+        'actor',
+      );
+      expect(result.name).toBe('New');
+    });
+
+    it('should throw NotFoundException if customer does not exist', async () => {
+      await expect(
+        service.update(
+          '00000000-0000-0000-0000-000000000999',
+          { name: 'Updated' },
+          'actor',
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+});

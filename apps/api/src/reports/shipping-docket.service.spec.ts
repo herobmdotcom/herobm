@@ -8,7 +8,7 @@ import {
   salesOrderLineItems,
   salesOrderShipments,
   salesOrderShipmentLines,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   products as coreProducts,
   uomDictionary,
   locations,
@@ -17,7 +17,7 @@ import {
 import {
   SALES_ORDER_STATE,
   SHIPMENT_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
 } from '@modbm/shared';
 
 describe('ShippingDocketService', () => {
@@ -69,8 +69,8 @@ describe('ShippingDocketService', () => {
 
     // Seed Customer
     await pg.db.insert(coreAccounts).values({
-      accountId: CUSTOMER_ID,
-      accountNumber: 'CUST01',
+      customerId: CUSTOMER_ID,
+      customerNumber: 'CUST01',
       name: 'Acme Corp',
       address1Line1: '123 Fake St',
       address1City: 'Springfield',
@@ -78,7 +78,7 @@ describe('ShippingDocketService', () => {
       address1PostalCode: '4000',
       address1Country: 'Australia',
       currencyCode: 'AUD',
-      stateCode: ACCOUNT_STATE.ACTIVE,
+      stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
     });
 

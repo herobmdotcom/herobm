@@ -1,7 +1,7 @@
 import { PgliteDatabase } from 'drizzle-orm/pglite';
 import { randomUUID as uuidv4 } from 'crypto';
 import {
-  accounts,
+  customers,
   products,
   salesOrders,
   salesOrderLineItems,
@@ -32,34 +32,40 @@ import {
 let _sequence = 0;
 
 export async function createTestCustomer(db: any, opts?: { name?: string }) {
-  const accountId = uuidv4();
-  await db.insert(accounts).values({
-    accountId,
-    accountNumber: `CUST-TEST-${++_sequence}`,
+  const customerId = uuidv4();
+  await db.insert(customers).values({
+    customerId,
+    customerNumber: `CUST-TEST-${++_sequence}`,
     name: opts?.name || 'Test Customer',
     currencyCode: 'AUD',
   });
-  return { accountId };
+  return { customerId };
 }
 
 export async function createTestProduct(
   db: any,
   opts?: {
-    type?: 'inventory' | 'non-stock';
+    type?: 'inventory' | 'non-stock' | 'service' | 'kit';
+    productType?: 'inventory' | 'non-stock' | 'service' | 'kit';
     name?: string;
     standardCost?: string;
     weightedAverageCost?: string;
+    listPrice?: string;
+    salesTaxCategoryId?: string;
   },
 ) {
   const productId = uuidv4();
+  const resolvedProductType = opts?.productType || opts?.type || 'inventory';
   await db.insert(products).values({
     productId,
     productNumber: `PROD-TEST-${++_sequence}`,
     name: opts?.name || 'Test Product',
-    productType: opts?.type || 'inventory',
+    productType: resolvedProductType,
     baseUom: 'EA',
     standardCost: opts?.standardCost || '10.00',
     weightedAverageCost: opts?.weightedAverageCost || '10.00',
+    listPrice: opts?.listPrice || '0.00',
+    salesTaxCategoryId: opts?.salesTaxCategoryId,
   });
   return { productId };
 }
@@ -160,15 +166,15 @@ export async function createTestReturnLine(
 }
 
 export async function createTestSupplier(db: any, opts?: { name?: string }) {
-  // Uses the same `accounts` table as customers, but conceptually a supplier.
-  const accountId = uuidv4();
-  await db.insert(accounts).values({
-    accountId,
-    accountNumber: `SUPP-TEST-${++_sequence}`,
+  // Uses the same `customers` table as customers, but conceptually a supplier.
+  const customerId = uuidv4();
+  await db.insert(customers).values({
+    customerId,
+    customerNumber: `SUPP-TEST-${++_sequence}`,
     name: opts?.name || 'Test Supplier',
     currencyCode: 'AUD',
   });
-  return { accountId };
+  return { customerId };
 }
 
 export async function createTestPurchaseOrder(

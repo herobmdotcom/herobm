@@ -116,7 +116,7 @@ describe('Invoices Controllers', () => {
       expect(result).toEqual({ data: [{ id: 'si-1' }] });
       expect(mockSalesService.findActiveInvoices).toHaveBeenCalledWith({
         days: 30,
-        accountId: 'acc-1',
+        customerId: 'acc-1',
         invoiceId: 'inv-1',
         limit: 50,
       });
@@ -128,7 +128,7 @@ describe('Invoices Controllers', () => {
       expect(result).toEqual({ data: [{ id: 'si-1' }] });
       expect(mockSalesService.findActiveInvoices).toHaveBeenCalledWith({
         days: undefined,
-        accountId: undefined,
+        customerId: undefined,
         invoiceId: undefined,
         limit: undefined,
       });

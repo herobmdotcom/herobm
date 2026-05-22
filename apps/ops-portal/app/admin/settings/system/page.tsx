@@ -505,7 +505,7 @@ export default function SystemSettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {tSettings('labels.accountNumber')}
+                  {tSettings('labels.customerNumber')}
                 </label>
                 <input
                   className="input"

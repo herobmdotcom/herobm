@@ -143,7 +143,7 @@ export class TaxCategoriesService {
       // Postgres foreign_key_violation
       if (err?.code === '23503') {
         throw new BadRequestException(
-          'Cannot delete this tax category because it is assigned to one or more accounts or products. Remove the assignments first.',
+          'Cannot delete this tax category because it is assigned to one or more customers or products. Remove the assignments first.',
         );
       }
       throw err;

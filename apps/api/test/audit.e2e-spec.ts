@@ -5,7 +5,11 @@ import { register } from 'prom-client';
 import { AppModule } from '../src/app.module';
 import { DRIZZLE } from '../src/drizzle/drizzle.module';
 import { sql } from 'drizzle-orm';
-import { ACCOUNT_STATE, PRODUCT_STATE, SALES_ORDER_STATE } from '@modbm/shared';
+import {
+  CUSTOMER_STATE,
+  PRODUCT_STATE,
+  SALES_ORDER_STATE,
+} from '@modbm/shared';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const request = require('supertest');
@@ -78,28 +82,28 @@ describe('Audit Events (e2e)', () => {
   });
 
   describe('Customer Audit', () => {
-    let accountId: string;
+    let customerId: string;
 
     it('should record a clean diff for name change', async () => {
       // 1. Create customer
       const createRes = await request(app.getHttpServer())
-        .post('/api/accounts')
+        .post('/api/customers')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          accountNumber: `AUDIT-CUST-${Date.now()}`,
+          customerNumber: `AUDIT-CUST-${Date.now()}`,
           name: 'Original Name',
         });
-      accountId = createRes.body.accountId;
+      customerId = createRes.body.customerId;
 
       // 2. Update name
       await request(app.getHttpServer())
-        .patch(`/api/accounts/${accountId}`)
+        .patch(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ name: 'Updated Name' });
 
       // 3. Verify event
       const res = await request(app.getHttpServer())
-        .get(`/api/accounts/${accountId}`)
+        .get(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       const events = res.body.events;
@@ -115,7 +119,7 @@ describe('Audit Events (e2e)', () => {
     it('should only log changed fields (strict diff)', async () => {
       // 1. Update notes while sending name (same value)
       await request(app.getHttpServer())
-        .patch(`/api/accounts/${accountId}`)
+        .patch(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'Updated Name',
@@ -124,7 +128,7 @@ describe('Audit Events (e2e)', () => {
 
       // 2. Verify event
       const res = await request(app.getHttpServer())
-        .get(`/api/accounts/${accountId}`)
+        .get(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       // Filter for the SECOND update event (the one with the note)
@@ -140,12 +144,12 @@ describe('Audit Events (e2e)', () => {
 
     it('should record specialized status_changed event', async () => {
       await request(app.getHttpServer())
-        .patch(`/api/accounts/${accountId}`)
+        .patch(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ stateCode: ACCOUNT_STATE.INACTIVE });
+        .send({ stateCode: CUSTOMER_STATE.INACTIVE });
 
       const res = await request(app.getHttpServer())
-        .get(`/api/accounts/${accountId}`)
+        .get(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${adminToken}`);
 
       const statusEvent = res.body.events.find(
@@ -153,8 +157,8 @@ describe('Audit Events (e2e)', () => {
       );
       expect(statusEvent).toBeDefined();
       expect(statusEvent.payload).toEqual({
-        from: ACCOUNT_STATE.ACTIVE,
-        to: ACCOUNT_STATE.INACTIVE,
+        from: CUSTOMER_STATE.ACTIVE,
+        to: CUSTOMER_STATE.INACTIVE,
       });
     });
   });
@@ -165,9 +169,9 @@ describe('Audit Events (e2e)', () => {
     it('should record clean diff for order name change', async () => {
       // 1. Find or create customer (needed for order)
       const custRes = await request(app.getHttpServer())
-        .get('/api/accounts?limit=1')
+        .get('/api/customers?limit=1')
         .set('Authorization', `Bearer ${adminToken}`);
-      const customerId = custRes.body.data[0].accountId;
+      const customerId = custRes.body.data[0].customerId;
 
       // 2. Create draft order
       const createRes = await request(app.getHttpServer())

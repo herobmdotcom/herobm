@@ -257,7 +257,10 @@ describe('useOrder — mutations', () => {
     });
 
     it('copyOrder calls POST and navigates to new order', async () => {
-        mockApiMutate.mockResolvedValueOnce({ salesOrderId: 'so-002' });
+        mockApiMutate.mockImplementation(async (url) => {
+            if (url === '/api/sales-orders') return { salesOrderId: 'so-002' };
+            return {};
+        });
 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());

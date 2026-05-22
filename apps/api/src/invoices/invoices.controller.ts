@@ -90,13 +90,13 @@ export class InvoiceDetailController {
   @CasbinAction('read')
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
-    @Query('accountId') accountId?: string,
+    @Query('customerId') customerId?: string,
     @Query('invoiceId') invoiceId?: string,
     @Query('limit') limit?: string,
   ) {
     const data = await this.salesInvoiceService.findActiveInvoices({
       days: days ? parseInt(days, 10) : undefined,
-      accountId,
+      customerId,
       invoiceId,
       limit: limit ? parseInt(limit, 10) : undefined,
     });

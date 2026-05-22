@@ -7,7 +7,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   inventoryLevels,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   salesOrderPicks,
   binContents,
   bins,
@@ -127,7 +127,7 @@ export class PickingSlipService {
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .leftJoin(
         locations,

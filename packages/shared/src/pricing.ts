@@ -172,8 +172,8 @@ export function computeReturnCreditSummary(
 // ---------------------------------------------------------------------------
 
 export interface DiscountRule {
-  /** 'account' = customer-specific rule, 'account_group' = group-level rule */
-  ownerType: 'account' | 'account_group';
+  /** 'customer' = customer-specific rule, 'customer_group' = group-level rule */
+  ownerType: 'customer' | 'customer_group';
   /** null = wildcard (applies to all product groups) */
   productGroupId: string | null;
   /** The discount percentage */
@@ -184,13 +184,13 @@ export interface DiscountRule {
  * Resolves the effective discount for a line item using most-specific-wins.
  *
  * Cascade (first match wins):
- *   1. account × product_group
- *   2. account_group × product_group
- *   3. account × wildcard (null product_group)
- *   4. account_group × wildcard (null product_group)
+ *   1. customer × product_group
+ *   2. customer_group × product_group
+ *   3. customer × wildcard (null product_group)
+ *   4. customer_group × wildcard (null product_group)
  *   5. 0%
  *
- * @param rules - All discount_matrix rows relevant to this account + account group
+ * @param rules - All discount_matrix rows relevant to this customer + customer group
  * @param productGroupId - The product group of the line item (null if product has no group)
  */
 export function resolveEffectiveDiscount(
@@ -203,31 +203,31 @@ export function resolveEffectiveDiscount(
     return isNaN(parsed) ? 0 : parsed;
   };
 
-  // Priority 1: account × specific product group
+  // Priority 1: customer × specific product group
   if (productGroupId) {
     const match = rules.find(
-      r => r.ownerType === 'account' && r.productGroupId === productGroupId,
+      r => r.ownerType === 'customer' && r.productGroupId === productGroupId,
     );
     if (match) return parse(match.discountPercentage).toString();
   }
 
-  // Priority 2: account_group × specific product group
+  // Priority 2: customer_group × specific product group
   if (productGroupId) {
     const match = rules.find(
-      r => r.ownerType === 'account_group' && r.productGroupId === productGroupId,
+      r => r.ownerType === 'customer_group' && r.productGroupId === productGroupId,
     );
     if (match) return parse(match.discountPercentage).toString();
   }
 
-  // Priority 3: account × wildcard
-  const accountWildcard = rules.find(
-    r => r.ownerType === 'account' && r.productGroupId === null,
+  // Priority 3: customer × wildcard
+  const customerWildcard = rules.find(
+    r => r.ownerType === 'customer' && r.productGroupId === null,
   );
-  if (accountWildcard) return parse(accountWildcard.discountPercentage).toString();
+  if (customerWildcard) return parse(customerWildcard.discountPercentage).toString();
 
-  // Priority 4: account_group × wildcard
+  // Priority 4: customer_group × wildcard
   const groupWildcard = rules.find(
-    r => r.ownerType === 'account_group' && r.productGroupId === null,
+    r => r.ownerType === 'customer_group' && r.productGroupId === null,
   );
   if (groupWildcard) return parse(groupWildcard.discountPercentage).toString();
 

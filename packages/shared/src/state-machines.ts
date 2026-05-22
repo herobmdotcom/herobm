@@ -266,16 +266,18 @@ export const PAYMENT_TRANSITIONS: Record<string, string[]> = {
   [PAYMENT_STATE.CANCELLED]: [],
 };
 
-export const ACCOUNT_STATE = {
+export const CUSTOMER_STATE = {
+  DRAFT: 'draft',
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   ARCHIVED: 'archived',
 } as const;
 
-export const ACCOUNT_TRANSITIONS: Record<string, string[]> = {
-  [ACCOUNT_STATE.ACTIVE]: [ACCOUNT_STATE.INACTIVE, ACCOUNT_STATE.ARCHIVED],
-  [ACCOUNT_STATE.INACTIVE]: [ACCOUNT_STATE.ACTIVE, ACCOUNT_STATE.ARCHIVED],
-  [ACCOUNT_STATE.ARCHIVED]: [ACCOUNT_STATE.ACTIVE],
+export const CUSTOMER_TRANSITIONS: Record<string, string[]> = {
+  [CUSTOMER_STATE.DRAFT]: [CUSTOMER_STATE.ACTIVE, CUSTOMER_STATE.ARCHIVED],
+  [CUSTOMER_STATE.ACTIVE]: [CUSTOMER_STATE.INACTIVE, CUSTOMER_STATE.ARCHIVED],
+  [CUSTOMER_STATE.INACTIVE]: [CUSTOMER_STATE.ACTIVE, CUSTOMER_STATE.ARCHIVED],
+  [CUSTOMER_STATE.ARCHIVED]: [CUSTOMER_STATE.ACTIVE],
 };
 
 export const SUPPLIER_STATE = {
@@ -338,7 +340,7 @@ export type BackorderState = typeof BACKORDER_STATE[keyof typeof BACKORDER_STATE
 export type TransferOrderState = typeof TRANSFER_ORDER_STATE[keyof typeof TRANSFER_ORDER_STATE];
 export type TransferOrderPickState = typeof TRANSFER_ORDER_PICK_STATE[keyof typeof TRANSFER_ORDER_PICK_STATE];
 export type PaymentState = typeof PAYMENT_STATE[keyof typeof PAYMENT_STATE];
-export type AccountState = typeof ACCOUNT_STATE[keyof typeof ACCOUNT_STATE];
+export type CustomerState = typeof CUSTOMER_STATE[keyof typeof CUSTOMER_STATE];
 export type SupplierState = typeof SUPPLIER_STATE[keyof typeof SUPPLIER_STATE];
 export type ProductState = typeof PRODUCT_STATE[keyof typeof PRODUCT_STATE];
 export type ReconciliationState = typeof RECONCILIATION_STATE[keyof typeof RECONCILIATION_STATE];

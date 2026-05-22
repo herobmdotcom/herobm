@@ -32,7 +32,7 @@ describe('PerpetualAccountingStrategy', () => {
       expect(line.activityId).toBe('act-456');
     });
     // Check specific line tagging
-    const grniLine = res!.lines.find((l) => l.accountId === 'grni-uuid');
+    const grniLine = res!.lines.find((l) => l.customerId === 'grni-uuid');
     expect(grniLine!.partyType).toBe('supplier');
     expect(grniLine!.partyId).toBe('supp-1');
   });

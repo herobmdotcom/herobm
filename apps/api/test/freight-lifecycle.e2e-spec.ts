@@ -11,7 +11,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
   let adminToken: string;
   let physicalProductId: string;
   let freightProductId: string;
-  let accountId: string;
+  let customerId: string;
   let vendorId: string;
   let soId: string;
   let locationId: string;
@@ -43,11 +43,11 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
     adminToken = loginRes.body.access_token;
 
     // Fetch dependencies
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    accountId = accounts.body.data[0].accountId;
+    customerId = customers.body.data[0].customerId;
 
     const suppliers = await request(app.getHttpServer())
       .get('/api/suppliers?limit=1')
@@ -159,7 +159,7 @@ describe('Freight and Non-Stock Lifecycle (e2e)', () => {
       .send({
         fulfillmentLocationId: locationId,
 
-        customerId: accountId,
+        customerId: customerId,
         name: 'Freight Test Order',
         lines: [
           {

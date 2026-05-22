@@ -15,7 +15,7 @@ export default function ReconciliationsPage() {
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'statementDate', headerName: t('columns.statementDate'), width: 140 },
-    { field: 'accountName', headerName: t('columns.account'), flex: 1 },
+    { field: 'accountName', headerName: t('columns.customer'), flex: 1 },
     { 
       field: 'statementBalance', 
       headerName: t('columns.statementBalance'), 

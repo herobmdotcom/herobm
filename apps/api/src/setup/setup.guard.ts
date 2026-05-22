@@ -80,7 +80,7 @@ export class SetupGuard extends AuthGuard('jwt') {
           'Setup token attempted but users exist. Rejecting token fallback.',
         );
         throw new UnauthorizedException(
-          'Setup token is disabled because admin accounts exist. Please login via JWT.',
+          'Setup token is disabled because admin customers exist. Please login via JWT.',
         );
       }
 

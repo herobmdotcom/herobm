@@ -32,7 +32,7 @@ async function bootstrap() {
       (await rl.question('Fiscal Year Start Month (1-12) [7]: ')) || '7';
 
     // COA Presets (Manual list to avoid complex FS scanning in this script)
-    console.log('\nChart of Accounts Presets:');
+    console.log('\nChart of Customers Presets:');
     console.log('  1. au_standard.json (Australia)');
     console.log('  2. generic.json     (Global)');
     const coaChoice = (await rl.question('Choose COA [1]: ')) || '1';

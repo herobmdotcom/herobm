@@ -13,7 +13,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
   let validVendorId: string;
   let productId: string;
   let locationId: string;
-  let accountId: string;
+  let customerId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await (
@@ -37,7 +37,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
 
     // Use seeded setup data
     locationId = '10000000-0000-0000-0000-000000000001'; // MAIN
-    accountId = '20000000-0000-0000-0000-000000000001'; // E2E Default Customer
+    customerId = '20000000-0000-0000-0000-000000000001'; // E2E Default Customer
     validVendorId = '20000000-0000-0000-0000-000000000002'; // Standard seed vendor
 
     console.log('Ensuring Location exists...');
@@ -55,15 +55,15 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
     console.log('Final locationId:', locationId);
 
     const createCustRes = await request(app.getHttpServer())
-      .post('/api/accounts')
+      .post('/api/customers')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        accountNumber: `CUST-ADV085-${Date.now()}`,
+        customerNumber: `CUST-ADV085-${Date.now()}`,
         name: 'ADV-085 Test Customer',
         currencyCode: 'AUD',
       });
-    accountId = createCustRes.body.accountId || accountId;
-    console.log('Final accountId:', accountId);
+    customerId = createCustRes.body.customerId || customerId;
+    console.log('Final customerId:', customerId);
 
     const createVendorRes = await request(app.getHttpServer())
       .post('/api/suppliers')
@@ -116,7 +116,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         fulfillmentLocationId: locationId,
-        customerId: accountId,
+        customerId: customerId,
         orderNumber: `SO-ADV085-${Date.now()}`,
         lines: [],
       });
@@ -266,7 +266,7 @@ describe('E2E — Backorder Receipt Synchronization (ADV-085)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         fulfillmentLocationId: locationId,
-        customerId: accountId,
+        customerId: customerId,
         orderNumber: `SO-ADV085-P-${Date.now()}`,
         lines: [
           { productId: pProductId, quantity: 10, pricePerUnit: '100.00' },

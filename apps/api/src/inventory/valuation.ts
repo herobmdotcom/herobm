@@ -9,14 +9,14 @@ export interface GoodsReceiptValuation {
   newWeightedAverageCost: string;
 
   /**
-   * The value to debit to the Inventory GL account.
+   * The value to debit to the Inventory GL customer.
    * WAC: Qty * Actual Unit Cost
    * Standard: Qty * Standard Cost
    */
   inventoryValueAdded: string;
 
   /**
-   * The variance to post to the Purchase Price Variance GL account.
+   * The variance to post to the Purchase Price Variance GL customer.
    * WAC: 0
    * Standard: (Actual Unit Cost - Standard Cost) * Qty
    * Positive variance = Actual Cost > Standard Cost (Debit variance expense)

@@ -36,7 +36,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/accounts": {
+    "/api/customers": {
         parameters: {
             query?: never;
             header?: never;
@@ -52,7 +52,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/accounts/{id}": {
+    "/api/customers/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -68,7 +68,7 @@ export interface paths {
         patch: operations["AccountsController_update"];
         trace?: never;
     };
-    "/api/accounts/{id}/archive": {
+    "/api/customers/{id}/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/accounts/{id}/unarchive": {
+    "/api/customers/{id}/unarchive": {
         parameters: {
             query?: never;
             header?: never;
@@ -100,7 +100,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/account-groups": {
+    "/api/customer-groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -116,7 +116,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/account-groups/{id}": {
+    "/api/customer-groups/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1661,7 +1661,7 @@ export interface components {
             password: string;
         };
         CreateAccountDto: {
-            accountNumber: string;
+            customerNumber: string;
             name: string;
             address1Line1?: string;
             address1Line2?: string;
@@ -1675,7 +1675,7 @@ export interface components {
             primaryContactName?: string;
             primaryContactEmail?: string;
             primaryContactPhone?: string;
-            accountGroupId?: string;
+            customerGroupId?: string;
             TaxCategoryId?: string;
             currencyCode?: string;
             customerDiscount?: string;
@@ -1695,7 +1695,7 @@ export interface components {
             primaryContactName?: string;
             primaryContactEmail?: string;
             primaryContactPhone?: string;
-            accountGroupId?: string;
+            customerGroupId?: string;
             stateCode?: string;
             TaxCategoryId?: string;
             currencyCode?: string;
@@ -3639,7 +3639,7 @@ export interface operations {
     GlController_getGeneralLedger: {
         parameters: {
             query: {
-                account: string;
+                customer: string;
                 from: string;
                 to: string;
                 limit: string;
@@ -3948,7 +3948,7 @@ export interface operations {
         parameters: {
             query: {
                 days: string;
-                accountId: string;
+                customerId: string;
                 invoiceId: string;
                 limit: string;
             };

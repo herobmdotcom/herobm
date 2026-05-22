@@ -44,7 +44,7 @@ const TRANSACTIONAL_TABLES = [
   'modbm_core.purchase_orders',
   'modbm_core.inventory_ledger',
   'modbm_core.account_events',
-  'modbm_core.accounts',
+  'modbm_core.customers',
   'modbm_core.suppliers',
   'modbm_core.products',
   'modbm_core.payment_events',

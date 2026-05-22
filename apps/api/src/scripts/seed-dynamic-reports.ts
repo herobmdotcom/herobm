@@ -73,6 +73,15 @@ const SEEDS = [
     outputPattern: 'Credit-{{returnNumber}}.pdf',
   },
   {
+    slug: 'return-slip',
+    name: 'Standard Return Slip',
+    contexts: ['sales-return'],
+    description:
+      'System default template for generating Return Slips for customers.',
+    templatePath: '../../../../tools/seeds/reports/return-slip.typ',
+    outputPattern: 'Return-Slip-{{returnMeta.returnNumber}}.pdf',
+  },
+  {
     slug: 'shipping-docket',
     name: 'Standard Shipping Docket',
     contexts: ['shipment'],

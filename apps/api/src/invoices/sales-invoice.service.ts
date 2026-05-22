@@ -15,10 +15,10 @@ import {
   salesOrderLineItems,
   outbox,
   orderEvents,
-  accounts,
+  customers,
   glAccounts,
   products as coreProducts,
-  accountGroups,
+  customerGroups,
   productGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
@@ -120,22 +120,22 @@ export class SalesInvoiceService {
 
       const custRows = await this.db
         .select({
-          externalId: accounts.externalId,
-          name: accounts.name,
-          defaultArAccountId: accountGroups.defaultArAccountId,
-          defaultRevenueAccountId: accountGroups.defaultRevenueAccountId,
-          defaultCostCenterId: accountGroups.defaultCostCenterId,
-          defaultActivityId: accountGroups.defaultActivityId,
+          externalId: customers.externalId,
+          name: customers.name,
+          defaultArAccountId: customerGroups.defaultArAccountId,
+          defaultRevenueAccountId: customerGroups.defaultRevenueAccountId,
+          defaultCostCenterId: customerGroups.defaultCostCenterId,
+          defaultActivityId: customerGroups.defaultActivityId,
         })
-        .from(accounts)
+        .from(customers)
         .leftJoin(
-          accountGroups,
-          eq(accounts.accountGroupId, accountGroups.accountGroupId),
+          customerGroups,
+          eq(customers.customerGroupId, customerGroups.customerGroupId),
         )
         .where(
           isUuid
-            ? eq(accounts.accountId, order.customerId)
-            : eq(accounts.externalId, order.customerId),
+            ? eq(customers.customerId, order.customerId)
+            : eq(customers.externalId, order.customerId),
         )
         .limit(1);
 
@@ -212,11 +212,11 @@ export class SalesInvoiceService {
     const invoiceLineValues: any[] = [];
     const outboxLineDetails: any[] = [];
 
-    // Revenue GL Routing tallies — keyed by composite (accountId|costCenterId|activityId)
+    // Revenue GL Routing tallies — keyed by composite (customerId|costCenterId|activityId)
     const revenueGroups = new Map<
       string,
       {
-        accountId: string;
+        customerId: string;
         amount: number;
         costCenterId: string | null;
         activityId: string | null;
@@ -306,7 +306,7 @@ export class SalesInvoiceService {
       rawTotal += pricing.amount;
       rawTax += pricing.tax;
 
-      // Group revenue by highest precedence GL account
+      // Group revenue by highest precedence GL customer
       const lineRevAcctId =
         this.appConfig.revenueRoutingPrecedence() === 'customer_first'
           ? customerRevenueAccountId || line.productRevenueAccountId || null
@@ -328,7 +328,7 @@ export class SalesInvoiceService {
           existing.amount += pricing.amount;
         } else {
           revenueGroups.set(compositeKey, {
-            accountId: lineRevAcctId,
+            customerId: lineRevAcctId,
             amount: pricing.amount,
             costCenterId: lineCostCenterId,
             activityId: lineActivityId,
@@ -437,7 +437,7 @@ export class SalesInvoiceService {
         customerArAccountId || settings?.defaultArAccountId;
 
       if (effectiveArAccountId) {
-        // Collect all distinct Account IDs logically needed
+        // Collect all distinct Customer IDs logically needed
         const distinctAccountIds = new Set<string>();
         distinctAccountIds.add(effectiveArAccountId);
         if (settings?.defaultTaxAccountId)
@@ -445,7 +445,7 @@ export class SalesInvoiceService {
         if (settings?.defaultRevenueAccountId)
           distinctAccountIds.add(settings.defaultRevenueAccountId);
         for (const group of revenueGroups.values()) {
-          distinctAccountIds.add(group.accountId);
+          distinctAccountIds.add(group.customerId);
         }
 
         const settingsIds = Array.from(distinctAccountIds).filter(Boolean);
@@ -488,9 +488,9 @@ export class SalesInvoiceService {
               },
             ];
 
-            // 1. Map explicitly dynamic revenue lines (grouped by account + dimensions)
+            // 1. Map explicitly dynamic revenue lines (grouped by customer + dimensions)
             for (const group of revenueGroups.values()) {
-              const code = idToCode.get(group.accountId);
+              const code = idToCode.get(group.customerId);
               if (code && group.amount > 0) {
                 glLines.push({
                   accountCode: code,
@@ -520,7 +520,7 @@ export class SalesInvoiceService {
                 });
               } else {
                 this.logger.warn(
-                  `Missing global default revenue account to cover ${defaultRevenue} on invoice ${invoiceNumber}`,
+                  `Missing global default revenue customer to cover ${defaultRevenue} on invoice ${invoiceNumber}`,
                 );
               }
             }
@@ -592,7 +592,7 @@ export class SalesInvoiceService {
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: accounts.name,
+        customerName: customers.name,
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -606,7 +606,7 @@ export class SalesInvoiceService {
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+      .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
       .where(eq(salesInvoices.invoiceId, invoiceId))
       .limit(1);
 
@@ -695,15 +695,15 @@ export class SalesInvoiceService {
 
   /**
    * Fetch a flattened, global list of Sales Invoices spanning multiple orders.
-   * Useful for the "All Invoices" page and Account Detail tabs.
+   * Useful for the "All Invoices" page and Customer Detail tabs.
    */
   async findActiveInvoices(query: {
     days?: number;
-    accountId?: string;
+    customerId?: string;
     invoiceId?: string;
     limit?: number;
   }) {
-    const { days = 30, accountId, invoiceId, limit = 100 } = query;
+    const { days = 30, customerId, invoiceId, limit = 100 } = query;
 
     const conditions: any[] = [];
 
@@ -716,11 +716,11 @@ export class SalesInvoiceService {
       conditions.push(gte(salesInvoices.createdOn, cutoffDate));
     }
 
-    if (accountId) {
+    if (customerId) {
       conditions.push(
         or(
-          eq(salesOrders.customerId, accountId),
-          eq(accounts.externalId, accountId),
+          eq(salesOrders.customerId, customerId),
+          eq(customers.externalId, customerId),
         ),
       );
     }
@@ -732,7 +732,7 @@ export class SalesInvoiceService {
         salesOrderId: salesInvoices.salesOrderId,
         orderNumber: salesOrders.orderNumber,
         customerId: salesOrders.customerId,
-        customerName: accounts.name,
+        customerName: customers.name,
         totalAmount: salesInvoices.totalAmount,
         taxAmount: salesInvoices.taxAmount,
         outstandingAmount: salesInvoices.outstandingAmount,
@@ -745,7 +745,7 @@ export class SalesInvoiceService {
         salesOrders,
         eq(salesInvoices.salesOrderId, salesOrders.salesOrderId),
       )
-      .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+      .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
       .where(and(...conditions))
       .orderBy(desc(salesInvoices.createdOn));
 

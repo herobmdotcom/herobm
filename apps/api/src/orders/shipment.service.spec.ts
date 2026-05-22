@@ -16,7 +16,7 @@ import {
   bins,
   locations,
   uomDictionary,
-  accounts,
+  customers,
   taxCategories,
   inventoryEntries,
   inventoryLedger,
@@ -110,13 +110,13 @@ describe('ShipmentService', () => {
     PICKING_ORDER.fulfillmentLocationId =
       '10000000-0000-0000-0000-000000000001';
 
-    // Since accounts isn't seeded with customers by default, let's just insert one or use the org. Let's insert a customer.
+    // Since customers isn't seeded with customers by default, let's just insert one or use the org. Let's insert a customer.
     await pg.db
-      .insert(accounts)
+      .insert(customers)
       .values([
         {
-          accountId: 'c0000000-0000-0000-0000-000000000001',
-          accountNumber: 'CUST-001',
+          customerId: 'c0000000-0000-0000-0000-000000000001',
+          customerNumber: 'CUST-001',
           name: 'Test Customer',
           currencyCode: 'AUD',
         },

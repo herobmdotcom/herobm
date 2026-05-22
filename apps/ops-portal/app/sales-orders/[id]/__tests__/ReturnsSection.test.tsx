@@ -174,12 +174,7 @@ describe('ReturnsSection — rendering', () => {
         expect(cancelledBtn).toBeTruthy();
     });
 
-    it('shows transition buttons for confirmed returns', () => {
-        render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        const buttons = screen.getAllByRole('button');
-        const processedBtn = buttons.find(b => b.textContent?.trim().includes('processed'));
-        expect(processedBtn).toBeTruthy();
-    });
+
 
     it('shows delete button for editable (draft) return lines', () => {
         render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);

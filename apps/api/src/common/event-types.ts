@@ -11,7 +11,7 @@ export const AggregateType = {
   SHIPMENT: 'shipment',
   PURCHASE_ORDER: 'purchase_order',
   PRODUCT: 'product',
-  ACCOUNT: 'account',
+  CUSTOMER: 'customer',
   SUPPLIER: 'supplier',
   PRODUCT_SUPPLIER: 'product_supplier',
   PAYMENT: 'payment',
@@ -27,7 +27,7 @@ export type AggregateTypeValue =
 
 import {
   SALES_ORDER_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
   PURCHASE_ORDER_STATE,
 } from '@modbm/shared';
 

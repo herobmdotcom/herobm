@@ -111,7 +111,7 @@ export default function GeneralLedgerContent() {
     },
     {
       field: 'accountCode',
-      headerName: t('columns.account'),
+      headerName: t('columns.customer'),
       width: 250,
       cellRenderer: (p: any) => {
         return (

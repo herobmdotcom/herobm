@@ -15,7 +15,7 @@ export {
   TRANSFER_ORDER_TRANSITIONS,
   PAYMENT_TRANSITIONS,
   TRANSFER_ORDER_PICK_TRANSITIONS,
-  ACCOUNT_TRANSITIONS,
+  CUSTOMER_TRANSITIONS,
   SUPPLIER_TRANSITIONS,
   PRODUCT_TRANSITIONS,
   RECEIPT_TRANSITIONS,
@@ -37,7 +37,7 @@ export {
   TRANSFER_ORDER_STATE,
   RECONCILIATION_STATE,
   PAYMENT_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
   TRANSFER_ORDER_PICK_STATE,
   SUPPLIER_STATE,
   PRODUCT_STATE,
@@ -80,7 +80,7 @@ export type {
   TransferOrderState,
   PaymentState,
   TransferOrderPickState,
-  AccountState,
+  CustomerState,
   SupplierState,
   ProductState,
   ReconciliationState,
@@ -131,3 +131,8 @@ export type { LinePricingInput, LinePricingResult, OrderTotalsResult, DiscountRu
 export type { CurrencyDef, RevenueRoutingStrategy, ExpenseRoutingStrategy } from './currency';
 
 export type ProductType = 'inventory' | 'non-stock' | 'service';
+
+export {
+  GL_ACCOUNT_TYPE,
+} from './accounting';
+export type { GLAccountType } from './accounting';

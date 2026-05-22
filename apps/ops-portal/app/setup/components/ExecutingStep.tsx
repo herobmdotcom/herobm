@@ -75,7 +75,7 @@ export default function ExecutingStep({ config }: Props) {
         // Run Phase 1 - Synchronization blocking call
         await apiMutate<any>('/api/setup/initialize', 'POST', executePayload);
         
-        setLogs(prev => [...prev, `Base system initialization successful!`, `Admin user accounts created.`]);
+        setLogs(prev => [...prev, `Base system initialization successful!`, `Admin user customers created.`]);
         setStatus('completed');
 
         // If ELT is requested, save the payload for Phase 2
@@ -144,7 +144,7 @@ export default function ExecutingStep({ config }: Props) {
             {/* eslint-disable no-restricted-syntax */}
             {config.emptyBase 
                ? "System successfully initialized. You must log in as 'admin' to access the platform."
-               : "Base system initialized and user accounts created. You must log in as 'admin' to run the Data Import pipeline."}
+               : "Base system initialized and user customers created. You must log in as 'admin' to run the Data Import pipeline."}
             {/* eslint-enable no-restricted-syntax */}
           </p>
           <a

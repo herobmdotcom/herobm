@@ -40,11 +40,11 @@ describe('API E2E — Sales Invoices', () => {
     locationId = locRes.body.data[0].locationId;
 
     // Fetch real IDs from mart data
-    const accounts = await request(app.getHttpServer())
-      .get('/api/accounts?limit=1')
+    const customers = await request(app.getHttpServer())
+      .get('/api/customers?limit=1')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    validCustomerId = accounts.body.data[0].accountId;
+    validCustomerId = customers.body.data[0].customerId;
 
     const products = await request(app.getHttpServer())
       .get('/api/products?limit=2')
@@ -271,9 +271,9 @@ describe('API E2E — Sales Invoices', () => {
       expect(parseFloat(found.totalAmount)).toBeGreaterThan(19.0); // Line 1 qty 2 * 10 = 20
     });
 
-    it('GET /api/sales-invoices?accountId=... — filters by account strictly', async () => {
+    it('GET /api/sales-invoices?customerId=... — filters by account strictly', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/sales-invoices?accountId=${validCustomerId}`)
+        .get(`/api/sales-invoices?customerId=${validCustomerId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
@@ -283,10 +283,10 @@ describe('API E2E — Sales Invoices', () => {
       ).toBe(true);
     });
 
-    it('GET /api/sales-invoices?accountId=BOGUS — returns empty', async () => {
+    it('GET /api/sales-invoices?customerId=BOGUS — returns empty', async () => {
       const res = await request(app.getHttpServer())
         .get(
-          '/api/sales-invoices?accountId=00000000-0000-0000-0000-000000000000',
+          '/api/sales-invoices?customerId=00000000-0000-0000-0000-000000000000',
         )
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);

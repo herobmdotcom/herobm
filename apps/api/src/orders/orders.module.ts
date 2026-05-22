@@ -14,7 +14,7 @@ import {
   salesOrderLineItems,
   salesInvoices,
   salesOrderShipments,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   transferOrders,
 } from '../drizzle/modbm-core-schema';
 import { ConfigModule } from '@nestjs/config';
@@ -35,7 +35,7 @@ import { TransfersController } from './transfers/transfers.controller';
 import { TransferService } from './transfers/transfers.service';
 import { TaxModule } from '../tax/tax.module';
 import { InventoryModule } from '../inventory/inventory.module';
-import { AccountsModule } from '../accounts/accounts.module';
+import { AccountsModule } from '../customers/customers.module';
 import { ProductsModule } from '../products/products.module';
 import { GlModule } from '../gl/gl.module';
 import { SettingsModule } from '../settings/settings.module';

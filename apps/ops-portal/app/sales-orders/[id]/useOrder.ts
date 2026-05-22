@@ -289,7 +289,7 @@ export function useOrder(id: string) {
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
-            router.push(`/sales-orders/${newOrder.salesOrderId}`);
+            router.push(`/sales-orders/${(newOrder as any).id || newOrder.salesOrderId}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {

@@ -1,8 +1,8 @@
 {
   "common": {
     "save": "Save",
-    "saving": "Saving…",
-    "copying": "Copying…",
+    "saving": "Saving\u2026",
+    "copying": "Copying\u2026",
     "by": "by",
     "add": "Add",
     "edit": "Edit",
@@ -21,11 +21,11 @@
     "delete": "Delete",
     "dismiss": "dismiss",
     "system": "System",
-    "loading": "Loading…",
+    "loading": "Loading\u2026",
     "noMatchingResults": "No matching results",
     "resolving": "Resolving...",
     "select": "Select",
-    "selectEllipsis": "Select…",
+    "selectEllipsis": "Select\u2026",
     "selectNone": "(None)",
     "none": "(None)",
     "activityTimeline": "Activity Timeline",
@@ -54,7 +54,7 @@
       "next": "Next",
       "rows": "{count} rows",
       "rowCountLabel": "Rows",
-      "loadingEllipsis": "Loading…"
+      "loadingEllipsis": "Loading\u2026"
     },
     "orderReadView": {
       "orderDetails": "Order Details",
@@ -110,7 +110,7 @@
       "username": "Username",
       "password": "Password",
       "invalidCredentials": "Invalid credentials",
-      "loading": "Loading…"
+      "loading": "Loading\u2026"
     },
     "columns": {
       "orderNumber": "Order #",
@@ -245,8 +245,8 @@
       "deleted": "Deleted"
     },
     "productSearch": {
-      "placeholder": "Search product…",
-      "typeMinChars": "Type at least 2 characters…",
+      "placeholder": "Search product\u2026",
+      "typeMinChars": "Type at least 2 characters\u2026",
       "noMatchingProducts": "No matching products",
       "onHandShort": "OH",
       "availableShort": "Avail"
@@ -277,7 +277,7 @@
       "lines": "Lines"
     },
     "na": "N/A",
-    "loadingEllipsis": "Loading…",
+    "loadingEllipsis": "Loading\u2026",
     "confirm": "Confirm",
     "errorBoundary": {
       "title": "Something went wrong",
@@ -290,29 +290,29 @@
     "unknownProduct": "Unknown Product",
     "unknown": "Unknown"
   },
-  "accounts": {
-    "title": "Accounts",
-    "subtitle": "Manage customer accounts",
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Manage customer customers",
     "totalAccounts": "TOTAL ACCOUNTS",
     "generalInfo": "General Information",
-    "company": "Company",
+    "company": "Customer",
     "pricingCurrency": "Pricing & Currency",
     "columns": {
-      "accountId": "Account ID",
-      "accountNumber": "Account Number",
+      "customerId": "Customer ID",
+      "customerNumber": "Customer Number",
       "discountPct": "Customer Discount %",
       "accountType": "Type"
     },
     "buttons": {
-      "createAccount": "Create Account"
+      "createCustomer": "Create Customer"
     },
     "placeholders": {
-      "searchAccounts": "Search by name, account number, or email…",
-      "noAccountGroup": "No Account Group",
-      "accountGroup": "Account Group"
+      "searchAccounts": "Search by name, customer number, or email\u2026",
+      "noAccountGroup": "No Customer Group",
+      "customerGroup": "Customer Group"
     },
     "financials": "Financials",
-    "management": "Account Management",
+    "management": "Customer Management",
     "overview": "Overview",
     "orders": "Orders",
     "invoices": "Invoices"
@@ -327,7 +327,7 @@
       "unlinkSupplier": "Unlink Supplier"
     },
     "placeholders": {
-      "searchSuppliers": "Search suppliers…",
+      "searchSuppliers": "Search suppliers\u2026",
       "vendorNumber": "e.g. VEND-001",
       "name": "e.g. ACME Corp",
       "paymentTerms": "e.g. NET30",
@@ -461,7 +461,7 @@
       "quantityOnHand": "On Hand",
       "uomCode": "UoM Code",
       "ratio": "Ratio",
-      "ratioBase": "Ratio (× Base)",
+      "ratioBase": "Ratio (\u00d7 Base)",
       "notes": "Notes"
     },
     "generalInfo": "General Information",
@@ -470,7 +470,7 @@
     "productName": "Product Name",
     "productGroup": "Product Group",
     "placeholders": {
-      "searchProducts": "Search by name, product number, or barcode…",
+      "searchProducts": "Search by name, product number, or barcode\u2026",
       "productNumber": "e.g. PROD-001",
       "productName": "e.g. Widget Deluxe",
       "barcode": "EAN / UPC barcode",
@@ -518,7 +518,7 @@
     "confirmRemoveConversion": "Remove {uomCode} conversion?",
     "unknownCategory": "Unknown Category ({id})",
     "baseUomLabel": "(Base: {uom})",
-    "uomRatioLabel": "{uom} (×{ratio})",
+    "uomRatioLabel": "{uom} (\u00d7{ratio})",
     "storage": {
       "columns": {
         "bin": "Bin",
@@ -546,6 +546,7 @@
       "copyOrder": "Copy Order",
       "createReturn": "Create Return",
       "salesCredit": "Credit Note PDF",
+      "returnSlip": "Return Slip PDF",
       "archive": "Archive",
       "unarchive": "Unarchive",
       "save": "Save",
@@ -559,14 +560,14 @@
       "generate": "Generate"
     },
     "placeholders": {
-      "searchOrders": "Search by order number, customer, or PO…",
+      "searchOrders": "Search by order number, customer, or PO\u2026",
       "orderName": "Order name",
       "customerPO": "Customer purchase order",
       "notes": "Internal notes",
-      "searchProduct": "Add product… (search)",
+      "searchProduct": "Add product\u2026 (search)",
       "returnNotes": "Return reason / notes",
       "reason": "Reason",
-      "searchCustomers": "Search customers…",
+      "searchCustomers": "Search customers\u2026",
       "zero": "0",
       "customDescription": "Custom description...",
       "quoteText": "Enter custom text for this quote...",
@@ -644,13 +645,13 @@
     "archivedBannerTitle": "This record is archived.",
     "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
     "orderNotFound": "Order not found",
-    "backToOrders": "← Back to Orders",
+    "backToOrders": "\u2190 Back to Orders",
     "untitledOrder": "Untitled order",
     "orderDetails": "Order Details",
     "lineItems": "Line items",
     "availability": "Availability",
-    "noLineItems": "No line items — use the search above to add products",
-    "loadingInventory": "Loading inventory data…",
+    "noLineItems": "No line items \u2014 use the search above to add products",
+    "loadingInventory": "Loading inventory data\u2026",
     "unnamedCustomer": "Unnamed customer",
     "returnsHeading": "Returns",
     "noLineItemsShort": "No products ordered yet.",
@@ -658,7 +659,7 @@
     "newReturn": "New Return",
     "selectLocation": "Select Location",
     "noInventoryData": "No inventory data",
-    "loadingReturns": "Loading returns…",
+    "loadingReturns": "Loading returns\u2026",
     "noReturns": "No returns for this order.",
     "virtualFulfillmentBypass": "N/A",
     "discountPercent": "{disc}% disc",
@@ -730,11 +731,11 @@
       "qty": "Qty"
     },
     "placeholders": {
-      "searchShipments": "Search by shipment number, customer, or PO…"
+      "searchShipments": "Search by shipment number, customer, or PO\u2026"
     },
     "shipmentDetails": "Shipment Details",
     "lineItems": "Line Items",
-    "backToShipments": "← Back to Shipments",
+    "backToShipments": "\u2190 Back to Shipments",
     "cancelShipment": "Cancel Shipment",
     "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
     "cancelFailed": "Failed to cancel shipment"
@@ -752,7 +753,7 @@
     "noLineItems": "No line items",
     "buttons": {
       "createTransfer": "+ Create Transfer",
-      "save": "💾 Save",
+      "save": "\ud83d\udcbe Save",
       "customLine": "Custom Line",
       "addLines": "Add Lines"
     },
@@ -761,7 +762,7 @@
       "notes": "Transfer notes...",
       "selectSourceLocation": "Select Source Location",
       "selectDestinationLocation": "Select Destination Location",
-      "searchProduct": "Add product… (search)"
+      "searchProduct": "Add product\u2026 (search)"
     },
     "columns": {
       "orderNumber": "Order Number",
@@ -816,18 +817,18 @@
       "createReturn": "Create Return",
       "enterSupplierBill": "Enter Invoice",
       "submitBill": "Submit Invoice",
-      "save": "💾 Save",
+      "save": "\ud83d\udcbe Save",
       "customLine": "Custom Line",
       "resolving": "Resolving...",
       "resolveDemands": "Resolve Demands"
     },
     "placeholders": {
-      "searchOrders": "Search purchase orders…",
+      "searchOrders": "Search purchase orders\u2026",
       "referenceNumber": "Supplier quote reference",
       "orderName": "Order name",
       "notes": "Internal notes",
-      "searchProduct": "Add product… (search)",
-      "searchSuppliers": "Search suppliers…",
+      "searchProduct": "Add product\u2026 (search)",
+      "searchSuppliers": "Search suppliers\u2026",
       "reason": "Reason"
     },
     "labels": {
@@ -873,13 +874,13 @@
       "remaining": "Remaining"
     },
     "orderNotFound": "Order not found",
-    "backToOrders": "← Back to Orders",
+    "backToOrders": "\u2190 Back to Orders",
     "untitledOrder": "Untitled order",
     "unnamedCustomer": "Unnamed customer",
     "orderDetails": "Order Details",
-    "noLineItems": "No line items — use the search above to add products",
+    "noLineItems": "No line items \u2014 use the search above to add products",
     "noLineItemsShort": "No line items",
-    "loadingInventory": "Loading inventory data…",
+    "loadingInventory": "Loading inventory data\u2026",
     "noInventoryData": "No inventory data",
     "newReturn": "New Return",
     "availability": "Availability",
@@ -887,7 +888,7 @@
     "returnsHeading": "Returns",
     "noReturns": "No returns",
     "noReturnLines": "No return lines",
-    "loadingReturns": "Loading returns…",
+    "loadingReturns": "Loading returns\u2026",
     "returns": {
       "title": "Purchase Returns",
       "subtitle": "Return items back to suppliers",
@@ -998,8 +999,8 @@
       "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
     },
     "placeholders": {
-      "searchMovements": "Search by product, reference, or type…",
-      "searchLedger": "Search transactions…"
+      "searchMovements": "Search by product, reference, or type\u2026",
+      "searchLedger": "Search transactions\u2026"
     },
     "filters": {
       "last24Hours": "Last 24 Hours",
@@ -1068,7 +1069,7 @@
   "bins": {
     "title": "Bin Contents",
     "placeholders": {
-      "searchBins": "Search by bin number, product name, or product number…"
+      "searchBins": "Search by bin number, product name, or product number\u2026"
     },
     "columns": {
       "bin": "Bin",
@@ -1152,7 +1153,7 @@
       "cancelPick": "Cancel Pick"
     },
     "errors": {
-      "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
+      "cannotReducePicked": "Cannot reduce picked to {qty} \u2014 {shipped} already shipped",
       "failedToUpdatePick": "Failed to update pick",
       "failedToPickAll": "Failed to pick all",
       "failedToCreateShipment": "Failed to create shipment",
@@ -1194,7 +1195,7 @@
     },
     "selectOrder": "Select an order to create a shipment.",
     "noOrders": "No {tab} orders pending.",
-    "loadingOrder": "Loading order context…",
+    "loadingOrder": "Loading order context\u2026",
     "columns": {
       "product": "Product",
       "description": "Description",
@@ -1232,7 +1233,7 @@
     }
   },
   "gl": {
-    "loading": "Loading…",
+    "loading": "Loading\u2026",
     "trialBalance": {
       "title": "Trial Balance",
       "asOfDate": "As of Date",
@@ -1240,7 +1241,7 @@
       "noData": "No transactions found for this period.",
       "columns": {
         "accountCode": "Code",
-        "accountName": "Account",
+        "accountName": "Customer",
         "accountType": "Type",
         "debit": "Debit",
         "credit": "Credit",
@@ -1257,25 +1258,25 @@
     "codes": {
       "button": "Codes",
       "title": "Accounting Codes Cheat Sheet",
-      "subtitle": "Quick reference for accounts, cost centers, and activities",
+      "subtitle": "Quick reference for customers, cost centers, and activities",
       "search": "Search codes...",
       "exportCsv": "Export CSV",
       "columns": {
-        "chartOfAccounts": "Chart of Accounts",
+        "chartOfAccounts": "Chart of Customers",
         "costCenters": "Cost Centers",
         "activities": "Activities"
       }
     },
     "generalLedger": {
       "title": "General Ledger",
-      "allAccounts": "All Accounts",
+      "allAccounts": "All Customers",
       "fromDate": "From",
       "toDate": "To",
       "noData": "No transactions found for the selected filters.",
       "columns": {
         "date": "Date",
         "entryNumber": "Entry #",
-        "account": "Account",
+        "customer": "Customer",
         "memo": "Memo",
         "debit": "Debit",
         "credit": "Credit",
@@ -1292,7 +1293,7 @@
       "sourcePurchaseInvoice": "Purchase Invoice",
       "sourceManual": "Manual",
       "noData": "No journal entries found.",
-      "searchPlaceholder": "Search entry number…",
+      "searchPlaceholder": "Search entry number\u2026",
       "lines": "Lines",
       "columns": {
         "entryNumber": "Entry #",
@@ -1301,7 +1302,7 @@
         "source": "Source",
         "totalDebit": "Total Debit",
         "totalCredit": "Total Credit",
-        "account": "Account",
+        "customer": "Customer",
         "debit": "Debit",
         "credit": "Credit",
         "partyType": "Party Type",
@@ -1321,7 +1322,7 @@
       "placeholders": {
         "memo": "Reason for journal entry...",
         "lineMemo": "Line description",
-        "selectAccount": "Select Account...",
+        "selectAccount": "Select Customer...",
         "selectParty": "Select Party..."
       },
       "sourceDocument": "Source Document",
@@ -1334,7 +1335,7 @@
       "title": "Bank Reconciliations",
       "newReconciliation": "New Bank Reconciliation",
       "detailsTitle": "Reconciliation Details",
-      "reconciliationLabel": "Reconciliation: {account}",
+      "reconciliationLabel": "Reconciliation: {customer}",
       "statementDateLabel": "Statement Date: {date}",
       "statementDate": "Statement Date",
       "statementBalance": "Statement Balance",
@@ -1342,7 +1343,7 @@
       "clearedBalance": "Cleared Balance",
       "variance": "Variance",
       "status": "Status",
-      "account": "Account",
+      "customer": "Customer",
       "createdBy": "Created By",
       "rows": "Rows",
       "loading": "Loading...",
@@ -1352,7 +1353,7 @@
       "discard": "Discard",
       "create": "Start Reconciling",
       "creating": "Creating...",
-      "selectAccount": "Select Account...",
+      "selectAccount": "Select Customer...",
       "quickAdjustment": "Quick Adjustment",
       "splitEntry": "Split Entry",
       "varianceMustBeZero": "Variance must be zero to post",
@@ -1366,7 +1367,7 @@
       "toggleError": "Failed to toggle line",
       "columns": {
         "statementDate": "Statement Date",
-        "account": "Account",
+        "customer": "Customer",
         "statementBalance": "Statement Balance",
         "status": "Status",
         "date": "Date",
@@ -1391,10 +1392,10 @@
         "moneyOut": "Money Out (e.g. Bank Fee)",
         "moneyIn": "Money In (e.g. Interest)",
         "amount": "Amount",
-        "offsetAccount": "Offset Account",
-        "selectAccount": "Select an account...",
+        "offsetAccount": "Offset Customer",
+        "selectAccount": "Select an customer...",
         "memo": "Memo",
-        "memoPlaceholder": "e.g., Monthly Account Keeping Fee",
+        "memoPlaceholder": "e.g., Monthly Customer Keeping Fee",
         "creating": "Creating...",
         "createAndReconcile": "Create & Reconcile",
         "requiredFieldsError": "Please fill out all required fields",
@@ -1431,7 +1432,7 @@
         "po_created": "Purchase Order created",
         "po_ordered": "Purchase Order ordered",
         "po_received": "Purchase Order received",
-        "account_created": "Customer Account created",
+        "account_created": "Customer Customer created",
         "supplier_created": "Supplier created"
       },
       "empty": "No recent events to display.",
@@ -1453,18 +1454,18 @@
       "createPurchaseDesc": "Restock inventory from supplier"
     },
     "stats": {
-      "accounts": "Accounts",
+      "customers": "Customers",
       "products": "Products",
       "inventoryLevels": "Inventory Levels",
       "orderLines": "Order Lines"
     },
     "search": {
-      "placeholder": "Search products, accounts, orders, suppliers…",
+      "placeholder": "Search products, customers, orders, suppliers\u2026",
       "noResults": "No results found",
-      "typeMinChars": "Type at least 2 characters…",
+      "typeMinChars": "Type at least 2 characters\u2026",
       "types": {
         "product": "Products",
-        "account": "Accounts",
+        "customer": "Customers",
         "sales_order": "Sales Orders",
         "supplier": "Suppliers",
         "purchase_order": "Purchase Orders"
@@ -1474,7 +1475,7 @@
   "sidebar": {
     "title": "herobm",
     "subtitle": "Your business, your data",
-    "footer": "Phase 3 • modbm",
+    "footer": "Phase 3 \u2022 modbm",
     "groups": {
       "inventory": "Warehouse",
       "sales": "Sales",
@@ -1487,7 +1488,7 @@
       "products": "Products",
       "inventory": "Inventory",
       "bins": "Bin Contents",
-      "accounts": "Accounts",
+      "customers": "Customers",
       "salesOrders": "Sales Orders",
       "salesInvoices": "Sales Invoices",
       "shipments": "Shipments",
@@ -1513,12 +1514,12 @@
     }
   },
   "admin": {
-    "accountGroups": {
-      "title": "Account Groups",
-      "subtitle": "Manage group classifications for customer accounts",
+    "customerGroups": {
+      "title": "Customer Groups",
+      "subtitle": "Manage group classifications for customer customers",
       "newGroup": "+ New Group",
       "definedGroups": "Defined Groups",
-      "noGroups": "No account groups defined.",
+      "noGroups": "No customer groups defined.",
       "placeholders": {
         "code": "e.g. WHL",
         "name": "e.g. Wholesale"
@@ -1540,7 +1541,7 @@
       "productGroup": "Product Group",
       "discountPercent": "Discount %",
       "noProductGroupRules": "No product-group-specific overrides defined.",
-      "selectProductGroup": "— Select product group —",
+      "selectProductGroup": "\u2014 Select product group \u2014",
       "toasts": {
         "saved": "Discount rule saved",
         "deleted": "Discount rule deleted"
@@ -1567,7 +1568,7 @@
     },
     "supplierGroups": {
       "title": "Supplier Groups",
-      "subtitle": "Manage group classifications for supplier accounts",
+      "subtitle": "Manage group classifications for supplier customers",
       "newGroup": "+ New Group",
       "definedGroups": "Defined Groups",
       "noGroups": "No supplier groups defined.",
@@ -1595,7 +1596,7 @@
       "subtitle": "Visibility into external system synchronization events",
       "autoRefresh": "Auto-refresh (5s)",
       "refresh": "Refresh",
-      "loading": "Loading event queue…",
+      "loading": "Loading event queue\u2026",
       "summary": {
         "pending": "Pending",
         "processed": "Processed",
@@ -1627,7 +1628,7 @@
         "clear": "Clear"
       },
       "drawer": {
-        "loading": "Loading events…",
+        "loading": "Loading events\u2026",
         "noEvents": "No events of this type found.",
         "errorLabel": "Error:"
       },
@@ -1689,10 +1690,10 @@
       "name": "Name",
       "actions": "Actions",
       "defDiscount": "Def. Discount %",
-      "defArAccount": "Def. AR Account",
-      "defRevAccount": "Def. Revenue Account",
-      "defApAccount": "Def. AP Account",
-      "defExpenseAccount": "Def. Expense Account",
+      "defArAccount": "Def. AR Customer",
+      "defRevAccount": "Def. Revenue Customer",
+      "defApAccount": "Def. AP Customer",
+      "defExpenseAccount": "Def. Expense Customer",
       "defCostCenter": "Def. Cost Center",
       "defActivity": "Def. Activity",
       "errors": {
@@ -1876,13 +1877,13 @@
         "postCode": "Post Code",
         "country": "Country",
         "bankName": "Bank Name",
-        "accountName": "Account Name",
-        "accountNumber": "Account Number (BSB-Account)",
+        "accountName": "Customer Name",
+        "customerNumber": "Customer Number (BSB-Customer)",
         "iban": "IBAN",
         "swiftBic": "SWIFT/BIC",
-        "defaultAr": "Default Accounts Receivable",
+        "defaultAr": "Default Customers Receivable",
         "defaultRevenue": "Default Revenue",
-        "defaultAp": "Default Accounts Payable",
+        "defaultAp": "Default Customers Payable",
         "defaultTax": "Default Tax",
         "defaultCogs": "Default COGS",
         "defaultExpense": "Default Expense",
@@ -1904,7 +1905,7 @@
         "defaultGrni": "Default GRNI",
         "defaultShrinkage": "Default Shrinkage",
         "defaultFeeRevenue": "Default Fee Revenue",
-        "chartOfAccounts": "Chart of Accounts",
+        "chartOfAccounts": "Chart of Customers",
         "group": "Group",
         "bank": "Bank",
         "currency": "Curr",
@@ -1931,7 +1932,7 @@
         "postCode": "Post code",
         "country": "Country",
         "bankName": "Bank name",
-        "accountName": "Account name",
+        "accountName": "Customer name",
         "ccCode": "e.g. 100",
         "ccName": "e.g. Sales Victoria",
         "activityCode": "e.g. DIR",
@@ -1939,7 +1940,7 @@
       },
       "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
       "gl": {
-        "loading": "Loading GL accounts…",
+        "loading": "Loading GL customers\u2026",
         "customerFirst": "Customer first",
         "productFirst": "Product first",
         "supplierFirst": "Supplier first"
@@ -1962,7 +1963,7 @@
     },
     "users": {
       "title": "Users",
-      "subtitle": "Manage portal user accounts and access roles",
+      "subtitle": "Manage portal user customers and access roles",
       "columns": {
         "username": "Username",
         "displayName": "Name",
@@ -2012,10 +2013,10 @@
       "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires.",
       "disable": "Disable",
       "enable": "Enable",
-      "loading": "Loading…",
+      "loading": "Loading\u2026",
       "noneFound": "No users found.",
-      "cannotDisableSelfError": "Cannot disable your own account",
-      "cannotDeleteSelfError": "Cannot delete your own account",
+      "cannotDisableSelfError": "Cannot disable your own customer",
+      "cannotDeleteSelfError": "Cannot delete your own customer",
       "cannotChangeOwnRoleError": "Cannot change your own role"
     }
   },
@@ -2076,7 +2077,7 @@
       "fields": {
         "companyName": "Company Registered Name",
         "baseCurrency": "Base Currency",
-        "coaPreset": "Chart of Accounts Preset",
+        "coaPreset": "Chart of Customers Preset",
         "fiscalYearStart": "Fiscal Year Start Month",
         "revenueRouting": "Revenue Routing Precedence",
         "expenseRouting": "Expense Routing Precedence",
@@ -2202,8 +2203,8 @@
     "orderUnarchived": "Order has been unarchived",
     "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
     "supplierCreated": "Supplier created successfully",
-    "accountCreated": "Account created successfully",
-    "accountUpdated": "Account updated successfully",
+    "accountCreated": "Customer created successfully",
+    "accountUpdated": "Customer updated successfully",
     "productCreated": "Product created successfully",
     "productUpdated": "Product updated successfully",
     "invoiceGenerated": "Invoice generated successfully!"
@@ -2214,7 +2215,8 @@
     "removeReturnLine": "Remove this return line?",
     "removeShipmentLine": "Remove this shipment line?",
     "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
-    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries."
+    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
+    "processReturn": "Process this return? This will generate a Credit Note and publish AR ledger entries."
   },
   "payments": {
     "title": "Payments",
@@ -2255,11 +2257,11 @@
       "packingSlip": "Packing Slip"
     },
     "placeholders": {
-      "selectSupplier": "Select Supplier…",
-      "selectLocation": "Select Receiving Location…",
+      "selectSupplier": "Select Supplier\u2026",
+      "selectLocation": "Select Receiving Location\u2026",
       "packingSlip": "Packing slip number",
       "notes": "Reception notes",
-      "searchProduct": "Search or scan product…"
+      "searchProduct": "Search or scan product\u2026"
     },
     "columns": {
       "receiptNo": "Receipt No.",

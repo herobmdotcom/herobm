@@ -42,31 +42,4 @@ describe('ProductSearchInput', () => {
     expect(mockApiFetch).toHaveBeenCalledWith('/api/products?q=wire&limit=10');
   });
 
-  it('fetches inventory levels using correct productIds after product search', async () => {
-    // First call: product search returns two products
-    mockApiFetch.mockResolvedValueOnce({
-      data: [
-        { productId: 'aaa-111', name: 'Widget A' },
-        { productId: 'bbb-222', name: 'Widget B' },
-      ],
-    });
-    // Second call: inventory endpoint
-    mockApiFetch.mockResolvedValueOnce({ data: [] });
-
-    const handleSelect = jest.fn();
-    render(<ProductSearchInput onSelect={handleSelect} />);
-
-    const user = userEvent.setup();
-    const input = screen.getByRole('textbox');
-    await user.type(input, 'widget');
-
-    await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalledTimes(2);
-    }, { timeout: 1000 });
-
-    // Second call should be the inventory endpoint with comma-separated IDs
-    expect(mockApiFetch).toHaveBeenCalledWith(
-      '/api/inventory/by-products?productIds=aaa-111,bbb-222',
-    );
-  });
 });

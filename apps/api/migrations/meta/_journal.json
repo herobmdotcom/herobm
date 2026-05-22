@@ -370,70 +370,84 @@
       "idx": 52,
       "version": "7",
       "when": 1778485029705,
-      "tag": "0053_melted_warbound",
+      "tag": "0053_create_transfer_orders",
       "breakpoints": true
     },
     {
       "idx": 53,
       "version": "7",
       "when": 1778485096689,
-      "tag": "0054_perpetual_scalphunter",
+      "tag": "0054_add_in_transit_bin_type",
       "breakpoints": true
     },
     {
       "idx": 54,
       "version": "7",
       "when": 1778485882059,
-      "tag": "0055_perfect_spectrum",
+      "tag": "0055_create_transfer_order_shipments",
       "breakpoints": true
     },
     {
       "idx": 55,
       "version": "7",
       "when": 1778487539599,
-      "tag": "0057_purple_iron_patriot",
+      "tag": "0057_create_payment_events",
       "breakpoints": true
     },
     {
       "idx": 56,
       "version": "7",
       "when": 1778491925633,
-      "tag": "0058_glamorous_catseye",
+      "tag": "0058_add_bank_account_metadata",
       "breakpoints": true
     },
     {
       "idx": 57,
       "version": "7",
       "when": 1778528513532,
-      "tag": "0059_naive_mariko_yashida",
+      "tag": "0059_create_sales_credit_notes",
       "breakpoints": true
     },
     {
       "idx": 58,
       "version": "7",
       "when": 1779351589656,
-      "tag": "0060_bouncy_beyonder",
+      "tag": "0060_add_putaway_status_to_return_lines",
       "breakpoints": true
     },
     {
       "idx": 59,
       "version": "7",
       "when": 1779374078363,
-      "tag": "0059_gifted_human_fly",
+      "tag": "0061_add_quantity_received_to_return_lines",
       "breakpoints": true
     },
     {
       "idx": 60,
       "version": "7",
       "when": 1779374621905,
-      "tag": "0060_chubby_pride",
+      "tag": "0062_add_partially_received_to_return_state",
       "breakpoints": true
     },
     {
       "idx": 61,
       "version": "7",
       "when": 1779378099152,
-      "tag": "0061_omniscient_purple_man",
+      "tag": "0063_add_account_metadata_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1779395651936,
+      "tag": "0064_rename_accounts_to_customers",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1779433600002,
+      "tag": "0065_create_product_components",
       "breakpoints": true
     }
   ]

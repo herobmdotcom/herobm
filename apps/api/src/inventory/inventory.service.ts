@@ -24,7 +24,7 @@ import {
   salesOrderReturns,
   salesOrderReturnLines,
   salesOrderLineItems,
-  accounts,
+  customers,
   purchaseOrders,
   suppliers,
   productUoms,
@@ -606,12 +606,12 @@ export class InventoryService {
           .select({
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
-            accountId: accounts.accountId,
-            customerName: accounts.name,
-            customerNumber: accounts.accountNumber,
+            customerId: customers.customerId,
+            customerName: customers.name,
+            customerNumber: customers.customerNumber,
           })
           .from(salesOrders)
-          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
           .where(eq(salesOrders.salesOrderId, entry.sourceId))
           .limit(1);
 
@@ -624,7 +624,7 @@ export class InventoryService {
             ? {
                 name: o.customerName,
                 number: o.customerNumber || '',
-                link: `/accounts/${o.accountId}`,
+                link: `/customers/${o.customerId}`,
               }
             : null;
         }
@@ -634,16 +634,16 @@ export class InventoryService {
             shipmentNumber: salesOrderShipments.shipmentNumber,
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
-            accountId: accounts.accountId,
-            customerName: accounts.name,
-            customerNumber: accounts.accountNumber,
+            customerId: customers.customerId,
+            customerName: customers.name,
+            customerNumber: customers.customerNumber,
           })
           .from(salesOrderShipments)
           .innerJoin(
             salesOrders,
             eq(salesOrders.salesOrderId, salesOrderShipments.salesOrderId),
           )
-          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
           .where(eq(salesOrderShipments.shipmentId, entry.sourceId))
           .limit(1);
 
@@ -656,7 +656,7 @@ export class InventoryService {
             ? {
                 name: s.customerName,
                 number: s.customerNumber || '',
-                link: `/accounts/${s.accountId}`,
+                link: `/customers/${s.customerId}`,
               }
             : null;
         }
@@ -666,16 +666,16 @@ export class InventoryService {
             returnNumber: salesOrderReturns.returnNumber,
             salesOrderId: salesOrders.salesOrderId,
             orderNumber: salesOrders.orderNumber,
-            accountId: accounts.accountId,
-            customerName: accounts.name,
-            customerNumber: accounts.accountNumber,
+            customerId: customers.customerId,
+            customerName: customers.name,
+            customerNumber: customers.customerNumber,
           })
           .from(salesOrderReturns)
           .innerJoin(
             salesOrders,
             eq(salesOrders.salesOrderId, salesOrderReturns.salesOrderId),
           )
-          .leftJoin(accounts, eq(salesOrders.customerId, accounts.accountId))
+          .leftJoin(customers, eq(salesOrders.customerId, customers.customerId))
           .where(eq(salesOrderReturns.returnId, entry.sourceId))
           .limit(1);
 
@@ -688,7 +688,7 @@ export class InventoryService {
             ? {
                 name: ret.customerName,
                 number: ret.customerNumber || '',
-                link: `/accounts/${ret.accountId}`,
+                link: `/customers/${ret.customerId}`,
               }
             : null;
         }

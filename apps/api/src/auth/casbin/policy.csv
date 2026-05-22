@@ -2,7 +2,7 @@
 # Format: p, role, resource, action
 
 # viewer — read access to all data endpoints
-p, viewer, accounts, read
+p, viewer, customers, read
 p, viewer, products, read
 p, viewer, inventory, read
 p, viewer, sales-orders, read
@@ -18,7 +18,7 @@ p, viewer, payments, read
 
 # admin — full access to everything
 p, admin, report, write
-p, admin, accounts, write
+p, admin, customers, write
 p, admin, products, write
 p, admin, sales-orders, write
 p, admin, purchase-orders, write
@@ -30,7 +30,7 @@ p, admin, inventory, write
 # admin — full access to everything
 p, admin, users, read
 p, admin, users, write
-p, admin, accounts, archive
+p, admin, customers, archive
 p, admin, products, archive
 p, admin, sales-orders, archive
 p, admin, purchase-orders, archive
@@ -58,7 +58,7 @@ p, finance, sales-orders, write
 p, finance, purchase-orders, write
 
 # sales — viewer + customer/order writes
-p, sales, accounts, write
+p, sales, customers, write
 p, sales, sales-orders, write
 
 # warehouse — viewer + order writes (pick/ship) + purchase/reception writes

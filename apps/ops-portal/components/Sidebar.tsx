@@ -49,7 +49,7 @@ export default function Sidebar() {
     {
       label: t('groups.sales'),
       items: [
-        { href: '/accounts', label: t('items.accounts'), icon: 'storefront' },
+        { href: '/customers', label: t('items.customers'), icon: 'storefront' },
         { href: '/sales-orders', label: t('items.salesOrders'), icon: 'receipt_long' },
         { href: '/shipments', label: t('items.shipments', { defaultValue: 'Shipments' }), icon: 'local_post_office' },
         { href: '/sales-invoices', label: t('items.salesInvoices'), icon: 'request_quote' },
@@ -102,11 +102,11 @@ export default function Sidebar() {
           ]
         },
         { 
-          href: '/admin/account-groups', 
+          href: '/admin/customer-groups', 
           label: 'Groups', 
           icon: 'folder_shared',
           subItems: [
-            { href: '/admin/account-groups', label: 'Account Groups' },
+            { href: '/admin/customer-groups', label: 'Customer Groups' },
             { href: '/admin/supplier-groups', label: 'Supplier Groups' },
             { href: '/admin/product-groups', label: 'Product Groups' },
           ]

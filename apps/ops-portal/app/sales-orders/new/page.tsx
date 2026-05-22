@@ -13,17 +13,17 @@ import type { Product } from '@/components/shared/ProductSearchInput';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
-import AccountSelect from '@/components/shared/AccountSelect';
+import CustomerSelect from '@/components/shared/CustomerSelect';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
 import type { DiscountRule } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useSettings } from '@/components/SettingsProvider';
 
-interface Account {
-  accountId: string;
-  accountNumber: string;
+interface Customer {
+  customerId: string;
+  customerNumber: string;
   name: string;
-  accountGroupId?: string | null;
+  customerGroupId?: string | null;
   customerDiscount?: string | null;
   currencyCode?: string | null;
   taxPosition?: string | null;
@@ -153,15 +153,15 @@ export default function NewOrderPage() {
   }, [effectivetaxCategoryId]);
 
   // Select customer logic
-  const selectCustomer = async (a: Account) => {
-    setCustomerId(a.accountId);
-    setCustomerSearch(`${a.accountNumber} — ${a.name}`);
+  const selectCustomer = async (a: Customer) => {
+    setCustomerId(a.customerId);
+    setCustomerSearch(`${a.customerNumber} — ${a.name}`);
     
     // Fetch discount rules for this customer
     let rules: DiscountRule[] = [];
     try {
-      const q = new URLSearchParams({ accountId: a.accountId });
-      if (a.accountGroupId) q.set('accountGroupId', a.accountGroupId);
+      const q = new URLSearchParams({ customerId: a.customerId });
+      if (a.customerGroupId) q.set('customerGroupId', a.customerGroupId);
       rules = await apiFetch<DiscountRule[]>(`/api/discount-matrix/resolve?${q.toString()}`);
       setDiscountRules(rules);
     } catch (err) {
@@ -408,7 +408,7 @@ export default function NewOrderPage() {
                     </span>
                 )}
               </label>
-              <AccountSelect
+              <CustomerSelect
                 value={customerId}
                 onChange={(acc) => {
                   if (acc) {

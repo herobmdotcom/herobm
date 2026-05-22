@@ -21,8 +21,8 @@ import {
   bins,
   zones,
   products as coreProducts,
-  accounts as coreAccounts,
-  accountGroups,
+  customers as coreAccounts,
+  customerGroups,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -597,17 +597,17 @@ export class ReturnsWriteService {
 
           const [retOrder] = await innerTx
             .select({
-              costCenterId: accountGroups.defaultCostCenterId,
-              activityId: accountGroups.defaultActivityId,
+              costCenterId: customerGroups.defaultCostCenterId,
+              activityId: customerGroups.defaultActivityId,
             })
             .from(salesOrders)
             .leftJoin(
               coreAccounts,
-              eq(salesOrders.customerId, coreAccounts.accountId),
+              eq(salesOrders.customerId, coreAccounts.customerId),
             )
             .leftJoin(
-              accountGroups,
-              eq(coreAccounts.accountGroupId, accountGroups.accountGroupId),
+              customerGroups,
+              eq(coreAccounts.customerGroupId, customerGroups.customerGroupId),
             )
             .where(eq(salesOrders.salesOrderId, ret.salesOrderId));
 

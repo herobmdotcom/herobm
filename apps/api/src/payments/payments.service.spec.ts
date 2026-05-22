@@ -12,8 +12,8 @@ import {
   paymentAllocations,
   salesInvoices,
   purchaseInvoices,
-  accounts,
-  accountGroups,
+  customers,
+  customerGroups,
   suppliers,
   supplierGroups,
   salesOrders,
@@ -36,7 +36,7 @@ describe('PaymentsService', () => {
   let service: PaymentsService;
   let glService: GlService;
 
-  // Shared GL accounts
+  // Shared GL customers
   let bankAccountId: string;
   let arAccountId: string;
   let apAccountId: string;
@@ -48,7 +48,7 @@ describe('PaymentsService', () => {
   // Shared party IDs
   let customerId: string;
   let supplierId: string;
-  let accountGroupId: string;
+  let customerGroupId: string;
   let supplierGroupId: string;
   let locationId: string;
 
@@ -83,7 +83,7 @@ describe('PaymentsService', () => {
         set: { activityId: defaultActId },
       });
 
-    // 2. GL Accounts
+    // 2. GL Customers
     bankAccountId = randomUUID();
     arAccountId = randomUUID();
     apAccountId = randomUUID();
@@ -92,7 +92,7 @@ describe('PaymentsService', () => {
       {
         glAccountId: bankAccountId,
         accountCode: '1000',
-        name: 'Bank Account',
+        name: 'Bank Customer',
         accountType: 'asset',
         isGroup: false,
         isActive: true,
@@ -101,7 +101,7 @@ describe('PaymentsService', () => {
       {
         glAccountId: arAccountId,
         accountCode: '1100',
-        name: 'Accounts Receivable',
+        name: 'Customers Receivable',
         accountType: 'asset',
         isGroup: false,
         isActive: true,
@@ -110,7 +110,7 @@ describe('PaymentsService', () => {
       {
         glAccountId: apAccountId,
         accountCode: '2100',
-        name: 'Accounts Payable',
+        name: 'Customers Payable',
         accountType: 'liability',
         isGroup: false,
         isActive: true,
@@ -134,10 +134,10 @@ describe('PaymentsService', () => {
       name: 'Test Location',
     });
 
-    // 5. Account Group with AR routing
-    accountGroupId = randomUUID();
-    await pg.db.insert(accountGroups).values({
-      accountGroupId,
+    // 5. Customer Group with AR routing
+    customerGroupId = randomUUID();
+    await pg.db.insert(customerGroups).values({
+      customerGroupId,
       groupCode: 'TEST-GRP',
       name: 'Test Customer Group',
       defaultArAccountId: arAccountId,
@@ -145,13 +145,13 @@ describe('PaymentsService', () => {
 
     // 6. Customer
     customerId = randomUUID();
-    await pg.db.insert(accounts).values({
-      accountId: customerId,
-      accountNumber: 'ACCT-001',
+    await pg.db.insert(customers).values({
+      customerId: customerId,
+      customerNumber: 'ACCT-001',
       externalId: 'CUST-001',
       name: 'Test Customer',
       currencyCode: 'AUD',
-      accountGroupId,
+      customerGroupId,
     });
 
     // 6. Supplier Group with AP routing
@@ -184,8 +184,8 @@ describe('PaymentsService', () => {
     await pg.db.delete(salesInvoices);
     await pg.db.delete(purchaseInvoices);
     await pg.db.delete(salesOrders);
-    await pg.db.delete(accounts);
-    await pg.db.delete(accountGroups);
+    await pg.db.delete(customers);
+    await pg.db.delete(customerGroups);
     await pg.db.delete(suppliers);
     await pg.db.delete(supplierGroups);
     await pg.db.delete(glSettings);
@@ -385,15 +385,15 @@ describe('PaymentsService', () => {
     });
 
     it('should fall back to glSettings when group has no AR/AP override', async () => {
-      // Create a customer with no account group
+      // Create a customer with no customer group
       const ungroupedId = randomUUID();
-      await pg.db.insert(accounts).values({
-        accountId: ungroupedId,
-        accountNumber: 'ACCT-UNGROUPED',
+      await pg.db.insert(customers).values({
+        customerId: ungroupedId,
+        customerNumber: 'ACCT-UNGROUPED',
         externalId: 'UNGROUPED-001',
         name: 'Ungrouped Customer',
         currencyCode: 'AUD',
-        // No accountGroupId
+        // No customerGroupId
       });
 
       const payment = await service.createPaymentEntry(

@@ -14,7 +14,7 @@ import {
   zones,
   locations,
   products,
-  accounts,
+  customers,
   taxCategories,
   uomDictionary,
   orderEvents,
@@ -25,7 +25,7 @@ import {
   SALES_ORDER_STATE,
   SALES_ORDER_PICK_STATE,
   PRODUCT_STATE,
-  ACCOUNT_STATE,
+  CUSTOMER_STATE,
 } from '@modbm/shared';
 
 describe('PickingService', () => {
@@ -52,7 +52,7 @@ describe('PickingService', () => {
     await pg.db.delete(salesOrderLineItems);
     await pg.db.delete(salesOrders);
     await pg.db.delete(products);
-    await pg.db.delete(accounts);
+    await pg.db.delete(customers);
     await pg.db.delete(bins);
     await pg.db.delete(zones);
     await pg.db.delete(locations);
@@ -95,12 +95,12 @@ describe('PickingService', () => {
         binType: 'storage',
       },
     ]);
-    await pg.db.insert(accounts).values({
-      accountId: CUSTOMER_ID,
-      accountNumber: 'CUST01',
+    await pg.db.insert(customers).values({
+      customerId: CUSTOMER_ID,
+      customerNumber: 'CUST01',
       name: 'Acme Corp',
       currencyCode: 'AUD',
-      stateCode: ACCOUNT_STATE.ACTIVE,
+      stateCode: CUSTOMER_STATE.ACTIVE,
       source: 'app',
     });
     await pg.db.insert(products).values({

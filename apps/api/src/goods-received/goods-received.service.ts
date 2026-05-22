@@ -598,7 +598,7 @@ export class GoodsReceivedService {
 
         if (originalLines.length > 0) {
           const reversedLines = originalLines.map((line) => ({
-            accountId: line.glAccountId,
+            customerId: line.glAccountId,
             costCenterId: line.costCenterId,
             activityId: line.activityId,
             partyType: line.partyType,

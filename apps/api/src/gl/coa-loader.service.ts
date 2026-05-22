@@ -12,6 +12,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v5 as uuidv5 } from 'uuid';
 
+import { GLAccountType } from '@modbm/shared';
+
 export function resolveChartsDir(dirnameFallback: string): string {
   // 1. Standard flat structure / ts-node
   const dirPath = path.join(dirnameFallback, 'charts');
@@ -82,7 +84,7 @@ interface CoaFile {
 }
 
 // Map Legacy root_type to our account_type
-const ROOT_TYPE_MAP: Record<string, string> = {
+const ROOT_TYPE_MAP: Record<string, GLAccountType> = {
   Asset: 'asset',
   Liability: 'liability',
   Equity: 'equity',
@@ -132,7 +134,7 @@ export class CoaLoaderService {
     const insertRows: {
       accountCode: string;
       name: string;
-      accountType: string;
+      accountType: GLAccountType;
       parentCode: string | null;
       isGroup: boolean;
       isSystem: boolean;
@@ -143,7 +145,7 @@ export class CoaLoaderService {
     const walk = (
       nodes: Record<string, CoaNode>,
       parentCode: string | null,
-      inheritedType: string | null,
+      inheritedType: GLAccountType | null,
     ) => {
       for (const [name, node] of Object.entries(nodes)) {
         const accountType =

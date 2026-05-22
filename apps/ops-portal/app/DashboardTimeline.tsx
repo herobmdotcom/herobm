@@ -29,7 +29,7 @@ const EVENT_ICONS: Record<string, { icon: string, color: string, bg: string, pat
   po_ordered: { icon: 'send', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
   po_received: { icon: 'inventory_2', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', path: '/purchase-orders' },
   
-  account_created: { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/accounts' },
+  account_created: { icon: 'person_add', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', path: '/customers' },
   supplier_created: { icon: 'domain_add', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', path: '/suppliers' },
 };
 

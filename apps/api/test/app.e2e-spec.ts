@@ -59,7 +59,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       );
     }
 
-    if (process.env.USE_PGLITE === 'true') {
+    {
       const db = app.get<DrizzleDB>(DRIZZLE);
       try {
         const prod = await db.select().from(products).limit(1);
@@ -177,7 +177,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     });
 
     it('GET /api/accounts — no token returns 401', async () => {
-      await request(app.getHttpServer()).get('/api/accounts').expect(401);
+      await request(app.getHttpServer()).get('/api/customers').expect(401);
     });
   });
 
@@ -188,7 +188,7 @@ describe('API E2E — Data Pipeline Verification', () => {
   describe('Accounts — mart_accounts data pipeline', () => {
     it('GET /api/accounts — returns paginated list from Postgres', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts')
+        .get('/api/customers')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -202,15 +202,15 @@ describe('API E2E — Data Pipeline Verification', () => {
 
       // Verify CDM field names are present
       const firstAccount = res.body.data[0];
-      expect(firstAccount).toHaveProperty('accountId');
+      expect(firstAccount).toHaveProperty('customerId');
       expect(firstAccount).toHaveProperty('name');
-      expect(firstAccount.accountId).toBeTruthy();
+      expect(firstAccount.customerId).toBeTruthy();
       expect(firstAccount.name).toBeTruthy();
     });
 
     it('GET /api/accounts — pagination works', async () => {
       const res = await request(app.getHttpServer())
-        .get('/api/accounts?page=1&limit=2')
+        .get('/api/customers?page=1&limit=2')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -222,7 +222,7 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('GET /api/accounts — search filters results', async () => {
       // Get first account's name to use as search term
       const allRes = await request(app.getHttpServer())
-        .get('/api/accounts?limit=1')
+        .get('/api/customers?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -230,7 +230,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       if (!searchTerm) return; // skip if no data
 
       const searchRes = await request(app.getHttpServer())
-        .get(`/api/accounts?q=${searchTerm}`)
+        .get(`/api/customers?q=${searchTerm}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
@@ -240,25 +240,25 @@ describe('API E2E — Data Pipeline Verification', () => {
     it('GET /api/accounts/:id — returns specific account', async () => {
       // Get an ID from the list
       const listRes = await request(app.getHttpServer())
-        .get('/api/accounts?limit=1')
+        .get('/api/customers?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      const accountId = listRes.body.data[0]?.accountId;
-      expect(accountId).toBeTruthy();
+      const customerId = listRes.body.data[0]?.customerId;
+      expect(customerId).toBeTruthy();
 
       const detailRes = await request(app.getHttpServer())
-        .get(`/api/accounts/${accountId}`)
+        .get(`/api/customers/${customerId}`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(detailRes.body.accountId).toBe(accountId);
+      expect(detailRes.body.customerId).toBe(customerId);
       expect(detailRes.body.name).toBeTruthy();
     });
 
     it('GET /api/accounts/:id — unknown ID returns 404', async () => {
       await request(app.getHttpServer())
-        .get('/api/accounts/NONEXISTENT-UUID-12345')
+        .get('/api/customers/NONEXISTENT-UUID-12345')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404);
     });
@@ -441,12 +441,12 @@ describe('API E2E — Data Pipeline Verification', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(res.body).toHaveProperty('accounts');
+      expect(res.body).toHaveProperty('customers');
       expect(res.body).toHaveProperty('products');
       expect(res.body).toHaveProperty('orderLines');
 
       // All counts should be positive (marts are populated)
-      expect(res.body.accounts).toBeGreaterThan(0);
+      expect(res.body.customers).toBeGreaterThan(0);
       expect(res.body.products).toBeGreaterThan(0);
       expect(res.body.orderLines).toBeGreaterThan(0);
     });
@@ -467,7 +467,7 @@ describe('API E2E — Data Pipeline Verification', () => {
       // This implicitly tests that the MetricsInterceptor is working
       // by making requests and verifying they succeed
       const res = await request(app.getHttpServer())
-        .get('/api/accounts?limit=1')
+        .get('/api/customers?limit=1')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 

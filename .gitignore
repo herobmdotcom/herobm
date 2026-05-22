@@ -42,6 +42,7 @@ pipelines/abm_transform/logs/
 # Temp files (agents MUST write temp output here, not in app dirs)
 /tmp/
 *.tsbuildinfo
+/scratch/
 
 # Next.js
 .next/

@@ -13,7 +13,7 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { users, userEvents } from '../drizzle/modbm-core-schema';
 import { EventType } from '../common/event-types';
 import { CreateUserDto, UpdateUserDto } from './dto';
-import { ACCOUNT_STATE } from '@modbm/shared';
+import { CUSTOMER_STATE } from '@modbm/shared';
 
 /**
  * Whitelisted columns for public responses — passwordHash is NEVER returned.
@@ -204,7 +204,7 @@ export class UsersService {
 
     // ── Self-disable guard (Finding 3) ─────────────────────────────────
     if (actorId === id) {
-      throw new BadRequestException('Cannot disable your own account.');
+      throw new BadRequestException('Cannot disable your own customer.');
     }
 
     // ── Last-admin guard (Finding 2) — disabling an admin ──────────────
@@ -226,8 +226,10 @@ export class UsersService {
         eventType: EventType.STATUS_CHANGED,
         payload: {
           username: target.username,
-          from: target.isActive ? ACCOUNT_STATE.ACTIVE : ACCOUNT_STATE.INACTIVE,
-          to: newStatus ? ACCOUNT_STATE.ACTIVE : ACCOUNT_STATE.INACTIVE,
+          from: target.isActive
+            ? CUSTOMER_STATE.ACTIVE
+            : CUSTOMER_STATE.INACTIVE,
+          to: newStatus ? CUSTOMER_STATE.ACTIVE : CUSTOMER_STATE.INACTIVE,
         },
         actor,
       });
@@ -247,7 +249,7 @@ export class UsersService {
 
     // ── Self-deletion guard ────────────────────────────────────────────
     if (actorId === id) {
-      throw new BadRequestException('Cannot delete your own account.');
+      throw new BadRequestException('Cannot delete your own customer.');
     }
 
     // ── Last-admin guard (Finding 2) — deleting an admin ───────────────

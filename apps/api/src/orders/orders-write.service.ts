@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { BackordersService } from './backorders.service';
-import { InventoryGap, SALES_ORDER_STATE, ACCOUNT_STATE } from '@modbm/shared';
+import { InventoryGap, SALES_ORDER_STATE, CUSTOMER_STATE } from '@modbm/shared';
 import {
   Injectable,
   Inject,
@@ -9,6 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { eq, sql, inArray } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -16,12 +17,13 @@ import {
   salesOrders,
   salesOrderLineItems,
   orderEvents,
-  accounts as coreAccounts,
+  customers as coreAccounts,
   products as coreProducts,
   backorders,
   purchaseOrders,
   locations,
   productUoms,
+  productComponents,
 } from '../drizzle/modbm-core-schema';
 import {
   CreateOrderDto,
@@ -37,8 +39,8 @@ import { AggregateType, EventType } from '../common/event-types';
 import { TaxCategoriesService } from '../tax/tax-categories.service';
 import { PickingService } from './picking.service';
 import { InventoryService } from '../inventory/inventory.service';
-import { AccountsService } from '../accounts/accounts.service';
-import { CreditAssessmentService } from '../accounts/credit-assessment.service';
+import { AccountsService } from '../customers/customers.service';
+import { CreditAssessmentService } from '../customers/credit-assessment.service';
 import { ProductsService } from '../products/products.service';
 import {
   SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
@@ -48,7 +50,7 @@ import {
 import {
   resolveEffectiveCreditHold,
   resolveEffectiveCreditLimit,
-} from '../accounts/credit-control.utils';
+} from '../customers/credit-control.utils';
 
 const VALID_STATES = getValidStates(STATE_TRANSITIONS);
 
@@ -144,10 +146,10 @@ export class OrdersWriteService {
     }
 
     // 2. Customer exempt → always 0%
-    const account = await this.accountsService.findOne(customerId, tx);
+    const customer = await this.accountsService.findOne(customerId, tx);
 
-    if (account.taxCategoryId) {
-      const acctCat = await this.taxService.getById(account.taxCategoryId, tx);
+    if (customer.taxCategoryId) {
+      const acctCat = await this.taxService.getById(customer.taxCategoryId, tx);
       if (acctCat.code === 'EXE' || acctCat.type === 'exempt') {
         return {
           taxCategoryId: acctCat.taxCategoryId,
@@ -187,7 +189,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Resolve a customer from modbm_core.accounts.
+   * Resolve a customer from modbm_core.customers.
    * Throws BadRequestException if not found.
    * Returns the currency code. Discount resolution is now handled
    * by the frontend via the discount_matrix; backend trusts posted values.
@@ -199,9 +201,9 @@ export class OrdersWriteService {
     currencyCode: string;
   }> {
     try {
-      const account = await this.accountsService.findOne(customerId, tx);
+      const customer = await this.accountsService.findOne(customerId, tx);
       return {
-        currencyCode: account.currencyCode ?? 'EUR',
+        currencyCode: customer.currencyCode ?? 'EUR',
       };
     } catch (err) {
       if (err instanceof NotFoundException) {
@@ -212,7 +214,7 @@ export class OrdersWriteService {
   }
 
   /**
-   * Asserts that an account is valid for ordering.
+   * Asserts that an customer is valid for ordering.
    * Checks state, credit hold, and credit limit.
    */
   private async assertAccountStanding(
@@ -221,33 +223,33 @@ export class OrdersWriteService {
     operation: 'create' | 'update' | 'confirm',
     tx?: DrizzleDB,
   ): Promise<void> {
-    const account = await this.accountsService.findOne(customerId, tx);
+    const customer = await this.accountsService.findOne(customerId, tx);
 
     // 1. Strict State Block
     if (
-      account.stateCode === ACCOUNT_STATE.INACTIVE ||
-      account.stateCode === ACCOUNT_STATE.ARCHIVED
+      customer.stateCode === CUSTOMER_STATE.INACTIVE ||
+      customer.stateCode === CUSTOMER_STATE.ARCHIVED
     ) {
       throw new BadRequestException(
-        `Cannot ${operation} order: Account '${account.name}' is ${account.stateCode}.`,
+        `Cannot ${operation} order: Customer '${customer.name}' is ${customer.stateCode}.`,
       );
     }
 
     // 2. Credit Hold Status
     const isHold = resolveEffectiveCreditHold({
-      creditLimit: account.creditLimit,
-      isOnCreditHold: account.isOnCreditHold,
-      tradingTermsId: account.tradingTermsId,
+      creditLimit: customer.creditLimit,
+      isOnCreditHold: customer.isOnCreditHold,
+      tradingTermsId: customer.tradingTermsId,
       accountGroup: {
-        creditLimit: (account as any).accountGroupCreditLimit,
-        isOnCreditHold: (account as any).accountGroupIsOnCreditHold,
-        tradingTermsId: (account as any).accountGroupTradingTermsId,
+        creditLimit: (customer as any).accountGroupCreditLimit,
+        isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
+        tradingTermsId: (customer as any).accountGroupTradingTermsId,
       },
     });
 
     if (isHold && (operation === 'confirm' || operation === 'update')) {
       throw new BadRequestException(
-        `Cannot ${operation} order: Account '${account.name}' is on strict Credit Hold.`,
+        `Cannot ${operation} order: Customer '${customer.name}' is on strict Credit Hold.`,
       );
     }
 
@@ -259,18 +261,18 @@ export class OrdersWriteService {
 
     if (assessment.isOverdue && operation === 'confirm') {
       throw new BadRequestException(
-        `Cannot confirm order: Account has $${assessment.overdueBalance.toFixed(2)} in overdue balances.`,
+        `Cannot confirm order: Customer has $${assessment.overdueBalance.toFixed(2)} in overdue balances.`,
       );
     }
 
     const limitStr = resolveEffectiveCreditLimit({
-      creditLimit: account.creditLimit,
-      isOnCreditHold: account.isOnCreditHold,
-      tradingTermsId: account.tradingTermsId,
+      creditLimit: customer.creditLimit,
+      isOnCreditHold: customer.isOnCreditHold,
+      tradingTermsId: customer.tradingTermsId,
       accountGroup: {
-        creditLimit: (account as any).accountGroupCreditLimit,
-        isOnCreditHold: (account as any).accountGroupIsOnCreditHold,
-        tradingTermsId: (account as any).accountGroupTradingTermsId,
+        creditLimit: (customer as any).accountGroupCreditLimit,
+        isOnCreditHold: (customer as any).accountGroupIsOnCreditHold,
+        tradingTermsId: (customer as any).accountGroupTradingTermsId,
       },
     });
 
@@ -282,10 +284,10 @@ export class OrdersWriteService {
         const behavior = this.appConfig.creditLimitBehavior();
         if (behavior === 'hard') {
           throw new BadRequestException(
-            `Order exceeds account credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
+            `Order exceeds customer credit limit of $${creditLimit.toFixed(2)}. Current AR: $${assessment.totalArBalance.toFixed(2)}`,
           );
         } else {
-          this.logger.warn(`Soft Limit Warning for ${account.name}`);
+          this.logger.warn(`Soft Limit Warning for ${customer.name}`);
         }
       }
     }
@@ -294,7 +296,7 @@ export class OrdersWriteService {
   /**
    * Look up a product from modbm_core.products.
    * Throws BadRequestException if not found.
-   * Returns productId and taxCategoryId.
+   * Returns productId, taxCategoryId, productType, and listPrice.
    */
   private async lookupProduct(
     productId: string,
@@ -302,12 +304,16 @@ export class OrdersWriteService {
   ): Promise<{
     productId: string;
     salesTaxCategoryId: string | null;
+    productType: string;
+    listPrice: string;
   }> {
     try {
       const product = await this.productsService.findOne(productId, tx);
       return {
         productId: product.productId,
         salesTaxCategoryId: product.salesTaxCategoryId ?? null,
+        productType: product.productType ?? 'inventory',
+        listPrice: product.listPrice ?? '0',
       };
     } catch (err) {
       if (err instanceof NotFoundException) {
@@ -315,6 +321,32 @@ export class OrdersWriteService {
       }
       throw err;
     }
+  }
+
+  /**
+   * Fetch components for a kit parent product.
+   */
+  private async getKitComponents(productId: string, tx: DrizzleDB) {
+    return await tx
+      .select({
+        componentId: productComponents.componentId,
+        parentProductId: productComponents.parentProductId,
+        childProductId: productComponents.childProductId,
+        quantity: productComponents.quantity,
+        sequenceNumber: productComponents.sequenceNumber,
+        productType: coreProducts.productType,
+        name: coreProducts.name,
+        baseUom: coreProducts.baseUom,
+        listPrice: coreProducts.listPrice,
+        salesTaxCategoryId: coreProducts.salesTaxCategoryId,
+      })
+      .from(productComponents)
+      .innerJoin(
+        coreProducts,
+        eq(productComponents.childProductId, coreProducts.productId),
+      )
+      .where(eq(productComponents.parentProductId, productId))
+      .orderBy(productComponents.sequenceNumber);
   }
 
   /**
@@ -387,7 +419,8 @@ export class OrdersWriteService {
         .returning();
 
       // Insert line items — resolve GST per line (product × customer)
-      const lineValues = [];
+      const lineValues: any[] = [];
+      let currentLineNumber = 1;
       for (let idx = 0; idx < dto.lines.length; idx++) {
         const line = dto.lines[idx];
         const lineTax = await this.resolveTaxForLine(
@@ -397,27 +430,115 @@ export class OrdersWriteService {
           tx,
         );
         const lineDiscount = line.discountPercentage ?? '0';
-        const computed = this.computeLineAmount(
-          line.quantity,
-          line.pricePerUnit,
-          lineDiscount,
-          lineTax.rate,
-        );
-        lineValues.push({
-          salesOrderId: order.salesOrderId,
-          lineNumber: idx + 1,
-          productId: line.productId,
-          productDescription: line.productDescription,
-          quantity: line.quantity,
-          pricePerUnit: line.pricePerUnit,
-          discountPercentage: lineDiscount,
-          taxCategoryId: lineTax.taxCategoryId,
-          amount: computed.amount,
-          tax: computed.tax,
-          totalAmount: computed.totalAmount,
-          unitOfMeasure: line.unitOfMeasure,
-          fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
-        });
+
+        let isKit = false;
+        const parentPrice = parseFloat(line.pricePerUnit || '0');
+        if (line.productId) {
+          const prodInfo = await this.lookupProduct(line.productId, tx);
+          if (prodInfo.productType === 'kit') {
+            isKit = true;
+          }
+        }
+
+        const parentLineId = randomUUID();
+
+        if (isKit) {
+          const parentPriceToUse =
+            parentPrice > 0 ? parentPrice.toString() : '0';
+          const parentComputed = this.computeLineAmount(
+            line.quantity,
+            parentPriceToUse,
+            lineDiscount,
+            lineTax.rate,
+          );
+
+          lineValues.push({
+            salesOrderLineId: parentLineId,
+            salesOrderId: order.salesOrderId,
+            lineNumber: currentLineNumber++,
+            productId: line.productId,
+            productDescription: line.productDescription,
+            quantity: line.quantity,
+            pricePerUnit: parentPriceToUse,
+            discountPercentage: lineDiscount,
+            taxCategoryId: lineTax.taxCategoryId,
+            amount: parentComputed.amount,
+            tax: parentComputed.tax,
+            totalAmount: parentComputed.totalAmount,
+            unitOfMeasure: line.unitOfMeasure,
+            fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
+            parentLineId: null,
+          });
+
+          const components = await this.getKitComponents(line.productId!, tx);
+          for (const comp of components) {
+            const compTax = await this.resolveTaxForLine(
+              dto.customerId,
+              comp.childProductId,
+              undefined,
+              tx,
+            );
+
+            const childQtyStr = (
+              parseFloat(line.quantity) * parseFloat(comp.quantity)
+            ).toString();
+
+            let childPrice = '0';
+            if (parentPrice <= 0) {
+              childPrice = comp.listPrice || '0';
+            }
+
+            const childComputed = this.computeLineAmount(
+              childQtyStr,
+              childPrice,
+              '0',
+              compTax.rate,
+            );
+
+            lineValues.push({
+              salesOrderLineId: randomUUID(),
+              salesOrderId: order.salesOrderId,
+              lineNumber: currentLineNumber++,
+              productId: comp.childProductId,
+              productDescription: comp.name,
+              quantity: childQtyStr,
+              pricePerUnit: childPrice,
+              discountPercentage: '0',
+              taxCategoryId: compTax.taxCategoryId,
+              amount: childComputed.amount,
+              tax: childComputed.tax,
+              totalAmount: childComputed.totalAmount,
+              unitOfMeasure: comp.baseUom || 'EA',
+              fulfillmentLocationId:
+                line.fulfillmentLocationId || fallbackLocId,
+              parentLineId: parentLineId,
+            });
+          }
+        } else {
+          const computed = this.computeLineAmount(
+            line.quantity,
+            line.pricePerUnit,
+            lineDiscount,
+            lineTax.rate,
+          );
+          lineValues.push({
+            salesOrderLineId: parentLineId,
+            salesOrderId: order.salesOrderId,
+            lineNumber: currentLineNumber++,
+            productId: line.productId,
+            productDescription: line.productDescription,
+            quantity: line.quantity,
+            pricePerUnit: line.pricePerUnit,
+            discountPercentage: lineDiscount,
+            taxCategoryId: lineTax.taxCategoryId,
+            amount: computed.amount,
+            tax: computed.tax,
+            totalAmount: computed.totalAmount,
+            unitOfMeasure: line.unitOfMeasure,
+            fulfillmentLocationId: line.fulfillmentLocationId || fallbackLocId,
+            parentLineId: null,
+          });
+        }
       }
 
       // Assert Credit / State Safety before saving
@@ -740,7 +861,7 @@ export class OrdersWriteService {
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, orderId));
 
-    const lineNumber = (maxLine[0]?.max ?? 0) + 1;
+    let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
 
     // Resolve GST: product × customer intersection, with per-line override
     const lineTax = await this.resolveTaxForLine(
@@ -753,19 +874,103 @@ export class OrdersWriteService {
 
     const lineDiscount = dto.discountPercentage ?? '0';
 
-    const computed = this.computeLineAmount(
-      dto.quantity,
-      dto.pricePerUnit,
-      lineDiscount,
-      taxRate,
-    );
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [line] = await tx
-        .insert(salesOrderLineItems)
-        .values({
+      let isKit = false;
+      const parentPrice = parseFloat(dto.pricePerUnit || '0');
+      if (dto.productId) {
+        const prodInfo = await this.lookupProduct(dto.productId, tx);
+        if (prodInfo.productType === 'kit') {
+          isKit = true;
+        }
+      }
+
+      const parentLineId = randomUUID();
+      const insertValues: any[] = [];
+      let parentLine: any = null;
+
+      if (isKit) {
+        const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
+        const parentComputed = this.computeLineAmount(
+          dto.quantity,
+          parentPriceToUse,
+          lineDiscount,
+          taxRate,
+        );
+
+        parentLine = {
+          salesOrderLineId: parentLineId,
           salesOrderId: orderId,
-          lineNumber,
+          lineNumber: currentLineNumber++,
+          productId: dto.productId,
+          productDescription: dto.productDescription,
+          quantity: dto.quantity,
+          pricePerUnit: parentPriceToUse,
+          discountPercentage: lineDiscount,
+          taxCategoryId,
+          amount: parentComputed.amount,
+          tax: parentComputed.tax,
+          totalAmount: parentComputed.totalAmount,
+          unitOfMeasure: dto.unitOfMeasure,
+          fulfillmentLocationId: order.fulfillmentLocationId,
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+
+        const components = await this.getKitComponents(dto.productId!, tx);
+        for (const comp of components) {
+          const compTax = await this.resolveTaxForLine(
+            order.customerId ?? '',
+            comp.childProductId,
+            undefined,
+            tx,
+          );
+
+          const childQtyStr = (
+            parseFloat(dto.quantity) * parseFloat(comp.quantity)
+          ).toString();
+
+          let childPrice = '0';
+          if (parentPrice <= 0) {
+            childPrice = comp.listPrice || '0';
+          }
+
+          const childComputed = this.computeLineAmount(
+            childQtyStr,
+            childPrice,
+            '0',
+            compTax.rate,
+          );
+
+          insertValues.push({
+            salesOrderLineId: randomUUID(),
+            salesOrderId: orderId,
+            lineNumber: currentLineNumber++,
+            productId: comp.childProductId,
+            productDescription: comp.name,
+            quantity: childQtyStr,
+            pricePerUnit: childPrice,
+            discountPercentage: '0',
+            taxCategoryId: compTax.taxCategoryId,
+            amount: childComputed.amount,
+            tax: childComputed.tax,
+            totalAmount: childComputed.totalAmount,
+            unitOfMeasure: comp.baseUom || 'EA',
+            fulfillmentLocationId: order.fulfillmentLocationId,
+            parentLineId: parentLineId,
+          });
+        }
+      } else {
+        const computed = this.computeLineAmount(
+          dto.quantity,
+          dto.pricePerUnit,
+          lineDiscount,
+          taxRate,
+        );
+
+        parentLine = {
+          salesOrderLineId: parentLineId,
+          salesOrderId: orderId,
+          lineNumber: currentLineNumber++,
           productId: dto.productId,
           productDescription: dto.productDescription,
           quantity: dto.quantity,
@@ -777,8 +982,12 @@ export class OrdersWriteService {
           totalAmount: computed.totalAmount,
           unitOfMeasure: dto.unitOfMeasure,
           fulfillmentLocationId: order.fulfillmentLocationId,
-        })
-        .returning();
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+      }
+
+      await tx.insert(salesOrderLineItems).values(insertValues);
 
       await tx
         .update(salesOrders)
@@ -790,7 +999,7 @@ export class OrdersWriteService {
         aggregateId: orderId,
         eventType: EventType.LINE_ADDED,
         payload: {
-          lineId: line.salesOrderLineId,
+          lineId: parentLineId,
           productId: dto.productId,
           quantity: dto.quantity,
           taxCategoryId,
@@ -798,7 +1007,7 @@ export class OrdersWriteService {
         actor,
       });
 
-      return line;
+      return parentLine;
     });
 
     return result;
@@ -854,7 +1063,7 @@ export class OrdersWriteService {
       .from(salesOrderLineItems)
       .where(eq(salesOrderLineItems.salesOrderId, orderId));
 
-    const lineNumber = (maxLine[0]?.max ?? 0) + 1;
+    let currentLineNumber = (maxLine[0]?.max ?? 0) + 1;
 
     // Resolve GST: product × customer intersection, with per-line override
     const lineTax = await this.resolveTaxForLine(
@@ -867,19 +1076,105 @@ export class OrdersWriteService {
 
     const lineDiscount = dto.discountPercentage ?? '0';
 
-    const computed = this.computeLineAmount(
-      dto.quantity,
-      dto.pricePerUnit,
-      lineDiscount,
-      taxRate,
-    );
-
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [line] = await tx
-        .insert(salesOrderLineItems)
-        .values({
+      let isKit = false;
+      const parentPrice = parseFloat(dto.pricePerUnit || '0');
+      if (dto.productId) {
+        const prodInfo = await this.lookupProduct(dto.productId, tx);
+        if (prodInfo.productType === 'kit') {
+          isKit = true;
+        }
+      }
+
+      const parentLineId = randomUUID();
+      const insertValues: any[] = [];
+      let parentLine: any = null;
+
+      if (isKit) {
+        const parentPriceToUse = parentPrice > 0 ? parentPrice.toString() : '0';
+        const parentComputed = this.computeLineAmount(
+          dto.quantity,
+          parentPriceToUse,
+          lineDiscount,
+          taxRate,
+        );
+
+        parentLine = {
+          salesOrderLineId: parentLineId,
           salesOrderId: orderId,
-          lineNumber,
+          lineNumber: currentLineNumber++,
+          productId: dto.productId,
+          productDescription: dto.productDescription,
+          quantity: dto.quantity,
+          pricePerUnit: parentPriceToUse,
+          discountPercentage: lineDiscount,
+          taxCategoryId,
+          amount: parentComputed.amount,
+          tax: parentComputed.tax,
+          totalAmount: parentComputed.totalAmount,
+          unitOfMeasure: dto.unitOfMeasure,
+          fulfillmentLocationId: order.fulfillmentLocationId,
+          isPostConfirmation: true,
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+
+        const components = await this.getKitComponents(dto.productId!, tx);
+        for (const comp of components) {
+          const compTax = await this.resolveTaxForLine(
+            order.customerId ?? '',
+            comp.childProductId,
+            undefined,
+            tx,
+          );
+
+          const childQtyStr = (
+            parseFloat(dto.quantity) * parseFloat(comp.quantity)
+          ).toString();
+
+          let childPrice = '0';
+          if (parentPrice <= 0) {
+            childPrice = comp.listPrice || '0';
+          }
+
+          const childComputed = this.computeLineAmount(
+            childQtyStr,
+            childPrice,
+            '0',
+            compTax.rate,
+          );
+
+          insertValues.push({
+            salesOrderLineId: randomUUID(),
+            salesOrderId: orderId,
+            lineNumber: currentLineNumber++,
+            productId: comp.childProductId,
+            productDescription: comp.name,
+            quantity: childQtyStr,
+            pricePerUnit: childPrice,
+            discountPercentage: '0',
+            taxCategoryId: compTax.taxCategoryId,
+            amount: childComputed.amount,
+            tax: childComputed.tax,
+            totalAmount: childComputed.totalAmount,
+            unitOfMeasure: comp.baseUom || 'EA',
+            fulfillmentLocationId: order.fulfillmentLocationId,
+            isPostConfirmation: true,
+            parentLineId: parentLineId,
+          });
+        }
+      } else {
+        const computed = this.computeLineAmount(
+          dto.quantity,
+          dto.pricePerUnit,
+          lineDiscount,
+          taxRate,
+        );
+
+        parentLine = {
+          salesOrderLineId: parentLineId,
+          salesOrderId: orderId,
+          lineNumber: currentLineNumber++,
           productId: dto.productId,
           productDescription: dto.productDescription,
           quantity: dto.quantity,
@@ -892,8 +1187,12 @@ export class OrdersWriteService {
           unitOfMeasure: dto.unitOfMeasure,
           fulfillmentLocationId: order.fulfillmentLocationId,
           isPostConfirmation: true,
-        })
-        .returning();
+          parentLineId: null,
+        };
+        insertValues.push(parentLine);
+      }
+
+      await tx.insert(salesOrderLineItems).values(insertValues);
 
       await tx
         .update(salesOrders)
@@ -905,7 +1204,7 @@ export class OrdersWriteService {
         aggregateId: orderId,
         eventType: EventType.POST_CONFIRMATION_LINE_ADDED,
         payload: {
-          lineId: line.salesOrderLineId,
+          lineId: parentLineId,
           productId: dto.productId,
           quantity: dto.quantity,
           taxCategoryId,
@@ -914,7 +1213,7 @@ export class OrdersWriteService {
         actor,
       });
 
-      return line;
+      return parentLine;
     });
 
     return result;
@@ -1001,6 +1300,61 @@ export class OrdersWriteService {
         .where(eq(salesOrderLineItems.salesOrderLineId, lineId))
         .returning();
 
+      // Proactively propagate updates to child component lines if this is a parent kit
+      const childLines = await tx
+        .select()
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.parentLineId, lineId));
+
+      if (childLines.length > 0) {
+        const oldParentQty = parseFloat(existingLine.quantity);
+        const newParentQty = parseFloat(quantity);
+        const qtyRatio = oldParentQty !== 0 ? newParentQty / oldParentQty : 0;
+
+        const newParentPrice = parseFloat(pricePerUnit);
+
+        for (const child of childLines) {
+          const newChildQty = parseFloat(child.quantity) * qtyRatio;
+          let newChildPrice = parseFloat(child.pricePerUnit);
+
+          if (dto.pricePerUnit !== undefined) {
+            if (newParentPrice > 0) {
+              newChildPrice = 0;
+            } else {
+              const childProd = await this.lookupProduct(child.productId!, tx);
+              newChildPrice = parseFloat(childProd.listPrice || '0');
+            }
+          }
+
+          const childTax = await this.resolveTaxForLine(
+            order.customerId ?? '',
+            child.productId ?? undefined,
+            undefined,
+            tx,
+          );
+
+          const childComputed = this.computeLineAmount(
+            newChildQty.toString(),
+            newChildPrice.toString(),
+            child.discountPercentage ?? '0',
+            childTax.rate,
+          );
+
+          await tx
+            .update(salesOrderLineItems)
+            .set({
+              quantity: newChildQty.toString(),
+              pricePerUnit: newChildPrice.toString(),
+              amount: childComputed.amount,
+              tax: childComputed.tax,
+              totalAmount: childComputed.totalAmount,
+            })
+            .where(
+              eq(salesOrderLineItems.salesOrderLineId, child.salesOrderLineId),
+            );
+        }
+      }
+
       await tx
         .update(salesOrders)
         .set({ modifiedOn: new Date() })
@@ -1054,11 +1408,32 @@ export class OrdersWriteService {
     }
 
     await this.db.transaction(async (tx: DrizzleDB) => {
-      // Delete associated demand records
+      // Find all child component lines of this line if it's a parent kit
+      const childLines = await tx
+        .select({ id: salesOrderLineItems.salesOrderLineId })
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.parentLineId, lineId));
+
+      const childLineIds = childLines.map((c) => c.id);
+
+      if (childLineIds.length > 0) {
+        // Delete child backorders
+        await tx
+          .delete(backorders)
+          .where(inArray(backorders.salesOrderLineId, childLineIds));
+
+        // Delete child lines
+        await tx
+          .delete(salesOrderLineItems)
+          .where(inArray(salesOrderLineItems.salesOrderLineId, childLineIds));
+      }
+
+      // Delete associated demand records for parent
       await tx
         .delete(backorders)
         .where(eq(backorders.salesOrderLineId, lineId));
 
+      // Delete parent line
       await tx
         .delete(salesOrderLineItems)
         .where(eq(salesOrderLineItems.salesOrderLineId, lineId));
@@ -1108,6 +1483,7 @@ export class OrdersWriteService {
         taxCategoryId: salesOrderLineItems.taxCategoryId,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
         isPostConfirmation: salesOrderLineItems.isPostConfirmation,
+        parentLineId: salesOrderLineItems.parentLineId,
         baseUom: coreProducts.baseUom,
       })
       .from(salesOrderLineItems)
@@ -1209,7 +1585,7 @@ export class OrdersWriteService {
       .from(salesOrders)
       .leftJoin(
         coreAccounts,
-        eq(salesOrders.customerId, coreAccounts.accountId),
+        eq(salesOrders.customerId, coreAccounts.customerId),
       )
       .where(eq(salesOrders.salesOrderId, id))
       .limit(1);

@@ -11,7 +11,7 @@ import {
   glJournalLines,
   glAccounts,
   glJournalEntries,
-  accounts,
+  customers,
   suppliers,
 } from '../drizzle/modbm-core-schema';
 import { eq, and, sql, isNull, lte, asc, or, not } from 'drizzle-orm';
@@ -152,7 +152,7 @@ export class ReconciliationService {
         isCleared: sql<boolean>`${glJournalLines.reconciliationId} = ${id}`,
         partyType: glJournalLines.partyType,
         partyId: glJournalLines.partyId,
-        partyName: sql<string>`COALESCE(${accounts.name}, ${suppliers.name})`,
+        partyName: sql<string>`COALESCE(${customers.name}, ${suppliers.name})`,
         sourceId: glJournalEntries.sourceId,
         createdAt: glJournalEntries.createdOn,
       })
@@ -162,8 +162,8 @@ export class ReconciliationService {
         eq(glJournalLines.journalEntryId, glJournalEntries.journalEntryId),
       )
       .leftJoin(
-        accounts,
-        eq(glJournalLines.partyId, sql<string>`${accounts.accountId}::text`),
+        customers,
+        eq(glJournalLines.partyId, sql<string>`${customers.customerId}::text`),
       )
       .leftJoin(
         suppliers,
