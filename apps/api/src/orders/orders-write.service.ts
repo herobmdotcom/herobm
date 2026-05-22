@@ -305,6 +305,7 @@ export class OrdersWriteService {
     productId: string;
     salesTaxCategoryId: string | null;
     productType: string;
+    structureType: string;
     listPrice: string;
   }> {
     try {
@@ -313,6 +314,7 @@ export class OrdersWriteService {
         productId: product.productId,
         salesTaxCategoryId: product.salesTaxCategoryId ?? null,
         productType: product.productType ?? 'inventory',
+        structureType: (product as any).structureType ?? 'standard',
         listPrice: product.listPrice ?? '0',
       };
     } catch (err) {
@@ -333,7 +335,9 @@ export class OrdersWriteService {
         parentProductId: productComponents.parentProductId,
         childProductId: productComponents.childProductId,
         quantity: productComponents.quantity,
+        parentQuantity: productComponents.parentQuantity,
         sequenceNumber: productComponents.sequenceNumber,
+        fractionalBehavior: productComponents.fractionalBehavior,
         productType: coreProducts.productType,
         name: coreProducts.name,
         baseUom: coreProducts.baseUom,
@@ -347,6 +351,36 @@ export class OrdersWriteService {
       )
       .where(eq(productComponents.parentProductId, productId))
       .orderBy(productComponents.sequenceNumber);
+  }
+
+  private calculateComponentQuantity(
+    orderQuantity: string,
+    componentQuantity: string,
+    parentQuantity: string,
+    fractionalBehavior: string,
+    productId: string,
+  ): string {
+    const oq = parseFloat(orderQuantity);
+    const pq = parseFloat(parentQuantity || '1');
+    const cq = parseFloat(componentQuantity);
+
+    if (fractionalBehavior === 'force_multiple') {
+      if (oq % pq !== 0) {
+        throw new BadRequestException(
+          `Order quantity for kit ${productId} must be a multiple of ${pq}`,
+        );
+      }
+    }
+
+    let rawQty = (oq / pq) * cq;
+
+    if (fractionalBehavior === 'round_up') {
+      rawQty = Math.ceil(rawQty);
+    } else if (fractionalBehavior === 'round_down') {
+      rawQty = Math.floor(rawQty);
+    }
+
+    return rawQty.toString();
   }
 
   /**
@@ -435,7 +469,7 @@ export class OrdersWriteService {
         const parentPrice = parseFloat(line.pricePerUnit || '0');
         if (line.productId) {
           const prodInfo = await this.lookupProduct(line.productId, tx);
-          if (prodInfo.productType === 'kit') {
+          if (prodInfo.structureType === 'kit') {
             isKit = true;
           }
         }
@@ -479,9 +513,13 @@ export class OrdersWriteService {
               tx,
             );
 
-            const childQtyStr = (
-              parseFloat(line.quantity) * parseFloat(comp.quantity)
-            ).toString();
+            const childQtyStr = this.calculateComponentQuantity(
+              line.quantity,
+              comp.quantity,
+              comp.parentQuantity || '1',
+              comp.fractionalBehavior || 'allow_fractional',
+              line.productId!
+            );
 
             let childPrice = '0';
             if (parentPrice <= 0) {
@@ -879,7 +917,7 @@ export class OrdersWriteService {
       const parentPrice = parseFloat(dto.pricePerUnit || '0');
       if (dto.productId) {
         const prodInfo = await this.lookupProduct(dto.productId, tx);
-        if (prodInfo.productType === 'kit') {
+        if (prodInfo.structureType === 'kit') {
           isKit = true;
         }
       }
@@ -925,9 +963,13 @@ export class OrdersWriteService {
             tx,
           );
 
-          const childQtyStr = (
-            parseFloat(dto.quantity) * parseFloat(comp.quantity)
-          ).toString();
+          const childQtyStr = this.calculateComponentQuantity(
+            dto.quantity,
+            comp.quantity,
+            comp.parentQuantity || '1',
+            comp.fractionalBehavior || 'allow_fractional',
+            dto.productId!
+          );
 
           let childPrice = '0';
           if (parentPrice <= 0) {
@@ -1081,7 +1123,7 @@ export class OrdersWriteService {
       const parentPrice = parseFloat(dto.pricePerUnit || '0');
       if (dto.productId) {
         const prodInfo = await this.lookupProduct(dto.productId, tx);
-        if (prodInfo.productType === 'kit') {
+        if (prodInfo.structureType === 'kit') {
           isKit = true;
         }
       }
@@ -1128,9 +1170,13 @@ export class OrdersWriteService {
             tx,
           );
 
-          const childQtyStr = (
-            parseFloat(dto.quantity) * parseFloat(comp.quantity)
-          ).toString();
+          const childQtyStr = this.calculateComponentQuantity(
+            dto.quantity,
+            comp.quantity,
+            comp.parentQuantity || '1',
+            comp.fractionalBehavior || 'allow_fractional',
+            dto.productId!
+          );
 
           let childPrice = '0';
           if (parentPrice <= 0) {
@@ -1471,6 +1517,7 @@ export class OrdersWriteService {
         productId: salesOrderLineItems.productId,
         productNumber: coreProducts.productNumber,
         productType: coreProducts.productType,
+        structureType: coreProducts.structureType,
         productDescription: salesOrderLineItems.productDescription,
         quantity: salesOrderLineItems.quantity,
         pricePerUnit: salesOrderLineItems.pricePerUnit,

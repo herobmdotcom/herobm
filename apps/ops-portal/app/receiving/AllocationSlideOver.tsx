@@ -5,6 +5,7 @@ import SlideOver from '@/components/shared/SlideOver';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
+import { toast } from 'react-hot-toast';
 
 interface AllocationSlideOverProps {
   isOpen: boolean;
@@ -164,7 +165,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     const originalQuantity = parseFloat(grLine.quantityReceived || '0');
     const qty = parseFloat(qtyStr);
     if (isNaN(qty) || qty <= 0 || qty > originalQuantity) {
-      alert(t('allocation.quantityValidationError', { max: originalQuantity }));
+      toast.error(t('allocation.quantityValidationError', { max: originalQuantity }));
       return;
     }
 
@@ -197,7 +198,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
       markAllocated(grLine.goodsReceivedLineId, qtyStr, splitLine);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || t('allocation.matchError'));
+      toast.error(err.message || t('allocation.matchError'));
     }
   }, [onRefresh, markAllocated, t]);
 

@@ -9,6 +9,7 @@ interface SlideOverProps {
   subtitle?: React.ReactNode;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  footer?: React.ReactNode;
   width?: string;
 }
 
@@ -19,6 +20,7 @@ export default function SlideOver({
   subtitle,
   children,
   actions,
+  footer,
   width = 'max-w-xl'
 }: SlideOverProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,13 @@ export default function SlideOver({
           <div className="flex-1 overflow-y-auto w-full p-6">
             {children}
           </div>
+
+          {/* Footer */}
+          {footer && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 shrink-0">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
       

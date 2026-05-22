@@ -204,6 +204,33 @@ export default function DataGrid<T>({
   const [page, setPage] = useState(1);
   const limit = fetchAll ? 99999 : 200;
 
+  // Restore local React state from sessionStorage safely on the client
+  const [isRestored, setIsRestored] = useState(!gridKey);
+
+  useEffect(() => {
+    if (gridKey) {
+      const savedSearch = sessionStorage.getItem(`datagrid-search-${gridKey}`);
+      if (savedSearch !== null) setSearch(savedSearch);
+      
+      const savedArchived = sessionStorage.getItem(`datagrid-archived-${gridKey}`);
+      if (savedArchived !== null) setIncludeArchived(savedArchived === 'true');
+      
+      const savedPage = sessionStorage.getItem(`datagrid-page-${gridKey}`);
+      if (savedPage !== null) setPage(parseInt(savedPage, 10) || 1);
+      
+      setIsRestored(true);
+    }
+  }, [gridKey]);
+
+  // Persist local state back to sessionStorage when it changes
+  useEffect(() => {
+    if (gridKey && isRestored) {
+      sessionStorage.setItem(`datagrid-search-${gridKey}`, search);
+      sessionStorage.setItem(`datagrid-archived-${gridKey}`, String(includeArchived));
+      sessionStorage.setItem(`datagrid-page-${gridKey}`, String(page));
+    }
+  }, [gridKey, isRestored, search, includeArchived, page]);
+
   // Sync initialSearch prop changes (e.g. SPA navigation with new query params)
   const prevInitialSearch = useRef(initialSearch);
   useEffect(() => {
@@ -269,6 +296,8 @@ export default function DataGrid<T>({
   );
 
   useEffect(() => {
+    if (!isRestored) return; // wait until we have read sessionStorage
+
     if (rowData) {
       setData(rowData);
       setDisplayedRowCount(rowData.length);
@@ -294,7 +323,7 @@ export default function DataGrid<T>({
       })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
-  }, [endpoint, rowData, search, includeArchived, page, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded]);
+  }, [endpoint, rowData, search, includeArchived, page, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(

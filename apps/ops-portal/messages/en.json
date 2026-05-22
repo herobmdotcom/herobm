@@ -462,9 +462,19 @@
       "uomCode": "UoM Code",
       "ratio": "Ratio",
       "ratioBase": "Ratio (\u00d7 Base)",
-      "notes": "Notes"
+      "notes": "Notes",
+      "parentQuantity": "Parent Quantity",
+      "quantity": "Component Quantity",
+      "sequenceNumber": "Sequence Number",
+      "name": "Name",
+      "baseUom": "Base UoM"
     },
     "generalInfo": "General Information",
+    "cards": {
+      "identity": "Identity",
+      "classification": "Classification",
+      "taxation": "Taxation"
+    },
     "pricing": "Pricing & Costs",
     "management": "Product Management",
     "productName": "Product Name",
@@ -476,7 +486,8 @@
       "barcode": "EAN / UPC barcode",
       "notes": "Handling instructions, storage requirements, or product description...",
       "productDisplayName": "Product display name",
-      "noProductGroup": "No Product Group"
+      "noProductGroup": "No Product Group",
+      "searchProduct": "Search for a product..."
     },
     "supplierModal": {
       "title": "Link Supplier",
@@ -498,10 +509,28 @@
       }
     },
     "newTitle": "New Product",
+    "structureType": "Structure",
+    "structures": {
+      "standard": "Standard",
+      "kit": "Kit"
+    },
     "types": {
       "inventory": "Inventory (Tracked)",
       "nonStock": "Non-Stock",
       "service": "Service"
+    },
+    "tabs": {
+      "kitComponents": "Kit Components"
+    },
+    "help": {
+      "parentQuantity": "How many of the kit are needed to require the component quantity below. Usually 1."
+    },
+    "addComponent": "Add Component",
+    "editComponent": "Edit Component",
+    "componentProduct": "Component Product",
+    "confirmRemoveComponent": "Are you sure you want to remove this component?",
+    "errors": {
+      "childProductRequired": "Component product is required"
     },
     "unitsOfMeasure": "Units of Measure",
     "baseUom": "Base UoM",
@@ -513,7 +542,10 @@
     "inventoryLevels": "Inventory Levels",
     "toast": {
       "conversionAdded": "Conversion added",
-      "conversionRemoved": "Conversion removed"
+      "conversionRemoved": "Conversion removed",
+      "componentAdded": "Component added successfully",
+      "componentUpdated": "Component updated successfully",
+      "componentRemoved": "Component removed"
     },
     "confirmRemoveConversion": "Remove {uomCode} conversion?",
     "unknownCategory": "Unknown Category ({id})",

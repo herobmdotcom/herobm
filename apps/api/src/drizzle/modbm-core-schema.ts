@@ -1177,17 +1177,27 @@ export const discountMatrix = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
+export const productTypeEnum = pgEnum('product_type', [
+  'inventory',
+  'non-stock',
+  'service',
+]);
+export const productStructureEnum = pgEnum('product_structure', [
+  'standard',
+  'kit',
+]);
+
+// ---------------------------------------------------------------------------
 // products  (Native schema structure mapped to CDM product definitions)
 // ---------------------------------------------------------------------------
 export const products = modbmCore.table('products', {
   productId: uuid('product_id').primaryKey().defaultRandom(),
   productNumber: text('product_number').unique().notNull(),
   name: text('name').notNull(),
-  productType: text('product_type', {
-    enum: ['inventory', 'non-stock', 'service', 'kit'],
-  })
+  productType: productTypeEnum('product_type').notNull().default('inventory'),
+  structureType: productStructureEnum('structure_type')
     .notNull()
-    .default('inventory'),
+    .default('standard'),
   productGroupId: uuid('product_group_id').references(
     () => productGroups.productGroupId,
   ),
@@ -1231,6 +1241,14 @@ export const products = modbmCore.table('products', {
 // ---------------------------------------------------------------------------
 // product_components  (Master Bill of Materials / Kits)
 // ---------------------------------------------------------------------------
+export const fractionalBehaviorEnum = modbmCore.enum('fractional_behavior', [
+  'allow_fractional',
+  'round_up',
+  'round_down',
+  'force_multiple',
+]);
+
+
 export const productComponents = modbmCore.table('product_components', {
   componentId: uuid('component_id').primaryKey().defaultRandom(),
   parentProductId: uuid('parent_product_id')
@@ -1239,8 +1257,12 @@ export const productComponents = modbmCore.table('product_components', {
   childProductId: uuid('child_product_id')
     .notNull()
     .references(() => products.productId),
+  parentQuantity: numeric('parent_quantity', { precision: 14, scale: 4 })
+    .notNull()
+    .default('1'),
   quantity: numeric('quantity', { precision: 14, scale: 4 }).notNull(),
   sequenceNumber: integer('sequence_number').default(0),
+  fractionalBehavior: fractionalBehaviorEnum('fractional_behavior').notNull().default('allow_fractional'),
 });
 
 // ---------------------------------------------------------------------------

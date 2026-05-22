@@ -11,6 +11,7 @@ import {
   locations,
   bins,
   inventoryLedger,
+  productComponents,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
 import { PRODUCT_STATE } from '@modbm/shared';
@@ -157,5 +158,34 @@ export class ProductsService {
     }
 
     throw new NotFoundException(`Product '${id}' not found`);
+  }
+
+  async getComponents(productId: string) {
+    const components = await this.db
+      .select({
+        componentId: productComponents.componentId,
+        parentProductId: productComponents.parentProductId,
+        childProductId: productComponents.childProductId,
+        parentQuantity: productComponents.parentQuantity,
+        quantity: productComponents.quantity,
+        sequenceNumber: productComponents.sequenceNumber,
+        fractionalBehavior: productComponents.fractionalBehavior,
+        productNumber: coreProducts.productNumber,
+        name: coreProducts.name,
+        baseUom: coreProducts.baseUom,
+        stateCode: coreProducts.stateCode,
+      })
+      .from(productComponents)
+      .innerJoin(coreProducts, eq(productComponents.childProductId, coreProducts.productId))
+      .where(eq(productComponents.parentProductId, productId))
+      .orderBy(productComponents.sequenceNumber, coreProducts.productNumber);
+
+    return {
+      data: components.map(c => ({
+        ...c,
+        parentQuantity: Number(c.parentQuantity),
+        quantity: Number(c.quantity)
+      }))
+    };
   }
 }

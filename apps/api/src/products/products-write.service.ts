@@ -15,6 +15,7 @@ import {
   productSupplierEvents,
   productUoms,
   productDefaultBins,
+  productComponents,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -42,6 +43,9 @@ export class ProductsWriteService {
    * Product number uniqueness is enforced by the DB UNIQUE constraint.
    */
   async create(dto: CreateProductDto, actor: string) {
+    if (dto.structureType === 'kit' && dto.productType !== 'non-stock') {
+      throw new BadRequestException('Kits must be stored as non-stock products.');
+    }
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [product] = await tx
         .insert(coreProducts)
@@ -79,6 +83,12 @@ export class ProductsWriteService {
 
     if (existing.length === 0) {
       throw new NotFoundException(`Product '${id}' not found`);
+    }
+
+    const finalStructureType = dto.structureType ?? existing[0].structureType;
+    const finalProductType = dto.productType ?? existing[0].productType;
+    if (finalStructureType === 'kit' && finalProductType !== 'non-stock') {
+      throw new BadRequestException('Kits must be stored as non-stock products.');
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -486,6 +496,161 @@ export class ProductsWriteService {
         productId: existing[0].productId,
         eventType: EventType.UPDATED,
         payload: { action: 'unlinked_default_bin', binId: existing[0].binId },
+        actor,
+      });
+    });
+
+    return { deleted: true };
+  }
+
+  /**
+   * Add a component to a kit product.
+   */
+  async addComponent(
+    productId: string,
+    dto: { childProductId: string; parentQuantity: string; quantity: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    actor: string,
+  ) {
+    // Validate parent exists and is a kit
+    const [parent] = await this.db
+      .select({ structureType: coreProducts.structureType })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, productId))
+      .limit(1);
+
+    if (!parent) {
+      throw new NotFoundException(`Product ${productId} not found`);
+    }
+
+    if (parent.structureType !== 'kit') {
+      throw new BadRequestException('Only kit products can have components');
+    }
+
+    // Validate child exists
+    const [child] = await this.db
+      .select({ id: coreProducts.productId })
+      .from(coreProducts)
+      .where(eq(coreProducts.productId, dto.childProductId))
+      .limit(1);
+
+    if (!child) {
+      throw new NotFoundException(`Child product ${dto.childProductId} not found`);
+    }
+
+    // Check for circular dependency (simple 1-level check for now)
+    if (productId === dto.childProductId) {
+      throw new BadRequestException('Product cannot be a component of itself');
+    }
+
+    // Deeper circular dependency check (checking if parent is already a component of child)
+    const [cycle] = await this.db
+      .select({ id: productComponents.componentId })
+      .from(productComponents)
+      .where(and(
+        eq(productComponents.parentProductId, dto.childProductId),
+        eq(productComponents.childProductId, productId)
+      ))
+      .limit(1);
+    
+    if (cycle) {
+      throw new BadRequestException('Circular dependency detected');
+    }
+
+    return await this.db.transaction(async (tx) => {
+      const [component] = await tx
+        .insert(productComponents)
+        .values({
+          parentProductId: productId,
+          childProductId: dto.childProductId,
+          parentQuantity: dto.parentQuantity,
+          quantity: dto.quantity,
+          sequenceNumber: dto.sequenceNumber || 0,
+          fractionalBehavior: dto.fractionalBehavior || 'allow_fractional',
+        })
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: EventType.UPDATED,
+        payload: { action: 'component_added', componentId: component.componentId },
+        actor,
+      });
+
+      return component;
+    });
+  }
+
+  /**
+   * Update a component in a kit product.
+   */
+  async updateComponent(
+    productId: string,
+    componentId: string,
+    dto: { parentQuantity?: string; quantity?: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    actor: string,
+  ) {
+    const [existing] = await this.db
+      .select()
+      .from(productComponents)
+      .where(and(
+        eq(productComponents.componentId, componentId),
+        eq(productComponents.parentProductId, productId)
+      ))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException('Component not found');
+    }
+
+    return await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(productComponents)
+        .set({
+          parentQuantity: dto.parentQuantity ?? existing.parentQuantity,
+          quantity: dto.quantity ?? existing.quantity,
+          sequenceNumber: dto.sequenceNumber ?? existing.sequenceNumber,
+          fractionalBehavior: dto.fractionalBehavior ?? existing.fractionalBehavior,
+        })
+        .where(eq(productComponents.componentId, componentId))
+        .returning();
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: EventType.UPDATED,
+        payload: { action: 'component_updated', componentId },
+        actor,
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Remove a component from a kit product.
+   */
+  async removeComponent(productId: string, componentId: string, actor: string) {
+    const [existing] = await this.db
+      .select()
+      .from(productComponents)
+      .where(and(
+        eq(productComponents.componentId, componentId),
+        eq(productComponents.parentProductId, productId)
+      ))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException('Component not found');
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(productComponents)
+        .where(eq(productComponents.componentId, componentId));
+
+      await tx.insert(productEvents).values({
+        productId,
+        eventType: EventType.UPDATED,
+        payload: { action: 'component_removed', componentId },
         actor,
       });
     });

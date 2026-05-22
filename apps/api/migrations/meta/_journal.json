@@ -449,6 +449,27 @@
       "when": 1779433600002,
       "tag": "0065_create_product_components",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1779436016811,
+      "tag": "0066_product_kits_and_structure",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1779439257155,
+      "tag": "0065_add_fractional_behavior",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1779439301988,
+      "tag": "0066_add_fractional_behavior",
+      "breakpoints": true
     }
   ]
 }

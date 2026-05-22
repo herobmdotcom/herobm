@@ -15,6 +15,9 @@ async function bootstrap() {
     logger: fileLogger,
   });
 
+  // Enable graceful shutdown hooks for SIGTERM / SIGINT signals
+  app.enableShutdownHooks();
+
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new AllExceptionsFilter());
   app.useGlobalPipes(

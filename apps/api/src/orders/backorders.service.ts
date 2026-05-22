@@ -62,6 +62,7 @@ export class BackordersService {
         quantity: salesOrderLineItems.quantity,
         fulfillmentLocationId: salesOrderLineItems.fulfillmentLocationId,
         productType: coreProducts.productType,
+        structureType: coreProducts.structureType,
       })
       .from(salesOrderLineItems)
       .leftJoin(

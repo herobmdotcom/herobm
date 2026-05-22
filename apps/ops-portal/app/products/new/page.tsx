@@ -29,6 +29,7 @@ export default function NewProductPage() {
     productNumber: '',
     name: '',
     productType: 'inventory',
+    structureType: 'standard',
     barcode: '',
     listPrice: '0.00',
     standardCost: '0.00',
@@ -52,7 +53,12 @@ export default function NewProductPage() {
     setSubmitting(true);
 
     try {
-      const product = await apiMutate<any>('/api/products', 'POST', dto);
+      const payload: any = { ...dto };
+      if (!payload.purchaseTaxCategoryId) delete payload.purchaseTaxCategoryId;
+      if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;
+      if (!payload.productGroupId) delete payload.productGroupId;
+
+      const product = await apiMutate<any>('/api/products', 'POST', payload);
       toast.success(t('toast.productCreated'));
       router.push(`/products/${product.productId}`);
     } catch (err: any) {
@@ -63,7 +69,13 @@ export default function NewProductPage() {
   };
 
   const updateField = (field: string, value: string) => {
-    setDto((prev) => ({ ...prev, [field]: value }));
+    setDto((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'structureType' && value === 'kit') {
+        next.productType = 'non-stock';
+      }
+      return next;
+    });
   };
 
   const isValid = dto.productNumber.trim() !== '' && dto.name.trim() !== '';
@@ -99,165 +111,145 @@ export default function NewProductPage() {
       >
         <div className="flex flex-col gap-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Product Information Card */}
-          <div className="card">
-            <h3 className="section-heading">
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              <span className="material-symbols-outlined">info</span>
-              {t('products.generalInfo')}
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.columns.productNumber')} *
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={dto.productNumber}
-                  onChange={(e) => updateField('productNumber', e.target.value)}
-                  placeholder={t('products.placeholders.productNumber')}
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.productName')} *
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={dto.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  placeholder={t('products.placeholders.productName')}
-                  disabled={submitting}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.barcode')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.barcode}
-                    onChange={(e) => updateField('barcode', e.target.value)}
-                    placeholder={t('products.placeholders.barcode')}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.type')}
-                  </label>
-                  <select
-                    className="input"
-                    value={dto.productType}
-                    onChange={(e) => updateField('productType', e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value="inventory">{t('products.types.inventory')}</option>
-                    <option value="non-stock">{t('products.types.nonStock')}</option>
-                    <option value="service">{t('products.types.service')}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.columns.status')}
-                  </label>
-                  <select
-                    className="input"
-                    value={dto.stateCode}
-                    onChange={(e) => updateField('stateCode', e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
-                    <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
-                    <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
-                  </select>
+            {/* Left Column */}
+            <div className="flex flex-col gap-3">
+              {/* Identity Card */}
+              <div className="card">
+                <h3 className="section-heading">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">badge</span>
+                  {t('products.cards.identity', { defaultValue: 'Identity' })}
+                </h3>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('products.columns.productNumber')} *
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.productNumber}
+                      onChange={(e) => updateField('productNumber', e.target.value)}
+                      placeholder={t('products.placeholders.productNumber')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('products.productName')} *
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      value={dto.name}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      placeholder={t('products.placeholders.productName')}
+                      disabled={submitting}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        {t('products.columns.barcode')}
+                      </label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={dto.barcode}
+                        onChange={(e) => updateField('barcode', e.target.value)}
+                        placeholder={t('products.placeholders.barcode')}
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                        {t('products.columns.alternateProductNumber')}
+                      </label>
+                      <input
+                        type="text"
+                        className="input"
+                        value={dto.alternateProductNumber}
+                        onChange={(e) => updateField('alternateProductNumber', e.target.value)}
+                        placeholder={t('products.columns.alternateProductNumber')}
+                        disabled={submitting}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.productGroup')}
-                  </label>
-                  <GroupSelect
-                    type="product"
-                    value={dto.productGroupId}
-                    onChange={(val) => updateField('productGroupId', val || '')}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.alternateProductNumber')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={dto.alternateProductNumber}
-                    onChange={(e) => updateField('alternateProductNumber', e.target.value)}
-                    placeholder={t('products.columns.alternateProductNumber')}
-                    disabled={submitting}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.purchaseTaxCategory')}
-                  </label>
-                  <select
-                    className="input"
-                    value={dto.purchaseTaxCategoryId || ''}
-                    onChange={(e) => updateField('purchaseTaxCategoryId', e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value="">{t('common.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('products.columns.salesTaxCategory')}
-                  </label>
-                  <select
-                    className="input"
-                    value={dto.salesTaxCategoryId || ''}
-                    onChange={(e) => updateField('salesTaxCategoryId', e.target.value)}
-                    disabled={submitting}
-                  >
-                    <option value="">{t('common.none')}</option>
-                    {taxCategories.map((cat) => (
-                      <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
-                        {cat.title} ({cat.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('products.columns.notes')}
-                </label>
-                <input
-                  type="text"
-                  className="input"
-                  value={dto.notes}
-                  onChange={(e) => updateField('notes', e.target.value)}
-                  placeholder={t('products.placeholders.notes')}
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Pricing & Financials Card */}
-          <div className="card">
+              {/* Classification Card */}
+              <div className="card">
+                <h3 className="section-heading">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">category</span>
+                  {t('products.cards.classification', { defaultValue: 'Classification' })}
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.type')}
+                    </label>
+                    <select
+                      className="input w-full"
+                      value={dto.productType}
+                      onChange={(e) => updateField('productType', e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="inventory">{t('products.types.inventory')}</option>
+                      <option value="non-stock">{t('products.types.nonStock')}</option>
+                      <option value="service">{t('products.types.service')}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('products.structureType', { defaultValue: 'Structure' })}
+                    </label>
+                    <select
+                      className="input w-full"
+                      value={dto.structureType}
+                      onChange={(e) => updateField('structureType', e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value="standard">{t('products.structures.standard', { defaultValue: 'Standard' })}</option>
+                      <option value="kit">{t('products.structures.kit', { defaultValue: 'Kit' })}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.columns.status')}
+                    </label>
+                    <select
+                      className="input"
+                      value={dto.stateCode}
+                      onChange={(e) => updateField('stateCode', e.target.value)}
+                      disabled={submitting}
+                    >
+                      <option value={PRODUCT_STATE.ACTIVE}>{t('common.states.active')}</option>
+                      <option value={PRODUCT_STATE.INACTIVE}>{t('common.states.inactive')}</option>
+                      <option value={PRODUCT_STATE.DISCONTINUED}>{t('common.states.discontinued')}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('products.productGroup')}
+                    </label>
+                    <GroupSelect
+                      type="product"
+                      value={dto.productGroupId}
+                      onChange={(val) => updateField('productGroupId', val || '')}
+                      disabled={submitting}
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right Column */}
+            <div className="flex flex-col gap-3">
+              {/* Pricing & Financials Card */}
+              <div className="card">
             <h3 className="section-heading">
               {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">payments</span>
@@ -335,26 +327,74 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+            </div>
           </div>
-        </div>
 
-        {/* Notes Card */}
-        <div className="card">
-          <h3 className="section-heading">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="material-symbols-outlined">notes</span>
-            {t('common.notesCardHeading')}
-          </h3>
-          <textarea
-            className="input w-full"
-            style={{ height: 110, paddingTop: 12 }}
-            value={dto.notes}
-            onChange={(e) => updateField('notes', e.target.value)}
-            placeholder={t('products.placeholders.notes')}
-            disabled={submitting}
-          />
-        </div>
-        </div>
+          {/* Taxation Card */}
+          <div className="card">
+            <h3 className="section-heading">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
+              <span className="material-symbols-outlined">account_balance</span>
+              {t('products.cards.taxation', { defaultValue: 'Taxation' })}
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.purchaseTaxCategory')}
+                </label>
+                <select
+                  className="input"
+                  value={dto.purchaseTaxCategoryId || ''}
+                  onChange={(e) => updateField('purchaseTaxCategoryId', e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">{t('common.none')}</option>
+                  {taxCategories.map((cat) => (
+                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                      {cat.title} ({cat.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  {t('products.columns.salesTaxCategory')}
+                </label>
+                <select
+                  className="input"
+                  value={dto.salesTaxCategoryId || ''}
+                  onChange={(e) => updateField('salesTaxCategoryId', e.target.value)}
+                  disabled={submitting}
+                >
+                  <option value="">{t('common.none')}</option>
+                  {taxCategories.map((cat) => (
+                    <option key={cat.taxCategoryId} value={cat.taxCategoryId}>
+                      {cat.title} ({cat.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes Card */}
+              <div className="card">
+                <h3 className="section-heading">
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  <span className="material-symbols-outlined">notes</span>
+                  {t('common.notesCardHeading')}
+                </h3>
+                <textarea
+                  className="input w-full"
+                  style={{ height: 110, paddingTop: 12 }}
+                  value={dto.notes}
+                  onChange={(e) => updateField('notes', e.target.value)}
+                  placeholder={t('products.placeholders.notes')}
+                  disabled={submitting}
+                />
+              </div>
+            </div>
+          </div>
       </DetailsLayout>
     </>
   );

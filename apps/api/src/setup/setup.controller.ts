@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { SetupService } from './setup.service';
 import {
   CasbinResource,
@@ -8,6 +8,7 @@ import {
 import { SetupGuard } from './setup.guard';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { ExecuteSetupDto, TestAbmConnectionDto } from './setup.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('setup')
 @CasbinResource('setup')
@@ -68,5 +69,28 @@ export class SetupController {
   @CasbinAction('read')
   async getValidation() {
     return this.setupService.getValidation();
+  }
+
+  @Get('import-summary')
+  @CasbinAction('read')
+  async getImportSummary() {
+    return this.setupService.getImportSummary();
+  }
+
+  @Get('csv-metadata')
+  @CasbinAction('read')
+  async getCsvMetadata() {
+    return this.setupService.getCsvMetadata();
+  }
+
+  @Post('execute-csv')
+  @UseInterceptors(FileInterceptor('file'))
+  @CasbinAction('execute')
+  async executeCsv(
+    @Body('tableName') tableName: string,
+    @Body('strategy') strategy: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    return this.setupService.executeCsv(tableName, strategy, file);
   }
 }

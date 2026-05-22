@@ -5,7 +5,8 @@ import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import LocationSelect from '@/components/shared/LocationSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { apiMutate } from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 interface LineItem {
   productId: string;
@@ -22,6 +23,7 @@ interface CreateTransferSlideOverProps {
 
 export default function CreateTransferSlideOver({ open, onClose, onCreated }: CreateTransferSlideOverProps) {
   const t = useTranslations('transfers');
+  const tCommon = useTranslations('common');
   
   const [sourceLocationId, setSourceLocationId] = useState('');
   const [destinationLocationId, setDestinationLocationId] = useState('');
@@ -66,12 +68,12 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
 
   const handleSubmit = async () => {
     if (!sourceLocationId || !destinationLocationId) {
-      alert('Source and destination locations are required.');
+      toast.error('Source and destination locations are required.');
       return;
     }
     
     if (sourceLocationId === destinationLocationId) {
-      alert('Source and destination locations must be different.');
+      toast.error('Source and destination locations must be different.');
       return;
     }
 
@@ -93,7 +95,7 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       onCreated();
       onClose();
     } catch (e: any) {
-      alert('Failed to create transfer order: ' + e.message);
+      toast.error(e.message || 'Failed to create transfer order');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,14 +108,23 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
       title={t('createSlideOver.title')}
       subtitle={t('createSlideOver.subtitle')}
       width="max-w-3xl"
-      actions={
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !sourceLocationId || !destinationLocationId}
-          className="btn btn-primary"
-        >
-          {isSubmitting ? '...' : t('buttons.createTransfer')}
-        </button>
+      footer={
+        <div className="flex items-center justify-end gap-3 w-full">
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
+            {tCommon('cancel')}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !sourceLocationId || !destinationLocationId}
+            className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm"
+          >
+            {isSubmitting ? (
+              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving')}</>
+            ) : (
+              t('buttons.createTransfer')
+            )}
+          </button>
+        </div>
       }
     >
       <div className="space-y-6">

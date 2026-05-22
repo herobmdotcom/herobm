@@ -47,6 +47,7 @@ export async function createTestProduct(
   opts?: {
     type?: 'inventory' | 'non-stock' | 'service' | 'kit';
     productType?: 'inventory' | 'non-stock' | 'service' | 'kit';
+    structureType?: 'standard' | 'kit';
     name?: string;
     standardCost?: string;
     weightedAverageCost?: string;
@@ -56,11 +57,17 @@ export async function createTestProduct(
 ) {
   const productId = uuidv4();
   const resolvedProductType = opts?.productType || opts?.type || 'inventory';
+  const resolvedStructureType =
+    opts?.structureType || (resolvedProductType === 'kit' ? 'kit' : 'standard');
+  const finalProductType =
+    resolvedProductType === 'kit' ? 'inventory' : resolvedProductType;
+
   await db.insert(products).values({
     productId,
     productNumber: `PROD-TEST-${++_sequence}`,
     name: opts?.name || 'Test Product',
-    productType: resolvedProductType,
+    productType: finalProductType,
+    structureType: resolvedStructureType,
     baseUom: 'EA',
     standardCost: opts?.standardCost || '10.00',
     weightedAverageCost: opts?.weightedAverageCost || '10.00',

@@ -40,6 +40,7 @@ export interface OrderLineMinimal {
   quantity: string | number;
   fulfillmentLocationId?: string | null;
   productType?: ProductType | string | null;
+  structureType?: 'standard' | 'kit' | string | null;
 }
 
 export interface InventoryGap {
@@ -79,9 +80,11 @@ export function calculateInventoryGaps(
   for (const line of lines) {
     const isCustom = !line.productId || line.productId === CUSTOM_LINE_ID;
     
-    // Only check physical inventory products
+    // Only check physical inventory products, and exclude Kit parent items
     const isInventory = line.productType === 'inventory' || (!line.productType && !isCustom);
-    if (!isInventory || isCustom || !line.productId) continue;
+    const isKitParent = line.structureType === 'kit';
+    
+    if (!isInventory || isCustom || isKitParent || !line.productId) continue;
 
     const pid = line.productId;
     const locId = line.fulfillmentLocationId || headerLocationId;

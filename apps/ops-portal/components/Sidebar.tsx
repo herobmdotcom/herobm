@@ -130,6 +130,15 @@ export default function Sidebar() {
           ]
         },
         { href: '/admin/users', label: t('items.users'), icon: 'group' },
+        { 
+          href: '/admin/import/csv', 
+          label: 'Import', 
+          icon: 'cloud_upload',
+          subItems: [
+            { href: '/admin/import/csv', label: 'CSV Upload' },
+            { href: '/admin/import/abm', label: 'ABM Database' },
+          ]
+        },
       ],
     });
   }

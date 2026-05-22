@@ -266,8 +266,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const totalAllocatedNow = outstandingInvoices.reduce((sum, i) => sum + i.pendingAllocation, 0);
   const remainingToAllocate = data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow : 0;
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async () => {
     setSubmitting(true);
     try {
       const payload = {
@@ -323,17 +322,6 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     }
   };
 
-  const handleAutoAllocate = () => {
-    let remaining = parseFloat(data?.unallocatedAmount || '0');
-    const updated = outstandingInvoices.map(inv => {
-      const outstanding = parseFloat(inv.outstandingAmount);
-      const toAllocate = Math.min(remaining, outstanding);
-      remaining -= toAllocate;
-      return { ...inv, pendingAllocation: toAllocate };
-    });
-    setOutstandingInvoices(updated);
-  };
-
   const handleManualAllocateChange = (id: string, value: string) => {
     const amount = parseFloat(value) || 0;
     setOutstandingInvoices(prev => prev.map(inv => 
@@ -375,7 +363,6 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
   const isDraft = data?.stateCode === PAYMENT_STATE.DRAFT;
   const isSubmitted = data?.stateCode === PAYMENT_STATE.SUBMITTED;
-  const hasUnallocated = isSubmitted && parseFloat(data?.unallocatedAmount || '0') > 0;
 
   const actionsContent = (
     <div className="flex items-center gap-2">
@@ -422,27 +409,31 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       )}
 
       {/* Vertical Separator */}
-      <div className="w-px h-4 bg-[var(--border)] mx-1" />
-
-      {/* Navigation */}
-      <div className="flex items-center gap-1">
-        <button 
-          onClick={onPrev} 
-          disabled={!onPrev}
-          className="btn btn-secondary btn-sm p-1 min-w-0"
-          title="Previous Payment"
-        >
-          <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-        </button>
-        <button 
-          onClick={onNext} 
-          disabled={!onNext}
-          className="btn btn-secondary btn-sm p-1 min-w-0"
-          title="Next Payment"
-        >
-          <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-        </button>
-      </div>
+      {paymentId && (
+        <>
+          <div className="w-px h-4 bg-[var(--border)] mx-1" />
+          
+          {/* Navigation */}
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={onPrev} 
+              disabled={!onPrev}
+              className="btn btn-secondary btn-sm p-1 min-w-0"
+              title="Previous Payment"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+            <button 
+              onClick={onNext} 
+              disabled={!onNext}
+              className="btn btn-secondary btn-sm p-1 min-w-0"
+              title="Next Payment"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -452,8 +443,22 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
       onClose={onClose}
       title={paymentId ? (data?.paymentNumber || '...') : 'New Payment Entry'}
       subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${data.paymentType === 'receive' ? 'Customer Receipt' : 'Supplier Payment'}` : undefined}
-      actions={actionsContent}
+      actions={paymentId ? actionsContent : undefined}
       width="max-w-3xl"
+      footer={!paymentId ? (
+        <div className="flex items-center justify-end gap-3 w-full">
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={submitting}>
+            {tCommon('cancel')}
+          </button>
+          <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleCreate} disabled={submitting}>
+            {submitting ? (
+              <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving', { defaultValue: 'Saving...' })}</>
+            ) : (
+              t('createEntry')
+            )}
+          </button>
+        </div>
+      ) : undefined}
     >
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 opacity-50">
@@ -463,7 +468,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         ) : (
           <div className="space-y-4">
             {!paymentId ? (
-              <form onSubmit={handleCreate} className="space-y-4">
+              <form onSubmit={e => e.preventDefault()} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Type</label>
@@ -588,13 +593,6 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     onChange={e => setForm({...form, referenceNumber: e.target.value})}
                     placeholder="e.g. Check #, Wire Ref"
                   />
-                </div>
-
-                <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? t('saving') : t('createEntry')}
-                  </button>
                 </div>
               </form>            ) : (
               <div className="space-y-6">
@@ -798,10 +796,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                     <button
                                       onClick={submitAllocations}
                                       disabled={submitting || totalAllocatedNow <= 0 || remainingToAllocate < 0}
-                                      className="btn btn-primary btn-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                      title={remainingToAllocate < 0 ? "Cannot allocate more than the payment amount" : ""}
+                                      className="btn btn-primary btn-sm"
                                     >
-                                      {submitting ? t('submitting') : t('submit')}
+                                      {submitting ? '...' : 'Save Allocations'}
                                     </button>
                                   </div>
                                 </div>
@@ -811,13 +808,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                         </div>
                       </>
                     ) : (
-                      <div className="flex flex-col items-center justify-center flex-1 opacity-50 p-6">
-                        <div className="text-center text-xs text-[var(--text-muted)]">
-                          No outstanding invoices found for this party.
-                        </div>
-                        <button onClick={() => setIsAllocating(false)} className="btn btn-secondary mt-4">
-                          View Summary
-                        </button>
+                      <div className="flex flex-col items-center justify-center flex-1 opacity-50 border border-dashed border-gray-300 rounded-xl m-4 bg-gray-50/50">
+                        <span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long</span>
+                        <p className="text-sm font-medium text-gray-600">No outstanding invoices to allocate</p>
                       </div>
                     )}
                   </div>

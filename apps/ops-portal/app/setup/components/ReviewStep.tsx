@@ -8,13 +8,9 @@ interface Props {
 
 export default function ReviewStep({ config, onNext }: Props) {
   const t = useTranslations('setup.review');
-  const isSsl = config.port === '1433' ? '' : ' // non-standard port';
-
   const payload = [
     `# ${t('executionPayload')}`,
-    `Pipeline: ${config.emptyBase ? 'STERILE_INIT' : 'ENABLE_DLT_ABM_IMPORT'}`,
-    `${t('payload.source')}:   ${config.emptyBase ? 'None' : `read_only@${config.host}:${config.port}/${config.database}`}`,
-    `${t('payload.resume')}:   ${config.resume ? `${t('payload.enabled')} (Skipping loaded tables)` : t('payload.disabled')}`,
+    `Pipeline: STERILE_INIT`,
     `${t('payload.companyName')}: ${config.companyName}`,
     `${t('payload.coaPreset')}: ${config.coaPreset}`,
     `${t('payload.currency')}: ${config.baseCurrency.split(' ')[0]}`,

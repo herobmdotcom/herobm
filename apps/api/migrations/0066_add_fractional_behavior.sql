@@ -1,0 +1,2 @@
+CREATE TYPE "modbm_core"."fractional_behavior" AS ENUM('allow_fractional', 'round_up', 'round_down', 'force_multiple');--> statement-breakpoint
+ALTER TABLE "modbm_core"."product_components" ADD COLUMN "fractional_behavior" "modbm_core"."fractional_behavior" DEFAULT 'allow_fractional' NOT NULL;

@@ -18,6 +18,26 @@ export default function ProductsContent() {
     { field: 'productNumber', headerName: tProducts('columns.productNumber'), width: 130, pinned: 'left' },
     { field: 'name', headerName: tCommon('columns.name'), flex: 1, minWidth: 200 },
     { field: 'alternateProductNumber', headerName: tProducts('columns.alternateProductNumber'), width: 140 },
+    { 
+      field: 'productType', 
+      headerName: 'Type', 
+      width: 120,
+      cellRenderer: (params: any) => {
+        if (!params.value) return null;
+        const color = params.value === 'inventory' ? 'badge-info' : 'badge-secondary';
+        return <span className={`badge ${color}`}>{params.value}</span>;
+      }
+    },
+    { 
+      field: 'structureType', 
+      headerName: 'Structure', 
+      width: 120,
+      cellRenderer: (params: any) => {
+        if (!params.value) return null;
+        const color = params.value === 'kit' ? 'badge-warning' : 'badge-legacy';
+        return <span className={`badge ${color}`}>{params.value}</span>;
+      }
+    },
     { field: 'quantityOnHand', headerName: tProducts('columns.quantityOnHand'), width: 130, type: 'numericColumn',
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0' },
     { field: 'productGroupName', headerName: tCommon('columns.group'), width: 160 },

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
+import { toast } from 'react-hot-toast';
 
 interface LinkToPOSlideOverProps {
   isOpen: boolean;
@@ -151,7 +152,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
     const originalQuantity = parseFloat(demand.quantity || '0');
     const qty = parseFloat(qtyStr);
     if (isNaN(qty) || qty <= 0 || qty > originalQuantity) {
-      alert(t('demands.quantityValidationError', { max: originalQuantity }));
+      toast.error(t('demands.quantityValidationError', { max: originalQuantity }));
       return;
     }
 
@@ -177,7 +178,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
       markAllocated(demand.id, splitDemand);
       onRefresh();
     } catch (err: any) {
-      alert(err.message || t('demands.allocationError'));
+      toast.error(err.message || t('demands.allocationError'));
     }
   }, [onRefresh, markAllocated, t]);
 

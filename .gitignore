@@ -76,3 +76,8 @@ query_erpnext.js
 .pglite-snapshot.bin
 *.pglite-snapshot.bin
 
+# ABM State
+.abm_resume_state
+
+# Linting
+.eslintcache

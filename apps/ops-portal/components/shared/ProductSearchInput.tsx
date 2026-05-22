@@ -34,6 +34,8 @@ interface ProductSearchInputProps {
   style?: React.CSSProperties;
   /** Optional fulfillment location to constrain stock search */
   fulfillmentLocationId?: string;
+  /** Disable the input */
+  disabled?: boolean;
 }
 
 function useDebounce(fn: (...args: unknown[]) => void, delay: number) {
@@ -51,6 +53,7 @@ export default function ProductSearchInput({
   placeholder,
   style,
   fulfillmentLocationId,
+  disabled,
 }: ProductSearchInputProps) {
   const t = useTranslations('common.productSearch');
   const [search, setSearch] = useState('');
@@ -91,6 +94,7 @@ export default function ProductSearchInput({
         className="input"
         style={{ width: '100%' }}
         placeholder={placeholder || t('placeholder')}
+        disabled={disabled}
         value={search}
         onChange={(e) => {
           setSearch(e.target.value);

@@ -46,6 +46,10 @@ export class CreateProductDto {
   productType?: 'inventory' | 'non-stock' | 'service';
 
   @IsOptional()
+  @IsEnum(['standard', 'kit'])
+  structureType?: 'standard' | 'kit';
+
+  @IsOptional()
   @IsString()
   barcode?: string;
 
@@ -106,6 +110,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsEnum(['inventory', 'non-stock', 'service'])
   productType?: 'inventory' | 'non-stock' | 'service';
+
+  @IsOptional()
+  @IsEnum(['standard', 'kit'])
+  structureType?: 'standard' | 'kit';
 
   @IsOptional()
   @IsString()
