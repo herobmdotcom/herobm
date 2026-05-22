@@ -15,6 +15,7 @@ ifeq ($(OS),Windows_NT)
   INIT_ENV_CMD = python scripts/init_env.py
   DEV_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/dev-local.ps1
   PROD_LOCAL_CMD = powershell -ExecutionPolicy Bypass -File scripts/prod-local.ps1
+  CLEAN_BUILD_CMD = powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
   COMPOSE_CMD = podman compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 127.0.0.1
 else
@@ -25,6 +26,7 @@ else
   INIT_ENV_CMD = python3 scripts/init_env.py
   DEV_LOCAL_CMD = bash scripts/dev-local.sh
   PROD_LOCAL_CMD = bash scripts/prod-local.sh
+  CLEAN_BUILD_CMD = bash scripts/clean-build.sh
   COMPOSE_CMD = podman-compose -f docker-compose.yml $(COMPOSE_OVERRIDE)
   BIND_IP ?= 0.0.0.0
 endif
@@ -356,12 +358,12 @@ build-all:
 	npm run build --workspaces --if-present
 
 clean-dev:
-	@powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+	$(CLEAN_BUILD_CMD)
 	npm install
 	$(MAKE) build-shared
 
 clean-build:
-	@powershell -ExecutionPolicy Bypass -File scripts/clean-build.ps1
+	$(CLEAN_BUILD_CMD)
 	npm install
 	$(MAKE) build-all
 
