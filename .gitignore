@@ -72,3 +72,7 @@ query_erpnext.js
 .env.*
 .setup-token
 
+# PGlite Snapshots
+.pglite-snapshot.bin
+*.pglite-snapshot.bin
+
