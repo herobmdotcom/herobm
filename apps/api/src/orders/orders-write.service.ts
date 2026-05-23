@@ -518,7 +518,7 @@ export class OrdersWriteService {
               comp.quantity,
               comp.parentQuantity || '1',
               comp.fractionalBehavior || 'allow_fractional',
-              line.productId!
+              line.productId!,
             );
 
             let childPrice = '0';
@@ -968,7 +968,7 @@ export class OrdersWriteService {
             comp.quantity,
             comp.parentQuantity || '1',
             comp.fractionalBehavior || 'allow_fractional',
-            dto.productId!
+            dto.productId!,
           );
 
           let childPrice = '0';
@@ -1175,7 +1175,7 @@ export class OrdersWriteService {
             comp.quantity,
             comp.parentQuantity || '1',
             comp.fractionalBehavior || 'allow_fractional',
-            dto.productId!
+            dto.productId!,
           );
 
           let childPrice = '0';

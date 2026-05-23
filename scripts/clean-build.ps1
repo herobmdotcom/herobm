@@ -12,4 +12,8 @@ foreach ($dir in $directories) {
     }
 }
 
+Write-Host "Removing TypeScript build info cache..." -ForegroundColor Cyan
+Get-ChildItem -Include "*.tsbuildinfo" -Recurse -File -Force -ErrorAction SilentlyContinue | Remove-Item -Force
+
+
 Write-Host "Workspace cache clean." -ForegroundColor Green

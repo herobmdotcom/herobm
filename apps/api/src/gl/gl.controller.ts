@@ -36,11 +36,22 @@ export class GlController {
 
   @Get('accounts')
   @CasbinAction('read')
-  async getAccounts(@Query('format') format?: string) {
+  async getAccounts(
+    @Query('format') format?: string,
+    @Query('isBankAccount') isBankAccount?: string,
+  ) {
     if (format === 'tree') {
       return this.glService.getChartOfAccounts();
     }
-    return this.glService.getAccountsList();
+    const filterIsBankAccount =
+      isBankAccount === 'true'
+        ? true
+        : isBankAccount === 'false'
+          ? false
+          : undefined;
+    return this.glService.getAccountsList({
+      isBankAccount: filterIsBankAccount,
+    });
   }
 
   @Post('accounts')
@@ -193,10 +204,28 @@ export class GlController {
     return { success: true, message: 'Settings cache reloaded successfully.' };
   }
 
+  @Get('charts')
+  @CasbinAction('read')
+  async listCharts() {
+    return this.coaLoader.listAvailableCharts();
+  }
+
   @Post('seed')
   @CasbinAction('write')
   async seedChartOfAccounts(@Body() body?: { filename?: string }) {
     const filename = body?.filename || 'au_standard.json';
     return this.coaLoader.loadFromFile(filename);
+  }
+
+  @Get('tax-settings-files')
+  @CasbinAction('read')
+  async listTaxSettingsFiles() {
+    return this.coaLoader.listAvailableTaxSettings();
+  }
+
+  @Post('seed-tax')
+  @CasbinAction('write')
+  async seedTaxSettings(@Body() body: { filename: string }) {
+    return this.coaLoader.loadTaxSettingsFromFile(body.filename);
   }
 }

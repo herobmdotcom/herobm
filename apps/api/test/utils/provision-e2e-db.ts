@@ -22,7 +22,13 @@ dotenv.config({ path: rootEnv });
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../../src/drizzle/modbm-core-schema';
-import { runStandardSeeds } from '../../src/scripts/seed';
+import {
+  runStandardSeeds,
+  seedCoaSettings,
+  seedCoaAccounts,
+  seedAccounts,
+} from '../../src/scripts/seed';
+import { seedTestLocations } from './test-seed';
 
 const E2E_DB_NAME = 'modbm_e2e_test';
 
@@ -127,6 +133,11 @@ async function provision() {
     // 3. Seed the database
     const db = drizzle(e2eSql, { schema });
     await runStandardSeeds(db);
+    // Testing-only extension to seed COA defaults, accounts, and locations for E2E
+    await seedCoaAccounts(db, false);
+    await seedCoaSettings(db, false);
+    await seedTestLocations(db, false);
+    await seedAccounts(db, false);
     console.log('[E2E DB] Seeds applied.');
   } finally {
     await e2eSql.end();

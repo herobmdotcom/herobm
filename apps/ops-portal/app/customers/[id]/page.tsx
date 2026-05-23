@@ -14,6 +14,7 @@ import DataGrid from '@/components/DataGrid';
 import { ValidState } from '@/types/states';
 import PageNav from '@/components/shared/PageNav';
 import GroupSelect from '@/components/shared/GroupSelect';
+import CustomerSelect from '@/components/shared/CustomerSelect';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 import { useSettings } from '@/components/SettingsProvider';
 import { CUSTOMER_STATE } from '@modbm/shared';
@@ -109,6 +110,8 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
         { id: 'pricing-section', label: 'Pricing', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'address-section', label: 'Company', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('address-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'contact-section', label: 'Contact', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'bank-section', label: 'Bank', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('bank-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'hierarchy-section', label: 'Hierarchy', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('hierarchy-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: 'Activity', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ],
     },
@@ -135,7 +138,13 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
           <EntityHeader
             title={customer.name}
             subtitle={customer.customerNumber}
-            onBack={() => router.push('/customers')}
+            onBack={() => {
+              if (document.referrer.includes(window.location.host)) {
+                router.back();
+              } else {
+                router.push('/customers');
+              }
+            }}
             isSaving={saving}
             isDirty={isDirty}
             onSave={handleSave}
@@ -168,6 +177,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 endpoint={`/api/sales-orders?customerId=${encodeURIComponent(params.id)}&limit=50`}
                 columns={orderColumns}
                 gridKey="customer-orders"
+                urlPrefix="orders"
                 searchPlaceholder={tSales('placeholders.searchOrders')}
                 exportFileName={`orders-${customer.customerNumber}`}
                 fetchAll
@@ -212,6 +222,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                 endpoint={`/api/sales-invoices?customerId=${encodeURIComponent(params.id)}&days=0&limit=50`}
                 columns={invoiceColumns}
                 gridKey="customer-invoices"
+                urlPrefix="invoices"
                 fetchAll
                 rowIdField="invoiceId"
                 onRowClicked={handleInvoiceRowClicked}
@@ -561,6 +572,105 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                     disabled={!isEditable || saving}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Bank Details Card */}
+            <div id="bank-section" className="card h-fit">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">account_balance</span>
+                Bank Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Bank Account Name
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.bankAccountName || ''}
+                    onChange={(e) => updateField('bankAccountName', e.target.value)}
+                    onBlur={(e) => saveField('bankAccountName', e.target.value)}
+                    disabled={!isEditable || saving}
+                    placeholder="e.g. John Doe Pty Ltd"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    BSB
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankBsb || ''}
+                    onChange={(e) => updateField('bankBsb', e.target.value)}
+                    onBlur={(e) => saveField('bankBsb', e.target.value)}
+                    disabled={!isEditable || saving}
+                    placeholder="e.g. 062-000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankAccountNumber || ''}
+                    onChange={(e) => updateField('bankAccountNumber', e.target.value)}
+                    onBlur={(e) => saveField('bankAccountNumber', e.target.value)}
+                    disabled={!isEditable || saving}
+                    placeholder="e.g. 12345678"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Hierarchy Card */}
+            <div id="hierarchy-section" className="card h-fit">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">account_tree</span>
+                Hierarchy
+              </h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Parent Customer
+                  </label>
+                  <CustomerSelect
+                    value={dto.parentCustomerId || null}
+                    onChange={(val) => {
+                      updateField('parentCustomerId', val?.customerId || null);
+                      saveField('parentCustomerId', val?.customerId || null);
+                    }}
+                    disabled={!isEditable || saving}
+                    excludeId={params.id}
+                    initialSearchTerm={dto.parentCustomerName || ''}
+                  />
+                </div>
+                
+                {customer.childAccounts && customer.childAccounts.length > 0 && (
+                  <div className="mt-4">
+                    <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                      Child Accounts ({customer.childAccounts.length})
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      {customer.childAccounts.map((child: any) => (
+                        <div key={child.customerId} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
+                          <div className="flex flex-col">
+                            <Link href={`/customers/${child.customerId}`} className="font-semibold text-sm hover:underline" style={{ color: 'var(--accent)' }}>
+                              {child.customerNumber} - {child.name}
+                            </Link>
+                          </div>
+                          <StateBadge state={child.stateCode as ValidState} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

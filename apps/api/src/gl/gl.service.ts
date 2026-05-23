@@ -309,7 +309,13 @@ export class GlService {
     return this.buildTree(accounts);
   }
 
-  async getAccountsList() {
+  async getAccountsList(filters?: { isBankAccount?: boolean }) {
+    const conditions = [];
+    if (filters?.isBankAccount !== undefined) {
+      conditions.push(eq(glAccounts.isBankAccount, filters.isBankAccount));
+    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
     return this.db
       .select({
         glAccountId: glAccounts.glAccountId,
@@ -322,6 +328,7 @@ export class GlService {
         isActive: glAccounts.isActive,
       })
       .from(glAccounts)
+      .where(whereClause)
       .orderBy(glAccounts.accountCode);
   }
 

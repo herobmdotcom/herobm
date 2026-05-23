@@ -44,7 +44,9 @@ export class ProductsWriteService {
    */
   async create(dto: CreateProductDto, actor: string) {
     if (dto.structureType === 'kit' && dto.productType !== 'non-stock') {
-      throw new BadRequestException('Kits must be stored as non-stock products.');
+      throw new BadRequestException(
+        'Kits must be stored as non-stock products.',
+      );
     }
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const [product] = await tx
@@ -88,7 +90,9 @@ export class ProductsWriteService {
     const finalStructureType = dto.structureType ?? existing[0].structureType;
     const finalProductType = dto.productType ?? existing[0].productType;
     if (finalStructureType === 'kit' && finalProductType !== 'non-stock') {
-      throw new BadRequestException('Kits must be stored as non-stock products.');
+      throw new BadRequestException(
+        'Kits must be stored as non-stock products.',
+      );
     }
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
@@ -508,7 +512,17 @@ export class ProductsWriteService {
    */
   async addComponent(
     productId: string,
-    dto: { childProductId: string; parentQuantity: string; quantity: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    dto: {
+      childProductId: string;
+      parentQuantity: string;
+      quantity: string;
+      sequenceNumber?: number;
+      fractionalBehavior?:
+        | 'allow_fractional'
+        | 'round_up'
+        | 'round_down'
+        | 'force_multiple';
+    },
     actor: string,
   ) {
     // Validate parent exists and is a kit
@@ -534,7 +548,9 @@ export class ProductsWriteService {
       .limit(1);
 
     if (!child) {
-      throw new NotFoundException(`Child product ${dto.childProductId} not found`);
+      throw new NotFoundException(
+        `Child product ${dto.childProductId} not found`,
+      );
     }
 
     // Check for circular dependency (simple 1-level check for now)
@@ -546,12 +562,14 @@ export class ProductsWriteService {
     const [cycle] = await this.db
       .select({ id: productComponents.componentId })
       .from(productComponents)
-      .where(and(
-        eq(productComponents.parentProductId, dto.childProductId),
-        eq(productComponents.childProductId, productId)
-      ))
+      .where(
+        and(
+          eq(productComponents.parentProductId, dto.childProductId),
+          eq(productComponents.childProductId, productId),
+        ),
+      )
       .limit(1);
-    
+
     if (cycle) {
       throw new BadRequestException('Circular dependency detected');
     }
@@ -572,7 +590,10 @@ export class ProductsWriteService {
       await tx.insert(productEvents).values({
         productId,
         eventType: EventType.UPDATED,
-        payload: { action: 'component_added', componentId: component.componentId },
+        payload: {
+          action: 'component_added',
+          componentId: component.componentId,
+        },
         actor,
       });
 
@@ -586,16 +607,27 @@ export class ProductsWriteService {
   async updateComponent(
     productId: string,
     componentId: string,
-    dto: { parentQuantity?: string; quantity?: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    dto: {
+      parentQuantity?: string;
+      quantity?: string;
+      sequenceNumber?: number;
+      fractionalBehavior?:
+        | 'allow_fractional'
+        | 'round_up'
+        | 'round_down'
+        | 'force_multiple';
+    },
     actor: string,
   ) {
     const [existing] = await this.db
       .select()
       .from(productComponents)
-      .where(and(
-        eq(productComponents.componentId, componentId),
-        eq(productComponents.parentProductId, productId)
-      ))
+      .where(
+        and(
+          eq(productComponents.componentId, componentId),
+          eq(productComponents.parentProductId, productId),
+        ),
+      )
       .limit(1);
 
     if (!existing) {
@@ -609,7 +641,8 @@ export class ProductsWriteService {
           parentQuantity: dto.parentQuantity ?? existing.parentQuantity,
           quantity: dto.quantity ?? existing.quantity,
           sequenceNumber: dto.sequenceNumber ?? existing.sequenceNumber,
-          fractionalBehavior: dto.fractionalBehavior ?? existing.fractionalBehavior,
+          fractionalBehavior:
+            dto.fractionalBehavior ?? existing.fractionalBehavior,
         })
         .where(eq(productComponents.componentId, componentId))
         .returning();
@@ -632,10 +665,12 @@ export class ProductsWriteService {
     const [existing] = await this.db
       .select()
       .from(productComponents)
-      .where(and(
-        eq(productComponents.componentId, componentId),
-        eq(productComponents.parentProductId, productId)
-      ))
+      .where(
+        and(
+          eq(productComponents.componentId, componentId),
+          eq(productComponents.parentProductId, productId),
+        ),
+      )
       .limit(1);
 
     if (!existing) {

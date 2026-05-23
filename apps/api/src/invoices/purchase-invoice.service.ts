@@ -24,6 +24,8 @@ import {
   goodsReceivedLines,
   purchaseInvoiceReceipts,
   systemEvents,
+  paymentAllocations,
+  paymentEntries,
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -147,7 +149,28 @@ export class PurchaseInvoiceService {
       )
       .where(eq(purchaseInvoiceLines.invoiceId, invoiceId));
 
-    return { ...invoice, lines };
+    const allocations = await db
+      .select({
+        allocationId: paymentAllocations.allocationId,
+        allocatedAmount: paymentAllocations.allocatedAmount,
+        paymentId: paymentEntries.paymentId,
+        paymentNumber: paymentEntries.paymentNumber,
+        paymentDate: paymentEntries.paymentDate,
+        currencyCode: paymentEntries.currencyCode,
+      })
+      .from(paymentAllocations)
+      .innerJoin(
+        paymentEntries,
+        eq(paymentAllocations.paymentId, paymentEntries.paymentId),
+      )
+      .where(
+        and(
+          eq(paymentAllocations.referenceId, invoiceId),
+          eq(paymentAllocations.referenceType, 'purchase_invoice'),
+        ),
+      );
+
+    return { ...invoice, lines, allocations };
   }
 
   /**

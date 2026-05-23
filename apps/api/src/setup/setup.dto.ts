@@ -33,10 +33,65 @@ export class TestAbmConnectionDto {
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/setup/execute
+// POST /api/setup/test-odoo
+// ---------------------------------------------------------------------------
+export class TestOdooConnectionDto {
+  @IsString()
+  host: string;
+
+  @IsString()
+  database: string;
+
+  @IsString()
+  username: string;
+
+  @IsString()
+  password: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(65535)
+  port?: number;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/setup/execute-elt
+// ---------------------------------------------------------------------------
+export class ExecuteEltDto {
+  @IsOptional()
+  @IsObject()
+  dbConfig?: {
+    host?: string;
+    database?: string;
+    username?: string;
+    password?: string;
+    port?: number;
+  };
+
+  @IsOptional()
+  abmImport?: boolean;
+
+  @IsOptional()
+  odooImport?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  resumeExtraction?: boolean;
+
+  @IsOptional()
+  @IsString()
+  defaultLocationCode?: string;
+
+  @IsOptional()
+  @IsString()
+  baseCurrency?: string;
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/setup/initialize
 // ---------------------------------------------------------------------------
 export class ExecuteSetupDto {
-  /** COA preset filename, e.g. 'au_standard.json' */
   /** Transient DB Config mapping overridable from the UI test phase */
   @IsOptional()
   @IsObject()

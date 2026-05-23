@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
+import { eq } from 'drizzle-orm';
 import { glSettings, appSettings } from '../drizzle/modbm-core-schema';
 import type {
   RevenueRoutingStrategy,
@@ -180,5 +181,22 @@ export class AppConfigService implements OnModuleInit {
   /** The raw app settings row, if available. */
   getAppSettingsRaw(): typeof appSettings.$inferSelect | null {
     return this.appCache;
+  }
+
+  /** Update app settings. */
+  async update(dto: { defaultFulfillmentLocationId?: string }) {
+    const settings = this.getAppSettingsRaw();
+    if (!settings) {
+      throw new Error('App Settings not configured.');
+    }
+
+    const [updated] = await this.db
+      .update(appSettings)
+      .set(dto)
+      .where(eq(appSettings.settingsId, settings.settingsId))
+      .returning();
+
+    await this.reload();
+    return updated;
   }
 }

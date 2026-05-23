@@ -101,13 +101,7 @@ export async function validateSession(): Promise<boolean> {
 }
 
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
-  const isSetup = path.startsWith('/api/setup');
-  let setupToken = '';
-  if (isSetup && typeof window !== 'undefined') {
-    setupToken = new URLSearchParams(window.location.search).get('token') || '';
-  }
-
-  if (!token && !isSetup) throw new Error('Not authenticated');
+  if (!token) throw new Error('Not authenticated');
   
   const headers: Record<string, string> = {
     ...(init?.headers as Record<string, string> ?? {}),
@@ -116,15 +110,12 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  if (setupToken) {
-    headers['x-setup-token'] = setupToken;
-  }
 
   const res = await fetch(path, {
     ...init,
     headers,
   });
-  if (res.status === 401 && !isSetup) clearSessionAndReload();
+  if (res.status === 401) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);
@@ -158,21 +149,12 @@ export async function apiMutate<T = unknown>(
   method: 'POST' | 'PATCH' | 'DELETE',
   body?: unknown,
 ): Promise<T> {
-  const isSetup = path.startsWith('/api/setup');
-  let setupToken = '';
-  if (isSetup && typeof window !== 'undefined') {
-    setupToken = new URLSearchParams(window.location.search).get('token') || '';
-  }
-
-  if (!token && !isSetup) throw new Error('Not authenticated');
+  if (!token) throw new Error('Not authenticated');
 
   const headers: Record<string, string> = {};
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  }
-  if (setupToken) {
-    headers['x-setup-token'] = setupToken;
   }
   if (body) {
     headers['Content-Type'] = 'application/json';
@@ -183,7 +165,7 @@ export async function apiMutate<T = unknown>(
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401 && !isSetup) clearSessionAndReload();
+  if (res.status === 401) clearSessionAndReload();
   if (!res.ok) {
     const errData = await res.json().catch(() => null);
     throw new ApiError(errData?.message ?? `API error: ${res.status}`, res.status, errData);

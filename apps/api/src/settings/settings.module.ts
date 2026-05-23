@@ -12,6 +12,7 @@ import { CostCentersService } from './cost-centers.service';
 import { CostCentersController } from './cost-centers.controller';
 import { ActivitiesService } from './activities.service';
 import { ActivitiesController } from './activities.controller';
+import { AppConfigController } from './app-config.controller';
 
 @Global()
 @Module({
@@ -19,6 +20,7 @@ import { ActivitiesController } from './activities.controller';
     UomDictionaryController,
     ExchangeRatesController,
     OrganizationController,
+    AppConfigController,
     TradingTermsController,
     CostCentersController,
     ActivitiesController,

@@ -11,6 +11,7 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
 import { CURRENCIES } from '@/lib/currency';
 import GroupSelect from '@/components/shared/GroupSelect';
+import CustomerSelect from '@/components/shared/CustomerSelect';
 
 export default function NewAccountPage() {
   useDocumentTitle('New Customer');
@@ -36,6 +37,10 @@ export default function NewAccountPage() {
     currencyCode: 'EUR',
     customerDiscount: '0',
     notes: '',
+    parentCustomerId: '',
+    bankAccountName: '',
+    bankBsb: '',
+    bankAccountNumber: '',
   });
   const [taxCategories, settaxCategories] = useState<any[]>([]);
 
@@ -163,18 +168,31 @@ export default function NewAccountPage() {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    {t('common.notesCardHeading')}
-                  </label>
-                  <input
-                    type="text"
-                    className="input w-full"
-                    value={dto.notes}
-                    onChange={(e) => updateField('notes', e.target.value)}
-                    placeholder={t('common.notesCardPlaceholder')}
-                    disabled={submitting}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      Parent Customer
+                    </label>
+                    <CustomerSelect
+                      value={dto.parentCustomerId || null}
+                      onChange={(val) => updateField('parentCustomerId', val?.customerId || '')}
+                      disabled={submitting}
+                      excludeId={null}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      {t('common.notesCardHeading')}
+                    </label>
+                    <input
+                      type="text"
+                      className="input w-full"
+                      value={dto.notes}
+                      onChange={(e) => updateField('notes', e.target.value)}
+                      placeholder={t('common.notesCardPlaceholder')}
+                      disabled={submitting}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -368,6 +386,56 @@ export default function NewAccountPage() {
                     value={dto.primaryContactPhone}
                     onChange={(e) => updateField('primaryContactPhone', e.target.value)}
                     placeholder="+1 234 567 890"
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Details Card */}
+            <div className="card">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">account_balance</span>
+                Bank Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Bank Account Name
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.bankAccountName}
+                    onChange={(e) => updateField('bankAccountName', e.target.value)}
+                    placeholder="e.g. John Doe Pty Ltd"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    BSB
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankBsb}
+                    onChange={(e) => updateField('bankBsb', e.target.value)}
+                    placeholder="e.g. 062-000"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankAccountNumber}
+                    onChange={(e) => updateField('bankAccountNumber', e.target.value)}
+                    placeholder="e.g. 12345678"
                     disabled={submitting}
                   />
                 </div>

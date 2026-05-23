@@ -10,8 +10,6 @@
     "class-validator": "^0.15.1"
   },
   "scripts": {
-    "seed": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/seed.ts",
-    "setup": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/execute-setup.ts",
-    "setup:prod": "node apps/api/dist/scripts/execute-setup.js"
+    "seed": "tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/seed.ts"
   }
 }

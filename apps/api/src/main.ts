@@ -20,6 +20,17 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Debug middleware to log bodies
+  app.use((req: any, res: any, next: any) => {
+    if (req.method === 'PATCH' && req.url.includes('/api/customers/')) {
+      console.log('--- INCOMING PATCH BODY TO', req.url, '---');
+      console.log(req.body);
+      console.log('-----------------------------------');
+    }
+    next();
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

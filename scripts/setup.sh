@@ -147,6 +147,6 @@ echo -e "  \e[32m[OK]\e[0m Created systemd user config: modbm.service"
 echo -e "\n\e[36m=== Summary ===\e[0m"
 echo -e "\n  All prerequisites verified!\n"
 if [ "$NON_INTERACTIVE" = false ]; then
-    echo -e "  To boot your environment and start the setup wizard, run:"
-    echo -e "  \e[36m> make init-env ${makeTargets[*]} setup-wizard\e[0m"
+    echo -e "  To boot your environment, run:"
+    echo -e "  \e[36m> make init-env ${makeTargets[*]}\e[0m"
 fi

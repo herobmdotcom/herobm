@@ -30,6 +30,7 @@ import {
   salesOrderLineItems,
   products as coreProducts,
   productComponents,
+  locations,
 } from '../drizzle/modbm-core-schema';
 
 import { taxCategories } from '../drizzle/modbm-core-schema';
@@ -57,6 +58,16 @@ describe('OrdersWriteService', () => {
     TAX_DEFAULT = allTaxes.find((t) => t.code === 'GST');
     TAX_EXEMPT = allTaxes.find((t) => t.code === 'N-T');
     TAX_ZERO = allTaxes.find((t) => t.code === 'FRE');
+
+    // Ensure standard location exists
+    await pg.db
+      .insert(locations)
+      .values({
+        locationId: '10000000-0000-0000-0000-000000000001',
+        code: 'MAIN',
+        name: 'Main Location',
+      })
+      .onConflictDoNothing();
 
     mocktaxService = {
       getDefault: jest.fn().mockResolvedValue(TAX_DEFAULT),

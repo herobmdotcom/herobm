@@ -97,7 +97,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <EntityHeader
             title={order.orderNumber}
             subtitle={order.name || tPurchase('untitledOrder')}
-            onBack={() => router.push('/purchase-orders')}
+            onBack={() => {
+              if (document.referrer.includes(window.location.host)) {
+                router.back();
+              } else {
+                router.push('/purchase-orders');
+              }
+            }}
             isSaving={saving}
             badges={<StateBadge state={order.stateCode as ValidState} />}
             actions={

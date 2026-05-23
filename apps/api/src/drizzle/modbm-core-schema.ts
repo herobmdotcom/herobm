@@ -1248,7 +1248,6 @@ export const fractionalBehaviorEnum = modbmCore.enum('fractional_behavior', [
   'force_multiple',
 ]);
 
-
 export const productComponents = modbmCore.table('product_components', {
   componentId: uuid('component_id').primaryKey().defaultRandom(),
   parentProductId: uuid('parent_product_id')
@@ -1262,7 +1261,9 @@ export const productComponents = modbmCore.table('product_components', {
     .default('1'),
   quantity: numeric('quantity', { precision: 14, scale: 4 }).notNull(),
   sequenceNumber: integer('sequence_number').default(0),
-  fractionalBehavior: fractionalBehaviorEnum('fractional_behavior').notNull().default('allow_fractional'),
+  fractionalBehavior: fractionalBehaviorEnum('fractional_behavior')
+    .notNull()
+    .default('allow_fractional'),
 });
 
 // ---------------------------------------------------------------------------
@@ -1345,6 +1346,9 @@ export const customers = modbmCore.table(
     ),
     creditLimit: numeric('credit_limit'), // Nullable. Overrides group if NOT NULL.
     isOnCreditHold: boolean('is_on_credit_hold').notNull().default(false), // Manual override per account
+    bankAccountName: text('bank_account_name'),
+    bankBsb: text('bank_bsb'),
+    bankAccountNumber: text('bank_account_number'),
 
     externalId: text('external_id'),
     sourceId: text('source_id').unique(),
@@ -1421,6 +1425,9 @@ export const suppliers = modbmCore.table(
     stateCode: text('state_code').notNull().default(CUSTOMER_STATE.ACTIVE),
     externalId: text('external_id'),
     notes: text('notes'),
+    bankAccountName: text('bank_account_name'),
+    bankBsb: text('bank_bsb'),
+    bankAccountNumber: text('bank_account_number'),
     sourceId: text('source_id').unique(),
     source: text('source').notNull().default('app'),
     createdBy: text('created_by'),
@@ -1680,6 +1687,7 @@ export const paymentEntries = modbmCore.table('payment_entries', {
   stateCode: text('state_code').notNull().default(PAYMENT_STATE.DRAFT),
   currencyCode: text('currency_code').notNull(),
   createdBy: text('created_by'),
+  abaExportedAt: timestamp('aba_exported_at', { withTimezone: true }),
   createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
   modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
 });

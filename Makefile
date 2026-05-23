@@ -52,6 +52,7 @@ export PYTHONUTF8=1
 export ENV_FILE
 
 DBT_DIR = pipelines/abm_transform
+DBT_ODOO_DIR = pipelines/odoo_transform
 
 # --- Container Stack (Podman) ---
 
@@ -151,9 +152,7 @@ nuke:
 # Prerequisites: 'make up' running, .env populated with all passwords.
 # (init target defined further down alongside init-no-extract)
 
-# Generate setup token and provide URL for frontend setup flow
-setup-wizard: init-db migrate
-	@"$(VENV_PYTHON)" -c "import os,secrets; from dotenv import load_dotenv; load_dotenv(); t=secrets.token_urlsafe(32); open('.setup-token','w').write(t); p=os.environ.get('FE_PORT', '4300'); print('\n=================================\nHEROBM PLATFORM SETUP\n\nPlease complete the setup wizard to proceed:\n\nhttp://localhost:' + p + '/setup?token=' + t + '\n\n=================================\n')"
+
 
 # Create the active profile database and base schemas on a running container
 init-db:
@@ -173,6 +172,12 @@ extract:
 extract-dry:
 	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --dry-run
 
+extract-odoo:
+	"$(VENV_PYTHON)" pipelines/odoo_extract/pipeline.py
+
+extract-odoo-dry:
+	"$(VENV_PYTHON)" pipelines/odoo_extract/pipeline.py --dry-run
+
 # Extract a single ABM table: make extract-table TABLE=SGROUPS
 extract-table:
 	"$(VENV_PYTHON)" pipelines/abm_extract/pipeline.py --table $(TABLE)
@@ -182,6 +187,12 @@ transform:
 
 test-transform:
 	"$(DBT)" test --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+transform-odoo:
+	"$(DBT)" run --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
+
+test-transform-odoo:
+	"$(DBT)" test --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 
 # Rebuild a single model: make transform-select MODEL=import_accounts
 transform-select:
@@ -202,6 +213,19 @@ import-legacy:
 	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" test --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
+
+elt-odoo: extract-odoo transform-odoo import-legacy-odoo schema-ref
+	"$(VENV_PYTHON)" tools/elt_report.py
+
+elt-odoo-no-extract: transform-odoo import-legacy-odoo schema-ref
+	"$(VENV_PYTHON)" tools/elt_report.py
+
+import-legacy-odoo:
+	"$(DBT)" run --select tag:import --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
+	"$(DBT)" run-operation sync_sales_quotes --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
+	"$(DBT)" run-operation sync_sales_quote_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
+	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
+	"$(DBT)" test --select tag:import --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 
 # --- Schema Reference ---
 
@@ -328,6 +352,7 @@ test-deps:
 
 test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_adhoc_schema_scripts.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1
@@ -365,6 +390,7 @@ clean-dev:
 clean-build:
 	$(CLEAN_BUILD_CMD)
 	npm install
+	$(MAKE) build-shared
 	$(MAKE) build-all
 
 # --- CLI Specific Workflow (Granular & Explicit) ---
@@ -419,7 +445,7 @@ cli-migrate: migrate
 
 cli-bootstrap:
 	$(MAKE) build-api
-	npm run setup:prod
+	npm run seed
 	$(MAKE) verify-db
 
 verify-db: migrate-status
@@ -431,6 +457,7 @@ verify-all: build-api verify-fe-api verify-db test-structural test-deps test-tra
 
 test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_adhoc_schema_scripts.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_docker_socket.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_docker_log_shipping.ps1 -SkipLive
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_port_binding.ps1

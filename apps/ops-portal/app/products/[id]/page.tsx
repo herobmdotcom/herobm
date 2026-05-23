@@ -384,7 +384,13 @@ export default function ProductDetailPage() {
           <EntityHeader
         title={product.productNumber}
         subtitle={product.name}
-        onBack={() => router.push('/products')}
+        onBack={() => {
+          if (document.referrer.includes(window.location.host)) {
+            router.back();
+          } else {
+            router.push('/products');
+          }
+        }}
         isSaving={saving}
         badges={
           <>
@@ -423,6 +429,7 @@ export default function ProductDetailPage() {
                 endpoint={`/api/suppliers/by-product/${encodeURIComponent(id as string)}?r=${refreshGrid}`}
                 columns={supplierColumns}
                 gridKey={`product-suppliers-grid`}
+                urlPrefix="suppliers"
                 fetchAll
                 rowIdField="vendorId"
                 onRowClicked={(row: any) => router.push(`/suppliers/${row.vendorId}`)}

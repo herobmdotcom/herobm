@@ -176,16 +176,19 @@ export class ProductsService {
         stateCode: coreProducts.stateCode,
       })
       .from(productComponents)
-      .innerJoin(coreProducts, eq(productComponents.childProductId, coreProducts.productId))
+      .innerJoin(
+        coreProducts,
+        eq(productComponents.childProductId, coreProducts.productId),
+      )
       .where(eq(productComponents.parentProductId, productId))
       .orderBy(productComponents.sequenceNumber, coreProducts.productNumber);
 
     return {
-      data: components.map(c => ({
+      data: components.map((c) => ({
         ...c,
         parentQuantity: Number(c.parentQuantity),
-        quantity: Number(c.quantity)
-      }))
+        quantity: Number(c.quantity),
+      })),
     };
   }
 }

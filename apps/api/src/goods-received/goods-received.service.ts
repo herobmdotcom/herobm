@@ -213,7 +213,7 @@ export class GoodsReceivedService {
           .where(
             and(
               eq(zones.locationId, createDto.locationId),
-              eq(zones.code, 'RECV'),
+              eq(zones.code, 'HANDLING'),
             ),
           )
           .limit(1)
@@ -224,8 +224,9 @@ export class GoodsReceivedService {
             .insert(zones)
             .values({
               locationId: createDto.locationId,
-              code: 'RECV',
-              name: 'Receiving Dock',
+              code: 'HANDLING',
+              name: 'Handling Zone',
+              source: 'system',
               createdBy: userId,
             })
             .returning();
@@ -535,7 +536,10 @@ export class GoodsReceivedService {
         .select({ zoneId: zones.zoneId })
         .from(zones)
         .where(
-          and(eq(zones.locationId, receipt.locationId), eq(zones.code, 'RECV')),
+          and(
+            eq(zones.locationId, receipt.locationId),
+            eq(zones.code, 'HANDLING'),
+          ),
         )
         .limit(1);
 

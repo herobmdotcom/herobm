@@ -75,12 +75,9 @@ export async function runStandardSeeds(db: any, dryRun = false) {
   await seedUsers(db, dryRun);
   await seedProducts(db, dryRun);
   await seedOrganization(db, dryRun);
-  await seedCoaAccounts(db, dryRun);
-  await seedCoaSettings(db, dryRun);
+  await seedBaseGlSettings(db, dryRun);
   await seedAppSettings(db, dryRun);
   await seedFinancialDimensions(db, dryRun);
-  await seedLocations(db, dryRun);
-  await seedAccounts(db, dryRun);
   await seedReports(db, dryRun);
 
   console.log('\nDone.');
@@ -287,7 +284,127 @@ function loadCoaSettings() {
   return JSON.parse(fs.readFileSync(p, 'utf-8'));
 }
 
-async function seedCoaSettings(db: any, dryRun: boolean) {
+async function seedBaseGlSettings(db: any, dryRun: boolean) {
+  if (dryRun) {
+    console.log('  [DRY RUN] Would seed base gl_settings');
+    return;
+  }
+
+  const existing = await db.select().from(glSettings).limit(1);
+  if (existing.length > 0) {
+    console.log('  SKIP: gl_settings record already exists.');
+    return;
+  }
+
+  await db
+    .insert(glSettings)
+    .values({
+      settingsId: '4e185bce-d31a-4caa-8462-73c261864eff', // Use same constant ID
+      fiscalYearStartMonth: 7, // default
+      baseCurrency: 'AUD', // fallback
+    })
+    .onConflictDoNothing();
+
+  console.log('  Seeded base gl_settings (without accounts)');
+}
+
+export async function seedCoaAccounts(db: any, dryRun: boolean) {
+  const coaPath = path.join(
+    __dirname,
+    '..',
+    'gl',
+    'charts',
+    'au_standard.json',
+  );
+  if (!fs.existsSync(coaPath)) {
+    console.log(`  SKIP: COA file not found at ${coaPath}`);
+    return;
+  }
+
+  const coa = JSON.parse(fs.readFileSync(coaPath, 'utf-8'));
+
+  if (dryRun) {
+    console.log(
+      '  [DRY RUN] Would seed Chart of Customers from au_standard.json',
+    );
+    return;
+  }
+
+  const existing = await db.select().from(glAccounts).limit(1);
+  if (existing.length > 0) {
+    console.log('  SKIP: GL customers already exist');
+    return;
+  }
+
+  let autoCode = 100;
+  const insertRows: any[] = [];
+
+  function walk(
+    nodes: any,
+    parentCode: string | null,
+    inheritedType: string | null,
+  ) {
+    for (const [name, node] of Object.entries<any>(nodes)) {
+      const accountType =
+        ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
+      const code = node.account_number || String(autoCode++);
+      const isGroup = node.is_group === 1 || !!node.children;
+
+      insertRows.push({
+        code,
+        name,
+        accountType,
+        parentCode,
+        isGroup,
+      });
+
+      if (node.children) {
+        walk(node.children, code, accountType);
+      }
+    }
+  }
+
+  walk(coa.tree || {}, null, null);
+
+  for (const row of insertRows) {
+    const detId = uuidv5(row.code, NAMESPACE_COA);
+    await db
+      .insert(glAccounts)
+      .values({
+        glAccountId: detId,
+        accountCode: row.code,
+        name: row.name,
+        accountType: row.accountType,
+        isGroup: row.isGroup,
+        isSystem: true,
+        currencyCode: 'AUD',
+      })
+      .onConflictDoUpdate({
+        target: glAccounts.accountCode,
+        set: {
+          name: row.name,
+          accountType: row.accountType,
+          isGroup: row.isGroup,
+        },
+      });
+  }
+
+  for (const row of insertRows) {
+    if (row.parentCode) {
+      const parentId = uuidv5(row.parentCode, NAMESPACE_COA);
+      await db
+        .update(glAccounts)
+        .set({ parentAccountId: parentId })
+        .where(eq(glAccounts.accountCode, row.code));
+    }
+  }
+
+  console.log(
+    `  Seeded ${insertRows.length} GL customers from au_standard.json`,
+  );
+}
+
+export async function seedCoaSettings(db: any, dryRun: boolean) {
   const settings = loadCoaSettings();
   if (!settings) {
     console.log('  SKIP: No COA settings file found.');
@@ -381,104 +498,9 @@ async function seedCoaSettings(db: any, dryRun: boolean) {
     set: glData,
   });
 
+  console.log('  Seeded COA defaults to gl_settings');
   console.log(
     `  Seeded GL settings (base_currency=${baseCurrency}, fiscal_month=${fiscalMonth})`,
-  );
-}
-
-async function seedCoaAccounts(db: any, dryRun: boolean) {
-  const coaPath = path.join(
-    __dirname,
-    '..',
-    'gl',
-    'charts',
-    'au_standard.json',
-  );
-  if (!fs.existsSync(coaPath)) {
-    console.log(`  SKIP: COA file not found at ${coaPath}`);
-    return;
-  }
-
-  const coa = JSON.parse(fs.readFileSync(coaPath, 'utf-8'));
-
-  if (dryRun) {
-    console.log(
-      '  [DRY RUN] Would seed Chart of Customers from au_standard.json',
-    );
-    return;
-  }
-
-  const existing = await db.select().from(glAccounts).limit(1);
-  if (existing.length > 0) {
-    console.log('  SKIP: GL customers already exist');
-    return;
-  }
-
-  let autoCode = 100;
-  const insertRows: any[] = [];
-
-  function walk(
-    nodes: any,
-    parentCode: string | null,
-    inheritedType: string | null,
-  ) {
-    for (const [name, node] of Object.entries<any>(nodes)) {
-      const accountType =
-        ROOT_TYPE_MAP[node.root_type || ''] || inheritedType || 'asset';
-      const code = node.account_number || String(autoCode++);
-      const isGroup = node.is_group === 1 || !!node.children;
-
-      insertRows.push({
-        code,
-        name,
-        accountType,
-        parentCode,
-        isGroup,
-      });
-
-      if (node.children) {
-        walk(node.children, code, accountType);
-      }
-    }
-  }
-
-  walk(coa.tree || {}, null, null);
-
-  for (const row of insertRows) {
-    const detId = uuidv5(row.code, NAMESPACE_COA);
-    await db
-      .insert(glAccounts)
-      .values({
-        glAccountId: detId,
-        accountCode: row.code,
-        name: row.name,
-        accountType: row.accountType,
-        isGroup: row.isGroup,
-        isSystem: true,
-        currencyCode: 'AUD',
-      })
-      .onConflictDoUpdate({
-        target: glAccounts.accountCode,
-        set: {
-          name: row.name,
-          accountType: row.accountType,
-          isGroup: row.isGroup,
-        },
-      });
-  }
-
-  for (const row of insertRows) {
-    if (row.parentCode) {
-      const parentId = uuidv5(row.parentCode, NAMESPACE_COA);
-      await db
-        .update(glAccounts)
-        .set({ parentAccountId: parentId })
-        .where(eq(glAccounts.accountCode, row.code));
-    }
-  }
-
-  console.log(
-    `  Seeded ${insertRows.length} GL customers from au_standard.json`,
   );
 }
 
@@ -617,74 +639,7 @@ if (require.main === module) {
   });
 }
 
-async function seedLocations(db: any, dryRun: boolean) {
-  if (dryRun) {
-    console.log('  [DRY RUN] Would seed location: MAIN');
-    return;
-  }
-
-  await db
-    .insert(locations)
-    .values({
-      locationId: '10000000-0000-0000-0000-000000000001',
-      code: 'MAIN',
-      name: 'Main Location',
-    })
-    .onConflictDoUpdate({
-      target: locations.locationId,
-      set: { code: 'MAIN', name: 'Main Location' },
-    });
-
-  await db
-    .insert(zones)
-    .values({
-      zoneId: '30000000-0000-0000-0000-000000000001',
-      locationId: '10000000-0000-0000-0000-000000000001',
-      code: 'MAIN-Z1',
-      name: 'Main Zone',
-    })
-    .onConflictDoUpdate({
-      target: zones.zoneId,
-      set: { code: 'MAIN-Z1', name: 'Main Zone' },
-    });
-
-  await db
-    .insert(bins)
-    .values([
-      {
-        binId: '40000000-0000-0000-0000-000000000001',
-        zoneId: '30000000-0000-0000-0000-000000000001',
-        binNumber: 'RECEIVING',
-        binType: 'staging',
-        source: 'system',
-        isUnavailable: true,
-      },
-      {
-        binId: '40000000-0000-0000-0000-000000000002',
-        zoneId: '30000000-0000-0000-0000-000000000001',
-        binNumber: 'SHIPPING',
-        binType: 'staging',
-        source: 'system',
-        isUnavailable: true,
-      },
-      {
-        binId: '40000000-0000-0000-0000-000000000003',
-        zoneId: '30000000-0000-0000-0000-000000000001',
-        binNumber: 'MAIN-BIN-1',
-        binType: 'storage',
-        source: 'app',
-        isUnavailable: false,
-      },
-    ])
-    .onConflictDoUpdate({
-      target: bins.binId,
-      set: { binNumber: 'RECEIVING', binType: 'staging' },
-    });
-
-  console.log("  Seeded 'MAIN' location, zone, and bins");
-}
-
-async function seedAccounts(db: any, dryRun: boolean) {
+export async function seedAccounts(db: any, dryRun: boolean) {
   if (dryRun) {
     console.log('  [DRY RUN] Would seed default customer and vendor');
     return;

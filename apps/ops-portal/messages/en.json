@@ -1025,7 +1025,8 @@
         "bulk": "Bulk",
         "receiving": "Receiving",
         "staging": "Staging",
-        "quarantine": "Quarantine"
+        "quarantine": "Quarantine",
+        "in_transit": "In Transit"
       },
       "zonesCount": "{count, plural, =1 {# zone} other {# zones}}",
       "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
@@ -1835,6 +1836,7 @@
         "cancel": "Cancel",
         "create": "Create",
         "importCsv": "Import CSV",
+        "importSettings": "Import Settings",
         "actions": "Actions",
         "addChild": "+ Child",
         "configureMetadata": "Configure Metadata",
@@ -1913,12 +1915,13 @@
         "customerNumber": "Customer Number (BSB-Customer)",
         "iban": "IBAN",
         "swiftBic": "SWIFT/BIC",
-        "defaultAr": "Default Customers Receivable",
+        "defaultAr": "Default Accounts Receivable",
         "defaultRevenue": "Default Revenue",
-        "defaultAp": "Default Customers Payable",
+        "defaultAp": "Default Accounts Payable",
         "defaultTax": "Default Tax",
         "defaultCogs": "Default COGS",
         "defaultExpense": "Default Expense",
+        "baseCurrency": "Base Currency",
         "revenueRouting": "Revenue Routing Strategy",
         "expenseRouting": "Expense Routing Strategy",
         "type": "Type",
@@ -2220,7 +2223,8 @@
         "startExecution": "Start Execution",
         "goToDashboard": "Go to Dashboard",
         "retryImport": "Retry Import",
-        "returnToDashboard": "Return to Dashboard"
+        "returnToDashboard": "Return to Dashboard",
+        "continueToSummary": "Continue to Summary"
       },
       "errors": {
         "criticalError": "Critical Error: {message}"

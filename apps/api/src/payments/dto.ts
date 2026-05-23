@@ -75,3 +75,9 @@ export class AllocatePaymentDto {
   @Type(() => AllocationDto)
   allocations: AllocationDto[];
 }
+
+export class BatchPaymentActionDto {
+  @IsArray()
+  @IsString({ each: true })
+  paymentIds: string[];
+}

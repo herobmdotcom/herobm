@@ -30,6 +30,7 @@ import {
   suppliers,
   locations,
   inventoryLevels,
+  purchaseOrders,
 } from '../drizzle/modbm-core-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
@@ -61,6 +62,9 @@ export class AllocationsController {
         currencyCode: suppliers.currencyCode,
         locationId: salesOrderLineItems.fulfillmentLocationId,
         locationName: locations.name,
+        purchaseOrderId: backorders.purchaseOrderId,
+        purchaseOrderNumber: purchaseOrders.orderNumber,
+        purchaseOrderState: purchaseOrders.stateCode,
       })
       .from(backorders)
       .leftJoin(
@@ -84,12 +88,15 @@ export class AllocationsController {
         ),
       )
       .leftJoin(suppliers, eq(suppliers.vendorId, productSuppliers.vendorId))
+      .leftJoin(
+        purchaseOrders,
+        eq(backorders.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
       .where(
-        and(
-          sql`${backorders.purchaseOrderId} IS NULL`,
-          sql`${backorders.transferOrderId} IS NULL`,
-          eq(backorders.stateCode, BACKORDER_STATE.PENDING_SUPPLY),
-        ),
+        inArray(backorders.stateCode, [
+          BACKORDER_STATE.PENDING_SUPPLY,
+          BACKORDER_STATE.AWAITING_RECEIPT,
+        ]),
       );
 
     // -------------------------------------------------------------------

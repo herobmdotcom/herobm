@@ -515,6 +515,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       glAccountBank: val || '',
                       currencyCode: acc?.currencyCode || form.currencyCode
                     })}
+                    bankAccountOnly={true}
                     required
                   />
                   {form.glAccountBank && (
@@ -705,7 +706,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 <tr key={a.allocationId} className="hover:bg-gray-50/50 transition-colors">
                                   <td className="px-5 py-3">
                                     <Link 
-                                      href={a.referenceType.includes('sales') ? `/sales-invoices/${a.referenceId}` : `/purchase-invoices/${a.referenceId}`}
+                                      href={a.referenceType.includes('sales') ? `/sales-invoices/${a.referenceId}` : `/supplier-invoices/${a.referenceId}`}
                                       className="font-semibold text-[var(--accent)] hover:underline"
                                     >
                                       {a.invoiceNumber || a.referenceId.slice(0, 8)}

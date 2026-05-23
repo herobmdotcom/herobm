@@ -124,15 +124,29 @@ describe('ShipmentService', () => {
       .onConflictDoNothing();
 
     // Insert Default Mocks
-    await pg.db.insert(products).values([
-      {
-        productId: 'a0000000-0000-0000-0000-000000000001',
-        productNumber: 'PROD-001',
-        name: 'Widget A',
-        productType: 'inventory',
-        baseUom: 'EA',
-      },
-    ]);
+    await pg.db
+      .insert(products)
+      .values([
+        {
+          productId: 'a0000000-0000-0000-0000-000000000001',
+          productNumber: 'PROD-001',
+          name: 'Widget A',
+          productType: 'inventory',
+          baseUom: 'EA',
+        },
+      ])
+      .onConflictDoNothing();
+
+    await pg.db
+      .insert(locations)
+      .values([
+        {
+          locationId: '10000000-0000-0000-0000-000000000001',
+          code: 'LOC1',
+          name: 'Location 1',
+        },
+      ])
+      .onConflictDoNothing();
     await pg.db.insert(salesOrders).values([PICKING_ORDER]);
     await pg.db.insert(salesOrderLineItems).values([ORDER_LINE]);
     await pg.db.insert(salesOrderPicks).values([

@@ -10,6 +10,9 @@
 
 -- Phase 1 ELT landing schema (created dynamically by dlt into raw_abm)
 
+-- Suppress 'schema already exists' notices to keep logs clean
+SET client_min_messages = warning;
+
 -- Application schema (orders, users, events — managed by tools/migrate.py)
 CREATE SCHEMA IF NOT EXISTS modbm_core;
 

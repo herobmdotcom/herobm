@@ -22,6 +22,7 @@ interface AccountSelectProps {
   placeholder?: string;
   required?: boolean;
   initialSearchTerm?: string;
+  excludeId?: string | null;
 }
 
 function useDebounce(fn: (...args: any[]) => void, delay: number) {
@@ -40,6 +41,7 @@ export default function CustomerSelect({
   placeholder,
   required,
   initialSearchTerm,
+  excludeId,
 }: AccountSelectProps) {
   const t = useTranslations('common');
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm || '');
@@ -74,7 +76,11 @@ export default function CustomerSelect({
       const data = await apiFetch<{ data: Customer[] }>(
         `/api/customers?q=${encodeURIComponent(term)}&limit=10`,
       );
-      setFilteredAccounts(data.data);
+      if (excludeId) {
+        setFilteredAccounts(data.data.filter((c) => c.customerId !== excludeId));
+      } else {
+        setFilteredAccounts(data.data);
+      }
     } catch { 
       setFilteredAccounts([]); 
     }

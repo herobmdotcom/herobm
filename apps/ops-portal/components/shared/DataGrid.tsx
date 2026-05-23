@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AgGridReact } from "ag-grid-react";
 import {
@@ -131,6 +132,8 @@ export interface DataGridProps<T> {
   onDataLoaded?: (data: T[]) => void;
   /** AG Grid domLayout — use 'autoHeight' when the grid is inside a container without a resolved pixel height (e.g. slideovers) */
   domLayout?: 'normal' | 'autoHeight' | 'print';
+  /** Optional prefix for URL query parameters to avoid collisions when multiple grids exist on the same page */
+  urlPrefix?: string;
 }
 
 /** Format numbers: integers stay as integers, decimals get 2 places */
@@ -169,9 +172,16 @@ export default function DataGrid<T>({
   isRowSelectable,
   onDataLoaded,
   domLayout,
+  urlPrefix,
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const qParam = urlPrefix ? `${urlPrefix}_q` : 'q';
+  const pageParam = urlPrefix ? `${urlPrefix}_page` : 'page';
+  const archivedParam = urlPrefix ? `${urlPrefix}_archived` : 'archived';
 
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
   // into a single initialState — read once on mount
@@ -199,46 +209,61 @@ export default function DataGrid<T>({
 
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState(initialSearch ?? "");
-  const [includeArchived, setIncludeArchived] = useState(false);
-  const [page, setPage] = useState(1);
   const limit = fetchAll ? 99999 : 200;
 
-  // Restore local React state from sessionStorage safely on the client
-  const [isRestored, setIsRestored] = useState(!gridKey);
+  // Initialize state from URL params if available, falling back to defaults
+  const [search, setSearch] = useState(() => searchParams?.get(qParam) ?? initialSearch ?? "");
+  const [includeArchived, setIncludeArchived] = useState(() => searchParams?.get(archivedParam) === 'true');
+  const [page, setPage] = useState(() => {
+    const p = searchParams?.get(pageParam);
+    return p ? parseInt(p, 10) || 1 : 1;
+  });
 
-  useEffect(() => {
-    if (gridKey) {
-      const savedSearch = sessionStorage.getItem(`datagrid-search-${gridKey}`);
-      if (savedSearch !== null) setSearch(savedSearch);
-      
-      const savedArchived = sessionStorage.getItem(`datagrid-archived-${gridKey}`);
-      if (savedArchived !== null) setIncludeArchived(savedArchived === 'true');
-      
-      const savedPage = sessionStorage.getItem(`datagrid-page-${gridKey}`);
-      if (savedPage !== null) setPage(parseInt(savedPage, 10) || 1);
-      
-      setIsRestored(true);
-    }
-  }, [gridKey]);
+  // We are fully restored from URL synchronously
+  const isRestored = true;
 
-  // Persist local state back to sessionStorage when it changes
+  // Sync state FROM URL to local state (e.g., when user hits Back button)
   useEffect(() => {
-    if (gridKey && isRestored) {
-      sessionStorage.setItem(`datagrid-search-${gridKey}`, search);
-      sessionStorage.setItem(`datagrid-archived-${gridKey}`, String(includeArchived));
-      sessionStorage.setItem(`datagrid-page-${gridKey}`, String(page));
-    }
-  }, [gridKey, isRestored, search, includeArchived, page]);
+    setSearch(searchParams?.get(qParam) ?? initialSearch ?? "");
+    setIncludeArchived(searchParams?.get(archivedParam) === 'true');
+    const p = searchParams?.get(pageParam);
+    setPage(p ? parseInt(p, 10) || 1 : 1);
+  }, [searchParams, qParam, archivedParam, pageParam, initialSearch]);
 
-  // Sync initialSearch prop changes (e.g. SPA navigation with new query params)
-  const prevInitialSearch = useRef(initialSearch);
+  // Sync local state TO URL (e.g., when user types or clicks next page)
+  const firstRender = useRef(true);
   useEffect(() => {
-    if (initialSearch !== prevInitialSearch.current) {
-      prevInitialSearch.current = initialSearch;
-      setSearch(initialSearch ?? "");
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
     }
-  }, [initialSearch]);
+    
+    if (typeof window === 'undefined') return;
+    
+    // We only update if the local state actually differs from what's currently in the URL
+    // to avoid infinite loops when syncing back from URL
+    const currentQ = searchParams?.get(qParam) ?? "";
+    const currentArchived = searchParams?.get(archivedParam) === 'true';
+    const currentP = searchParams?.get(pageParam) ? parseInt(searchParams.get(pageParam)!, 10) : 1;
+    
+    if (search === currentQ && includeArchived === currentArchived && page === currentP) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    
+    if (search) params.set(qParam, search);
+    else params.delete(qParam);
+
+    if (includeArchived) params.set(archivedParam, 'true');
+    else params.delete(archivedParam);
+
+    if (page > 1) params.set(pageParam, String(page));
+    else params.delete(pageParam);
+
+    const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+    window.history.replaceState(window.history.state, '', newUrl);
+  }, [search, includeArchived, page, qParam, archivedParam, pageParam, searchParams]);
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);

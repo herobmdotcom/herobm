@@ -74,6 +74,7 @@ export class AccountsWriteService {
       'customerGroupId',
       'taxCategoryId',
       'currencyCode',
+      'parentCustomerId',
 
       'notes',
     ];
@@ -156,6 +157,7 @@ export class AccountsWriteService {
       'stateCode',
       'taxCategoryId',
       'currencyCode',
+      'parentCustomerId',
 
       'notes',
     ];

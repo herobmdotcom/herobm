@@ -31,6 +31,13 @@ export interface Customer {
   customerDiscount: string | null;
   stateCode: ValidState;
   notes: string | null;
+  parentCustomerId: string | null;
+  parentCustomerName?: string | null;
+  childAccounts?: any[];
+
+  bankAccountName?: string | null;
+  bankBsb?: string | null;
+  bankAccountNumber?: string | null;
 
   createdOn: string | null;
   createdBy: string | null;

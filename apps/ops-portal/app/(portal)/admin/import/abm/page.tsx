@@ -5,6 +5,7 @@ import { apiFetch, apiMutate, reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
+import { CURRENCIES, getCurrencyByAbmCode } from '@/lib/currency';
 
 type Step = 'config' | 'preview' | 'executing' | 'finalisation';
 
@@ -24,7 +25,8 @@ export default function AdminImportPage() {
     username: '',
     password: '',
     resumeExtraction: false,
-    defaultLocationCode: ''
+    defaultLocationCode: '',
+    baseCurrency: 'AUD'
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -88,6 +90,10 @@ export default function AdminImportPage() {
         if (locs.length > 0) {
            setConfig(prev => ({ ...prev, defaultLocationCode: locs[0].code }));
         }
+        if (res.preview?.baseCurrencyAbmCode !== undefined) {
+           const mappedCurr = getCurrencyByAbmCode(res.preview.baseCurrencyAbmCode);
+           setConfig(prev => ({ ...prev, baseCurrency: mappedCurr.code }));
+        }
         setStep('preview');
       }
     } catch (err: any) {
@@ -110,6 +116,7 @@ export default function AdminImportPage() {
         abmImport: true,
         resumeExtraction: config.resumeExtraction,
         defaultLocationCode: config.defaultLocationCode,
+        baseCurrency: config.baseCurrency,
       };
 
       setStep('executing');
@@ -139,22 +146,20 @@ export default function AdminImportPage() {
           if (progressRes.status === 'completed' || progressRes.status === 'done') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
-            // Fetch import summary and move to finalisation
-            apiFetch<any>('/api/setup/import-summary').then(summary => {
-               setImportSummary(summary);
-               setStep('finalisation');
-            }).catch(err => {
-               console.error(err);
-               setStep('finalisation');
-            });
           } else if (progressRes.status === 'failed') {
             setStatus('failed');
             setErrorMsg(progressRes.error || 'Execution failed on backend.');
             clearInterval(pollTimerRef.current);
           }
         }
-      } catch (err) {
-        reportError(err, 'Polling error');
+      } catch (err: any) {
+        if (err.status === 404 || err.message?.includes('not found') || err.message?.toLowerCase().includes('job not found')) {
+          setStatus('failed');
+          setErrorMsg('Job not found. The server might have restarted.');
+          clearInterval(pollTimerRef.current);
+        } else {
+          reportError(err, 'Polling error');
+        }
       }
     }, 2000);
   };
@@ -262,18 +267,34 @@ export default function AdminImportPage() {
       {step === 'preview' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           
-          <div className="mb-8 pb-8 border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">Default Fulfillment Location</h2>
-            <p className="text-sm text-slate-500 mb-4">Select the primary location from ABM that will act as the default fulfillment warehouse going forward.</p>
-            <select
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
-              value={config.defaultLocationCode}
-              onChange={(e) => setConfig({ ...config, defaultLocationCode: e.target.value })}
-            >
-              {abmLocations.map(loc => (
-                <option key={loc.code} value={loc.code}>{loc.name} ({loc.code})</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-100">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">Default Fulfillment Location</h2>
+              <p className="text-sm text-slate-500 mb-4">Select the primary location from ABM that will act as the default fulfillment warehouse going forward.</p>
+              <select
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                value={config.defaultLocationCode}
+                onChange={(e) => setConfig({ ...config, defaultLocationCode: e.target.value })}
+              >
+                {abmLocations.map(loc => (
+                  <option key={loc.code} value={loc.code}>{loc.name} ({loc.code})</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">System Base Currency</h2>
+              <p className="text-sm text-slate-500 mb-4">Confirm the base currency to be used for transactions imported from this ABM instance.</p>
+              <select
+                className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                value={config.baseCurrency}
+                onChange={(e) => setConfig({ ...config, baseCurrency: e.target.value })}
+              >
+                {CURRENCIES.map(curr => (
+                  <option key={curr.code} value={curr.code}>{curr.name} ({curr.code})</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions', { fallback: 'Execution Options' })}</h2>
@@ -409,6 +430,25 @@ export default function AdminImportPage() {
         </div>
       )}
       
+      {step === 'executing' && status === 'completed' && (
+        <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
+           <button
+            onClick={() => {
+              apiFetch<any>('/api/setup/import-summary').then(summary => {
+                 setImportSummary(summary);
+                 setStep('finalisation');
+              }).catch(err => {
+                 console.error(err);
+                 setStep('finalisation');
+              });
+            }}
+            className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
+           >
+             {t('buttons.continueToSummary', { fallback: 'Continue to Summary' })}
+           </button>
+        </div>
+      )}
+
       {step === 'executing' && status === 'failed' && (
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
@@ -417,12 +457,6 @@ export default function AdminImportPage() {
            >
              {t('buttons.retryImport', { fallback: 'Retry Import' })}
            </button>
-           <button
-            onClick={() => router.push('/')}
-            className="text-slate-500 hover:text-slate-800 underline"
-          >
-            {t('buttons.returnToDashboard', { fallback: 'Return to Dashboard' })}
-          </button>
         </div>
       )}
     </div>

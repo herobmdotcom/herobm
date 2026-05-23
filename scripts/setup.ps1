@@ -202,8 +202,7 @@ if ($failed.Count -gt 0) {
 }
 else {
     Write-Host "`n  All prerequisites installed! Starting your chosen environment..." -ForegroundColor Green
-    $initCmd = "make init-env " + ($makeTargets -join " ") + " setup-wizard"
+    $initCmd = "make init-env " + ($makeTargets -join " ")
     Write-Host "  Running: $initCmd" -ForegroundColor Cyan
-    Invoke-Expression $ilitCmdor Cyan
     Invoke-Expression $initCmd
 }

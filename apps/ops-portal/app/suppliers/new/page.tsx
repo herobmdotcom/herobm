@@ -32,6 +32,9 @@ export default function NewSupplierPage() {
     currencyCode: '',
     supplierGroupId: '',
     notes: '',
+    bankAccountName: '',
+    bankBsb: '',
+    bankAccountNumber: '',
   });
 
   const handleSubmit = async () => {
@@ -254,6 +257,56 @@ export default function NewSupplierPage() {
                       disabled={submitting}
                     />
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bank Details Card */}
+            <div className="card">
+              <h3 className="section-heading">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
+                <span className="material-symbols-outlined">account_balance</span>
+                Bank Details
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Bank Account Name
+                  </label>
+                  <input
+                    type="text"
+                    className="input w-full"
+                    value={dto.bankAccountName}
+                    onChange={(e) => updateField('bankAccountName', e.target.value)}
+                    placeholder="e.g. John Doe Pty Ltd"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    BSB
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankBsb}
+                    onChange={(e) => updateField('bankBsb', e.target.value)}
+                    placeholder="e.g. 062-000"
+                    disabled={submitting}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    Account Number
+                  </label>
+                  <input
+                    type="text"
+                    className="input"
+                    value={dto.bankAccountNumber}
+                    onChange={(e) => updateField('bankAccountNumber', e.target.value)}
+                    placeholder="e.g. 12345678"
+                    disabled={submitting}
+                  />
                 </div>
               </div>
             </div>

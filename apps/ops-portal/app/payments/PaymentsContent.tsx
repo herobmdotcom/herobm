@@ -9,6 +9,7 @@ import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import { useSettings } from '@/components/SettingsProvider';
 import PaymentManagerSlideOver from './PaymentManagerSlideOver';
+import { PAYMENT_STATE } from '@modbm/shared';
 
 interface UnifiedPayment {
   paymentId: string;
@@ -32,8 +33,10 @@ export default function PaymentsContent() {
   const [slideOverOpen, setSlideOverOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const [payments, setPayments] = useState<UnifiedPayment[]>([]);
+  const [selectedPayments, setSelectedPayments] = useState<UnifiedPayment[]>([]);
   const [days, setDays] = useState('90');
   const [allocationFilter, setAllocationFilter] = useState('all');
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const tCommon = useTranslations('common');
 
   const handleNext = useCallback(() => {
@@ -56,8 +59,10 @@ export default function PaymentsContent() {
     { 
       field: 'paymentNumber', 
       headerName: 'Payment #', 
-      width: 150, 
+      width: 170, 
       pinned: 'left',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
     },
     { field: 'paymentType', headerName: 'Type', width: 120, cellRenderer: (params: any) => params.value === 'receive' ? 'Receipt' : 'Payment' },
     { field: 'partyType', headerName: 'Party Type', width: 120, cellRenderer: (params: any) => params.value === 'customer' ? 'Customer' : 'Supplier' },
@@ -136,6 +141,60 @@ export default function PaymentsContent() {
     setSlideOverOpen(true);
   }, []);
 
+  const handleExportAba = async () => {
+    if (selectedPayments.length === 0) return;
+    setIsProcessingBatch(true);
+    try {
+      const response = await fetch('/api/payments/export-aba', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIds: selectedPayments.map(p => p.paymentId) }),
+      });
+      if (!response.ok) throw new Error('Export failed');
+      const data = await response.json();
+      
+      // Download the file
+      const blob = new Blob([data.fileContent], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ABA_${new Date().toISOString().slice(0,10)}.aba`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
+      setSelectedPayments([]);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProcessingBatch(false);
+    }
+  };
+
+  const handleBatchAction = async (endpoint: string) => {
+    if (selectedPayments.length === 0) return;
+    setIsProcessingBatch(true);
+    try {
+      const response = await fetch(`/api/payments/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIds: selectedPayments.map(p => p.paymentId) }),
+      });
+      if (!response.ok) throw new Error('Action failed');
+      window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
+      setSelectedPayments([]);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsProcessingBatch(false);
+    }
+  };
+
+  const draftSelected = selectedPayments.filter(p => p.stateCode === PAYMENT_STATE.DRAFT);
+  const exportedSelected = selectedPayments.filter(p => p.stateCode === PAYMENT_STATE.EXPORTED);
+  const hasDraftSelected = draftSelected.length > 0 && draftSelected.length === selectedPayments.length;
+  const hasExportedSelected = exportedSelected.length > 0 && exportedSelected.length === selectedPayments.length;
+
   return (
     <>
       <div className="h-full flex flex-col relative p-4 lg:p-6">
@@ -149,6 +208,8 @@ export default function PaymentsContent() {
               exportFileName="payments"
               fetchAll
               rowIdField="paymentId"
+              rowSelection="multiple"
+              onSelectionChanged={setSelectedPayments}
               onDataLoaded={setPayments}
               onRowClicked={handleRowClicked}
               renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
@@ -194,7 +255,37 @@ export default function PaymentsContent() {
                       <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
                     </select>
                     {optionsButton}
-                    <button 
+                    
+                    {hasDraftSelected && (
+                      <button 
+                        onClick={handleExportAba} 
+                        disabled={isProcessingBatch}
+                        className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+                      >
+                        {isProcessingBatch ? 'Processing...' : `Export ABA (${draftSelected.length})`}
+                      </button>
+                    )}
+                    
+                    {hasExportedSelected && (
+                      <>
+                        <button 
+                          onClick={() => handleBatchAction('confirm-exported')} 
+                          disabled={isProcessingBatch}
+                          className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+                        >
+                          Confirm ({exportedSelected.length})
+                        </button>
+                        <button 
+                          onClick={() => handleBatchAction('reject-exported')} 
+                          disabled={isProcessingBatch}
+                          className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    <button  
                       onClick={() => {
                         setSelectedPaymentId(null);
                         setSlideOverOpen(true);

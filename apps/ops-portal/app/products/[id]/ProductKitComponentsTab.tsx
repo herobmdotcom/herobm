@@ -75,6 +75,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
           endpoint={`/api/products/${productId}/components?r=${refreshKey}`}
           columns={columns}
           gridKey="kit-components-grid"
+          urlPrefix="components"
           fetchAll
           rowIdField="componentId"
           renderHeader={({ rowCount, loading }: { rowCount: number, loading: boolean }) => (

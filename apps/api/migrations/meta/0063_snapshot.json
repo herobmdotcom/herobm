@@ -1,5 +1,5 @@
 {
-  "id": "8f2ae394-2316-43da-ae3e-042372ccda1c",
+  "id": "4776e648-cb68-4a5d-8b1d-e4c130dd52fc",
   "prevId": "ac844c74-b29e-4d6c-b83e-aa4ab99dc8f0",
   "version": "7",
   "dialect": "postgresql",
@@ -3234,6 +3234,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "parent_quantity": {
+          "name": "parent_quantity",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'1'"
+        },
         "quantity": {
           "name": "quantity",
           "type": "numeric(14, 4)",
@@ -3246,6 +3253,14 @@
           "primaryKey": false,
           "notNull": false,
           "default": 0
+        },
+        "fractional_behavior": {
+          "name": "fractional_behavior",
+          "type": "fractional_behavior",
+          "typeSchema": "modbm_core",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'allow_fractional'"
         }
       },
       "indexes": {},
@@ -3958,10 +3973,19 @@
         },
         "product_type": {
           "name": "product_type",
-          "type": "text",
+          "type": "product_type",
+          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
           "default": "'inventory'"
+        },
+        "structure_type": {
+          "name": "structure_type",
+          "type": "product_structure",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'standard'"
         },
         "product_group_id": {
           "name": "product_group_id",
@@ -8682,6 +8706,33 @@
         "staging",
         "quarantine",
         "in_transit"
+      ]
+    },
+    "modbm_core.fractional_behavior": {
+      "name": "fractional_behavior",
+      "schema": "modbm_core",
+      "values": [
+        "allow_fractional",
+        "round_up",
+        "round_down",
+        "force_multiple"
+      ]
+    },
+    "public.product_structure": {
+      "name": "product_structure",
+      "schema": "public",
+      "values": [
+        "standard",
+        "kit"
+      ]
+    },
+    "public.product_type": {
+      "name": "product_type",
+      "schema": "public",
+      "values": [
+        "inventory",
+        "non-stock",
+        "service"
       ]
     }
   },

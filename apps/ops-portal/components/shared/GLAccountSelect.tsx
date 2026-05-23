@@ -22,6 +22,7 @@ interface GLAccountSelectProps {
   required?: boolean;
   /** If false, group accounts are filtered out. Default: false */
   allowGroups?: boolean;
+  bankAccountOnly?: boolean;
 }
 
 export default function GLAccountSelect({
@@ -32,6 +33,7 @@ export default function GLAccountSelect({
   placeholder,
   required,
   allowGroups = false,
+  bankAccountOnly = false,
 }: GLAccountSelectProps) {
   const [accounts, setAccounts] = useState<GLAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,13 @@ export default function GLAccountSelect({
     let active = true;
     setLoading(true);
 
-    apiFetch<GLAccount[]>('/api/gl/accounts')
+    const queryParams = new URLSearchParams();
+    if (bankAccountOnly) {
+      queryParams.set('isBankAccount', 'true');
+    }
+    const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
+
+    apiFetch<GLAccount[]>(`/api/gl/accounts${qs}`)
       .then((data) => {
         if (active) setAccounts(data);
       })
@@ -53,7 +61,7 @@ export default function GLAccountSelect({
     return () => {
       active = false;
     };
-  }, []);
+  }, [bankAccountOnly]);
 
   return (
     <select

@@ -9,6 +9,7 @@ import {
   taxCategories,
 } from '../drizzle/modbm-core-schema';
 import { PaginationQuery, parsePagination } from '../common/pagination';
+import { alias } from 'drizzle-orm/pg-core';
 
 import { CUSTOMER_STATE } from '@modbm/shared';
 
@@ -65,6 +66,7 @@ export class AccountsService {
         taxCategories,
         eq(customers.taxCategoryId, taxCategories.taxCategoryId),
       )
+
       .orderBy(asc(sql`lower(${customers.name})`))
       .limit(limit)
       .offset(offset)
@@ -105,6 +107,7 @@ export class AccountsService {
         taxCategories,
         eq(customers.taxCategoryId, taxCategories.taxCategoryId),
       )
+
       .where(isUuid ? eq(customers.customerId, id) : eq(customers.sourceId, id))
       .limit(1);
 

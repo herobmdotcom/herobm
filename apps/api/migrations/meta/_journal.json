@@ -446,29 +446,22 @@
     {
       "idx": 63,
       "version": "7",
-      "when": 1779433600002,
-      "tag": "0065_create_product_components",
+      "when": 1779544500844,
+      "tag": "0063_catchup",
       "breakpoints": true
     },
     {
       "idx": 64,
       "version": "7",
-      "when": 1779436016811,
-      "tag": "0066_product_kits_and_structure",
+      "when": 1779544569810,
+      "tag": "0069_add_bank_details",
       "breakpoints": true
     },
     {
       "idx": 65,
       "version": "7",
-      "when": 1779439257155,
-      "tag": "0065_add_fractional_behavior",
-      "breakpoints": true
-    },
-    {
-      "idx": 66,
-      "version": "7",
-      "when": 1779439301988,
-      "tag": "0066_add_fractional_behavior",
+      "when": 1779565109288,
+      "tag": "0070_add_outstanding_amounts",
       "breakpoints": true
     }
   ]

@@ -112,6 +112,18 @@ export class CreateSupplierDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountName?: string;
+
+  @IsOptional()
+  @IsString()
+  bankBsb?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
 }
 
 export class UpdateSupplierDto {
@@ -213,6 +225,18 @@ export class UpdateSupplierDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountName?: string;
+
+  @IsOptional()
+  @IsString()
+  bankBsb?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
 
   @IsOptional()
   @IsString()

@@ -234,7 +234,13 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                     <EntityHeader
                         title={order.orderNumber}
                         subtitle={order.name || tSales('untitledOrder')}
-                        onBack={() => router.push('/sales-orders')}
+                        onBack={() => {
+                          if (document.referrer.includes(window.location.host)) {
+                            router.back();
+                          } else {
+                            router.push('/sales-orders');
+                          }
+                        }}
                         isSaving={saving}
                         badges={<StateBadge state={order.stateCode as ValidState} />}
                         actions={

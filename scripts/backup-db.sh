@@ -24,21 +24,43 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 BACKUP_FILE="${BACKUP_DIR}/modbm_db_backup_${TIMESTAMP}.sql"
 GZ_BACKUP_FILE="${BACKUP_FILE}.gz"
 RETENTION_DAYS=14 # How many days to keep local backups
+# Parse command line arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --profile|-p) PROFILE="$2"; shift ;;
+    esac
+    shift
+done
 # =================================================
 
-# Load environment variables if available to get BACKUP_RCLONE_DEST
+# Load environment variables to get BACKUP_RCLONE_DEST, POSTGRES_DB, and POSTGRES_USER
 ENV_FILE="$(dirname "$0")/../.env"
-if [ -f "$ENV_FILE" ]; then
-    # We only want specific backup variables from .env to avoid collision
-    export $(grep '^BACKUP_RCLONE_DEST=' "$ENV_FILE" | xargs -0)
+if [ -n "$PROFILE" ] && [ -f "${ENV_FILE}.${PROFILE}" ]; then
+    ENV_FILE="${ENV_FILE}.${PROFILE}"
+elif [ -f "$(dirname "$0")/../.active_profile" ]; then
+    ACTIVE_PROFILE=$(cat "$(dirname "$0")/../.active_profile")
+    if [ -f "${ENV_FILE}.${ACTIVE_PROFILE}" ]; then
+        ENV_FILE="${ENV_FILE}.${ACTIVE_PROFILE}"
+    fi
 fi
+
+if [ -f "$ENV_FILE" ]; then
+    # Load env safely
+    set -a
+    source <(grep -v '^#' "$ENV_FILE" | sed -e '/^$/d')
+    set +a
+fi
+
+DB_USER=${POSTGRES_USER:-postgres}
+DB_NAME=${POSTGRES_DB:-custom_app}
 
 echo -e "\e[36m=========================================\e[0m"
 echo -e "\e[97m MODBM PostgreSQL Database Backup Worker \e[0m"
 echo -e "\e[36m=========================================\e[0m"
 echo ""
 echo "Target container : postgres-custom"
-echo "Target database  : custom_app"
+echo "Target database  : $DB_NAME"
+echo "Target user      : $DB_USER"
 echo "Export directory : $BACKUP_DIR"
 echo ""
 
@@ -48,7 +70,7 @@ echo -e "\e[90mExecuting pg_dump via Podman...\e[0m"
 # --clean drops objects before recreating them, making restoration seamless.
 # --if-exists suppresses errors if the tables don't exist yet on the restore target.
 # Note: we use -i without -t so it doesn't fail when run in a non-TTY cron environment.
-podman exec -i postgres-custom pg_dump -U postgres -d custom_app --clean --if-exists > "$BACKUP_FILE"
+podman exec -i postgres-custom pg_dump -U "$DB_USER" -d "$DB_NAME" --clean --if-exists > "$BACKUP_FILE"
 
 # Compress the backup to save disk space and network bandwidth
 echo -e "\e[90mCompressing backup...\e[0m"

@@ -612,7 +612,7 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(zones)
         .values({
-          zoneId: '10000000-0000-0000-0000-000000000003',
+          zoneId: '30000000-0000-0000-0000-000000000001',
           locationId: '10000000-0000-0000-0000-000000000001',
           code: 'HANDLING',
           name: 'Handling',
@@ -621,9 +621,9 @@ describe('ReturnsWriteService', () => {
       await pg.db
         .insert(bins)
         .values({
-          binId: '10000000-0000-0000-0000-000000000002',
+          binId: '20000000-0000-0000-0000-000000000001',
           binNumber: 'RETURNS',
-          zoneId: '10000000-0000-0000-0000-000000000003',
+          zoneId: '30000000-0000-0000-0000-000000000001',
           binType: 'staging',
         })
         .onConflictDoNothing();

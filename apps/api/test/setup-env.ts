@@ -33,6 +33,10 @@ if (fs.existsSync(envPath)) {
   }
 }
 
+// Force the application to use the discrete POSTGRES_* components
+// (which we can override with cross-env) rather than a hardcoded URL from .env
+delete process.env.DATABASE_URL;
+
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'test-secret-value-for-e2e';
 }

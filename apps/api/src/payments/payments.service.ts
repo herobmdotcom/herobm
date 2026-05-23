@@ -24,6 +24,8 @@ import { AggregateType, EventType } from '../common/event-types';
 import { GlService } from '../gl/gl.service';
 import { evaluateInvoiceLifecycleRules } from '../invoices/invoice-lifecycle-rules';
 import { CreatePaymentDto, AllocatePaymentDto } from './dto';
+import { AbaGeneratorService } from './aba-generator.service';
+import { inArray } from 'drizzle-orm';
 import {
   PAYMENT_STATE,
   PAYMENT_TRANSITIONS,
@@ -42,6 +44,7 @@ export class PaymentsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     private readonly glService: GlService,
+    private readonly abaGenerator: AbaGeneratorService,
   ) {}
 
   // -------------------------------------------------------------------------
@@ -218,9 +221,12 @@ export class PaymentsService {
         throw new NotFoundException(`Payment ${paymentId} not found`);
       }
 
-      if (payment.stateCode !== PAYMENT_STATE.DRAFT) {
+      if (
+        payment.stateCode !== PAYMENT_STATE.DRAFT &&
+        payment.stateCode !== PAYMENT_STATE.EXPORTED
+      ) {
         throw new BadRequestException(
-          `Only ${PAYMENT_STATE.DRAFT} payments can be submitted`,
+          `Only draft or exported payments can be submitted`,
         );
       }
 
@@ -608,6 +614,136 @@ export class PaymentsService {
       );
 
       return updated;
+    });
+  }
+
+  async exportAba(paymentIds: string[], actor: string): Promise<string> {
+    return await this.db.transaction(async (tx) => {
+      // 1. Fetch payments and their payee bank details
+      const payments = await tx
+        .select({
+          paymentId: paymentEntries.paymentId,
+          totalAmount: paymentEntries.totalAmount,
+          stateCode: paymentEntries.stateCode,
+          paymentNumber: paymentEntries.paymentNumber,
+          glAccountBank: paymentEntries.glAccountBank,
+          customerBankName: customers.bankAccountName,
+          customerBsb: customers.bankBsb,
+          customerAccount: customers.bankAccountNumber,
+          supplierBankName: suppliers.bankAccountName,
+          supplierBsb: suppliers.bankBsb,
+          supplierAccount: suppliers.bankAccountNumber,
+        })
+        .from(paymentEntries)
+        .leftJoin(customers, eq(paymentEntries.partyId, customers.customerId))
+        .leftJoin(suppliers, eq(paymentEntries.partyId, suppliers.vendorId))
+        .where(inArray(paymentEntries.paymentId, paymentIds));
+
+      if (payments.length === 0) {
+        throw new BadRequestException('No payments found to export');
+      }
+
+      // Check states
+      for (const p of payments) {
+        if (p.stateCode !== PAYMENT_STATE.DRAFT) {
+          throw new BadRequestException(
+            `Payment ${p.paymentNumber} is not in DRAFT state`,
+          );
+        }
+      }
+
+      // 2. Determine the company bank account
+      const bankAccountId = payments[0].glAccountBank;
+      if (!bankAccountId)
+        throw new BadRequestException('No GL Account Bank set on payment');
+
+      const [bankGl] = await tx
+        .select()
+        .from(glAccounts)
+        .where(eq(glAccounts.glAccountId, bankAccountId));
+
+      if (!bankGl) throw new NotFoundException('GL Account Bank not found');
+
+      const meta = (bankGl.metadata || {}) as any;
+      if (!meta.abaUserName || !meta.abaUserId || !meta.bankName) {
+        throw new BadRequestException(
+          'Company Bank GL Account metadata is missing ABA details (abaUserName, abaUserId, bankName)',
+        );
+      }
+
+      // 3. Build transactions
+      const transactions = payments.map((p) => {
+        const bsb = p.supplierBsb || p.customerBsb;
+        const account = p.supplierAccount || p.customerAccount;
+        const name = p.supplierBankName || p.customerBankName;
+
+        if (!bsb || !account || !name) {
+          throw new BadRequestException(
+            `Missing bank details for payee on payment ${p.paymentNumber}`,
+          );
+        }
+
+        return {
+          bsb,
+          accountNumber: account,
+          accountName: name,
+          amount: parseFloat(p.totalAmount),
+          traceBsb: meta.bsb || '000-000',
+          traceAccountNumber: meta.accountNumber || '000000',
+          remitterName: meta.abaUserName,
+          reference: p.paymentNumber,
+        };
+      });
+
+      const d = new Date();
+      const processDate =
+        String(d.getDate()).padStart(2, '0') +
+        String(d.getMonth() + 1).padStart(2, '0') +
+        String(d.getFullYear()).slice(2, 4);
+
+      // 4. Generate ABA file content
+      const abaContent = this.abaGenerator.generateAbaFile({
+        bankName: meta.bankName,
+        abaUserName: meta.abaUserName,
+        abaUserId: meta.abaUserId,
+        description: 'PAYMENTS',
+        processDate,
+        transactions,
+      });
+
+      // 5. Update payments state
+      for (const p of payments) {
+        await this.changePaymentState(
+          p.paymentId,
+          PAYMENT_STATE.EXPORTED,
+          actor,
+          tx as any,
+        );
+
+        await tx
+          .update(paymentEntries)
+          .set({
+            abaExportedAt: new Date(),
+            modifiedOn: new Date(),
+          })
+          .where(eq(paymentEntries.paymentId, p.paymentId));
+      }
+
+      return abaContent;
+    });
+  }
+
+  async confirmExported(paymentIds: string[], actor: string) {
+    for (const pid of paymentIds) {
+      await this.submitPaymentEntry(pid, actor);
+    }
+  }
+
+  async rejectExported(paymentIds: string[], actor: string) {
+    return await this.db.transaction(async (tx) => {
+      for (const pid of paymentIds) {
+        await this.changePaymentState(pid, PAYMENT_STATE.DRAFT, actor, tx);
+      }
     });
   }
 

@@ -49,6 +49,11 @@ export default function SystemSettingsPage() {
   const [macroForm, setMacroForm] = useState<any>({});
   const [macroCreating, setMacroCreating] = useState(false);
 
+  // ── App Settings state ─────────────────────────────────────────────────────
+  const [appForm, setAppForm] = useState<any>({});
+  const [appLoading, setAppLoading] = useState(true);
+  const [locations, setLocations] = useState<any[]>([]);
+
   // ── Organization state ─────────────────────────────────────────────────────
   const [orgForm, setOrgForm] = useState<any>({});
   const [orgLoading, setOrgLoading] = useState(true);
@@ -97,6 +102,32 @@ export default function SystemSettingsPage() {
       toast.error(err.message, { id: 'org-save-error' });
     } finally {
       setOrgSaving(false);
+    }
+  };
+
+  const loadAppConfig = async () => {
+    try {
+      setAppLoading(true);
+      const [appData, locs] = await Promise.all([
+        apiFetch<any>('/api/settings/app'),
+        apiFetch<any>('/api/inventory/locations?limit=100')
+      ]);
+      setAppForm(appData);
+      setLocations(locs?.data || locs || []);
+    } catch (err: any) {
+      toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + err.message);
+    } finally {
+      setAppLoading(false);
+    }
+  };
+
+  const updateAppField = async (field: string, value: any) => {
+    try {
+      setAppForm((prev: any) => ({ ...prev, [field]: value }));
+      await apiMutate('/api/settings/app', 'PATCH', { [field]: value });
+      toast.success(t('common.updated'));
+    } catch (err: any) {
+      toast.error(err.message);
     }
   };
 
@@ -187,6 +218,7 @@ export default function SystemSettingsPage() {
 
   useEffect(() => {
     loadOrg();
+    loadAppConfig();
     loadUom();
     loadMacros();
   }, []);
@@ -252,6 +284,7 @@ export default function SystemSettingsPage() {
   const navSections = useMemo(() => [
     { id: 'org-section', label: tSettings('sections.company'), show: true },
     { id: 'bank-section', label: tSettings('sections.bank'), show: true },
+    { id: 'warehouse-settings-section', label: 'Warehouse Settings', show: true },
     { id: 'uom-section', label: tSettings('sections.uom'), show: true },
     { id: 'macros-section', label: tSettings('sections.macros'), show: true },
   ], [tSettings]);
@@ -537,6 +570,38 @@ export default function SystemSettingsPage() {
                     onBlur={saveOrgField}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Warehouse Settings ────────────────────────────────────────── */}
+        <div id="warehouse-settings-section" className="card">
+          <h3 className="section-heading mb-4">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">warehouse</span>
+            Warehouse Settings
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  Default Fulfillment Location
+                </label>
+                <select
+                  className="input"
+                  value={appForm?.defaultFulfillmentLocationId || ''}
+                  onChange={(e) => updateAppField('defaultFulfillmentLocationId', e.target.value || null)}
+                  disabled={appLoading}
+                >
+                  {!appForm?.defaultFulfillmentLocationId && <option value="">-- None --</option>}
+                  {locations.map((loc) => (
+                    <option key={loc.locationId || loc.id} value={loc.locationId || loc.id}>
+                      {loc.name} ({loc.code})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

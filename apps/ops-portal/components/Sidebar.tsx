@@ -137,6 +137,7 @@ export default function Sidebar() {
           subItems: [
             { href: '/admin/import/csv', label: 'CSV Upload' },
             { href: '/admin/import/abm', label: 'ABM Database' },
+            { href: '/admin/import/odoo', label: 'Odoo Database' },
           ]
         },
       ],

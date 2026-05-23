@@ -11,6 +11,7 @@ import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export interface AvailableElsewhereEntry {
   locationId: string;
@@ -40,6 +41,9 @@ export interface DemandRow {
    * cell renderer sorts by qty descending for display.
    */
   availableElsewhere: AvailableElsewhereEntry[];
+  purchaseOrderId?: string;
+  purchaseOrderNumber?: string;
+  purchaseOrderState?: string;
 }
 
 export default function DemandsContent() {
@@ -64,6 +68,27 @@ export default function DemandsContent() {
     },
     { field: 'productName', headerName: 'Product', flex: 1, minWidth: 150 },
     { field: 'productDescription', headerName: 'Description', flex: 2, minWidth: 200 },
+    {
+      field: 'purchaseOrderState',
+      headerName: 'Status',
+      width: 160,
+      cellRenderer: (params: ICellRendererParams<DemandRow>) => {
+        if (!params.data?.purchaseOrderId) {
+          return <span className="badge badge-warning">Pending Supply</span>;
+        }
+        
+        const badgeClass = params.data.purchaseOrderState === 'draft' ? 'badge-draft' : 'badge-info';
+        const label = params.data.purchaseOrderState === 'draft' ? 'Draft' : 'Ordered';
+        const poNumber = params.data.purchaseOrderNumber || '';
+        const displayPo = poNumber.length > 8 ? poNumber.substring(0, 8) + '...' : poNumber;
+        
+        return (
+          <Link href={`/purchase-orders/${params.data.purchaseOrderId}`} className="hover:opacity-80 transition-opacity inline-flex items-center">
+            <span className={`badge ${badgeClass} cursor-pointer`} title={poNumber}>{label} {displayPo}</span>
+          </Link>
+        );
+      }
+    },
     {
       field: 'locationName',
       headerName: 'Location',
@@ -128,6 +153,7 @@ export default function DemandsContent() {
             fetchAll
             rowIdField="id"
             rowSelection="multiple"
+            isRowSelectable={(rowNode) => !rowNode.data?.purchaseOrderId}
             onSelectionChanged={setSelectedRows}
             renderHeader={({ searchInput, optionsButton, rowCount, loading: gridLoading }) => (
               <div className="flex flex-col gap-3 px-6 py-4">

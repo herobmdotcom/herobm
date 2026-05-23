@@ -152,10 +152,25 @@ export class ProductsController {
   @CasbinAction('write')
   addComponent(
     @Param('id') productId: string,
-    @Body() dto: { childProductId: string; parentQuantity: string; quantity: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    @Body()
+    dto: {
+      childProductId: string;
+      parentQuantity: string;
+      quantity: string;
+      sequenceNumber?: number;
+      fractionalBehavior?:
+        | 'allow_fractional'
+        | 'round_up'
+        | 'round_down'
+        | 'force_multiple';
+    },
     @AuthUser() user: JwtUser,
   ) {
-    return this.productsWriteService.addComponent(productId, dto, user.username);
+    return this.productsWriteService.addComponent(
+      productId,
+      dto,
+      user.username,
+    );
   }
 
   @Patch(':id/components/:componentId')
@@ -163,10 +178,25 @@ export class ProductsController {
   updateComponent(
     @Param('id') productId: string,
     @Param('componentId') componentId: string,
-    @Body() dto: { parentQuantity?: string; quantity?: string; sequenceNumber?: number; fractionalBehavior?: 'allow_fractional' | 'round_up' | 'round_down' | 'force_multiple' },
+    @Body()
+    dto: {
+      parentQuantity?: string;
+      quantity?: string;
+      sequenceNumber?: number;
+      fractionalBehavior?:
+        | 'allow_fractional'
+        | 'round_up'
+        | 'round_down'
+        | 'force_multiple';
+    },
     @AuthUser() user: JwtUser,
   ) {
-    return this.productsWriteService.updateComponent(productId, componentId, dto, user.username);
+    return this.productsWriteService.updateComponent(
+      productId,
+      componentId,
+      dto,
+      user.username,
+    );
   }
 
   @Delete(':id/components/:componentId')
@@ -176,6 +206,10 @@ export class ProductsController {
     @Param('componentId') componentId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.productsWriteService.removeComponent(productId, componentId, user.username);
+    return this.productsWriteService.removeComponent(
+      productId,
+      componentId,
+      user.username,
+    );
   }
 }

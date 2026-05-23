@@ -6,6 +6,7 @@ import {
   IsUUID,
   IsNumberString,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateAccountDto {
   @IsString()
@@ -49,6 +50,13 @@ export class CreateAccountDto {
   fax?: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === ''
+      ? null
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   @IsEmail()
   emailAddress1?: string;
 
@@ -57,6 +65,13 @@ export class CreateAccountDto {
   primaryContactName?: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === ''
+      ? null
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   @IsEmail()
   primaryContactEmail?: string;
 
@@ -67,6 +82,10 @@ export class CreateAccountDto {
   @IsOptional()
   @IsUUID()
   customerGroupId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  parentCustomerId?: string;
 
   @IsOptional()
   @IsUUID()
@@ -83,6 +102,18 @@ export class CreateAccountDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountName?: string;
+
+  @IsOptional()
+  @IsString()
+  bankBsb?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
 }
 
 export class UpdateAccountDto {
@@ -123,6 +154,13 @@ export class UpdateAccountDto {
   fax?: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === ''
+      ? null
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   @IsEmail()
   emailAddress1?: string;
 
@@ -131,6 +169,13 @@ export class UpdateAccountDto {
   primaryContactName?: string;
 
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === ''
+      ? null
+      : typeof value === 'string'
+        ? value.trim()
+        : value,
+  )
   @IsEmail()
   primaryContactEmail?: string;
 
@@ -148,6 +193,10 @@ export class UpdateAccountDto {
 
   @IsOptional()
   @IsUUID()
+  parentCustomerId?: string;
+
+  @IsOptional()
+  @IsUUID()
   taxCategoryId?: string;
 
   @IsOptional()
@@ -161,6 +210,18 @@ export class UpdateAccountDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountName?: string;
+
+  @IsOptional()
+  @IsString()
+  bankBsb?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
 }
 
 export class CreateAccountGroupDto {

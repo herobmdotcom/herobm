@@ -44,6 +44,14 @@ export interface PurchaseInvoiceDetails {
     poLineQuantityReceived?: string;
     poLinePricePerUnit?: string;
   }[];
+  allocations?: {
+    allocationId: string;
+    allocatedAmount: string;
+    paymentId: string;
+    paymentNumber: string;
+    paymentDate: string;
+    currencyCode: string;
+  }[];
 }
 
 export function useSupplierInvoice(id: string) {

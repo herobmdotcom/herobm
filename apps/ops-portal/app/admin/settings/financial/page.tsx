@@ -12,6 +12,8 @@ import CsvImportButton from '@/components/shared/CsvImportButton';
 import SlideOver from '@/components/shared/SlideOver';
 import { SchemaBuilder } from '@/components/SchemaBuilder';
 import { DynamicForm } from '@/components/DynamicForm';
+import ImportCoaModal from './ImportCoaModal';
+import ImportTaxModal from './ImportTaxModal';
 
 import { getCurrency } from '@/lib/currency';
 import { CURRENCIES, GL_ACCOUNT_TYPE } from '@modbm/shared';
@@ -77,6 +79,7 @@ export default function FinancialSettingsPage() {
   const [taxEditingId, setTaxEditingId] = useState<string | null>(null);
   const [taxForm, setTaxForm] = useState<any>({});
   const [taxCreating, setTaxCreating] = useState(false);
+  const [importTaxModalOpen, setImportTaxModalOpen] = useState(false);
 
   // ── Exchange Rates state ───────────────────────────────────────────────────
   const [rates, setRates] = useState<ExchangeRate[]>([]);
@@ -111,6 +114,7 @@ export default function FinancialSettingsPage() {
   const [coaForm, setCoaForm] = useState<any>({});
   const [coaCreating, setCoaCreating] = useState(false);
   const [coaEditingId, setCoaEditingId] = useState<string | null>(null);
+  const [importCoaModalOpen, setImportCoaModalOpen] = useState(false);
 
   const coaTree = useMemo(() => {
     const map = new Map<string | null, any[]>();
@@ -842,7 +846,22 @@ export default function FinancialSettingsPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    {tSettings('labels.baseCurrency')}
+                  </label>
+                  <select 
+                    className="input max-w-sm" 
+                    value={glSettings?.baseCurrency || ''} 
+                    onChange={(e) => updateGlSetting('baseCurrency', e.target.value)}
+                  >
+                    <option value="">{tCommon('notConfigured')}</option>
+                    {CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>{c.code} - {c.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tSettings('labels.revenueRouting')}
@@ -874,11 +893,12 @@ export default function FinancialSettingsPage() {
           )}
         </div>
 
-        {/* ── Chart of Customers ────────────────────────────────────────── */}
+        {/* ── Chart of Accounts ────────────────────────────────────────── */}
         <div id="coa-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading !mb-0">{tSettings('labels.chartOfAccounts')}</h3>
             <div className="flex gap-2">
+              <button className="btn btn-secondary btn-xs" onClick={() => setImportCoaModalOpen(true)}>Import CoA...</button>
               <button className="btn btn-secondary btn-xs" onClick={openSchemaEditor}>{tSettings('actions.configureMetadata')}</button>
               <button className="btn btn-primary btn-sm" onClick={() => coaCreate()}>{tSettings('actions.addRootGroup')}</button>
             </div>
@@ -920,7 +940,13 @@ export default function FinancialSettingsPage() {
               <span className="material-symbols-outlined">payments</span>
               {tSettings('sections.tax')}
             </h3>
-            <button className="btn btn-primary btn-sm" onClick={taxCreate}>+ {tSettings('actions.create')}</button>
+            <div className="flex gap-2">
+              <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+                <span className="material-symbols-outlined text-base">upload_file</span>
+                {tSettings('actions.importSettings') || 'Import Settings'}
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={taxCreate}>+ {tSettings('actions.create')}</button>
+            </div>
           </div>
           <table className="table-lines w-full">
             <thead>
@@ -1091,6 +1117,22 @@ export default function FinancialSettingsPage() {
           </div>
         </div>
       </SlideOver>
+
+      {importCoaModalOpen && (
+        <ImportCoaModal
+          isOpen={importCoaModalOpen}
+          onClose={() => setImportCoaModalOpen(false)}
+          onImportComplete={loadGl}
+        />
+      )}
+
+      {importTaxModalOpen && (
+        <ImportTaxModal
+          isOpen={importTaxModalOpen}
+          onClose={() => setImportTaxModalOpen(false)}
+          onImportComplete={loadTax}
+        />
+      )}
     </DetailsLayout>
   );
 }

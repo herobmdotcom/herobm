@@ -98,6 +98,71 @@ export class CoaLoaderService {
 
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
+  async listAvailableCharts(): Promise<
+    { filename: string; name: string; countryCode?: string }[]
+  > {
+    const chartsDir = resolveChartsDir(__dirname);
+    if (!fs.existsSync(chartsDir)) return [];
+
+    const files = fs.readdirSync(chartsDir);
+    const charts = [];
+
+    for (const file of files) {
+      if (file.endsWith('.json') && !file.endsWith('_settings.json')) {
+        try {
+          const raw = fs.readFileSync(path.join(chartsDir, file), 'utf-8');
+          const coa: CoaFile = JSON.parse(raw);
+          charts.push({
+            filename: file,
+            name: coa.name || file.replace('.json', ''),
+            countryCode: coa.country_code,
+          });
+        } catch (e) {
+          this.logger.warn(`Failed to parse COA file ${file}: ${e}`);
+        }
+      }
+    }
+
+    return charts;
+  }
+
+  async listAvailableTaxSettings(): Promise<
+    { filename: string; name: string; countryCode?: string }[]
+  > {
+    const chartsDir = resolveChartsDir(__dirname);
+    if (!fs.existsSync(chartsDir)) return [];
+
+    const files = fs.readdirSync(chartsDir);
+    const settingsFiles = [];
+
+    for (const file of files) {
+      if (file.endsWith('_settings.json')) {
+        try {
+          const raw = fs.readFileSync(path.join(chartsDir, file), 'utf-8');
+          const settings = JSON.parse(raw);
+          // Only return if it actually has gst_categories
+          if (
+            settings.gst_categories &&
+            Array.isArray(settings.gst_categories)
+          ) {
+            settingsFiles.push({
+              filename: file,
+              name: file
+                .replace('_settings.json', ' Tax Settings')
+                .replace('_', ' ')
+                .toUpperCase(),
+              countryCode: file.split('_')[0].toUpperCase(),
+            });
+          }
+        } catch (e) {
+          this.logger.warn(`Failed to parse settings file ${file}: ${e}`);
+        }
+      }
+    }
+
+    return settingsFiles;
+  }
+
   /**
    * Load a chart of accounts from a JSON file.
    * Skips if accounts already exist in the database.
@@ -342,5 +407,64 @@ export class CoaLoaderService {
     );
 
     return { created: insertRows.length, skipped: false };
+  }
+
+  /**
+   * Load only tax settings (GST categories) from a settings JSON file.
+   */
+  async loadTaxSettingsFromFile(
+    filename: string,
+  ): Promise<{ created: number; skipped: boolean }> {
+    const chartsDir = resolveChartsDir(__dirname);
+    const filePath = path.join(chartsDir, filename);
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Tax settings file not found: ${filePath}`);
+    }
+
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const settings = JSON.parse(raw);
+
+    if (!settings.gst_categories || !Array.isArray(settings.gst_categories)) {
+      throw new Error(`No gst_categories found in ${filename}`);
+    }
+
+    this.logger.log(`Loading tax settings from: ${filename}`);
+
+    await this.db.transaction(async (tx: DrizzleDB) => {
+      // Neutralize defaults first to avoid unique constraint if we are updating
+      await tx.update(taxCategories).set({ isDefault: false });
+
+      for (const category of settings.gst_categories) {
+        const deterministicId = uuidv5(
+          'GST_CAT_' + category.code,
+          NAMESPACE_COA,
+        );
+        await tx
+          .insert(taxCategories)
+          .values({
+            taxCategoryId: deterministicId,
+            code: category.code,
+            title: category.title,
+            type: category.type,
+            rate: category.rate.toString(),
+            isDefault: category.is_default || false,
+          })
+          .onConflictDoUpdate({
+            target: [taxCategories.code],
+            set: {
+              title: category.title,
+              type: category.type,
+              rate: category.rate.toString(),
+              isDefault: category.is_default || false,
+            },
+          });
+      }
+    });
+
+    this.logger.log(
+      `Tax settings loaded: ${settings.gst_categories.length} categories created/updated`,
+    );
+
+    return { created: settings.gst_categories.length, skipped: false };
   }
 }

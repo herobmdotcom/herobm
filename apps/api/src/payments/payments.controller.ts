@@ -10,7 +10,11 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto, AllocatePaymentDto } from './dto';
+import {
+  CreatePaymentDto,
+  AllocatePaymentDto,
+  BatchPaymentActionDto,
+} from './dto';
 import {
   CasbinGuard,
   CasbinResource,
@@ -65,5 +69,33 @@ export class PaymentsController {
   @CasbinAction('write')
   async cancel(@Param('id') id: string, @AuthUser() user: any) {
     return this.paymentsService.cancelPayment(id, user.username);
+  }
+
+  @Post('export-aba')
+  @CasbinAction('write')
+  async exportAba(@Body() dto: BatchPaymentActionDto, @AuthUser() user: any) {
+    const fileContent = await this.paymentsService.exportAba(
+      dto.paymentIds,
+      user.username,
+    );
+    return { fileContent }; // Return as json for the frontend to blobify
+  }
+
+  @Post('confirm-exported')
+  @CasbinAction('write')
+  async confirmExported(
+    @Body() dto: BatchPaymentActionDto,
+    @AuthUser() user: any,
+  ) {
+    return this.paymentsService.confirmExported(dto.paymentIds, user.username);
+  }
+
+  @Post('reject-exported')
+  @CasbinAction('write')
+  async rejectExported(
+    @Body() dto: BatchPaymentActionDto,
+    @AuthUser() user: any,
+  ) {
+    return this.paymentsService.rejectExported(dto.paymentIds, user.username);
   }
 }

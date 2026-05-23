@@ -5,19 +5,24 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../drizzle/drizzle.module';
+import { sql } from 'drizzle-orm';
 import {
   appSettings,
   glSettings,
   organization,
   locations,
 } from '../drizzle/modbm-core-schema';
-import { ExecuteSetupDto, TestAbmConnectionDto } from './setup.dto';
+import {
+  ExecuteSetupDto,
+  TestAbmConnectionDto,
+  TestOdooConnectionDto,
+  ExecuteEltDto,
+} from './setup.dto';
 import { AppConfigService } from '../settings/app-config.service';
-import { CoaLoaderService, resolveChartsDir } from '../gl/coa-loader.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
-import { eq, sql, getTableColumns } from 'drizzle-orm';
+import { eq, getTableColumns } from 'drizzle-orm';
 import { Readable } from 'stream';
 import { parse } from 'csv-parse';
 import * as schema from '../drizzle/modbm-core-schema';
@@ -32,41 +37,7 @@ export class SetupService {
   constructor(
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
     @Inject(AppConfigService) private readonly appConfig: AppConfigService,
-    @Inject(CoaLoaderService) private readonly coaLoader: CoaLoaderService,
   ) {}
-
-  async getStatus() {
-    const rawApp = this.appConfig.getAppSettingsRaw();
-    return {
-      needsSetup: !rawApp?.setupCompletedAt,
-      setupCompletedAt: rawApp?.setupCompletedAt || null,
-    };
-  }
-
-  async getCoaPresets() {
-    const glDir = path.join(__dirname, '..', 'gl');
-    const chartsDir = resolveChartsDir(glDir);
-
-    if (!fs.existsSync(chartsDir)) {
-      return [];
-    }
-
-    const files = fs.readdirSync(chartsDir);
-    return files
-      .filter(
-        (file) => file.endsWith('.json') && !file.endsWith('_settings.json'),
-      )
-      .map((file) => {
-        const content = JSON.parse(
-          fs.readFileSync(path.join(chartsDir, file), 'utf-8'),
-        );
-        return {
-          filename: file,
-          name: content.name || file,
-          country: content.country_code,
-        };
-      });
-  }
 
   async getResumeState() {
     const rootDir = this.getWorkspaceRoot();
@@ -82,7 +53,19 @@ export class SetupService {
     return { completedTables: tables };
   }
 
-  private lastAbmPreview: any = null;
+  async getResumeStateOdoo() {
+    const rootDir = this.getWorkspaceRoot();
+    const stateFile = path.join(rootDir, '.odoo_resume_state');
+    if (!fs.existsSync(stateFile)) {
+      return { completedTables: [] };
+    }
+    const content = fs.readFileSync(stateFile, 'utf-8');
+    const tables = content
+      .split('\n')
+      .map((line) => line.trim().toLowerCase())
+      .filter((line) => line.length > 0);
+    return { completedTables: tables };
+  }
 
   async testAbmConnection(dto: TestAbmConnectionDto) {
     this.logger.log(`Testing ABM connection to ${dto.host}...`);
@@ -129,14 +112,14 @@ export class SetupService {
             }
             return resolve({ success: false, message: msg });
           }
-
           try {
-            const previewData = JSON.parse(stdout.trim());
-            this.lastAbmPreview = previewData;
+            const result = stdout.trim()
+              ? JSON.parse(stdout.trim())
+              : undefined;
             resolve({
               success: true,
               message: 'Connected',
-              preview: previewData,
+              preview: result,
             });
           } catch (e) {
             resolve({
@@ -149,12 +132,68 @@ export class SetupService {
     );
   }
 
-  async getAbmPreview() {
-    return (
-      this.lastAbmPreview || {
-        tables: [],
-        locations: [{ code: 'HQ', name: 'Main Headquarters' }],
-      }
+  async testOdooConnection(dto: TestOdooConnectionDto) {
+    this.logger.log(`Testing Odoo connection to ${dto.host}...`);
+
+    return new Promise<{ success: boolean; message: string; preview?: any }>(
+      (resolve) => {
+        const envOverride: Record<string, string> = {
+          ...process.env,
+          ODOO_PG_HOST: dto.host,
+          ODOO_PG_DATABASE: dto.database,
+          ODOO_PG_USER: dto.username,
+          ODOO_PG_PASSWORD: dto.password,
+          ODOO_PG_PORT: dto.port ? dto.port.toString() : '5432',
+        };
+
+        const rootDir = this.getWorkspaceRoot();
+        const venvPython =
+          process.platform === 'win32'
+            ? '".venv\\Scripts\\python"'
+            : '".venv/bin/python"';
+
+        const child = spawn(`${venvPython} pipelines/odoo_extract/preview.py`, {
+          cwd: rootDir,
+          env: envOverride,
+          shell: true,
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => (stdout += data.toString()));
+        child.stderr.on('data', (data) => (stderr += data.toString()));
+
+        child.on('close', (code) => {
+          if (code !== 0) {
+            let msg = 'Connection failed.';
+            try {
+              if (stdout) {
+                const errorJson = JSON.parse(stdout.trim());
+                if (errorJson.error) msg = errorJson.error;
+              }
+            } catch (e) {
+              msg = stderr.substring(0, 200) || stdout.substring(0, 200);
+            }
+            return resolve({ success: false, message: msg });
+          }
+          try {
+            const result = stdout.trim()
+              ? JSON.parse(stdout.trim())
+              : undefined;
+            resolve({
+              success: true,
+              message: 'Connected',
+              preview: result,
+            });
+          } catch (e) {
+            resolve({
+              success: false,
+              message: 'Invalid response from preview script',
+            });
+          }
+        });
+      },
     );
   }
 
@@ -173,11 +212,16 @@ export class SetupService {
 
   async getImportSummary() {
     try {
-      const { sql } = require('drizzle-orm');
-      const [{ count: products }] = await this.db.execute(sql`SELECT COUNT(*) FROM modbm_core.products`);
-      const [{ count: customers }] = await this.db.execute(sql`SELECT COUNT(*) FROM modbm_core.customers`);
-      const [{ count: orders }] = await this.db.execute(sql`SELECT COUNT(*) FROM modbm_core.sales_orders`);
-      
+      const [{ count: products }] = await this.db.execute(
+        sql`SELECT COUNT(*) FROM modbm_core.products`,
+      );
+      const [{ count: customers }] = await this.db.execute(
+        sql`SELECT COUNT(*) FROM modbm_core.customers`,
+      );
+      const [{ count: orders }] = await this.db.execute(
+        sql`SELECT COUNT(*) FROM modbm_core.sales_orders`,
+      );
+
       return {
         products: parseInt(products as string, 10),
         customers: parseInt(customers as string, 10),
@@ -191,64 +235,188 @@ export class SetupService {
 
   // --- CSV Import ---
   private csvRegistry = [
-    { id: 'customers', name: 'Customers', table: schema.customers, uniqueKey: 'customer_number' },
-    { id: 'customer_groups', name: 'Customer Groups', table: schema.customerGroups, uniqueKey: 'code' },
-    { id: 'products', name: 'Products', table: schema.products, uniqueKey: 'product_code' },
-    { id: 'product_groups', name: 'Product Groups', table: schema.productGroups, uniqueKey: 'code' },
-    { id: 'product_components', name: 'Product Components', table: schema.productComponents, uniqueKey: 'component_id' },
-    { id: 'locations', name: 'Locations', table: schema.locations, uniqueKey: 'code' },
+    {
+      id: 'customers',
+      name: 'Customers',
+      table: schema.customers,
+      uniqueKey: 'customer_number',
+    },
+    {
+      id: 'customer_groups',
+      name: 'Customer Groups',
+      table: schema.customerGroups,
+      uniqueKey: 'code',
+    },
+    {
+      id: 'products',
+      name: 'Products',
+      table: schema.products,
+      uniqueKey: 'product_code',
+    },
+    {
+      id: 'product_groups',
+      name: 'Product Groups',
+      table: schema.productGroups,
+      uniqueKey: 'code',
+    },
+    {
+      id: 'product_components',
+      name: 'Product Components',
+      table: schema.productComponents,
+      uniqueKey: 'component_id',
+    },
+    {
+      id: 'locations',
+      name: 'Locations',
+      table: schema.locations,
+      uniqueKey: 'code',
+    },
     { id: 'zones', name: 'Zones', table: schema.zones, uniqueKey: 'code' },
     { id: 'bins', name: 'Bins', table: schema.bins, uniqueKey: 'code' },
-    { id: 'product_default_bins', name: 'Product Default Bins', table: schema.productDefaultBins, uniqueKey: 'product_default_bin_id' },
-    { id: 'suppliers', name: 'Suppliers', table: schema.suppliers, uniqueKey: 'code' },
-    { id: 'supplier_groups', name: 'Supplier Groups', table: schema.supplierGroups, uniqueKey: 'code' },
-    { id: 'discount_matrix', name: 'Discount Matrix', table: schema.discountMatrix, uniqueKey: 'discount_matrix_id' },
-    { id: 'exchange_rates', name: 'Exchange Rates', table: schema.exchangeRates, uniqueKey: 'currency_code' },
-    { id: 'sales_orders', name: 'Sales Orders', table: schema.salesOrders, uniqueKey: 'order_number' },
-    { id: 'sales_order_lines', name: 'Sales Order Lines', table: schema.salesOrderLineItems, uniqueKey: 'sales_order_line_id' },
-    { id: 'purchase_orders', name: 'Purchase Orders', table: schema.purchaseOrders, uniqueKey: 'order_number' },
-    { id: 'purchase_order_lines', name: 'Purchase Order Lines', table: schema.purchaseOrderLineItems, uniqueKey: 'purchase_order_line_id' },
-    { id: 'transfer_orders', name: 'Transfer Orders', table: schema.transferOrders, uniqueKey: 'order_number' },
-    { id: 'transfer_order_lines', name: 'Transfer Order Lines', table: schema.transferOrderLines, uniqueKey: 'transfer_order_line_id' },
-    { id: 'sales_credit_notes', name: 'Sales Credit Notes', table: schema.salesCreditNotes, uniqueKey: 'credit_note_number' },
-    { id: 'sales_credit_note_lines', name: 'Sales Credit Note Lines', table: schema.salesCreditNoteLines, uniqueKey: 'credit_note_line_id' },
-    { id: 'sales_order_returns', name: 'Sales Order Returns', table: schema.salesOrderReturns, uniqueKey: 'return_number' },
-    { id: 'sales_order_return_lines', name: 'Sales Order Return Lines', table: schema.salesOrderReturnLines, uniqueKey: 'return_line_id' },
-    { id: 'purchase_order_returns', name: 'Purchase Order Returns', table: schema.purchaseOrderReturns, uniqueKey: 'return_number' },
-    { id: 'purchase_order_return_lines', name: 'Purchase Order Return Lines', table: schema.purchaseOrderReturnLines, uniqueKey: 'return_line_id' }
+    {
+      id: 'product_default_bins',
+      name: 'Product Default Bins',
+      table: schema.productDefaultBins,
+      uniqueKey: 'product_default_bin_id',
+    },
+    {
+      id: 'suppliers',
+      name: 'Suppliers',
+      table: schema.suppliers,
+      uniqueKey: 'code',
+    },
+    {
+      id: 'supplier_groups',
+      name: 'Supplier Groups',
+      table: schema.supplierGroups,
+      uniqueKey: 'code',
+    },
+    {
+      id: 'discount_matrix',
+      name: 'Discount Matrix',
+      table: schema.discountMatrix,
+      uniqueKey: 'discount_matrix_id',
+    },
+    {
+      id: 'exchange_rates',
+      name: 'Exchange Rates',
+      table: schema.exchangeRates,
+      uniqueKey: 'currency_code',
+    },
+    {
+      id: 'sales_orders',
+      name: 'Sales Orders',
+      table: schema.salesOrders,
+      uniqueKey: 'order_number',
+    },
+    {
+      id: 'sales_order_lines',
+      name: 'Sales Order Lines',
+      table: schema.salesOrderLineItems,
+      uniqueKey: 'sales_order_line_id',
+    },
+    {
+      id: 'purchase_orders',
+      name: 'Purchase Orders',
+      table: schema.purchaseOrders,
+      uniqueKey: 'order_number',
+    },
+    {
+      id: 'purchase_order_lines',
+      name: 'Purchase Order Lines',
+      table: schema.purchaseOrderLineItems,
+      uniqueKey: 'purchase_order_line_id',
+    },
+    {
+      id: 'transfer_orders',
+      name: 'Transfer Orders',
+      table: schema.transferOrders,
+      uniqueKey: 'order_number',
+    },
+    {
+      id: 'transfer_order_lines',
+      name: 'Transfer Order Lines',
+      table: schema.transferOrderLines,
+      uniqueKey: 'transfer_order_line_id',
+    },
+    {
+      id: 'sales_credit_notes',
+      name: 'Sales Credit Notes',
+      table: schema.salesCreditNotes,
+      uniqueKey: 'credit_note_number',
+    },
+    {
+      id: 'sales_credit_note_lines',
+      name: 'Sales Credit Note Lines',
+      table: schema.salesCreditNoteLines,
+      uniqueKey: 'credit_note_line_id',
+    },
+    {
+      id: 'sales_order_returns',
+      name: 'Sales Order Returns',
+      table: schema.salesOrderReturns,
+      uniqueKey: 'return_number',
+    },
+    {
+      id: 'sales_order_return_lines',
+      name: 'Sales Order Return Lines',
+      table: schema.salesOrderReturnLines,
+      uniqueKey: 'return_line_id',
+    },
+    {
+      id: 'purchase_order_returns',
+      name: 'Purchase Order Returns',
+      table: schema.purchaseOrderReturns,
+      uniqueKey: 'return_number',
+    },
+    {
+      id: 'purchase_order_return_lines',
+      name: 'Purchase Order Return Lines',
+      table: schema.purchaseOrderReturnLines,
+      uniqueKey: 'return_line_id',
+    },
   ];
 
   async getCsvMetadata() {
-    const excludedColumns = ['created_by', 'created_on', 'modified_on', 'updated_on'];
-    
-    return this.csvRegistry.map(t => {
+    const excludedColumns = [
+      'created_by',
+      'created_on',
+      'modified_on',
+      'updated_on',
+    ];
+
+    return this.csvRegistry.map((t) => {
       const cols = getTableColumns(t.table);
       const columns = Object.keys(cols)
-        .map(k => {
-           const col = (cols as any)[k];
-           return {
-             name: col.name,
-             notNull: col.notNull,
-             hasDefault: col.hasDefault
-           };
+        .map((k) => {
+          const col = (cols as any)[k];
+          return {
+            name: col.name,
+            notNull: col.notNull,
+            hasDefault: col.hasDefault,
+          };
         })
-        .filter(c => !excludedColumns.includes(c.name))
-        .map(c => {
-           const isRequired = c.notNull && !c.hasDefault;
-           return isRequired ? `${c.name}*` : c.name;
+        .filter((c) => !excludedColumns.includes(c.name))
+        .map((c) => {
+          const isRequired = c.notNull && !c.hasDefault;
+          return isRequired ? `${c.name}*` : c.name;
         });
 
       return {
         id: t.id,
         name: t.name,
         uniqueKey: t.uniqueKey,
-        columns
+        columns,
       };
     });
   }
 
-  async executeCsv(tableName: string, strategy: string, file: Express.Multer.File) {
-    const registryEntry = this.csvRegistry.find(r => r.id === tableName);
+  async executeCsv(
+    tableName: string,
+    strategy: string,
+    file: Express.Multer.File,
+  ) {
+    const registryEntry = this.csvRegistry.find((r) => r.id === tableName);
     if (!registryEntry) throw new BadRequestException('Unsupported table');
 
     const runningJobId = Object.keys(this.activeJobs).find(
@@ -259,7 +427,9 @@ export class SetupService {
     const jobId = Math.random().toString(36).substring(7);
     this.activeJobs[jobId] = {
       status: 'running',
-      progress: [{ step: 1, name: `Importing CSV to ${tableName}`, status: 'running' }],
+      progress: [
+        { step: 1, name: `Importing CSV to ${tableName}`, status: 'running' },
+      ],
       logs: [`--- Initializing CSV Import for ${tableName} ---`],
     };
 
@@ -275,19 +445,24 @@ export class SetupService {
     return { jobId };
   }
 
-  private async runCsvCore(entry: any, strategy: string, file: Express.Multer.File, jobId: string) {
+  private async runCsvCore(
+    entry: any,
+    strategy: string,
+    file: Express.Multer.File,
+    jobId: string,
+  ) {
     const tableCols = getTableColumns(entry.table);
-    const colNames = Object.keys(tableCols).map(k => tableCols[k].name);
-    
+    const colNames = Object.keys(tableCols).map((k) => tableCols[k].name);
+
     this.log(jobId, `Starting CSV parsing for strategy: ${strategy}...`);
-    
+
     const records: any[] = [];
     const parser = Readable.from(file.buffer).pipe(
       parse({
-        columns: (header: string[]) => header.map(h => h.replace(/\*$/, '')),
+        columns: (header: string[]) => header.map((h) => h.replace(/\*$/, '')),
         skip_empty_lines: true,
         trim: true,
-      })
+      }),
     );
 
     let parsedCount = 0;
@@ -305,8 +480,11 @@ export class SetupService {
         this.log(jobId, `Parsed ${parsedCount} rows...`);
       }
     }
-    
-    this.log(jobId, `Completed parsing. Total rows: ${records.length}. Starting DB insertion...`);
+
+    this.log(
+      jobId,
+      `Completed parsing. Total rows: ${records.length}. Starting DB insertion...`,
+    );
 
     // Batch insert
     const BATCH_SIZE = 500;
@@ -314,10 +492,16 @@ export class SetupService {
 
     for (let i = 0; i < records.length; i += BATCH_SIZE) {
       const batch = records.slice(i, i + BATCH_SIZE);
-      
+
       if (strategy === 'upsert') {
-        const conflictTarget = entry.table[entry.uniqueKey] || (tableCols as any)[Object.keys(tableCols).find(k => tableCols[k].name === entry.uniqueKey)!];
-        
+        const conflictTarget =
+          entry.table[entry.uniqueKey] ||
+          tableCols[
+            Object.keys(tableCols).find(
+              (k) => tableCols[k].name === entry.uniqueKey,
+            )!
+          ];
+
         // Build set object for DO UPDATE
         const updateSet: any = {};
         for (const colName of colNames) {
@@ -328,19 +512,28 @@ export class SetupService {
 
         await this.db.insert(entry.table).values(batch).onConflictDoUpdate({
           target: conflictTarget,
-          set: updateSet
+          set: updateSet,
         });
       } else if (strategy === 'ignore') {
-        const conflictTarget = entry.table[entry.uniqueKey] || (tableCols as any)[Object.keys(tableCols).find(k => tableCols[k].name === entry.uniqueKey)!];
+        const conflictTarget =
+          entry.table[entry.uniqueKey] ||
+          tableCols[
+            Object.keys(tableCols).find(
+              (k) => tableCols[k].name === entry.uniqueKey,
+            )!
+          ];
         await this.db.insert(entry.table).values(batch).onConflictDoNothing({
-          target: conflictTarget
+          target: conflictTarget,
         });
       } else {
         await this.db.insert(entry.table).values(batch);
       }
 
       insertedCount += batch.length;
-      this.log(jobId, `Inserted/Upserted ${insertedCount} / ${records.length} rows...`);
+      this.log(
+        jobId,
+        `Inserted/Upserted ${insertedCount} / ${records.length} rows...`,
+      );
     }
 
     this.log(jobId, 'DATA IMPORT COMPLETED SUCCESSFULLY');
@@ -361,35 +554,7 @@ export class SetupService {
     }
   }
 
-  async initializeSystem(dto: ExecuteSetupDto) {
-    this.logger.log('--- Initializing Base System ---');
-
-    // Step 1: Load Chart of Customers
-    this.logger.log(`Loading Chart of Customers: ${dto.coaPreset}`);
-    await this.coaLoader.loadFromFile(dto.coaPreset);
-
-    // Step 2: Configure GL settings
-    this.logger.log('Configuring GL...');
-    await this.saveGlSettings(dto);
-
-    // Step 3: Configure App settings
-    this.logger.log('Configuring App...');
-    await this.saveAppSettings(dto);
-
-    // Step 4: Seed organization
-    this.logger.log('Configuring Organization...');
-    await this.saveOrganization(dto);
-    await this.appConfig.reload();
-
-    // Step 5: Absolute Final Operation (Seed users/system)
-    this.logger.log('Seeding base system records (including users)...');
-    await this.runCommandStream(undefined, 'make', ['seed']);
-
-    this.logger.log('--- Base System Initialized Successfully ---');
-    return { success: true };
-  }
-
-  async executeElt(dto: ExecuteSetupDto) {
+  async executeElt(dto: ExecuteEltDto) {
     const runningJobId = Object.keys(this.activeJobs).find(
       (id) => this.activeJobs[id].status === 'running',
     );
@@ -413,14 +578,24 @@ export class SetupService {
     return { jobId };
   }
 
-  async runEltCore(dto: ExecuteSetupDto, jobId?: string) {
+  async runEltCore(dto: ExecuteEltDto, jobId?: string) {
     try {
       this.log(jobId, '--- Initializing ABM ELT Pipeline ---');
-      
-      const [appSettingsRow] = await this.db.select().from(appSettings).limit(1);
+
+      if (dto.baseCurrency) {
+        this.log(jobId, `Setting base currency to ${dto.baseCurrency}`);
+        await this.db
+          .update(glSettings)
+          .set({ baseCurrency: dto.baseCurrency });
+      }
+
+      const [appSettingsRow] = await this.db
+        .select()
+        .from(appSettings)
+        .limit(1);
       let defaultLocationCode = 'HQ';
       let inventoryValuationMethod = 'weighted_average';
-      
+
       if (appSettingsRow) {
         if (appSettingsRow.inventoryValuationMethod) {
           inventoryValuationMethod = appSettingsRow.inventoryValuationMethod;
@@ -429,7 +604,12 @@ export class SetupService {
           const [loc] = await this.db
             .select()
             .from(locations)
-            .where(eq(locations.locationId, appSettingsRow.defaultFulfillmentLocationId))
+            .where(
+              eq(
+                locations.locationId,
+                appSettingsRow.defaultFulfillmentLocationId,
+              ),
+            )
             .limit(1);
           if (loc) {
             defaultLocationCode = loc.code;
@@ -441,29 +621,66 @@ export class SetupService {
         DEFAULT_FULFILLMENT_LOCATION_CODE: defaultLocationCode,
         INVENTORY_VALUATION_METHOD: inventoryValuationMethod,
       };
+
+      const isOdoo = dto.odooImport === true;
+      const prefix = isOdoo ? 'ODOO_PG' : 'ABM_MSSQL';
+
       if (dto.dbConfig) {
         if (dto.dbConfig.host)
-          envOverride['ABM_MSSQL_HOST'] = dto.dbConfig.host;
+          envOverride[`${prefix}_HOST`] = dto.dbConfig.host;
         if (dto.dbConfig.database)
-          envOverride['ABM_MSSQL_DATABASE'] = dto.dbConfig.database;
+          envOverride[`${prefix}_DATABASE`] = dto.dbConfig.database;
         if (dto.dbConfig.username)
-          envOverride['ABM_MSSQL_USER'] = dto.dbConfig.username;
+          envOverride[`${prefix}_USER`] = dto.dbConfig.username;
         if (dto.dbConfig.password)
-          envOverride['ABM_MSSQL_PASSWORD'] = dto.dbConfig.password;
+          envOverride[`${prefix}_PASSWORD`] = dto.dbConfig.password;
         if (dto.dbConfig.port)
-          envOverride['ABM_MSSQL_PORT'] = dto.dbConfig.port.toString();
+          envOverride[`${prefix}_PORT`] = dto.dbConfig.port.toString();
       }
 
-      envOverride['ABM_RESUME'] = dto.resumeExtraction ? 'true' : 'false';
+      envOverride[isOdoo ? 'ODOO_RESUME' : 'ABM_RESUME'] = dto.resumeExtraction
+        ? 'true'
+        : 'false';
 
-      await this.runCommandStream(jobId, 'make', ['elt'], envOverride);
+      const venvPython =
+        process.platform === 'win32'
+          ? '".venv\\Scripts\\python"'
+          : '".venv/bin/python"';
+      this.log(
+        jobId,
+        `Running ${isOdoo ? 'Odoo' : 'ABM'} Extraction (bypassing make to preserve passwords)...`,
+      );
+      await this.runCommandStream(
+        jobId,
+        venvPython,
+        [`pipelines/${isOdoo ? 'odoo' : 'abm'}_extract/pipeline.py`],
+        envOverride,
+      );
+
+      this.log(jobId, 'Running Transformations & Report...');
+      await this.runCommandStream(
+        jobId,
+        'make',
+        [isOdoo ? 'elt-odoo-no-extract' : 'elt-no-extract'],
+        envOverride,
+      );
 
       if (dto.defaultLocationCode) {
-        const [loc] = await this.db.select().from(locations).where(eq(locations.code, dto.defaultLocationCode)).limit(1);
+        const [loc] = await this.db
+          .select()
+          .from(locations)
+          .where(eq(locations.code, dto.defaultLocationCode))
+          .limit(1);
         if (loc) {
-          const [existingApp] = await this.db.select().from(appSettings).limit(1);
+          const [existingApp] = await this.db
+            .select()
+            .from(appSettings)
+            .limit(1);
           if (existingApp) {
-            await this.db.update(appSettings).set({ defaultFulfillmentLocationId: loc.locationId }).where(eq(appSettings.settingsId, existingApp.settingsId));
+            await this.db
+              .update(appSettings)
+              .set({ defaultFulfillmentLocationId: loc.locationId })
+              .where(eq(appSettings.settingsId, existingApp.settingsId));
           }
         }
       }
@@ -501,80 +718,6 @@ export class SetupService {
     ) {
       this.activeJobs[jobId].progress[stepIndex].status = status;
     }
-  }
-
-  private async saveGlSettings(dto: ExecuteSetupDto) {
-    const SETTINGS_ID = '4e185bce-d31a-4caa-8462-73c261864eff';
-    const data = {
-      fiscalYearStartMonth: dto.fiscalYearStartMonth,
-      baseCurrency: dto.baseCurrency,
-      revenueRoutingPrecedence: dto.revenueRoutingPrecedence,
-      expenseRoutingPrecedence: dto.expenseRoutingPrecedence,
-    };
-    await this.db
-      .insert(glSettings)
-      .values({ settingsId: SETTINGS_ID, ...data })
-      .onConflictDoUpdate({ target: glSettings.settingsId, set: data });
-  }
-
-  private async saveAppSettings(
-    dto: ExecuteSetupDto,
-    linkLocation: boolean = true,
-  ) {
-    const [existing] = await this.db.select().from(appSettings).limit(1);
-    let locationId =
-      dto.defaultLocationId || existing?.defaultFulfillmentLocationId;
-
-    if (linkLocation && !dto.defaultLocationId) {
-      const targetCode = dto.defaultLocationCode || 'HQ';
-      const existingLoc = await this.db.query.locations.findFirst({
-        where: eq(locations.code, targetCode),
-      });
-      if (existingLoc) {
-        locationId = existingLoc.locationId;
-      } else if (dto.defaultLocationCode && dto.defaultLocationName) {
-        const [inserted] = await this.db
-          .insert(locations)
-          .values({
-            code: dto.defaultLocationCode,
-            name: dto.defaultLocationName,
-          })
-          .returning();
-        locationId = inserted.locationId;
-      }
-    }
-
-    const data = {
-      defaultFulfillmentLocationId: locationId || null,
-      inventoryValuationMethod: dto.inventoryValuationMethod,
-      inventoryAccountingMode: dto.inventoryAccountingMode,
-      nonStockBillingMode: dto.nonStockBillingMode,
-      setupCompletedAt: new Date(),
-    };
-
-    if (existing) {
-      await this.db
-        .update(appSettings)
-        .set(data)
-        .where(eq(appSettings.settingsId, existing.settingsId));
-    } else {
-      await this.db.insert(appSettings).values(data);
-    }
-  }
-
-  private async saveOrganization(dto: ExecuteSetupDto) {
-    const ORG_ID = '00000000-0000-0000-0000-000000000000';
-    const data = {
-      name: dto.companyName || 'My Company',
-      addressLine1: dto.companyAddress || null,
-      phone: dto.companyPhone || null,
-      email: dto.companyEmail || null,
-      taxNumber: dto.taxNumber || null,
-    };
-    await this.db
-      .insert(organization)
-      .values({ organizationId: ORG_ID, ...data })
-      .onConflictDoUpdate({ target: organization.organizationId, set: data });
   }
 
   private getWorkspaceRoot(): string {

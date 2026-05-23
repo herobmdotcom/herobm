@@ -60,6 +60,10 @@ interface Supplier {
   notes: string | null;
   blockNotes?: string | null;
 
+  bankAccountName?: string | null;
+  bankBsb?: string | null;
+  bankAccountNumber?: string | null;
+
   createdBy?: string | null;
   createdOn?: string | null;
   modifiedOn?: string | null;
@@ -103,6 +107,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const [editPaymentBlockReason, setEditPaymentBlockReason] = useState('');
   const [editBlockNotes, setEditBlockNotes] = useState('');
 
+  const [editBankAccountName, setEditBankAccountName] = useState('');
+  const [editBankBsb, setEditBankBsb] = useState('');
+  const [editBankAccountNumber, setEditBankAccountNumber] = useState('');
+
   const [availableTradingTerms, setAvailableTradingTerms] = useState<any[]>([]);
 
   const loadSupplier = async (showSpinner = true) => {
@@ -130,6 +138,10 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
       setEditIsPaymentBlocked(data.isPaymentBlocked || false);
       setEditPaymentBlockReason(data.paymentBlockReason || '');
       setEditBlockNotes(data.blockNotes || '');
+      
+      setEditBankAccountName(data.bankAccountName || '');
+      setEditBankBsb(data.bankBsb || '');
+      setEditBankAccountNumber(data.bankAccountNumber || '');
       
       setEditCurrency(data.currencyCode || baseCurrency);
       setEditSupplierGroupId(data.supplierGroupId || null);
@@ -254,6 +266,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
         { id: 'financials-section', label: t('tabs.financials'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('financials-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'notes-section', label: t('tabs.notes'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('notes-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'contact-section', label: t('tabs.contact'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
+        { id: 'bank-section', label: 'Bank', onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('bank-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
         { id: 'activity-section', label: t('tabs.activity'), onClick: () => { setActiveTab('details'); setTimeout(() => document.getElementById('activity-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); } },
       ]
     },
@@ -280,7 +293,13 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
           <EntityHeader
             title={supplier.name}
             subtitle={supplier.vendorNumber}
-            onBack={() => router.push('/suppliers')}
+            onBack={() => {
+              if (document.referrer.includes(window.location.host)) {
+                router.back();
+              } else {
+                router.push('/suppliers');
+              }
+            }}
             isSaving={saving}
             badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier as any)} stateCode={supplier.stateCode} />}
             actions={
@@ -610,6 +629,59 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
                 onChange={(e) => setEditCountry(e.target.value)}
                 onBlur={() => saveField('address1Country', editCountry, supplier.address1Country)}
                 disabled={!isEditable || saving}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bank Details Card */}
+        <div id="bank-section" className="card">
+          <h3 className="section-heading">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="material-symbols-outlined">account_balance</span>
+            Bank Details
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Bank Account Name
+              </label>
+              <input
+                type="text"
+                className="input w-full"
+                value={editBankAccountName}
+                onChange={(e) => setEditBankAccountName(e.target.value)}
+                onBlur={() => saveField('bankAccountName', editBankAccountName, supplier.bankAccountName)}
+                disabled={!isEditable || saving}
+                placeholder="e.g. John Doe Pty Ltd"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                BSB
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editBankBsb}
+                onChange={(e) => setEditBankBsb(e.target.value)}
+                onBlur={() => saveField('bankBsb', editBankBsb, supplier.bankBsb)}
+                disabled={!isEditable || saving}
+                placeholder="e.g. 062-000"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Account Number
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editBankAccountNumber}
+                onChange={(e) => setEditBankAccountNumber(e.target.value)}
+                onBlur={() => saveField('bankAccountNumber', editBankAccountNumber, supplier.bankAccountNumber)}
+                disabled={!isEditable || saving}
+                placeholder="e.g. 12345678"
               />
             </div>
           </div>

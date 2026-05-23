@@ -1,26 +1,34 @@
-import { Controller, Get, Post, Body, Param, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { SetupService } from './setup.service';
 import {
   CasbinResource,
   CasbinAction,
   CasbinGuard,
 } from '../auth/casbin.guard';
-import { SetupGuard } from './setup.guard';
+import { AuthGuard } from '@nestjs/passport';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
-import { ExecuteSetupDto, TestAbmConnectionDto } from './setup.dto';
+import {
+  ExecuteSetupDto,
+  TestAbmConnectionDto,
+  TestOdooConnectionDto,
+  ExecuteEltDto,
+} from './setup.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('setup')
 @CasbinResource('setup')
-@UseGuards(SetupGuard, CasbinGuard, ThrottlerGuard)
+@UseGuards(AuthGuard('jwt'), CasbinGuard, ThrottlerGuard)
 export class SetupController {
   constructor(private readonly setupService: SetupService) {}
-
-  @Get('status')
-  @CasbinAction('read')
-  async getStatus() {
-    return this.setupService.getStatus();
-  }
 
   @Post('test-abm')
   @CasbinAction('execute')
@@ -28,16 +36,10 @@ export class SetupController {
     return this.setupService.testAbmConnection(dto);
   }
 
-  @Get('abm-preview')
-  @CasbinAction('read')
-  async getAbmPreview() {
-    return this.setupService.getAbmPreview();
-  }
-
-  @Get('coa-presets')
-  @CasbinAction('read')
-  async getCoaPresets() {
-    return this.setupService.getCoaPresets();
+  @Post('test-odoo')
+  @CasbinAction('execute')
+  async testOdoo(@Body() dto: TestOdooConnectionDto) {
+    return this.setupService.testOdooConnection(dto);
   }
 
   @Get('resume-state')
@@ -46,15 +48,15 @@ export class SetupController {
     return this.setupService.getResumeState();
   }
 
-  @Post('initialize')
-  @CasbinAction('execute')
-  async initializeSystem(@Body() dto: ExecuteSetupDto) {
-    return this.setupService.initializeSystem(dto);
+  @Get('resume-state-odoo')
+  @CasbinAction('read')
+  async getResumeStateOdoo() {
+    return this.setupService.getResumeStateOdoo();
   }
 
   @Post('execute-elt')
   @CasbinAction('execute')
-  async executeElt(@Body() dto: ExecuteSetupDto) {
+  async executeElt(@Body() dto: ExecuteEltDto) {
     return this.setupService.executeElt(dto);
   }
 
@@ -89,7 +91,7 @@ export class SetupController {
   async executeCsv(
     @Body('tableName') tableName: string,
     @Body('strategy') strategy: string,
-    @UploadedFile() file: Express.Multer.File
+    @UploadedFile() file: Express.Multer.File,
   ) {
     return this.setupService.executeCsv(tableName, strategy, file);
   }

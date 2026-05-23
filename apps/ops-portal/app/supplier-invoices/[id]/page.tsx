@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
@@ -14,12 +14,14 @@ import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { cap, isBackTransition, PURCHASE_INVOICE_LIFECYCLE, PURCHASE_INVOICE_STATE, MATCH_STATUS } from '@modbm/shared';
 import { useSupplierInvoice, PurchaseInvoiceDetails } from './useSupplierInvoice';
+import PaymentManagerSlideOver from '@/app/payments/PaymentManagerSlideOver';
 
 export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = React.use(params);
   const t = useTranslations('purchaseOrders');
   const tCommon = useTranslations('common');
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   
   const {
     invoice, loading, saving,
@@ -49,6 +51,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
     addRoundingLine,
     handleProductSelect,
     handleUnresolve,
+    loadInvoice,
   } = useSupplierInvoice(id);
 
   useDocumentTitle(invoice ? `Invoice ${invoice.invoiceNumber}` : 'Loading Invoice...');
@@ -159,7 +162,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   Cancel
                 </button>
               )}
-              {!headerDirty && allowedTransitions.includes(PURCHASE_INVOICE_STATE.INVOICED) && (
+              {!headerDirty && invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT && allowedTransitions.includes(PURCHASE_INVOICE_STATE.INVOICED) && (
                 <button 
                   className="btn btn-primary btn-sm" 
                   onClick={() => changeState(PURCHASE_INVOICE_STATE.INVOICED)} 
@@ -594,12 +597,53 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
       {/* Payment Allocations Card */}
       <div className="card mt-4 p-5">
         <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Payment Allocations</h2>
-        <p className="text-sm text-gray-500">
-          When payments are allocated to this invoice from the Payment Manager, they will appear here.
-        </p>
+        {invoice.allocations && invoice.allocations.length > 0 ? (
+          <table className="w-full text-left border-collapse mt-2">
+            <thead>
+              <tr className="border-b border-[var(--border)]">
+                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Payment No.</th>
+                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Date</th>
+                <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>Allocated Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.allocations.map((alloc) => (
+                <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
+                  <td className="py-2 text-sm font-medium">
+                    {/* eslint-disable-next-line i18next/no-literal-string */}
+                    <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
+                      {alloc.paymentNumber}
+                    </span>
+                  </td>
+                  <td className="py-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {new Date(alloc.paymentDate).toLocaleDateString()}
+                  </td>
+                  <td className="py-2 text-sm font-semibold text-right" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {formatAmount(parseFloat(alloc.allocatedAmount), alloc.currencyCode)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            No payments have been allocated to this invoice yet.
+          </p>
+        )}
       </div>
 
       </div>
+
+      {selectedPaymentId && (
+        <PaymentManagerSlideOver
+          paymentId={selectedPaymentId}
+          onClose={() => setSelectedPaymentId(null)}
+          onSaved={(close) => {
+            if (close !== false) setSelectedPaymentId(null);
+            loadInvoice();
+          }}
+        />
+      )}
     </DetailsLayout>
   );
 }

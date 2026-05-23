@@ -4,7 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { eq, and, or, sql } from 'drizzle-orm';
+import { eq, and, or, sql, inArray } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -27,15 +27,26 @@ export class LocationsService {
   // ── Locations ─────────────────────────────────────────────────────────────
 
   async createLocation(dto: CreateLocationDto, userId?: string) {
-    const [row] = await this.db
-      .insert(locations)
-      .values({
-        ...dto,
-        source: 'app',
-        createdBy: userId,
-      })
-      .returning();
-    return row;
+    return await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(locations)
+        .values({
+          ...dto,
+          source: 'app',
+          createdBy: userId,
+        })
+        .returning();
+
+      const [settings] = await tx.select().from(appSettings).limit(1);
+      if (settings && !settings.defaultFulfillmentLocationId) {
+        await tx
+          .update(appSettings)
+          .set({ defaultFulfillmentLocationId: row.locationId })
+          .where(eq(appSettings.settingsId, settings.settingsId));
+      }
+
+      return row;
+    });
   }
 
   async updateLocation(id: string, dto: Partial<CreateLocationDto>) {
@@ -49,72 +60,111 @@ export class LocationsService {
   }
 
   async deleteLocation(id: string) {
-    // 1. Check for zones
-    const zoneList = await this.db
-      .select({ id: zones.zoneId, code: zones.code })
-      .from(zones)
-      .where(eq(zones.locationId, id));
+    return await this.db.transaction(async (tx) => {
+      // 1. Check for orders
+      const [soCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(salesOrders)
+        .where(eq(salesOrders.fulfillmentLocationId, id));
 
-    if (zoneList.length > 0) {
-      throw new BadRequestException(
-        `Cannot delete location with ${zoneList.length} existing zones: ${zoneList.map((z) => z.code).join(', ')}`,
-      );
-    }
+      const [solCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(salesOrderLineItems)
+        .where(eq(salesOrderLineItems.fulfillmentLocationId, id));
 
-    // 2. Check for referencing orders
-    const [soCount] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(salesOrders)
-      .where(eq(salesOrders.fulfillmentLocationId, id));
+      const [poCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.deliveryLocationId, id));
 
-    const [solCount] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(salesOrderLineItems)
-      .where(eq(salesOrderLineItems.fulfillmentLocationId, id));
+      const orderRefs =
+        Number(soCount.count) + Number(solCount.count) + Number(poCount.count);
+      if (orderRefs > 0) {
+        throw new BadRequestException(
+          `Cannot delete location referenced by ${Number(soCount.count)} sales order(s), ${Number(solCount.count)} sales order line(s), and ${Number(poCount.count)} purchase order(s)`,
+        );
+      }
 
-    const [poCount] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(purchaseOrders)
-      .where(eq(purchaseOrders.deliveryLocationId, id));
+      // 2. Check for inventory ledger entries
+      const [ledgerCount] = await tx
+        .select({ count: sql<number>`count(*)` })
+        .from(inventoryLedger)
+        .where(eq(inventoryLedger.locationId, id));
 
-    const orderRefs =
-      Number(soCount.count) + Number(solCount.count) + Number(poCount.count);
-    if (orderRefs > 0) {
-      throw new BadRequestException(
-        `Cannot delete location referenced by ${Number(soCount.count)} sales order(s), ${Number(solCount.count)} sales order line(s), and ${Number(poCount.count)} purchase order(s)`,
-      );
-    }
+      if (Number(ledgerCount.count) > 0) {
+        throw new BadRequestException(
+          `Cannot delete location with ${Number(ledgerCount.count)} inventory ledger entries`,
+        );
+      }
 
-    // 3. Check for inventory ledger entries
-    const [ledgerCount] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(inventoryLedger)
-      .where(eq(inventoryLedger.locationId, id));
+      // 3. Check for app_settings default reference
+      const settingsRef = await tx
+        .select({ id: appSettings.settingsId })
+        .from(appSettings)
+        .where(eq(appSettings.defaultFulfillmentLocationId, id));
 
-    if (Number(ledgerCount.count) > 0) {
-      throw new BadRequestException(
-        `Cannot delete location with ${Number(ledgerCount.count)} inventory ledger entries`,
-      );
-    }
+      if (settingsRef.length > 0) {
+        throw new BadRequestException(
+          `Cannot delete location that is set as the default fulfillment location in app settings`,
+        );
+      }
 
-    // 4. Check for app_settings default reference
-    const settingsRef = await this.db
-      .select({ id: appSettings.settingsId })
-      .from(appSettings)
-      .where(eq(appSettings.defaultFulfillmentLocationId, id));
+      // 4. Cascade delete empty system zones and bins
+      const zoneList = await tx
+        .select({ id: zones.zoneId, code: zones.code, source: zones.source })
+        .from(zones)
+        .where(eq(zones.locationId, id));
 
-    if (settingsRef.length > 0) {
-      throw new BadRequestException(
-        `Cannot delete location that is set as the default fulfillment location in app settings`,
-      );
-    }
+      const nonSystemZones = zoneList.filter((z) => z.source !== 'system');
+      if (nonSystemZones.length > 0) {
+        throw new BadRequestException(
+          `Cannot delete location with ${nonSystemZones.length} existing non-system zones`,
+        );
+      }
 
-    const [row] = await this.db
-      .delete(locations)
-      .where(eq(locations.locationId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Location ${id} not found`);
-    return { success: true };
+      const zoneIds = zoneList.map((z) => z.id);
+      if (zoneIds.length > 0) {
+        const binList = await tx
+          .select()
+          .from(bins)
+          .where(inArray(bins.zoneId, zoneIds));
+        const nonSystemBins = binList.filter((b) => b.source !== 'system');
+
+        if (nonSystemBins.length > 0) {
+          throw new BadRequestException(
+            `Cannot delete location with ${nonSystemBins.length} existing non-system bins`,
+          );
+        }
+
+        for (const bin of binList) {
+          const stockCount = await tx
+            .select({ count: sql<number>`count(*)` })
+            .from(binContents)
+            .where(
+              and(eq(binContents.binId, bin.binId), sql`actual_quantity > 0`),
+            );
+
+          if (Number(stockCount[0].count) > 0) {
+            throw new BadRequestException(
+              `Cannot delete location because system bin ${bin.binNumber} contains stock.`,
+            );
+          }
+        }
+
+        if (binList.length > 0) {
+          await tx.delete(bins).where(inArray(bins.zoneId, zoneIds));
+        }
+        await tx.delete(zones).where(eq(zones.locationId, id));
+      }
+
+      const [row] = await tx
+        .delete(locations)
+        .where(eq(locations.locationId, id))
+        .returning();
+
+      if (!row) throw new NotFoundException(`Location ${id} not found`);
+      return { success: true };
+    });
   }
 
   // ── Zones ─────────────────────────────────────────────────────────────────
@@ -142,30 +192,46 @@ export class LocationsService {
   }
 
   async deleteZone(id: string) {
-    const [zone] = await this.db
-      .select()
-      .from(zones)
-      .where(eq(zones.zoneId, id));
-    if (!zone) throw new NotFoundException(`Zone ${id} not found`);
+    return await this.db.transaction(async (tx) => {
+      const [zone] = await tx.select().from(zones).where(eq(zones.zoneId, id));
+      if (!zone) throw new NotFoundException(`Zone ${id} not found`);
 
-    // 1. Check for bins
-    const binCount = await this.db
-      .select({ count: sql`count(*)` })
-      .from(bins)
-      .where(eq(bins.zoneId, id));
+      // 1. Check for bins
+      const binList = await tx.select().from(bins).where(eq(bins.zoneId, id));
 
-    if (Number(binCount[0].count) > 0) {
-      throw new BadRequestException(
-        `Cannot delete zone with ${Number(binCount[0].count)} existing bins`,
-      );
-    }
+      const nonSystemBins = binList.filter((b) => b.source !== 'system');
+      if (nonSystemBins.length > 0) {
+        throw new BadRequestException(
+          `Cannot delete zone with ${nonSystemBins.length} existing non-system bins`,
+        );
+      }
 
-    const [row] = await this.db
-      .delete(zones)
-      .where(eq(zones.zoneId, id))
-      .returning();
-    if (!row) throw new NotFoundException(`Zone ${id} not found`);
-    return { success: true };
+      for (const bin of binList) {
+        const stockCount = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(binContents)
+          .where(
+            and(eq(binContents.binId, bin.binId), sql`actual_quantity > 0`),
+          );
+
+        if (Number(stockCount[0].count) > 0) {
+          throw new BadRequestException(
+            `Cannot delete zone because system bin ${bin.binNumber} contains stock.`,
+          );
+        }
+      }
+
+      if (binList.length > 0) {
+        await tx.delete(bins).where(eq(bins.zoneId, id));
+      }
+
+      const [row] = await tx
+        .delete(zones)
+        .where(eq(zones.zoneId, id))
+        .returning();
+      if (!row) throw new NotFoundException(`Zone ${id} not found`);
+      return { success: true };
+    });
   }
 
   // ── Bins ──────────────────────────────────────────────────────────────────

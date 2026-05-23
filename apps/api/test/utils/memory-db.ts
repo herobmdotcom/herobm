@@ -3,7 +3,13 @@ import { drizzle } from 'drizzle-orm/pglite';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as schema from '../../src/drizzle/modbm-core-schema';
-import { runStandardSeeds } from '../../src/scripts/seed';
+import {
+  runStandardSeeds,
+  seedCoaSettings,
+  seedCoaAccounts,
+  seedAccounts,
+} from '../../src/scripts/seed';
+import { seedTestLocations } from './test-seed';
 
 export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   const client = new PGlite();
@@ -39,6 +45,11 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
   // Run the standard application seeds against the in-memory PGLite DB
   if (!opts?.skipSeeds) {
     await runStandardSeeds(db);
+    // Testing-only extension to seed COA defaults, accounts, and locations
+    await seedCoaAccounts(db, false);
+    await seedCoaSettings(db, false);
+    await seedTestLocations(db, false);
+    await seedAccounts(db, false);
   }
 
   return { client, db };
