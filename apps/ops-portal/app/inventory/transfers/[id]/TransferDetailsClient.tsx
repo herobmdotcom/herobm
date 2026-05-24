@@ -90,7 +90,9 @@ export default function TransferDetailsClient({ id }: { id: string }) {
                   onClick={handleCancel}
                   disabled={saving}
                 >
+                  {/* eslint-disable i18next/no-literal-string */}
                   <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                  {/* eslint-enable i18next/no-literal-string */}
                   {tCommon('cancel')}
                 </button>
               )}
@@ -159,7 +161,9 @@ export default function TransferDetailsClient({ id }: { id: string }) {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">
+              {/* eslint-disable i18next/no-literal-string */}
               <span className="material-symbols-outlined">inventory_2</span>
+              {/* eslint-enable i18next/no-literal-string */}
               {tTransfers('lineItems')}
             </h3>
             {isEditable && (

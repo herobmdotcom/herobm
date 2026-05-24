@@ -19,6 +19,7 @@ interface Props {
 
 export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Props) {
   const tCommon = useTranslations('common');
+  const tSettings = useTranslations('admin.settings');
   const [charts, setCharts] = useState<ChartFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,12 +65,12 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
     <SlideOver isOpen={isOpen} onClose={onClose} title="Import Chart of Accounts" width="max-w-md">
       <div className="flex flex-col gap-4 p-4">
         {isLoading ? (
-          <div className="text-sm text-muted animate-pulse">Loading available charts...</div>
+          <div className="text-sm text-muted animate-pulse">{tSettings('importCoaModal.loadingCharts')}</div>
         ) : charts.length === 0 ? (
-          <div className="text-sm text-muted">No charts available.</div>
+          <div className="text-sm text-muted">{tSettings('importCoaModal.noCharts')}</div>
         ) : (
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Select Preset</label>
+            <label className="text-sm font-medium">{tSettings('importCoaModal.selectPreset')}</label>
             <select
               className="input w-full"
               value={selectedFile}
@@ -94,7 +95,7 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
             onClick={handleImport}
             disabled={!selectedFile || isImporting || isLoading}
           >
-            {isImporting ? 'Importing...' : 'Import CoA'}
+            {isImporting ? tSettings('importCoaModal.importing') : tSettings('importCoaModal.importAction')}
           </button>
         </div>
       </div>

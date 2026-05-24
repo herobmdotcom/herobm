@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { debounce } from 'lodash';
 import { apiFetch } from '../../lib/api';
+import { useTranslations } from 'next-intl';
 
 interface PurchaseOrder {
   purchaseOrderId: string;
@@ -16,6 +18,7 @@ interface POSearchInputProps {
   onSelect: (poId: string) => void;
   placeholder?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 export default function POSearchInput({
@@ -23,7 +26,9 @@ export default function POSearchInput({
   onSelect,
   placeholder = 'Search Purchase Orders...',
   style,
+  disabled = false,
 }: POSearchInputProps) {
+  const t = useTranslations('purchaseOrders');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<PurchaseOrder[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -160,7 +165,7 @@ export default function POSearchInput({
               ))
             ) : (
               <div style={{ padding: '8px 12px', color: 'var(--text-muted)', fontSize: 12 }}>
-                No POs found
+                {t('noPosFound')}
               </div>
             )}
           </div>

@@ -19,6 +19,7 @@ interface Props {
 
 export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Props) {
   const tCommon = useTranslations('common');
+  const tSettings = useTranslations('admin.settings');
   const [files, setFiles] = useState<SettingsFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -64,12 +65,12 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
     <SlideOver isOpen={isOpen} onClose={onClose} title="Import Tax Settings" width="max-w-md">
       <div className="flex flex-col gap-4 p-4">
         {isLoading ? (
-          <div className="text-sm text-muted animate-pulse">Loading available tax settings...</div>
+          <div className="text-sm text-muted animate-pulse">{tSettings('importTaxModal.loadingCharts')}</div>
         ) : files.length === 0 ? (
-          <div className="text-sm text-muted">No tax settings files available.</div>
+          <div className="text-sm text-muted">{tSettings('importTaxModal.noCharts')}</div>
         ) : (
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium">Select Preset</label>
+            <label className="text-sm font-medium">{tSettings('importTaxModal.selectPreset')}</label>
             <select
               className="input w-full"
               value={selectedFile}
@@ -94,7 +95,7 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
             onClick={handleImport}
             disabled={!selectedFile || isImporting || isLoading}
           >
-            {isImporting ? 'Importing...' : 'Import Tax Settings'}
+            {isImporting ? tSettings('importTaxModal.importing') : tSettings('importTaxModal.importAction')}
           </button>
         </div>
       </div>

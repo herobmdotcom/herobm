@@ -105,8 +105,9 @@ export default function SystemLogsPage() {
               {t('actions.copy')}
             </button>
             <button className="btn btn-secondary btn-sm" onClick={loadLogs}>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              ↻ {t('actions.refresh')}
+              <span>🔄</span>
+              {' '}
+              {t('actions.refresh')}
             </button>
           </div>
         </div>

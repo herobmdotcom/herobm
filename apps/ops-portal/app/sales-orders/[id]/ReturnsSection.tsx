@@ -458,7 +458,9 @@ export default function ReturnsSection({
 
                                 {ret.creditNoteNumber && (
                                     <div className="flex items-center gap-2 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>receipt_long</span>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>receipt_long</span>
+                        {/* eslint-enable i18next/no-literal-string */}
                                         <span style={{ fontWeight: 600 }}>{tSales('returns.creditNote')}:</span>
                                         <span>{ret.creditNoteNumber}</span>
                                     </div>

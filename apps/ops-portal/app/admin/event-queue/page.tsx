@@ -154,8 +154,9 @@ export default function EventQueueDashboard() {
               {t('autoRefresh')}
             </label>
             <button className="btn btn-secondary btn-sm" onClick={loadData}>
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              ↻ {t('refresh')}
+              <span>🔄</span>
+              {' '}
+              {t('refresh')}
             </button>
           </div>
         </div>
@@ -281,13 +282,10 @@ export default function EventQueueDashboard() {
                           <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{row.processed}</td>
                           <td>
                             {row.failed > 0 ? (
-                               // eslint-disable-next-line i18next/no-literal-string
-                               <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>✕ {t('status.errors', { count: row.failed })}</span>
+                               <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }}>❌ {t('status.errors', { count: row.failed })}</span>
                             ) : row.pending === 0 ? (
-                              // eslint-disable-next-line i18next/no-literal-string
-                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓ {t('status.allSynced')}</span>
+                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✅ {t('status.allSynced')}</span>
                             ) : (
-                              // eslint-disable-next-line i18next/no-literal-string
                               <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳ {t('status.pending', { count: row.pending })}</span>
                             )}
                           </td>
@@ -363,13 +361,10 @@ export default function EventQueueDashboard() {
                                             </td>
                                             <td style={{ fontSize: 10 }}>
                                               {evt.lastError ? (
-                                                  // eslint-disable-next-line i18next/no-literal-string
-                                                  <span style={{ color: '#ef4444', fontWeight: 700 }} title={evt.lastError}>✕</span>
+                                                  <span style={{ color: '#ef4444', fontWeight: 700 }} title={evt.lastError}>❌</span>
                                                 ) : evt.processedAt ? (
-                                                  // eslint-disable-next-line i18next/no-literal-string
-                                                  <span style={{ color: '#4ade80', fontWeight: 700 }}>✓</span>
+                                                  <span style={{ color: '#4ade80', fontWeight: 700 }}>✅</span>
                                                 ) : (
-                                                  // eslint-disable-next-line i18next/no-literal-string
                                                   <span style={{ color: '#f59e0b', fontWeight: 700 }}>⏳</span>
                                                 )}
                                             </td>
@@ -480,13 +475,10 @@ export default function EventQueueDashboard() {
                           </td>
                           <td style={{ textAlign: 'center' }}>
                             {evt.lastError ? (
-                              // eslint-disable-next-line i18next/no-literal-string
-                              <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }} title={evt.lastError}>✕</span>
+                              <span style={{ color: '#ef4444', fontWeight: 700, fontSize: 11 }} title={evt.lastError}>❌</span>
                             ) : evt.processedAt ? (
-                              // eslint-disable-next-line i18next/no-literal-string
-                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✓</span>
+                              <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 11 }}>✅</span>
                             ) : (
-                              // eslint-disable-next-line i18next/no-literal-string
                               <span style={{ color: '#f59e0b', fontWeight: 700, fontSize: 11 }}>⏳</span>
                             )}
                           </td>

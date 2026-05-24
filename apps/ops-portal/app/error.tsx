@@ -124,7 +124,10 @@ export default function Error({
             )}
             {mailto && (
               <p>
-                ✉️{' '}
+                {/* eslint-disable i18next/no-literal-string */}
+                <span>✉️</span>
+                {/* eslint-enable i18next/no-literal-string */}
+                {' '}
                 <a href={mailto} style={{ color: 'var(--accent)' }}>
                   {supportEmail}
                 </a>

@@ -248,9 +248,11 @@ export default function DiscountMatrixSlideOver({
                             onClick={() => handleDelete(r.discountMatrixId)}
                             title={tCommon('delete')}
                           >
+                            {/* eslint-disable i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-base">
                               close
                             </span>
+                            {/* eslint-enable i18next/no-literal-string */}
                           </button>
                         </td>
                       </tr>
@@ -294,7 +296,9 @@ export default function DiscountMatrixSlideOver({
                           onClick={handleAdd}
                           disabled={!newProductGroupId || !newDiscount}
                         >
+                          {/* eslint-disable i18next/no-literal-string */}
                           <span className="material-symbols-outlined text-base">add</span>
+                          {/* eslint-enable i18next/no-literal-string */}
                         </button>
                       </td>
                     </tr>

@@ -141,8 +141,8 @@ export default function DemandsContent() {
   };
 
   return (
-      <>
-          <DataGrid<DemandRow>
+    <div className="h-full flex flex-col">
+      <DataGrid<DemandRow>
             refreshTrigger={refreshKey}
             endpoint={`/api/allocations/open`}
             columns={columns}
@@ -197,7 +197,6 @@ export default function DemandsContent() {
               </div>
             }
           />
-      </>
       <DraftPOsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

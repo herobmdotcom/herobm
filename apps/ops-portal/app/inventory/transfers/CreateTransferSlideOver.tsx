@@ -199,13 +199,14 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
                   className="text-gray-400 hover:text-red-500"
                   onClick={() => handleRemoveLine(index)}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  {/* eslint-disable i18next/no-literal-string */}
                   <span className="material-symbols-outlined">delete</span>
+                  {/* eslint-enable i18next/no-literal-string */}
                 </button>
               </div>
             ))}
             {lines.length === 0 && (
-              <div className="text-sm text-gray-500 italic">No lines added.</div>
+              <div className="text-sm text-gray-500 italic">{t('noLinesAdded')}</div>
             )}
           </div>
         </div>

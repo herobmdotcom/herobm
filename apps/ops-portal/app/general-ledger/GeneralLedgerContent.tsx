@@ -208,7 +208,9 @@ export default function GeneralLedgerContent() {
           onClick={() => setIsCodesOpen(true)}
           className="btn btn-secondary btn-sm whitespace-nowrap"
         >
+          {/* eslint-disable i18next/no-literal-string */}
           <span className="material-symbols-outlined text-sm">visibility</span>
+          {/* eslint-enable i18next/no-literal-string */}
           {tCodes('button')}
         </button>
       }

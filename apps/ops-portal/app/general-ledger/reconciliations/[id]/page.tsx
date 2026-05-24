@@ -312,7 +312,9 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         onClick={() => setAdjustmentModalOpen(true)}
                         className="btn btn-secondary btn-sm flex items-center gap-2"
                       >
+                        {/* eslint-disable i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[18px]">add</span>
+                        {/* eslint-enable i18next/no-literal-string */}
                         {t('quickAdjustment')}
                       </button>
                       <button
@@ -321,7 +323,9 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
                         className="btn btn-secondary btn-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         title={!selectedRow ? t('tooltips.selectRowToSplit') : selectedRow.isCleared ? t('tooltips.splitRowDisabled') : ''}
                       >
+                        {/* eslint-disable i18next/no-literal-string */}
                         <span className="material-symbols-outlined text-[18px]">call_split</span>
+                        {/* eslint-enable i18next/no-literal-string */}
                         {t('splitEntry')}
                       </button>
                     </>

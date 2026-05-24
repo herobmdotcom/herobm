@@ -292,7 +292,6 @@ export default function SystemSettingsPage() {
   const flushCache = async () => {
     try {
       await apiMutate('/api/gl/settings/reload', 'POST');
-      // eslint-disable-next-line i18next/no-literal-string
       toast.success('Settings cache flushed successfully.');
     } catch (err: any) {
       toast.error(err.message);
@@ -587,7 +586,7 @@ export default function SystemSettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Default Fulfillment Location
+                  {t('settings.fulfillmentHeading')}
                 </label>
                 <select
                   className="input"
@@ -595,7 +594,7 @@ export default function SystemSettingsPage() {
                   onChange={(e) => updateAppField('defaultFulfillmentLocationId', e.target.value || null)}
                   disabled={appLoading}
                 >
-                  {!appForm?.defaultFulfillmentLocationId && <option value="">-- None --</option>}
+                  {!appForm?.defaultFulfillmentLocationId && <option value="">{t('settings.none')}</option>}
                   {locations.map((loc) => (
                     <option key={loc.locationId || loc.id} value={loc.locationId || loc.id}>
                       {loc.name} ({loc.code})

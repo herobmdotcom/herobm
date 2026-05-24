@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 export interface FormFieldProps {
   type: 'string' | 'number' | 'integer' | 'boolean' | 'enum';
@@ -21,6 +22,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   options,
   description,
 }) => {
+  const t = useTranslations('common');
   if (type === 'boolean') {
     return (
       <div className="flex items-center gap-4">
@@ -70,7 +72,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           onChange={(e) => onChange(e.target.value)}
           disabled={readOnly}
         >
-          <option value="">-- Select --</option>
+          <option value="">{t('selectOption')}</option>
           {(options || []).map((opt: string) => (
             <option key={opt} value={opt}>
               {opt}

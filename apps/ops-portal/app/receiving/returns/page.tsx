@@ -43,7 +43,7 @@ export default function ReceivingReturnsPage() {
                 if (!p.value) return null;
                 return (
                     <span className="badge badge-sm badge-info">
-                        {p.value.length} items
+                        {tCommon('itemsCount', { count: p.value.length })}
                     </span>
                 );
             }

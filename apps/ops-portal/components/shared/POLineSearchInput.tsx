@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiFetch } from '../../lib/api';
+import { useTranslations } from 'next-intl';
 
 interface POLine {
   purchaseOrderLineId: string;
@@ -18,6 +19,7 @@ interface POLineSearchInputProps {
   onSelect: (poLineId: string, line?: any) => void;
   placeholder?: string;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
 export default function POLineSearchInput({
@@ -26,7 +28,9 @@ export default function POLineSearchInput({
   onSelect,
   placeholder = 'Search POs...',
   style,
+  disabled,
 }: POLineSearchInputProps) {
+  const t = useTranslations('purchaseOrders');
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<POLine[]>([]);
   const [allLines, setAllLines] = useState<POLine[]>([]);
@@ -139,7 +143,7 @@ export default function POLineSearchInput({
                 )}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Pending Qty: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{qtyPending}</span>
+                {t('pendingQty')}: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{qtyPending}</span>
               </div>
             </div>
           </div>
@@ -147,7 +151,7 @@ export default function POLineSearchInput({
       })}
       {results.length === 0 && !loading && (
         <div className="px-3 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-          No pending POs found.
+          {t('noPendingPos')}
         </div>
       )}
     </div>

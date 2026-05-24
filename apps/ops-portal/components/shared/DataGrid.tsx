@@ -298,8 +298,6 @@ export default function DataGrid<T>({
 
   const [displayedRowCount, setDisplayedRowCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const limit = fetchAll ? 99999 : 200;
-
   // Initialize state from URL params if available, falling back to defaults
   const [search, setSearch] = useState(() => searchParams?.get(qParam) ?? initialSearch ?? "");
   const [includeArchived, setIncludeArchived] = useState(() => searchParams?.get(archivedParam) === 'true');
@@ -356,6 +354,20 @@ export default function DataGrid<T>({
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth < 1024 : false
+  );
+
+  useEffect(() => {
+    setMounted(true);
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const effectiveFetchAll = isMobile ? false : fetchAll;
+  const limit = effectiveFetchAll ? 99999 : 25;
   const [colRevision, setColRevision] = useState(0);
   const colPickerRef = useRef<HTMLDivElement>(null);
 
@@ -437,7 +449,7 @@ export default function DataGrid<T>({
       })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
-  }, [endpoint, rowData, search, includeArchived, page, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
+  }, [endpoint, rowData, search, includeArchived, page, limit, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
@@ -808,42 +820,52 @@ export default function DataGrid<T>({
   );
 
 
+  const renderPaginationControls = (isMobileView: boolean) => {
+    if (effectiveFetchAll || !mounted) return null;
+    
+    const wrapperClass = isMobileView 
+      ? 'lg:hidden flex items-center justify-between w-full p-2 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 shrink-0'
+      : 'hidden lg:flex gap-1 ml-auto shrink-0 mb-3 absolute top-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-slate-100';
+
+    return (
+      <div className={wrapperClass}>
+        <button
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+          disabled={page === 1}
+          className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <span aria-hidden>←</span>{' '}{tGrid('prev')}
+        </button>
+        <span
+          className="px-3 py-1.5 text-xs font-medium"
+          style={{ color: "var(--text-muted)" }}
+        >
+          {tGrid('page', { page: String(page) })}
+        </span>
+        <button
+          onClick={() => setPage((p) => p + 1)}
+          disabled={!data || data.length < limit}
+          className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
+          }}
+        >
+          {tGrid('next')}{' '}<span aria-hidden>→</span>
+        </button>
+      </div>
+    );
+  };
+
   const gridContent = (
     <div className="flex-1 lg:min-h-0 flex flex-col relative w-full lg:h-full">
-      {!fetchAll && (
-        <div className="flex gap-1 ml-auto shrink-0 mb-3 absolute top-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-slate-100">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            <span aria-hidden>←</span>{' '}{tGrid('prev')}
-          </button>
-          <span
-            className="px-3 py-1.5 text-xs"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {tGrid('page', { page: String(page) })}
-          </span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!data || data.length < limit}
-            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {tGrid('next')}{' '}<span aria-hidden>→</span>
-          </button>
-        </div>
-      )}
+      {renderPaginationControls(false)}
       <div className="hidden lg:block flex-1 min-h-0 w-full h-full relative">
         <div className={`${gridTheme} absolute inset-0`}>
           <AgGridReact<T>
@@ -866,17 +888,19 @@ export default function DataGrid<T>({
             onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged!(e.api.getSelectedRows()) : undefined}
             tooltipShowDelay={300}
             {...(domLayout ? { domLayout } : {})}
-            {...(fetchAll ? { quickFilterText: search } : {})}
+            {...(effectiveFetchAll ? { quickFilterText: search } : {})}
           />
         </div>
       </div>
 
       {/* Mobile Generic Card View */}
       <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24">
+        {renderPaginationControls(true)}
         {data?.map((row, idx) => {
           const key = rowIdField ? String((row as any)[rowIdField as keyof T]) : idx;
           return <GenericMobileCard key={key} row={row} columns={enhancedColumns} onRowClicked={onRowClicked} />;
         })}
+        {data && data.length > 0 && renderPaginationControls(true)}
       </div>
     </div>
   );

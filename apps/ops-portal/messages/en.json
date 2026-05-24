@@ -192,18 +192,18 @@
         "totalCount": "Total Templates"
       },
       "hooks": {
-        "importCoaModal": {
-          "loadingCharts": "Loading available charts...",
-          "noCharts": "No charts available.",
-          "selectPreset": "Select Preset",
-          "importing": "Importing...",
-          "importAction": "Import CoA"
-        },
         "actions": {
           "editTemplate": "Edit Template"
         },
         "errors": {
           "updateFailed": "Failed to update assignment: "
+        },
+        "importCoaModal": {
+          "importAction": "Import CoA",
+          "importing": "Importing...",
+          "loadingCharts": "Loading available charts...",
+          "noCharts": "No charts available.",
+          "selectPreset": "Select Preset"
         },
         "moduleTitle": "Reporting Hooks",
         "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
@@ -256,6 +256,20 @@
         "loading": "Loading GL customers...",
         "productFirst": "Product first",
         "supplierFirst": "Supplier first"
+      },
+      "importCoaModal": {
+        "importAction": "Import CoA",
+        "importing": "Importing...",
+        "loadingCharts": "Loading available charts...",
+        "noCharts": "No charts available.",
+        "selectPreset": "Select Preset"
+      },
+      "importTaxModal": {
+        "importAction": "Import Tax Settings",
+        "importing": "Importing...",
+        "loadingCharts": "Loading available files...",
+        "noCharts": "No tax settings files available.",
+        "selectPreset": "Select Preset"
       },
       "labels": {
         "accountName": "Customer Name",
@@ -728,6 +742,7 @@
       "rowCountLabel": "Rows",
       "rows": "{count} rows"
     },
+    "itemsCount": "{count} items",
     "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
     "loading": "Loading...",
     "loadingEllipsis": "Loading...",
@@ -774,6 +789,7 @@
     "select": "Select",
     "selectEllipsis": "Select...",
     "selectNone": "(None)",
+    "selectOption": "-- Select --",
     "sources": {
       "abm": "ABM",
       "app": "App"
@@ -1700,6 +1716,7 @@
   "purchaseOrders": {
     "addLine": "+ Line",
     "addRoundingAdj": "+ Rounding Adj",
+    "allocated": "Allocated",
     "allocationsSection": {
       "action": "Action",
       "allocatedQty": "Allocated Qty",
@@ -1865,12 +1882,15 @@
     "noLineItems": "No line items — use the search above to add products",
     "noLineItemsShort": "No line items",
     "noPaymentsAllocated": "No payments have been allocated to this invoice yet.",
+    "noPendingPos": "No pending POs found.",
+    "noPosFound": "No POs found.",
     "noReturnLines": "No return lines",
     "noReturns": "No returns",
     "orderDetails": "Order Details",
     "orderNotFound": "Order not found",
     "packingSlip": "Packing Slip",
     "paymentAllocations": "Payment Allocations",
+    "pendingQty": "Pending Qty",
     "placeholders": {
       "notes": "Internal notes",
       "orderName": "Order name",
@@ -1942,20 +1962,19 @@
     },
     "returnsHeading": "Returns",
     "selectGlCustomer": "Select GL Customer...",
+    "statusTab": "Status",
     "subtitle": "Manage purchase orders",
     "supplierInvoice": {
       "addLine": "+ Add Line",
-      "receipt": "Receipt",
       "fromPo": "From PO",
-      "standaloneItem": "Standalone Item",
       "invoiceNumberLabel": "Supplier Invoice Number *",
       "noItems": "No items",
+      "receipt": "Receipt",
       "receiptFilenameLabel": "Receipt Filename (Optional)",
+      "standaloneItem": "Standalone Item",
       "taxTotalAmount": "{tax} (Total Amount)"
     },
     "supplierInvoicesCardHeading": "Supplier Invoices",
-    "statusTab": "Status",
-    "allocated": "Allocated",
     "title": "Purchase Orders",
     "unnamedCustomer": "Unnamed customer",
     "untitledOrder": "Untitled order"
@@ -2359,6 +2378,7 @@
       "fulfillmentHeading": "Default Fulfillment Location",
       "loading": "Loading...",
       "noLocations": "No Locations Found in Source",
+      "none": "-- None --",
       "options": {
         "billing": {
           "finalInvoice": "Final Invoice Only",
@@ -2546,11 +2566,6 @@
     "title": "herobm"
   },
   "suppliers": {
-    "fields": {
-      "selectCurrency": "Select Currency",
-      "bankAccountName": "Bank Account Name",
-      "accountNumber": "Account Number"
-    },
     "buttons": {
       "createSupplier": "+ Create Supplier",
       "editSupplier": "Edit Supplier",
@@ -2607,6 +2622,11 @@
         "tax_certificate": "Tax Certificate",
         "trial_period": "Trial Period"
       }
+    },
+    "fields": {
+      "accountNumber": "Account Number",
+      "bankAccountName": "Bank Account Name",
+      "selectCurrency": "Select Currency"
     },
     "financials": "Financials",
     "generalInfo": "General Information",
@@ -2716,6 +2736,7 @@
     },
     "lineItems": "Line items",
     "noLineItems": "No line items",
+    "noLinesAdded": "No lines added.",
     "notFound": "Transfer order not found",
     "placeholders": {
       "notes": "Transfer notes...",
