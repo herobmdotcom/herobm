@@ -163,14 +163,12 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
     <div className="flex flex-col gap-4">
       <div className="flex justify-end mb-2">
         <button className="btn btn-secondary btn-sm" onClick={handleAddField}>
-          + Add Field
+          + {t('addField')}
         </button>
       </div>
       
       {fields.length === 0 ? (
-        <div className="text-center py-8 text-muted bg-[var(--bg-card)] rounded border border-dashed border-[var(--border)]">
-          No custom metadata fields configured.
-        </div>
+        <div className="text-center py-8 text-muted bg-[var(--bg-card)] rounded border border-dashed border-[var(--border)]">{t('noFields')}</div>
       ) : (
         <div className="flex flex-col gap-3">
           {fields.map(field => {
@@ -184,7 +182,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-muted">Field Title (UI Label)</label>
+                      <label className="text-xs font-medium text-muted">{t('fieldTitle')}</label>
                       <input 
                         type="text" 
                         className="input w-full" 
@@ -195,7 +193,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-muted">Internal Key (JSON property)</label>
+                      <label className="text-xs font-medium text-muted">{t('internalKey')}</label>
                       <input 
                         type="text" 
                         className="input w-full font-mono text-xs" 
@@ -205,16 +203,16 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs font-medium text-muted">Data Type</label>
+                      <label className="text-xs font-medium text-muted">{t('dataType')}</label>
                       <select 
                         className="input w-full" 
                         value={field.type} 
                         onChange={e => handleChange(field.id, { type: e.target.value as FieldType })}
                       >
-                        <option value="string">Text</option>
-                        <option value="number">Number</option>
-                        <option value="boolean">Toggle (Boolean)</option>
-                        <option value="enum">Dropdown (Single Choice)</option>
+                        <option value="string">{t('types.string')}</option>
+                        <option value="number">{t('types.number')}</option>
+                        <option value="boolean">{t('types.boolean')}</option>
+                        <option value="enum">{t('types.enum')}</option>
                       </select>
                     </div>
                     <div className="flex flex-col gap-1 justify-center pt-5">
@@ -225,13 +223,13 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                           checked={field.required}
                           onChange={e => handleChange(field.id, { required: e.target.checked })}
                         />
-                        <span className="text-sm font-medium">Required Field</span>
+                        <span className="text-sm font-medium">{t('requiredField')}</span>
                       </label>
                     </div>
 
                     {field.type === 'enum' && (
                       <div className="flex flex-col gap-1 md:col-span-2">
-                        <label className="text-xs font-medium text-muted">Dropdown Options (Comma separated)</label>
+                        <label className="text-xs font-medium text-muted">{t('dropdownOptions')}</label>
                         <input 
                           type="text" 
                           className="input w-full" 
@@ -243,8 +241,8 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                     )}
                   </div>
                   <div className="flex justify-end gap-2 mt-2">
-                    <button className="btn btn-secondary btn-sm" onClick={handleCancel}>Cancel</button>
-                    <button className="btn btn-primary btn-sm" onClick={() => { setEditingFieldId(null); setEditingSnapshot(null); }}>Save</button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleCancel}>{t('cancel')}</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => { setEditingFieldId(null); setEditingSnapshot(null); }}>{t('save')}</button>
                   </div>
                 </div>
               );
@@ -271,7 +269,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                 <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity absolute right-4 top-1/2 -translate-y-1/2 pointer-events-auto">
                   <button 
                     className="btn btn-sm btn-ghost text-muted hover:text-gray-800 h-8 w-8 p-0 flex items-center justify-center rounded-full bg-white shadow-sm border border-gray-200"
-                    title="Edit Field"
+                    title={t('editField')}
                     onClick={(e) => { e.stopPropagation(); setEditingSnapshot(field); setEditingFieldId(field.id); }}
                   >
                     {/* eslint-disable-next-line i18next/no-literal-string */}
@@ -279,7 +277,7 @@ export const SchemaBuilder: React.FC<SchemaBuilderProps> = ({ value, onChange })
                   </button>
                   <button 
                     className="btn btn-sm btn-ghost text-[var(--danger)] hover:bg-red-50 h-8 w-8 p-0 flex items-center justify-center rounded-full bg-white shadow-sm border border-gray-200"
-                    title="Remove Field"
+                    title={t('removeField')}
                     onClick={(e) => handleRemoveField(field.id, e)}
                   >
                     {/* eslint-disable-next-line i18next/no-literal-string */}

@@ -80,9 +80,9 @@ BEGIN
     VALUES 
         ('SHIPPING', handling_zone_id, 'staging', 'system', true, 'system'),
         ('RECEIVING', handling_zone_id, 'staging', 'system', true, 'system'),
-        ('RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
-        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system'),
-        ('DEFAULT', handling_zone_id, 'storage', 'system', false, 'system');
+        ('CUSTOMER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
+        ('SUPPLIER_RETURNS', handling_zone_id, 'staging', 'system', true, 'system'),
+        ('INTRA_TRANSIT', handling_zone_id, 'in_transit', 'system', true, 'system');
 
     RETURN NEW;
 END;
@@ -94,13 +94,26 @@ CREATE TRIGGER scaffold_handling_bins
 AFTER INSERT ON modbm_core.locations
 FOR EACH ROW EXECUTE FUNCTION modbm_core.trg_scaffold_system_bins();
 
--- Back-fill RETURNS bin for existing locations that don't have one yet
+-- Rename existing RETURNS bins to CUSTOMER_RETURNS
+UPDATE modbm_core.bins SET bin_number = 'CUSTOMER_RETURNS' WHERE bin_number = 'RETURNS';
+
+-- Back-fill CUSTOMER_RETURNS bin for existing locations that don't have one yet
 INSERT INTO modbm_core.bins (bin_number, zone_id, bin_type, source, is_unavailable, created_by)
-SELECT 'RETURNS', z.zone_id, 'staging', 'system', true, 'system'
+SELECT 'CUSTOMER_RETURNS', z.zone_id, 'staging', 'system', true, 'system'
 FROM modbm_core.zones z
 WHERE z.code = 'HANDLING'
   AND NOT EXISTS (
     SELECT 1 FROM modbm_core.bins b
-    WHERE b.zone_id = z.zone_id AND b.bin_number = 'RETURNS'
+    WHERE b.zone_id = z.zone_id AND b.bin_number = 'CUSTOMER_RETURNS'
+  );
+
+-- Back-fill SUPPLIER_RETURNS bin for existing locations that don't have one yet
+INSERT INTO modbm_core.bins (bin_number, zone_id, bin_type, source, is_unavailable, created_by)
+SELECT 'SUPPLIER_RETURNS', z.zone_id, 'staging', 'system', true, 'system'
+FROM modbm_core.zones z
+WHERE z.code = 'HANDLING'
+  AND NOT EXISTS (
+    SELECT 1 FROM modbm_core.bins b
+    WHERE b.zone_id = z.zone_id AND b.bin_number = 'SUPPLIER_RETURNS'
   );
 

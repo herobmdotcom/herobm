@@ -171,7 +171,7 @@ export default function NewAccountPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Parent Customer
+                      {t('customers.fields.parentCustomer')}
                     </label>
                     <CustomerSelect
                       value={dto.parentCustomerId || null}
@@ -402,7 +402,7 @@ export default function NewAccountPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Bank Account Name
+                    {t('customers.fields.bankAccountName')}
                   </label>
                   <input
                     type="text"
@@ -428,7 +428,7 @@ export default function NewAccountPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Account Number
+                    {t('customers.fields.accountNumber')}
                   </label>
                   <input
                     type="text"

@@ -82,7 +82,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
     // Validate: No unassigned demands allowed
     const hasUnassigned = Object.values(lineAssignments).some(a => !a.vendorId);
     if (hasUnassigned) {
-      toast.error('All line items must be assigned to a supplier before generating POs.');
+      toast.error(t('demands.allAssignedError'));
       return;
     }
 
@@ -122,11 +122,11 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
 
       await apiMutate('/api/allocations/generate-pos', 'POST', { pos: posPayload });
 
-      toast.success('Purchase Orders generated successfully');
+      toast.success(t('demands.posGeneratedSuccess'));
       onSuccess();
     } catch (err) {
       reportError(err, 'DraftPOsModal');
-      toast.error('Failed to generate Purchase Orders');
+      toast.error(t('demands.posGeneratedError'));
     } finally {
       setLoading(false);
     }
@@ -139,10 +139,11 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-xl">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Review & Generate Draft POs</h2>
-            <p className="text-sm text-gray-500 mt-1">Review grouped line items and assign suppliers before generation.</p>
+            <h2 className="text-xl font-bold text-gray-900">{t('demands.reviewDraftPos')}</h2>
+            <p className="text-sm text-gray-500 mt-1">{t('demands.reviewDraftPosDesc')}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -157,23 +158,24 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                   </span>
                   {group.vendorId ? `Supplier: ${group.vendorName}` : t('demands.unassignedActionRequired')}
                   <span className="mx-2 text-gray-300">|</span>
+                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   <span className="material-symbols-outlined text-[16px] text-gray-400">location_on</span>
-                  <span className="font-normal text-gray-600 ml-1">Deliver to: {group.locationName || t('demands.unknown')}</span>
+                  <span className="font-normal text-gray-600 ml-1">{t('demands.deliverTo')} {group.locationName || t('demands.unknown')}</span>
                 </h3>
                 <span className="badge badge-legacy">
-                  {group.demands.length} items
+                  {t('demands.items', { count: group.demands.length })}
                 </span>
               </div>
               <div className="overflow-visible">
                 <table className="table-lines">
                   <thead>
                     <tr>
-                      <th style={{ width: 120 }}>Sales Order</th>
-                      <th style={{ width: 140 }}>Product</th>
-                      <th>Description</th>
-                      <th style={{ width: 90, textAlign: 'right' }}>Req Qty</th>
-                      <th style={{ width: 110, textAlign: 'right' }}>Est. Cost</th>
-                      <th style={{ width: 220 }}>Supplier Assignment</th>
+                      <th style={{ width: 120 }}>{t('demands.salesOrder')}</th>
+                      <th style={{ width: 140 }}>{t('demands.product')}</th>
+                      <th>{t('demands.description')}</th>
+                      <th style={{ width: 90, textAlign: 'right' }}>{t('demands.reqQty')}</th>
+                      <th style={{ width: 110, textAlign: 'right' }}>{t('demands.estCost')}</th>
+                      <th style={{ width: 220 }}>{t('demands.supplierAssignment')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -192,7 +194,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
                             <SupplierSelect
                               value={assign?.vendorId || null}
                               initialSearchTerm={assign?.vendorName || ''}
-                              placeholder="-- Select Supplier --"
+                              placeholder={t('demands.selectSupplier')}
                               className={!assign?.vendorId ? 'border-red-400 bg-red-50 text-red-700' : ''}
                               onChange={(sup) => {
                                 setLineAssignments(prev => ({
@@ -222,15 +224,18 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
             onClick={onClose}
             className="btn btn-secondary"
           >
-            Cancel
+            {t('demands.cancel', { fallback: 'Cancel' })}
           </button>
           <button 
             onClick={handleGenerate}
             disabled={loading}
             className="btn btn-primary flex items-center gap-2"
           >
-            {loading && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-            Create Draft POs
+            {loading && (
+              /* eslint-disable-next-line i18next/no-literal-string */
+              <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
+            )}
+            {t('demands.createDraftPos', { fallback: 'Create Draft POs' })}
           </button>
         </div>
       </div>

@@ -193,10 +193,10 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
           <table className="table-lines">
             <thead>
               <tr>
-                <th>Sales Order</th>
-                <th>Product</th>
-                <th style={{ textAlign: 'right' }}>Req Qty</th>
-                <th style={{ width: 90, textAlign: 'center' }}>Status</th>
+                <th>{t('demands.salesOrder')}</th>
+                <th>{t('demands.product')}</th>
+                <th style={{ textAlign: 'right' }}>{t('demands.reqQty')}</th>
+                <th style={{ width: 90, textAlign: 'center' }}>{t('demands.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -219,9 +219,9 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                     </td>
                     <td className="text-center">
                       {state?.allocated ? (
-                        <span className="badge badge-success">Linked</span>
+                        <span className="badge badge-success">{t('demands.linked')}</span>
                       ) : (
-                        <span className="text-xs text-[var(--text-muted)]">Pending</span>
+                        <span className="text-xs text-[var(--text-muted)]">{t('demands.pending')}</span>
                       )}
                     </td>
                   </tr>
@@ -265,24 +265,23 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                 <span className="text-[var(--text-muted)]">—</span>
                 <span className="text-sm text-[var(--text-primary)]">{demand.orderNumber}</span>
                 
-                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="text-xs ml-4 text-[var(--text-secondary)]">
-                  Required at: <span className="font-medium text-[var(--text-primary)]">{demand.locationName || t('demands.unknown')}</span>
+                  {t('demands.requiredAt')} <span className="font-medium text-[var(--text-primary)]">{demand.locationName || t('demands.unknown')}</span>
                 </span>
 
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
-                  Qty Required: {originalQuantity}
+                  {t('demands.qtyRequired')} {originalQuantity}
                 </span>
               </div>
 
               {/* PO Cards */}
               {state.loading ? (
                 <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  Loading eligible POs...
+                  {t('demands.loadingEligible')}
                 </div>
               ) : groups.length === 0 ? (
                 <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  No open purchase orders found with available capacity for this product.
+                  {t('demands.noOpenPos')}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -307,7 +306,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             {demand.locationName && group.locationName && demand.locationName !== group.locationName && (
-                              <span className="badge badge-sm badge-warning">Location Mismatch</span>
+                              <span className="badge badge-sm badge-warning">{t('demands.locationMismatch')}</span>
                             )}
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                               <span className="font-medium text-[var(--text-primary)]">{group.vendorName}</span>
@@ -323,9 +322,9 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
                             <table className="table-lines">
                               <thead>
                                 <tr>
-                                  <th>Ordered</th>
-                                  <th>Available Cap.</th>
-                                  <th style={{ width: 160, textAlign: 'center' }}>Link</th>
+                                  <th>{t('demands.ordered')}</th>
+                                  <th>{t('demands.availableCap')}</th>
+                                  <th style={{ width: 160, textAlign: 'center' }}>{t('demands.link')}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -390,7 +389,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             className="btn btn-primary btn-sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
-            {isAllocating ? '...' : t('demands.allocate')}
+            {isAllocating ? t('demands.allocating') : t('demands.allocate')}
           </button>
         </div>
       </td>

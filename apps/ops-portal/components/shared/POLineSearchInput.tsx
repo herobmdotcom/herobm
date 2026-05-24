@@ -162,9 +162,12 @@ export default function POLineSearchInput({
         style={{ width: '100%', fontSize: 12, padding: '4px 8px', height: 26 }}
         placeholder={loading ? 'Loading POs...' : placeholder}
         value={search}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={(e) => handleSearch(e.target.value.trimStart())}
         onFocus={() => setShowDropdown(true)}
-        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+        onBlur={(e) => {
+          setSearch(e.target.value.trim());
+          setTimeout(() => setShowDropdown(false), 200);
+        }}
         disabled={loading}
       />
       {typeof document !== 'undefined' && showDropdown && createPortal(dropdownContent, document.body)}

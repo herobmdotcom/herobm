@@ -80,6 +80,10 @@ export class ExecuteEltDto {
   resumeExtraction?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  skipExtraction?: boolean;
+
+  @IsOptional()
   @IsString()
   defaultLocationCode?: string;
 
@@ -183,6 +187,11 @@ export class ExecuteSetupDto {
   @IsOptional()
   @IsBoolean()
   resumeExtraction?: boolean;
+
+  /** If true, skips data extraction entirely */
+  @IsOptional()
+  @IsBoolean()
+  skipExtraction?: boolean;
 
   /** Required when re-running setup on an already-completed instance */
   @IsOptional()

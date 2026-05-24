@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
 import { apiFetch } from '@/lib/api';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
+import InitiateReturnModal from './InitiateReturnModal';
 
 interface ReturnLine {
   returnLineId: string;
@@ -35,7 +36,7 @@ interface Return {
 function PurchaseReturnStateBadge({ state }: { state: string }) {
   const t = useTranslations('common.states');
   const colours: Record<string, string> = {
-    [PURCHASE_RETURN_STATE.PROCESSED]: 'var(--badge-shipped, #059669)',
+    [PURCHASE_RETURN_STATE.SHIPPED]: 'var(--badge-shipped, #059669)',
     [PURCHASE_RETURN_STATE.CANCELLED]: 'var(--badge-cancelled, #dc2626)',
   };
   return (
@@ -79,6 +80,14 @@ function ReturnCard({
           <strong style={{ fontSize: 13 }}>{r.returnNumber}</strong>
           <PurchaseReturnStateBadge state={r.stateCode} />
         </div>
+        {r.stateCode === PURCHASE_RETURN_STATE.SHIPPED && (
+          <a
+            href={`/purchase-orders/returns/${r.returnId}`}
+            className="btn btn-primary btn-sm"
+          >
+            {tPurchase('returns.enterDebitNote', { fallback: 'Enter Debit Note' })}
+          </a>
+        )}
       </div>
 
       {(() => {
@@ -200,14 +209,17 @@ export default function ReturnsSection({
   orderLines,
   events = [],
   currencyCode,
+  orderState,
 }: {
   orderId: string;
   orderLines: any[];
   events: any[];
   currencyCode?: string;
+  orderState?: string;
 }) {
   const [returns, setReturns] = useState<Return[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitiateModalOpen, setIsInitiateModalOpen] = useState(false);
   const tPurchase = useTranslations('purchaseOrders');
 
   // Load Returns
@@ -240,8 +252,25 @@ export default function ReturnsSection({
     return () => { active = false; };
   }, [orderId]);
 
+  const refreshReturns = () => {
+    setLoading(true);
+    // this will re-trigger the useEffect if we had a dependency, but we can just call the api directly here if we want.
+    // the easiest is to just mutate a state variable or re-fetch.
+    apiFetch<{ data: any[] }>(`/api/purchase-orders/${orderId}/returns?limit=50`).then(async (listData) => {
+      const detailedReturns = await Promise.all(
+        (listData.data || []).map((rec) => 
+          apiFetch<Return>(`/api/purchase-orders/${orderId}/returns/${rec.returnId}`)
+        )
+      );
+      setReturns(detailedReturns);
+      setLoading(false);
+    });
+  };
+
   if (loading) return null;
-  if (returns.length === 0) return null;
+  
+  const canInitiateReturn = ['partially_received', 'received', 'invoiced'].includes(orderState || '');
+  if (returns.length === 0 && !canInitiateReturn) return null;
 
   return (
     <div className="card !border-none" id="receivings-section">
@@ -258,6 +287,11 @@ export default function ReturnsSection({
           Returns
           <span style={{ fontSize: 11, fontWeight: 400 }}>({returns.length})</span>
         </h3>
+        {canInitiateReturn && (
+          <button className="btn btn-secondary btn-sm" onClick={() => setIsInitiateModalOpen(true)}>
+            {tPurchase('returns.initiateReturn', { fallback: 'Initiate Return' })}
+          </button>
+        )}
       </div>
       
       <div style={{ marginBottom: 24 }}>
@@ -297,6 +331,13 @@ export default function ReturnsSection({
           <ReturnCard key={rec.returnId} r={rec} orderLines={orderLines || []} events={events} currencyCode={currencyCode} />
         ))}
       </div>
+      <InitiateReturnModal
+        isOpen={isInitiateModalOpen}
+        onClose={() => setIsInitiateModalOpen(false)}
+        orderId={orderId}
+        orderLines={orderLines}
+        onSuccess={refreshReturns}
+      />
     </div>
   );
 }

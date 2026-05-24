@@ -167,120 +167,77 @@ export default function GoodsReceivedListPage() {
 
     return (
         <>
-            <div className="h-full flex flex-col relative p-4 lg:p-6">
-                <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-                    <DataGrid 
-                        refreshTrigger={refreshKey}
-                        endpoint={gridEndpoint} 
-                        columns={gridColumns} 
-                        gridKey="goods-received-lines-list"
-                        fetchAll
-                        rowIdField="goodsReceivedLineId"
-                        rowSelection="multiple"
-                        onSelectionChanged={setSelectedRows}
-                        renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                            <div className="flex flex-col gap-3 px-6 py-4">
-                                {/* First Row: Title, Filters, Search, Options */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4 flex-1">
-                                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                                        <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                            {t('title')}
-                                        </h2>
-                                        <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                                            <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                                {tCommon('grid.rowCountLabel')}
-                                            </span>
-                                            <span className="text-[11px] font-bold text-[#006b5c]">
-                                                {loading ? '...' : rowCount.toLocaleString()}
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="flex-1 ml-4 max-w-md">
-                                            {searchInput}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                                        <select
-                                            value={selectedLocationId}
-                                            onChange={(e) => setSelectedLocationId(e.target.value)}
-                                            className="input text-sm"
-                                            style={{ minWidth: 180 }}
-                                        >
-                                            <option value="">All locations</option>
-                                            {locations.map(loc => (
-                                                <option key={loc.locationId} value={loc.locationId}>
-                                                    {loc.code} - {loc.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <select
-                                            value={days}
-                                            onChange={(e) => setDays(e.target.value)}
-                                            className="input text-sm"
-                                            style={{ minWidth: 150 }}
-                                        >
-                                            <option value="30">{tCommon('filters.last30Days')}</option>
-                                            <option value="90">{tCommon('filters.last90Days')}</option>
-                                            <option value="365">{tCommon('filters.last1Year')}</option>
-                                            <option value="0">{tCommon('filters.allTime')}</option>
-                                        </select>
-                                        {optionsButton}
-                                    </div>
-                                </div>
-
-                                {/* Second Row: Action Buttons */}
-                                <div className="flex items-center justify-end gap-4 pt-1">
-                                    {/* Group 1: Receive Goods */}
-                                    <div className="flex items-center">
-                                        <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                                            {t('buttons.newReception')}
-                                        </Link>
-                                    </div>
-                                    
-                                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
-                                    
-                                    {/* Group 2: Quarantine & Cancel */}
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={handleToggleQuarantine}
-                                            disabled={selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length === 0}
-                                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                        >
-                                            Quarantine
-                                        </button>
-                                        <button
-                                            onClick={handleCancelReceipt}
-                                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === PUTAWAY_STATUS.COMPLETED)}
-                                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                            title="Cancel the entire receipt for the selected lines"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-
-                                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
-
-                                    {/* Group 3: Match */}
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={handleAllocate}
-                                            disabled={matchableCount === 0}
-                                            title={hasQuarantinedSelected ? 'Quarantined items must be cleared before matching' : undefined}
-                                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                                        >
-                                            {/* eslint-disable-next-line i18next/no-literal-string */}
-                                            Match{matchableCount > 0 ? ` (${matchableCount})` : ''}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    />
-                </div>
-            </div>
+            <DataGrid 
+                refreshTrigger={refreshKey}
+                endpoint={gridEndpoint} 
+                columns={gridColumns} 
+                gridKey="goods-received-lines-list"
+                fetchAll
+                rowIdField="goodsReceivedLineId"
+                rowSelection="multiple"
+                onSelectionChanged={setSelectedRows}
+                pageTitle={t('title')}
+                headerFilters={
+                    <>
+                        <select
+                            value={selectedLocationId}
+                            onChange={(e) => setSelectedLocationId(e.target.value)}
+                            className="input text-sm"
+                            style={{ minWidth: 180 }}
+                        >
+                            <option value="">{t('buttons.allLocations')}</option>
+                            {locations.map(loc => (
+                                <option key={loc.locationId} value={loc.locationId}>
+                                    {loc.code} - {loc.name}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={days}
+                            onChange={(e) => setDays(e.target.value)}
+                            className="input text-sm"
+                            style={{ minWidth: 150 }}
+                        >
+                            <option value="30">{tCommon('filters.last30Days')}</option>
+                            <option value="90">{tCommon('filters.last90Days')}</option>
+                            <option value="365">{tCommon('filters.last1Year')}</option>
+                            <option value="0">{tCommon('filters.allTime')}</option>
+                        </select>
+                    </>
+                }
+                headerActions={
+                    <div className="flex flex-wrap items-center justify-start lg:justify-end gap-3 w-full lg:w-auto">
+                        <Link href="/receiving/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
+                            {t('buttons.newReception')}
+                        </Link>
+                        <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                        <button
+                            onClick={handleToggleQuarantine}
+                            disabled={selectedRows.filter(r => r.putawayStatus !== PUTAWAY_STATUS.COMPLETED).length === 0}
+                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                            {t('buttons.quarantine')}
+                        </button>
+                        <button
+                            onClick={handleCancelReceipt}
+                            disabled={[...new Set(selectedRows.map(r => r.goodsReceivedId))].length !== 1 || selectedRows.some(r => r.putawayStatus === PUTAWAY_STATUS.COMPLETED)}
+                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all border border-[var(--border)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            title={t('buttons.cancelReceiptTooltip')}
+                        >
+                            {t('buttons.cancel')}
+                        </button>
+                        <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                        <button
+                            onClick={handleAllocate}
+                            disabled={matchableCount === 0}
+                            title={hasQuarantinedSelected ? 'Quarantined items must be cleared before matching' : undefined}
+                            className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[var(--accent)] text-white hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        >
+                            {matchableCount > 0 ? t('buttons.matchCount', { count: matchableCount }) : t('buttons.match')}
+                        </button>
+                    </div>
+                }
+            />
             
             <AllocationSlideOver 
                 isOpen={slideOverOpen} 

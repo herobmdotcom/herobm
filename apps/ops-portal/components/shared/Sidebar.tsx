@@ -36,7 +36,7 @@ export default function Sidebar({ title, subtitle, sections, footer }: SidebarPr
 
   return (
     <aside
-      className="w-60 h-screen fixed left-0 top-0 flex flex-col print:hidden"
+      className="w-60 h-full flex flex-col print:hidden"
       style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}
     >
       <div className="px-5 py-5">

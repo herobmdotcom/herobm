@@ -63,7 +63,8 @@ export default function SupplierSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const searchSuppliers = useCallback(async (term: string) => {
+  const searchSuppliers = useCallback(async (rawTerm: string) => {
+    const term = rawTerm.trim();
     if (!term || term.length < 2) { 
       setFilteredSuppliers([]); 
       return; 
@@ -103,12 +104,14 @@ export default function SupplierSelect({
           disabled={disabled}
           required={required && !value}
           onChange={(e) => {
-            setSearchTerm(e.target.value);
+            const val = e.target.value.trimStart();
+            setSearchTerm(val);
             setShowDropdown(true);
             if (value) onChange(null);
-            debouncedSearch(e.target.value);
+            debouncedSearch(val);
           }}
           onFocus={() => setShowDropdown(true)}
+          onBlur={(e) => setSearchTerm(e.target.value.trim())}
         />
         {searchTerm && !disabled && (
           <button

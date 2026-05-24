@@ -476,7 +476,19 @@ export default function FinancialSettingsPage() {
           {isEdit
             ? <input className="input" value={coaForm.name} onChange={e => setCoaForm({ ...coaForm, name: e.target.value })} placeholder="Name" />
             : <span className={`${data.isGroup ? 'font-bold' : 'font-medium'} flex items-center gap-2`}>
-                {data.isGroup ? <span className="material-symbols-outlined text-[16px]">folder</span> : <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>}
+                {data.isGroup ? (
+                  <>
+                    {/* eslint-disable i18next/no-literal-string */}
+                    <span className="material-symbols-outlined text-[16px]">folder</span>
+                    {/* eslint-enable i18next/no-literal-string */}
+                  </>
+                ) : (
+                  <>
+                    {/* eslint-disable i18next/no-literal-string */}
+                    <span className="material-symbols-outlined text-[16px] text-muted">receipt_long</span>
+                    {/* eslint-enable i18next/no-literal-string */}
+                  </>
+                )}
                 {data.name}
               </span>}
         </td>
@@ -491,14 +503,22 @@ export default function FinancialSettingsPage() {
           {isEdit && coaCreating ? (
             <input type="checkbox" checked={coaForm.isGroup} onChange={e => setCoaForm({ ...coaForm, isGroup: e.target.checked })} />
           ) : data.isGroup ? (
-            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+            <>
+              {/* eslint-disable i18next/no-literal-string */}
+              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+              {/* eslint-enable i18next/no-literal-string */}
+            </>
           ) : null}
         </td>
         <td style={{ textAlign: 'center' }}>
           {isEdit ? (
             <input type="checkbox" checked={coaForm.isBankAccount} onChange={e => setCoaForm({ ...coaForm, isBankAccount: e.target.checked })} />
           ) : data.isBankAccount ? (
-            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+            <>
+              {/* eslint-disable i18next/no-literal-string */}
+              <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--text-muted)' }}>check</span>
+              {/* eslint-enable i18next/no-literal-string */}
+            </>
           ) : null}
         </td>
         <td style={{ textAlign: 'center' }}>
@@ -589,8 +609,11 @@ export default function FinancialSettingsPage() {
         {isEdit ? (
           <input type="checkbox" checked={taxForm.isDefault === true || taxForm.isDefault === 'true'} onChange={e => setTaxForm({ ...taxForm, isDefault: e.target.checked })} />
         ) : data.isDefault ? (
-          // eslint-disable-next-line i18next/no-literal-string
-          <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
+          <>
+            {/* eslint-disable i18next/no-literal-string */}
+            <span className="material-symbols-outlined text-[16px]" style={{ color: 'var(--primary)' }}>check_circle</span>
+            {/* eslint-enable i18next/no-literal-string */}
+          </>
         ) : null}
       </td>
       <td style={{ textAlign: 'right' }}>
@@ -942,8 +965,10 @@ export default function FinancialSettingsPage() {
             </h3>
             <div className="flex gap-2">
               <button className="btn btn-secondary btn-sm" onClick={() => setImportTaxModalOpen(true)}>
+                {/* eslint-disable i18next/no-literal-string */}
                 <span className="material-symbols-outlined text-base">upload_file</span>
-                {tSettings('actions.importSettings') || 'Import Settings'}
+                {/* eslint-enable i18next/no-literal-string */}
+                {tSettings('actions.importSettings')}
               </button>
               <button className="btn btn-primary btn-sm" onClick={taxCreate}>+ {tSettings('actions.create')}</button>
             </div>

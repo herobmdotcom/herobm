@@ -213,11 +213,11 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
           <table className="table-lines">
             <thead>
               <tr>
-                <th>Receipt No.</th>
-                <th>Product</th>
-                <th>Supplier</th>
-                <th style={{ textAlign: 'right' }}>Received Qty</th>
-                <th style={{ width: 90, textAlign: 'center' }}>Status</th>
+                <th>{t('columns.receiptNo')}</th>
+                <th>{t('columns.product')}</th>
+                <th>{t('columns.supplier')}</th>
+                <th style={{ textAlign: 'right' }}>{t('columns.receivedQty', { fallback: 'Received Qty' })}</th>
+                <th style={{ width: 90, textAlign: 'center' }}>{t('columns.status', { fallback: 'Status' })}</th>
               </tr>
             </thead>
             <tbody>
@@ -241,9 +241,9 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                     </td>
                     <td className="text-center">
                       {state?.allocated ? (
-                        <span className="badge badge-success">Allocated</span>
+                        <span className="badge badge-success">{t('status.allocated')}</span>
                       ) : (
-                        <span className="text-xs text-[var(--text-muted)]">Pending</span>
+                        <span className="text-xs text-[var(--text-muted)]">{t('status.pending')}</span>
                       )}
                     </td>
                   </tr>
@@ -285,24 +285,23 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                 <span className="text-[var(--text-muted)]">—</span>
                 <span className="text-sm text-[var(--text-primary)]">{grLine.productName}</span>
                 
-                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="text-xs ml-4 text-[var(--text-secondary)]">
-                  Received at: <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || t('allocation.unknown')}</span>
+                  {t('allocation.receivedAt')} <span className="font-medium text-[var(--text-primary)]">{grLine.locationName || t('allocation.unknown')}</span>
                 </span>
 
                 <span className="text-xs text-[var(--text-muted)] ml-auto tabular-nums">
-                  Qty: {originalQuantity}
+                  {t('allocation.qty')} {originalQuantity}
                 </span>
               </div>
 
               {/* PO Cards */}
               {state.loading ? (
                 <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  Loading eligible POs...
+                  {t('allocation.loadingEligible')}
                 </div>
               ) : groups.length === 0 ? (
                 <div className="p-6 text-center text-[var(--text-muted)] border border-[var(--border)] rounded-md bg-[var(--bg-card)]">
-                  No pending purchase orders found for this product.
+                  {t('allocation.noPendingPOs')}
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
@@ -326,7 +325,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             {grLine.locationName && group.locationName && grLine.locationName !== group.locationName && (
-                              <span className="badge badge-sm badge-warning">Location Mismatch</span>
+                              <span className="badge badge-sm badge-warning">{t('allocation.locationMismatch')}</span>
                             )}
                             <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                               {t('allocation.destination')} <span className="font-medium text-[var(--text-primary)]">{group.locationName || t('allocation.unknown')}</span>
@@ -340,10 +339,10 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
                             <table className="table-lines">
                               <thead>
                                 <tr>
-                                  <th>Ordered</th>
-                                  <th>Received</th>
-                                  <th>Remaining</th>
-                                  <th style={{ width: 160, textAlign: 'center' }}>Allocate</th>
+                                  <th>{t('columns.ordered', { fallback: 'Ordered' })}</th>
+                                  <th>{t('columns.received', { fallback: 'Received' })}</th>
+                                  <th>{t('columns.remaining', { fallback: 'Remaining' })}</th>
+                                  <th style={{ width: 160, textAlign: 'center' }}>{t('columns.allocate', { fallback: 'Allocate' })}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -410,7 +409,7 @@ function POLineRow({ line, originalQuantity, onAllocate }: { line: any; original
             className="btn btn-primary btn-sm"
             style={{ padding: '2px 8px', height: '26px', fontSize: '11px' }}
           >
-            {isAllocating ? '...' : t('allocation.match')}
+            {isAllocating ? t('allocation.allocating') : t('allocation.match')}
           </button>
         </div>
       </td>

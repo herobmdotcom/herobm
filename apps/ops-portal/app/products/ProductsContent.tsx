@@ -76,53 +76,22 @@ export default function ProductsContent() {
   ], [tCommon, tProducts]);
 
   return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <div className="relative h-full flex flex-col">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid
-              endpoint="/api/products"
-              columns={columns}
-              gridKey="ops-products"
-              searchPlaceholder={tProducts('placeholders.searchProducts')}
-              exportFileName="products"
-              fetchAll
-              showArchivedToggle
-              rowIdField="productId"
-              onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}
-              renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                <div className="flex items-center justify-between px-6 py-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {tProducts('title')}
-                    </h2>
-                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {tCommon('grid.rowCountLabel')}
-                      </span>
-                      <span className="text-[11px] font-bold text-[#006b5c]">
-                        {loading ? '...' : rowCount.toLocaleString()}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 ml-4 max-w-md">
-                      {searchInput}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0 ml-4">
-                    {optionsButton}
-                    <Link href="/products/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110">
-                      + {tProducts('buttons.addProduct')}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            />
-          </div>
-        </div>
-      </div>
-    </>
+    <DataGrid
+      endpoint="/api/products"
+      columns={columns}
+      gridKey="ops-products"
+      searchPlaceholder={tProducts('placeholders.searchProducts')}
+      exportFileName="products"
+      fetchAll
+      showArchivedToggle
+      rowIdField="productId"
+      onRowClicked={(row: any) => router.push(`/products/${row.productId}`)}
+      pageTitle={tProducts('title')}
+      headerActions={
+        <Link href="/products/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
+          + {tProducts('buttons.addProduct')}
+        </Link>
+      }
+    />
   );
 }

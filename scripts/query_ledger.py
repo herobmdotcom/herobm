@@ -15,7 +15,7 @@ class CustomEncoder(json.JSONEncoder):
 conn = pymssql.connect(
     server="13.236.59.199",
     user="mpg",
-    password="@ThisIsForTesting26##",
+    password="<REDACTED>",
     database="vau2010"
 )
 

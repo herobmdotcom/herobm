@@ -161,7 +161,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
             {node.accountCode}
           </td>
           <td className={`px-3 py-1.5 text-xs ${selectedAccount === node.accountCode ? 'font-bold text-[var(--text-primary)]' : 'font-medium text-[var(--text-secondary)]'}`} style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}>
-             {node.isGroup ? <span className="uppercase text-[9px] font-bold opacity-40 bg-gray-100 px-1 rounded mr-2 border border-gray-200">Group</span> : null}
+             {node.isGroup ? <span className="uppercase text-[9px] font-bold opacity-40 bg-gray-100 px-1 rounded mr-2 border border-gray-200">{t('group')}</span> : null}
              {node.name}
           </td>
         </tr>
@@ -187,10 +187,11 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
           {/* Left: Title & Icon */}
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="w-10 h-10 rounded-xl bg-[var(--bg-primary)] flex items-center justify-center shrink-0">
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[var(--accent)]">menu_book</span>
             </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] truncate" style={{ fontFamily: 'Manrope, sans-serif' }}>
-              Accounting Codes
+              {t('accountingCodes')}
             </h2>
           </div>
 
@@ -204,6 +205,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
               className="flex items-center justify-center p-1.5 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title="Copy to clipboard"
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-xl !leading-none">content_copy</span>
             </button>
           </div>
@@ -215,12 +217,14 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
               className="flex items-center justify-center p-2 hover:bg-[var(--bg-primary)] rounded-lg transition-all text-[var(--text-muted)] hover:text-[var(--accent)] active:scale-90"
               title={t('exportCsv')}
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-xl !leading-none">download</span>
             </button>
             <button 
               onClick={onClose}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[var(--bg-primary)] transition-all text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>

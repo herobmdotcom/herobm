@@ -11,8 +11,8 @@ import { AggregateType, EventType } from '../common/event-types';
 import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 
 export interface POLifecycleTrigger {
-  entity: 'goods_receipt' | 'purchase_invoice';
-  action: 'created' | 'posted' | 'cancelled';
+  entity: 'goods_receipt' | 'purchase_invoice' | 'purchase_return';
+  action: 'created' | 'posted' | 'cancelled' | 'shipped';
   id?: string;
 }
 
@@ -303,6 +303,101 @@ export const autoInvoiceWhenFullyInvoicedAndReceived: POLifecycleRule = {
   },
 };
 
+export const autoRevertToPartiallyReceivedOnReturn: POLifecycleRule = {
+  name: 'auto-revert-to-partially-received-on-return',
+  description:
+    'Transitions a PO from received to partially_received or ordered when a return shipment drops total received quantity below ordered quantity',
+  enabled: true,
+  evaluate: async (db, poId, trigger, actor) => {
+    if (trigger.entity !== 'purchase_return' || trigger.action !== 'shipped')
+      return null;
+
+    const [order] = await db
+      .select({ stateCode: purchaseOrders.stateCode })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+    if (
+      !order ||
+      ![
+        PURCHASE_ORDER_STATE.RECEIVED,
+        PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED,
+        PURCHASE_ORDER_STATE.INVOICED, // maybe? But if invoiced, we probably have a debit note process
+      ].includes(order.stateCode as any)
+    )
+      return null;
+
+    const lines = await db
+      .select({
+        quantity: purchaseOrderLineItems.quantity,
+        quantityReceived: purchaseOrderLineItems.quantityReceived,
+      })
+      .from(purchaseOrderLineItems)
+      .where(eq(purchaseOrderLineItems.purchaseOrderId, poId));
+
+    if (lines.length === 0) return null;
+
+    let hasAnyReceipts = false;
+    let isFullyReceived = true;
+
+    for (const line of lines) {
+      const ordered = parseFloat(line.quantity || '0');
+      const received = parseFloat(line.quantityReceived || '0');
+
+      if (received > 0) hasAnyReceipts = true;
+      if (received < ordered) isFullyReceived = false;
+    }
+
+    let newState: string | null = null;
+    let reason = '';
+
+    if (!hasAnyReceipts && order.stateCode !== PURCHASE_ORDER_STATE.ORDERED) {
+      newState = PURCHASE_ORDER_STATE.ORDERED;
+      reason = 'All receipts were returned (0 received)';
+    } else if (
+      !isFullyReceived &&
+      order.stateCode !== PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED &&
+      order.stateCode !== PURCHASE_ORDER_STATE.ORDERED
+    ) {
+      newState = PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED;
+      reason =
+        'Return shipment dropped received quantity below ordered quantity';
+    }
+
+    if (!newState) return null;
+
+    // Execute transition
+    await db
+      .update(purchaseOrders)
+      .set({
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseOrders.purchaseOrderId, poId));
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.PURCHASE_ORDER,
+      aggregateId: poId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        rule: 'auto-revert-to-partially-received-on-return',
+        trigger,
+        from: order.stateCode,
+        to: newState,
+        reason,
+      },
+      actor,
+    });
+
+    return {
+      ruleName: 'auto-revert-to-partially-received-on-return',
+      from: order.stateCode,
+      to: newState,
+      reason,
+    };
+  },
+};
+
 // ============================================================================
 // Registry & Engine
 // ============================================================================
@@ -311,6 +406,7 @@ const PO_LIFECYCLE_RULES: POLifecycleRule[] = [
   autoInvoiceWhenFullyInvoicedAndReceived, // check this first, as it's terminal
   autoReceiveWhenFullyReceived,
   autoPartiallyReceiveWhenSomeReceived,
+  autoRevertToPartiallyReceivedOnReturn,
 ];
 
 /**

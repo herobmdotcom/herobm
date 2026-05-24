@@ -77,64 +77,35 @@ export default function SalesOrdersContent() {
   }, [router]);
 
   return (
-    <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <div className="relative h-full flex flex-col">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid<UnifiedOrder>
-              endpoint={`/api/sales-orders?days=${days}`}
-              columns={columns}
-              gridKey="ops-orders"
-              searchPlaceholder={tSales('placeholders.searchOrders')}
-              exportFileName="orders"
-              fetchAll
-              showArchivedToggle
-              rowIdField="id"
-              onRowClicked={handleRowClicked}
-              renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                <div className="flex items-center justify-between px-6 py-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {tSales('title')}
-                    </h2>
-                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        {tCommon('grid.rowCountLabel')}
-                      </span>
-                      <span className="text-[11px] font-bold text-[#006b5c]">
-                        {loading ? '...' : rowCount.toLocaleString()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex-1 ml-4 max-w-[280px]">
-                      {searchInput}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 shrink-0 ml-4">
-                    <select
-                        value={days}
-                        onChange={(e) => setDays(e.target.value)}
-                        className="input text-sm"
-                        style={{ minWidth: 150 }}
-                    >
-                        <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
-                        <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
-                        <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
-                        <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
-                    </select>
-                    {optionsButton}
-                    <Link href="/sales-orders/new" className="px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
-                      {tSales('buttons.createOrder')}
-                    </Link>
-                  </div>
-                </div>
-              )}
-            />
-          </div>
-        </div>
-      </div>
-    </>
+    <DataGrid<UnifiedOrder>
+      endpoint={`/api/sales-orders?days=${days}`}
+      columns={columns}
+      gridKey="ops-orders"
+      searchPlaceholder={tSales('placeholders.searchOrders')}
+      exportFileName="orders"
+      fetchAll
+      showArchivedToggle
+      rowIdField="id"
+      onRowClicked={handleRowClicked}
+      pageTitle={tSales('title')}
+      headerFilters={
+        <select
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            className="input text-sm"
+            style={{ minWidth: 120 }}
+        >
+            <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
+            <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
+            <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
+            <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+        </select>
+      }
+      headerActions={
+        <Link href="/sales-orders/new" className="px-3 lg:px-4 py-2 text-sm font-bold rounded-lg transition-all bg-[#006b5c] text-white hover:brightness-110 whitespace-nowrap">
+          {tSales('buttons.createOrder')}
+        </Link>
+      }
+    />
   );
 }

@@ -79,6 +79,7 @@ export default function NewPurchaseInvoicePage() {
           return {
             key: ++lineKey,
             productId: poLine?.productId,
+            productNumber: poLine?.productNumber,
             productDescription: poLine?.productDescription || '',
             quantityInvoiced: lti.defaultQty,
             pricePerUnit: poLine?.pricePerUnit || '0',
@@ -241,7 +242,7 @@ export default function NewPurchaseInvoicePage() {
 
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Supplier Invoice Number *
+                  {t('supplierInvoice.invoiceNumberLabel')}
                 </label>
                 <input
                   className="input"
@@ -265,7 +266,7 @@ export default function NewPurchaseInvoicePage() {
 
               <div>
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Receipt Filename (Optional)
+                  {t('supplierInvoice.receiptFilenameLabel')}
                 </label>
                 <input
                   className="input"
@@ -299,7 +300,7 @@ export default function NewPurchaseInvoicePage() {
               </h3>
               <div className="flex items-center gap-3">
                 <button className="btn btn-secondary btn-sm" onClick={addLine}>
-                  + Add Line
+                  {t('supplierInvoice.addLine')}
                 </button>
               </div>
             </div>
@@ -349,11 +350,6 @@ export default function NewPurchaseInvoicePage() {
                         onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
                         placeholder="Description..."
                       />
-                      {line.purchaseOrderLineId && (
-                        <div style={{ fontSize: 10, color: 'var(--badge-shipped)', marginTop: 4 }}>
-                          Matched to PO line
-                        </div>
-                      )}
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <input
@@ -396,7 +392,7 @@ export default function NewPurchaseInvoicePage() {
                 {lines.length === 0 && (
                   <tr>
                     <td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                      No items
+                      {t('supplierInvoice.noItems')}
                     </td>
                   </tr>
                 )}
@@ -411,7 +407,7 @@ export default function NewPurchaseInvoicePage() {
                 </tr>
                 <tr>
                   <td colSpan={5} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
-                    {tCommon('tax')} (Total Amount)
+                    {t('supplierInvoice.taxTotalAmount', { tax: tCommon('tax') })}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <input

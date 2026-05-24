@@ -123,7 +123,7 @@ export default function ProductDetailPage() {
             productIdsToFetch = componentsData.data.map((c: any) => c.childProductId);
           }
         } catch (e) {
-          console.error("Failed to load components for inventory", e);
+          reportError(e, 'ProductDetailPage');
         }
       } else {
         setKitComponents([]);
@@ -140,9 +140,9 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
-    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
-    apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch(console.error);
-    apiFetch<any>('/api/inventory/locations').then(res => setLocations(res.data || [])).catch(console.error);
+    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'ProductDetailPage'));
+    apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch((err) => reportError(err, 'ProductDetailPage'));
+    apiFetch<any>('/api/inventory/locations').then(res => setLocations(res.data || [])).catch((err) => reportError(err, 'ProductDetailPage'));
   }, [fetchProduct]);
 
   useEffect(() => {
@@ -480,7 +480,7 @@ export default function ProductDetailPage() {
                   {t('products.inventoryLevels')}
                   {buildableQuantity !== null && (
                     <span className="ml-3 badge badge-success text-[13px] font-bold">
-                      Available to Assemble: {buildableQuantity}
+                      {t('products.availableToAssemble', { quantity: buildableQuantity })}
                     </span>
                   )}
                 </h2>
@@ -492,7 +492,6 @@ export default function ProductDetailPage() {
                   onClick={() => setAddingBinLink(true)}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
                   + {t('products.storage.addBinLink')}
                 </button>
               )}
@@ -554,7 +553,7 @@ export default function ProductDetailPage() {
                   />
                 </div>
                 <div style={{ width: 80 }}>
-                  <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>Primary</label>
+                  <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>{t('products.storage.columns.primary')}</label>
                   <label className="switch mt-1">
                     <input 
                       type="checkbox" 
@@ -632,7 +631,7 @@ export default function ProductDetailPage() {
                         {lvl.bins.length === 0 ? (
                           <tr className="border-b border-[#e2e8f0]">
                             <td className="py-2 px-6"></td>
-                            <td className="py-2 px-4 text-[#64748b] italic text-xs" colSpan={8}>No bins or storage links</td>
+                            <td className="py-2 px-4 text-[#64748b] italic text-xs" colSpan={8}>{t('products.storage.noBins')}</td>
                           </tr>
                         ) : (
                           Array.from(lvl.bins.values()).map((bin: any) => editingBinId === bin.binId ? (
@@ -669,7 +668,7 @@ export default function ProductDetailPage() {
                                     />
                                     <span className="switch-slider"></span>
                                   </label>
-                                  <span className="text-xs text-[#64748b] font-medium leading-none mt-[-2px]">Primary</span>
+                                  <span className="text-xs text-[#64748b] font-medium leading-none mt-[-2px]">{t('products.storage.columns.primary')}</span>
                                 </div>
                               </td>
                               <td className="py-2 px-4 text-right">
@@ -749,6 +748,7 @@ export default function ProductDetailPage() {
                                         }}
                                         className="p-1 hover:bg-red-50 rounded text-red-500 transition-colors"
                                       >
+                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                         <span className="material-symbols-outlined text-[16px]">delete</span>
                                       </button>
                                     )}
@@ -1157,7 +1157,7 @@ export default function ProductDetailPage() {
                   onClick={() => setAddingUom(true)}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
+                  { }
                   + {t('products.addConversion')}
                 </button>
               )}

@@ -37,6 +37,7 @@ export default function PaymentsContent() {
   const [days, setDays] = useState('90');
   const [allocationFilter, setAllocationFilter] = useState('all');
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const t = useTranslations('payments');
   const tCommon = useTranslations('common');
 
   const handleNext = useCallback(() => {
@@ -145,13 +146,7 @@ export default function PaymentsContent() {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
     try {
-      const response = await fetch('/api/payments/export-aba', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentIds: selectedPayments.map(p => p.paymentId) }),
-      });
-      if (!response.ok) throw new Error('Export failed');
-      const data = await response.json();
+      const data = await apiMutate<any>('/api/payments/export-aba', 'POST', { paymentIds: selectedPayments.map(p => p.paymentId) });
       
       // Download the file
       const blob = new Blob([data.fileContent], { type: 'text/plain' });
@@ -175,12 +170,7 @@ export default function PaymentsContent() {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
     try {
-      const response = await fetch(`/api/payments/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentIds: selectedPayments.map(p => p.paymentId) }),
-      });
-      if (!response.ok) throw new Error('Action failed');
+      await apiMutate(`/api/payments/${endpoint}`, 'POST', { paymentIds: selectedPayments.map(p => p.paymentId) });
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: any) {
@@ -197,110 +187,86 @@ export default function PaymentsContent() {
 
   return (
     <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <div className="relative h-full flex flex-col">
-          <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-            <DataGrid<UnifiedPayment>
-              endpoint={`/api/payments?days=${days}&allocation=${allocationFilter}`}
-              columns={columns}
-              gridKey="ops-payments"
-              searchPlaceholder="Search payments..."
-              exportFileName="payments"
-              fetchAll
-              rowIdField="paymentId"
-              rowSelection="multiple"
-              onSelectionChanged={setSelectedPayments}
-              onDataLoaded={setPayments}
-              onRowClicked={handleRowClicked}
-              renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                <div className="flex items-center justify-between px-6 py-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      Payments
-                    </h2>
-                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Records
-                      </span>
-                      <span className="text-[11px] font-bold text-[#006b5c]">
-                        {loading ? '...' : rowCount.toLocaleString()}
-                      </span>
-                    </div>
-                    
-                    <div className="flex-1 ml-4 max-w-[280px]">
-                      {searchInput}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 shrink-0 ml-4">
-                    <select
-                      value={allocationFilter}
-                      onChange={(e) => setAllocationFilter(e.target.value)}
-                      className="input text-sm"
-                      style={{ minWidth: 150 }}
-                    >
-                      <option value="all">All Allocations</option>
-                      <option value="unallocated">Unallocated Only</option>
-                    </select>
-                    <select
-                      value={days}
-                      onChange={(e) => setDays(e.target.value)}
-                      className="input text-sm"
-                      style={{ minWidth: 150 }}
-                    >
-                      <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
-                      <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
-                      <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
-                      <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
-                    </select>
-                    {optionsButton}
-                    
-                    {hasDraftSelected && (
-                      <button 
-                        onClick={handleExportAba} 
-                        disabled={isProcessingBatch}
-                        className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
-                      >
-                        {isProcessingBatch ? 'Processing...' : `Export ABA (${draftSelected.length})`}
-                      </button>
-                    )}
-                    
-                    {hasExportedSelected && (
-                      <>
-                        <button 
-                          onClick={() => handleBatchAction('confirm-exported')} 
-                          disabled={isProcessingBatch}
-                          className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
-                        >
-                          Confirm ({exportedSelected.length})
-                        </button>
-                        <button 
-                          onClick={() => handleBatchAction('reject-exported')} 
-                          disabled={isProcessingBatch}
-                          className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
-                        >
-                          Reject
-                        </button>
-                      </>
-                    )}
+    <DataGrid<UnifiedPayment>
+      endpoint={`/api/payments?days=${days}&allocation=${allocationFilter}`}
+      columns={columns}
+      gridKey="ops-payments"
+      searchPlaceholder="Search payments..."
+      exportFileName="payments"
+      fetchAll
+      rowIdField="paymentId"
+      rowSelection="multiple"
+      onSelectionChanged={setSelectedPayments}
+      onDataLoaded={setPayments}
+      onRowClicked={handleRowClicked}
+      pageTitle={t('title')}
+      headerFilters={
+        <>
+          <select
+            value={allocationFilter}
+            onChange={(e) => setAllocationFilter(e.target.value)}
+            className="input text-sm"
+            style={{ minWidth: 150 }}
+          >
+            <option value="all">{t('allAllocations')}</option>
+            <option value="unallocated">{t('unallocatedOnly')}</option>
+          </select>
+          <select
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            className="input text-sm"
+            style={{ minWidth: 150 }}
+          >
+            <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
+            <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
+            <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
+            <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+          </select>
+        </>
+      }
+      headerActions={
+        <>
+          {hasDraftSelected && (
+            <button 
+              onClick={handleExportAba} 
+              disabled={isProcessingBatch}
+              className="px-4 py-2 bg-[var(--brand-blue)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+            >
+              {isProcessingBatch ? t('processing') : t('exportAba', { count: draftSelected.length })}
+            </button>
+          )}
+          
+          {hasExportedSelected && (
+            <>
+              <button 
+                onClick={() => handleBatchAction('confirm-exported')} 
+                disabled={isProcessingBatch}
+                className="px-4 py-2 bg-[var(--success)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+              >
+                {t('confirmCount', { count: exportedSelected.length })}
+              </button>
+              <button 
+                onClick={() => handleBatchAction('reject-exported')} 
+                disabled={isProcessingBatch}
+                className="px-4 py-2 bg-[var(--danger)] text-white rounded font-bold hover:brightness-110 transition-all text-sm whitespace-nowrap"
+              >
+                {t('reject')}
+              </button>
+            </>
+          )}
 
-                    <button  
-                      onClick={() => {
-                        setSelectedPaymentId(null);
-                        setSlideOverOpen(true);
-                      }}
-                      className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
-                    >
-                      New Payment
-                    </button>
-                  </div>
-                </div>
-              )}
-            />
-          </div>
-        </div>
-      </div>
+          <button  
+            onClick={() => {
+              setSelectedPaymentId(null);
+              setSlideOverOpen(true);
+            }}
+            className="px-4 py-2 bg-[#006b5c] text-white rounded font-bold hover:brightness-110 transition-all whitespace-nowrap"
+          >
+            {t('newPayment')}
+          </button>
+        </>
+      }
+    />
       
       {slideOverOpen && (
         <PaymentManagerSlideOver

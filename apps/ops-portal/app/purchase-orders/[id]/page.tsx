@@ -121,7 +121,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     onClick={() => changeState(t.state)}
                   >
                     {t.icon === 'close' ? (
-                      <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                      <>
+                        {/* eslint-disable i18next/no-literal-string */}
+                        <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                        {/* eslint-enable i18next/no-literal-string */}
+                      </>
                     ) : (
                       t.icon
                     )}
@@ -309,7 +313,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                   }}
                   onClick={() => setActiveTab('status')}
                 >
-                  Status
+                  {tPurchase('statusTab')}
                 </button>
               )}
             </div>
@@ -720,7 +724,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                             <th>{tPurchase('columns.product')}</th>
                             <th>{tPurchase('columns.description')}</th>
                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-                            <th style={{ textAlign: 'right' }}>Allocated</th>
+                            <th style={{ textAlign: 'right' }}>{tPurchase('allocated')}</th>
                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
@@ -777,6 +781,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
         <ReturnsSection
           orderId={id}
+          orderState={order.stateCode}
           orderLines={order.lines}
           events={order.events}
           currencyCode={order.currencyCode}

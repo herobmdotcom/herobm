@@ -208,7 +208,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
             {dto.parentQuantity !== '1' && (
               <div>
                 <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  Fractional Behavior
+                  {t('fractionalBehavior.label')}
                 </label>
                 <select
                   className="input w-full"
@@ -216,10 +216,10 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
                   onChange={(e) => setDto({ ...dto, fractionalBehavior: e.target.value })}
                   disabled={saving}
                 >
-                  <option value="allow_fractional">Allow Fractional</option>
-                  <option value="round_up">Round Up</option>
-                  <option value="round_down">Round Down</option>
-                  <option value="force_multiple">Force Multiple</option>
+                  <option value="allow_fractional">{t('fractionalBehavior.allow_fractional')}</option>
+                  <option value="round_up">{t('fractionalBehavior.round_up')}</option>
+                  <option value="round_down">{t('fractionalBehavior.round_down')}</option>
+                  <option value="force_multiple">{t('fractionalBehavior.force_multiple')}</option>
                 </select>
               </div>
             )}

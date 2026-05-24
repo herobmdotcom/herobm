@@ -254,7 +254,7 @@ export default function PickingPage() {
             <div className="flex items-center justify-between mb-4 shrink-0">
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                        Picking
+                        {t('title')}
                     </h1>
                 </div>
 
@@ -305,6 +305,7 @@ export default function PickingPage() {
                             </div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-4xl mb-2 opacity-50">inventory_2</span>
                                 {t('noOrders', { tab: activeTab })}
                             </div>
@@ -319,8 +320,10 @@ export default function PickingPage() {
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex items-center gap-2">
                                                 {order.hasAllocation ? (
-                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title="Allocated" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                    /* eslint-disable-next-line i18next/no-literal-string */
+                                                    <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} title={t('tooltips.allocated')} style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
                                                 ) : (
+                                                    /* eslint-disable-next-line i18next/no-literal-string */
                                                     <span className={`material-symbols-outlined indicator-icon shrink-0 ${order.pickabilityStatus === 'ready' ? 'text-[var(--success)]' : order.pickabilityStatus === 'partial' ? 'text-[var(--warning)]' : 'text-[var(--danger)]'}`} style={{ fontVariationSettings: "'FILL' 1" }}>fiber_manual_record</span>
                                                 )}
                                                 <div className="font-bold text-[var(--text-primary)] text-sm">{order.orderNumber}</div>
@@ -340,6 +343,7 @@ export default function PickingPage() {
                 <div className="flex-1 flex flex-col bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
                     {!selectedOrder ? (
                         <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)] text-sm p-8 text-center">
+                            {/* eslint-disable-next-line i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">pallet</span>
                             {t('selectOrder')}
                         </div>
@@ -364,7 +368,10 @@ export default function PickingPage() {
                                         disabled={isGeneratingPdf}
                                         className="btn btn-secondary btn-sm flex items-center gap-1.5"
                                     >
-                                        {isGeneratingPdf && <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>}
+                                        {isGeneratingPdf && (
+                                            /* eslint-disable-next-line i18next/no-literal-string */
+                                            <span className="material-symbols-outlined text-[16px] animate-spin">refresh</span>
+                                        )}
                                         {t('pickingSlipPdf')}
                                     </button>
                                     <span className="bg-[var(--accent)] text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -377,6 +384,7 @@ export default function PickingPage() {
                                 <div className="flex flex-col h-full w-full">
                                     {error && (
                                         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md flex items-center gap-2">
+                                            {/* eslint-disable-next-line i18next/no-literal-string */}
                                             <span className="material-symbols-outlined text-sm">error</span>
                                             {error}
                                         </div>
@@ -405,7 +413,12 @@ export default function PickingPage() {
                                                             <div className="flex items-center gap-1.5">
                                                                 <div className="font-bold">{line.productNumber}</div>
                                                                 {line.hasAllocation && (
-                                                                    <span className="material-symbols-outlined indicator-icon text-[var(--accent)]" title="Stock was specifically ordered for this line" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                                                                    <>
+                                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                        <span className="material-symbols-outlined indicator-icon text-[var(--accent)]" title={t('tooltips.stockSpecificallyOrdered')} style={{ fontVariationSettings: "'FILL' 1" }}>
+                                                                            bookmark
+                                                                        </span>
+                                                                    </>
                                                                 )}
                                                             </div>
                                                             <div className="text-xs text-[var(--text-muted)] truncate max-w-[200px]">{line.productDescription}</div>
@@ -424,7 +437,7 @@ export default function PickingPage() {
                                                             >
                                                                 <option value="" disabled>{t('selectBin')}</option>
                                                                 {line.availableBins.map(b => (
-                                                                    <option key={b.binId} value={b.binId}>{b.binName} (qty: {parseFloat(b.onHand)})</option>
+                                                                    <option key={b.binId} value={b.binId}>{b.binName} {t('qtyOption', { qty: parseFloat(b.onHand) })}</option>
                                                                 ))}
                                                             </select>
                                                         </td>
@@ -564,7 +577,12 @@ export default function PickingPage() {
                                                             <td style={{ textAlign: 'right' }}>
                                                                 <div className="flex justify-end items-center gap-1.5 font-semibold text-[var(--text-primary)]">
                                                                     {pick.line && !pick.line.isFullyPicked && (
-                                                                        <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title="Partially picked">warning</span>
+                                                                        <>
+                                                                            {/* eslint-disable-next-line i18next/no-literal-string */}
+                                                                            <span className="material-symbols-outlined text-[16px] text-[var(--warning)]" title={t('tooltips.partiallyPicked')}>
+                                                                                warning
+                                                                            </span>
+                                                                        </>
                                                                     )}
                                                                     {parseFloat(pick.quantity).toLocaleString()}
                                                                 </div>
@@ -581,6 +599,7 @@ export default function PickingPage() {
                                                                         className="btn btn-secondary btn-sm !p-1 !text-[var(--text-muted)] hover:!text-[var(--danger)]"
                                                                         title={t('tooltips.cancelPick')}
                                                                     >
+                                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                                                         <span className="material-symbols-outlined text-[18px]">close</span>
                                                                     </button>
                                                                 </div>
@@ -630,6 +649,7 @@ export default function PickingPage() {
                                                             </td>
                                                             <td>
                                                                 <span className="ml-2 text-xs font-bold text-[var(--text-muted)] inline-flex items-center">
+                                                                    {/* eslint-disable-next-line i18next/no-literal-string */}
                                                                     <span className="material-symbols-outlined text-[14px] mr-1">local_shipping</span>
                                                                     {t('statuses.dispatched')}
                                                                 </span>

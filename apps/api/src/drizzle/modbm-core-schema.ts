@@ -24,12 +24,16 @@ import {
   PURCHASE_ORDER_TRANSITIONS,
   SHIPMENT_TRANSITIONS,
   PURCHASE_RETURN_TRANSITIONS,
+  PURCHASE_RETURN_SHIPMENT_TRANSITIONS,
+  PURCHASE_DEBIT_NOTE_TRANSITIONS,
   RETURN_TRANSITIONS,
   SALES_ORDER_PICK_TRANSITIONS,
   SalesOrderState,
   PurchaseOrderState,
   ShipmentState,
   PurchaseReturnState,
+  PurchaseReturnShipmentState,
+  PurchaseDebitNoteState,
   ReturnState,
   SalesOrderPickState,
   CurrencyDef,
@@ -49,6 +53,8 @@ import {
   GOODS_RECEIVED_STATE,
   BACKORDER_STATE,
   PURCHASE_RETURN_STATE,
+  PURCHASE_RETURN_SHIPMENT_STATE,
+  PURCHASE_DEBIT_NOTE_STATE,
   PAYMENT_STATE,
   TRANSFER_ORDER_STATE,
   RECONCILIATION_STATE,
@@ -523,18 +529,34 @@ export const purchaseOrderEvents = modbmCore.table('purchase_order_events', {
 // ---------------------------------------------------------------------------
 // purchase_order_returns  (Return header against a PO)
 // ---------------------------------------------------------------------------
-export const purchaseOrderReturns = modbmCore.table('purchase_order_returns', {
-  returnId: uuid('return_id').primaryKey().defaultRandom(),
-  returnNumber: text('return_number').unique().notNull(),
-  purchaseOrderId: uuid('purchase_order_id')
-    .notNull()
-    .references(() => purchaseOrders.purchaseOrderId),
-  stateCode: text('state_code').notNull().default(RETURN_STATE.DRAFT),
-  notes: text('notes'),
-  createdBy: text('created_by'),
-  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
-  modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
-});
+export const purchaseOrderReturns = modbmCore.table(
+  'purchase_order_returns',
+  {
+    returnId: uuid('return_id').primaryKey().defaultRandom(),
+    returnNumber: text('return_number').unique().notNull(),
+    purchaseOrderId: uuid('purchase_order_id')
+      .notNull()
+      .references(() => purchaseOrders.purchaseOrderId),
+    stateCode: text('state_code')
+      .$type<PurchaseReturnState>()
+      .notNull()
+      .default(PURCHASE_RETURN_STATE.DRAFT),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    stateCheck: check(
+      'po_return_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(PURCHASE_RETURN_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
+  }),
+);
 
 // ---------------------------------------------------------------------------
 // purchase_order_return_lines  (Per-line return quantities + reason + fee)
@@ -552,6 +574,124 @@ export const purchaseOrderReturnLines = modbmCore.table(
     quantityReturned: numeric('quantity_returned').notNull(),
     reason: text('reason'),
     returnFee: numeric('return_fee').default('0'), // absolute fee in order currency
+  },
+);
+
+// ---------------------------------------------------------------------------
+// purchase_order_return_shipments
+// ---------------------------------------------------------------------------
+export const purchaseOrderReturnShipments = modbmCore.table(
+  'purchase_order_return_shipments',
+  {
+    shipmentId: uuid('shipment_id').primaryKey().defaultRandom(),
+    shipmentNumber: text('shipment_number').unique().notNull(),
+    returnId: uuid('return_id')
+      .notNull()
+      .references(() => purchaseOrderReturns.returnId),
+    stateCode: text('state_code')
+      .$type<PurchaseReturnShipmentState>()
+      .notNull()
+      .default(PURCHASE_RETURN_SHIPMENT_STATE.DISPATCHED),
+    notes: text('notes'),
+    trackingNumber: text('tracking_number'),
+    fulfillmentLocationId: uuid('fulfillment_location_id').references(
+      () => locations.locationId,
+    ),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    stateCheck: check(
+      'po_return_shipment_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(PURCHASE_RETURN_SHIPMENT_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// purchase_order_return_shipment_lines
+// ---------------------------------------------------------------------------
+export const purchaseOrderReturnShipmentLines = modbmCore.table(
+  'purchase_order_return_shipment_lines',
+  {
+    shipmentLineId: uuid('shipment_line_id').primaryKey().defaultRandom(),
+    shipmentId: uuid('shipment_id')
+      .notNull()
+      .references(() => purchaseOrderReturnShipments.shipmentId),
+    returnLineId: uuid('return_line_id')
+      .notNull()
+      .references(() => purchaseOrderReturnLines.returnLineId),
+    quantityShipped: numeric('quantity_shipped').notNull(),
+  },
+);
+
+// ---------------------------------------------------------------------------
+// purchase_debit_notes
+// ---------------------------------------------------------------------------
+export const purchaseDebitNotes = modbmCore.table(
+  'purchase_debit_notes',
+  {
+    debitNoteId: uuid('debit_note_id').primaryKey().defaultRandom(),
+    debitNoteNumber: text('debit_note_number').unique().notNull(),
+    supplierReferenceNumber: text('supplier_reference_number'),
+    returnId: uuid('return_id')
+      .notNull()
+      .references(() => purchaseOrderReturns.returnId),
+    purchaseOrderId: uuid('purchase_order_id')
+      .notNull()
+      .references(() => purchaseOrders.purchaseOrderId),
+    vendorId: uuid('vendor_id')
+      .notNull()
+      .references(() => suppliers.vendorId),
+    totalAmount: numeric('total_amount').notNull(),
+    taxAmount: numeric('tax_amount').default('0'),
+    feeAmount: numeric('fee_amount').default('0'),
+    outstandingAmount: numeric('outstanding_amount').notNull().default('0'),
+    currencyCode: text('currency_code').notNull(),
+    stateCode: text('state_code')
+      .$type<PurchaseDebitNoteState>()
+      .notNull()
+      .default(PURCHASE_DEBIT_NOTE_STATE.DRAFT),
+    notes: text('notes'),
+    createdBy: text('created_by'),
+    createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+    modifiedOn: timestamp('modified_on', { withTimezone: true }).defaultNow(),
+  },
+  (t) => ({
+    currencyCheck: validCurrencyCheck('purchase_debit_notes'),
+    stateCheck: check(
+      'purchase_debit_note_state_check',
+      sql.raw(
+        `state_code IN (${getValidStates(PURCHASE_DEBIT_NOTE_TRANSITIONS)
+          .map((s: string) => `'${s}'`)
+          .join(', ')})`,
+      ),
+    ),
+  }),
+);
+
+// ---------------------------------------------------------------------------
+// purchase_debit_note_lines
+// ---------------------------------------------------------------------------
+export const purchaseDebitNoteLines = modbmCore.table(
+  'purchase_debit_note_lines',
+  {
+    debitNoteLineId: uuid('debit_note_line_id').primaryKey().defaultRandom(),
+    debitNoteId: uuid('debit_note_id')
+      .notNull()
+      .references(() => purchaseDebitNotes.debitNoteId),
+    purchaseOrderLineId: uuid('purchase_order_line_id')
+      .notNull()
+      .references(() => purchaseOrderLineItems.purchaseOrderLineId),
+    quantityInvoiced: numeric('quantity_invoiced').notNull(),
+    pricePerUnit: numeric('price_per_unit').notNull(),
+    amount: numeric('amount').notNull(),
+    taxAmount: numeric('tax_amount').default('0'),
   },
 );
 
@@ -1784,7 +1924,7 @@ export const glJournalEntries = modbmCore.table('gl_journal_entries', {
   entryNumber: text('entry_number').unique().notNull(),
   entryDate: date('entry_date').notNull(),
   memo: text('memo'),
-  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | manual | adjustment
+  sourceType: text('source_type').notNull(), // sales_invoice | purchase_invoice | sales_credit_note | purchase_debit_note | manual | adjustment
   sourceId: uuid('source_id'), // FK to originating document (nullable for manual)
   isReversed: boolean('is_reversed').notNull().default(false),
   reversedBy: uuid('reversed_by'), // self-ref to reversing JE

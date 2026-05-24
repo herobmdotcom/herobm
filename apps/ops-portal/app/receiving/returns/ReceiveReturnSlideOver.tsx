@@ -95,7 +95,7 @@ export default function ReceiveReturnSlideOver({
             }
         >
             <div className="mb-4">
-                <span className="text-sm text-[var(--text-secondary)] mr-2">Order:</span>
+                <span className="text-sm text-[var(--text-secondary)] mr-2">{t('columns.return.order')}</span>
                 <Link href={`/sales-orders/${returnRecord.salesOrderId}`} className="text-sm font-medium text-[var(--accent)] hover:underline" onClick={onClose}>
                     {returnRecord.orderNumber}
                 </Link>
@@ -104,11 +104,11 @@ export default function ReceiveReturnSlideOver({
             <table className="table-lines w-full">
                 <thead>
                     <tr>
-                        <th style={{ textAlign: 'left' }}>Product</th>
-                        <th style={{ textAlign: 'left' }}>Description</th>
-                        <th style={{ textAlign: 'right' }}>Expected Qty</th>
-                        <th style={{ textAlign: 'right' }}>Received</th>
-                        <th style={{ textAlign: 'right' }}>Receive Now</th>
+                        <th style={{ textAlign: 'left' }}>{t('columns.return.product')}</th>
+                        <th style={{ textAlign: 'left' }}>{t('columns.return.description')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('columns.return.expectedQty')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('columns.return.received')}</th>
+                        <th style={{ textAlign: 'right' }}>{t('columns.return.receiveNow')}</th>
                     </tr>
                 </thead>
                 <tbody>

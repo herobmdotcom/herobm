@@ -183,14 +183,15 @@ export default function POMatchingPanel({
           <span className="material-symbols-outlined">link</span>
           {t('matching.panelTitle')}
         </h3>
+        {/* eslint-disable i18next/no-literal-string */}
         <button
           onClick={onClose}
           className="btn btn-secondary btn-sm"
           style={{ padding: '0 8px', height: 28, fontSize: 12 }}
         >
-          {/* eslint-disable-next-line i18next/no-literal-string */}
           ✕
         </button>
+        {/* eslint-enable i18next/no-literal-string */}
       </div>
 
       {/* Search */}
@@ -200,7 +201,8 @@ export default function POMatchingPanel({
           style={{ width: '100%', fontSize: 12 }}
           placeholder={t('placeholders.searchOrders')}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value.trimStart())}
+          onBlur={(e) => setSearchTerm(e.target.value.trim())}
         />
       </div>
 
@@ -344,7 +346,7 @@ function POCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* eslint-disable-next-line i18next/no-literal-string */}
+          {/* eslint-disable i18next/no-literal-string */}
           <span
             className="material-symbols-outlined"
             style={{
@@ -356,6 +358,7 @@ function POCard({
           >
             chevron_right
           </span>
+          {/* eslint-enable i18next/no-literal-string */}
           <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
             {group.orderNumber}
           </span>
@@ -523,28 +526,31 @@ function POCard({
                       ) : isFullyInvoiced ? (
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
                       ) : (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          style={{
-                            padding: '2px 8px',
-                            height: 22,
-                            fontSize: 10,
-                            fontWeight: 600,
-                          }}
-                          disabled={isDisabled}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMatchClick(line.purchaseOrderLineId);
-                          }}
-                          title={
-                            !selectedLineId
-                              ? t('matching.selectInvoiceLine')
-                              : t('matching.matchButton')
-                          }
-                        >
-                          {/* eslint-disable-next-line i18next/no-literal-string */}
-                          Match
-                        </button>
+                        <>
+                          {/* eslint-disable i18next/no-literal-string */}
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{
+                              padding: '2px 8px',
+                              height: 22,
+                              fontSize: 10,
+                              fontWeight: 600,
+                            }}
+                            disabled={isDisabled}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMatchClick(line.purchaseOrderLineId);
+                            }}
+                            title={
+                              !selectedLineId
+                                ? t('matching.selectInvoiceLine')
+                                : t('matching.matchButton')
+                            }
+                          >
+                            Match
+                          </button>
+                          {/* eslint-enable i18next/no-literal-string */}
+                        </>
                       )}
                     </td>
                   </tr>

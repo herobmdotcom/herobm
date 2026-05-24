@@ -49,13 +49,23 @@ export class PurchaseReturnsController {
     return this.purchaseReturnsService.findOne(returnId);
   }
 
-  @Post(':returnId/action')
+  @Post(':returnId/stage')
   @CasbinAction('write')
-  actionReturn(
+  stageReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
     @AuthUser() user: JwtUser,
   ) {
-    return this.purchaseReturnsService.actionReturn(returnId, user.username);
+    return this.purchaseReturnsService.stageReturn(returnId, user.username);
+  }
+
+  @Post(':returnId/ship')
+  @CasbinAction('write')
+  shipReturn(
+    @Param('id') _id: string,
+    @Param('returnId') returnId: string,
+    @AuthUser() user: JwtUser,
+  ) {
+    return this.purchaseReturnsService.shipReturn(returnId, user.username);
   }
 }

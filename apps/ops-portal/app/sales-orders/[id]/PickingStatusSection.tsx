@@ -55,7 +55,9 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
         <div id="picking-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
+                    {/* eslint-disable i18next/no-literal-string */}
                     <span className="material-symbols-outlined">inventory</span>
+                    {/* eslint-enable i18next/no-literal-string */}
                     {tPicking('title')}
                 </h3>
                 <div className="flex items-center gap-2">
@@ -64,7 +66,9 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                     </span>
                     {pickingSummary.isFullyPicked && (
                         <span className="text-xs font-bold text-[var(--success)]">
+                            {/* eslint-disable i18next/no-literal-string */}
                             <span className="material-symbols-outlined text-sm align-middle mr-0.5">check_circle</span>
+                            {/* eslint-enable i18next/no-literal-string */}
                             {tPicking('statuses.done')}
                         </span>
                     )}
@@ -113,9 +117,17 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                                 </td>
                                 <td style={{ textAlign: 'center' }}>
                                     {line.isFullyPicked ? (
-                                        <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                        <>
+                                            {/* eslint-disable i18next/no-literal-string */}
+                                            <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                            {/* eslint-enable i18next/no-literal-string */}
+                                        </>
                                     ) : remaining > 0 ? (
-                                        <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                        <>
+                                            {/* eslint-disable i18next/no-literal-string */}
+                                            <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                            {/* eslint-enable i18next/no-literal-string */}
+                                        </>
                                     ) : null}
                                 </td>
                             </tr>
@@ -124,7 +136,7 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                     {physicalLines.length === 0 && (
                         <tr>
                             <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                No physical lines.
+                                {tPicking('noPhysicalLines')}
                             </td>
                         </tr>
                     )}

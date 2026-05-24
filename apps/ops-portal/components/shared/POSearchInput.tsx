@@ -88,8 +88,11 @@ export default function POSearchInput({
         className="input"
         placeholder={placeholder}
         value={search}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={(e) => handleSearch(e.target.value.trimStart())}
         onFocus={() => setShowDropdown(true)}
+        onBlur={(e) => {
+          setSearch(e.target.value.trim());
+        }}
         style={{ width: '100%', fontSize: 13, padding: '4px 8px' }}
       />
       

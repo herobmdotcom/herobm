@@ -98,7 +98,9 @@ export default function GlobalError({
           }}
         >
           <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+            {/* eslint-disable i18next/no-literal-string */}
             Something went wrong
+            {/* eslint-enable i18next/no-literal-string */}
           </h2>
           <p style={{ fontSize: 14, color: '#94a3b8', marginBottom: 24 }}>
             {/* eslint-disable-next-line no-restricted-syntax */}
@@ -118,7 +120,9 @@ export default function GlobalError({
               marginBottom: 24,
             }}
           >
+            {/* eslint-disable i18next/no-literal-string */}
             Try Again
+            {/* eslint-enable i18next/no-literal-string */}
           </button>
           {(supportPhone || supportEmail) && (
             <div
@@ -129,7 +133,11 @@ export default function GlobalError({
                 color: '#94a3b8',
               }}
             >
-              <p style={{ marginBottom: 8 }}>If this problem persists, please contact support:</p>
+              <p style={{ marginBottom: 8 }}>
+                {/* eslint-disable i18next/no-literal-string */}
+                If this problem persists, please contact support:
+                {/* eslint-enable i18next/no-literal-string */}
+              </p>
               {supportPhone && (
                 <p style={{ marginBottom: 4 }}>
                   📞{' '}
@@ -140,7 +148,9 @@ export default function GlobalError({
               )}
               {mailto && (
                 <p>
+                  {/* eslint-disable i18next/no-literal-string */}
                   ✉️{' '}
+                  {/* eslint-enable i18next/no-literal-string */}
                   <a href={mailto} style={{ color: '#f59e0b' }}>
                     {supportEmail}
                   </a>

@@ -151,94 +151,68 @@ export default function GeneralLedgerContent() {
 
   return (
     <>
-      <div className="h-full flex flex-col relative p-4 lg:p-6">
-        <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-          <DataGrid<GlEntry>
-            endpoint={`/api/gl/general-ledger?account=${accountCode}&fromDate=${fromDate}&toDate=${toDate}`}
-            columns={columns}
-            gridKey="gl-general-ledger"
-            exportFileName="general-ledger"
-            fetchAll={true}
-            onRowClicked={(row) => {
-              setSelectedEntry({
-                journalEntryId: row.journalEntryId,
-                entryNumber: row.entryNumber,
-                entryDate: row.entryDate,
-                memo: row.entryMemo,
-                sourceType: row.sourceType || 'manual',
-                sourceId: row.sourceId || null,
-                createdBy: row.createdBy || null,
-              });
-            }}
-            renderHeader={({ optionsButton, rowCount, loading: gridLoading }) => (
-              <div className="flex items-center px-6 py-4 gap-6 border-b border-gray-100">
-                {/* Title + Row Count */}
-                <div className="flex items-center gap-4 shrink-0">
-                  <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                    {t('title')}
-                  </h2>
-                  <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                    <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                      {tCommon('grid.rowCountLabel')}
-                    </span>
-                    <span className="text-[11px] font-bold text-[#006b5c]">
-                      {gridLoading ? '...' : rowCount.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
+    <DataGrid<GlEntry>
+      endpoint={`/api/gl/general-ledger?account=${accountCode}&fromDate=${fromDate}&toDate=${toDate}`}
+      columns={columns}
+      gridKey="gl-general-ledger"
+      exportFileName="general-ledger"
+      fetchAll={true}
+      onRowClicked={(row) => {
+        setSelectedEntry({
+          journalEntryId: row.journalEntryId,
+          entryNumber: row.entryNumber,
+          entryDate: row.entryDate,
+          memo: row.entryMemo,
+          sourceType: row.sourceType || 'manual',
+          sourceId: row.sourceId || null,
+          createdBy: row.createdBy || null,
+        });
+      }}
+      pageTitle={t('title')}
+      headerFilters={
+        <>
+          <select
+            value={accountCode}
+            onChange={(e) => setAccountCode(e.target.value)}
+            className="input text-xs h-9 border-gray-200 w-auto min-w-[200px] bg-white rounded-lg"
+          >
+            <option value="">{t('allAccounts')}</option>
+            {accounts.map((a) => (
+              <option key={a.accountCode} value={a.accountCode}>
+                {a.accountCode} — {a.name}
+              </option>
+            ))}
+          </select>
 
-                {/* Filters */}
-                <select
-                  value={accountCode}
-                  onChange={(e) => setAccountCode(e.target.value)}
-                  className="input text-xs h-9 border-gray-200 w-auto min-w-[200px] bg-white rounded-lg"
-                >
-                  <option value="">{t('allAccounts')}</option>
-                  {accounts.map((a) => (
-                    <option key={a.accountCode} value={a.accountCode}>
-                      {a.accountCode} — {a.name}
-                    </option>
-                  ))}
-                </select>
-
-                <div className="flex items-center gap-3">
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
-                    title={t('fromDate')}
-                  />
-                  <span className="text-gray-300 font-bold">→</span>
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
-                    title={t('toDate')}
-                  />
-                </div>
-
-                {/* Spacer */}
-                <div className="flex-1" />
-
-                {/* Options */}
-                <div className="flex items-center gap-3 shrink-0">
-                  <button
-                    onClick={() => setIsCodesOpen(true)}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    <span className="material-symbols-outlined text-sm">visibility</span>
-                    {tCodes('button')}
-                  </button>
-                  {optionsButton}
-                </div>
-              </div>
-            )}
-          />
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+              title={t('fromDate')}
+            />
+            <span className="text-gray-300 font-bold">→</span>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="input text-xs h-9 border-gray-200 bg-white px-3 text-gray-500 rounded-lg w-auto"
+              title={t('toDate')}
+            />
+          </div>
+        </>
+      }
+      headerActions={
+        <button
+          onClick={() => setIsCodesOpen(true)}
+          className="btn btn-secondary btn-sm whitespace-nowrap"
+        >
+          <span className="material-symbols-outlined text-sm">visibility</span>
+          {tCodes('button')}
+        </button>
+      }
+    />
 
       <JournalEntrySlideOver
         entry={selectedEntry}

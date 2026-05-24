@@ -919,6 +919,16 @@ export class InventoryService {
 
   async getPendingPutaway(locationId?: string) {
     // 1. Goods Receipts
+    const grConditions = [
+      inArray(goodsReceivedLines.putawayStatus, [
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+      ]),
+    ];
+    if (locationId) {
+      grConditions.push(eq(goodsReceived.locationId, locationId));
+    }
+
     let grQb = this.db
       .select({
         id: goodsReceivedLines.goodsReceivedLineId,
@@ -938,19 +948,19 @@ export class InventoryService {
         eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
       )
       .innerJoin(products, eq(goodsReceivedLines.productId, products.productId))
-      .where(
-        inArray(goodsReceivedLines.putawayStatus, [
-          PUTAWAY_STATUS.PENDING_PUTAWAY,
-          PUTAWAY_STATUS.QUARANTINED,
-        ]),
-      )
-      .$dynamic();
-
-    if (locationId) {
-      grQb = grQb.where(eq(goodsReceived.locationId, locationId));
-    }
+      .where(and(...grConditions));
 
     // 2. Sales Returns
+    const retConditions = [
+      inArray(salesOrderReturnLines.putawayStatus, [
+        PUTAWAY_STATUS.PENDING_PUTAWAY,
+        PUTAWAY_STATUS.QUARANTINED,
+      ]),
+    ];
+    if (locationId) {
+      retConditions.push(eq(salesOrders.fulfillmentLocationId, locationId));
+    }
+
     let retQb = this.db
       .select({
         id: salesOrderReturnLines.returnLineId,
@@ -962,7 +972,7 @@ export class InventoryService {
         putawayStatus: salesOrderReturnLines.putawayStatus,
         locationId: salesOrders.fulfillmentLocationId,
         createdOn: salesOrderReturns.createdOn,
-        sourceBinCode: sql`CASE WHEN ${salesOrderReturnLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'RETURNS' END`,
+        sourceBinCode: sql`CASE WHEN ${salesOrderReturnLines.putawayStatus} = 'quarantined' THEN 'QUARANTINE' ELSE 'CUSTOMER_RETURNS' END`,
       })
       .from(salesOrderReturnLines)
       .innerJoin(
@@ -984,17 +994,7 @@ export class InventoryService {
         products,
         eq(salesOrderLineItems.productId, products.productId),
       )
-      .where(
-        inArray(salesOrderReturnLines.putawayStatus, [
-          PUTAWAY_STATUS.PENDING_PUTAWAY,
-          PUTAWAY_STATUS.QUARANTINED,
-        ]),
-      )
-      .$dynamic();
-
-    if (locationId) {
-      retQb = retQb.where(eq(salesOrders.fulfillmentLocationId, locationId));
-    }
+      .where(and(...retConditions));
 
     const [grLines, retLines] = await Promise.all([grQb, retQb]);
 
@@ -1099,7 +1099,7 @@ export class InventoryService {
           sourceBinCode =
             putawayStatus === PUTAWAY_STATUS.QUARANTINED
               ? 'QUARANTINE'
-              : 'RETURNS';
+              : 'CUSTOMER_RETURNS';
         }
 
         if (putawayStatus === PUTAWAY_STATUS.COMPLETED) {
@@ -1343,7 +1343,7 @@ export class InventoryService {
         recordSourceId = retLine.line.returnId;
         linePrefix = retLine.line.returnLineId.substring(0, 4);
         quantityToMove = parseFloat(retLine.line.quantityReturned);
-        defaultBinCode = 'RETURNS';
+        defaultBinCode = 'CUSTOMER_RETURNS';
       }
 
       if (currentPutawayStatus === PUTAWAY_STATUS.COMPLETED) {

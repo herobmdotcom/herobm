@@ -3,6 +3,8 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import i18nextPlugin from 'eslint-plugin-i18next';
 import reactPlugin from 'eslint-plugin-react';
+import jsoncPlugin from 'eslint-plugin-jsonc';
+import * as jsoncParser from 'jsonc-eslint-parser';
 
 export default tseslint.config(
   {
@@ -10,6 +12,25 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ['**/*.json'],
+    languageOptions: {
+      parser: jsoncParser,
+    },
+    plugins: {
+      jsonc: jsoncPlugin,
+    },
+    rules: {
+      'jsonc/no-dupe-keys': 'error',
+      'jsonc/sort-keys': [
+        'warn',
+        {
+          pathPattern: '^.*$',
+          order: { type: 'asc' },
+        },
+      ],
+    },
+  },
   {
     languageOptions: {
       globals: {

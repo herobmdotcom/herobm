@@ -41,12 +41,12 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">receipt_long</span>
-            Invoice Details
+            {t('invoiceDetails')}
           </h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Customer
+                {t('customer')}
               </label>
               <div className="text-sm">
                 {invoice.customerId ? (
@@ -63,7 +63,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Order No.
+                {t('orderNo')}
               </label>
               <div className="text-sm">
                 {invoice.salesOrderId ? (
@@ -86,7 +86,7 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Date
+                {t('date')}
               </label>
               <div className="text-sm">{new Date(invoice.createdOn).toLocaleDateString()}</div>
             </div>
@@ -107,17 +107,17 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
           <h3 className="section-heading">
             {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">list</span>
-            Line Items
+            {t('lineItems')}
           </h3>
           <table className="table-lines">
             <thead>
               <tr>
                 <th style={{ width: 40 }}>#</th>
-                <th style={{ width: 150 }}>Product</th>
-                <th>Description</th>
-                <th style={{ width: 90, textAlign: 'right' }}>Qty</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Price</th>
-                <th style={{ width: 110, textAlign: 'right' }}>Amount</th>
+                <th style={{ width: 150 }}>{t('columns.product')}</th>
+                <th>{t('columns.description')}</th>
+                <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qty')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.price')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('columns.amount')}</th>
               </tr>
             </thead>
             <tbody>
@@ -173,9 +173,9 @@ export default function InvoiceDetailContent({ id }: { id: string }) {
 
         {/* Payment Allocations Card */}
         <div className="card mt-4 p-5">
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Payment Allocations</h2>
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
           <p className="text-sm text-gray-500">
-            When payments are allocated to this invoice from the Payment Manager, they will appear here.
+            {t('paymentAllocationsDesc')}
           </p>
         </div>
       </div>

@@ -122,7 +122,7 @@ export default function InvoicesSection({
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.discountPct')}</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.tax')}</th>
-                                            <th>Receipt</th>
+                                            <th>{tPurchase('supplierInvoice.receipt')}</th>
                                             <th style={{ textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
                                         </tr>
                                     </thead>
@@ -139,12 +139,12 @@ export default function InvoicesSection({
                                                         <div>{il.description || '—'}</div>
                                                         {!orderLine && il.purchaseOrderNumber && (
                                                             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                                                                From PO: <Link href={`/purchase-orders/${il.purchaseOrderId}`} style={{ color: 'var(--accent)', fontWeight: 500 }}>{il.purchaseOrderNumber}</Link>
+                                                                {tPurchase('supplierInvoice.fromPo')}: <Link href={`/purchase-orders/${il.purchaseOrderId}`} style={{ color: 'var(--accent)', fontWeight: 500 }}>{il.purchaseOrderNumber}</Link>
                                                             </div>
                                                         )}
                                                         {!orderLine && !il.purchaseOrderNumber && (
                                                             <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                                                                Standalone Item
+                                                                {tPurchase('supplierInvoice.standaloneItem')}
                                                             </div>
                                                         )}
                                                     </td>

@@ -13,6 +13,8 @@ import {
   purchaseOrderLineItems,
   purchaseOrderReturns,
   purchaseOrderReturnLines,
+  purchaseOrderReturnShipments,
+  purchaseOrderReturnShipmentLines,
   purchaseOrderEvents,
   bins,
   zones,
@@ -27,14 +29,15 @@ import { CreatePurchaseReturnDto } from './dto';
 import {
   PURCHASE_RETURN_STATE,
   PURCHASE_RETURN_TRANSITIONS,
+  PURCHASE_RETURN_SHIPMENT_STATE,
   PURCHASE_ORDER_STATE,
   getValidStates,
 } from '@modbm/shared';
 import { AppConfigService } from '../settings/app-config.service';
+import { GlService } from '../gl/gl.service';
 import { getValuationStrategy } from '../inventory/valuation';
 import { getAccountingStrategy } from '../inventory/inventory-accounting';
-import { GlService } from '../gl/gl.service';
-
+import { evaluatePOLifecycleRules } from './purchase-order-lifecycle-rules';
 const VALID_RETURN_STATES = getValidStates(PURCHASE_RETURN_TRANSITIONS);
 
 @Injectable()
@@ -62,6 +65,27 @@ export class PurchaseReturnsService {
     const seq =
       result.length > 0
         ? parseInt(result[0].returnNumber.replace(prefix, ''), 10) + 1
+        : 1;
+
+    return `${prefix}${String(seq).padStart(4, '0')}`;
+  }
+
+  private async generateShipmentNumber(): Promise<string> {
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const prefix = `RSH-${today}-`;
+
+    const result = await this.db
+      .select({ shipmentNumber: purchaseOrderReturnShipments.shipmentNumber })
+      .from(purchaseOrderReturnShipments)
+      .where(
+        sql`${purchaseOrderReturnShipments.shipmentNumber} LIKE ${prefix + '%'}`,
+      )
+      .orderBy(sql`${purchaseOrderReturnShipments.shipmentNumber} DESC`)
+      .limit(1);
+
+    const seq =
+      result.length > 0
+        ? parseInt(result[0].shipmentNumber.replace(prefix, ''), 10) + 1
         : 1;
 
     return `${prefix}${String(seq).padStart(4, '0')}`;
@@ -165,7 +189,7 @@ export class PurchaseReturnsService {
     return { ...ret, lines };
   }
 
-  async actionReturn(returnId: string, actor: string) {
+  async stageReturn(returnId: string, actor: string) {
     const [ret] = await this.db
       .select()
       .from(purchaseOrderReturns)
@@ -173,8 +197,10 @@ export class PurchaseReturnsService {
       .limit(1);
 
     if (!ret) throw new NotFoundException('Return not found');
-    if (ret.stateCode === PURCHASE_RETURN_STATE.PROCESSED) {
-      throw new BadRequestException('Return is already processed');
+    if (ret.stateCode !== PURCHASE_RETURN_STATE.DRAFT) {
+      throw new BadRequestException(
+        'Return must be in DRAFT state to be staged',
+      );
     }
 
     const [po] = await this.db
@@ -183,20 +209,94 @@ export class PurchaseReturnsService {
       .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
       .limit(1);
 
-    // deduct inventory
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
       const updated = await this.changePurchaseReturnState(
         returnId,
-        PURCHASE_RETURN_STATE.PROCESSED,
+        PURCHASE_RETURN_STATE.STAGED,
         actor,
         tx,
       );
+
+      await emitEvent(tx as any, {
+        aggregateType: AggregateType.PURCHASE_ORDER,
+        aggregateId: po.purchaseOrderId,
+        eventType: EventType.STATUS_CHANGED,
+        payload: {
+          entity: 'return',
+          entityId: returnId,
+          returnNumber: ret.returnNumber,
+          from: ret.stateCode,
+          to: PURCHASE_RETURN_STATE.STAGED,
+        },
+        actor,
+      });
+
+      return updated;
+    });
+
+    return result;
+  }
+
+  async shipReturn(returnId: string, actor: string) {
+    const [ret] = await this.db
+      .select()
+      .from(purchaseOrderReturns)
+      .where(eq(purchaseOrderReturns.returnId, returnId))
+      .limit(1);
+
+    if (!ret) throw new NotFoundException('Return not found');
+    if (ret.stateCode !== PURCHASE_RETURN_STATE.STAGED) {
+      throw new BadRequestException(
+        'Return must be STAGED before it can be shipped',
+      );
+    }
+
+    const [po] = await this.db
+      .select()
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.purchaseOrderId, ret.purchaseOrderId))
+      .limit(1);
+
+    const result = await this.db.transaction(async (tx: DrizzleDB) => {
+      // 1. Mark Return as SHIPPED
+      const updated = await this.changePurchaseReturnState(
+        returnId,
+        PURCHASE_RETURN_STATE.SHIPPED,
+        actor,
+        tx,
+      );
+
+      // 2. Create the shipment record
+      const shipmentNumber = await this.generateShipmentNumber();
+      const [shipment] = await tx
+        .insert(purchaseOrderReturnShipments)
+        .values({
+          shipmentNumber,
+          returnId,
+          stateCode: PURCHASE_RETURN_SHIPMENT_STATE.DISPATCHED,
+          fulfillmentLocationId: po.deliveryLocationId,
+          createdBy: actor,
+        })
+        .returning();
 
       const returnLines = await tx
         .select()
         .from(purchaseOrderReturnLines)
         .where(eq(purchaseOrderReturnLines.returnId, returnId));
 
+      const shipmentLineValues = returnLines.map((rl) => ({
+        shipmentId: shipment.shipmentId,
+        returnLineId: rl.returnLineId,
+        quantityShipped: rl.quantityReturned,
+      }));
+
+      if (shipmentLineValues.length > 0) {
+        await tx
+          .insert(purchaseOrderReturnShipmentLines)
+          .values(shipmentLineValues);
+      }
+
+      // 3. Deduct inventory from SUPPLIER_RETURNS bin
       const stockLines = [];
       for (const rl of returnLines) {
         const [orderLine] = await tx
@@ -219,130 +319,114 @@ export class PurchaseReturnsService {
       }
 
       if (po.deliveryLocationId) {
-        const [dockBin] = await tx
+        const [supplierReturnsBin] = await tx
           .select({ binId: bins.binId })
           .from(bins)
           .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
           .where(
             and(
-              eq(bins.binNumber, 'RECEIVING'),
+              eq(bins.binNumber, 'SUPPLIER_RETURNS'),
               eq(zones.locationId, po.deliveryLocationId),
             ),
           )
           .limit(1);
 
-        if (dockBin) {
-          const validStockLines = stockLines.filter(
-            (l) => l.productId != null,
-          ) as { productId: string; quantity: string }[];
-          const moveLines = validStockLines.map((line) => ({
-            productId: line.productId,
-            binId: dockBin.binId,
-            quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
-          }));
+        if (!supplierReturnsBin) {
+          throw new BadRequestException(
+            `SUPPLIER_RETURNS bin not found for location '${po.deliveryLocationId}'`,
+          );
+        }
 
-          if (moveLines.length > 0) {
-            await this.inventoryService.recordInventoryMovement(tx, {
-              entryNumber:
-                'PRT-' +
-                ret.returnNumber +
-                '-' +
-                Date.now().toString().slice(-4),
-              sourceType: 'PO_RETURN',
-              sourceId: returnId,
-              memo: 'Return to Supplier',
-              userId: actor,
-              lines: moveLines,
-            });
-          }
+        const validStockLines = stockLines.filter(
+          (l) => l.productId != null,
+        ) as { productId: string; quantity: string }[];
+
+        const moveLines = validStockLines.map((line) => ({
+          productId: line.productId,
+          binId: supplierReturnsBin.binId,
+          quantity: -parseFloat(line.quantity), // negative quantity for removing from inventory
+        }));
+
+        if (moveLines.length > 0) {
+          await this.inventoryService.recordInventoryMovement(tx, {
+            entryNumber:
+              'RSH-' +
+              shipment.shipmentNumber +
+              '-' +
+              Date.now().toString().slice(-4),
+            sourceType: 'PO_RETURN',
+            sourceId: returnId,
+            memo: 'Return shipped to Supplier',
+            userId: actor,
+            lines: moveLines,
+          });
         }
       }
 
       // Decrement PO quantity Received
+      let totalValueReturned = 0;
       for (const rl of returnLines) {
+        // Calculate financial value of return
+        const [orderLine] = await tx
+          .select({ pricePerUnit: purchaseOrderLineItems.pricePerUnit })
+          .from(purchaseOrderLineItems)
+          .where(eq(purchaseOrderLineItems.purchaseOrderLineId, rl.purchaseOrderLineId))
+          .limit(1);
+          
+        if (orderLine && orderLine.pricePerUnit) {
+          totalValueReturned += parseFloat(orderLine.pricePerUnit) * parseFloat(rl.quantityReturned);
+        }
+
         await tx.execute(
           sql`UPDATE modbm_core.purchase_order_lines SET quantity_received = (quantity_received::numeric - ${rl.quantityReturned}::numeric) WHERE purchase_order_line_id = ${rl.purchaseOrderLineId}`,
         );
       }
 
-      const method = this.appConfig.valuationMethod();
-      const valuationStrategy = getValuationStrategy(method);
-      let totalReturnCost = 0;
-
-      for (const line of stockLines) {
-        if (!line.productId) continue;
-        const [product] = await tx
-          .select()
-          .from(coreProducts)
-          .where(eq(coreProducts.productId, line.productId));
-
-        if (product) {
-          const cost = valuationStrategy.getCogs(
-            {
-              productId: product.productId,
-              standardCost: product.standardCost || '0',
-              weightedAverageCost: product.weightedAverageCost || '0',
-            },
-            Math.abs(parseFloat(line.quantity)),
-          );
-          totalReturnCost += parseFloat(cost);
-        }
-      }
-
-      // --- Financial Integration: Post Supplier Return GL via Accounting Strategy ---
-      const accountingStrategy = getAccountingStrategy(
-        this.appConfig.inventoryAccountingMode(),
-        {
-          inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
-          grniAccountId: this.appConfig.defaultGrniAccountId(),
-          cogsAccountId: this.appConfig.defaultCogsAccountId(),
-          shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
-        },
-      );
-
-      // Resolve supplier group dimensions for return posting
-      let suppCostCenterId: string | undefined;
-      let suppActivityId: string | undefined;
-      if (po.vendorId) {
-        const [supp] = await tx
-          .select({
-            costCenterId: supplierGroups.defaultCostCenterId,
-            activityId: supplierGroups.defaultActivityId,
-          })
-          .from(suppliers)
-          .leftJoin(
-            supplierGroups,
-            eq(suppliers.supplierGroupId, supplierGroups.supplierGroupId),
-          )
-          .where(eq(suppliers.vendorId, po.vendorId));
-        if (supp) {
-          suppCostCenterId = supp.costCenterId || undefined;
-          suppActivityId = supp.activityId || undefined;
-        }
-      }
-
-      const supplierReturnGl = accountingStrategy.onSupplierReturn({
-        amount: Number(totalReturnCost.toFixed(2)),
-        memo: `Supplier Return ${ret.returnNumber}`,
-        partyType: 'supplier',
-        partyId: po.vendorId || undefined,
-        costCenterId: suppCostCenterId,
-        activityId: suppActivityId,
-      });
-
-      if (supplierReturnGl) {
-        await this.glService.postJournalEntry(
-          supplierReturnGl.lines as any,
+      // 4. Financial Integration (GL)
+      if (totalValueReturned > 0) {
+        const accountingStrategy = getAccountingStrategy(
+          this.appConfig.inventoryAccountingMode(),
           {
-            actor,
-            entryDate: new Date().toISOString().slice(0, 10),
-            sourceType: supplierReturnGl.sourceType,
-            sourceId: returnId,
-            memo: `Supplier Return ${ret.returnNumber}`,
+            inventoryAccountId: this.appConfig.defaultInventoryAccountId(),
+            grniAccountId: this.appConfig.defaultGrniAccountId(),
+            cogsAccountId: this.appConfig.defaultCogsAccountId(),
+            shrinkageAccountId: this.appConfig.defaultShrinkageAccountId(),
           },
-          tx,
         );
+
+        const glResult = accountingStrategy.onSupplierReturn({
+          amount: Number(totalValueReturned.toFixed(2)),
+          memo: `Supplier Return ${ret.returnNumber}`,
+          partyType: 'supplier',
+          partyId: po.vendorId || undefined,
+        });
+
+        if (glResult) {
+          await this.glService.postJournalEntry(
+            glResult.lines as any,
+            {
+              actor,
+              entryDate: new Date().toISOString().slice(0, 10),
+              sourceType: glResult.sourceType,
+              sourceId: returnId,
+              memo: `Supplier Return ${ret.returnNumber}`,
+            },
+            tx as any,
+          );
+        }
       }
+
+      // 5. Evaluate PO Lifecycle Engine for Reversal
+      await evaluatePOLifecycleRules(
+        tx as any,
+        po.purchaseOrderId,
+        {
+          entity: 'purchase_return',
+          action: 'shipped',
+          id: returnId,
+        },
+        actor,
+      );
 
       await emitEvent(tx as any, {
         aggregateType: AggregateType.PURCHASE_ORDER,
@@ -353,7 +437,7 @@ export class PurchaseReturnsService {
           entityId: returnId,
           returnNumber: ret.returnNumber,
           from: ret.stateCode,
-          to: PURCHASE_RETURN_STATE.PROCESSED,
+          to: PURCHASE_RETURN_STATE.SHIPPED,
         },
         actor,
       });
@@ -364,9 +448,6 @@ export class PurchaseReturnsService {
     return result;
   }
 
-  /**
-   * Universal changeState for Purchase Returns
-   */
   async changePurchaseReturnState(
     returnId: string,
     newState: string,
@@ -399,7 +480,7 @@ export class PurchaseReturnsService {
 
     const [updated] = await db
       .update(purchaseOrderReturns)
-      .set({ stateCode: newState, modifiedOn: new Date() })
+      .set({ stateCode: newState as any, modifiedOn: new Date() })
       .where(eq(purchaseOrderReturns.returnId, returnId))
       .returning();
 

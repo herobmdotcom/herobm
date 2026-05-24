@@ -272,6 +272,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             >
                                                 {state === SALES_ORDER_STATE.CANCELLED ? (
                                                     <>
+                                                        {/* eslint-disable-next-line i18next/no-literal-string */}
                                                         <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
                                                         {tCommon('cancel')}
                                                     </>
@@ -617,21 +618,25 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             <>
                                                 <td style={{ textAlign: 'right', position: 'relative' }}>
                                                     {gapMap.has(line.salesOrderLineId) && (
-                                                        <span 
-                                                            className="material-symbols-outlined" 
-                                                            style={{ 
-                                                                fontSize: 14, 
-                                                                position: 'absolute',
-                                                                left: -16,
-                                                                top: '50%',
-                                                                transform: 'translateY(-50%)',
-                                                                color: 'var(--danger)',
-                                                                zIndex: 1
-                                                            }}
-                                                            title={tSales('availabilityStatus.shortage')}
-                                                        >
-                                                            warning
-                                                        </span>
+                                                        <>
+                                                            {/* eslint-disable i18next/no-literal-string */}
+                                                            <span 
+                                                                className="material-symbols-outlined" 
+                                                                style={{ 
+                                                                    fontSize: 14, 
+                                                                    position: 'absolute',
+                                                                    left: -16,
+                                                                    top: '50%',
+                                                                    transform: 'translateY(-50%)',
+                                                                    color: 'var(--danger)',
+                                                                    zIndex: 1
+                                                                }}
+                                                                title={tSales('availabilityStatus.shortage')}
+                                                            >
+                                                                warning
+                                                            </span>
+                                                            {/* eslint-enable i18next/no-literal-string */}
+                                                        </>
                                                     )}
                                                     <input
                                                         className="input"
@@ -729,13 +734,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                             <>
                                                 <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: gapMap.has(line.salesOrderLineId) ? 'var(--danger)' : undefined, fontWeight: gapMap.has(line.salesOrderLineId) ? 600 : undefined }}>
                                                     {gapMap.has(line.salesOrderLineId) && (
-                                                        <span 
-                                                            className="material-symbols-outlined" 
-                                                            style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4, color: 'var(--danger)' }}
-                                                            title={tSales('availabilityStatus.shortage')}
-                                                        >
-                                                            warning
-                                                        </span>
+                                                        <>
+                                                            {/* eslint-disable i18next/no-literal-string */}
+                                                            <span 
+                                                                className="material-symbols-outlined" 
+                                                                style={{ fontSize: 14, verticalAlign: 'middle', marginRight: 4, color: 'var(--danger)' }}
+                                                                title={tSales('availabilityStatus.shortage')}
+                                                            >
+                                                                warning
+                                                            </span>
+                                                            {/* eslint-enable i18next/no-literal-string */}
+                                                        </>
                                                     )}
                                                     {line.quantity}
                                                 </td>
@@ -1019,17 +1028,17 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                                                     </td>
                                                     <td>
                                                         {bo.productNumber || '—'}
-                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{bo.quantity} demanded</div>
+                                                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tSales('demandedQty', { qty: bo.quantity })}</div>
                                                     </td>
                                                     <td style={{ color: isPo ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 400 }}>{displayOrderNumber}</td>
                                                     <td>
                                                         {isPo ? (
                                                             <div className="flex flex-col gap-1 items-start">
-                                                                <span className="badge badge-sm badge-success">Allocated</span>
+                                                                <span className="badge badge-sm badge-success">{tSales('allocated')}</span>
                                                                 <StateBadge state={bo.purchaseOrderState as ValidState} />
                                                             </div>
                                                         ) : (
-                                                            <span className="badge badge-draft">Open Demand</span>
+                                                            <span className="badge badge-draft">{tSales('openDemandBadge')}</span>
                                                         )}
                                                     </td>
                                                     <td>{new Date(bo.createdOn).toLocaleDateString()}</td>
@@ -1104,6 +1113,7 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                             <h2 className="text-xl font-bold text-gray-900">{tSales('discrepancies.title')}</h2>
                             <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+                                {/* eslint-disable-next-line i18next/no-literal-string */}
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>

@@ -26,7 +26,7 @@ const ToggleCell = (p: any) => {
   const context = p.context;
   
   if (!data || !context) return null;
-  const { handleToggle } = context;
+  const { handleToggle, t } = context;
 
   const isAllocated = data.pendingAllocation > 0;
 
@@ -40,7 +40,7 @@ const ToggleCell = (p: any) => {
         }`}
         aria-checked={isAllocated}
         role="switch"
-        title={isAllocated ? "Click to remove allocation" : "Click to auto-allocate max"}
+        title={isAllocated ? t("manager.messages.clickToRemoveAllocation") : t("manager.messages.clickToAutoAllocateMax")}
       >
         <span
           aria-hidden="true"
@@ -234,34 +234,34 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
   const allocationColumns = useMemo<ColDef[]>(() => [
     { 
       field: 'date', 
-      headerName: 'Date', 
+      headerName: t('manager.columns.date'), 
       width: 140,
       valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString() : ''
     },
-    { field: 'invoiceNumber', headerName: 'Invoice No.', flex: 1 },
+    { field: 'invoiceNumber', headerName: t('manager.columns.invoiceNo'), flex: 1 },
     { 
       field: 'outstandingAmount', 
-      headerName: 'Outstanding', 
+      headerName: t('manager.columns.outstanding'), 
       width: 150,
       type: 'numericColumn',
       valueFormatter: (p) => data ? formatAmount(parseFloat(p.value), data.currencyCode) : ''
     },
     { 
       field: 'pendingAllocation', 
-      headerName: 'Allocated', 
+      headerName: t('manager.columns.allocated'), 
       width: 150,
       type: 'numericColumn',
       valueFormatter: (p) => p.value > 0 && data ? formatAmount(p.value, data.currencyCode) : ''
     },
     {
-      headerName: 'Allocate?',
+      headerName: t('manager.columns.allocate'),
       cellRenderer: ToggleCell,
       width: 100,
       suppressSizeToFit: true,
       sortable: false,
       filter: false,
     }
-  ], [data]);
+  ], [data, t]);
 
   const totalAllocatedNow = outstandingInvoices.reduce((sum, i) => sum + i.pendingAllocation, 0);
   const remainingToAllocate = data ? parseFloat(data.unallocatedAmount) - totalAllocatedNow : 0;
@@ -275,10 +275,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         submitImmediately: true,
       };
       await apiMutate('/api/payments', 'POST', payload);
-      toast.success('Payment created and posted successfully');
+      toast.success(t('manager.messages.paymentCreated'));
       onSaved();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create payment');
+      toast.error(err.message || t('manager.messages.failedToCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -289,7 +289,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     setSubmitting(true);
     try {
       await apiMutate(`/api/payments/${paymentId}/submit`, 'PATCH', {});
-      toast.success('Payment submitted and posted to GL');
+      toast.success(t('manager.messages.paymentSubmitted'));
       loadPayment();
       onSaved(false);
     } catch (err: any) {
@@ -304,15 +304,15 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     const isDraft = data?.stateCode === PAYMENT_STATE.DRAFT;
     const message = isDraft 
-      ? 'Are you sure you want to delete this draft payment?' 
-      : 'Are you sure you want to reverse this payment? This will create a reversing GL entry.';
+      ? t('manager.messages.deleteDraftConfirm') 
+      : t('manager.messages.reversePaymentConfirm');
     
     if (!confirm(message)) return;
     
     setSubmitting(true);
     try {
       await apiMutate(`/api/payments/${paymentId}/cancel`, 'PATCH', {});
-      toast.success('Payment cancelled');
+      toast.success(t('manager.messages.paymentCancelled'));
       loadPayment();
       onSaved(); // Refresh grid
     } catch (err: any) {
@@ -344,14 +344,14 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     // Check total allocation doesn't exceed unallocated
     const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
     if (totalAllocated > parseFloat(data?.unallocatedAmount || '0')) {
-      toast.error('Total allocation exceeds unallocated amount');
+      toast.error(t('manager.messages.allocationExceedsUnallocated'));
       return;
     }
 
     setSubmitting(true);
     try {
       await apiMutate(`/api/payments/${paymentId}/allocate`, 'PATCH', { allocations });
-      toast.success('Allocations saved');
+      toast.success(t('manager.messages.allocationsSaved'));
       loadPayment();
       onSaved(false);
     } catch (err: any) {
@@ -394,8 +394,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               disabled={submitting}
               className="btn btn-secondary btn-sm"
             >
-              Reverse
-            </button>
+              {t('manager.buttons.reverse')}</button>
           )}
           {(parseFloat(data?.unallocatedAmount || '0') > 0 || isAllocating) && (
             <button 
@@ -419,16 +418,18 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               onClick={onPrev} 
               disabled={!onPrev}
               className="btn btn-secondary btn-sm p-1 min-w-0"
-              title="Previous Payment"
+              title={t('manager.buttons.previousPayment')}
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]">chevron_left</span>
             </button>
             <button 
               onClick={onNext} 
               disabled={!onNext}
               className="btn btn-secondary btn-sm p-1 min-w-0"
-              title="Next Payment"
+              title={t('manager.buttons.nextPayment')}
             >
+              {/* eslint-disable-next-line i18next/no-literal-string */}
               <span className="material-symbols-outlined text-[18px]">chevron_right</span>
             </button>
           </div>
@@ -441,8 +442,8 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     <SlideOver
       isOpen={true}
       onClose={onClose}
-      title={paymentId ? (data?.paymentNumber || '...') : 'New Payment Entry'}
-      subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${data.paymentType === 'receive' ? 'Customer Receipt' : 'Supplier Payment'}` : undefined}
+      title={paymentId ? (data?.paymentNumber || '...') : t('manager.newEntry')}
+      subtitle={paymentId && data ? `${new Date(data.paymentDate).toLocaleDateString()} · ${data.paymentType === 'receive' ? t('manager.options.customerReceipt') : t('manager.options.supplierPayment')}` : undefined}
       actions={paymentId ? actionsContent : undefined}
       width="max-w-3xl"
       footer={!paymentId ? (
@@ -462,6 +463,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     >
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 opacity-50">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined animate-spin text-3xl mb-2">sync</span>
             <p className="text-sm font-medium">{t('loadingEllipsis')}</p>
           </div>
@@ -471,7 +473,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
               <form onSubmit={e => e.preventDefault()} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Type</label>
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.type')}</label>
                     <select 
                       className="input w-full"
                       value={form.paymentType}
@@ -486,28 +488,28 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       }}
                       required
                     >
-                      <option value="receive">Customer Receipt</option>
-                      <option value="pay">Supplier Payment</option>
+                      <option value="receive">{t('manager.options.customerReceipt')}</option>
+                      <option value="pay">{t('manager.options.supplierPayment')}</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Mode</label>
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.mode')}</label>
                     <select 
                       className="input w-full"
                       value={form.modeOfPayment}
                       onChange={e => setForm({...form, modeOfPayment: e.target.value})}
                       required
                     >
-                      <option value="Cash">Cash</option>
-                      <option value="EFT">EFT / Wire</option>
-                      <option value="Credit Card">Credit Card</option>
-                      <option value="Cheque">Cheque</option>
+                      <option value="Cash">{t('manager.options.cash')}</option>
+                      <option value="EFT">{t('manager.options.eft')}</option>
+                      <option value="Credit Card">{t('manager.options.creditCard')}</option>
+                      <option value="Cheque">{t('manager.options.cheque')}</option>
                     </select>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">GL Bank Customer</label>
+                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.glBank')}</label>
                   <GLAccountSelect 
                     value={form.glAccountBank}
                     onChange={(val, acc) => setForm({
@@ -520,9 +522,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   />
                   {form.glAccountBank && (
                     <div className="mt-1.5 flex items-center gap-1.5 px-1">
+                      {/* eslint-disable-next-line i18next/no-literal-string */}
                       <span className="material-symbols-outlined text-[14px] text-[var(--text-muted)]">payments</span>
                       <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wider">
-                        Settlement Currency: <span className="text-[var(--accent)]">{form.currencyCode}</span>
+                        {t('manager.labels.settlementCurrency')}: <span className="text-[var(--accent)]">{form.currencyCode}</span>
                       </span>
                     </div>
                   )}
@@ -557,7 +560,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Amount</label>
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.amount')}</label>
                     <div className="relative">
                       <input 
                         type="number"
@@ -566,7 +569,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                         value={form.totalAmount}
                         onChange={e => setForm({...form, totalAmount: e.target.value})}
                         required
-                        placeholder="0.00"
+                        placeholder={t('manager.placeholders.amount')}
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold opacity-40">
                         {form.currencyCode}
@@ -574,7 +577,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Date</label>
+                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.date')}</label>
                     <input 
                       type="date"
                       className="input w-full"
@@ -586,13 +589,13 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">Reference / Memo</label>
+                  <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">{t('manager.labels.reference')}</label>
                   <input 
                     type="text"
                     className="input w-full"
                     value={form.referenceNumber}
                     onChange={e => setForm({...form, referenceNumber: e.target.value})}
-                    placeholder="e.g. Check #, Wire Ref"
+                    placeholder={t('manager.placeholders.reference')}
                   />
                 </div>
               </form>            ) : (
@@ -603,23 +606,23 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     <div className="card space-y-3 p-4">
                       <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Party</span>
+                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.party')}</span>
                           <span className="text-[#041627] font-medium">{data?.partyName || '—'}</span>
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Status</span>
+                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.status')}</span>
                           <StateBadge state={data?.stateCode as ValidState} />
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Mode of Payment</span>
+                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.mode')}</span>
                           <span className="text-[#041627] font-medium">{data?.modeOfPayment}</span>
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Reference / Memo</span>
+                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.reference')}</span>
                           <span className="text-[#041627]">{data?.referenceNumber || '—'}</span>
                         </div>
                         <div>
-                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Unallocated Amount</span>
+                          <span className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{t('manager.labels.unallocatedAmount')}</span>
                           <span className="text-[var(--accent)] font-bold">{formatAmount(parseFloat(data?.unallocatedAmount || '0'), data?.currencyCode || baseCurrency)}</span>
                         </div>
                       </div>
@@ -637,10 +640,10 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                             <table className="w-full text-sm text-left">
                               <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                                 <tr>
-                                  <th className="px-5 py-3">Customer</th>
-                                  <th className="px-5 py-3 text-right">Debit</th>
-                                  <th className="px-5 py-3 text-right">Credit</th>
-                                  <th className="px-5 py-3">Memo</th>
+                                  <th className="px-5 py-3">{t('manager.columns.customer')}</th>
+                                  <th className="px-5 py-3 text-right">{t('manager.columns.debit')}</th>
+                                  <th className="px-5 py-3 text-right">{t('manager.columns.credit')}</th>
+                                  <th className="px-5 py-3">{t('manager.columns.memo')}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
@@ -664,7 +667,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                 {/* Totals Row */}
                                 <tr className="bg-[#f8f9fa] border-t-2 border-gray-200">
                                   <td className="px-5 py-3 text-right font-bold text-[#041627] text-xs uppercase tracking-wider">
-                                    Total
+                                    {t('manager.messages.total')}
                                   </td>
                                   <td className="px-5 py-3 text-right font-mono font-bold text-[#041627]">
                                     {formatAmount(journalEntry.lines.reduce((s: number, l: any) => s + parseFloat(l.debit || '0'), 0), journalEntry.currencyCode)}
@@ -678,7 +681,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                             </table>
                           ) : (
                             <div className="p-8 text-center text-gray-500 text-sm">
-                              No ledger lines found for this entry.
+                              {t('manager.messages.noLedgerLines')}
                             </div>
                           )}
                         </div>
@@ -689,16 +692,17 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                     {data?.allocations && data.allocations.length > 0 && (
                       <div className="mt-6">
                         <h3 className="section-heading mb-3">
+                          {/* eslint-disable-next-line i18next/no-literal-string */}
                           <span className="material-symbols-outlined">history</span>
-                          Allocation History
+                          {t('manager.messages.allocationHistory')}
                         </h3>
                         <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                           <table className="w-full text-sm text-left">
                             <thead className="bg-[#f8f9fa] border-b border-gray-200 text-[#041627] font-semibold text-xs uppercase tracking-wider">
                               <tr>
-                                <th className="px-5 py-3">Invoice</th>
-                                <th className="px-5 py-3">Type</th>
-                                <th className="px-5 py-3 text-right">Allocated Amount</th>
+                                <th className="px-5 py-3">{t('manager.columns.invoice')}</th>
+                                <th className="px-5 py-3">{t('manager.columns.type')}</th>
+                                <th className="px-5 py-3 text-right">{t('manager.columns.allocatedAmount')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -733,34 +737,35 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                   <div className="flex-1 flex flex-col min-h-0 gap-6 h-full min-h-[600px]">
                     {loadingInvoices ? (
                       <div className="flex flex-col items-center justify-center flex-1 opacity-50">
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
                         <span className="material-symbols-outlined animate-spin text-3xl mb-4">sync</span>
-                        <p className="text-sm font-medium">Loading outstanding invoices...</p>
+                        <p className="text-sm font-medium">{t('manager.messages.loadingInvoices')}</p>
                       </div>
                     ) : outstandingInvoices.length > 0 ? (
                       <>
                         {data && (
                           <div className="grid grid-cols-4 gap-4">
                             <div className="p-3 bg-white rounded-lg border border-gray-200">
-                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Payment Unallocated</div>
+                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('manager.labels.paymentUnallocated')}</div>
                               <div className="text-xl font-bold mt-0.5 text-gray-900">
                                 {formatAmount(parseFloat(data.unallocatedAmount), data.currencyCode)}
                               </div>
                             </div>
                             <div className="p-3 bg-white rounded-lg border border-gray-200">
-                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Total Outstanding</div>
+                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('manager.labels.totalOutstanding')}</div>
                               <div className="text-xl font-bold mt-0.5 text-gray-900">
                                 {formatAmount(outstandingInvoices.reduce((sum, i) => sum + parseFloat(i.outstandingAmount), 0), data.currencyCode)}
                               </div>
                             </div>
                             <div className="p-3 bg-white rounded-lg border border-gray-200">
-                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Allocated Now</div>
+                              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{t('manager.labels.allocatedNow')}</div>
                               <div className="text-xl font-bold mt-0.5 text-gray-900">
                                 {formatAmount(totalAllocatedNow, data.currencyCode)}
                               </div>
                             </div>
                             <div className={`p-3 rounded-lg border ${remainingToAllocate >= 0 ? 'bg-[#f0f8f6] border-[#006b5c]/30' : 'bg-red-50 border-red-200'}`}>
                               <div className={`text-[10px] uppercase tracking-wider font-bold ${remainingToAllocate >= 0 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
-                                Remaining to Allocate
+                                {t('manager.labels.remainingToAllocate')}
                               </div>
                               <div className={`text-xl font-bold mt-0.5 ${remainingToAllocate >= 0 ? 'text-[#006b5c]' : 'text-[var(--danger)]'}`}>
                                 {formatAmount(remainingToAllocate, data.currencyCode)}
@@ -778,7 +783,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                             domLayout="autoHeight"
                             rowSelection="single"
                             onSelectionChanged={(rows) => setSelectedInvoice(rows[0] || null)}
-                            context={{ handleToggle }}
+                            context={{ handleToggle, t }}
                             renderHeader={({ searchInput }) => (
                               <div className="flex flex-col bg-white border-b border-gray-100">
                                 <div className="flex items-center justify-between px-4 py-3">
@@ -790,16 +795,16 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                                       onClick={() => setPartialModalOpen(true)}
                                       disabled={!selectedInvoice}
                                       className="btn btn-secondary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                      title={!selectedInvoice ? "Select a row to allocate partially" : ""}
+                                      title={!selectedInvoice ? t('manager.messages.selectRowForPartial') : ""}
                                     >
-                                      Partial
+                                      {t('manager.messages.partial')}
                                     </button>
                                     <button
                                       onClick={submitAllocations}
                                       disabled={submitting || totalAllocatedNow <= 0 || remainingToAllocate < 0}
                                       className="btn btn-primary btn-sm"
                                     >
-                                      {submitting ? '...' : 'Save Allocations'}
+                                      {submitting ? t('submitting') : t('manager.buttons.saveAllocations')}
                                     </button>
                                   </div>
                                 </div>
@@ -810,8 +815,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
                       </>
                     ) : (
                       <div className="flex flex-col items-center justify-center flex-1 opacity-50 border border-dashed border-gray-300 rounded-xl m-4 bg-gray-50/50">
-                        <span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long</span>
-                        <p className="text-sm font-medium text-gray-600">No outstanding invoices to allocate</p>
+                        {/* eslint-disable-next-line i18next/no-literal-string */}
+                          <span className="material-symbols-outlined text-4xl mb-4 text-gray-400">receipt_long</span>
+                        <p className="text-sm font-medium text-gray-600">{t('manager.messages.noOutstandingInvoices')}</p>
                       </div>
                     )}
                   </div>

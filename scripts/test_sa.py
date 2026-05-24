@@ -5,7 +5,7 @@ from sqlalchemy.engine import URL
 host = "13.236.59.199"
 database = "vau2010"
 user = "mpg"
-password = "@ThisIsForTesting26##"
+password = "<REDACTED>"
 port = "1433"
 
 url = URL.create(
@@ -28,7 +28,7 @@ except Exception as e:
     print("SQLAlchemy connection failed:", e)
 
 # Test raw string without query params
-url2 = f"mssql+pymssql://mpg:%40ThisIsForTesting26%23%23@13.236.59.199:1433/vau2010"
+url2 = f"mssql+pymssql://mpg:<REDACTED>@13.236.59.199:1433/vau2010"
 try:
     engine2 = create_engine(url2)
     with engine2.connect() as conn:

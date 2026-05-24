@@ -53,49 +53,16 @@ export default function ReceivingReturnsPage() {
 
     return (
         <>
-            <div className="h-full flex flex-col relative p-4 lg:p-6">
-                <div className="flex-1 min-h-0 flex flex-col z-10 bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border)] overflow-hidden transition-all">
-                    <DataGrid 
-                        refreshTrigger={refreshKey}
-                        endpoint={gridEndpoint} 
-                        columns={gridColumns} 
-                        gridKey="returns-receiving-list"
-                        fetchAll
-                        rowIdField="returnId"
-                        onRowClicked={handleReceive}
-                        renderHeader={({ searchInput, rowCount, loading }) => (
-                            <div className="flex flex-col gap-3 px-6 py-4 border-b border-[var(--border)]">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4 flex-1">
-                                        <h2 className="text-[1.3rem] font-bold tracking-tight text-[var(--text-primary)] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                            Customer Returns
-                                        </h2>
-                                        <div className="h-5 w-px bg-[var(--border)] shrink-0 mx-2"></div>
-                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-secondary)] rounded-lg shrink-0">
-                                            <span className="text-[11px] font-bold text-[var(--text-primary)] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                                {tCommon('grid.rowCountLabel')}
-                                            </span>
-                                            <span className="text-[11px] font-bold text-[var(--accent)]">
-                                                {loading ? '...' : rowCount.toLocaleString()}
-                                            </span>
-                                        </div>
-                                        
-                                        <div className="flex-1 ml-4 max-w-md">
-                                            {searchInput}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-3 shrink-0 ml-4">
-                                        <Link href="/receiving" className="btn btn-secondary btn-sm">
-                                            Back to Receipts
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    />
-                </div>
-            </div>
+            <DataGrid 
+                refreshTrigger={refreshKey}
+                endpoint={gridEndpoint} 
+                columns={gridColumns} 
+                gridKey="returns-receiving-list"
+                fetchAll
+                rowIdField="returnId"
+                onRowClicked={handleReceive}
+                pageTitle="Customer Returns"
+            />
             
             <ReceiveReturnSlideOver 
                 isOpen={slideOverOpen} 

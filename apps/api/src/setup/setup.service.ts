@@ -642,20 +642,24 @@ export class SetupService {
         ? 'true'
         : 'false';
 
-      const venvPython =
-        process.platform === 'win32'
-          ? '".venv\\Scripts\\python"'
-          : '".venv/bin/python"';
-      this.log(
-        jobId,
-        `Running ${isOdoo ? 'Odoo' : 'ABM'} Extraction (bypassing make to preserve passwords)...`,
-      );
-      await this.runCommandStream(
-        jobId,
-        venvPython,
-        [`pipelines/${isOdoo ? 'odoo' : 'abm'}_extract/pipeline.py`],
-        envOverride,
-      );
+      if (!dto.skipExtraction) {
+        const venvPython =
+          process.platform === 'win32'
+            ? '".venv\\Scripts\\python"'
+            : '".venv/bin/python"';
+        this.log(
+          jobId,
+          `Running ${isOdoo ? 'Odoo' : 'ABM'} Extraction (bypassing make to preserve passwords)...`,
+        );
+        await this.runCommandStream(
+          jobId,
+          venvPython,
+          [`pipelines/${isOdoo ? 'odoo' : 'abm'}_extract/pipeline.py`],
+          envOverride,
+        );
+      } else {
+        this.log(jobId, `Skipping ${isOdoo ? 'Odoo' : 'ABM'} Extraction...`);
+      }
 
       this.log(jobId, 'Running Transformations & Report...');
       await this.runCommandStream(

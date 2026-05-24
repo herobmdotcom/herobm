@@ -105,7 +105,13 @@ export interface DataGridProps<T> {
   /** Whether to show a toggle to include archived records */
   /** Whether to show a toggle to include archived records */
   showArchivedToggle?: boolean;
-  /** If provided, customizes the entire top bar rendering */
+  /** Built-in responsive header: The title of the page. If provided, DataGrid automatically wraps itself in the standard page layout. */
+  pageTitle?: string | React.ReactNode;
+  /** Built-in responsive header: Custom actions (e.g., Create Button) */
+  headerActions?: React.ReactNode;
+  /** Built-in responsive header: Custom filters (e.g., date dropdown) */
+  headerFilters?: React.ReactNode;
+  /** If provided, customizes the entire top bar rendering (mutually exclusive with pageTitle) */
   renderHeader?: (props: {
     searchInput: React.ReactNode;
     optionsButton: React.ReactNode;
@@ -149,18 +155,101 @@ export function numericFormatter(params: { value: unknown }) {
     });
 }
 
+function getCellValue<T>(col: ColDef<T>, row: T) {
+  let rawValue = col.field ? (row as any)[col.field] : undefined;
+  if (col.valueGetter) {
+    if (typeof col.valueGetter === 'function') {
+      rawValue = col.valueGetter({ data: row, getValue: () => undefined } as any);
+    }
+  }
+
+  let formattedValue = rawValue;
+  if (col.valueFormatter) {
+    if (typeof col.valueFormatter === 'function') {
+      formattedValue = col.valueFormatter({ value: rawValue, data: row } as any);
+    }
+  }
+
+  if (col.cellRenderer) {
+    if (typeof col.cellRenderer === 'function') {
+      const Renderer = col.cellRenderer as any;
+      return <Renderer value={rawValue} data={row} />;
+    }
+  }
+
+  return formattedValue ?? rawValue;
+}
+
+function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns: ColDef<T>[]; onRowClicked?: (row: T) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const visibleCols = columns.filter(c => !c.hide);
+  if (visibleCols.length === 0) return null;
+
+  const primaryCol = visibleCols[0];
+  const primaryVal = getCellValue(primaryCol, row);
+
+  const secondaryCol = visibleCols.length > 1 ? visibleCols[1] : null;
+  const secondaryVal = secondaryCol ? getCellValue(secondaryCol, row) : null;
+
+  const restCols = visibleCols.slice(2);
+  const validRestCols = restCols.map(col => ({ col, val: getCellValue(col, row) })).filter(item => item.val != null && item.val !== '');
+
+  const displayLimit = 3;
+  const isTruncated = validRestCols.length > displayLimit;
+  const displayedCols = expanded ? validRestCols : validRestCols.slice(0, displayLimit);
+
+  return (
+    <div 
+      className={`p-4 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200 flex flex-col gap-3 transition-transform ${onRowClicked ? 'cursor-pointer active:scale-[0.98]' : ''}`}
+      onClick={() => onRowClicked?.(row)}
+    >
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          {secondaryVal && <div className="text-[11px] text-slate-500 font-bold tracking-wider uppercase mb-1">{primaryVal}</div>}
+          <div className="text-[15px] font-bold text-[#041627] leading-tight">{secondaryVal || primaryVal}</div>
+        </div>
+      </div>
+      
+      {displayedCols.length > 0 && (
+        <div className="flex flex-col gap-2 pt-3 border-t border-slate-100">
+          {displayedCols.map(({col, val}, idx) => (
+            <div key={col.field || col.headerName || idx} className="flex justify-between items-start gap-4 text-[13px]">
+              <span className="text-slate-500">{col.headerName}</span>
+              <span className="font-medium text-[#041627] text-right">{val}</span>
+            </div>
+          ))}
+          {isTruncated && (
+            <div 
+              className="text-[13px] font-bold text-[var(--accent)] mt-1 pt-2 border-t border-slate-50 flex items-center justify-center gap-1 cursor-pointer hover:brightness-110"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
+            >
+              {expanded ? 'Show Less' : `+ ${validRestCols.length - displayLimit} More`}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DataGrid<T>({
   endpoint,
   rowData,
   columns,
-  gridKey,
+  gridKey = "default-grid",
   searchPlaceholder,
-  exportFileName,
+  exportFileName = "export",
   apiFetch,
   onError,
   onRowClicked,
-  fetchAll,
-  showArchivedToggle,
+  fetchAll = false,
+  showArchivedToggle = false,
+  pageTitle,
+  headerActions,
+  headerFilters,
   renderHeader,
   gridTheme = "ag-theme-alpine-dark",
   initialSearch,
@@ -476,11 +565,14 @@ export default function DataGrid<T>({
         placeholder={searchPlaceholder ?? "Search…"}
         value={search}
         onChange={(e) => {
-          setSearch(e.target.value);
+          setSearch(e.target.value.trimStart());
           setPage(1);
         }}
         onFocus={(e) => e.target.style.borderColor = "var(--accent)"}
-        onBlur={(e) => e.target.style.borderColor = "var(--border)"}
+        onBlur={(e) => {
+          e.target.style.borderColor = "var(--border)";
+          setSearch(e.target.value.trim());
+        }}
       />
     </div>
   );
@@ -715,10 +807,134 @@ export default function DataGrid<T>({
         </div>
   );
 
+
+  const gridContent = (
+    <div className="flex-1 lg:min-h-0 flex flex-col relative w-full lg:h-full">
+      {!fetchAll && (
+        <div className="flex gap-1 ml-auto shrink-0 mb-3 absolute top-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-slate-100">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <span aria-hidden>←</span>{' '}{tGrid('prev')}
+          </button>
+          <span
+            className="px-3 py-1.5 text-xs"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {tGrid('page', { page: String(page) })}
+          </span>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!data || data.length < limit}
+            className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            {tGrid('next')}{' '}<span aria-hidden>→</span>
+          </button>
+        </div>
+      )}
+      <div className="hidden lg:block flex-1 min-h-0 w-full h-full relative">
+        <div className={`${gridTheme} absolute inset-0`}>
+          <AgGridReact<T>
+            ref={gridRef}
+            rowData={data}
+            columnDefs={enhancedColumns}
+            defaultColDef={defaultColDef}
+            animateRows
+            rowSelection={rowSelection}
+            isRowSelectable={isRowSelectable}
+            context={context}
+            {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField as keyof T]) } : {})}
+            suppressScrollOnNewData={true}
+            initialState={savedInitialState}
+            onGridReady={onGridReady}
+            onFirstDataRendered={onFirstDataRendered}
+            onStateUpdated={onStateUpdated}
+            onModelUpdated={(e) => setDisplayedRowCount(e.api.getDisplayedRowCount())}
+            onRowClicked={onRowClicked ? handleRowClicked : undefined}
+            onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged!(e.api.getSelectedRows()) : undefined}
+            tooltipShowDelay={300}
+            {...(domLayout ? { domLayout } : {})}
+            {...(fetchAll ? { quickFilterText: search } : {})}
+          />
+        </div>
+      </div>
+
+      {/* Mobile Generic Card View */}
+      <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24">
+        {data?.map((row, idx) => {
+          const key = rowIdField ? String((row as any)[rowIdField as keyof T]) : idx;
+          return <GenericMobileCard key={key} row={row} columns={enhancedColumns} onRowClicked={onRowClicked} />;
+        })}
+      </div>
+    </div>
+  );
+
+  if (pageTitle) {
+    return (
+      <div className="lg:h-full flex flex-col relative p-4 lg:p-6">
+        <div className="relative lg:h-full flex flex-col">
+          <div className="flex-1 lg:min-h-0 flex flex-col z-10 lg:bg-white lg:rounded-xl lg:shadow-[0_2px_8px_rgba(0,0,0,0.04)] lg:border lg:border-[rgba(196,198,205,0.4)] lg:overflow-hidden transition-all">
+             <div className="flex flex-col lg:flex-row lg:items-center justify-between lg:px-6 py-4 gap-4">
+                <div className="flex items-center justify-between lg:justify-start gap-4 w-full lg:w-auto">
+                  <div className="flex items-center gap-4">
+                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                      {pageTitle}
+                    </h2>
+                    <div className="hidden lg:block h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0"></div>
+                    <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
+                      <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                        {tGrid('rowCountLabel')}
+                      </span>
+                      <span className="text-[11px] font-bold text-[#006b5c]">
+                        {loading ? '...' : displayedRowCount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  {headerActions && (
+                    <div className="lg:hidden shrink-0">
+                      {headerActions}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-3 w-full lg:w-auto relative">
+                  <div className="flex-1 lg:max-w-[280px] lg:ml-6 transition-all duration-200 focus-within:absolute focus-within:inset-y-0 focus-within:left-0 focus-within:right-0 focus-within:z-20 lg:focus-within:static bg-[#f8fafc] lg:bg-transparent rounded-lg">
+                    {searchInputNode}
+                  </div>
+                  <div className="shrink-0 flex items-center gap-3">
+                    {headerFilters}
+                    {optionsButtonNode}
+                    {headerActions && (
+                      <div className="hidden lg:block shrink-0">
+                        {headerActions}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+             {gridContent}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex flex-col flex-1 min-h-0 overflow-hidden ${renderHeader ? '' : 'gap-4'}`}>
+    <div className="flex flex-col lg:h-full lg:bg-white relative">
       {renderHeader ? (
-        renderHeader({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: displayedRowCount, loading })
+        renderHeader!({ searchInput: searchInputNode, optionsButton: optionsButtonNode, rowCount: displayedRowCount, loading })
       ) : (
         <div className="flex items-center gap-3">
           {searchInputNode}
@@ -728,66 +944,7 @@ export default function DataGrid<T>({
           {optionsButtonNode}
         </div>
       )}
-      <div className="flex-1 min-h-0 flex flex-col relative w-full h-full">
-        {!fetchAll && (
-          <div className="flex gap-1 ml-auto shrink-0 mb-3 absolute top-0 right-0 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-lg shadow-sm border border-slate-100">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              <span aria-hidden>←</span>{' '}{tGrid('prev')}
-            </button>
-            <span
-              className="px-3 py-1.5 text-xs"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {tGrid('page', { page: String(page) })}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!data || data.length < limit}
-              className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {tGrid('next')}{' '}<span aria-hidden>→</span>
-            </button>
-          </div>
-        )}
-        <div className={`${gridTheme} flex-1 min-h-0 w-full h-full`}>
-          <AgGridReact<T>
-          ref={gridRef}
-          rowData={data}
-          columnDefs={enhancedColumns}
-          defaultColDef={defaultColDef}
-          animateRows
-          rowSelection={rowSelection}
-          isRowSelectable={isRowSelectable}
-          context={context}
-          {...(rowIdField ? { getRowId: (params) => String(params.data[rowIdField]) } : {})}
-          suppressScrollOnNewData={true}
-          initialState={savedInitialState}
-          onGridReady={onGridReady}
-          onFirstDataRendered={onFirstDataRendered}
-          onStateUpdated={onStateUpdated}
-          onModelUpdated={(e) => setDisplayedRowCount(e.api.getDisplayedRowCount())}
-          onRowClicked={onRowClicked ? handleRowClicked : undefined}
-          onSelectionChanged={onSelectionChanged ? (e: SelectionChangedEvent<T>) => onSelectionChanged(e.api.getSelectedRows()) : undefined}
-          tooltipShowDelay={300}
-          {...(domLayout ? { domLayout } : {})}
-          {...(fetchAll ? { quickFilterText: search } : {})}
-        />
-      </div>
-      </div>
+      {gridContent}
     </div>
   );
 }

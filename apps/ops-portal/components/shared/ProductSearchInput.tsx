@@ -60,7 +60,8 @@ export default function ProductSearchInput({
   const [results, setResults] = useState<Product[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const searchProducts = useCallback(async (term: string) => {
+  const searchProducts = useCallback(async (rawTerm: string) => {
+    const term = rawTerm.trim();
     if (!term || term.length < 2) { setResults([]); return; }
     try {
       const data = await apiFetch<{ data: Product[] }>(
@@ -97,12 +98,16 @@ export default function ProductSearchInput({
         disabled={disabled}
         value={search}
         onChange={(e) => {
-          setSearch(e.target.value);
+          const val = e.target.value.trimStart();
+          setSearch(val);
           setShowDropdown(true);
-          debouncedSearch(e.target.value);
+          debouncedSearch(val);
         }}
         onFocus={() => setShowDropdown(true)}
-        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+        onBlur={(e) => {
+          setSearch(e.target.value.trim());
+          setTimeout(() => setShowDropdown(false), 200);
+        }}
       />
       {showDropdown && search && (
         <div

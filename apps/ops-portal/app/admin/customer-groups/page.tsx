@@ -146,7 +146,7 @@ export default function AccountGroupsAdmin() {
             <tr>
               <th style={{ width: 100 }}>{tCommon('code')}</th>
               <th>{tCommon('name')}</th>
-              <th style={{ width: 140 }}>Discount Rules</th>
+              <th style={{ width: 140 }}>{t('discountRules')}</th>
               <th style={{ width: 140 }}>{tCommon('defArAccount')}</th>
               <th style={{ width: 140 }}>{tCommon('defRevAccount')}</th>
               <th style={{ width: 140 }}>{tCommon('defCostCenter')}</th>
@@ -164,7 +164,7 @@ export default function AccountGroupsAdmin() {
                   <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} placeholder={t('placeholders.name')} />
                 </td>
                 <td>
-                  <span className="text-xs text-muted italic">Save to manage</span>
+                  <span className="text-xs text-muted italic">{t('saveToManage')}</span>
                 </td>
                 <td>
                   <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
@@ -225,7 +225,7 @@ export default function AccountGroupsAdmin() {
                     <input className="input" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                   </td>
                   <td>
-                    <span className="text-xs text-muted italic">Save to manage</span>
+                    <span className="text-xs text-muted italic">{t('saveToManage')}</span>
                   </td>
                   <td>
                     <select className="input font-mono text-xs" value={editForm.defaultArAccountId || ''} onChange={e => setEditForm({...editForm, defaultArAccountId: e.target.value || null})}>
@@ -275,11 +275,9 @@ export default function AccountGroupsAdmin() {
                       className="btn btn-secondary btn-xs relative"
                       onClick={() => setDiscountGroup(g)}
                     >
-                      Manage
+                      {t('manage')}
                       {matrixRules.some((r: any) => r.customerGroupId === g.customerGroupId) && (
-                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 ml-2"></span>
                       )}
                     </button>
                   </td>

@@ -46,7 +46,8 @@ export default function UniversalSearch() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const search = useCallback(async (term: string) => {
+  const search = useCallback(async (rawTerm: string) => {
+    const term = rawTerm.trim();
     if (!term || term.length < 2) {
       setResults([]);
       return;
@@ -138,13 +139,15 @@ export default function UniversalSearch() {
           placeholder={t('placeholder')}
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const val = e.target.value.trimStart();
+            setQuery(val);
             setShowDropdown(true);
             setActiveIndex(-1);
-            debouncedSearch(e.target.value);
+            debouncedSearch(val);
           }}
           onFocus={() => setShowDropdown(true)}
           onKeyDown={handleKeyDown}
+          onBlur={(e) => setQuery(e.target.value.trim())}
           autoComplete="off"
         />
       </div>

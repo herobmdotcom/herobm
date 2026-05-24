@@ -43,7 +43,15 @@ export default function Sidebar() {
         },
         { href: '/inventory/putaway', label: 'Putaway', icon: 'pallet' },
         { href: '/inventory/picking', label: t('items.picking', { defaultValue: 'Picking' }), icon: 'inventory' },
-        { href: '/inventory/shipping', label: t('items.shipping', { defaultValue: 'Shipping' }), icon: 'local_shipping' },
+        { 
+          href: '/inventory/shipping', 
+          label: t('items.shipping', { defaultValue: 'Shipping' }), 
+          icon: 'local_shipping',
+          subItems: [
+            { href: '/inventory/shipping', label: 'Customer Shipments' },
+            { href: '/shipments/returns', label: 'Supplier Returns' }
+          ]
+        },
       ],
     },
     {

@@ -105,25 +105,26 @@ export default function ReallocateModal({
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-md shadow-xl w-full max-w-md flex flex-col">
         <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-[var(--bg-secondary)] rounded-t-md">
           <h2 className="text-lg font-bold text-[var(--text-primary)] font-['Manrope']">
-            Reallocate Location
+            {t('reallocateModal.title')}
           </h2>
           <button
             onClick={onClose}
             className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
-            ✕
+            &times;
           </button>
         </div>
 
         <div className="p-4 flex flex-col gap-4">
           <p className="text-sm text-[var(--text-secondary)]">
-            You are reallocating <strong>{selectedDemands.length}</strong> demand line(s).
-            This will update the Sales Order line's fulfillment location and reset any existing PO allocations for these lines.
+            {t('reallocateModal.warning1')}<strong>{selectedDemands.length}</strong>{t('reallocateModal.warning2')}
+            <br />
+            {t('reallocateModal.warning3')}
           </p>
 
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
-              New Fulfillment Location
+              {t('reallocateModal.newLocation')}
             </label>
             <select
               value={selectedLocationId}
@@ -146,7 +147,7 @@ export default function ReallocateModal({
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded bg-white hover:bg-gray-50 transition-colors"
             disabled={isSubmitting}
           >
-            Cancel
+            {t('reallocateModal.cancel')}
           </button>
           <button
             onClick={handleSubmit}

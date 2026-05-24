@@ -70,7 +70,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
   }
 
   if (!invoice) {
-    return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">Invoice not found.</div>;
+    return <div className="flex items-center justify-center p-12 text-gray-500 text-sm">{tCommon('errors.failedToLoadOrder', { defaultValue: 'Invoice not found.' })}</div>;
   }
 
   const isEditable = invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT;
@@ -82,10 +82,10 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
       return (
         <div className="flex items-center justify-between gap-2 h-full w-full">
           <div className="flex flex-col gap-1">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Inventory Asset</span>
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <span style={{ fontWeight: 500, fontSize: 12 }}>PO {line.purchaseOrderNumber}</span>
+            { }
+            <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{t('inventoryAsset')}</span>
+            { }
+            <span style={{ fontWeight: 500, fontSize: 12 }}>{t('poNumberLabel', { number: line.purchaseOrderNumber })}</span>
           </div>
           {isEditable && (
             <button
@@ -94,8 +94,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               style={{ padding: '0 6px', height: 22, fontSize: 11 }}
               title="Change Allocation"
             >
-              {/* eslint-disable-next-line i18next/no-literal-string */}
-              Change
+              {t('buttons.change')}
             </button>
           )}
         </div>
@@ -111,8 +110,8 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             value={line.glAccountId || ''}
             onChange={(e) => updateLine(line.lineId, 'glAccountId', e.target.value)}
           >
-            {/* eslint-disable-next-line i18next/no-literal-string */}
-            <option value="" disabled>Select GL Customer...</option>
+            { }
+            <option value="" disabled>{t('selectGlCustomer')}</option>
             {glAccounts
               .filter(a => a.accountType === 'expense' || a.accountType === 'asset' || a.accountType === 'liability')
               .map((acc) => (
@@ -123,7 +122,6 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
           </select>
         ) : (
           <div className="text-xs truncate">
-            {/* eslint-disable-next-line i18next/no-literal-string */}
             {glAccounts.find(a => a.glAccountId === line.glAccountId)?.name || t('defaultExpense')}
           </div>
         )}
@@ -159,7 +157,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   }} 
                   disabled={saving}
                 >
-                  Cancel
+                  {tCommon('cancel')}
                 </button>
               )}
               {!headerDirty && invoice.stateCode === PURCHASE_INVOICE_STATE.DRAFT && allowedTransitions.includes(PURCHASE_INVOICE_STATE.INVOICED) && (
@@ -168,7 +166,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   onClick={() => changeState(PURCHASE_INVOICE_STATE.INVOICED)} 
                   disabled={saving}
                 >
-                  Approve Invoice
+                  {t('buttons.approveInvoice')}
                 </button>
               )}
             </>
@@ -187,7 +185,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
 
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Supplier
+                {t('labels.supplier')}
               </label>
               {isEditable ? (
                 <div style={{ height: 38 }}>
@@ -209,7 +207,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Supplier Invoice No.
+                {t('columns.supplierInvoiceNumber')}
               </label>
               {isEditable ? (
                 <input
@@ -241,7 +239,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-                Receipt Filename
+                {t('labels.receiptFilename')}
               </label>
               {isEditable ? (
                 <input
@@ -303,16 +301,14 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                   onClick={addBlankLine}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  + Line
+                  {t('addLine')}
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"
                   onClick={addRoundingLine}
                   disabled={saving}
                 >
-                  {/* eslint-disable-next-line i18next/no-literal-string */}
-                  + Rounding Adj
+                  {t('addRoundingAdj')}
                 </button>
                 </>
                 )}
@@ -325,12 +321,12 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 <th style={{ width: 40 }}>#</th>
                 <th style={{ width: 150 }}>{t('columns.product')}</th>
                 <th>{t('columns.description')}</th>
-                {!isMatchingMode && <th style={{ width: 280 }}>Allocation</th>}
+                {!isMatchingMode && <th style={{ width: 280 }}>{t('columns.allocation')}</th>}
                 <th style={{ width: 90, textAlign: 'right' }}>{t('columns.qtyToBill', { defaultValue: 'Qty' })}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('columns.unitPrice')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('columns.amount')}</th>
                 {!isMatchingMode && isEditable && <th style={{ width: 50 }}></th>}
-                {isMatchingMode && <th style={{ width: 70, textAlign: 'center' }}>Status</th>}
+                {isMatchingMode && <th style={{ width: 70, textAlign: 'center' }}>{t('columns.status')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -440,15 +436,18 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                         onClick={() => removeLine(line.lineId)}
                         title="Remove Line"
                       >
-                        {/* eslint-disable-next-line i18next/no-literal-string */}
-                        ✕
+                        { }
+                        {'✕'}
                       </button>
                     </td>
                   )}
                   {isMatchingMode && (
                     <td style={{ textAlign: 'center' }}>
                       {line.matchStatus === MATCH_STATUS.MATCHED ? (
-                        <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--badge-shipped)' }}>✓</span>
+                        <>
+                          { }
+                          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--badge-shipped)' }}>{'✓'}</span>
+                        </>
                       ) : (
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>—</span>
                       )}
@@ -460,7 +459,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
               {(!invoice.lines || invoice.lines.length === 0) && (
                 <tr>
                   <td colSpan={isEditable ? 8 : 7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                    No items
+                    {t('noItems')}
                   </td>
                 </tr>
               )}
@@ -535,8 +534,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-              <h2 className="text-xl font-bold text-gray-900">Invoice Discrepancies</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('invoiceDiscrepancies')}</h2>
               <button onClick={() => setShowDiscrepancyModal(false)} className="text-gray-400 hover:text-gray-600">
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -546,9 +546,9 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Line</th>
-                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Issue Type</th>
-                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">Details</th>
+                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.line')}</th>
+                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.issueType')}</th>
+                      <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">{t('columns.details')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -596,21 +596,20 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
 
       {/* Payment Allocations Card */}
       <div className="card mt-4 p-5">
-        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Payment Allocations</h2>
+        <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">{t('paymentAllocations')}</h2>
         {invoice.allocations && invoice.allocations.length > 0 ? (
           <table className="w-full text-left border-collapse mt-2">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Payment No.</th>
-                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Date</th>
-                <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>Allocated Amount</th>
+                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.paymentNo')}</th>
+                <th className="py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{t('columns.date')}</th>
+                <th className="py-2 text-xs font-semibold text-right" style={{ color: 'var(--text-muted)' }}>{t('columns.allocatedAmount')}</th>
               </tr>
             </thead>
             <tbody>
               {invoice.allocations.map((alloc) => (
                 <tr key={alloc.allocationId} className="border-b border-[var(--border)] last:border-0 hover:bg-[var(--bg-card-hover)] transition-colors">
                   <td className="py-2 text-sm font-medium">
-                    {/* eslint-disable-next-line i18next/no-literal-string */}
                     <span className="text-[var(--accent)] cursor-pointer hover:underline" onClick={() => setSelectedPaymentId(alloc.paymentId)}>
                       {alloc.paymentNumber}
                     </span>
@@ -627,7 +626,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
           </table>
         ) : (
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-            No payments have been allocated to this invoice yet.
+            {t('noPaymentsAllocated')}
           </p>
         )}
       </div>

@@ -38,6 +38,7 @@ export class JournalMeta {
     | 'sales_invoice'
     | 'purchase_invoice'
     | 'sales_credit_note'
+    | 'purchase_debit_note'
     | 'manual'
     | 'adjustment'
     | 'inventory_receipt'

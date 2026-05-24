@@ -1,2353 +1,2740 @@
 {
-  "common": {
-    "save": "Save",
-    "saving": "Saving\u2026",
-    "copying": "Copying\u2026",
-    "by": "by",
-    "add": "Add",
-    "edit": "Edit",
-    "create": "Create",
-    "updated": "Updated",
-    "created": "Created",
-    "deleted": "Deleted",
-    "actions": "Actions",
-    "confirmDelete": "Are you sure you want to delete this item?",
-    "location": "Location",
-    "subtotal": "Subtotal",
-    "tax": "Tax",
-    "total": "Total",
-    "cancel": "Cancel",
-    "submit": "Submit",
-    "delete": "Delete",
-    "dismiss": "dismiss",
-    "system": "System",
-    "loading": "Loading\u2026",
-    "noMatchingResults": "No matching results",
-    "resolving": "Resolving...",
-    "select": "Select",
-    "selectEllipsis": "Select\u2026",
-    "selectNone": "(None)",
-    "none": "(None)",
-    "activityTimeline": "Activity Timeline",
-    "noEvents": "No events recorded",
-    "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
-    "timeline": {
-      "by": "by {actor}"
+  "admin": {
+    "common": {
+      "actions": "Actions",
+      "code": "Code",
+      "defActivity": "Def. Activity",
+      "defApAccount": "Def. AP Customer",
+      "defArAccount": "Def. AR Customer",
+      "defCostCenter": "Def. Cost Center",
+      "defDiscount": "Def. Discount %",
+      "defExpenseAccount": "Def. Expense Customer",
+      "defRevAccount": "Def. Revenue Customer",
+      "errors": {
+        "typeAndDateRequired": "Type and effective date are required"
+      },
+      "financial": "Financial",
+      "name": "Name",
+      "notConfigured": "Not configured",
+      "system": "System"
     },
-    "notesCardHeading": "Notes",
-    "notesCardPlaceholder": "Internal notes",
-    "filters": {
-      "last30Days": "Last 30 Days",
-      "last90Days": "Last 90 Days",
-      "last1Year": "Last 1 Year",
-      "allTime": "All Time"
+    "customerGroups": {
+      "definedGroups": "Defined Groups",
+      "discountRules": "Discount Rules",
+      "manage": "Manage",
+      "newGroup": "+ New Group",
+      "noGroups": "No customer groups defined.",
+      "notConfigured": "Not configured",
+      "placeholders": {
+        "code": "e.g. WHL",
+        "name": "e.g. Wholesale"
+      },
+      "saveToManage": "Save to manage",
+      "subtitle": "Manage group classifications for customer customers",
+      "title": "Customer Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
     },
-    "grid": {
-      "options": "Options",
-      "export": "Export",
-      "includeArchived": "Include Archived",
-      "exportCsv": "Export CSV",
-      "resetColumns": "Reset Columns",
-      "columns": "Columns",
-      "prev": "Prev",
-      "page": "Page {page}",
-      "next": "Next",
-      "rows": "{count} rows",
-      "rowCountLabel": "Rows",
-      "loadingEllipsis": "Loading\u2026"
+    "discountMatrix": {
+      "baseDiscount": "Base Default Discount",
+      "baseDiscountHint": "Applies to all product groups unless overridden below",
+      "discountPercent": "Discount %",
+      "noProductGroupRules": "No product-group-specific overrides defined.",
+      "productGroup": "Product Group",
+      "productGroupRules": "Product Group Overrides",
+      "selectProductGroup": "— Select product group —",
+      "title": "Discount Rules",
+      "toasts": {
+        "deleted": "Discount rule deleted",
+        "saved": "Discount rule saved"
+      }
     },
-    "orderReadView": {
-      "orderDetails": "Order Details",
-      "lineItems": "Line Items",
-      "noLineItems": "No line items",
-      "customer": "Customer",
-      "customerPO": "Customer PO",
-      "orderName": "Order Name",
-      "created": "Created",
-      "notes": "Notes",
-      "subtotal": "Subtotal",
-      "tax": "Tax",
-      "taxWithPct": "Tax ({pct}%)",
-      "total": "Total",
-      "exempt": "EXEMPT",
-      "untitledOrder": "Untitled order"
+    "eventQueue": {
+      "actions": {
+        "clear": "Clear",
+        "hide": "Hide",
+        "view": "View"
+      },
+      "autoRefresh": "Auto-refresh (5s)",
+      "columns": {
+        "actions": "Actions",
+        "aggregate": "Aggregate",
+        "eventType": "Event Type",
+        "failed": "Failed",
+        "payload": "Payload",
+        "pending": "Pending",
+        "processed": "Processed",
+        "processedAt": "Processed At",
+        "status": "Status",
+        "timestamp": "Timestamp",
+        "total": "Total"
+      },
+      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
+      "drawer": {
+        "errorLabel": "Error:",
+        "loading": "Loading events...",
+        "noEvents": "No events of this type found."
+      },
+      "errors": {
+        "clearFailed": "Failed to clear events",
+        "loadFailed": "Failed to load sync data"
+      },
+      "eventTypes": "Event Types",
+      "loading": "Loading event queue...",
+      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
+      "recentEvents": "Recent Events ({count})",
+      "refresh": "Refresh",
+      "status": {
+        "allSynced": "All synced",
+        "errors": "{count} Error(s)",
+        "pending": "{count} pending"
+      },
+      "subtitle": "Visibility into external system synchronization events",
+      "summary": {
+        "failed": "Failed",
+        "pending": "Pending",
+        "processed": "Processed",
+        "total": "Total Events"
+      },
+      "title": "Event Queue"
+    },
+    "productGroups": {
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "definedGroups": "Defined Groups",
+      "newGroup": "+ New Group",
+      "noGroups": "No product groups defined.",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "subtitle": "Manage group classifications for products and inventory",
+      "title": "Product Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "reporting": {
+      "errors": {
+        "loading": "Loading template data...",
+        "notFound": "Error: Template not found or unauthorized access logging in."
+      },
+      "form": {
+        "buttons": {
+          "compiling": "Compiling...",
+          "delete": "Delete Template",
+          "deleting": "Deleting...",
+          "generatePdf": "Generate PDF",
+          "getRandomId": "Get Random ID",
+          "returnToList": "Return to Reporting List",
+          "save": "Save Template",
+          "saving": "Saving..."
+        },
+        "defaults": {
+          "outputPattern": "{context}-{id}",
+          "template": "// Enter your Typst template here"
+        },
+        "descriptions": {
+          "contextHelp": "Only templates assigned to a context will appear in the action menus for those records."
+        },
+        "labels": {
+          "contextResolver": "Context Resolver",
+          "description": "Description",
+          "displayName": "Display Name",
+          "outputPattern": "Output Filename Pattern",
+          "supportedContexts": "Supported Contexts",
+          "targetRecordId": "Target Record ID",
+          "typstSource": "Typst Source Code",
+          "uniqueSlug": "Unique Slug"
+        },
+        "livePreview": {
+          "badge": "Typst Compiler",
+          "title": "Live Preview",
+          "waiting": "Waiting for compilation..."
+        },
+        "loadingContexts": "Loading contexts...",
+        "newTemplate": "+ New Template",
+        "none": "-- None --",
+        "placeholders": {
+          "selectContexts": "Select contexts...",
+          "slug": "e.g. default-quote",
+          "uuid": "UUID..."
+        },
+        "toasts": {
+          "created": "Template created successfully!",
+          "deleteConfirm": "Are you sure you want to delete this report template? This action cannot be undone.",
+          "deleteFailed": "Failed to delete template",
+          "deleted": "Template deleted",
+          "previewFailed": "Preview generation failed. Check typo in template or missing ID data.",
+          "saveFailed": "Failed to save template",
+          "saved": "Saved successfully!"
+        }
+      },
+      "grid": {
+        "columns": {
+          "createdOn": "Created On",
+          "description": "Description",
+          "lastModified": "Last Modified",
+          "outputFilename": "Output Filename",
+          "systemToken": "System Token",
+          "templateName": "Template Name"
+        },
+        "createButton": "Create Template",
+        "searchPlaceholder": "Search Typst templates...",
+        "totalCount": "Total Templates"
+      },
+      "hooks": {
+        "importCoaModal": {
+          "loadingCharts": "Loading available charts...",
+          "noCharts": "No charts available.",
+          "selectPreset": "Select Preset",
+          "importing": "Importing...",
+          "importAction": "Import CoA"
+        },
+        "actions": {
+          "editTemplate": "Edit Template"
+        },
+        "errors": {
+          "updateFailed": "Failed to update assignment: "
+        },
+        "moduleTitle": "Reporting Hooks",
+        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
+        "table": {
+          "columns": {
+            "actions": "Actions",
+            "assignedTemplate": "Assigned Template",
+            "contextResolver": "Context Resolver",
+            "hookSlug": "Hook Slug"
+          },
+          "empty": "No system hooks registered in the database.",
+          "selectTemplate": "Select a template...",
+          "title": "Hook Mappings"
+        },
+        "title": "Hook Assignments"
+      },
+      "title": "Reporting Templates"
+    },
+    "settings": {
+      "actions": {
+        "actions": "Actions",
+        "addChild": "+ Child",
+        "addRootGroup": "+ Add Root Group",
+        "cancel": "Cancel",
+        "configureMetadata": "Configure Metadata",
+        "create": "Create",
+        "delete": "Delete",
+        "edit": "Edit",
+        "importCsv": "Import CSV",
+        "importSettings": "Import Settings",
+        "save": "Save",
+        "saveSchema": "Save Schema"
+      },
+      "activities": {
+        "empty": "No activities defined. Create one to get started."
+      },
+      "confirmations": {
+        "deleteActivity": "Are you sure you want to delete this activity?",
+        "deleteCc": "Are you sure you want to delete this cost center?",
+        "deleteMacro": "Are you sure you want to delete this macro?",
+        "deleteRate": "Are you sure you want to delete this exchange rate?",
+        "deleteTax": "Are you sure you want to delete this tax code?",
+        "deleteUom": "Are you sure you want to delete this unit of measure?"
+      },
+      "costCenters": {
+        "empty": "No cost centers defined. Create one to get started."
+      },
+      "gl": {
+        "customerFirst": "Customer first",
+        "loading": "Loading GL customers...",
+        "productFirst": "Product first",
+        "supplierFirst": "Supplier first"
+      },
+      "labels": {
+        "accountName": "Customer Name",
+        "active": "Active",
+        "address1": "Address Line 1",
+        "address2": "Address Line 2",
+        "bank": "Bank",
+        "bankName": "Bank Name",
+        "baseCurrency": "Base Currency",
+        "buyRate": "Buy Rate",
+        "chartOfAccounts": "Chart of Customers",
+        "city": "City",
+        "code": "Code",
+        "companyName": "Company Name",
+        "companyNumber": "Company Number (ABN/ACN)",
+        "configureMetadataSchema": "Configure Metadata Schema",
+        "content": "Content",
+        "country": "Country",
+        "currency": "Curr",
+        "currencyCode": "Currency Code",
+        "currencyName": "Currency Name",
+        "customerNumber": "Customer Number (BSB-Customer)",
+        "defaultAp": "Default Accounts Payable",
+        "defaultAr": "Default Accounts Receivable",
+        "defaultCogs": "Default COGS",
+        "defaultExpense": "Default Expense",
+        "defaultFeeRevenue": "Default Fee Revenue",
+        "defaultGrni": "Default GRNI",
+        "defaultInventory": "Default Inventory",
+        "defaultRevenue": "Default Revenue",
+        "defaultShrinkage": "Default Shrinkage",
+        "defaultTax": "Default Tax",
+        "description": "Description",
+        "effectiveDate": "Effective Date",
+        "email": "Email",
+        "expenseRouting": "Expense Routing Strategy",
+        "fixed": "Fixed",
+        "group": "Group",
+        "iban": "IBAN",
+        "inactive": "Inactive",
+        "isDefault": "Default",
+        "logoUrl": "Logo URL",
+        "name": "Name",
+        "phone": "Phone",
+        "postCode": "Post Code",
+        "rate": "Rate (%)",
+        "revenueRouting": "Revenue Routing Strategy",
+        "sellRate": "Sell Rate",
+        "state": "State",
+        "status": "Status",
+        "swiftBic": "SWIFT/BIC",
+        "systemBase": "System Base",
+        "taxNumber": "Tax Number",
+        "title": "Title",
+        "type": "Type",
+        "website": "Website"
+      },
+      "placeholders": {
+        "accountName": "Customer name",
+        "activityCode": "e.g. DIR",
+        "activityName": "e.g. Direct Sales",
+        "address1": "Street address",
+        "address2": "Suite/Floor/Unit",
+        "bankName": "Bank name",
+        "ccCode": "e.g. 100",
+        "ccName": "e.g. Sales Victoria",
+        "city": "City",
+        "companyName": "Enter company name",
+        "companyNumber": "e.g. 12 345 678 901",
+        "country": "Country",
+        "currencyCode": "e.g. AUD",
+        "currencyName": "e.g. Australian Dollar",
+        "email": "info@example.com",
+        "logoUrl": "https://...",
+        "phone": "+61 ...",
+        "postCode": "Post code",
+        "state": "State/Province",
+        "taxNumber": "e.g. 12345678901",
+        "uomCode": "e.g. EA",
+        "uomDescription": "e.g. Each",
+        "website": "https://..."
+      },
+      "rates": {
+        "empty": "No exchange rates defined. Create one to get started."
+      },
+      "sections": {
+        "activities": "Activities",
+        "bank": "Bank Details",
+        "company": "Company Details",
+        "costCenters": "Cost Centers",
+        "gl": "General Ledger",
+        "macros": "Text Macros",
+        "rates": "Exchange Rates",
+        "tax": "Tax Codes",
+        "uom": "Units of Measure"
+      },
+      "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
+      "tax": {
+        "empty": "No tax codes defined. Create one to get started."
+      },
+      "taxTypes": {
+        "exempt": "Exempt",
+        "not_relevant": "Not Relevant",
+        "tax_applies": "Tax Applies",
+        "zero_rated": "Zero Rated"
+      },
+      "title": "System Settings",
+      "toasts": {
+        "activityCreated": "Activity created",
+        "activityDeleted": "Activity deleted",
+        "activityUpdated": "Activity updated",
+        "ccCreated": "Cost Center created",
+        "ccDeleted": "Cost Center deleted",
+        "ccUpdated": "Cost Center updated",
+        "importFailed": "Import failed: {message}",
+        "importSuccess": "Imported {count} items successfully",
+        "loadFailed": "Failed to load data",
+        "macroCreated": "Macro created",
+        "macroDeleted": "Macro deleted",
+        "macroUpdated": "Macro updated",
+        "rateCreated": "Exchange rate created",
+        "rateDeleted": "Exchange rate deleted",
+        "rateUpdated": "Exchange rate updated",
+        "taxCreated": "Tax code created",
+        "taxDeleted": "Tax code deleted",
+        "taxUpdated": "Tax code updated",
+        "uomCreated": "Unit of measure created",
+        "uomDeleted": "Unit of measure deleted",
+        "uomUpdated": "Unit of measure updated"
+      },
+      "uom": {
+        "empty": "No units of measure defined. Create one to get started."
+      }
+    },
+    "supplierGroups": {
+      "active": "ACTIVE",
+      "blocked": "BLOCKED",
+      "confirmDelete": "Are you sure you want to delete this group?",
+      "currentlyActive": "Currently Active",
+      "currentlyBlocked": "Currently Blocked",
+      "definedGroups": "Defined Groups",
+      "newGroup": "+ New Group",
+      "noGroups": "No supplier groups defined.",
+      "payment": "Payment",
+      "placeholders": {
+        "code": "Code",
+        "name": "Name"
+      },
+      "purchasing": "Purchasing",
+      "subtitle": "Manage group classifications for supplier customers",
+      "title": "Supplier Groups",
+      "toasts": {
+        "created": "Group created",
+        "deleted": "Group deleted",
+        "loadFailed": "Failed to load groups",
+        "requiredFields": "Code and Name are required",
+        "updated": "Group updated"
+      }
+    },
+    "systemLogs": {
+      "actions": {
+        "copied": "Logs copied to clipboard!",
+        "copy": "Copy Logs",
+        "refresh": "Refresh"
+      },
+      "autoRefresh": "Auto-refresh (5s)",
+      "fields": {
+        "limit": "Limit",
+        "service": "Service"
+      },
+      "filters": {
+        "autoRefresh": "Auto-refresh (5s)",
+        "limit": "Limit:",
+        "limits": {
+          "100": "100 lines",
+          "1000": "1000 lines",
+          "500": "500 lines",
+          "5000": "5000 lines"
+        },
+        "service": "Service:",
+        "services": {
+          "api": "API",
+          "postgres": "PostgreSQL",
+          "worker": "Outbox Worker"
+        }
+      },
+      "limits": {
+        "lines": "{count} lines"
+      },
+      "loading": "Loading system logs...",
+      "noLogs": "No logs available.",
+      "refresh": "Refresh",
+      "services": {
+        "api": "API",
+        "postgres": "PostgreSQL",
+        "worker": "Outbox Worker"
+      },
+      "subtitle": "Live tail of backend container and worker file logs",
+      "title": "System Logs",
+      "toasts": {
+        "loadFailed": "Failed to load system logs"
+      }
+    },
+    "users": {
+      "buttons": {
+        "createUser": "+ Create User"
+      },
+      "cannotChangeOwnRoleError": "Cannot change your own role",
+      "cannotDeleteSelfError": "Cannot delete your own customer",
+      "cannotDisableSelfError": "Cannot disable your own customer",
+      "columns": {
+        "createdAt": "Created",
+        "displayName": "Name",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status",
+        "username": "Username"
+      },
+      "confirmDelete": "Are you sure you want to delete user \"{username}\"? This action is permanent.",
+      "disable": "Disable",
+      "enable": "Enable",
+      "labels": {
+        "displayName": "Full Name",
+        "email": "Email Address",
+        "password": "Password",
+        "role": "Role",
+        "username": "Username"
+      },
+      "loading": "Loading...",
+      "noneFound": "No users found.",
+      "placeholders": {
+        "displayName": "e.g. John Smith",
+        "email": "john@example.com",
+        "password": "Min 6 characters",
+        "passwordUnchanged": "Leave blank to keep current",
+        "username": "e.g. jsmith"
+      },
+      "roles": {
+        "admin": "Admin",
+        "finance": "Finance",
+        "procurement": "Procurement",
+        "sales": "Sales",
+        "viewer": "Viewer",
+        "warehouse": "Warehouse"
+      },
+      "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires.",
+      "status": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "subtitle": "Manage portal user customers and access roles",
+      "title": "Users",
+      "toasts": {
+        "created": "User created",
+        "deleted": "User deleted",
+        "loadFailed": "Failed to load users",
+        "requiredFieldsError": "Username and password are required",
+        "toggled": "User status updated",
+        "updated": "User updated"
+      }
+    }
+  },
+  "bins": {
+    "columns": {
+      "baseQty": "Base Qty",
+      "bin": "Bin",
+      "binType": "Type",
+      "bonded": "Bonded",
+      "consignment": "Consignment",
+      "locationName": "Location Name",
+      "locationNo": "Location No",
+      "productNumber": "Product #",
+      "qtyOption": "(qty: {qty})",
+      "unavailable": "Unavailable",
+      "zone": "Zone"
     },
     "placeholders": {
-      "quantity": "0",
-      "number": "e.g., P-1000"
+      "searchBins": "Search by bin number, product name, or product number..."
     },
-    "states": {
-      "draft": "Draft",
-      "quoted": "Quoted",
-      "confirmed": "Confirmed",
-      "picking": "Picking",
-      "shipped": "Shipped",
-      "invoiced": "Invoiced",
-      "cancelled": "Cancelled",
-      "ordered": "Ordered",
-      "partially_received": "Part Recd",
-      "received": "Received",
-      "dispatched": "Dispatched",
-      "processed": "Processed",
-      "legacy": "Legacy",
-      "active": "Active",
-      "inactive": "Inactive",
-      "discontinued": "Discontinued",
-      "archived": "Archived",
-      "submitted": "Submitted",
-      "posted": "Posted",
-      "partially_paid": "Partial",
-      "paid": "Paid"
-    },
-    "sources": {
-      "abm": "ABM",
-      "app": "App"
-    },
-    "auth": {
-      "signIn": "Sign In",
-      "signOut": "Sign Out",
-      "signInToContinue": "Sign in to continue",
-      "username": "Username",
-      "password": "Password",
-      "invalidCredentials": "Invalid credentials",
-      "loading": "Loading\u2026"
-    },
-    "columns": {
-      "orderNumber": "Order #",
-      "customer": "Customer",
-      "vendor": "Vendor",
-      "code": "Code",
-      "name": "Name",
-      "status": "Status",
-      "source": "Source",
-      "customerPO": "Customer PO",
-      "invoiceNumber": "Invoice #",
-      "totalPrice": "Total",
-      "currency": "Currency",
-      "date": "Date",
-      "created": "Created",
-      "createdBy": "Created By",
-      "address": "Address",
-      "address2": "Address 2",
-      "city": "City",
-      "location": "Location",
-      "state": "State",
-      "postalCode": "Postal Code",
-      "country": "Country",
-      "phone": "Phone",
-      "fax": "Fax",
-      "email": "Email",
-      "contactName": "Contact Name",
-      "contact": "Contact",
-      "contactEmail": "Contact Email",
-      "contactPhone": "Contact Phone",
-      "group": "Group",
-      "taxPosition": "Tax Position",
-      "deliveryAddrs": "Delivery Addrs",
-      "priceScale": "Price Scale",
-      "groupDisc": "Grp Disc",
-      "disc": "Disc %",
-      "discountPct": "Discount %",
-      "qty": "Qty",
-      "onHand": "On Hand",
-      "committed": "Committed",
-      "available": "Avail",
-      "ordered": "On Order",
-      "reserved": "Reserved",
-      "total": "Total",
-      "subtotal": "Subtotal",
-      "tax": "Tax",
-      "activityTimeline": "Activity Timeline",
-      "createdOn": "Created On",
-      "modifiedOn": "Modified On",
-      "telephone": "Telephone",
-      "notes": "Notes",
-      "product": "Product",
-      "description": "Description",
-      "received": "Received",
-      "invoicePrice": "Invoice Price",
-      "purchaseOrder": "Purchase Order",
-      "packingSlip": "Packing Slip",
-      "type": "Type",
-      "quantity": "Quantity",
-      "reference": "Reference",
-      "number": "Number",
-      "locationNo": "Location No.",
-      "id": "ID"
-    },
-    "errors": {
-      "failedToLoadOrder": "Failed to load order",
-      "failedToUpdateOrder": "Failed to update order",
-      "failedToUpdateLine": "Failed to update line",
-      "failedToRemoveLine": "Failed to remove line",
-      "failedToAddLine": "Failed to add line",
-      "failedToCopy": "Failed to copy order",
-      "failedToChangeState": "Failed to change state",
-      "failedToArchive": "Failed to archive order",
-      "failedToUnarchive": "Failed to unarchive order",
-      "failedToGenerateQuote": "Failed to generate quote",
-      "failedToGenerateInvoice": "Failed to generate invoice",
-      "failedToCreateReturn": "Failed to create return",
-      "failedToChangeReturnState": "Failed to change return state",
-      "failedToUpdateReturnLine": "Failed to update return line",
-      "failedToRemoveReturnLine": "Failed to remove return line",
-      "failedToPickAll": "Failed to pick all",
-      "failedToCreateShipment": "Failed to create shipment",
-      "failedToUpdateShipment": "Failed to update shipment",
-      "failedToCreateOrder": "Failed to create order",
-      "failedToCreatePO": "Failed to create purchase order",
-      "pleaseSelectCustomer": "Please select a customer",
-      "pleaseSelectSupplier": "Please select a supplier",
-      "pleaseSelectLocation": "Please select a delivery location",
-      "pleaseAddLineItem": "Please add at least one line item",
-      "failedToGenerateReport": "Failed to generate report",
-      "failedToLoadExpiries": "Failed to load expiries",
-      "typeAndDateRequired": "Type and Date are required"
-    },
-    "taxLabels": {
-      "exempt": "Exempt"
-    },
-    "eventTypes": {
-      "created": "Created",
-      "updated": "Updated",
-      "status_changed": "Status Changed",
-      "line_added": "Line Added",
-      "line_updated": "Line Updated",
-      "line_removed": "Line Removed",
-      "quoted": "Quoted",
-      "confirmed": "Confirmed",
-      "cancelled": "Cancelled",
-      "archived": "Archived",
-      "unarchived": "Unarchived",
-      "shipment_created": "Shipment Created",
-      "shipment_updated": "Shipment Updated",
-      "shipment_status_changed": "Shipment Status Changed",
-      "shipment_line_added": "Shipment Line Added",
-      "shipment_line_updated": "Shipment Line Updated",
-      "shipment_line_removed": "Shipment Line Removed",
-      "picking_line_updated": "Picking Line Updated",
-      "picking_line_picked_all": "Picking Line Picked All",
-      "picking_order_picked_all": "Picking Order Picked All",
-      "return_created": "Return Created",
-      "return_updated": "Return Updated",
-      "return_status_changed": "Return Status Changed",
-      "return_processed": "Return Processed",
-      "return_received": "Return Received",
-      "credit_note_posted": "Credit Note Posted",
-      "return_line_added": "Return Line Added",
-      "return_line_updated": "Return Line Updated",
-      "return_line_removed": "Return Line Removed",
-      "price_discrepancy_warning": "Price Discrepancy",
-      "over_received_warning": "Over-received Warning",
-      "location_discrepancy_warning": "Location Discrepancy",
-      "shipment_dispatched": "Shipment Dispatched",
-      "stock_dispatch_reverted": "Dispatch Reverted",
-      "deleted": "Deleted"
-    },
-    "productSearch": {
-      "placeholder": "Search product\u2026",
-      "typeMinChars": "Type at least 2 characters\u2026",
-      "noMatchingProducts": "No matching products",
-      "onHandShort": "OH",
-      "availableShort": "Avail"
-    },
-    "options": {
-      "none": "(None)"
-    },
+    "title": "Bin Contents"
+  },
+  "common": {
+    "actions": "Actions",
+    "activityTimeline": "Activity Timeline",
+    "add": "Add",
     "address": {
       "city": "City",
       "country": "Country"
     },
-    "toast": {
-      "expiryUpdated": "Expiry updated",
-      "expiryCreated": "Expiry created",
-      "expiryDeleted": "Expiry deleted",
-      "supplierCreated": "Supplier created successfully"
+    "auth": {
+      "invalidCredentials": "Invalid credentials",
+      "loading": "Loading...",
+      "password": "Password",
+      "signIn": "Sign In",
+      "signInToContinue": "Sign in to continue",
+      "signOut": "Sign Out",
+      "username": "Username"
     },
     "buttons": {
-      "remove": "Remove",
       "cancel": "Cancel",
+      "remove": "Remove",
       "save": "Save"
     },
-    "default": "(Default)",
-    "tabs": {
-      "overview": "Overview",
-      "suppliers": "Suppliers",
-      "inventory": "Inventory",
-      "lines": "Lines"
+    "by": "by",
+    "cancel": "Cancel",
+    "columns": {
+      "activityTimeline": "Activity Timeline",
+      "address": "Address",
+      "address2": "Address 2",
+      "available": "Avail",
+      "city": "City",
+      "code": "Code",
+      "committed": "Committed",
+      "contact": "Contact",
+      "contactEmail": "Contact Email",
+      "contactName": "Contact Name",
+      "contactPhone": "Contact Phone",
+      "country": "Country",
+      "created": "Created",
+      "createdBy": "Created By",
+      "createdOn": "Created On",
+      "currency": "Currency",
+      "customer": "Customer",
+      "customerPO": "Customer PO",
+      "date": "Date",
+      "deliveryAddrs": "Delivery Addrs",
+      "description": "Description",
+      "disc": "Disc %",
+      "discountPct": "Discount %",
+      "email": "Email",
+      "fax": "Fax",
+      "group": "Group",
+      "groupDisc": "Grp Disc",
+      "id": "ID",
+      "invoiceNumber": "Invoice #",
+      "invoicePrice": "Invoice Price",
+      "location": "Location",
+      "locationNo": "Location No.",
+      "modifiedOn": "Modified On",
+      "name": "Name",
+      "notes": "Notes",
+      "number": "Number",
+      "onHand": "On Hand",
+      "orderNumber": "Order #",
+      "ordered": "On Order",
+      "packingSlip": "Packing Slip",
+      "phone": "Phone",
+      "postalCode": "Postal Code",
+      "priceScale": "Price Scale",
+      "product": "Product",
+      "purchaseOrder": "Purchase Order",
+      "qty": "Qty",
+      "quantity": "Quantity",
+      "received": "Received",
+      "reference": "Reference",
+      "reserved": "Reserved",
+      "source": "Source",
+      "state": "State",
+      "status": "Status",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "taxPosition": "Tax Position",
+      "telephone": "Telephone",
+      "total": "Total",
+      "totalPrice": "Total",
+      "type": "Type",
+      "vendor": "Vendor"
     },
-    "na": "N/A",
-    "loadingEllipsis": "Loading\u2026",
     "confirm": "Confirm",
+    "confirmDelete": "Are you sure you want to delete this item?",
+    "copying": "Copying...",
+    "create": "Create",
+    "created": "Created",
+    "default": "(Default)",
+    "delete": "Delete",
+    "deleted": "Deleted",
+    "dismiss": "dismiss",
+    "edit": "Edit",
     "errorBoundary": {
-      "title": "Something went wrong",
-      "unexpected": "An unexpected error occurred",
+      "contactSupport": "If the problem persists, please contact support.",
       "page": "Page",
       "reference": "Reference",
+      "title": "Something went wrong",
       "tryAgain": "Try Again",
-      "contactSupport": "If the problem persists, please contact support."
+      "unexpected": "An unexpected error occurred"
     },
+    "errors": {
+      "failedToAddLine": "Failed to add line",
+      "failedToArchive": "Failed to archive order",
+      "failedToChangeReturnState": "Failed to change return state",
+      "failedToChangeState": "Failed to change state",
+      "failedToCopy": "Failed to copy order",
+      "failedToCreateOrder": "Failed to create order",
+      "failedToCreatePO": "Failed to create purchase order",
+      "failedToCreateReturn": "Failed to create return",
+      "failedToCreateShipment": "Failed to create shipment",
+      "failedToGenerateInvoice": "Failed to generate invoice",
+      "failedToGenerateQuote": "Failed to generate quote",
+      "failedToGenerateReport": "Failed to generate report",
+      "failedToLoadExpiries": "Failed to load expiries",
+      "failedToLoadOrder": "Failed to load order",
+      "failedToPickAll": "Failed to pick all",
+      "failedToRemoveLine": "Failed to remove line",
+      "failedToRemoveReturnLine": "Failed to remove return line",
+      "failedToUnarchive": "Failed to unarchive order",
+      "failedToUpdateLine": "Failed to update line",
+      "failedToUpdateOrder": "Failed to update order",
+      "failedToUpdateReturnLine": "Failed to update return line",
+      "failedToUpdateShipment": "Failed to update shipment",
+      "pleaseAddLineItem": "Please add at least one line item",
+      "pleaseSelectCustomer": "Please select a customer",
+      "pleaseSelectLocation": "Please select a delivery location",
+      "pleaseSelectSupplier": "Please select a supplier",
+      "typeAndDateRequired": "Type and Date are required"
+    },
+    "eventTypes": {
+      "archived": "Archived",
+      "cancelled": "Cancelled",
+      "confirmed": "Confirmed",
+      "created": "Created",
+      "credit_note_posted": "Credit Note Posted",
+      "deleted": "Deleted",
+      "line_added": "Line Added",
+      "line_removed": "Line Removed",
+      "line_updated": "Line Updated",
+      "location_discrepancy_warning": "Location Discrepancy",
+      "over_received_warning": "Over-received Warning",
+      "picking_line_picked_all": "Picking Line Picked All",
+      "picking_line_updated": "Picking Line Updated",
+      "picking_order_picked_all": "Picking Order Picked All",
+      "price_discrepancy_warning": "Price Discrepancy",
+      "quoted": "Quoted",
+      "return_created": "Return Created",
+      "return_line_added": "Return Line Added",
+      "return_line_removed": "Return Line Removed",
+      "return_line_updated": "Return Line Updated",
+      "return_processed": "Return Processed",
+      "return_received": "Return Received",
+      "return_status_changed": "Return Status Changed",
+      "return_updated": "Return Updated",
+      "shipment_created": "Shipment Created",
+      "shipment_dispatched": "Shipment Dispatched",
+      "shipment_line_added": "Shipment Line Added",
+      "shipment_line_removed": "Shipment Line Removed",
+      "shipment_line_updated": "Shipment Line Updated",
+      "shipment_status_changed": "Shipment Status Changed",
+      "shipment_updated": "Shipment Updated",
+      "status_changed": "Status Changed",
+      "stock_dispatch_reverted": "Dispatch Reverted",
+      "unarchived": "Unarchived",
+      "updated": "Updated"
+    },
+    "filters": {
+      "allTime": "All Time",
+      "last1Year": "Last 1 Year",
+      "last30Days": "Last 30 Days",
+      "last90Days": "Last 90 Days"
+    },
+    "grid": {
+      "columns": "Columns",
+      "export": "Export",
+      "exportCsv": "Export CSV",
+      "includeArchived": "Include Archived",
+      "loadingEllipsis": "Loading...",
+      "next": "Next",
+      "options": "Options",
+      "page": "Page {page}",
+      "prev": "Prev",
+      "resetColumns": "Reset Columns",
+      "rowCountLabel": "Rows",
+      "rows": "{count} rows"
+    },
+    "legacyRecordImported": "This is a read-only legacy record imported from ABM. Changes must be made in the source system.",
+    "loading": "Loading...",
+    "loadingEllipsis": "Loading...",
+    "location": "Location",
+    "na": "N/A",
+    "noEvents": "No events recorded",
+    "noMatchingResults": "No matching results",
+    "none": "(None)",
+    "notesCardHeading": "Notes",
+    "notesCardPlaceholder": "Internal notes",
+    "options": {
+      "none": "(None)"
+    },
+    "orderReadView": {
+      "created": "Created",
+      "customer": "Customer",
+      "customerPO": "Customer PO",
+      "exempt": "EXEMPT",
+      "lineItems": "Line Items",
+      "noLineItems": "No line items",
+      "notes": "Notes",
+      "orderDetails": "Order Details",
+      "orderName": "Order Name",
+      "subtotal": "Subtotal",
+      "tax": "Tax",
+      "taxWithPct": "Tax ({pct}%)",
+      "total": "Total",
+      "untitledOrder": "Untitled order"
+    },
+    "placeholders": {
+      "number": "e.g., P-1000",
+      "quantity": "0"
+    },
+    "productSearch": {
+      "availableShort": "Avail",
+      "noMatchingProducts": "No matching products",
+      "onHandShort": "OH",
+      "placeholder": "Search product...",
+      "typeMinChars": "Type at least 2 characters..."
+    },
+    "resolving": "Resolving...",
+    "save": "Save",
+    "saving": "Saving...",
+    "select": "Select",
+    "selectEllipsis": "Select...",
+    "selectNone": "(None)",
+    "sources": {
+      "abm": "ABM",
+      "app": "App"
+    },
+    "states": {
+      "active": "Active",
+      "archived": "Archived",
+      "cancelled": "Cancelled",
+      "confirmed": "Confirmed",
+      "discontinued": "Discontinued",
+      "dispatched": "Dispatched",
+      "draft": "Draft",
+      "inactive": "Inactive",
+      "invoiced": "Invoiced",
+      "legacy": "Legacy",
+      "ordered": "Ordered",
+      "paid": "Paid",
+      "partially_paid": "Partial",
+      "partially_received": "Part Recd",
+      "picking": "Picking",
+      "posted": "Posted",
+      "processed": "Processed",
+      "quoted": "Quoted",
+      "received": "Received",
+      "shipped": "Shipped",
+      "submitted": "Submitted"
+    },
+    "submit": "Submit",
+    "subtotal": "Subtotal",
+    "system": "System",
+    "tabs": {
+      "inventory": "Inventory",
+      "lines": "Lines",
+      "overview": "Overview",
+      "suppliers": "Suppliers"
+    },
+    "tax": "Tax",
+    "taxLabels": {
+      "exempt": "Exempt"
+    },
+    "timeline": {
+      "by": "by {actor}"
+    },
+    "toast": {
+      "expiryCreated": "Expiry created",
+      "expiryDeleted": "Expiry deleted",
+      "expiryUpdated": "Expiry updated",
+      "supplierCreated": "Supplier created successfully"
+    },
+    "total": "Total",
+    "unknown": "Unknown",
     "unknownProduct": "Unknown Product",
-    "unknown": "Unknown"
+    "updated": "Updated"
+  },
+  "confirm": {
+    "archiveOrder": "Are you sure you want to archive this order?",
+    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
+    "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
+    "processReturn": "Process this return? This will generate a Credit Note and publish AR ledger entries.",
+    "removeLine": "Remove this line item?",
+    "removeReturnLine": "Remove this return line?",
+    "removeShipmentLine": "Remove this shipment line?"
   },
   "customers": {
-    "title": "Customers",
-    "subtitle": "Manage customer customers",
-    "totalAccounts": "TOTAL ACCOUNTS",
-    "generalInfo": "General Information",
-    "company": "Customer",
-    "pricingCurrency": "Pricing & Currency",
-    "columns": {
-      "customerId": "Customer ID",
-      "customerNumber": "Customer Number",
-      "discountPct": "Customer Discount %",
-      "accountType": "Type"
-    },
     "buttons": {
       "createCustomer": "Create Customer"
     },
-    "placeholders": {
-      "searchAccounts": "Search by name, customer number, or email\u2026",
-      "noAccountGroup": "No Customer Group",
-      "customerGroup": "Customer Group"
-    },
-    "financials": "Financials",
-    "management": "Customer Management",
-    "overview": "Overview",
-    "orders": "Orders",
-    "invoices": "Invoices"
-  },
-  "suppliers": {
-    "title": "Suppliers",
-    "subtitle": "Manage supplier records",
-    "buttons": {
-      "createSupplier": "+ Create Supplier",
-      "editSupplier": "Edit Supplier",
-      "save": "Save Supplier",
-      "unlinkSupplier": "Unlink Supplier"
-    },
-    "placeholders": {
-      "searchSuppliers": "Search suppliers\u2026",
-      "vendorNumber": "e.g. VEND-001",
-      "name": "e.g. ACME Corp",
-      "paymentTerms": "e.g. NET30",
-      "email": "vendor@example.com",
-      "phone": "+1 234 567 890",
-      "address": "123 Main St",
-      "city": "City",
-      "country": "Country",
-      "notes": "Key relationship details, preferred delivery methods, etc.",
-      "noGroup": "No Supplier Group"
-    },
     "columns": {
-      "vendorNumber": "Vendor #",
-      "paymentTerms": "Payment Terms",
-      "productCount": "Products",
-      "name": "Name"
+      "accountType": "Type",
+      "customerId": "Customer ID",
+      "customerNumber": "Customer Number",
+      "discountPct": "Customer Discount %"
     },
-    "generalInfo": "General Information",
-    "labels": {
-      "vendorName": "Vendor Name",
-      "email": "Email Address",
-      "phone": "Phone Number"
+    "company": "Customer",
+    "fields": {
+      "accountNumber": "Account Number",
+      "bankAccountName": "Bank Account Name",
+      "childAccounts": "Child Accounts ({count})",
+      "discountRules": "Discount Rules",
+      "manage": "Manage",
+      "parentCustomer": "Parent Customer"
     },
-    "management": "Vendor Management",
-    "contactLocation": "Contact & Location",
     "financials": "Financials",
-    "paymentTerms": "Payment Terms",
-    "supplierGroup": "Supplier Group",
-    "earlyPaymentDiscount": "Early Payment Discount %",
-    "email": "Email",
-    "phone": "Phone",
-    "city": "City",
-    "country": "Country",
-    "compliance": {
-      "title": "Compliance Status",
-      "purchasingBlock": "Purchasing Block",
-      "paymentBlock": "Payment Block",
-      "reason": "Reason",
-      "blockNotes": "Block Notes",
-      "notesPlaceholder": "Internal notes regarding blocking...",
-      "groupInherited": "Group Inherited ({reason})",
-      "reasons": {
-        "compliance_breach": "Compliance Breach",
-        "quality_issues": "Quality Issues",
-        "dispute": "Dispute",
-        "financial_risk": "Financial Risk",
-        "invoice_dispute": "Invoice Dispute",
-        "missing_goods": "Missing Goods",
-        "contractual_breach": "Contractual Breach",
-        "other": "Other"
-      }
+    "generalInfo": "General Information",
+    "invoices": "Invoices",
+    "management": "Customer Management",
+    "orders": "Orders",
+    "overview": "Overview",
+    "placeholders": {
+      "customerGroup": "Customer Group",
+      "noAccountGroup": "No Customer Group",
+      "searchAccounts": "Search by name, customer number, or email..."
     },
-    "expiries": {
-      "title": "Expiries",
-      "addExpiry": "+ Add Expiry",
-      "columns": {
-        "type": "Type",
-        "expiryDate": "Expiry Date",
-        "notes": "Notes",
-        "actions": "Actions"
-      },
+    "pricingCurrency": "Pricing & Currency",
+    "subtitle": "Manage customer customers",
+    "title": "Customers",
+    "totalAccounts": "TOTAL ACCOUNTS"
+  },
+  "dashboard": {
+    "quickActions": {
+      "createPurchaseDesc": "Restock inventory from supplier",
+      "createPurchaseOrder": "Create Purchase Order",
+      "createSalesDesc": "New customer quote or order",
+      "createSalesOrder": "Create Sales Order",
+      "title": "Quick Actions"
+    },
+    "search": {
+      "noResults": "No results found",
+      "placeholder": "Search products, customers, orders, suppliers...",
+      "typeMinChars": "Type at least 2 characters...",
       "types": {
-        "select": "-- Select Type --",
-        "insurance": "Insurance",
-        "tax_certificate": "Tax Certificate",
-        "trial_period": "Trial Period",
-        "other": "Other"
-      },
-      "empty": "No expiries defined for this supplier.",
-      "expired": "Expired",
-      "noNotes": "No notes"
-    },
-    "statusBadges": {
-      "status": "Status",
-      "active": "Active",
-      "inactive": "Inactive",
-      "paymentBlocked": "Payment Blocked",
-      "purchaseBlocked": "Purchase Blocked"
-    },
-    "tabs": {
-      "overview": "Overview",
-      "products": "Products",
-      "compliance": "Compliance",
-      "info": "Info",
-      "financials": "Financials",
-      "notes": "Notes",
-      "contact": "Contact",
-      "activity": "Activity"
-    },
-    "products": {
-      "title": "Products",
-      "columns": {
-        "productNo": "Product No.",
-        "name": "Name",
-        "partNo": "Supplier Part No.",
-        "costPrice": "Cost Price",
-        "discount": "Discount %",
-        "status": "Status"
+        "customer": "Customers",
+        "product": "Products",
+        "purchase_order": "Purchase Orders",
+        "sales_order": "Sales Orders",
+        "supplier": "Suppliers"
       }
     },
-    "tooltips": {
-      "currentlyBlocked": "Currently Blocked",
-      "currentlyActive": "Currently Active"
+    "stats": {
+      "customers": "Customers",
+      "inventoryLevels": "Inventory Levels",
+      "orderLines": "Order Lines",
+      "products": "Products"
     },
-    "new": {
-      "documentTitle": "New Supplier"
+    "timeline": {
+      "configureInfo": "Select which business events you want to see in your recent events feed.",
+      "empty": "No recent events to display.",
+      "errors": {
+        "failedToLoad": "Failed to load timeline."
+      },
+      "relativeUnits": {
+        "d": "{count}d ago",
+        "h": "{count}h ago",
+        "justNow": "just now",
+        "m": "{count}m ago"
+      },
+      "settings": "Timeline Settings",
+      "title": "Recent Events",
+      "types": {
+        "account_created": "Customer Customer created",
+        "po_created": "Purchase Order created",
+        "po_ordered": "Purchase Order ordered",
+        "po_received": "Purchase Order received",
+        "so_confirmed": "Sales Order confirmed",
+        "so_created": "Sales Order created",
+        "so_invoiced": "Sales Order invoiced",
+        "so_shipped": "Sales Order shipped",
+        "supplier_created": "Supplier created"
+      }
     },
-    "confirmUnlink": "Are you sure you want to unlink {name} from this product?",
-    "toast": {
-      "unlinked": "Supplier successfully unlinked"
+    "title": "Dashboard"
+  },
+  "fulfillment": {
+    "columns": {
+      "onHand": "On Hand",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "product": "Product",
+      "readyToShip": "Ready to Ship",
+      "shipped": "Shipped",
+      "status": "Status"
+    },
+    "noData": "Fulfillment data unavailable.",
+    "noPhysicalLines": "No physical lines on this order.",
+    "picked": "Picked",
+    "shipped": "Shipped",
+    "statuses": {
+      "awaitingShipment": "Picked, awaiting shipment",
+      "notPicked": "Not yet picked",
+      "partiallyPicked": "Partially picked",
+      "readyToShip": "Ready to ship",
+      "shipped": "Fully shipped"
+    },
+    "title": "Picking & Shipping"
+  },
+  "gl": {
+    "codes": {
+      "accountingCodes": "Accounting Codes",
+      "button": "Codes",
+      "columns": {
+        "activities": "Activities",
+        "chartOfAccounts": "Chart of Accounts",
+        "costCenters": "Cost Centers"
+      },
+      "exportCsv": "Export CSV",
+      "group": "Group",
+      "search": "Search codes...",
+      "subtitle": "Quick reference for customers, cost centers, and activities",
+      "title": "Accounting Codes Cheat Sheet"
+    },
+    "generalLedger": {
+      "allAccounts": "All Customers",
+      "columns": {
+        "balance": "Balance",
+        "credit": "Credit",
+        "customer": "Customer",
+        "date": "Date",
+        "debit": "Debit",
+        "entryNumber": "Entry #",
+        "memo": "Memo"
+      },
+      "fromDate": "From",
+      "noData": "No transactions found for the selected filters.",
+      "title": "General Ledger",
+      "toDate": "To"
+    },
+    "journalEntries": {
+      "addLine": "Add Line",
+      "allSources": "All Sources",
+      "columns": {
+        "createdBy": "Created By",
+        "credit": "Credit",
+        "customer": "Customer",
+        "date": "Date",
+        "debit": "Debit",
+        "entryNumber": "Entry #",
+        "memo": "Memo",
+        "party": "Party",
+        "partyType": "Party Type",
+        "source": "Source",
+        "totalCredit": "Total Credit",
+        "totalDebit": "Total Debit"
+      },
+      "fromDate": "From",
+      "lines": "Lines",
+      "na": "N/A",
+      "newEntry": "New Entry",
+      "newManualEntry": "New Manual Journal Entry",
+      "noData": "No journal entries found.",
+      "noLines": "No journal lines found for this entry.",
+      "partyTypes": {
+        "customer": "Customer",
+        "none": "None",
+        "supplier": "Supplier"
+      },
+      "placeholders": {
+        "lineMemo": "Line description",
+        "memo": "Reason for journal entry...",
+        "selectAccount": "Select Customer...",
+        "selectParty": "Select Party..."
+      },
+      "postEntry": "Post Journal Entry",
+      "searchPlaceholder": "Search entry number...",
+      "sourceDocument": "Source Document",
+      "sourceManual": "Manual",
+      "sourcePurchaseInvoice": "Purchase Invoice",
+      "sourceSalesCreditNote": "Sales Credit Note",
+      "sourceSalesInvoice": "Sales Invoice",
+      "title": "Journal Entries",
+      "toDate": "To",
+      "total": "Total",
+      "totals": "Totals",
+      "unbalancedWarning": "Entry is unbalanced by {amount}"
+    },
+    "loading": "Loading...",
+    "reconciliations": {
+      "clearedBalance": "Cleared Balance",
+      "columns": {
+        "cleared": "Cleared?",
+        "credit": "Credit",
+        "customer": "Customer",
+        "date": "Date",
+        "debit": "Debit",
+        "entryNo": "Entry No.",
+        "memo": "Memo",
+        "party": "Party",
+        "statementBalance": "Statement Balance",
+        "statementDate": "Statement Date",
+        "status": "Status"
+      },
+      "confirmDiscard": "Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.",
+      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
+      "create": "Start Reconciling",
+      "createError": "Failed to create reconciliation",
+      "createdBy": "Created By",
+      "creating": "Creating...",
+      "customer": "Customer",
+      "detailsTitle": "Reconciliation Details",
+      "discard": "Discard",
+      "discardError": "Failed to discard reconciliation",
+      "discardSuccess": "Reconciliation discarded successfully",
+      "loading": "Loading...",
+      "newReconciliation": "New Bank Reconciliation",
+      "notFound": "Reconciliation not found",
+      "openingBalance": "Opening Balance",
+      "postError": "Failed to post reconciliation",
+      "postReconciliation": "Post Reconciliation",
+      "postSuccess": "Reconciliation posted successfully",
+      "posting": "Posting...",
+      "quickAdjustment": "Quick Adjustment",
+      "quickAdjustmentForm": {
+        "amount": "Amount",
+        "createAndReconcile": "Create & Reconcile",
+        "creating": "Creating...",
+        "date": "Date",
+        "failedToCreateError": "Failed to create adjustment",
+        "memo": "Memo",
+        "memoPlaceholder": "e.g., Monthly Customer Keeping Fee",
+        "moneyIn": "Money In (e.g. Interest)",
+        "moneyOut": "Money Out (e.g. Bank Fee)",
+        "offsetAccount": "Offset Customer",
+        "requiredFieldsError": "Please fill out all required fields",
+        "selectAccount": "Select an customer...",
+        "title": "Quick Adjustment",
+        "type": "Type"
+      },
+      "reconciliationLabel": "Reconciliation: {customer}",
+      "rows": "Rows",
+      "selectAccount": "Select Customer...",
+      "splitEntry": "Split Entry",
+      "splitEntryForm": {
+        "amountToClear": "Amount to Clear Now",
+        "confirmSplit": "Confirm Split",
+        "credit": "Credit",
+        "date": "Date",
+        "debit": "Debit",
+        "failedToSplitError": "Failed to split entry",
+        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
+        "memo": "Memo",
+        "party": "Party",
+        "splitSuccess": "Entry successfully split and cleared!",
+        "splitting": "Splitting...",
+        "title": "Split Entry",
+        "total": "Total"
+      },
+      "statementBalance": "Statement Balance",
+      "statementDate": "Statement Date",
+      "statementDateLabel": "Statement Date: {date}",
+      "status": "Status",
+      "title": "Bank Reconciliations",
+      "toggleError": "Failed to toggle line",
+      "tooltips": {
+        "back": "Back",
+        "clickToClear": "Click to clear",
+        "clickToUnclear": "Click to unclear",
+        "selectRowToSplit": "Select a row to split",
+        "splitRowDisabled": "Cannot split an already cleared row"
+      },
+      "variance": "Variance",
+      "varianceMustBeZero": "Variance must be zero to post"
+    },
+    "trialBalance": {
+      "accountTypes": {
+        "asset": "Asset",
+        "equity": "Equity",
+        "expense": "Expense",
+        "income": "Income",
+        "liability": "Liability"
+      },
+      "asOfDate": "As of Date",
+      "columns": {
+        "accountCode": "Code",
+        "accountName": "Customer",
+        "accountType": "Type",
+        "balance": "Balance",
+        "credit": "Credit",
+        "debit": "Debit"
+      },
+      "noData": "No transactions found for this period.",
+      "title": "Trial Balance",
+      "totals": "Totals"
     }
   },
+  "goodsReceived": {
+    "allocation": {
+      "allocating": "...",
+      "destination": "Destination:",
+      "loadingEligible": "Loading eligible POs...",
+      "locationMismatch": "Location Mismatch",
+      "match": "Match",
+      "matchError": "Failed to match receipt",
+      "noPendingPOs": "No pending purchase orders found for this product.",
+      "qty": "Qty:",
+      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
+      "receivedAt": "Received at:",
+      "unknown": "Unknown"
+    },
+    "buttons": {
+      "allLocations": "All locations",
+      "cancel": "Cancel",
+      "cancelReceiptTooltip": "Cancel the entire receipt for the selected lines",
+      "match": "Match",
+      "matchCount": "Match ({count})",
+      "newReception": "Receive Goods",
+      "quarantine": "Quarantine"
+    },
+    "columns": {
+      "matchStatus": "PO Match",
+      "matched": "matched",
+      "packingSlip": "Packing Slip",
+      "receiptNo": "Receipt No.",
+      "supplier": "Supplier"
+    },
+    "completed": {
+      "backToList": "Back to Receiving",
+      "newReception": "New Reception",
+      "subtitle": "The packing slip has been recorded. Items are held on dock pending invoice entry.",
+      "title": "Goods Receipt Confirmed"
+    },
+    "flow": {
+      "confirmReception": "Confirm Reception",
+      "itemsReceived": "Items Received",
+      "noItems": "No items scanned yet.",
+      "scanProduct": "Scan Product",
+      "selectedProduct": "Selected Product",
+      "subtitle": "Record items received from a supplier packing slip",
+      "title": "Receive Goods"
+    },
+    "labels": {
+      "location": "Receiving Location",
+      "packingSlip": "Packing Slip",
+      "supplier": "Supplier"
+    },
+    "matchStatus": {
+      "ambiguous": "Multiple POs",
+      "matched": "Matched",
+      "unmatched": "Unmatched"
+    },
+    "placeholders": {
+      "notes": "Reception notes",
+      "packingSlip": "Packing slip number",
+      "searchProduct": "Search or scan product...",
+      "selectLocation": "Select Receiving Location...",
+      "selectSupplier": "Select Supplier..."
+    },
+    "return": {
+      "description": "Description",
+      "expectedQty": "Expected Qty",
+      "order": "Order:",
+      "product": "Product",
+      "receiveNow": "Receive Now",
+      "received": "Received"
+    },
+    "returns": {
+      "confirmDebitNote": "Confirm & Record Debit Note",
+      "confirmReceipt": "Confirm Receipt",
+      "createReturn": "Create Return",
+      "creating": "Creating...",
+      "creditPricePerUnit": "Credit Price Per Unit",
+      "lineHash": "Line #",
+      "lineItems": "Line Items",
+      "lineTotal": "Line Total",
+      "maxReturn": "{received} (Max {maxReturn})",
+      "noReturnableLines": "No returnable lines available.",
+      "qtyReturned": "Qty Returned",
+      "qtyToReturn": "Qty to Return",
+      "reason": "Reason",
+      "reasons": {
+        "defective": "Defective",
+        "incorrectItem": "Incorrect Item",
+        "other": "Other",
+        "overShipment": "Over-shipment"
+      },
+      "receiving": "Receiving...",
+      "recording": "Recording...",
+      "selectLinesMsg": "Select the items and quantities you wish to return. Only items that have been received can be returned."
+    },
+    "status": {
+      "allocated": "Allocated",
+      "pending": "Pending"
+    },
+    "title": "Goods Received",
+    "toast": {
+      "confirmed": "Goods receipt confirmed!",
+      "failed": "Failed to commit goods receipt",
+      "qtyReq": "Quantity must be greater than 0",
+      "selectLocation": "Please select a receiving location.",
+      "selectSupplier": "Please select a supplier."
+    }
+  },
+  "inventory": {
+    "columns": {
+      "actor": "User",
+      "alternateProductNumber": "Alternate Product Number",
+      "available": "Available",
+      "committed": "Committed",
+      "defaultBin": "Default Bin",
+      "document": "Document",
+      "locationNo": "Location No",
+      "maxQty": "Max Qty",
+      "minQty": "Min Qty",
+      "netChange": "Net Change",
+      "onHand": "On Hand",
+      "onOrder": "On Order",
+      "productNumber": "Product #",
+      "qtyChange": "Qty Change",
+      "reference": "Ref / Document",
+      "sourceType": "Type",
+      "stockIn": "Stock In",
+      "stockOut": "Stock Out",
+      "type": "Type",
+      "value": "Value"
+    },
+    "filters": {
+      "last24Hours": "Last 24 Hours",
+      "last30Days": "Last 30 Days",
+      "last7Days": "Last 7 Days",
+      "last90Days": "Last 90 Days"
+    },
+    "ledger": {
+      "columns": {
+        "locationBin": "Location / Bin",
+        "product": "Product",
+        "qtyChange": "Qty Change"
+      },
+      "loadFailed": "Failed to load ledger entries",
+      "noLines": "No ledger entries found.",
+      "operationMemo": "Operation Memo",
+      "relatedParty": "Related Party",
+      "sourceDocument": "Source Document",
+      "sourceType": "Source Type",
+      "system": "System",
+      "title": "Inventory Ledger"
+    },
+    "locations": {
+      "addBin": "Add Bin",
+      "addBinTo": "Add Bin to {name}",
+      "addLocation": "Add Location",
+      "addZone": "Add Zone",
+      "addZoneTo": "Add Zone to {name}",
+      "binTypes": {
+        "bulk": "Bulk",
+        "in_transit": "In Transit",
+        "pick": "Picking",
+        "quarantine": "Quarantine",
+        "receiving": "Receiving",
+        "staging": "Staging",
+        "storage": "Storage"
+      },
+      "bins": "Bins",
+      "binsCount": "{count, plural, =1 {# bin} other {# bins}}",
+      "editBin": "Edit Bin",
+      "editLocation": "Edit Location",
+      "editZone": "Edit Zone",
+      "fields": {
+        "binNumber": "Bin Number",
+        "binType": "Bin Type",
+        "bonded": "Bonded Bin",
+        "city": "City",
+        "consignment": "Consignment Stock",
+        "country": "Country",
+        "flags": "Flags",
+        "source": "Source",
+        "unavailable": "Unavailable (Locked)",
+        "zoneCode": "Zone Code",
+        "zoneName": "Zone Name"
+      },
+      "noBinsInZone": "No bins in this zone.",
+      "placeholders": {
+        "binNumber": "e.g. A-01-01",
+        "binType": "Select bin type...",
+        "locationCode": "e.g. SYD01",
+        "locationName": "e.g. Sydney Warehouse",
+        "zoneCode": "e.g. BULK",
+        "zoneName": "e.g. Bulk Storage"
+      },
+      "zones": "Zones",
+      "zonesCount": "{count, plural, =1 {# zone} other {# zones}}"
+    },
+    "placeholders": {
+      "searchLedger": "Search transactions...",
+      "searchMovements": "Search by product, reference, or type..."
+    },
+    "putaway": {
+      "action": "Putaway Action",
+      "confirmPutaway": "Confirm Putaway",
+      "currentStock": "Current stock: {count}",
+      "destinationBin": "Destination Bin",
+      "loadingBinContext": "Loading bin context...",
+      "newTotalQuantity": "New Total Quantity in Bin",
+      "noItemsPending": "No items pending putaway in this location.",
+      "pendingPutaway": "Pending Putaway",
+      "primaryLabel": "(Primary)",
+      "processing": "Processing...",
+      "receipt": "RECEIPT",
+      "ref": "Ref: {ref}",
+      "return": "RETURN",
+      "searchBins": "Search bins...",
+      "selectItemToPutaway": "Select an item from the list to putaway.",
+      "title": "Putaway",
+      "verifyCountDescription": "Verify the physical count. An inventory adjustment will be generated if this differs from system expectations.",
+      "warningNotPrimary": "Warning: You are not placing this in the primary bin ({bin})."
+    },
+    "tabs": {
+      "binContents": "Bin Contents",
+      "ledger": "Ledger",
+      "locations": "Locations",
+      "movements": "Movements",
+      "products": "Products"
+    },
+    "title": "Inventory"
+  },
+  "payments": {
+    "allAllocations": "All Allocations",
+    "allocate": "Allocate",
+    "confirmCount": "Confirm ({count})",
+    "createEntry": "Create Entry",
+    "customer": "Customer",
+    "date": "Date",
+    "exportAba": "Export ABA ({count})",
+    "loadingEllipsis": "Loading...",
+    "manager": {
+      "buttons": {
+        "nextPayment": "Next Payment",
+        "previousPayment": "Previous Payment",
+        "reverse": "Reverse",
+        "saveAllocations": "Save Allocations"
+      },
+      "columns": {
+        "allocate": "Allocate?",
+        "allocated": "Allocated",
+        "allocatedAmount": "Allocated Amount",
+        "credit": "Credit",
+        "customer": "Customer",
+        "date": "Date",
+        "debit": "Debit",
+        "invoice": "Invoice",
+        "invoiceNo": "Invoice No.",
+        "memo": "Memo",
+        "outstanding": "Outstanding",
+        "type": "Type"
+      },
+      "labels": {
+        "allocatedNow": "Allocated Now",
+        "amount": "Amount",
+        "date": "Date",
+        "glBank": "GL Bank Customer",
+        "mode": "Mode",
+        "party": "Party",
+        "paymentUnallocated": "Payment Unallocated",
+        "reference": "Reference / Memo",
+        "remainingToAllocate": "Remaining to Allocate",
+        "settlementCurrency": "Settlement Currency",
+        "status": "Status",
+        "totalOutstanding": "Total Outstanding",
+        "type": "Type",
+        "unallocatedAmount": "Unallocated Amount"
+      },
+      "messages": {
+        "allocationExceedsUnallocated": "Total allocation exceeds unallocated amount",
+        "allocationHistory": "Allocation History",
+        "allocationsSaved": "Allocations saved",
+        "clickToAutoAllocateMax": "Click to auto-allocate max",
+        "clickToRemoveAllocation": "Click to remove allocation",
+        "deleteDraftConfirm": "Are you sure you want to delete this draft payment?",
+        "failedToCreate": "Failed to create payment",
+        "loadingInvoices": "Loading outstanding invoices...",
+        "noLedgerLines": "No ledger lines found for this entry.",
+        "noOutstandingInvoices": "No outstanding invoices to allocate",
+        "partial": "Partial",
+        "paymentCancelled": "Payment cancelled",
+        "paymentCreated": "Payment created and posted successfully",
+        "paymentSubmitted": "Payment submitted and posted to GL",
+        "reversePaymentConfirm": "Are you sure you want to reverse this payment? This will create a reversing GL entry.",
+        "selectRowForPartial": "Select a row to allocate partially",
+        "total": "Total"
+      },
+      "newEntry": "New Payment Entry",
+      "options": {
+        "cash": "Cash",
+        "cheque": "Cheque",
+        "creditCard": "Credit Card",
+        "customerReceipt": "Customer Receipt",
+        "eft": "EFT / Wire",
+        "supplierPayment": "Supplier Payment"
+      },
+      "placeholders": {
+        "amount": "0.00",
+        "reference": "e.g. Check #, Wire Ref"
+      }
+    },
+    "mode": "Mode",
+    "newPayment": "New Payment",
+    "noPayments": "No payments found",
+    "partialAllocation": {
+      "amountToAllocate": "Amount to Allocate",
+      "confirm": "Confirm Allocation",
+      "invoice": "Invoice",
+      "maxAvailable": "Max Available to Allocate",
+      "outstanding": "Outstanding",
+      "title": "Partial Allocation"
+    },
+    "party": "Party",
+    "payment": "Payment",
+    "paymentNumber": "Payment #",
+    "processing": "Processing...",
+    "purchInv": "Purch Inv",
+    "receipt": "Receipt",
+    "records": "Records",
+    "reject": "Reject",
+    "salesInv": "Sales Inv",
+    "saving": "Saving...",
+    "status": "Status",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "subtitle": "Manage customer receipts and supplier payments",
+    "supplier": "Supplier",
+    "title": "Payments",
+    "total": "Total",
+    "type": "Type",
+    "unallocated": "Unallocated",
+    "unallocatedOnly": "Unallocated Only",
+    "view": "View"
+  },
+  "picking": {
+    "actions": {
+      "done": "Done",
+      "pickAll": "Pick All"
+    },
+    "buttons": {
+      "pick": "Pick"
+    },
+    "clickToEdit": "Click to edit",
+    "columns": {
+      "action": "Action",
+      "binLocation": "Bin Location",
+      "description": "Description",
+      "lineNumber": "#",
+      "location": "Location",
+      "notes": "Notes",
+      "onHand": "On Hand",
+      "ordered": "Ordered",
+      "pickQty": "Pick Qty",
+      "picked": "Picked",
+      "product": "Product",
+      "qtyToShip": "Qty to Ship",
+      "remaining": "Remaining",
+      "shipped": "Shipped",
+      "status": "Status",
+      "trackingNumber": "Tracking Number"
+    },
+    "createShipment": "Create Shipment",
+    "createdOn": "Created {date}",
+    "createdOnBy": "Created {date} by {user}",
+    "errors": {
+      "atLeastOneLineRequired": "At least one line with a quantity is required",
+      "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
+      "failedToCreateShipment": "Failed to create shipment",
+      "failedToGeneratePickingSlip": "Failed to generate picking slip",
+      "failedToPickAll": "Failed to pick all",
+      "failedToUpdateLocation": "Failed to update location",
+      "failedToUpdatePick": "Failed to update pick",
+      "failedToUpdateShipment": "Failed to update shipment",
+      "unpickToChangeLocation": "Must unpick to change location"
+    },
+    "linesPicked": "{picked} / {total} lines picked",
+    "loadingOrder": "Loading order context...",
+    "locationLabel": "Location:",
+    "newShipment": "New Shipment",
+    "noItemsToPick": "No items available to pick.",
+    "noName": "No Name",
+    "noOrders": "No {tab} orders pending.",
+    "noShipmentsYet": "No products have shipped yet.",
+    "outOfStock": "Out of Stock",
+    "pickAllCreateShipment": "Pick All & Create Shipment",
+    "picked": "Picked",
+    "pickingSlipPdf": "Picking Slip PDF",
+    "placeholders": {
+      "notes": "Shipment notes",
+      "tracking": "Tracking #"
+    },
+    "printPickingSlip": "Print Picking Slip",
+    "qtyOption": "(qty: {qty})",
+    "selectBin": "Select Bin...",
+    "selectOrder": "Select an order from the list to pick items.",
+    "shipments": "Shipments",
+    "shipped": "Shipped",
+    "statuses": {
+      "dispatched": "Dispatched",
+      "done": "Fully Picked",
+      "partial": "Partially Picked",
+      "picked": "Picked"
+    },
+    "tabs": {
+      "blocked": "Blocked",
+      "partial": "Partial",
+      "ready": "Ready"
+    },
+    "title": "Picking",
+    "toPick": "To Pick",
+    "tooltips": {
+      "allocated": "Allocated",
+      "cancelPick": "Cancel Pick",
+      "partiallyPicked": "Partially picked",
+      "stockSpecificallyOrdered": "Stock was specifically ordered for this line"
+    },
+    "unavailable": "Unavailable"
+  },
   "products": {
-    "title": "Products",
+    "addComponent": "Add Component",
+    "addConversion": "Add Conversion",
+    "availableToAssemble": "Available to Assemble: {quantity}",
+    "baseUom": "Base UoM",
+    "baseUomLabel": "(Base: {uom})",
     "buttons": {
       "addProduct": "Add Product"
     },
-    "columns": {
-      "productNumber": "Product # (SKU)",
-      "productId": "Product ID",
-      "vendor": "Default Vendor",
-      "stdCost": "Standard cost",
-      "listPrice": "List Price",
-      "tradePrice": "Trade Price",
-      "priceLevel3": "Level 3",
-      "priceLevel4": "Level 4",
-      "barcode": "Barcode",
-      "purchaseTaxCategory": "Purchase Tax Category",
-      "salesTaxCategory": "Sales Tax Category",
-      "alternateProductNumber": "Alternate Product Number",
-      "quantityOnHand": "On Hand",
-      "uomCode": "UoM Code",
-      "ratio": "Ratio",
-      "ratioBase": "Ratio (\u00d7 Base)",
-      "notes": "Notes",
-      "parentQuantity": "Parent Quantity",
-      "quantity": "Component Quantity",
-      "sequenceNumber": "Sequence Number",
-      "name": "Name",
-      "baseUom": "Base UoM"
-    },
-    "generalInfo": "General Information",
     "cards": {
-      "identity": "Identity",
       "classification": "Classification",
+      "identity": "Identity",
       "taxation": "Taxation"
     },
-    "pricing": "Pricing & Costs",
+    "columns": {
+      "alternateProductNumber": "Alternate Product Number",
+      "barcode": "Barcode",
+      "baseUom": "Base UoM",
+      "listPrice": "List Price",
+      "name": "Name",
+      "notes": "Notes",
+      "parentQuantity": "Parent Quantity",
+      "priceLevel3": "Level 3",
+      "priceLevel4": "Level 4",
+      "productId": "Product ID",
+      "productNumber": "Product # (SKU)",
+      "purchaseTaxCategory": "Purchase Tax Category",
+      "quantity": "Component Quantity",
+      "quantityOnHand": "Qty On Hand",
+      "ratio": "Ratio",
+      "ratioBase": "Ratio (x Base)",
+      "salesTaxCategory": "Sales Tax Category",
+      "sequenceNumber": "Sequence Number",
+      "stdCost": "Standard cost",
+      "tradePrice": "Trade Price",
+      "uomCode": "UoM Code",
+      "vendor": "Default Vendor"
+    },
+    "componentProduct": "Component Product",
+    "confirmRemoveComponent": "Are you sure you want to remove this component?",
+    "confirmRemoveConversion": "Remove {uomCode} conversion?",
+    "defaultPurchaseUom": "Default Purchase UoM",
+    "defaultSalesUom": "Default Sales UoM",
+    "editComponent": "Edit Component",
+    "errors": {
+      "childProductRequired": "Component product is required"
+    },
+    "fractionalBehavior": {
+      "allow_fractional": "Allow Fractional",
+      "force_multiple": "Force Multiple",
+      "label": "Fractional Behavior",
+      "round_down": "Round Down",
+      "round_up": "Round Up"
+    },
+    "generalInfo": "General Information",
+    "help": {
+      "parentQuantity": "How many of the kit are needed to require the component quantity below. Usually 1."
+    },
+    "inventoryLevels": "Inventory Levels",
     "management": "Product Management",
-    "productName": "Product Name",
-    "productGroup": "Product Group",
+    "newTitle": "New Product",
+    "noConversions": "No alternate packaging conversions configured.",
+    "packagingConversions": "Packaging Conversions",
     "placeholders": {
-      "searchProducts": "Search by name, product number, or barcode\u2026",
-      "productNumber": "e.g. PROD-001",
-      "productName": "e.g. Widget Deluxe",
       "barcode": "EAN / UPC barcode",
+      "noProductGroup": "No Product Group",
       "notes": "Handling instructions, storage requirements, or product description...",
       "productDisplayName": "Product display name",
-      "noProductGroup": "No Product Group",
-      "searchProduct": "Search for a product..."
+      "productName": "e.g. Widget Deluxe",
+      "productNumber": "e.g. PROD-001",
+      "searchProduct": "Search for a product...",
+      "searchProducts": "Search by name, product number, or barcode..."
+    },
+    "pricing": "Pricing & Costs",
+    "productGroup": "Product Group",
+    "productName": "Product Name",
+    "storage": {
+      "addBinLink": "Link bin",
+      "columns": {
+        "bin": "Bin",
+        "location": "Location",
+        "maxQty": "Max Qty",
+        "minQty": "Min Qty",
+        "primary": "Primary"
+      },
+      "confirmRemoveLink": "Are you sure you want to unlink this bin?",
+      "noBins": "No bins or storage links",
+      "toastLinkAdded": "Bin configuration added",
+      "toastLinkRemoved": "Bin configuration removed",
+      "toastLinkUpdated": "Bin configuration updated"
+    },
+    "structureType": "Structure",
+    "structures": {
+      "kit": "Kit",
+      "standard": "Standard"
     },
     "supplierModal": {
-      "title": "Link Supplier",
-      "inputs": {
-        "searchSupplier": "Search & Select Supplier",
-        "searchPlaceholder": "Type at least 2 characters to search...",
-        "noSuppliersFound": "No suppliers found matching \"{search}\"",
-        "supplierSelected": "Supplier selected and ready.",
-        "supplierPartNo": "Supplier Part No.",
-        "costPrice": "Cost Price"
-      },
       "buttons": {
         "cancel": "Cancel",
         "linkProduct": "Link Product"
       },
+      "inputs": {
+        "costPrice": "Cost Price",
+        "noSuppliersFound": "No suppliers found matching \"{search}\"",
+        "searchPlaceholder": "Type at least 2 characters to search...",
+        "searchSupplier": "Search & Select Supplier",
+        "supplierPartNo": "Supplier Part No.",
+        "supplierSelected": "Supplier selected and ready."
+      },
       "messages": {
-        "success": "Supplier successfully linked",
-        "selectDropdown": "Please select a supplier from the dropdown"
-      }
+        "selectDropdown": "Please select a supplier from the dropdown",
+        "success": "Supplier successfully linked"
+      },
+      "title": "Link Supplier"
     },
-    "newTitle": "New Product",
-    "structureType": "Structure",
-    "structures": {
-      "standard": "Standard",
-      "kit": "Kit"
+    "tabs": {
+      "kitComponents": "Kit Components"
+    },
+    "title": "Products",
+    "toast": {
+      "componentAdded": "Component added successfully",
+      "componentRemoved": "Component removed",
+      "componentUpdated": "Component updated successfully",
+      "conversionAdded": "Conversion added",
+      "conversionRemoved": "Conversion removed"
     },
     "types": {
       "inventory": "Inventory (Tracked)",
       "nonStock": "Non-Stock",
       "service": "Service"
     },
-    "tabs": {
-      "kitComponents": "Kit Components"
-    },
-    "help": {
-      "parentQuantity": "How many of the kit are needed to require the component quantity below. Usually 1."
-    },
-    "addComponent": "Add Component",
-    "editComponent": "Edit Component",
-    "componentProduct": "Component Product",
-    "confirmRemoveComponent": "Are you sure you want to remove this component?",
-    "errors": {
-      "childProductRequired": "Component product is required"
-    },
     "unitsOfMeasure": "Units of Measure",
-    "baseUom": "Base UoM",
-    "defaultSalesUom": "Default Sales UoM",
-    "defaultPurchaseUom": "Default Purchase UoM",
-    "packagingConversions": "Packaging Conversions",
-    "addConversion": "Add Conversion",
-    "noConversions": "No alternate packaging conversions configured.",
-    "inventoryLevels": "Inventory Levels",
-    "toast": {
-      "conversionAdded": "Conversion added",
-      "conversionRemoved": "Conversion removed",
-      "componentAdded": "Component added successfully",
-      "componentUpdated": "Component updated successfully",
-      "componentRemoved": "Component removed"
-    },
-    "confirmRemoveConversion": "Remove {uomCode} conversion?",
     "unknownCategory": "Unknown Category ({id})",
-    "baseUomLabel": "(Base: {uom})",
-    "uomRatioLabel": "{uom} (\u00d7{ratio})",
-    "storage": {
-      "columns": {
-        "bin": "Bin",
-        "location": "Location",
-        "minQty": "Min Qty",
-        "maxQty": "Max Qty"
-      },
-      "addBinLink": "Link bin",
-      "toastLinkAdded": "Bin configuration added",
-      "toastLinkUpdated": "Bin configuration updated",
-      "confirmRemoveLink": "Are you sure you want to unlink this bin?",
-      "toastLinkRemoved": "Bin configuration removed"
-    }
+    "uomRatioLabel": "{uom} (x{ratio})"
   },
-  "salesOrders": {
-    "title": "Sales Orders",
-    "subtitle": "Manage customer orders and quotes",
-    "generateQuoteTitle": "Generate Quote PDF",
+  "purchaseOrders": {
+    "addLine": "+ Line",
+    "addRoundingAdj": "+ Rounding Adj",
+    "allocationsSection": {
+      "action": "Action",
+      "allocatedQty": "Allocated Qty",
+      "confirmUnallocate": "Are you sure you want to unallocate this demand? It will be placed back into the Open Demands pool.",
+      "dateRequested": "Date Requested",
+      "error": "Failed to unallocate demand",
+      "loading": "Loading allocations...",
+      "noAllocations": "No open sales demand is currently allocated to this purchase order.",
+      "product": "Product",
+      "salesOrder": "Sales Order",
+      "success": "Demand unallocated successfully",
+      "title": "Allocations",
+      "unallocate": "Unallocate",
+      "unallocateTitle": "Unallocate demand from this PO"
+    },
+    "availability": "Availability",
+    "backToOrders": "â† Back to Orders",
+    "billSummary": "Bill Summary",
     "buttons": {
-      "createOrder": "+ Create Order",
-      "createQuote": "Create Quote",
-      "createInvoice": "Create Invoice",
-      "printInvoice": "Invoice PDF",
-      "generateInvoice": "Generate Invoice",
+      "approveInvoice": "Approve Invoice",
+      "change": "Change",
       "copyOrder": "Copy Order",
+      "createPO": "+ Create PO",
       "createReturn": "Create Return",
-      "salesCredit": "Credit Note PDF",
-      "returnSlip": "Return Slip PDF",
-      "archive": "Archive",
-      "unarchive": "Unarchive",
-      "save": "Save",
-      "removeLine": "Remove line",
-      "saveReturn": "Create Return",
-      "removeReturnLine": "Remove return line",
       "customLine": "Custom Line",
-      "addPostConfirmationLine": "Add Line",
-      "proFormaInvoice": "Pro Forma Invoice",
-      "confirmationPdf": "Confirmation PDF",
-      "generate": "Generate"
-    },
-    "placeholders": {
-      "searchOrders": "Search by order number, customer, or PO\u2026",
-      "orderName": "Order name",
-      "customerPO": "Customer purchase order",
-      "notes": "Internal notes",
-      "searchProduct": "Add product\u2026 (search)",
-      "returnNotes": "Return reason / notes",
-      "reason": "Reason",
-      "searchCustomers": "Search customers\u2026",
-      "zero": "0",
-      "customDescription": "Custom description...",
-      "quoteText": "Enter custom text for this quote...",
-      "selectMacro": "Select a macro to insert..."
-    },
-    "labels": {
-      "customer": "Customer",
-      "orderName": "Order Name",
-      "customerPO": "Customer PO #",
-      "created": "Created",
-      "notes": "Notes",
-      "fulfillmentLocation": "Fulfillment Location *",
-      "quoteText": "Quote Text",
-      "quoteMacro": "Insert Template"
-    },
-    "sections": {
-      "quoteText": "Quote Text"
+      "enterSupplierBill": "Enter Invoice",
+      "resolveDemands": "Resolve Demands",
+      "resolving": "Resolving...",
+      "save": "💾 Save",
+      "submitBill": "Submit Invoice"
     },
     "columns": {
-      "lineNumber": "#",
-      "product": "Product",
-      "description": "Description",
-      "qty": "Qty",
-      "uom": "UOM",
-      "unitPrice": "Unit Price",
-      "discountPct": "Disc %",
-      "tax": "Tax",
+      "allocatedAmount": "Allocated Amount",
+      "allocation": "Allocation",
       "amount": "Amount",
-      "ordered": "Ordered",
+      "available": "Available",
+      "billed": "Billed",
+      "committed": "Committed",
+      "date": "Date",
+      "description": "Description",
+      "details": "Details",
+      "discountPct": "Disc %",
+      "fee": "Fee",
+      "invoiceNumber": "Bill #",
+      "issueType": "Issue Type",
+      "line": "Line",
+      "lineNumber": "#",
       "location": "Location",
       "onHand": "On Hand",
-      "committed": "Committed",
-      "reserved": "Reserved",
-      "available": "Available",
-      "status": "Status",
-      "returnQty": "Return Qty",
-      "reason": "Reason",
-      "fee": "Fee",
+      "ordered": "On Order",
+      "paymentNo": "Payment No.",
+      "product": "Product",
+      "qty": "Qty",
+      "qtyReceived": "Received",
       "qtyReturned": "Qty Returned",
-      "invoiceNumber": "Invoice No.",
-      "orderNumber": "Order No.",
-      "customer": "Customer",
-      "date": "Date",
+      "qtyToBill": "Qty to Bill",
+      "reason": "Reason",
+      "received": "Received",
+      "referenceNumber": "Ref #",
+      "remaining": "Remaining",
+      "reserved": "Reserved",
       "state": "State",
-      "postConfirmation": "Post-Confirmation",
-      "picked": "Picked",
-      "shipped": "Shipped",
-      "invoiced": "Invoiced",
-      "qtyToInvoice": "Qty to Invoice",
-      "fulfillment": "Fulfillment",
-      "incoming": "Incoming",
-      "type": "Type",
-      "allocatedTo": "Allocated To",
-      "demandDate": "Demand Date",
-      "name": "Name",
-      "required": "Required",
-      "gap": "Gap"
+      "status": "Status",
+      "supplierInvoiceNumber": "Supplier Invoice No.",
+      "tax": "Tax",
+      "taxCategory": "Tax",
+      "thisOrder": "This Order",
+      "unitPrice": "Unit Price",
+      "uom": "UOM",
+      "vendor": "Supplier"
     },
-    "shortages": {
-      "title": "Stock Shortage Detected",
-      "description": "The following items have insufficient stock at ",
-      "item": "Item",
+    "createTitle": "Create Purchase Order",
+    "defaultExpense": "Default Expense",
+    "demandTitle": "Open Demand",
+    "demands": {
+      "allAssignedError": "All line items must be assigned to a supplier before generating POs.",
+      "allocate": "Allocate",
+      "allocating": "...",
+      "allocationError": "Failed to allocate demand",
+      "availableCap": "Available Cap.",
+      "confirmReallocation": "Confirm Reallocation",
+      "createTransfer": "Create Transfer",
+      "createTransferDesc": "Create a Transfer Order to fulfill {count} demands from another location.",
+      "createTransferTitle": "Create Internal Transfer",
+      "creating": "Creating...",
+      "deliverTo": "Deliver to:",
+      "description": "Description",
+      "destination": "Destination:",
+      "estCost": "Est. Cost",
+      "iconStorefront": "storefront",
+      "iconWarning": "warning",
+      "items": "{count} items",
+      "link": "Link",
+      "linked": "Linked",
+      "loadingEligible": "Loading eligible POs...",
+      "locationMismatch": "Location Mismatch",
+      "noLocationsAvailable": "No other locations available.",
+      "noOpenPos": "No open purchase orders found with available capacity for this product.",
       "ordered": "Ordered",
-      "available": "Available",
-      "shortage": "Shortage",
-      "cancel": "Cancel"
+      "pending": "Pending",
+      "posGeneratedError": "Failed to generate Purchase Orders",
+      "posGeneratedSuccess": "Purchase Orders generated successfully",
+      "product": "Product",
+      "qtyRequired": "Qty Required:",
+      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
+      "reallocating": "Reallocating...",
+      "reqQty": "Req Qty",
+      "requiredAt": "Required at:",
+      "reviewDraftPos": "Review & Generate Draft POs",
+      "reviewDraftPosDesc": "Review grouped line items and assign suppliers before generation.",
+      "salesOrder": "Sales Order",
+      "selectSupplier": "-- Select Supplier --",
+      "sourceLocation": "Source Location",
+      "status": "Status",
+      "supplierAssignment": "Supplier Assignment",
+      "unassignedActionRequired": "Unassigned (Action Required)",
+      "unknown": "Unknown"
     },
-    "discrepancies": {
-      "title": "Part Availability Discrepancies",
-      "shortageOf": "Shortage of {qty} units",
-      "orderedVsAvail": "{ordered} ordered vs {avail} avail",
-      "modalDescription": "The following line items do not have enough inventory on hand. If you confirm this order, it will result in shortages.",
-      "acknowledgeCheckbox": "I acknowledge the part availability issues listed above and wish to proceed with order confirmation."
+    "demandsContent": {
+      "allocateToPo": "Allocate to PO",
+      "changeLocation": "Change Location",
+      "draft": "Draft",
+      "draftPos": "Draft POs",
+      "internalTransfer": "Internal Transfer",
+      "ordered": "Ordered",
+      "pendingSupply": "Pending Supply"
     },
-    "archivedBannerTitle": "This record is archived.",
-    "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
-    "orderNotFound": "Order not found",
-    "backToOrders": "\u2190 Back to Orders",
-    "untitledOrder": "Untitled order",
-    "orderDetails": "Order Details",
+    "file": "File:",
+    "inventoryAsset": "Inventory Asset",
+    "invoiceDiscrepancies": "Invoice Discrepancies",
+    "labels": {
+      "created": "Created",
+      "location": "Delivery Location",
+      "notes": "Notes",
+      "orderName": "Order Name",
+      "receiptFilename": "Receipt Filename",
+      "referenceNumber": "Reference #",
+      "supplier": "Supplier"
+    },
     "lineItems": "Line items",
-    "availability": "Availability",
-    "noLineItems": "No line items \u2014 use the search above to add products",
-    "loadingInventory": "Loading inventory data\u2026",
-    "unnamedCustomer": "Unnamed customer",
-    "returnsHeading": "Returns",
-    "noLineItemsShort": "No products ordered yet.",
-    "noReturnLines": "No return lines",
+    "loadingInventory": "Loading inventory data...",
+    "loadingReturns": "Loading returns...",
+    "location": "Location",
+    "locationWarning": "Delivery was received at a different location than specified on the Purchase Order.",
+    "locationWarningPrefix": "Location Warning:",
+    "matching": {
+      "autoMatchAll": "Auto-match All",
+      "fullyInvoiced": "Fully invoiced",
+      "linesCount": "{count, plural, =1 {# line} other {# lines}}",
+      "matchButton": "Match",
+      "matchableCount": "{count} matchable",
+      "matched": "matched",
+      "noPendingPOs": "No matchable PO lines found for this vendor.",
+      "panelTitle": "Match to PO Lines",
+      "remaining": "Remaining",
+      "selectInvoiceLine": "Select an invoice line to match"
+    },
+    "newOrderTitle": "New Purchase Order",
     "newReturn": "New Return",
-    "selectLocation": "Select Location",
+    "noBillsGeneratedYet": "No invoices entered yet.",
     "noInventoryData": "No inventory data",
-    "loadingReturns": "Loading returns\u2026",
-    "noReturns": "No returns for this order.",
-    "virtualFulfillmentBypass": "N/A",
-    "discountPercent": "{disc}% disc",
-    "invoicesCardHeading": "Sales Invoices",
+    "noItems": "No items",
+    "noLineItems": "No line items — use the search above to add products",
+    "noLineItemsShort": "No line items",
+    "noPaymentsAllocated": "No payments have been allocated to this invoice yet.",
+    "noReturnLines": "No return lines",
+    "noReturns": "No returns",
+    "orderDetails": "Order Details",
+    "orderNotFound": "Order not found",
+    "packingSlip": "Packing Slip",
+    "paymentAllocations": "Payment Allocations",
+    "placeholders": {
+      "notes": "Internal notes",
+      "orderName": "Order name",
+      "reason": "Reason",
+      "referenceNumber": "Supplier quote reference",
+      "searchOrders": "Search purchase orders...",
+      "searchProduct": "Add product... (search)",
+      "searchSuppliers": "Search suppliers..."
+    },
+    "poNumberLabel": "PO {number}",
+    "reallocateModal": {
+      "cancel": "Cancel",
+      "newLocation": "New Fulfillment Location",
+      "reallocate": "Reallocate",
+      "title": "Reallocate Location",
+      "warning1": "You are reallocating ",
+      "warning2": " demand line(s).",
+      "warning3": "This will update the Sales Order line's fulfillment location and reset any existing PO allocations for these lines."
+    },
+    "receptionSummary": "Reception Summary",
+    "receptionsSection": {
+      "action": "Action",
+      "confirmUnlink": "Are you sure you want to unlink this reception line? It will be placed back into the Goods Received pool for manual allocation.",
+      "dateReceived": "Date Received",
+      "error": "Failed to unlink reception",
+      "loading": "Loading receptions...",
+      "noReceptions": "No goods received lines are currently allocated to this purchase order.",
+      "product": "Product",
+      "receipt": "Receipt",
+      "receivedQty": "Received Qty",
+      "success": "Reception unlinked successfully",
+      "title": "Receptions",
+      "unlink": "Unlink",
+      "unlinkTitle": "Unlink reception from this PO"
+    },
+    "ref": "Ref:",
     "returns": {
-      "totalCredit": "Total Credit",
-      "totalFees": "Total Fees",
-      "netCredit": "Net Credit",
-      "creditNote": "Credit Note"
+      "cancel": "Cancel",
+      "clear": "Clear",
+      "confirm": "Confirm",
+      "confirmReturns": "Complete Returns",
+      "exceptionQuarantine": "Exception Quarantine",
+      "exceptionQuarantineTag": "QUARANTINE",
+      "loadingLines": "Loading...",
+      "markQuarantine": "Mark Quarantine",
+      "moveToQuarantine": "Move to Quarantine",
+      "noActivePOs": "No returnable PO lines found for this product.",
+      "noItemsScanned": "No items staged for return.",
+      "noPartNumber": "No Part Number",
+      "ordered": "Ordered",
+      "placeholder": "Scan or search product...",
+      "poPrice": "PO Price",
+      "qtyReturned": "Quantity to Return",
+      "qtyReturnedSummary": "Return Qty",
+      "qtyToQuarantine": "Qty to Quarantine",
+      "quarantineBtnSub": "Add to quarantine without a PO",
+      "quarantineBtnTitle": "Exceptional Quarantine",
+      "received": "Received",
+      "remaining": "received: {rem}",
+      "remove": "Remove",
+      "returnFee": "Return Fee",
+      "returnFeeDiscrepancy": "Fee: {amount}",
+      "returnsSummary": "Returns Draft Cart",
+      "scanProduct": "Scan Product to Return",
+      "selectPOLine": "Select received PO Line to return against",
+      "subtitle": "Return items back to suppliers",
+      "title": "Purchase Returns",
+      "unknownProduct": "Unknown Product"
     },
-    "timeline": {
-      "by": "by {actor}"
+    "returnsHeading": "Returns",
+    "selectGlCustomer": "Select GL Customer...",
+    "subtitle": "Manage purchase orders",
+    "supplierInvoice": {
+      "addLine": "+ Add Line",
+      "receipt": "Receipt",
+      "fromPo": "From PO",
+      "standaloneItem": "Standalone Item",
+      "invoiceNumberLabel": "Supplier Invoice Number *",
+      "noItems": "No items",
+      "receiptFilenameLabel": "Receipt Filename (Optional)",
+      "taxTotalAmount": "{tax} (Total Amount)"
     },
-    "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
-    "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances.",
-    "noInventoryFound": "No inventory records found for this product.",
+    "supplierInvoicesCardHeading": "Supplier Invoices",
+    "statusTab": "Status",
+    "allocated": "Allocated",
+    "title": "Purchase Orders",
+    "unnamedCustomer": "Unnamed customer",
+    "untitledOrder": "Untitled order"
+  },
+  "salesInvoices": {
+    "columns": {
+      "amount": "Amount",
+      "description": "Description",
+      "price": "Price",
+      "product": "Product",
+      "qty": "Qty"
+    },
+    "customer": "Customer",
+    "date": "Date",
+    "errorLoading": "Error loading invoice: {message}",
+    "invoiceDetails": "Invoice Details",
+    "lineItems": "Line Items",
+    "loading": "Loading Invoice...",
+    "loadingEllipsis": "Loading...",
+    "notFound": "Invoice not found.",
+    "orderNo": "Order No.",
+    "paymentAllocations": "Payment Allocations",
+    "paymentAllocationsDesc": "When payments are allocated to this invoice from the Payment Manager, they will appear here.",
+    "unknownCustomer": "Unknown Customer"
+  },
+  "salesOrders": {
+    "allocated": "Allocated",
+    "archivedBannerBody": "It is hidden from default views and is read-only. Unarchive to restore normal access.",
+    "archivedBannerTitle": "This record is archived.",
+    "availability": "Availability",
     "availabilityStatus": {
       "local": "In Stock (Local)",
       "others": "In Stock (Other)",
       "shortage": "Stock Shortage"
     },
-    "noProductsShippedYet": "No products have shipped yet.",
-    "noInvoicesGeneratedYet": "No invoices generated yet.",
+    "backToOrders": "â† Back to Orders",
     "backordersTab": "Backorders",
+    "buttons": {
+      "addPostConfirmationLine": "Add Line",
+      "archive": "Archive",
+      "confirmationPdf": "Confirmation PDF",
+      "copyOrder": "Copy Order",
+      "createInvoice": "Create Invoice",
+      "createOrder": "+ Create Order",
+      "createQuote": "Create Quote",
+      "createReturn": "Create Return",
+      "customLine": "Custom Line",
+      "generate": "Generate",
+      "generateInvoice": "Generate Invoice",
+      "printInvoice": "Invoice PDF",
+      "proFormaInvoice": "Pro Forma Invoice",
+      "removeLine": "Remove line",
+      "removeReturnLine": "Remove return line",
+      "returnSlip": "Return Slip PDF",
+      "salesCredit": "Credit Note PDF",
+      "save": "Save",
+      "saveReturn": "Create Return",
+      "unarchive": "Unarchive"
+    },
+    "child": "Child",
+    "columns": {
+      "allocatedTo": "Allocated To",
+      "amount": "Amount",
+      "available": "Available",
+      "committed": "Committed",
+      "customer": "Customer",
+      "date": "Date",
+      "demandDate": "Demand Date",
+      "description": "Description",
+      "discountPct": "Disc %",
+      "fee": "Fee",
+      "fulfillment": "Fulfillment",
+      "gap": "Gap",
+      "incoming": "Incoming",
+      "invoiceNumber": "Invoice No.",
+      "invoiced": "Invoiced",
+      "lineNumber": "#",
+      "location": "Location",
+      "name": "Name",
+      "onHand": "On Hand",
+      "orderNumber": "Order No.",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "postConfirmation": "Post-Confirmation",
+      "product": "Product",
+      "qty": "Qty",
+      "qtyReturned": "Qty Returned",
+      "qtyToInvoice": "Qty to Invoice",
+      "reason": "Reason",
+      "required": "Required",
+      "reserved": "Reserved",
+      "returnQty": "Return Qty",
+      "shipped": "Shipped",
+      "state": "State",
+      "status": "Status",
+      "tax": "Tax",
+      "type": "Type",
+      "unitPrice": "Unit Price",
+      "uom": "UOM"
+    },
+    "createTitle": "Create Sales Order",
+    "demandedQty": "{qty} demanded",
+    "discountPercent": "{disc}% disc",
+    "discrepancies": {
+      "acknowledgeCheckbox": "I acknowledge the part availability issues listed above and wish to proceed with order confirmation.",
+      "modalDescription": "The following line items do not have enough inventory on hand. If you confirm this order, it will result in shortages.",
+      "orderedVsAvail": "{ordered} ordered vs {avail} avail",
+      "shortageOf": "Shortage of {qty} units",
+      "title": "Part Availability Discrepancies"
+    },
+    "errors": {
+      "acknowledgeShortages": "Please review and acknowledge the part availability shortages before confirming.",
+      "failedToAddLine": "Failed to add line",
+      "failedToArchive": "Failed to archive order",
+      "failedToChangeState": "Failed to change state",
+      "failedToCopy": "Failed to copy order",
+      "failedToLoadOrder": "Failed to load order",
+      "failedToRemoveLine": "Failed to remove line",
+      "failedToUnarchive": "Failed to unarchive order",
+      "failedToUpdateLine": "Failed to update line",
+      "failedToUpdateOrder": "Failed to update order",
+      "noCurrency": "The selected customer does not have a currency configured."
+    },
+    "generateQuoteTitle": "Generate Quote PDF",
+    "invoicesCardHeading": "Sales Invoices",
+    "labels": {
+      "created": "Created",
+      "customer": "Customer",
+      "customerPO": "Customer PO #",
+      "fulfillmentLocation": "Fulfillment Location *",
+      "notes": "Notes",
+      "orderName": "Order Name",
+      "quoteMacro": "Insert Template",
+      "quoteText": "Quote Text"
+    },
+    "lineItems": "Line items",
+    "loadingInventory": "Loading inventory data...",
+    "loadingReturns": "Loading returns...",
+    "newReturn": "New Return",
+    "noBackordersFound": "No associated parent or child backorders found.",
+    "noInventoryData": "No inventory data",
+    "noInventoryFound": "No inventory records found for this product.",
+    "noInvoicesGeneratedYet": "No invoices generated yet.",
+    "noLineItems": "No line items — use the search above to add products",
+    "noLineItemsShort": "No products ordered yet.",
+    "noProductsShippedYet": "No products have shipped yet.",
+    "noReturnLines": "No return lines",
+    "noReturns": "No returns for this order.",
+    "openDemandBadge": "Open Demand",
+    "orderDetails": "Order Details",
+    "orderNotFound": "Order not found",
+    "parent": "Parent",
+    "placeholders": {
+      "customDescription": "Custom description...",
+      "customerPO": "Customer purchase order",
+      "notes": "Internal notes",
+      "orderName": "Order name",
+      "quoteText": "Enter custom text for this quote...",
+      "reason": "Reason",
+      "returnNotes": "Return reason / notes",
+      "searchCustomers": "Search customers...",
+      "searchOrders": "Search by order number, customer, or PO...",
+      "searchProduct": "Add product... (search)",
+      "selectMacro": "Select a macro to insert...",
+      "zero": "0"
+    },
+    "postConfirmationLineWarningBody": "Are you sure you want to add a new line after this order has already been confirmed? This should only be used for additional freight or post-confirmation charges. This will affect un-invoiced balances.",
+    "postConfirmationLineWarningTitle": "Add Post-Confirmation Line",
+    "returns": {
+      "creditNote": "Credit Note",
+      "netCredit": "Net Credit",
+      "totalCredit": "Total Credit",
+      "totalFees": "Total Fees"
+    },
+    "returnsHeading": "Returns",
+    "sections": {
+      "quoteText": "Quote Text"
+    },
+    "selectLocation": "Select Location",
+    "shortages": {
+      "available": "Available",
+      "cancel": "Cancel",
+      "description": "The following items have insufficient stock at ",
+      "item": "Item",
+      "ordered": "Ordered",
+      "shortage": "Shortage",
+      "title": "Stock Shortage Detected"
+    },
+    "subtitle": "Manage customer orders and quotes",
+    "timeline": {
+      "by": "by {actor}"
+    },
+    "title": "Sales Orders",
     "totals": {
       "subtotal": "Subtotal",
       "tax": "Tax",
       "total": "Total"
     },
-    "parent": "Parent",
-    "child": "Child",
-    "noBackordersFound": "No associated parent or child backorders found.",
-    "errors": {
-      "noCurrency": "The selected customer does not have a currency configured.",
-      "failedToLoadOrder": "Failed to load order",
-      "failedToUpdateOrder": "Failed to update order",
-      "failedToChangeState": "Failed to change state",
-      "failedToArchive": "Failed to archive order",
-      "failedToUnarchive": "Failed to unarchive order",
-      "failedToCopy": "Failed to copy order",
-      "failedToUpdateLine": "Failed to update line",
-      "failedToRemoveLine": "Failed to remove line",
-      "failedToAddLine": "Failed to add line",
-      "acknowledgeShortages": "Please review and acknowledge the part availability shortages before confirming."
-    },
-    "createTitle": "Create Sales Order"
-  },
-  "salesInvoices": {
-    "loading": "Loading Invoice...",
-    "loadingEllipsis": "Loading...",
-    "errorLoading": "Error loading invoice: {message}",
-    "notFound": "Invoice not found.",
-    "unknownCustomer": "Unknown Customer"
-  },
-  "shipments": {
-    "title": "Shipments",
-    "subtitle": "Track Sales Order shipments and deliveries",
-    "columns": {
-      "shipmentNumber": "Shipment #",
-      "date": "Date",
-      "customer": "Customer",
-      "orderNumber": "Order #",
-      "purchaseOrders": "Linked POs",
-      "status": "Status",
-      "notes": "Notes",
-      "tracking": "Tracking",
-      "product": "Product",
-      "description": "Description",
-      "qty": "Qty"
-    },
-    "placeholders": {
-      "searchShipments": "Search by shipment number, customer, or PO\u2026"
-    },
-    "shipmentDetails": "Shipment Details",
-    "lineItems": "Line Items",
-    "backToShipments": "\u2190 Back to Shipments",
-    "cancelShipment": "Cancel Shipment",
-    "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
-    "cancelFailed": "Failed to cancel shipment"
-  },
-  "transfers": {
-    "title": "Transfer Orders",
-    "subtitle": "Manage internal inventory transfers",
-    "lineItems": "Line items",
-    "transferTitle": "Transfer {number}",
-    "notFound": "Transfer order not found",
-    "backToTransfers": "Back to Transfers",
-    "cancelConfirm": "Are you sure you want to cancel this transfer order?",
-    "subtitleFlow": "From {source} to {destination}",
-    "removeLine": "Remove line",
-    "noLineItems": "No line items",
-    "buttons": {
-      "createTransfer": "+ Create Transfer",
-      "save": "\ud83d\udcbe Save",
-      "customLine": "Custom Line",
-      "addLines": "Add Lines"
-    },
-    "placeholders": {
-      "searchTransfer": "Search or scan transfers...",
-      "notes": "Transfer notes...",
-      "selectSourceLocation": "Select Source Location",
-      "selectDestinationLocation": "Select Destination Location",
-      "searchProduct": "Add product\u2026 (search)"
-    },
-    "columns": {
-      "orderNumber": "Order Number",
-      "sourceLocation": "Source Location",
-      "destinationLocation": "Destination Location",
-      "notes": "Notes",
-      "status": "Status",
-      "createdBy": "Created By",
-      "createdOn": "Created On",
-      "product": "Product",
-      "description": "Description",
-      "ordered": "Ordered",
-      "shipped": "Shipped",
-      "received": "Received"
-    },
-    "createSlideOver": {
-      "title": "New Transfer Order",
-      "subtitle": "Create an internal transfer between locations"
-    },
-    "status": {
-      "confirmed": "Confirmed",
-      "picking": "Picking",
-      "shipped": "Shipped",
-      "received": "Received",
-      "cancelled": "Cancelled"
-    }
-  },
-  "purchaseOrders": {
-    "title": "Purchase Orders",
-    "defaultExpense": "Default Expense",
-    "demandTitle": "Open Demand",
-    "demands": {
-      "iconWarning": "warning",
-      "iconStorefront": "storefront",
-      "unassignedActionRequired": "Unassigned (Action Required)",
-      "unknown": "Unknown",
-      "createTransfer": "Create Transfer",
-      "creating": "Creating...",
-      "confirmReallocation": "Confirm Reallocation",
-      "reallocating": "Reallocating...",
-      "allocate": "Allocate",
-      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
-      "allocationError": "Failed to allocate demand",
-      "destination": "Destination:"
-    },
-    "subtitle": "Manage purchase orders",
-    "supplierInvoicesCardHeading": "Supplier Invoices",
-    "lineItems": "Line items",
-    "buttons": {
-      "createPO": "+ Create PO",
-      "copyOrder": "Copy Order",
-      "createReturn": "Create Return",
-      "enterSupplierBill": "Enter Invoice",
-      "submitBill": "Submit Invoice",
-      "save": "\ud83d\udcbe Save",
-      "customLine": "Custom Line",
-      "resolving": "Resolving...",
-      "resolveDemands": "Resolve Demands"
-    },
-    "placeholders": {
-      "searchOrders": "Search purchase orders\u2026",
-      "referenceNumber": "Supplier quote reference",
-      "orderName": "Order name",
-      "notes": "Internal notes",
-      "searchProduct": "Add product\u2026 (search)",
-      "searchSuppliers": "Search suppliers\u2026",
-      "reason": "Reason"
-    },
-    "labels": {
-      "supplier": "Supplier",
-      "referenceNumber": "Reference #",
-      "orderName": "Order Name",
-      "created": "Created",
-      "notes": "Notes",
-      "location": "Delivery Location"
-    },
-    "columns": {
-      "lineNumber": "#",
-      "product": "Product",
-      "description": "Description",
-      "vendor": "Supplier",
-      "date": "Date",
-      "state": "State",
-      "supplierInvoiceNumber": "Supplier Invoice No.",
-      "invoiceNumber": "Bill #",
-      "referenceNumber": "Ref #",
-      "qty": "Qty",
-      "uom": "UOM",
-      "unitPrice": "Unit Price",
-      "amount": "Amount",
-      "ordered": "On Order",
-      "thisOrder": "This Order",
-      "location": "Location",
-      "onHand": "On Hand",
-      "committed": "Committed",
-      "reserved": "Reserved",
-      "available": "Available",
-      "qtyReceived": "Received",
-      "status": "Status",
-      "qtyReturned": "Qty Returned",
-      "reason": "Reason",
-      "fee": "Fee",
-      "tax": "Tax",
-      "discountPct": "Disc %",
-      "taxCategory": "Tax",
-      "received": "Received",
-      "billed": "Billed",
-      "qtyToBill": "Qty to Bill",
-      "remaining": "Remaining"
-    },
-    "orderNotFound": "Order not found",
-    "backToOrders": "\u2190 Back to Orders",
-    "untitledOrder": "Untitled order",
     "unnamedCustomer": "Unnamed customer",
-    "orderDetails": "Order Details",
-    "noLineItems": "No line items \u2014 use the search above to add products",
-    "noLineItemsShort": "No line items",
-    "loadingInventory": "Loading inventory data\u2026",
-    "noInventoryData": "No inventory data",
-    "newReturn": "New Return",
-    "availability": "Availability",
-    "packingSlip": "Packing Slip",
-    "returnsHeading": "Returns",
-    "noReturns": "No returns",
-    "noReturnLines": "No return lines",
-    "loadingReturns": "Loading returns\u2026",
-    "returns": {
-      "title": "Purchase Returns",
-      "subtitle": "Return items back to suppliers",
-      "scanProduct": "Scan Product to Return",
-      "placeholder": "Scan or search product...",
-      "loadingLines": "Loading...",
-      "unknownProduct": "Unknown Product",
-      "noPartNumber": "No Part Number",
-      "noActivePOs": "No returnable PO lines found for this product.",
-      "clear": "Clear",
-      "markQuarantine": "Mark Quarantine",
-      "selectPOLine": "Select received PO Line to return against",
-      "remaining": "received: {rem}",
-      "quarantineBtnTitle": "Exceptional Quarantine",
-      "quarantineBtnSub": "Add to quarantine without a PO",
-      "ordered": "Ordered",
-      "received": "Received",
-      "poPrice": "PO Price",
-      "qtyReturned": "Quantity to Return",
-      "returnFee": "Return Fee",
-      "confirm": "Confirm",
-      "cancel": "Cancel",
-      "exceptionQuarantine": "Exception Quarantine",
-      "qtyToQuarantine": "Qty to Quarantine",
-      "exceptionQuarantineTag": "QUARANTINE",
-      "returnsSummary": "Returns Draft Cart",
-      "noItemsScanned": "No items staged for return.",
-      "qtyReturnedSummary": "Return Qty",
-      "returnFeeDiscrepancy": "Fee: {amount}",
-      "moveToQuarantine": "Move to Quarantine",
-      "remove": "Remove",
-      "confirmReturns": "Complete Returns"
-    },
-    "noBillsGeneratedYet": "No invoices entered yet.",
-    "locationWarning": "Delivery was received at a different location than specified on the Purchase Order.",
-    "receptionSummary": "Reception Summary",
-    "locationWarningPrefix": "Location Warning:",
-    "location": "Location",
-    "ref": "Ref:",
-    "file": "File:",
-    "billSummary": "Bill Summary",
-    "createTitle": "Create Purchase Order",
-    "newOrderTitle": "New Purchase Order",
-    "matching": {
-      "panelTitle": "Match to PO Lines",
-      "selectInvoiceLine": "Select an invoice line to match",
-      "noPendingPOs": "No matchable PO lines found for this vendor.",
-      "fullyInvoiced": "Fully invoiced",
-      "remaining": "Remaining",
-      "matchButton": "Match",
-      "autoMatchAll": "Auto-match All",
-      "linesCount": "{count, plural, =1 {# line} other {# lines}}",
-      "matchableCount": "{count} matchable",
-      "matched": "matched"
-    }
+    "untitledOrder": "Untitled order",
+    "virtualFulfillmentBypass": "N/A"
   },
-  "inventory": {
-    "title": "Inventory",
-    "tabs": {
-      "products": "Products",
-      "binContents": "Bin Contents",
-      "movements": "Movements",
-      "ledger": "Ledger",
-      "locations": "Locations"
+  "schemaBuilder": {
+    "addField": "+ Add Field",
+    "cancel": "Cancel",
+    "dataType": "Data Type",
+    "dropdownOptions": "Dropdown Options (Comma separated)",
+    "editField": "Edit Field",
+    "editFieldTitle": "Edit: {title}",
+    "fieldTitle": "Field Title (UI Label)",
+    "internalKey": "Internal Key (JSON property)",
+    "newField": "New Field",
+    "noFields": "No extra fields defined yet.",
+    "removeField": "Remove Field",
+    "requiredField": "Required Field",
+    "save": "Save",
+    "saveField": "Save Field",
+    "types": {
+      "boolean": "Toggle (Boolean)",
+      "enum": "Dropdown (Single Choice)",
+      "number": "Number",
+      "string": "Text"
     },
-    "locations": {
-      "zones": "Zones",
-      "bins": "Bins",
-      "addLocation": "Add Location",
-      "editLocation": "Edit Location",
-      "addZone": "Add Zone",
-      "editZone": "Edit Zone",
-      "addBin": "Add Bin",
-      "editBin": "Edit Bin",
-      "addZoneTo": "Add Zone to {name}",
-      "addBinTo": "Add Bin to {name}",
-      "noBinsInZone": "No bins in this zone.",
-      "fields": {
-        "city": "City",
-        "country": "Country",
-        "zoneCode": "Zone Code",
-        "zoneName": "Zone Name",
-        "binNumber": "Bin Number",
-        "binType": "Bin Type",
-        "flags": "Flags",
-        "source": "Source",
-        "consignment": "Consignment Stock",
-        "bonded": "Bonded Bin",
-        "unavailable": "Unavailable (Locked)"
-      },
-      "placeholders": {
-        "locationCode": "e.g. SYD01",
-        "locationName": "e.g. Sydney Warehouse",
-        "zoneCode": "e.g. BULK",
-        "zoneName": "e.g. Bulk Storage",
-        "binNumber": "e.g. A-01-01",
-        "binType": "Select bin type..."
-      },
-      "binTypes": {
-        "storage": "Storage",
-        "pick": "Picking",
-        "bulk": "Bulk",
-        "receiving": "Receiving",
-        "staging": "Staging",
-        "quarantine": "Quarantine",
-        "in_transit": "In Transit"
-      },
-      "zonesCount": "{count, plural, =1 {# zone} other {# zones}}",
-      "binsCount": "{count, plural, =1 {# bin} other {# bins}}"
-    },
-    "placeholders": {
-      "searchMovements": "Search by product, reference, or type\u2026",
-      "searchLedger": "Search transactions\u2026"
-    },
-    "filters": {
-      "last24Hours": "Last 24 Hours",
-      "last7Days": "Last 7 Days",
-      "last30Days": "Last 30 Days",
-      "last90Days": "Last 90 Days"
-    },
-    "columns": {
-      "document": "Document",
-      "sourceType": "Type",
-      "qtyChange": "Qty Change",
-      "actor": "User",
-      "productNumber": "Product #",
-      "locationNo": "Location No",
-      "alternateProductNumber": "Alternate Product Number",
-      "minQty": "Min Qty",
-      "maxQty": "Max Qty",
-      "defaultBin": "Default Bin",
-      "value": "Value",
-      "type": "Type",
-      "reference": "Ref / Document",
-      "stockIn": "Stock In",
-      "stockOut": "Stock Out",
-      "netChange": "Net Change",
-      "onHand": "On Hand",
-      "committed": "Committed",
-      "available": "Available",
-      "onOrder": "On Order"
-    },
-    "ledger": {
-      "title": "Inventory Ledger",
-      "system": "System",
-      "sourceType": "Source Type",
-      "sourceDocument": "Source Document",
-      "relatedParty": "Related Party",
-      "operationMemo": "Operation Memo",
-      "columns": {
-        "product": "Product",
-        "locationBin": "Location / Bin",
-        "qtyChange": "Qty Change"
-      },
-      "noLines": "No ledger entries found.",
-      "loadFailed": "Failed to load ledger entries"
-    },
-    "putaway": {
-      "title": "Putaway",
-      "pendingPutaway": "Pending Putaway",
-      "noItemsPending": "No items pending putaway in this location.",
-      "return": "RETURN",
-      "receipt": "RECEIPT",
-      "ref": "Ref: {ref}",
-      "action": "Putaway Action",
-      "selectItemToPutaway": "Select an item from the list to putaway.",
-      "loadingBinContext": "Loading bin context...",
-      "destinationBin": "Destination Bin",
-      "searchBins": "Search bins...",
-      "primaryLabel": "(Primary)",
-      "warningNotPrimary": "Warning: You are not placing this in the primary bin ({bin}).",
-      "newTotalQuantity": "New Total Quantity in Bin",
-      "currentStock": "Current stock: {count}",
-      "verifyCountDescription": "Verify the physical count. An inventory adjustment will be generated if this differs from system expectations.",
-      "confirmPutaway": "Confirm Putaway",
-      "processing": "Processing..."
-    }
-  },
-  "bins": {
-    "title": "Bin Contents",
-    "placeholders": {
-      "searchBins": "Search by bin number, product name, or product number\u2026"
-    },
-    "columns": {
-      "bin": "Bin",
-      "zone": "Zone",
-      "binType": "Type",
-      "locationNo": "Location No",
-      "productNumber": "Product #",
-      "baseQty": "Base Qty",
-      "consignment": "Consignment",
-      "bonded": "Bonded",
-      "unavailable": "Unavailable",
-      "locationName": "Location Name"
-    }
-  },
-  "picking": {
-    "title": "Picking",
-    "printPickingSlip": "Print Picking Slip",
-    "pickAllCreateShipment": "Pick All & Create Shipment",
-    "createShipment": "Create Shipment",
-    "newShipment": "New Shipment",
-    "shipments": "Shipments",
-    "noShipmentsYet": "No products have shipped yet.",
-    "linesPicked": "{picked} / {total} lines picked",
-    "clickToEdit": "Click to edit",
-    "createdOnBy": "Created {date} by {user}",
-    "createdOn": "Created {date}",
-    "locationLabel": "Location:",
-    "noOrders": "No {tab} orders pending.",
-    "selectOrder": "Select an order from the list to pick items.",
-    "loadingOrder": "Loading order context...",
-    "noName": "No Name",
-    "pickingSlipPdf": "Picking Slip PDF",
-    "toPick": "To Pick",
-    "picked": "Picked",
-    "unavailable": "Unavailable",
-    "outOfStock": "Out of Stock",
-    "shipped": "Shipped",
-    "noItemsToPick": "No items available to pick.",
-    "selectBin": "Select Bin...",
-    "tabs": {
-      "ready": "Ready",
-      "partial": "Partial",
-      "blocked": "Blocked"
-    },
-    "columns": {
-      "lineNumber": "#",
-      "product": "Product",
-      "description": "Description",
-      "ordered": "Ordered",
-      "picked": "Picked",
-      "shipped": "Shipped",
-      "remaining": "Remaining",
-      "location": "Location",
-      "onHand": "On Hand",
-      "action": "Action",
-      "qtyToShip": "Qty to Ship",
-      "notes": "Notes",
-      "trackingNumber": "Tracking Number",
-      "status": "Status",
-      "binLocation": "Bin Location",
-      "pickQty": "Pick Qty"
-    },
-    "statuses": {
-      "done": "Fully Picked",
-      "partial": "Partially Picked",
-      "picked": "Picked",
-      "dispatched": "Dispatched"
-    },
-    "actions": {
-      "pickAll": "Pick All",
-      "done": "Done"
-    },
-    "placeholders": {
-      "notes": "Shipment notes",
-      "tracking": "Tracking #"
-    },
-    "buttons": {
-      "pick": "Pick"
-    },
-    "tooltips": {
-      "cancelPick": "Cancel Pick"
-    },
-    "errors": {
-      "cannotReducePicked": "Cannot reduce picked to {qty} \u2014 {shipped} already shipped",
-      "failedToUpdatePick": "Failed to update pick",
-      "failedToPickAll": "Failed to pick all",
-      "failedToCreateShipment": "Failed to create shipment",
-      "failedToUpdateShipment": "Failed to update shipment",
-      "atLeastOneLineRequired": "At least one line with a quantity is required",
-      "failedToGeneratePickingSlip": "Failed to generate picking slip",
-      "failedToUpdateLocation": "Failed to update location",
-      "unpickToChangeLocation": "Must unpick to change location"
-    }
-  },
-  "fulfillment": {
-    "title": "Picking & Shipping",
-    "picked": "Picked",
-    "shipped": "Shipped",
-    "noData": "Fulfillment data unavailable.",
-    "noPhysicalLines": "No physical lines on this order.",
-    "columns": {
-      "product": "Product",
-      "ordered": "Ordered",
-      "picked": "Picked",
-      "onHand": "On Hand",
-      "shipped": "Shipped",
-      "readyToShip": "Ready to Ship",
-      "status": "Status"
-    },
-    "statuses": {
-      "shipped": "Fully shipped",
-      "readyToShip": "Ready to ship",
-      "awaitingShipment": "Picked, awaiting shipment",
-      "partiallyPicked": "Partially picked",
-      "notPicked": "Not yet picked"
-    }
-  },
-  "shipping": {
-    "title": "Shipping",
-    "tabs": {
-      "ready": "Ready",
-      "partial": "Partial"
-    },
-    "selectOrder": "Select an order to create a shipment.",
-    "noOrders": "No {tab} orders pending.",
-    "loadingOrder": "Loading order context\u2026",
-    "columns": {
-      "product": "Product",
-      "description": "Description",
-      "ordered": "Ordered",
-      "picked": "Picked",
-      "shipped": "Shipped",
-      "available": "Available",
-      "qtyToShip": "Qty to Ship",
-      "notes": "Notes",
-      "trackingNumber": "Tracking Number"
-    },
-    "placeholders": {
-      "notes": "Shipment notes",
-      "tracking": "Tracking #"
-    },
-    "buttons": {
-      "createShipment": "Create Shipment"
-    },
-    "existingShipments": "Existing Shipments",
-    "noShipmentsYet": "No shipments created yet.",
-    "shipmentLines": "{count} lines",
-    "noName": "No Name",
-    "noPhysicalLines": "No physical lines on this order.",
-    "fullyShipped": "Fully Shipped",
-    "docketPdf": "Docket PDF",
-    "toasts": {
-      "shipmentCreated": "Shipment created successfully!"
-    },
-    "errors": {
-      "atLeastOneLineError": "At least one line with a quantity is required",
-      "failedToCreateError": "Failed to create shipment",
-      "failedToLoadOrdersError": "Failed to load shipping queue",
-      "failedToLoadContextError": "Failed to load order context",
-      "failedToGenerateDocketError": "Failed to generate shipping docket."
-    }
-  },
-  "gl": {
-    "loading": "Loading\u2026",
-    "trialBalance": {
-      "title": "Trial Balance",
-      "asOfDate": "As of Date",
-      "totals": "Totals",
-      "noData": "No transactions found for this period.",
-      "columns": {
-        "accountCode": "Code",
-        "accountName": "Customer",
-        "accountType": "Type",
-        "debit": "Debit",
-        "credit": "Credit",
-        "balance": "Balance"
-      },
-      "accountTypes": {
-        "asset": "Asset",
-        "liability": "Liability",
-        "equity": "Equity",
-        "income": "Income",
-        "expense": "Expense"
-      }
-    },
-    "codes": {
-      "button": "Codes",
-      "title": "Accounting Codes Cheat Sheet",
-      "subtitle": "Quick reference for customers, cost centers, and activities",
-      "search": "Search codes...",
-      "exportCsv": "Export CSV",
-      "columns": {
-        "chartOfAccounts": "Chart of Customers",
-        "costCenters": "Cost Centers",
-        "activities": "Activities"
-      }
-    },
-    "generalLedger": {
-      "title": "General Ledger",
-      "allAccounts": "All Customers",
-      "fromDate": "From",
-      "toDate": "To",
-      "noData": "No transactions found for the selected filters.",
-      "columns": {
-        "date": "Date",
-        "entryNumber": "Entry #",
-        "customer": "Customer",
-        "memo": "Memo",
-        "debit": "Debit",
-        "credit": "Credit",
-        "balance": "Balance"
-      }
-    },
-    "journalEntries": {
-      "title": "Journal Entries",
-      "newEntry": "New Entry",
-      "fromDate": "From",
-      "toDate": "To",
-      "allSources": "All Sources",
-      "sourceSalesInvoice": "Sales Invoice",
-      "sourcePurchaseInvoice": "Purchase Invoice",
-      "sourceManual": "Manual",
-      "noData": "No journal entries found.",
-      "searchPlaceholder": "Search entry number\u2026",
-      "lines": "Lines",
-      "columns": {
-        "entryNumber": "Entry #",
-        "date": "Date",
-        "memo": "Memo",
-        "source": "Source",
-        "totalDebit": "Total Debit",
-        "totalCredit": "Total Credit",
-        "customer": "Customer",
-        "debit": "Debit",
-        "credit": "Credit",
-        "partyType": "Party Type",
-        "party": "Party",
-        "createdBy": "Created By"
-      },
-      "partyTypes": {
-        "none": "None",
-        "customer": "Customer",
-        "supplier": "Supplier"
-      },
-      "newManualEntry": "New Manual Journal Entry",
-      "totals": "Totals",
-      "addLine": "Add Line",
-      "postEntry": "Post Journal Entry",
-      "unbalancedWarning": "Entry is unbalanced by {amount}",
-      "placeholders": {
-        "memo": "Reason for journal entry...",
-        "lineMemo": "Line description",
-        "selectAccount": "Select Customer...",
-        "selectParty": "Select Party..."
-      },
-      "sourceDocument": "Source Document",
-      "total": "Total",
-      "noLines": "No journal lines found for this entry.",
-      "sourceSalesCreditNote": "Sales Credit Note",
-      "na": "N/A"
-    },
-    "reconciliations": {
-      "title": "Bank Reconciliations",
-      "newReconciliation": "New Bank Reconciliation",
-      "detailsTitle": "Reconciliation Details",
-      "reconciliationLabel": "Reconciliation: {customer}",
-      "statementDateLabel": "Statement Date: {date}",
-      "statementDate": "Statement Date",
-      "statementBalance": "Statement Balance",
-      "openingBalance": "Opening Balance",
-      "clearedBalance": "Cleared Balance",
-      "variance": "Variance",
-      "status": "Status",
-      "customer": "Customer",
-      "createdBy": "Created By",
-      "rows": "Rows",
-      "loading": "Loading...",
-      "notFound": "Reconciliation not found",
-      "postReconciliation": "Post Reconciliation",
-      "posting": "Posting...",
-      "discard": "Discard",
-      "create": "Start Reconciling",
-      "creating": "Creating...",
-      "selectAccount": "Select Customer...",
-      "quickAdjustment": "Quick Adjustment",
-      "splitEntry": "Split Entry",
-      "varianceMustBeZero": "Variance must be zero to post",
-      "confirmPost": "Are you sure you want to post this reconciliation? This cannot be undone.",
-      "confirmDiscard": "Are you sure you want to discard this draft reconciliation? This will un-clear all related lines and delete the draft.",
-      "postSuccess": "Reconciliation posted successfully",
-      "postError": "Failed to post reconciliation",
-      "discardSuccess": "Reconciliation discarded successfully",
-      "discardError": "Failed to discard reconciliation",
-      "createError": "Failed to create reconciliation",
-      "toggleError": "Failed to toggle line",
-      "columns": {
-        "statementDate": "Statement Date",
-        "customer": "Customer",
-        "statementBalance": "Statement Balance",
-        "status": "Status",
-        "date": "Date",
-        "entryNo": "Entry No.",
-        "party": "Party",
-        "memo": "Memo",
-        "debit": "Debit",
-        "credit": "Credit",
-        "cleared": "Cleared?"
-      },
-      "tooltips": {
-        "clickToUnclear": "Click to unclear",
-        "clickToClear": "Click to clear",
-        "back": "Back",
-        "splitRowDisabled": "Cannot split an already cleared row",
-        "selectRowToSplit": "Select a row to split"
-      },
-      "quickAdjustmentForm": {
-        "title": "Quick Adjustment",
-        "date": "Date",
-        "type": "Type",
-        "moneyOut": "Money Out (e.g. Bank Fee)",
-        "moneyIn": "Money In (e.g. Interest)",
-        "amount": "Amount",
-        "offsetAccount": "Offset Customer",
-        "selectAccount": "Select an customer...",
-        "memo": "Memo",
-        "memoPlaceholder": "e.g., Monthly Customer Keeping Fee",
-        "creating": "Creating...",
-        "createAndReconcile": "Create & Reconcile",
-        "requiredFieldsError": "Please fill out all required fields",
-        "failedToCreateError": "Failed to create adjustment"
-      },
-      "splitEntryForm": {
-        "title": "Split Entry",
-        "date": "Date",
-        "party": "Party",
-        "memo": "Memo",
-        "total": "Total",
-        "amountToClear": "Amount to Clear Now",
-        "splitting": "Splitting...",
-        "confirmSplit": "Confirm Split",
-        "debit": "Debit",
-        "credit": "Credit",
-        "invalidAmountError": "Split amount must be greater than 0 and less than the total line amount.",
-        "splitSuccess": "Entry successfully split and cleared!",
-        "failedToSplitError": "Failed to split entry"
-      }
-    }
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "timeline": {
-      "title": "Recent Events",
-      "settings": "Timeline Settings",
-      "configureInfo": "Select which business events you want to see in your recent events feed.",
-      "types": {
-        "so_created": "Sales Order created",
-        "so_confirmed": "Sales Order confirmed",
-        "so_shipped": "Sales Order shipped",
-        "so_invoiced": "Sales Order invoiced",
-        "po_created": "Purchase Order created",
-        "po_ordered": "Purchase Order ordered",
-        "po_received": "Purchase Order received",
-        "account_created": "Customer Customer created",
-        "supplier_created": "Supplier created"
-      },
-      "empty": "No recent events to display.",
-      "errors": {
-        "failedToLoad": "Failed to load timeline."
-      },
-      "relativeUnits": {
-        "justNow": "just now",
-        "m": "{count}m ago",
-        "h": "{count}h ago",
-        "d": "{count}d ago"
-      }
-    },
-    "quickActions": {
-      "title": "Quick Actions",
-      "createSalesOrder": "Create Sales Order",
-      "createPurchaseOrder": "Create Purchase Order",
-      "createSalesDesc": "New customer quote or order",
-      "createPurchaseDesc": "Restock inventory from supplier"
-    },
-    "stats": {
-      "customers": "Customers",
-      "products": "Products",
-      "inventoryLevels": "Inventory Levels",
-      "orderLines": "Order Lines"
-    },
-    "search": {
-      "placeholder": "Search products, customers, orders, suppliers\u2026",
-      "noResults": "No results found",
-      "typeMinChars": "Type at least 2 characters\u2026",
-      "types": {
-        "product": "Products",
-        "customer": "Customers",
-        "sales_order": "Sales Orders",
-        "supplier": "Suppliers",
-        "purchase_order": "Purchase Orders"
-      }
-    }
-  },
-  "sidebar": {
-    "title": "herobm",
-    "subtitle": "Your business, your data",
-    "footer": "Phase 3 \u2022 modbm",
-    "groups": {
-      "inventory": "Warehouse",
-      "sales": "Sales",
-      "purchasing": "Purchasing",
-      "finance": "Finance",
-      "admin": "Admin"
-    },
-    "items": {
-      "dashboard": "Dashboard",
-      "products": "Products",
-      "inventory": "Inventory",
-      "bins": "Bin Contents",
-      "customers": "Customers",
-      "salesOrders": "Sales Orders",
-      "salesInvoices": "Sales Invoices",
-      "shipments": "Shipments",
-      "suppliers": "Suppliers",
-      "demand": "Demand",
-      "purchaseOrders": "Purchase Orders",
-      "trialBalance": "Trial Balance",
-      "generalLedger": "General Ledger",
-      "journalEntries": "Journal Entries",
-      "eventQueue": "Event Queue",
-      "movements": "Movements",
-      "systemLogs": "System Logs",
-      "invoices": "Invoices",
-      "supplierInvoices": "Supplier Invoices",
-      "receiving": "Receiving",
-      "picking": "Picking",
-      "shipping": "Shipping",
-      "transfers": "Transfers",
-      "users": "Users",
-      "settings": "Settings",
-      "system": "System",
-      "financial": "Financial"
-    }
-  },
-  "admin": {
-    "customerGroups": {
-      "title": "Customer Groups",
-      "subtitle": "Manage group classifications for customer customers",
-      "newGroup": "+ New Group",
-      "definedGroups": "Defined Groups",
-      "noGroups": "No customer groups defined.",
-      "placeholders": {
-        "code": "e.g. WHL",
-        "name": "e.g. Wholesale"
-      },
-      "toasts": {
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "created": "Group created",
-        "updated": "Group updated",
-        "deleted": "Group deleted"
-      },
-      "notConfigured": "Not configured"
-    },
-    "discountMatrix": {
-      "title": "Discount Rules",
-      "baseDiscount": "Base Default Discount",
-      "baseDiscountHint": "Applies to all product groups unless overridden below",
-      "productGroupRules": "Product Group Overrides",
-      "productGroup": "Product Group",
-      "discountPercent": "Discount %",
-      "noProductGroupRules": "No product-group-specific overrides defined.",
-      "selectProductGroup": "\u2014 Select product group \u2014",
-      "toasts": {
-        "saved": "Discount rule saved",
-        "deleted": "Discount rule deleted"
-      }
-    },
-    "productGroups": {
-      "title": "Product Groups",
-      "subtitle": "Manage group classifications for products and inventory",
-      "newGroup": "+ New Group",
-      "definedGroups": "Defined Groups",
-      "noGroups": "No product groups defined.",
-      "confirmDelete": "Are you sure you want to delete this group?",
-      "placeholders": {
-        "code": "Code",
-        "name": "Name"
-      },
-      "toasts": {
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "created": "Group created",
-        "updated": "Group updated",
-        "deleted": "Group deleted"
-      }
-    },
-    "supplierGroups": {
-      "title": "Supplier Groups",
-      "subtitle": "Manage group classifications for supplier customers",
-      "newGroup": "+ New Group",
-      "definedGroups": "Defined Groups",
-      "noGroups": "No supplier groups defined.",
-      "confirmDelete": "Are you sure you want to delete this group?",
-      "purchasing": "Purchasing",
-      "payment": "Payment",
-      "active": "ACTIVE",
-      "blocked": "BLOCKED",
-      "currentlyActive": "Currently Active",
-      "currentlyBlocked": "Currently Blocked",
-      "placeholders": {
-        "code": "Code",
-        "name": "Name"
-      },
-      "toasts": {
-        "loadFailed": "Failed to load groups",
-        "requiredFields": "Code and Name are required",
-        "created": "Group created",
-        "updated": "Group updated",
-        "deleted": "Group deleted"
-      }
-    },
-    "eventQueue": {
-      "title": "Event Queue",
-      "subtitle": "Visibility into external system synchronization events",
-      "autoRefresh": "Auto-refresh (5s)",
-      "refresh": "Refresh",
-      "loading": "Loading event queue\u2026",
-      "summary": {
-        "pending": "Pending",
-        "processed": "Processed",
-        "failed": "Failed",
-        "total": "Total Events"
-      },
-      "eventTypes": "Event Types",
-      "columns": {
-        "eventType": "Event Type",
-        "total": "Total",
-        "pending": "Pending",
-        "failed": "Failed",
-        "processed": "Processed",
-        "status": "Status",
-        "actions": "Actions",
-        "timestamp": "Timestamp",
-        "aggregate": "Aggregate",
-        "payload": "Payload",
-        "processedAt": "Processed At"
-      },
-      "status": {
-        "errors": "{count} Error(s)",
-        "allSynced": "All synced",
-        "pending": "{count} pending"
-      },
-      "actions": {
-        "hide": "Hide",
-        "view": "View",
-        "clear": "Clear"
-      },
-      "drawer": {
-        "loading": "Loading events\u2026",
-        "noEvents": "No events of this type found.",
-        "errorLabel": "Error:"
-      },
-      "recentEvents": "Recent Events ({count})",
-      "noEvents": "No outbox events found. Generate invoices to see sync activity.",
-      "confirmClear": "Clear all pending \"{type}\" events from the outbox?",
-      "errors": {
-        "loadFailed": "Failed to load sync data",
-        "clearFailed": "Failed to clear events"
-      }
-    },
-    "systemLogs": {
-      "title": "System Logs",
-      "subtitle": "Live tail of backend container and worker file logs",
-      "refresh": "Refresh",
-      "loading": "Loading system logs...",
-      "noLogs": "No logs available.",
-      "autoRefresh": "Auto-refresh (5s)",
-      "fields": {
-        "service": "Service",
-        "limit": "Limit"
-      },
-      "services": {
-        "api": "API",
-        "worker": "Outbox Worker",
-        "postgres": "PostgreSQL"
-      },
-      "limits": {
-        "lines": "{count} lines"
-      },
-      "actions": {
-        "copy": "Copy Logs",
-        "refresh": "Refresh",
-        "copied": "Logs copied to clipboard!"
-      },
-      "filters": {
-        "service": "Service:",
-        "limit": "Limit:",
-        "autoRefresh": "Auto-refresh (5s)",
-        "services": {
-          "api": "API",
-          "worker": "Outbox Worker",
-          "postgres": "PostgreSQL"
-        },
-        "limits": {
-          "100": "100 lines",
-          "500": "500 lines",
-          "1000": "1000 lines",
-          "5000": "5000 lines"
-        }
-      },
-      "toasts": {
-        "loadFailed": "Failed to load system logs"
-      }
-    },
-    "common": {
-      "notConfigured": "Not configured",
-      "code": "Code",
-      "name": "Name",
-      "actions": "Actions",
-      "defDiscount": "Def. Discount %",
-      "defArAccount": "Def. AR Customer",
-      "defRevAccount": "Def. Revenue Customer",
-      "defApAccount": "Def. AP Customer",
-      "defExpenseAccount": "Def. Expense Customer",
-      "defCostCenter": "Def. Cost Center",
-      "defActivity": "Def. Activity",
-      "errors": {
-        "typeAndDateRequired": "Type and effective date are required"
-      },
-      "system": "System",
-      "financial": "Financial"
-    },
-    "reporting": {
-      "form": {
-        "labels": {
-          "displayName": "Display Name",
-          "uniqueSlug": "Unique Slug",
-          "outputPattern": "Output Filename Pattern",
-          "description": "Description",
-          "supportedContexts": "Supported Contexts",
-          "typstSource": "Typst Source Code",
-          "contextResolver": "Context Resolver",
-          "targetRecordId": "Target Record ID"
-        },
-        "placeholders": {
-          "slug": "e.g. default-quote",
-          "selectContexts": "Select contexts...",
-          "uuid": "UUID..."
-        },
-        "descriptions": {
-          "contextHelp": "Only templates assigned to a context will appear in the action menus for those records."
-        },
-        "buttons": {
-          "save": "Save Template",
-          "saving": "Saving...",
-          "delete": "Delete Template",
-          "deleting": "Deleting...",
-          "returnToList": "Return to Reporting List",
-          "generatePdf": "Generate PDF",
-          "compiling": "Compiling...",
-          "getRandomId": "Get Random ID"
-        },
-        "livePreview": {
-          "title": "Live Preview",
-          "badge": "Typst Compiler",
-          "waiting": "Waiting for compilation..."
-        },
-        "toasts": {
-          "created": "Template created successfully!",
-          "saved": "Saved successfully!",
-          "saveFailed": "Failed to save template",
-          "deleteConfirm": "Are you sure you want to delete this report template? This action cannot be undone.",
-          "deleted": "Template deleted",
-          "deleteFailed": "Failed to delete template",
-          "previewFailed": "Preview generation failed. Check typo in template or missing ID data."
-        },
-        "loadingContexts": "Loading contexts...",
-        "none": "-- None --",
-        "defaults": {
-          "template": "// Enter your Typst template here",
-          "outputPattern": "{context}-{id}"
-        },
-        "newTemplate": "+ New Template"
-      },
-      "errors": {
-        "notFound": "Error: Template not found or unauthorized access logging in.",
-        "loading": "Loading template data..."
-      },
-      "hooks": {
-        "title": "Hook Assignments",
-        "subtitle": "Map standard actions (like printing an invoice) to specific templates.",
-        "moduleTitle": "Reporting Hooks",
-        "table": {
-          "title": "Hook Mappings",
-          "columns": {
-            "hookSlug": "Hook Slug",
-            "contextResolver": "Context Resolver",
-            "assignedTemplate": "Assigned Template",
-            "actions": "Actions"
-          },
-          "empty": "No system hooks registered in the database.",
-          "selectTemplate": "Select a template..."
-        },
-        "errors": {
-          "updateFailed": "Failed to update assignment: "
-        },
-        "actions": {
-          "editTemplate": "Edit Template"
-        }
-      },
-      "title": "Reporting Templates",
-      "grid": {
-        "columns": {
-          "templateName": "Template Name",
-          "systemToken": "System Token",
-          "description": "Description",
-          "outputFilename": "Output Filename",
-          "lastModified": "Last Modified",
-          "createdOn": "Created On"
-        },
-        "searchPlaceholder": "Search Typst templates...",
-        "totalCount": "Total Templates",
-        "createButton": "Create Template"
-      }
-    },
-    "settings": {
-      "actions": {
-        "edit": "Edit",
-        "delete": "Delete",
-        "save": "Save",
-        "cancel": "Cancel",
-        "create": "Create",
-        "importCsv": "Import CSV",
-        "importSettings": "Import Settings",
-        "actions": "Actions",
-        "addChild": "+ Child",
-        "configureMetadata": "Configure Metadata",
-        "addRootGroup": "+ Add Root Group",
-        "saveSchema": "Save Schema"
-      },
-      "title": "System Settings",
-      "taxTypes": {
-        "tax_applies": "Tax Applies",
-        "zero_rated": "Zero Rated",
-        "exempt": "Exempt",
-        "not_relevant": "Not Relevant"
-      },
-      "toasts": {
-        "loadFailed": "Failed to load data",
-        "taxUpdated": "Tax code updated",
-        "taxCreated": "Tax code created",
-        "taxDeleted": "Tax code deleted",
-        "uomUpdated": "Unit of measure updated",
-        "uomCreated": "Unit of measure created",
-        "uomDeleted": "Unit of measure deleted",
-        "rateUpdated": "Exchange rate updated",
-        "rateCreated": "Exchange rate created",
-        "rateDeleted": "Exchange rate deleted",
-        "macroCreated": "Macro created",
-        "macroUpdated": "Macro updated",
-        "macroDeleted": "Macro deleted",
-        "ccUpdated": "Cost Center updated",
-        "ccCreated": "Cost Center created",
-        "ccDeleted": "Cost Center deleted",
-        "activityUpdated": "Activity updated",
-        "activityCreated": "Activity created",
-        "activityDeleted": "Activity deleted",
-        "importSuccess": "Imported {count} items successfully",
-        "importFailed": "Import failed: {message}"
-      },
-      "sections": {
-        "company": "Company Details",
-        "gl": "General Ledger",
-        "tax": "Tax Codes",
-        "uom": "Units of Measure",
-        "rates": "Exchange Rates",
-        "bank": "Bank Details",
-        "macros": "Text Macros",
-        "costCenters": "Cost Centers",
-        "activities": "Activities"
-      },
-      "confirmations": {
-        "deleteTax": "Are you sure you want to delete this tax code?",
-        "deleteUom": "Are you sure you want to delete this unit of measure?",
-        "deleteRate": "Are you sure you want to delete this exchange rate?",
-        "deleteMacro": "Are you sure you want to delete this macro?",
-        "deleteCc": "Are you sure you want to delete this cost center?",
-        "deleteActivity": "Are you sure you want to delete this activity?"
-      },
-      "labels": {
-        "code": "Code",
-        "title": "Title",
-        "name": "Name",
-        "content": "Content",
-        "companyName": "Company Name",
-        "email": "Email",
-        "phone": "Phone",
-        "website": "Website",
-        "companyNumber": "Company Number (ABN/ACN)",
-        "taxNumber": "Tax Number",
-        "logoUrl": "Logo URL",
-        "address1": "Address Line 1",
-        "address2": "Address Line 2",
-        "city": "City",
-        "state": "State",
-        "postCode": "Post Code",
-        "country": "Country",
-        "bankName": "Bank Name",
-        "accountName": "Customer Name",
-        "customerNumber": "Customer Number (BSB-Customer)",
-        "iban": "IBAN",
-        "swiftBic": "SWIFT/BIC",
-        "defaultAr": "Default Accounts Receivable",
-        "defaultRevenue": "Default Revenue",
-        "defaultAp": "Default Accounts Payable",
-        "defaultTax": "Default Tax",
-        "defaultCogs": "Default COGS",
-        "defaultExpense": "Default Expense",
-        "baseCurrency": "Base Currency",
-        "revenueRouting": "Revenue Routing Strategy",
-        "expenseRouting": "Expense Routing Strategy",
-        "type": "Type",
-        "rate": "Rate (%)",
-        "isDefault": "Default",
-        "currencyCode": "Currency Code",
-        "currencyName": "Currency Name",
-        "buyRate": "Buy Rate",
-        "sellRate": "Sell Rate",
-        "effectiveDate": "Effective Date",
-        "description": "Description",
-        "status": "Status",
-        "active": "Active",
-        "inactive": "Inactive",
-        "defaultInventory": "Default Inventory",
-        "defaultGrni": "Default GRNI",
-        "defaultShrinkage": "Default Shrinkage",
-        "defaultFeeRevenue": "Default Fee Revenue",
-        "chartOfAccounts": "Chart of Customers",
-        "group": "Group",
-        "bank": "Bank",
-        "currency": "Curr",
-        "systemBase": "System Base",
-        "fixed": "Fixed",
-        "configureMetadataSchema": "Configure Metadata Schema"
-      },
-      "placeholders": {
-        "uomCode": "e.g. EA",
-        "uomDescription": "e.g. Each",
-        "currencyCode": "e.g. AUD",
-        "currencyName": "e.g. Australian Dollar",
-        "companyName": "Enter company name",
-        "email": "info@example.com",
-        "phone": "+61 ...",
-        "website": "https://...",
-        "companyNumber": "e.g. 12 345 678 901",
-        "taxNumber": "e.g. 12345678901",
-        "logoUrl": "https://...",
-        "address1": "Street address",
-        "address2": "Suite/Floor/Unit",
-        "city": "City",
-        "state": "State/Province",
-        "postCode": "Post code",
-        "country": "Country",
-        "bankName": "Bank name",
-        "accountName": "Customer name",
-        "ccCode": "e.g. 100",
-        "ccName": "e.g. Sales Victoria",
-        "activityCode": "e.g. DIR",
-        "activityName": "e.g. Direct Sales"
-      },
-      "subtitle": "Manage company details, GL defaults, tax codes, currencies and units of measure",
-      "gl": {
-        "loading": "Loading GL customers\u2026",
-        "customerFirst": "Customer first",
-        "productFirst": "Product first",
-        "supplierFirst": "Supplier first"
-      },
-      "tax": {
-        "empty": "No tax codes defined. Create one to get started."
-      },
-      "rates": {
-        "empty": "No exchange rates defined. Create one to get started."
-      },
-      "uom": {
-        "empty": "No units of measure defined. Create one to get started."
-      },
-      "costCenters": {
-        "empty": "No cost centers defined. Create one to get started."
-      },
-      "activities": {
-        "empty": "No activities defined. Create one to get started."
-      }
-    },
-    "users": {
-      "title": "Users",
-      "subtitle": "Manage portal user customers and access roles",
-      "columns": {
-        "username": "Username",
-        "displayName": "Name",
-        "email": "Email",
-        "role": "Role",
-        "status": "Status",
-        "createdAt": "Created"
-      },
-      "buttons": {
-        "createUser": "+ Create User"
-      },
-      "labels": {
-        "username": "Username",
-        "displayName": "Full Name",
-        "email": "Email Address",
-        "password": "Password",
-        "role": "Role"
-      },
-      "placeholders": {
-        "username": "e.g. jsmith",
-        "displayName": "e.g. John Smith",
-        "email": "john@example.com",
-        "password": "Min 6 characters",
-        "passwordUnchanged": "Leave blank to keep current"
-      },
-      "roles": {
-        "admin": "Admin",
-        "viewer": "Viewer",
-        "sales": "Sales",
-        "warehouse": "Warehouse",
-        "procurement": "Procurement",
-        "finance": "Finance"
-      },
-      "status": {
-        "active": "Active",
-        "disabled": "Disabled"
-      },
-      "toasts": {
-        "created": "User created",
-        "updated": "User updated",
-        "deleted": "User deleted",
-        "toggled": "User status updated",
-        "loadFailed": "Failed to load users",
-        "requiredFieldsError": "Username and password are required"
-      },
-      "confirmDelete": "Are you sure you want to delete user \"{username}\"? This action is permanent.",
-      "sessionWarning": "Changes take effect on the user's next login. Active sessions continue until their token expires.",
-      "disable": "Disable",
-      "enable": "Enable",
-      "loading": "Loading\u2026",
-      "noneFound": "No users found.",
-      "cannotDisableSelfError": "Cannot disable your own customer",
-      "cannotDeleteSelfError": "Cannot delete your own customer",
-      "cannotChangeOwnRoleError": "Cannot change your own role"
-    }
+    "untitledField": "Untitled Field"
   },
   "setup": {
-    "gate": {
-      "verifying": "Verifying secure token...",
-      "unauthorized": {
-        "title": "Unauthorized Access",
-        "description": "This installation portal strictly requires a one-time cryptographic token.",
-        "instructions": "Please run <strong>make setup-wizard</strong> inside the host system CLI to generate a valid secure link."
-      },
-      "loading": "Loading wizard..."
-    },
-    "page": {
-      "title": "herobm",
-      "subtitle": "Initialize your business OS environment"
-    },
-    "wizard": {
-      "steps": {
-        "extraction": "Extraction",
-        "preview": "Preview",
-        "settings": "Settings",
-        "review": "Review",
-        "execution": "Execution"
-      }
-    },
-    "extraction": {
-      "title": "Source Pipeline Sync",
-      "description": "Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.",
-      "fields": {
-        "host": "Host",
-        "port": "Port",
-        "database": "Database Name (ABM)",
-        "username": "Username",
-        "password": "Password"
-      },
-      "resume": "Resume interrupted extraction",
-      "resumeNote": "(Skips fully loaded tables)",
-      "skip": "Skip extraction (Empty Base)",
-      "testConnection": "Test Connection",
-      "testing": "Testing...",
-      "toasts": {
-        "connectionFailed": "Connection Failed",
-        "connectionVerified": "Connection Verified",
-        "apiError": "Failed to communicate with API"
-      }
-    },
-    "preview": {
-      "title": "Source Preview Data",
-      "description": "Validating entities detected in the ABM MSSQL pipeline from <highlight>{database}</highlight> at <highlight>{host}</highlight>.",
-      "loading": "Scanning MSSQL schema...",
-      "noTables": "No tables returned by pipeline. Ensure extraction step succeeded.",
-      "confirm": "Confirm Mapping"
-    },
-    "settings": {
-      "title": "Application Configuration",
-      "description": "Set your core accounting and operational defaults.",
-      "fields": {
-        "companyName": "Company Registered Name",
-        "baseCurrency": "Base Currency",
-        "coaPreset": "Chart of Customers Preset",
-        "fiscalYearStart": "Fiscal Year Start Month",
-        "revenueRouting": "Revenue Routing Precedence",
-        "expenseRouting": "Expense Routing Precedence",
-        "inventoryValuation": "Inventory Valuation",
-        "nonStockBilling": "Non-Stock Billing Mode",
-        "primaryLocation": "Select Primary Location"
-      },
-      "placeholders": {
-        "companyName": "Acme Logistics Corp.",
-        "selectCoa": "Select COA preset...",
-        "selectMonth": "Select start month...",
-        "selectPrecedence": "Select precedence...",
-        "selectValuation": "Select valuation method...",
-        "selectBilling": "Select billing mode...",
-        "selectLocation": "Select primary location..."
-      },
-      "loading": "Loading...",
-      "noLocations": "No Locations Found in Source",
-      "fulfillmentHeading": "Default Fulfillment Location",
-      "finalize": "Finalize Setup",
-      "options": {
-        "currencies": {
-          "aud": "AUD - Australian Dollar"
-        },
-        "months": {
-          "january": "January",
-          "april": "April",
-          "may": "May",
-          "july": "July",
-          "october": "October"
-        },
-        "precedence": {
-          "product": "Product Priority",
-          "customer": "Customer Priority",
-          "location": "Location Priority",
-          "supplier": "Supplier Priority"
-        },
-        "valuation": {
-          "weightedAverage": "Weighted Average",
-          "fifo": "FIFO",
-          "standard": "Standard Costing"
-        },
-        "billing": {
-          "perShipment": "Per Shipment",
-          "finalInvoice": "Final Invoice Only"
-        }
-      }
-    },
-    "review": {
-      "title": "Ready to Initialize",
-      "description": "Your configuration is saved and ready to be compiled into the database.",
-      "confirm": "Compile Platform",
-      "executionPayload": "Execution Payload",
-      "payload": {
-        "source": "Source",
-        "resume": "Resume",
-        "companyName": "Company Name",
-        "coaPreset": "COA Preset",
-        "currency": "Currency",
-        "fiscalStartMonth": "Fiscal Start Month",
-        "valuationStrategy": "Valuation Strategy",
-        "billingMode": "Billing Mode",
-        "defaultFulfillmentLocation": "Default Fulfillment Location",
-        "revenueRouting": "Revenue Routing",
-        "expenseRouting": "Expense Routing",
-        "enabled": "ENABLED",
-        "disabled": "DISABLED",
-        "systemDefault": "System Default"
-      }
-    },
-    "execution": {
-      "failedTitle": "Initialization Failed",
-      "runningTitle": "Initializing System",
-      "failedDescription": "An error occurred during pipeline execution. Check the terminal below.",
-      "runningDescription": "Please do not close this window. This process may take a few minutes if extracting data.",
-      "terminalLabel": "Terminal (pipeline-execution.log)",
-      "criticalError": "[CRITICAL]: {error}",
-      "goDashboard": "Go to Dashboard",
-      "aborted": "Execution aborted. Please review error logs."
-    },
     "dataImport": {
-      "title": {
-        "pending": "Data Import Staged",
-        "failed": "Data Import Failed",
-        "completed": "Data Import Complete",
-        "running": "Executing Data Import"
+      "back": "Back",
+      "buttons": {
+        "continueToSummary": "Continue to Summary",
+        "goToDashboard": "Go to Dashboard",
+        "retryImport": "Retry Import",
+        "returnToDashboard": "Return to Dashboard",
+        "startExecution": "Start Execution"
       },
-      "subtitle": {
-        "pending": "Your legacy Data Import task is ready to begin. Review extraction settings before confirming.",
-        "failed": "The ABM extract-load-transform sequence failed to complete safely.",
-        "completed": "Your legacy data has been successfully imported into the HeroBM platform.",
-        "running": "Migrating legacy ERP records into HeroBM databases using dbt pipelines..."
+      "chooseFile": "Choose File",
+      "connectSourceSystem": "Connect Source System",
+      "connectSourceSystemDesc": "Enter database credentials for the system you want to import from.",
+      "connectSourceSystemDescOdoo": "Enter database credentials for the Odoo PostgreSQL database.",
+      "continue": "Continue",
+      "criticalError": "Critical Error:",
+      "csvOutput": "CSV Import Output",
+      "customers": "Customers",
+      "dbPopulated": "The database has been populated and is ready for use.",
+      "defaultLocation": "Default Fulfillment Location",
+      "defaultLocationDesc": "Select the primary location from ABM that will act as the default fulfillment warehouse going forward.",
+      "defaultLocationDescOdoo": "Select the primary location from Odoo that will act as the default fulfillment warehouse going forward.",
+      "descCompleted": "Done",
+      "descConfig": "Choose the modbm table to import data into.",
+      "descFailed": "Check the logs",
+      "descFinalisation": "Review the summary of data imported.",
+      "descPending": "Review settings",
+      "descPreview": "Upload your CSV file and select a merge strategy.",
+      "descRunning": "Please wait...",
+      "downloadTemplate": "Download CSV Template",
+      "errors": {
+        "criticalError": "Critical Error: {message}"
       },
+      "fileUpload": "File Upload",
+      "goToDashboard": "Go to Dashboard",
+      "importSuccessful": "Import Successful",
+      "importSuccessfulDesc": "The CSV data has been merged and is ready for use.",
+      "insertNewOnly": "Insert New Only",
+      "insertNewOnlyDesc": "Inserts new records and ignores existing ones without failing.",
+      "insertOnly": "Insert Only",
+      "insertOnlyDesc": "Will fail if duplicate unique keys exist.",
+      "mergeStrategy": "Merge Strategy",
+      "noFileChosen": "No file chosen",
+      "options": {
+        "alreadyStaged": "Already Staged: ",
+        "fullExtractionDesc": "Wipe the staging area and pull every single table firmly from scratch. Required if upstream schema changed.",
+        "fullExtractionTitle": "Full Extraction",
+        "resumeModeDesc": "Skip tables that have already been fully extracted successfully and only pull missing tables. This is much faster.",
+        "resumeModeTitle": "Resume Mode (Recommended)",
+        "tablesCached": "{count} Tables Cached"
+      },
+      "orders": "Orders",
+      "products": "Products",
+      "retryImport": "Retry Import",
+      "returnToDashboard": "Return to Dashboard",
       "sections": {
         "confirmedSettings": "Confirmed Settings",
         "executionOptions": "Execution Options",
         "terminal": "etl-worker terminal"
       },
+      "startImport": "Start Import",
+      "subtitle": {
+        "completed": "Your legacy data has been successfully imported into the HeroBM platform.",
+        "failed": "The ABM extract-load-transform sequence failed to complete safely.",
+        "pending": "Your legacy Data Import task is ready to begin. Review extraction settings before confirming.",
+        "running": "Migrating legacy ERP records into HeroBM databases using dbt pipelines..."
+      },
+      "systemBaseCurrency": "System Base Currency",
+      "systemBaseCurrencyDesc": "Confirm the base currency to be used for transactions imported from this ABM instance.",
+      "systemBaseCurrencyDescOdoo": "Confirm the base currency to be used for transactions imported from this Odoo instance.",
+      "targetTable": "Target Table",
+      "title": {
+        "completed": "Data Import Complete",
+        "failed": "Data Import Failed",
+        "pending": "Data Import Staged",
+        "running": "Executing Data Import"
+      },
+      "titleCompleted": "Import Completed",
+      "titleConfig": "Select Target Table",
+      "titleFailed": "Import Failed",
+      "titleFinalisation": "Import Report",
+      "titlePending": "Configure Import",
+      "titlePreview": "Upload Data",
+      "titleRunning": "Import Running",
+      "upsertMerge": "Upsert / Merge",
+      "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise."
+    },
+    "execution": {
+      "aborted": "Execution aborted. Please review error logs.",
+      "criticalError": "[CRITICAL]: {error}",
+      "failedDescription": "An error occurred during pipeline execution. Check the terminal below.",
+      "failedTitle": "Initialization Failed",
+      "goDashboard": "Go to Dashboard",
+      "runningDescription": "Please do not close this window. This process may take a few minutes if extracting data.",
+      "runningTitle": "Initializing System",
+      "terminalLabel": "Terminal (pipeline-execution.log)"
+    },
+    "extraction": {
+      "description": "Connect to an Advanced Business Manager MSSQL database to migrate historical accounting, inventory, and sales data.",
+      "fields": {
+        "database": "Database Name (ABM)",
+        "host": "Host",
+        "password": "Password",
+        "port": "Port",
+        "username": "Username"
+      },
+      "resume": "Resume interrupted extraction",
+      "resumeNote": "(Skips fully loaded tables)",
+      "skip": "Load from previous extraction",
+      "skipDesc": "Proceed to transformation. No new data will be extracted.",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "title": "Source Pipeline Sync",
+      "toasts": {
+        "apiError": "Failed to communicate with API",
+        "connectionFailed": "Connection Failed",
+        "connectionVerified": "Connection Verified"
+      }
+    },
+    "gate": {
+      "loading": "Loading wizard...",
+      "unauthorized": {
+        "description": "This installation portal strictly requires a one-time cryptographic token.",
+        "instructions": "Please run <strong>make setup-wizard</strong> inside the host system CLI to generate a valid secure link.",
+        "title": "Unauthorized Access"
+      },
+      "verifying": "Verifying secure token..."
+    },
+    "page": {
+      "subtitle": "Initialize your business OS environment",
+      "title": "herobm"
+    },
+    "preview": {
+      "confirm": "Confirm Mapping",
+      "description": "Validating entities detected in the ABM MSSQL pipeline from <highlight>{database}</highlight> at <highlight>{host}</highlight>.",
+      "loading": "Scanning MSSQL schema...",
+      "noTables": "No tables returned by pipeline. Ensure extraction step succeeded.",
+      "title": "Source Preview Data"
+    },
+    "review": {
+      "confirm": "Compile Platform",
+      "description": "Your configuration is saved and ready to be compiled into the database.",
+      "executionPayload": "Execution Payload",
+      "payload": {
+        "billingMode": "Billing Mode",
+        "coaPreset": "COA Preset",
+        "companyName": "Company Name",
+        "currency": "Currency",
+        "defaultFulfillmentLocation": "Default Fulfillment Location",
+        "disabled": "DISABLED",
+        "enabled": "ENABLED",
+        "expenseRouting": "Expense Routing",
+        "fiscalStartMonth": "Fiscal Start Month",
+        "resume": "Resume",
+        "revenueRouting": "Revenue Routing",
+        "source": "Source",
+        "systemDefault": "System Default",
+        "valuationStrategy": "Valuation Strategy"
+      },
+      "title": "Ready to Initialize"
+    },
+    "settings": {
+      "description": "Set your core accounting and operational defaults.",
+      "fields": {
+        "baseCurrency": "Base Currency",
+        "coaPreset": "Chart of Customers Preset",
+        "companyName": "Company Registered Name",
+        "expenseRouting": "Expense Routing Precedence",
+        "fiscalYearStart": "Fiscal Year Start Month",
+        "inventoryValuation": "Inventory Valuation",
+        "nonStockBilling": "Non-Stock Billing Mode",
+        "primaryLocation": "Select Primary Location",
+        "revenueRouting": "Revenue Routing Precedence"
+      },
+      "finalize": "Finalize Setup",
+      "fulfillmentHeading": "Default Fulfillment Location",
+      "loading": "Loading...",
+      "noLocations": "No Locations Found in Source",
       "options": {
-        "resumeModeTitle": "Resume Mode (Recommended)",
-        "resumeModeDesc": "Skip tables that have already been fully extracted successfully and only pull missing tables. This is much faster.",
-        "tablesCached": "{count} Tables Cached",
-        "alreadyStaged": "Already Staged: ",
-        "fullExtractionTitle": "Full Extraction",
-        "fullExtractionDesc": "Wipe the staging area and pull every single table firmly from scratch. Required if upstream schema changed."
+        "billing": {
+          "finalInvoice": "Final Invoice Only",
+          "perShipment": "Per Shipment"
+        },
+        "currencies": {
+          "aud": "AUD - Australian Dollar"
+        },
+        "months": {
+          "april": "April",
+          "january": "January",
+          "july": "July",
+          "may": "May",
+          "october": "October"
+        },
+        "precedence": {
+          "customer": "Customer Priority",
+          "location": "Location Priority",
+          "product": "Product Priority",
+          "supplier": "Supplier Priority"
+        },
+        "valuation": {
+          "fifo": "FIFO",
+          "standard": "Standard Costing",
+          "weightedAverage": "Weighted Average"
+        }
       },
-      "buttons": {
-        "startExecution": "Start Execution",
-        "goToDashboard": "Go to Dashboard",
-        "retryImport": "Retry Import",
-        "returnToDashboard": "Return to Dashboard",
-        "continueToSummary": "Continue to Summary"
+      "placeholders": {
+        "companyName": "Acme Logistics Corp.",
+        "selectBilling": "Select billing mode...",
+        "selectCoa": "Select COA preset...",
+        "selectLocation": "Select primary location...",
+        "selectMonth": "Select start month...",
+        "selectPrecedence": "Select precedence...",
+        "selectValuation": "Select valuation method..."
       },
-      "errors": {
-        "criticalError": "Critical Error: {message}"
+      "title": "Application Configuration"
+    },
+    "wizard": {
+      "steps": {
+        "execution": "Execution",
+        "extraction": "Extraction",
+        "preview": "Preview",
+        "review": "Review",
+        "settings": "Settings"
       }
     }
   },
-  "toast": {
-    "orderStateUpdated": "Order State Updated",
-    "orderMovedTo": "Order moved to {state}",
-    "orderMovedToReason": "Order moved to {state} because {reason}.",
-    "orderArchived": "Order has been archived",
-    "orderUnarchived": "Order has been unarchived",
-    "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
-    "supplierCreated": "Supplier created successfully",
-    "accountCreated": "Customer created successfully",
-    "accountUpdated": "Customer updated successfully",
-    "productCreated": "Product created successfully",
-    "productUpdated": "Product updated successfully",
-    "invoiceGenerated": "Invoice generated successfully!"
-  },
-  "confirm": {
-    "archiveOrder": "Are you sure you want to archive this order?",
-    "removeLine": "Remove this line item?",
-    "removeReturnLine": "Remove this return line?",
-    "removeShipmentLine": "Remove this shipment line?",
-    "generateInvoice": "Generate financial invoice for selected quantities? This will publish AR ledger entries.",
-    "enterSupplierBill": "Enter invoice? This will publish AP ledger entries.",
-    "processReturn": "Process this return? This will generate a Credit Note and publish AR ledger entries."
-  },
-  "payments": {
-    "title": "Payments",
-    "subtitle": "Manage customer receipts and supplier payments",
-    "newPayment": "New Payment",
-    "paymentNumber": "Payment #",
-    "type": "Type",
-    "party": "Party",
-    "mode": "Mode",
-    "date": "Date",
-    "status": "Status",
-    "total": "Total",
-    "unallocated": "Unallocated",
-    "records": "Records",
-    "loadingEllipsis": "Loading...",
-    "noPayments": "No payments found",
-    "receipt": "Receipt",
-    "payment": "Payment",
-    "view": "View",
-    "allocate": "Allocate",
-    "customer": "Customer",
-    "supplier": "Supplier",
-    "saving": "Saving...",
-    "createEntry": "Create Entry",
-    "salesInv": "Sales Inv",
-    "purchInv": "Purch Inv",
-    "submitting": "Submitting...",
-    "submit": "Submit"
-  },
-  "goodsReceived": {
-    "title": "Goods Received",
-    "buttons": {
-      "newReception": "Receive Goods"
-    },
-    "labels": {
-      "supplier": "Supplier",
-      "location": "Receiving Location",
-      "packingSlip": "Packing Slip"
-    },
-    "placeholders": {
-      "selectSupplier": "Select Supplier\u2026",
-      "selectLocation": "Select Receiving Location\u2026",
-      "packingSlip": "Packing slip number",
-      "notes": "Reception notes",
-      "searchProduct": "Search or scan product\u2026"
-    },
+  "shipments": {
+    "backToShipments": "â†  Back to Shipments",
+    "cancelFailed": "Failed to cancel shipment",
+    "cancelShipment": "Cancel Shipment",
     "columns": {
-      "receiptNo": "Receipt No.",
-      "supplier": "Supplier",
-      "packingSlip": "Packing Slip",
-      "matchStatus": "PO Match",
-      "matched": "matched"
+      "customer": "Customer",
+      "date": "Date",
+      "description": "Description",
+      "notes": "Notes",
+      "orderNumber": "Order #",
+      "product": "Product",
+      "purchaseOrders": "Linked POs",
+      "qty": "Qty",
+      "shipmentNumber": "Shipment #",
+      "status": "Status",
+      "tracking": "Tracking"
     },
-    "matchStatus": {
-      "matched": "Matched",
-      "unmatched": "Unmatched",
-      "ambiguous": "Multiple POs"
-    },
-    "flow": {
-      "title": "Receive Goods",
-      "subtitle": "Record items received from a supplier packing slip",
-      "confirmReception": "Confirm Reception",
-      "scanProduct": "Scan Product",
-      "itemsReceived": "Items Received",
-      "noItems": "No items scanned yet.",
-      "selectedProduct": "Selected Product"
-    },
-    "toast": {
-      "confirmed": "Goods receipt confirmed!",
-      "failed": "Failed to commit goods receipt",
-      "selectSupplier": "Please select a supplier.",
-      "selectLocation": "Please select a receiving location.",
-      "qtyReq": "Quantity must be greater than 0"
-    },
-    "completed": {
-      "title": "Goods Receipt Confirmed",
-      "subtitle": "The packing slip has been recorded. Items are held on dock pending invoice entry.",
-      "backToList": "Back to Receiving",
-      "newReception": "New Reception"
-    },
-    "allocation": {
-      "unknown": "Unknown",
-      "match": "Match",
-      "quantityValidationError": "Please enter a valid quantity between 0.01 and {max}",
-      "matchError": "Failed to match receipt",
-      "destination": "Destination:"
+    "confirmCancel": "Are you sure you want to cancel this shipment? This will reverse inventory and accounting entries.",
+    "docketPdf": "Docket PDF",
+    "lineItems": "Line Items",
+    "notFound": "Shipment not found",
+    "placeholders": {
+      "searchShipments": "Search by shipment number, customer, or PO..."
     },
     "returns": {
-      "receiving": "Receiving...",
-      "confirmReceipt": "Confirm Receipt"
+      "dispatch": "Dispatch Return",
+      "dispatching": "Shipping...",
+      "item": "Item",
+      "itemsToReturn": "Items to Return",
+      "lineNum": "Line #{id}",
+      "loadingItems": "Loading items...",
+      "notes": "Notes",
+      "poNumber": "PO Number",
+      "qty": "Qty",
+      "readyToShip": "Ready to Ship",
+      "readyToShipDesc": "These items are currently staged in {bin}. Dispatching this shipment will deduct the inventory from that bin.",
+      "reason": "Reason",
+      "returnDetails": "Return Details",
+      "slideOverTitle": "Supplier Return: {returnNumber}",
+      "stageItems": "Mark as Staged",
+      "staging": "Staging...",
+      "stagingRequired": "Staging Required",
+      "stagingRequiredDesc": "Please physically move these items into the {bin} bin before clicking Stage.",
+      "status": "Status",
+      "supplier": "Supplier"
+    },
+    "shipmentDetails": "Shipment Details",
+    "subtitle": "Track Sales Order shipments and deliveries",
+    "title": "Shipments"
+  },
+  "shipping": {
+    "buttons": {
+      "createShipment": "Create Shipment"
+    },
+    "columns": {
+      "available": "Available",
+      "description": "Description",
+      "notes": "Notes",
+      "ordered": "Ordered",
+      "picked": "Picked",
+      "product": "Product",
+      "qtyToShip": "Qty to Ship",
+      "shipped": "Shipped",
+      "trackingNumber": "Tracking Number"
+    },
+    "docketPdf": "Docket PDF",
+    "errors": {
+      "atLeastOneLineError": "At least one line with a quantity is required",
+      "failedToCreateError": "Failed to create shipment",
+      "failedToGenerateDocketError": "Failed to generate shipping docket.",
+      "failedToLoadContextError": "Failed to load order context",
+      "failedToLoadOrdersError": "Failed to load shipping queue"
+    },
+    "existingShipments": "Existing Shipments",
+    "fullyShipped": "Fully Shipped",
+    "loadingOrder": "Loading order context...",
+    "noName": "No Name",
+    "noOrders": "No {tab} orders pending.",
+    "noPhysicalLines": "No physical lines on this order.",
+    "noShipmentsFound": "No shipments found.",
+    "noShipmentsYet": "No shipments created yet.",
+    "placeholders": {
+      "notes": "Shipment notes",
+      "tracking": "Tracking #"
+    },
+    "selectOrder": "Select an order to create a shipment.",
+    "shipmentLines": "{count} lines",
+    "shipmentsTitle": "Shipments",
+    "tabs": {
+      "partial": "Partial",
+      "ready": "Ready"
+    },
+    "title": "Shipping",
+    "toasts": {
+      "shipmentCreated": "Shipment created successfully!"
     }
   },
-  "schemaBuilder": {
-    "newField": "New Field",
-    "editFieldTitle": "Edit: {title}",
-    "untitledField": "Untitled Field"
+  "sidebar": {
+    "footer": "Phase 3 â€¢ modbm",
+    "groups": {
+      "admin": "Admin",
+      "finance": "Finance",
+      "inventory": "Warehouse",
+      "purchasing": "Purchasing",
+      "sales": "Sales"
+    },
+    "items": {
+      "bins": "Bin Contents",
+      "customers": "Customers",
+      "dashboard": "Dashboard",
+      "demand": "Demand",
+      "eventQueue": "Event Queue",
+      "financial": "Financial",
+      "generalLedger": "General Ledger",
+      "inventory": "Inventory",
+      "invoices": "Invoices",
+      "journalEntries": "Journal Entries",
+      "movements": "Movements",
+      "picking": "Picking",
+      "products": "Products",
+      "purchaseOrders": "Purchase Orders",
+      "receiving": "Receiving",
+      "salesInvoices": "Sales Invoices",
+      "salesOrders": "Sales Orders",
+      "settings": "Settings",
+      "shipments": "Shipments",
+      "shipping": "Shipping",
+      "supplierInvoices": "Supplier Invoices",
+      "suppliers": "Suppliers",
+      "system": "System",
+      "systemLogs": "System Logs",
+      "transfers": "Transfers",
+      "trialBalance": "Trial Balance",
+      "users": "Users"
+    },
+    "subtitle": "Your business, your data",
+    "title": "herobm"
+  },
+  "suppliers": {
+    "fields": {
+      "selectCurrency": "Select Currency",
+      "bankAccountName": "Bank Account Name",
+      "accountNumber": "Account Number"
+    },
+    "buttons": {
+      "createSupplier": "+ Create Supplier",
+      "editSupplier": "Edit Supplier",
+      "save": "Save Supplier",
+      "unlinkSupplier": "Unlink Supplier"
+    },
+    "city": "City",
+    "columns": {
+      "name": "Name",
+      "paymentTerms": "Payment Terms",
+      "productCount": "Products",
+      "vendorNumber": "Vendor #"
+    },
+    "compliance": {
+      "blockNotes": "Block Notes",
+      "groupInherited": "Group Inherited ({reason})",
+      "notesPlaceholder": "Internal notes regarding blocking...",
+      "paymentBlock": "Payment Block",
+      "purchasingBlock": "Purchasing Block",
+      "reason": "Reason",
+      "reasons": {
+        "compliance_breach": "Compliance Breach",
+        "contractual_breach": "Contractual Breach",
+        "dispute": "Dispute",
+        "financial_risk": "Financial Risk",
+        "invoice_dispute": "Invoice Dispute",
+        "missing_goods": "Missing Goods",
+        "other": "Other",
+        "quality_issues": "Quality Issues"
+      },
+      "title": "Compliance Status"
+    },
+    "confirmUnlink": "Are you sure you want to unlink {name} from this product?",
+    "contactLocation": "Contact & Location",
+    "country": "Country",
+    "earlyPaymentDiscount": "Early Payment Discount %",
+    "email": "Email",
+    "expiries": {
+      "addExpiry": "+ Add Expiry",
+      "columns": {
+        "actions": "Actions",
+        "expiryDate": "Expiry Date",
+        "notes": "Notes",
+        "type": "Type"
+      },
+      "empty": "No expiries defined for this supplier.",
+      "expired": "Expired",
+      "noNotes": "No notes",
+      "title": "Expiries",
+      "types": {
+        "insurance": "Insurance",
+        "other": "Other",
+        "select": "-- Select Type --",
+        "tax_certificate": "Tax Certificate",
+        "trial_period": "Trial Period"
+      }
+    },
+    "financials": "Financials",
+    "generalInfo": "General Information",
+    "labels": {
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "vendorName": "Vendor Name"
+    },
+    "management": "Vendor Management",
+    "new": {
+      "documentTitle": "New Supplier"
+    },
+    "paymentTerms": "Payment Terms",
+    "phone": "Phone",
+    "placeholders": {
+      "address": "123 Main St",
+      "city": "City",
+      "country": "Country",
+      "email": "vendor@example.com",
+      "name": "e.g. ACME Corp",
+      "noGroup": "No Supplier Group",
+      "notes": "Key relationship details, preferred delivery methods, etc.",
+      "paymentTerms": "e.g. NET30",
+      "phone": "+1 234 567 890",
+      "searchSuppliers": "Search suppliers...",
+      "vendorNumber": "e.g. VEND-001"
+    },
+    "products": {
+      "columns": {
+        "costPrice": "Cost Price",
+        "discount": "Discount %",
+        "name": "Name",
+        "partNo": "Supplier Part No.",
+        "productNo": "Product No.",
+        "status": "Status"
+      },
+      "title": "Products"
+    },
+    "statusBadges": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "paymentBlocked": "Payment Blocked",
+      "purchaseBlocked": "Purchase Blocked",
+      "status": "Status"
+    },
+    "subtitle": "Manage supplier records",
+    "supplierGroup": "Supplier Group",
+    "tabs": {
+      "activity": "Activity",
+      "compliance": "Compliance",
+      "contact": "Contact",
+      "financials": "Financials",
+      "info": "Info",
+      "notes": "Notes",
+      "overview": "Overview",
+      "products": "Products"
+    },
+    "title": "Suppliers",
+    "toast": {
+      "unlinked": "Supplier successfully unlinked"
+    },
+    "tooltips": {
+      "currentlyActive": "Currently Active",
+      "currentlyBlocked": "Currently Blocked"
+    }
+  },
+  "toast": {
+    "accountCreated": "Customer created successfully",
+    "accountUpdated": "Customer updated successfully",
+    "invoiceGenerated": "Invoice generated successfully!",
+    "orderArchived": "Order has been archived",
+    "orderMovedTo": "Order moved to {state}",
+    "orderMovedToReason": "Order moved to {state} because {reason}.",
+    "orderStateUpdated": "Order State Updated",
+    "orderUnarchived": "Order has been unarchived",
+    "productAlreadyInOrder": "Product {productNumber} is already present in this order.",
+    "productCreated": "Product created successfully",
+    "productUpdated": "Product updated successfully",
+    "supplierCreated": "Supplier created successfully"
+  },
+  "transfers": {
+    "backToTransfers": "Back to Transfers",
+    "buttons": {
+      "addLines": "Add Lines",
+      "createTransfer": "+ Create Transfer",
+      "customLine": "Custom Line",
+      "save": "💾 Save"
+    },
+    "cancelConfirm": "Are you sure you want to cancel this transfer order?",
+    "columns": {
+      "createdBy": "Created By",
+      "createdOn": "Created On",
+      "description": "Description",
+      "destinationLocation": "Destination Location",
+      "notes": "Notes",
+      "orderNumber": "Order Number",
+      "ordered": "Ordered",
+      "product": "Product",
+      "received": "Received",
+      "shipped": "Shipped",
+      "sourceLocation": "Source Location",
+      "status": "Status"
+    },
+    "createSlideOver": {
+      "subtitle": "Create an internal transfer between locations",
+      "title": "New Transfer Order"
+    },
+    "lineItems": "Line items",
+    "noLineItems": "No line items",
+    "notFound": "Transfer order not found",
+    "placeholders": {
+      "notes": "Transfer notes...",
+      "searchProduct": "Add product... (search)",
+      "searchTransfer": "Search or scan transfers...",
+      "selectDestinationLocation": "Select Destination Location",
+      "selectSourceLocation": "Select Source Location"
+    },
+    "removeLine": "Remove line",
+    "status": {
+      "cancelled": "Cancelled",
+      "confirmed": "Confirmed",
+      "picking": "Picking",
+      "received": "Received",
+      "shipped": "Shipped"
+    },
+    "subtitle": "Manage internal inventory transfers",
+    "subtitleFlow": "From {source} to {destination}",
+    "title": "Transfer Orders",
+    "transferTitle": "Transfer {number}"
   }
 }

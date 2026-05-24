@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 
@@ -84,6 +84,7 @@ export default function CsvImportPage() {
       const headers: any = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
+      // eslint-disable-next-line no-restricted-syntax
       const res = await fetch('/api/setup/execute-csv', {
         method: 'POST',
         headers,
@@ -122,7 +123,7 @@ export default function CsvImportPage() {
                setImportSummary(summary);
                setStep('finalisation');
             }).catch(err => {
-               console.error(err);
+               reportError(err, 'CsvImportPage.pollProgress.importSummary');
                setStep('finalisation');
             });
           } else if (progressRes.status === 'failed') {
@@ -132,7 +133,7 @@ export default function CsvImportPage() {
           }
         }
       } catch (err) {
-        console.error('Failed to poll progress', err);
+        reportError(err, 'CsvImportPage.pollProgress');
       }
     }, 1000);
   };
@@ -147,29 +148,29 @@ export default function CsvImportPage() {
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          {step === 'config' ? 'Select Target Table' : 
-           step === 'preview' ? 'Upload Data' :
-           step === 'finalisation' ? 'Import Report' :
-           status === 'pending' ? 'Configure Import' :
-           status === 'failed' ? 'Import Failed' : 
-           status === 'completed' ? 'Import Completed' : 
-           'Import Running'}
+          {step === 'config' ? t('titleConfig') : 
+           step === 'preview' ? t('titlePreview') :
+           step === 'finalisation' ? t('titleFinalisation') :
+           status === 'pending' ? t('titlePending') :
+           status === 'failed' ? t('titleFailed') : 
+           status === 'completed' ? t('titleCompleted') : 
+           t('titleRunning')}
         </h1>
         <p className="text-slate-500">
-          {step === 'config' ? 'Choose the modbm table to import data into.' :
-           step === 'preview' ? 'Upload your CSV file and select a merge strategy.' :
-           step === 'finalisation' ? 'Review the summary of data imported.' :
-           status === 'pending' ? 'Review settings' :
-           status === 'failed' ? 'Check the logs' : 
-           status === 'completed' ? 'Done' : 
-           'Please wait...'}
+          {step === 'config' ? t('descConfig') :
+           step === 'preview' ? t('descPreview') :
+           step === 'finalisation' ? t('descFinalisation') :
+           status === 'pending' ? t('descPending') :
+           status === 'failed' ? t('descFailed') : 
+           status === 'completed' ? t('descCompleted') : 
+           t('descRunning')}
         </p>
       </div>
 
       {step === 'config' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-lg mx-auto w-full animate-in fade-in">
           <div className="mb-6">
-            <label className="block text-sm font-bold text-slate-700 mb-2">Target Table</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('targetTable')}</label>
             <select
               className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c] transition-colors"
               value={selectedTable}
@@ -186,7 +187,7 @@ export default function CsvImportPage() {
                onClick={handleDownloadTemplate}
                className="text-[#006b5c] hover:text-[#005246] hover:underline font-medium transition-colors"
              >
-               Download CSV Template
+               {t('downloadTemplate')}
              </button>
           </div>
           
@@ -194,7 +195,7 @@ export default function CsvImportPage() {
             onClick={() => setStep('preview')}
             className="w-full bg-[#006b5c] hover:bg-[#005246] text-white px-4 py-3 rounded-lg font-bold transition-colors shadow-sm"
           >
-            Continue
+            {t('continue')}
           </button>
         </div>
       )}
@@ -202,12 +203,12 @@ export default function CsvImportPage() {
       {step === 'preview' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-2xl mx-auto w-full animate-in fade-in">
           <div className="mb-8 pb-8 border-b border-slate-100">
-            <h2 className="text-xl font-bold text-slate-800 mb-4">File Upload</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-4">{t('fileUpload')}</h2>
             
             <div className="flex items-center gap-4">
               <label className="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-6 py-2.5 rounded-lg font-bold transition-colors inline-flex items-center gap-2">
                 <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-                Choose File
+                {t('chooseFile')}
                 <input
                   type="file"
                   accept=".csv"
@@ -216,12 +217,12 @@ export default function CsvImportPage() {
                 />
               </label>
               <span className="text-sm font-medium text-slate-600 truncate max-w-xs">
-                {file ? file.name : 'No file chosen'}
+                {file ? file.name : t('noFileChosen')}
               </span>
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-slate-800 mb-4">Merge Strategy</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-4">{t('mergeStrategy')}</h2>
           <div className="flex flex-col gap-4 mb-8">
             <label className="flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors hover:bg-slate-50 aria-selected:border-[#006b5c] aria-selected:bg-[#f0f9f8]" aria-selected={strategy === 'insert'}>
               <input 
@@ -232,8 +233,8 @@ export default function CsvImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">Insert Only</div>
-                <div className="text-sm text-slate-500">Will fail if duplicate unique keys exist.</div>
+                <div className="font-bold text-slate-800">{t('insertOnly')}</div>
+                <div className="text-sm text-slate-500">{t('insertOnlyDesc')}</div>
               </div>
             </label>
 
@@ -246,8 +247,8 @@ export default function CsvImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">Insert New Only</div>
-                <div className="text-sm text-slate-500">Inserts new records and ignores existing ones without failing.</div>
+                <div className="font-bold text-slate-800">{t('insertNewOnly')}</div>
+                <div className="text-sm text-slate-500">{t('insertNewOnlyDesc')}</div>
               </div>
             </label>
 
@@ -260,8 +261,8 @@ export default function CsvImportPage() {
                 className="mt-1 text-[#006b5c] focus:ring-[#006b5c]" 
               />
               <div>
-                <div className="font-bold text-slate-800">Upsert / Merge</div>
-                <div className="text-sm text-slate-500">Updates existing records if unique keys match, inserts otherwise.</div>
+                <div className="font-bold text-slate-800">{t('upsertMerge')}</div>
+                <div className="text-sm text-slate-500">{t('upsertMergeDesc')}</div>
               </div>
             </label>
           </div>
@@ -271,14 +272,14 @@ export default function CsvImportPage() {
               onClick={() => setStep('config')}
               className="text-slate-500 hover:text-slate-800 font-bold px-4 py-2"
             >
-              Back
+              {t('back')}
             </button>
             <button
               onClick={handleStartImport}
               disabled={!file}
               className="bg-[#006b5c] hover:bg-[#005246] disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm flex items-center gap-2"
             >
-              Start Import
+              {t('startImport')}
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
             </button>
           </div>
@@ -291,7 +292,7 @@ export default function CsvImportPage() {
           <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
           <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
           <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-          <div className="ml-4 text-slate-400 text-xs font-medium">CSV Import Output</div>
+          <div className="ml-4 text-slate-400 text-xs font-medium">{t('csvOutput')}</div>
         </div>
         <div 
           ref={scrollContainerRef} 
@@ -313,7 +314,7 @@ export default function CsvImportPage() {
           {status === 'failed' && errorMsg && (
             <div className="flex gap-4 mb-3 text-red-400">
               <span className="text-[#0ea5e9] select-none">{'>'}</span>
-              <span>Critical Error: {errorMsg}</span>
+              <span>{t('criticalError')} {errorMsg}</span>
             </div>
           )}
           <div ref={bottomRef} />
@@ -326,21 +327,21 @@ export default function CsvImportPage() {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Import Successful</h2>
-          <p className="text-slate-500 mb-8">The CSV data has been merged and is ready for use.</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('importSuccessful')}</h2>
+          <p className="text-slate-500 mb-8">{t('importSuccessfulDesc')}</p>
 
           {importSummary && (
             <div className="grid grid-cols-3 gap-6 mb-8 text-left">
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Products</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('products')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.products.toLocaleString()}</div>
               </div>
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Customers</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('customers')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.customers.toLocaleString()}</div>
               </div>
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Orders</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('orders')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.orders.toLocaleString()}</div>
               </div>
             </div>
@@ -350,7 +351,7 @@ export default function CsvImportPage() {
             onClick={() => router.push('/')}
             className="bg-[#006b5c] hover:bg-[#005246] text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm w-full"
           >
-            Go to Dashboard
+            {t('goToDashboard')}
           </button>
         </div>
       )}
@@ -361,13 +362,13 @@ export default function CsvImportPage() {
             onClick={() => { setStep('config'); setStatus('pending'); }}
             className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-3 rounded-lg font-bold transition-colors shadow-sm"
            >
-             Retry Import
+             {t('retryImport')}
            </button>
            <button
             onClick={() => router.push('/')}
             className="text-slate-500 hover:text-slate-800 underline"
           >
-            Return to Dashboard
+            {t('returnToDashboard')}
           </button>
         </div>
       )}

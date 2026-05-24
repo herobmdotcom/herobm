@@ -92,7 +92,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
   if (!shipment) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
-        <p className="mb-4">Shipment not found</p>
+        <p className="mb-4">{t('notFound')}</p>
         <button className="btn btn-primary" onClick={() => router.push('/shipments')}>
           {t('backToShipments')}
         </button>
@@ -119,7 +119,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                   tCommon('resolving')
                 ) : (
                   <>
-                    <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+                    {/* eslint-disable i18next/no-literal-string */}
+            <span className="material-symbols-outlined mr-1" style={{ fontSize: 16 }}>close</span>
+            {/* eslint-enable i18next/no-literal-string */}
                     {tCommon('cancel')}
                   </>
                 )}
@@ -134,7 +136,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         <div id="details-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">
+              {/* eslint-disable i18next/no-literal-string */}
               <span className="material-symbols-outlined">local_shipping</span>
+              {/* eslint-enable i18next/no-literal-string */}
               {t('shipmentDetails')}
             </h3>
             <button
@@ -151,7 +155,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
                 }
               }}
             >
-              Docket PDF
+              {t('docketPdf')}
             </button>
           </div>
           
@@ -198,7 +202,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
         <div id="lines-section" className="card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="section-heading">
-              <span className="material-symbols-outlined">list_alt</span>
+              {/* eslint-disable i18next/no-literal-string */}
+            <span className="material-symbols-outlined">list_alt</span>
+            {/* eslint-enable i18next/no-literal-string */}
               {t('lineItems')}
             </h3>
           </div>

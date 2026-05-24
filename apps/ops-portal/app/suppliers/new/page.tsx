@@ -125,7 +125,7 @@ export default function NewSupplierPage() {
                       onChange={(e) => updateField('currencyCode', e.target.value)}
                       disabled={submitting}
                     >
-                      <option value="" disabled>Select Currency</option>
+                      <option value="" disabled>{t('fields.selectCurrency')}</option>
                       {CURRENCIES.map((c) => (
                         <option key={c.code} value={c.code}>
                           {c.code} - {c.name}
@@ -271,7 +271,7 @@ export default function NewSupplierPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Bank Account Name
+                    {t('fields.bankAccountName')}
                   </label>
                   <input
                     type="text"
@@ -297,7 +297,7 @@ export default function NewSupplierPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    Account Number
+                    {t('fields.accountNumber')}
                   </label>
                   <input
                     type="text"

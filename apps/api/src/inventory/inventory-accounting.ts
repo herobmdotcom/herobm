@@ -13,6 +13,7 @@ export interface InventoryGlAccounts {
   grniAccountId: string | null;
   cogsAccountId: string | null;
   shrinkageAccountId: string | null;
+  apAccountId?: string | null;
 }
 
 /**
@@ -97,6 +98,9 @@ export interface InventoryAccountingStrategy {
 
   /** Supplier return dispatched → DR GRNI, CR Inventory */
   onSupplierReturn(ctx: GlPostingContext): InventoryGlResult | null;
+
+  /** Supplier Debit Note → DR AP, CR GRNI */
+  onSupplierDebitNote(ctx: GlPostingContext): InventoryGlResult | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,6 +124,9 @@ class PeriodicAccountingStrategy implements InventoryAccountingStrategy {
     return null;
   }
   onSupplierReturn(): null {
+    return null;
+  }
+  onSupplierDebitNote(): null {
     return null;
   }
 }
@@ -352,6 +359,38 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
           debit: 0,
           credit: ctx.amount,
           memo: ctx.memo,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
+      ],
+    };
+  }
+
+  onSupplierDebitNote(ctx: GlPostingContext): InventoryGlResult | null {
+    if (ctx.amount <= 0) return null;
+    const ap = this.requireAccount(this.accts.apAccountId || null, 'Accounts Payable');
+    const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
+    // Supplier Debit Note: DR Accounts Payable, CR GRNI
+    return {
+      sourceType: 'inventory_receipt', // Alternatively 'supplier_debit_note' if defined, but keeping consistent with sourceType types
+      lines: [
+        {
+          customerId: ap,
+          debit: ctx.amount,
+          credit: 0,
+          memo: ctx.memo,
+          partyType: ctx.partyType,
+          partyId: ctx.partyId,
+          costCenterId: ctx.costCenterId,
+          activityId: ctx.activityId,
+        },
+        {
+          customerId: grni,
+          debit: 0,
+          credit: ctx.amount,
+          memo: ctx.memo,
+          partyType: ctx.partyType,
+          partyId: ctx.partyId,
           costCenterId: ctx.costCenterId,
           activityId: ctx.activityId,
         },

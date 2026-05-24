@@ -37,6 +37,7 @@ export default function InternalTransferModal({
   onSuccess,
 }: InternalTransferModalProps) {
   const t = useTranslations('purchaseOrders');
+  const tCommon = useTranslations('common');
   const [locations, setLocations] = useState<RawLocationWithAvailability[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,21 +123,22 @@ export default function InternalTransferModal({
       <div className="bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl w-full max-w-md flex flex-col">
         <div className="px-6 py-4 border-b border-[var(--border)] flex justify-between items-center">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
-            Create Internal Transfer
+            {t('demands.createTransferTitle')}
           </h2>
           <button onClick={onClose} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         <div className="p-6 space-y-4">
           <p className="text-sm text-[var(--text-secondary)]">
-            Create a Transfer Order to fulfill {selectedDemands.length} demands from another location.
+            {t('demands.createTransferDesc', { count: selectedDemands.length })}
           </p>
 
           <div>
             <label className="block text-sm font-medium text-[var(--text-primary)] mb-1">
-              Source Location
+              {t('demands.sourceLocation')}
             </label>
             <select
               value={selectedLocationId}
@@ -151,7 +153,7 @@ export default function InternalTransferModal({
               ))}
             </select>
             {options.length === 0 && (
-              <p className="text-sm text-[var(--danger)] mt-1">No other locations available.</p>
+              <p className="text-sm text-[var(--danger)] mt-1">{t('demands.noLocationsAvailable')}</p>
             )}
           </div>
         </div>
@@ -162,7 +164,7 @@ export default function InternalTransferModal({
             disabled={isSubmitting}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-md hover:bg-[var(--bg-card-hover)] transition-colors text-[var(--text-primary)]"
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -171,6 +173,7 @@ export default function InternalTransferModal({
           >
             {isSubmitting ? (
               <>
+                {/* eslint-disable-next-line i18next/no-literal-string */}
                 <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
                 {t('demands.creating')}
               </>

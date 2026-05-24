@@ -235,7 +235,7 @@ describe('API E2E — Purchase Order Returns', () => {
         .expect(201);
 
       expect(res.body.returnId).toBe(returnId);
-      expect(res.body.stateCode).toBe(PURCHASE_RETURN_STATE.PROCESSED); // Returns flow immediately marks it as processed
+      expect(res.body.stateCode).toBe(PURCHASE_RETURN_STATE.SHIPPED); // Returns flow immediately marks it as processed
     });
   });
 

@@ -63,62 +63,35 @@ export default function GlobalPurchaseInvoicesPage() {
     ];
 
     return (
-        <>
-            <div className="h-full flex flex-col relative p-4 lg:p-6">
-                <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
-                    <DataGrid 
-                        endpoint={gridEndpoint} 
-                        columns={gridColumns} 
-                        gridKey="global-purchase-invoices"
-                        fetchAll
-                        rowIdField="invoiceId"
-                        onRowClicked={handleRowClicked}
-                        renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-                            <div className="flex items-center justify-between px-6 py-4">
-                                <div className="flex items-center gap-4 flex-1">
-                                    <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                        {t('supplierInvoicesCardHeading', { defaultValue: 'Supplier Invoices' })}
-                                    </h2>
-                                    <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                                        <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                                            {tCommon('grid.rowCountLabel')}
-                                        </span>
-                                        <span className="text-[11px] font-bold text-[#006b5c]">
-                                            {loading ? '...' : rowCount.toLocaleString()}
-                                        </span>
-                                    </div>
-                                    
-                                    <div className="flex-1 ml-4 max-w-md">
-                                        {searchInput}
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center gap-3 shrink-0 ml-4">
-                                    <select
-                                        value={days}
-                                        onChange={(e) => setDays(e.target.value)}
-                                        className="input text-sm"
-                                        style={{ minWidth: 150 }}
-                                    >
-                                        <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
-                                        <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
-                                        <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
-                                        <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
-                                    </select>
-                                    {optionsButton}
-                                    <button
-                                        className="btn btn-primary whitespace-nowrap ml-2"
-                                        onClick={() => router.push('/supplier-invoices/new')}
-                                    >
-                                        {t('buttons.enterSupplierBill', { defaultValue: 'Enter Supplier Bill' })}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    />
-                </div>
-            </div>
-        </>
+        <DataGrid 
+            endpoint={gridEndpoint} 
+            columns={gridColumns} 
+            gridKey="global-purchase-invoices"
+            fetchAll
+            rowIdField="invoiceId"
+            onRowClicked={handleRowClicked}
+            pageTitle={t('supplierInvoicesCardHeading', { defaultValue: 'Supplier Invoices' })}
+            headerFilters={
+                <select
+                    value={days}
+                    onChange={(e) => setDays(e.target.value)}
+                    className="input text-sm"
+                    style={{ minWidth: 150 }}
+                >
+                    <option value="30">{tCommon('filters.last30Days', { defaultValue: 'Last 30 Days' })}</option>
+                    <option value="90">{tCommon('filters.last90Days', { defaultValue: 'Last 90 Days' })}</option>
+                    <option value="365">{tCommon('filters.last1Year', { defaultValue: 'Last 1 Year' })}</option>
+                    <option value="0">{tCommon('filters.allTime', { defaultValue: 'All Time' })}</option>
+                </select>
+            }
+            headerActions={
+                <button
+                    className="btn btn-primary whitespace-nowrap ml-2 lg:ml-0"
+                    onClick={() => router.push('/supplier-invoices/new')}
+                >
+                    {t('buttons.enterSupplierBill', { defaultValue: 'Enter Supplier Bill' })}
+                </button>
+            }
+        />
     );
 }

@@ -166,20 +166,20 @@ export default function OdooImportPage() {
     <div className="flex-1 flex flex-col p-8 max-w-5xl mx-auto w-full min-h-[calc(100vh-64px)]">
       <div className="flex flex-col items-center justify-center text-center mb-8">
         <h1 className="text-3xl font-bold text-slate-900 mb-2">
-          {step === 'config' ? 'Connect Source System' : 
-           step === 'finalisation' ? 'Import Report' :
-           status === 'pending' ? t('title.pending', { fallback: 'Configure Import' }) :
-           status === 'failed' ? t('title.failed', { fallback: 'Import Failed' }) : 
-           status === 'completed' ? t('title.completed', { fallback: 'Import Completed' }) : 
-           t('title.running', { fallback: 'Import Running' })}
+          {step === 'config' ? t('connectSourceSystem') : 
+           step === 'finalisation' ? t('titleFinalisation') :
+           status === 'pending' ? t('titlePending', { fallback: 'Configure Import' }) :
+           status === 'failed' ? t('titleFailed', { fallback: 'Import Failed' }) : 
+           status === 'completed' ? t('titleCompleted', { fallback: 'Import Completed' }) : 
+           t('titleRunning', { fallback: 'Import Running' })}
         </h1>
         <p className="text-slate-500">
-          {step === 'config' ? 'Enter database credentials for the Odoo PostgreSQL database.' :
-           step === 'finalisation' ? 'Review the summary of data imported.' :
-           status === 'pending' ? t('subtitle.pending', { fallback: 'Review settings' }) :
-           status === 'failed' ? t('subtitle.failed', { fallback: 'Check the logs' }) : 
-           status === 'completed' ? t('subtitle.completed', { fallback: 'Done' }) : 
-           t('subtitle.running', { fallback: 'Please wait...' })}
+          {step === 'config' ? t('connectSourceSystemDescOdoo') :
+           step === 'finalisation' ? t('descFinalisation') :
+           status === 'pending' ? t('descPending', { fallback: 'Review settings' }) :
+           status === 'failed' ? t('descFailed', { fallback: 'Check the logs' }) : 
+           status === 'completed' ? t('descCompleted', { fallback: 'Done' }) : 
+           t('descRunning', { fallback: 'Please wait...' })}
         </p>
       </div>
 
@@ -267,8 +267,8 @@ export default function OdooImportPage() {
           
           <div className="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-100">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">Default Fulfillment Location</h2>
-              <p className="text-sm text-slate-500 mb-4">Select the primary location from Odoo that will act as the default fulfillment warehouse going forward.</p>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultLocation')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('defaultLocationDescOdoo')}</p>
               <select
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
                 value={config.defaultLocationCode}
@@ -281,8 +281,8 @@ export default function OdooImportPage() {
             </div>
             
             <div>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">System Base Currency</h2>
-              <p className="text-sm text-slate-500 mb-4">Confirm the base currency to be used for transactions imported from this Odoo instance.</p>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">{t('systemBaseCurrency')}</h2>
+              <p className="text-sm text-slate-500 mb-4">{t('systemBaseCurrencyDescOdoo')}</p>
               <select
                 className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
                 value={config.baseCurrency}
@@ -346,7 +346,7 @@ export default function OdooImportPage() {
               onClick={() => setStep('config')}
               className="text-slate-500 hover:text-slate-800 font-medium"
             >
-              Back
+              {t('back')}
             </button>
             <button
               onClick={handleStartElt}
@@ -399,21 +399,21 @@ export default function OdooImportPage() {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Import Successful</h2>
-          <p className="text-slate-500 mb-8">The database has been populated and is ready for use.</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('importSuccessful')}</h2>
+          <p className="text-slate-500 mb-8">{t('dbPopulated')}</p>
 
           {importSummary && (
             <div className="grid grid-cols-3 gap-6 mb-8 text-left">
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Products</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('products')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.products.toLocaleString()}</div>
               </div>
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Customers</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('customers')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.customers.toLocaleString()}</div>
               </div>
               <div className="p-6 bg-slate-50 rounded-lg border border-slate-100">
-                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">Orders</div>
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">{t('orders')}</div>
                 <div className="text-3xl font-bold text-slate-900">{importSummary.orders.toLocaleString()}</div>
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function OdooImportPage() {
                  setImportSummary(summary);
                  setStep('finalisation');
               }).catch(err => {
-                 console.error(err);
+                 reportError(err, 'OdooImportPage.pollProgress.importSummary');
                  setStep('finalisation');
               });
             }}

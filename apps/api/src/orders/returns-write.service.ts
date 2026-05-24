@@ -549,14 +549,14 @@ export class ReturnsWriteService {
         }
 
         if (stockLines.length > 0) {
-          // Receive into the RETURNS bin (HANDLING zone)
+          // Receive into the CUSTOMER_RETURNS bin (HANDLING zone)
           const [returnsBin] = await innerTx
             .select({ binId: bins.binId })
             .from(bins)
             .innerJoin(zones, eq(bins.zoneId, zones.zoneId))
             .where(
               and(
-                eq(bins.binNumber, 'RETURNS'),
+                eq(bins.binNumber, 'CUSTOMER_RETURNS'),
                 eq(zones.locationId, dto.locationId),
               ),
             )
@@ -564,7 +564,7 @@ export class ReturnsWriteService {
 
           if (!returnsBin) {
             throw new BadRequestException(
-              `No RETURNS bin found for location '${dto.locationId}'.`,
+              `No CUSTOMER_RETURNS bin found for location '${dto.locationId}'.`,
             );
           }
 

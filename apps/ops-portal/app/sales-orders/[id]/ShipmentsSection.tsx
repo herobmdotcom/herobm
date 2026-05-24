@@ -47,8 +47,10 @@ export default function ShipmentsSection({ orderId }: Props) {
         <div id="shipments-section" className="card">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="section-heading">
+                    {/* eslint-disable i18next/no-literal-string */}
                     <span className="material-symbols-outlined">inventory_2</span>
-                    Shipments
+                    {/* eslint-enable i18next/no-literal-string */}
+                    {tShipping('shipmentsTitle')}
                 </h3>
             </div>
 
@@ -58,7 +60,7 @@ export default function ShipmentsSection({ orderId }: Props) {
                 </div>
             ) : shipments.length === 0 ? (
                 <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-                    No shipments found.
+                    {tShipping('noShipmentsFound')}
                 </div>
             ) : (
                 <div className="flex flex-col gap-2">
@@ -69,7 +71,9 @@ export default function ShipmentsSection({ orderId }: Props) {
                             className="flex items-center justify-between p-3 rounded-lg border border-[var(--border)] hover:bg-[var(--bg-card-hover)] transition-colors"
                         >
                             <div className="flex items-center gap-3">
+                                {/* eslint-disable i18next/no-literal-string */}
                                 <span className="material-symbols-outlined text-[var(--text-muted)] text-lg">inventory_2</span>
+                                {/* eslint-enable i18next/no-literal-string */}
                                 <div>
                                     <div className="font-bold text-sm text-[var(--text-primary)]">{shipment.shipmentNumber}</div>
                                     <div className="text-xs text-[var(--text-muted)]">

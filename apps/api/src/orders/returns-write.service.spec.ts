@@ -456,7 +456,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      // HANDLING zone with RETURNS bin (for received transition)
+      // HANDLING zone with CUSTOMER_RETURNS bin (for received transition)
       await pg.db
         .insert(zones)
         .values({
@@ -471,7 +471,7 @@ describe('ReturnsWriteService', () => {
         .values({
           binId: '20000000-0000-0000-0000-000000000001',
           zoneId: '30000000-0000-0000-0000-000000000001',
-          binNumber: 'RETURNS',
+          binNumber: 'CUSTOMER_RETURNS',
           binType: 'staging',
         })
         .onConflictDoNothing();
@@ -608,7 +608,7 @@ describe('ReturnsWriteService', () => {
         .onConflictDoNothing()
         .returning();
 
-      // HANDLING zone with RETURNS bin
+      // HANDLING zone with CUSTOMER_RETURNS bin
       await pg.db
         .insert(zones)
         .values({
@@ -622,7 +622,7 @@ describe('ReturnsWriteService', () => {
         .insert(bins)
         .values({
           binId: '20000000-0000-0000-0000-000000000001',
-          binNumber: 'RETURNS',
+          binNumber: 'CUSTOMER_RETURNS',
           zoneId: '30000000-0000-0000-0000-000000000001',
           binType: 'staging',
         })

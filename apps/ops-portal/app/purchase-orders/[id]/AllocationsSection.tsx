@@ -18,15 +18,17 @@ interface AllocationsSectionProps {
 export default function AllocationsSection({ orderId, allocations, loading, onAllocationsChanged }: AllocationsSectionProps) {
   const tCommon = useTranslations('common');
 
+  const t = useTranslations('purchaseOrders');
+
   const handleUnlink = async (id: string) => {
-    if (!confirm('Are you sure you want to unallocate this demand? It will be placed back into the Open Demands pool.')) return;
+    if (!confirm(t('allocationsSection.confirmUnallocate'))) return;
     try {
       await apiFetch(`/api/allocations/${id}/unlink`, { method: 'POST' });
-      toast.success('Demand unallocated successfully');
+      toast.success(t('allocationsSection.success'));
       onAllocationsChanged();
     } catch (err) {
       reportError(err, 'AllocationsSection');
-      toast.error('Failed to unallocate demand');
+      toast.error(t('allocationsSection.error'));
     }
   };
 
@@ -36,28 +38,28 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
         <h3 className="section-heading">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined">link</span>
-          Allocations
+          {t('allocationsSection.title')}
         </h3>
       </div>
       
       {loading ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
-          Loading allocations...
+          {t('allocationsSection.loading')}
         </p>
       ) : allocations.length === 0 ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
-          No open sales demand is currently allocated to this purchase order.
+          {t('allocationsSection.noAllocations')}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Sales Order</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Product</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated Qty</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Date Requested</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>Action</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.salesOrder')}</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.product')}</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.allocatedQty')}</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('allocationsSection.dateRequested')}</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>{t('allocationsSection.action')}</th>
               </tr>
             </thead>
             <tbody>
@@ -81,9 +83,9 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
                     <button 
                       onClick={() => handleUnlink(alloc.id)}
                       className="btn btn-secondary btn-sm"
-                      title="Unallocate demand from this PO"
+                      title={t('allocationsSection.unallocateTitle')}
                     >
-                      Unallocate
+                      {t('allocationsSection.unallocate')}
                     </button>
                   </td>
                 </tr>

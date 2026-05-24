@@ -75,7 +75,7 @@ export default function LedgerView() {
   ], [tCommon, tInventory]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col z-10 bg-white rounded-xl shadow-sm border border-[rgba(196,198,205,0.4)] overflow-hidden transition-all">
+    <>
       <DataGrid
         endpoint={`/api/inventory/ledger?days=${days}`}
         columns={columns}
@@ -83,43 +83,20 @@ export default function LedgerView() {
         searchPlaceholder={tInventory('placeholders.searchLedger', { fallback: 'Search transactions...' })}
         exportFileName="inventory-ledger"
         fetchAll
-        renderHeader={({ searchInput, optionsButton, rowCount, loading }) => (
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-4 flex-1">
-              <h2 className="text-[1.3rem] font-bold tracking-tight text-[#041627] shrink-0" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                {tInventory('tabs.ledger', { fallback: 'Ledger' })}
-              </h2>
-              <div className="h-5 w-px bg-[rgba(196,198,205,0.4)] shrink-0 mx-2"></div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-[#f2f4f6] rounded-lg shrink-0">
-                <span className="text-[11px] font-bold text-[#041627] tracking-wider uppercase" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  {tCommon('grid.rowCountLabel')}
-                </span>
-                <span className="text-[11px] font-bold text-[#006b5c]">
-                  {loading ? '...' : rowCount.toLocaleString()}
-                </span>
-              </div>
-              
-              <div className="flex-1 ml-4 max-w-md">
-                {searchInput}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3 shrink-0 ml-4">
-              <select
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-                className="input text-sm"
-                style={{ minWidth: 150 }}
-              >
-                <option value={1}>{tInventory('filters.last24Hours', { fallback: 'Last 24 Hours' })}</option>
-                <option value={7}>{tInventory('filters.last7Days')}</option>
-                <option value={30}>{tInventory('filters.last30Days')}</option>
-                <option value={90}>{tInventory('filters.last90Days')}</option>
-              </select>
-              {optionsButton}
-            </div>
-          </div>
-        )}
+        pageTitle={tInventory('tabs.ledger', { fallback: 'Ledger' })}
+        headerFilters={
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="input text-sm"
+            style={{ minWidth: 150 }}
+          >
+            <option value={1}>{tInventory('filters.last24Hours', { fallback: 'Last 24 Hours' })}</option>
+            <option value={7}>{tInventory('filters.last7Days')}</option>
+            <option value={30}>{tInventory('filters.last30Days')}</option>
+            <option value={90}>{tInventory('filters.last90Days')}</option>
+          </select>
+        }
         onRowClicked={(row: any) => setSelectedEntryId(row.entryId)}
       />
 
@@ -127,6 +104,6 @@ export default function LedgerView() {
         entryId={selectedEntryId}
         onClose={() => setSelectedEntryId(null)}
       />
-    </div>
+    </>
   );
 }

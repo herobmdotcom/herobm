@@ -16,6 +16,7 @@ import { TelemetryModule } from './telemetry/telemetry.module';
 import { MetricsInterceptor } from './common/metrics.interceptor';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { PurchaseOrdersModule } from './purchase-orders/purchase-orders.module';
+import { PurchaseDebitNotesModule } from './purchase-debit-notes/purchase-debit-notes.module';
 
 import { ReportsModule } from './reports/reports.module';
 import { InvoicesModule } from './invoices/invoices.module';
@@ -50,6 +51,7 @@ import { PricingModule } from './pricing/pricing.module';
     TelemetryModule,
     SuppliersModule,
     PurchaseOrdersModule,
+    PurchaseDebitNotesModule,
 
     ReportsModule,
     GlModule,

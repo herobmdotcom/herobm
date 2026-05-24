@@ -28,6 +28,7 @@ interface ReceptionLine {
 
 export default function ReceptionsSection({ orderId }: { orderId: string }) {
   const tCommon = useTranslations('common');
+  const t = useTranslations('purchaseOrders.receptionsSection');
   const [receptions, setReceptions] = useState<ReceptionLine[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,14 +51,14 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
   }, [orderId]);
 
   const handleUnlink = async (lineId: string) => {
-    if (!confirm('Are you sure you want to unlink this reception line? It will be placed back into the Goods Received pool for manual allocation.')) return;
+    if (!confirm(t('confirmUnlink'))) return;
     try {
       await apiFetch(`/api/goods-received/lines/${lineId}/unresolve`, { method: 'POST' });
-      toast.success('Reception unlinked successfully');
+      toast.success(t('success'));
       loadReceptions();
     } catch (err) {
       reportError(err, 'ReceptionsSection');
-      toast.error('Failed to unlink reception');
+      toast.error(t('error'));
     }
   };
 
@@ -67,28 +68,28 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
         <h3 className="section-heading">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span className="material-symbols-outlined">inventory_2</span>
-          Receptions
+          {t('title')}
         </h3>
       </div>
       
       {loading ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
-          Loading receptions...
+          {t('loading')}
         </p>
       ) : receptions.length === 0 ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>
-          No goods received lines are currently allocated to this purchase order.
+          {t('noReceptions')}
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="table-lines w-full">
             <thead>
               <tr>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Receipt</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Product</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Received Qty</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Date Received</th>
-                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>Action</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('receipt')}</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('product')}</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('receivedQty')}</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>{t('dateReceived')}</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)', width: 80 }}>{t('action')}</th>
               </tr>
             </thead>
             <tbody>
@@ -113,9 +114,9 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
                     <button 
                       onClick={() => handleUnlink(rec.goodsReceivedLineId)}
                       className="btn btn-secondary btn-sm"
-                      title="Unlink reception from this PO"
+                      title={t('unlinkTitle')}
                     >
-                      Unlink
+                      {t('unlink')}
                     </button>
                   </td>
                 </tr>
