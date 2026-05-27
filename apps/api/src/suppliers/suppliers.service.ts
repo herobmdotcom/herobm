@@ -7,8 +7,21 @@ import {
   supplierGroups,
   supplierExpiries,
 } from '../drizzle/modbm-core-schema';
-import { eq, ilike, or, sql, and, getTableColumns } from 'drizzle-orm';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  eq,
+  ilike,
+  or,
+  sql,
+  and,
+  asc,
+  desc,
+  getTableColumns,
+} from 'drizzle-orm';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { SUPPLIER_STATE } from '@modbm/shared';
 
 @Injectable()
@@ -16,7 +29,7 @@ export class SuppliersService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(params: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(params);
 
     let qb = this.db
@@ -57,10 +70,43 @@ export class SuppliersService {
       qb = qb.where(and(...conditions));
     }
 
-    const data = await qb
-      .orderBy(coreSuppliers.name)
-      .limit(limit)
-      .offset(offset);
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${coreSuppliers.name} > ${c.name}`,
+              and(
+                eq(coreSuppliers.name, c.name),
+                sql`${coreSuppliers.vendorId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${coreSuppliers.name} < ${c.name}`,
+              and(
+                eq(coreSuppliers.name, c.name),
+                sql`${coreSuppliers.vendorId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(coreSuppliers.name),
+          orderFn(coreSuppliers.vendorId),
+        );
+      },
+      encodeRow: (row) => ({ name: row.name, id: row.vendorId }),
+    });
 
     // Count query for total (same filters, no limit/offset)
     let countQb = this.db
@@ -74,7 +120,7 @@ export class SuppliersService {
 
     const [{ count: total }] = await countQb;
 
-    return { data, page, limit, total: Number(total) };
+    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 
   async findOne(id: string) {
@@ -139,12 +185,12 @@ export class SuppliersService {
 
   /** Expiries for a given vendor */
   async findSupplierExpiries(vendorId: string, params: PaginationQuery) {
-    const { page, limit, offset } = parsePagination(params);
+    const { page, limit, cursor, direction } = parsePagination(params);
 
     const { supplierExpiries } =
       await import('../drizzle/modbm-core-schema.js');
 
-    const baseQuery = this.db
+    const qb = this.db
       .select({
         expiryId: supplierExpiries.expiryId,
         vendorId: supplierExpiries.vendorId,
@@ -154,12 +200,47 @@ export class SuppliersService {
         createdOn: supplierExpiries.createdOn,
       })
       .from(supplierExpiries)
-      .where(eq(supplierExpiries.vendorId, vendorId));
+      .where(eq(supplierExpiries.vendorId, vendorId))
+      .$dynamic();
 
-    const data = await baseQuery
-      .orderBy(supplierExpiries.expiryDate)
-      .limit(limit)
-      .offset(offset);
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { date: string; id: string }, dir) => {
+        const cDate = c.date;
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${supplierExpiries.expiryDate} > ${cDate}::timestamp`,
+              and(
+                eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
+                sql`${supplierExpiries.expiryId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${supplierExpiries.expiryDate} < ${cDate}::timestamp`,
+              and(
+                eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
+                sql`${supplierExpiries.expiryId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(supplierExpiries.expiryDate),
+          orderFn(supplierExpiries.expiryId),
+        );
+      },
+      encodeRow: (row) => ({ date: row.expiryDate, id: row.expiryId }),
+    });
 
     const countQuery = this.db
       .select({ count: sql<number>`count(*)` })
@@ -168,17 +249,17 @@ export class SuppliersService {
 
     const [{ count: total }] = await countQuery;
 
-    return { data, page, limit, total: Number(total) };
+    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 
   /** Products supplied by a given vendor */
   async findSupplierProducts(vendorId: string, params: PaginationQuery) {
-    const { page, limit, offset } = parsePagination(params);
+    const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, products } =
       await import('../drizzle/modbm-core-schema.js');
 
-    const baseQuery = this.db
+    const qb = this.db
       .select({
         productSupplierId: productSuppliers.productSupplierId,
         productId: productSuppliers.productId,
@@ -195,12 +276,49 @@ export class SuppliersService {
       })
       .from(productSuppliers)
       .innerJoin(products, eq(productSuppliers.productId, products.productId))
-      .where(eq(productSuppliers.vendorId, vendorId));
+      .where(eq(productSuppliers.vendorId, vendorId))
+      .$dynamic();
 
-    const data = await baseQuery
-      .orderBy(products.name)
-      .limit(limit)
-      .offset(offset);
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${products.name} > ${c.name}`,
+              and(
+                eq(products.name, c.name),
+                sql`${productSuppliers.productSupplierId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${products.name} < ${c.name}`,
+              and(
+                eq(products.name, c.name),
+                sql`${productSuppliers.productSupplierId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(products.name),
+          orderFn(productSuppliers.productSupplierId),
+        );
+      },
+      encodeRow: (row) => ({
+        name: row.productName,
+        id: row.productSupplierId,
+      }),
+    });
 
     const countQuery = this.db
       .select({ count: sql<number>`count(*)` })
@@ -209,17 +327,17 @@ export class SuppliersService {
 
     const [{ count: total }] = await countQuery;
 
-    return { data, page, limit, total: Number(total) };
+    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 
   /** Suppliers that provide a given product */
   async findProductSuppliers(productId: string, params: PaginationQuery) {
-    const { page, limit, offset } = parsePagination(params);
+    const { page, limit, cursor, direction } = parsePagination(params);
 
     const { productSuppliers, suppliers } =
       await import('../drizzle/modbm-core-schema.js');
 
-    const baseQuery = this.db
+    const qb = this.db
       .select({
         productSupplierId: productSuppliers.productSupplierId,
         productId: productSuppliers.productId,
@@ -235,12 +353,46 @@ export class SuppliersService {
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
-      .where(eq(productSuppliers.productId, productId));
+      .where(eq(productSuppliers.productId, productId))
+      .$dynamic();
 
-    const data = await baseQuery
-      .orderBy(suppliers.name)
-      .limit(limit)
-      .offset(offset);
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${suppliers.name} > ${c.name}`,
+              and(
+                eq(suppliers.name, c.name),
+                sql`${productSuppliers.productSupplierId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${suppliers.name} < ${c.name}`,
+              and(
+                eq(suppliers.name, c.name),
+                sql`${productSuppliers.productSupplierId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(suppliers.name),
+          orderFn(productSuppliers.productSupplierId),
+        );
+      },
+      encodeRow: (row) => ({ name: row.vendorName, id: row.productSupplierId }),
+    });
 
     const countQuery = this.db
       .select({ count: sql<number>`count(*)` })
@@ -249,6 +401,6 @@ export class SuppliersService {
 
     const [{ count: total }] = await countQuery;
 
-    return { data, page, limit, total: Number(total) };
+    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 }

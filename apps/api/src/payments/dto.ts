@@ -21,6 +21,10 @@ export const MODES_OF_PAYMENT = [
 export type ModeOfPayment = (typeof MODES_OF_PAYMENT)[number];
 
 export class CreatePaymentDto {
+  @IsUUID()
+  @IsNotEmpty()
+  paymentId: string;
+
   @IsEnum(['receive', 'pay'])
   paymentType: 'receive' | 'pay';
 

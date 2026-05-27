@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 export interface Customer {
@@ -74,13 +74,15 @@ export default function CustomerSelect({
       return; 
     }
     try {
-      const data = await apiFetch<{ data: Customer[] }>(
-        `/api/customers?q=${encodeURIComponent(term)}&limit=10`,
+      const res = await api.customFetch<{ data: { data: Customer[] } }>(
+        `/customers?q=${encodeURIComponent(term)}&limit=10`,
+        { method: 'GET' }
       );
+      const data = res.data;
       if (excludeId) {
-        setFilteredAccounts(data.data.filter((c) => c.customerId !== excludeId));
+        setFilteredAccounts(data?.data?.filter((c) => c.customerId !== excludeId) || []);
       } else {
-        setFilteredAccounts(data.data);
+        setFilteredAccounts(data?.data || []);
       }
     } catch { 
       setFilteredAccounts([]); 

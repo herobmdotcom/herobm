@@ -1,1 +1,0 @@
-ALTER TABLE "modbm_core"."supplier_groups" DROP COLUMN "default_discount_percentage";

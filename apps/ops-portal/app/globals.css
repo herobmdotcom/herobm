@@ -67,6 +67,11 @@
   transition: border-color 150ms;
 }
 
+.input-sm {
+  padding: 4px 8px;
+  height: 32px;
+}
+
 .input:focus, .select:focus {
   border-color: var(--accent);
 }
@@ -82,7 +87,8 @@
 }
 
 /* Add custom dropdown arrow for select elements */
-.select:not([multiple]):not([size]) {
+.select:not([multiple]):not([size]),
+select.input:not([multiple]):not([size]) {
   appearance: none;
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
   background-position: right 0.75rem center;

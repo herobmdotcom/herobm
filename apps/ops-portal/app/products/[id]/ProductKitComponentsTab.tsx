@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import DataGrid from '@/components/DataGrid';
 import { KitComponentSlideOver } from './KitComponentSlideOver';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 
 interface ProductKitComponentsTabProps {
@@ -62,7 +62,7 @@ export const ProductKitComponentsTab: React.FC<ProductKitComponentsTabProps> = (
   const handleDelete = async (row: any) => {
     if (!window.confirm(t('confirmRemoveComponent'))) return;
     try {
-      await apiMutate(`/api/products/${productId}/components/${row.componentId}`, 'DELETE');
+      await api.productsControllerRemoveComponent(productId, row.componentId);
       toast.success(t('toast.componentRemoved'));
       setRefreshKey(k => k + 1);
     } catch (err: any) {

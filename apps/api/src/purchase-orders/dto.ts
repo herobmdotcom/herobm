@@ -5,6 +5,7 @@ import {
   IsArray,
   ValidateNested,
   IsNumberString,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -67,6 +68,10 @@ export class UpdatePurchaseOrderLineDto {
 // ── PO Header DTOs ──
 
 export class CreatePurchaseOrderDto {
+  @IsUUID()
+  @IsNotEmpty()
+  purchaseOrderId!: string;
+
   @IsString()
   @IsNotEmpty()
   orderNumber!: string;

@@ -22,9 +22,13 @@ import {
   purchaseInvoiceLines,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
-import { eq, or, ilike, desc, sql, inArray, and } from 'drizzle-orm';
+import { eq, or, ilike, desc, sql, inArray, and, asc } from 'drizzle-orm';
 import { InventoryService } from '../inventory/inventory.service';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { calculateAuditTrail, AuditMode } from '../common/audit';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
@@ -164,6 +168,7 @@ export class PurchaseOrdersService {
         const [inserted] = await tx
           .insert(purchaseOrders)
           .values({
+            purchaseOrderId: createDto.purchaseOrderId,
             orderNumber: createDto.orderNumber, // In reality, should auto-gen
             name: createDto.name,
             vendorId: createDto.vendorId,
@@ -236,31 +241,16 @@ export class PurchaseOrdersService {
   }
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived, days } =
-      parsePagination(query);
-    const stateFilter = query?.state ?? null;
-
-    // --- App orders ---
-    let appQuery = this.db
-      .select({
-        id: purchaseOrders.purchaseOrderId,
-        orderNumber: purchaseOrders.orderNumber,
-        name: purchaseOrders.name,
-        vendorName: coreSuppliers.name,
-        referenceNumber: purchaseOrders.referenceNumber,
-        stateCode: purchaseOrders.stateCode,
-        source: sql<string>`'app'`.as('source'),
-        createdBy: purchaseOrders.createdBy,
-        createdOn: purchaseOrders.createdOn,
-        currencyCode: purchaseOrders.currencyCode,
-      })
-      .from(purchaseOrders)
-      .leftJoin(
-        coreSuppliers,
-        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
-      )
-      .orderBy(desc(purchaseOrders.createdOn))
-      .$dynamic();
+    const {
+      page,
+      limit,
+      cursor,
+      direction,
+      searchTerm,
+      includeArchived,
+      days,
+      states,
+    } = parsePagination(query);
 
     const conditions = [];
 
@@ -286,11 +276,100 @@ export class PurchaseOrdersService {
       );
     }
 
-    if (conditions.length > 0) {
-      appQuery = appQuery.where(and(...conditions));
+    if (states && states.length > 0) {
+      if (states.length === 1) {
+        conditions.push(eq(purchaseOrders.stateCode, states[0] as any));
+      } else {
+        conditions.push(inArray(purchaseOrders.stateCode, states as any[]));
+      }
     }
 
-    const appRows = await appQuery;
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    // Count total
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(purchaseOrders)
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
+      .where(whereClause);
+
+    // --- App orders ---
+    let appQuery = this.db
+      .select({
+        id: purchaseOrders.purchaseOrderId,
+        orderNumber: purchaseOrders.orderNumber,
+        name: purchaseOrders.name,
+        vendorName: coreSuppliers.name,
+        referenceNumber: purchaseOrders.referenceNumber,
+        stateCode: purchaseOrders.stateCode,
+        source: sql<string>`'app'`.as('source'),
+        createdBy: purchaseOrders.createdBy,
+        createdOn: purchaseOrders.createdOn,
+        currencyCode: purchaseOrders.currencyCode,
+      })
+      .from(purchaseOrders)
+      .leftJoin(
+        coreSuppliers,
+        eq(purchaseOrders.vendorId, coreSuppliers.vendorId),
+      )
+      .$dynamic();
+
+    if (whereClause) {
+      appQuery = appQuery.where(whereClause);
+    }
+
+    const {
+      data: appRows,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
+      qb: appQuery,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
+              and(
+                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                sql`${purchaseOrders.purchaseOrderId} < ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
+              and(
+                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                sql`${purchaseOrders.purchaseOrderId} > ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          orderFn(
+            sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp)`,
+          ),
+          orderFn(purchaseOrders.purchaseOrderId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn
+          ? row.createdOn.toISOString()
+          : '1970-01-01T00:00:00.000Z',
+        id: row.id,
+      }),
+    });
 
     // --- Aggregate line totals per app order ---
     const appTotalMap = new Map<string, string>();
@@ -325,9 +404,14 @@ export class PurchaseOrdersService {
       };
     });
 
-    const paginated = unified.slice(offset, offset + limit);
-
-    return { data: paginated, page, limit, total: unified.length };
+    return {
+      data: unified,
+      page,
+      limit,
+      total: Number(count),
+      nextCursor,
+      prevCursor,
+    };
   }
 
   async findOne(id: string, tx: any = this.db) {

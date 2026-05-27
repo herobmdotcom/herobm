@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 
 interface Macro {
@@ -44,8 +44,9 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<Macro[]>('/api/macros');
-      const textMacros = data.filter(m => m.macroType === 'text_template');
+      const res = await api.macrosControllerFindAll({ macroType: 'text_template' } as any);
+      const data = res.data as any;
+      const textMacros = data.filter((m: any) => m.macroType === 'text_template');
       setMacros(textMacros);
     } catch (err: any) {
       setError(err.message || 'Failed to load macros');

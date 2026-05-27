@@ -8,7 +8,8 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice } from '@modbm/shared';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import { useSettings } from '@/components/SettingsProvider';
@@ -62,8 +63,8 @@ export default function NewPurchaseInvoicePage() {
   useEffect(() => {
     if (initialPurchaseOrderId) {
       Promise.all([
-        apiFetch<OrderDetail>(`/api/purchase-orders/${initialPurchaseOrderId}`),
-        apiFetch<{ data: PurchaseInvoice[] }>(`/api/purchase-orders/${initialPurchaseOrderId}/invoices`),
+        api.purchaseOrdersControllerFindOne(initialPurchaseOrderId).then(r => r.data as any),
+        api.purchaseInvoiceControllerGetPurchaseBills(initialPurchaseOrderId).then(r => r.data as any),
       ]).then(([order, invoicesRes]) => {
         setVendorId(order.vendorId || '');
         if (order.vendorName) {
@@ -139,26 +140,26 @@ export default function NewPurchaseInvoicePage() {
     setError('');
 
     try {
-      const invoice = await apiMutate<{ invoiceId: string }>('/api/purchase-invoices', 'POST', {
-        vendorId,
-        supplierInvoiceNumber,
-        currencyCode,
-        purchaseOrderId: initialPurchaseOrderId || undefined,
-        totalAmount: grandTotal,
-        taxAmount: totalTax,
-        receiptFilename: receiptFilename || undefined,
-        notes: notes || undefined,
-        lines: lines
-          .filter(l => parseFloat(l.quantityInvoiced) > 0)
-          .map(l => ({
+      const { data: invoice } = await api.invoiceDetailControllerCreateDraftInvoice({
+        body: JSON.stringify({
+          vendorId,
+          supplierInvoiceNumber,
+          currencyCode,
+          purchaseOrderId: initialPurchaseOrderId || undefined,
+          totalAmount: grandTotal,
+          taxAmount: totalTax,
+          receiptFilename: receiptFilename || undefined,
+          notes: notes || undefined,
+          lines: items.map((l: LineItem) => ({
             description: l.productDescription,
             productId: l.productId,
             quantityInvoiced: parseFloat(l.quantityInvoiced),
             pricePerUnit: parseFloat(l.pricePerUnit),
             purchaseOrderLineId: l.purchaseOrderLineId,
           })),
+        })
       });
-      router.push(`/supplier-invoices/${invoice.invoiceId}`);
+      router.push(`/supplier-invoices/${(invoice as any).invoiceId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
     } finally {

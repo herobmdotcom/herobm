@@ -45,6 +45,10 @@ p, admin, payments, write
 p, admin, system_logs, read
 p, admin, setup, execute
 p, admin, setup, read
+p, admin, api_keys, read
+p, admin, api_keys, write
+p, admin, webhooks, read
+p, admin, webhooks, write
 
 # system — bootstrap role for setup execution only
 p, system, setup, execute

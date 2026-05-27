@@ -5,9 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import DataGrid from '@/components/DataGrid';
-import StateBadge from '@/components/StateBadge';
 import { formatAmount } from '@/lib/currency';
-import { ValidState } from '@/types/states';
 import { useSettings } from '@/components/SettingsProvider';
 
 
@@ -16,6 +14,7 @@ export default function GlobalInvoicesPage() {
   const { baseCurrency } = useSettings();
     const t = useTranslations('salesOrders');
     const tCommon = useTranslations('common');
+    const tStates = useTranslations('common.states');
     useDocumentTitle(t('invoicesCardHeading', { defaultValue: 'Sales Invoices' }));
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -52,9 +51,10 @@ export default function GlobalInvoicesPage() {
             field: 'stateCode', 
             headerName: t('columns.state', { defaultValue: 'State' }), 
             width: 140,
-            cellRenderer: (params: { value: string }) => {
-                if (!params.value) return null;
-                return <StateBadge state={params.value as ValidState} />;
+            valueFormatter: (params: any) => {
+                if (!params.value) return '';
+                const s = String(params.value).toLowerCase();
+                return tStates.has(s as any) ? tStates(s as any) : String(params.value);
             }
         },
     ];

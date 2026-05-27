@@ -8,9 +8,12 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { AuthGuard } from '@nestjs/passport';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaginationQuery } from '../common/pagination';
 import {
   CasbinGuard,
@@ -34,6 +37,12 @@ export class PurchaseOrdersController {
 
   @Post()
   @CasbinAction('write')
+  @UseInterceptors(IdempotencyInterceptor)
+  @Idempotent({
+    queryKey: 'purchaseOrders',
+    pkField: 'purchaseOrderId',
+    idBodyPath: 'purchaseOrderId',
+  })
   async create(
     @Body() createPurchaseOrderDto: CreatePurchaseOrderDto,
     @AuthUser() user: JwtUser,

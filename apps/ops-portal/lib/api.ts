@@ -32,8 +32,19 @@ function writeStorage(key: string, value: string | null): void {
   } catch { /* storage unavailable */ }
 }
 
+import { setSdkConfig } from '@modbm/sdk';
+
 let token: string | null = readStorage(TOKEN_KEY);
 let role: string | null = readStorage(ROLE_KEY);
+
+// Wire up the new @modbm/sdk to use the portal's token and error handling
+setSdkConfig({
+  baseUrl: '/api', // Using Next.js rewrites, so relative URL is correct
+  getToken: () => token,
+  onUnauthorized: () => clearSessionAndReload(),
+  onError: (error) => reportError(error, 'SDK'),
+});
+
 
 export async function login(username: string, password: string) {
   const res = await fetch('/api/auth/login', {
@@ -100,6 +111,18 @@ export async function validateSession(): Promise<boolean> {
   }
 }
 
+/**
+ * Fetches data from the API (GET requests).
+ * The JWT token is automatically injected.
+ * 
+ * @example
+ * // Correct:
+ * const data = await apiFetch<User>('/api/users/me');
+ * 
+ * @example
+ * // Incorrect: DO NOT use this for POST/PATCH (use apiMutate instead).
+ * // Incorrect: DO NOT stringify JSON bodies here.
+ */
 export async function apiFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   if (!token) throw new Error('Not authenticated');
   
@@ -123,7 +146,13 @@ export async function apiFetch<T = unknown>(path: string, init?: RequestInit): P
   return res.json();
 }
 
-/** Fetch for binary data (e.g. PDF reports). */
+/** 
+ * Fetch for binary data (e.g. PDF reports). 
+ * 
+ * @example
+ * const blob = await apiFetchBlob('/api/reports/invoice.pdf');
+ * const url = URL.createObjectURL(blob);
+ */
 export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Blob> {
   if (!token) throw new Error('Not authenticated');
   const res = await fetch(path, {
@@ -143,7 +172,18 @@ export async function apiFetchBlob(path: string, init?: RequestInit): Promise<Bl
   return res.blob();
 }
 
-/** POST/PATCH/DELETE with JSON body. */
+/** 
+ * Performs state-mutating requests (POST, PATCH, DELETE) with a JSON body.
+ * Automatically injects headers and stringifies the body.
+ * 
+ * @example
+ * // Correct: Pass raw object as body
+ * await apiMutate('/api/users', 'POST', { name: 'Alice' });
+ * 
+ * @example
+ * // Incorrect: DO NOT stringify the body yourself.
+ * await apiMutate('/api/users', 'POST', JSON.stringify({ name: 'Alice' }));
+ */
 export async function apiMutate<T = unknown>(
   path: string,
   method: 'POST' | 'PATCH' | 'DELETE',

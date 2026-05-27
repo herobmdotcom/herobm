@@ -15,6 +15,7 @@
     "generate-api": "npx openapi-typescript http://127.0.0.1:3001/api-docs-json -o lib/api-types.ts"
   },
   "dependencies": {
+    "@modbm/sdk": "^0.1.0",
     "@modbm/shared": "*",
     "ag-grid-community": "^33.2.5",
     "ag-grid-react": "^33.2.5",
@@ -33,6 +34,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.17.24",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

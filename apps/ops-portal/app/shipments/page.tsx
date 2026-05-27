@@ -5,12 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+
 
 export default function ShipmentsPage() {
   const t = useTranslations('shipments');
   const tCommon = useTranslations('common');
+  const tStates = useTranslations('common.states');
   const router = useRouter();
   const [days, setDays] = useState('30');
 
@@ -53,9 +53,10 @@ export default function ShipmentsPage() {
       field: 'stateCode',
       headerName: t('columns.status'),
       width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
     {

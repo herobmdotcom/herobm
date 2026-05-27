@@ -8,9 +8,12 @@ import {
   Query,
   Body,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { OrdersWriteService } from './orders-write.service';
 import {
   CasbinGuard,
@@ -67,6 +70,12 @@ export class OrdersController {
 
   @Post()
   @CasbinAction('write')
+  @UseInterceptors(IdempotencyInterceptor)
+  @Idempotent({
+    queryKey: 'salesOrders',
+    pkField: 'salesOrderId',
+    idBodyPath: 'salesOrderId',
+  })
   create(@Body() body: CreateOrderDto, @AuthUser() user: JwtUser) {
     return this.ordersWriteService.create(body, user.username);
   }

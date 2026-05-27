@@ -47,7 +47,7 @@
       "noProductGroupRules": "No product-group-specific overrides defined.",
       "productGroup": "Product Group",
       "productGroupRules": "Product Group Overrides",
-      "selectProductGroup": "— Select product group —",
+      "selectProductGroup": "\u2014 Select product group \u2014",
       "title": "Discount Rules",
       "toasts": {
         "deleted": "Discount rule deleted",
@@ -223,6 +223,8 @@
       "title": "Reporting Templates"
     },
     "settings": {
+      "fulfillmentHeading": "Default Fulfillment Location",
+      "none": "None",
       "actions": {
         "actions": "Actions",
         "addChild": "+ Child",
@@ -1177,10 +1179,25 @@
       "quarantine": "Quarantine"
     },
     "columns": {
+      "allocate": "Allocate",
       "matchStatus": "PO Match",
       "matched": "matched",
+      "ordered": "Ordered",
       "packingSlip": "Packing Slip",
+      "product": "Product",
       "receiptNo": "Receipt No.",
+      "received": "Received",
+      "receivedQty": "Received Qty",
+      "remaining": "Remaining",
+      "return": {
+        "description": "Description",
+        "expectedQty": "Expected Qty",
+        "order": "Order",
+        "product": "Product",
+        "receiveNow": "Receive Now",
+        "received": "Received"
+      },
+      "status": "Status",
       "supplier": "Supplier"
     },
     "completed": {
@@ -1526,7 +1543,7 @@
     "createdOnBy": "Created {date} by {user}",
     "errors": {
       "atLeastOneLineRequired": "At least one line with a quantity is required",
-      "cannotReducePicked": "Cannot reduce picked to {qty} — {shipped} already shipped",
+      "cannotReducePicked": "Cannot reduce picked to {qty} \u2014 {shipped} already shipped",
       "failedToCreateShipment": "Failed to create shipment",
       "failedToGeneratePickingSlip": "Failed to generate picking slip",
       "failedToPickAll": "Failed to pick all",
@@ -1542,6 +1559,7 @@
     "noItemsToPick": "No items available to pick.",
     "noName": "No Name",
     "noOrders": "No {tab} orders pending.",
+    "noPhysicalLines": "No physical lines",
     "noShipmentsYet": "No products have shipped yet.",
     "outOfStock": "Out of Stock",
     "pickAllCreateShipment": "Pick All & Create Shipment",
@@ -1733,7 +1751,7 @@
       "unallocateTitle": "Unallocate demand from this PO"
     },
     "availability": "Availability",
-    "backToOrders": "â† Back to Orders",
+    "backToOrders": "\u2190 Back to Orders",
     "billSummary": "Bill Summary",
     "buttons": {
       "approveInvoice": "Approve Invoice",
@@ -1745,10 +1763,20 @@
       "enterSupplierBill": "Enter Invoice",
       "resolveDemands": "Resolve Demands",
       "resolving": "Resolving...",
-      "save": "💾 Save",
+      "save": "\ud83d\udcbe Save",
       "submitBill": "Submit Invoice"
     },
     "columns": {
+      "allocate": "Allocate",
+      "receivedQty": "Received Qty",
+      "return": {
+        "order": "Order",
+        "product": "Product",
+        "description": "Description",
+        "expectedQty": "Expected Qty",
+        "received": "Received",
+        "receiveNow": "Receive Now"
+      },
       "allocatedAmount": "Allocated Amount",
       "allocation": "Allocation",
       "amount": "Amount",
@@ -1792,6 +1820,8 @@
     "defaultExpense": "Default Expense",
     "demandTitle": "Open Demand",
     "demands": {
+      "cancel": "Cancel",
+      "createDraftPos": "Create Draft POs",
       "allAssignedError": "All line items must be assigned to a supplier before generating POs.",
       "allocate": "Allocate",
       "allocating": "...",
@@ -1879,7 +1909,7 @@
     "noBillsGeneratedYet": "No invoices entered yet.",
     "noInventoryData": "No inventory data",
     "noItems": "No items",
-    "noLineItems": "No line items — use the search above to add products",
+    "noLineItems": "No line items \u2014 use the search above to add products",
     "noLineItemsShort": "No line items",
     "noPaymentsAllocated": "No payments have been allocated to this invoice yet.",
     "noPendingPos": "No pending POs found.",
@@ -1928,12 +1958,32 @@
     },
     "ref": "Ref:",
     "returns": {
+      "confirmDebitNote": "Confirm Debit Note",
+      "creditPricePerUnit": "Credit Unit Price",
+      "debitNoteEntry": "Debit Note Entry",
+      "debitNoteWarning": "Are you sure you want to confirm this debit note?",
+      "lineHash": "#",
+      "lineItems": "Line Items",
+      "lineTotal": "Line Total",
+      "noPhysicalLines": "No physical lines",
+      "notFound": "Purchase order not found",
+      "notes": "Notes",
+      "recording": "Recording...",
+      "restockingFee": "Restocking Fee",
+      "supplierReturnRef": "Supplier Return Ref",
+      "totalTaxAmount": "Total Tax Amount",
       "cancel": "Cancel",
       "clear": "Clear",
       "confirm": "Confirm",
       "confirmReturns": "Complete Returns",
+      "createReturn": "Create Return",
+      "creating": "Creating...",
+      "enterDebitNote": "Enter Debit Note",
       "exceptionQuarantine": "Exception Quarantine",
       "exceptionQuarantineTag": "QUARANTINE",
+      "initiateReturn": "Initiate Return",
+      "maxReturn": "Max Return",
+      "noReturnableLines": "No returnable lines found",
       "loadingLines": "Loading...",
       "markQuarantine": "Mark Quarantine",
       "moveToQuarantine": "Move to Quarantine",
@@ -1943,6 +1993,14 @@
       "ordered": "Ordered",
       "placeholder": "Scan or search product...",
       "poPrice": "PO Price",
+      "qtyToReturn": "Quantity to Return",
+      "reason": "Reason",
+      "reasons": {
+        "defective": "Defective",
+        "incorrectItem": "Incorrect Item",
+        "other": "Other",
+        "overShipment": "Over Shipment"
+      },
       "qtyReturned": "Quantity to Return",
       "qtyReturnedSummary": "Return Qty",
       "qtyToQuarantine": "Qty to Quarantine",
@@ -1955,6 +2013,7 @@
       "returnFeeDiscrepancy": "Fee: {amount}",
       "returnsSummary": "Returns Draft Cart",
       "scanProduct": "Scan Product to Return",
+      "selectLinesMsg": "Select the lines to return and specify the quantities.",
       "selectPOLine": "Select received PO Line to return against",
       "subtitle": "Return items back to suppliers",
       "title": "Purchase Returns",
@@ -2010,7 +2069,7 @@
       "others": "In Stock (Other)",
       "shortage": "Stock Shortage"
     },
-    "backToOrders": "â† Back to Orders",
+    "backToOrders": "\u2190 Back to Orders",
     "backordersTab": "Backorders",
     "buttons": {
       "addPostConfirmationLine": "Add Line",
@@ -2118,7 +2177,7 @@
     "noInventoryData": "No inventory data",
     "noInventoryFound": "No inventory records found for this product.",
     "noInvoicesGeneratedYet": "No invoices generated yet.",
-    "noLineItems": "No line items — use the search above to add products",
+    "noLineItems": "No line items \u2014 use the search above to add products",
     "noLineItemsShort": "No products ordered yet.",
     "noProductsShippedYet": "No products have shipped yet.",
     "noReturnLines": "No return lines",
@@ -2285,7 +2344,9 @@
       "titlePreview": "Upload Data",
       "titleRunning": "Import Running",
       "upsertMerge": "Upsert / Merge",
-      "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise."
+      "upsertMergeDesc": "Updates existing records if unique keys match, inserts otherwise.",
+      "defaultTaxCategory": "Default Tax Category",
+      "defaultTaxCategoryDesc": "Select the default tax category to use when a category is missing or omitted."
     },
     "execution": {
       "aborted": "Execution aborted. Please review error logs.",
@@ -2428,7 +2489,7 @@
     }
   },
   "shipments": {
-    "backToShipments": "â†  Back to Shipments",
+    "backToShipments": "\u2190 Back to Shipments",
     "cancelFailed": "Failed to cancel shipment",
     "cancelShipment": "Cancel Shipment",
     "columns": {
@@ -2525,7 +2586,7 @@
     }
   },
   "sidebar": {
-    "footer": "Phase 3 â€¢ modbm",
+    "footer": "Phase 3 \u2022 modbm",
     "groups": {
       "admin": "Admin",
       "finance": "Finance",
@@ -2713,7 +2774,7 @@
       "addLines": "Add Lines",
       "createTransfer": "+ Create Transfer",
       "customLine": "Custom Line",
-      "save": "💾 Save"
+      "save": "\ud83d\udcbe Save"
     },
     "cancelConfirm": "Are you sure you want to cancel this transfer order?",
     "columns": {

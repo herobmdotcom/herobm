@@ -14,10 +14,10 @@ jest.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
 }));
 
-const mockApiMutate = jest.fn().mockResolvedValue({});
+const mockCreateInvoice = jest.fn().mockResolvedValue({});
 jest.mock('@/lib/api', () => ({
-    apiFetch: jest.fn(),
-    apiMutate: (...args: any[]) => mockApiMutate(...args),
+    
+    
     apiFetchBlob: jest.fn().mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' })),
     reportError: jest.fn(),
 }));
@@ -215,7 +215,7 @@ describe('InvoicesSection — create invoice form', () => {
         expect(inputs.length).toBeGreaterThan(0);
     });
 
-    it('calls apiMutate with correct payload when Generate Invoice is clicked', async () => {
+    it('calls sdk endpoint with correct payload when Generate Invoice is clicked', async () => {
         const user = userEvent.setup();
         // Mock window.confirm
         jest.spyOn(window, 'confirm').mockReturnValue(true);
@@ -226,7 +226,7 @@ describe('InvoicesSection — create invoice form', () => {
         await user.click(screen.getByText('buttons.generateInvoice'));
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockCreateInvoice).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/invoice',
                 'POST',
                 expect.objectContaining({}),
@@ -249,14 +249,14 @@ describe('InvoicesSection — create invoice form', () => {
         await user.click(screen.getByText('buttons.createInvoice'));
         await user.click(screen.getByText('buttons.generateInvoice'));
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockCreateInvoice).not.toHaveBeenCalled();
         jest.restoreAllMocks();
     });
 
     it('shows error when generation fails', async () => {
         const user = userEvent.setup();
         jest.spyOn(window, 'confirm').mockReturnValue(true);
-        mockApiMutate.mockRejectedValueOnce(new Error('Invoice generation failed'));
+        mockCreateInvoice.mockRejectedValueOnce(new Error('Invoice generation failed'));
 
         const setError = jest.fn();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} setError={setError} />);

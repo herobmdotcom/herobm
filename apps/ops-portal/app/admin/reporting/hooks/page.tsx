@@ -3,7 +3,8 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -38,7 +39,7 @@ function ReportingHooksRow(props: {
   const handleChange = async (newReportId: string) => {
     setUpdating(true);
     try {
-      await apiMutate(`/api/reports/hook-assignments/${assignment.hookSlug}`, 'PATCH', { reportId: newReportId });
+      await api.reportsControllerUpdateAssignment(assignment.hookSlug, { body: JSON.stringify({ reportId: newReportId }) });
       onUpdate();
     } catch (e) {
       reportError(e, 'ReportingHooksRow');
@@ -95,10 +96,12 @@ export default function ReportingHooksPage() {
     setLoading(true);
     try {
       const [assignRes, templRes] = await Promise.all([
-        apiFetch<{ data: Assignment[] }>('/api/reports/hook-assignments'),
-        apiFetch<{ data: ReportTemplate[] }>('/api/reports')
+        api.reportsControllerGetAssignments(),
+        api.reportsControllerGetAllReports()
       ]);
+      // @ts-expect-error
       setAssignments(assignRes.data);
+      // @ts-expect-error
       setTemplates(templRes.data);
     } catch (e) {
       reportError(e, 'ReportingHooksPage');

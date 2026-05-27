@@ -15,9 +15,9 @@ jest.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
 }));
 
-const mockApiMutate = jest.fn().mockResolvedValue({});
+const mockSdkMutate = jest.fn().mockResolvedValue({});
 jest.mock('@/lib/api', () => ({
-    apiMutate: (...args: any[]) => mockApiMutate(...args),
+    apiCall: (...args: any[]) => mockSdkMutate(...args),
 }));
 
 jest.mock('@/lib/currency', () => ({
@@ -193,7 +193,7 @@ describe('ReturnsSection — rendering', () => {
 describe('ReturnsSection — state transitions', () => {
     beforeEach(() => jest.clearAllMocks());
 
-    it('calls apiMutate to change state when transition button is clicked', async () => {
+    it('calls apiCall to change state when transition button is clicked', async () => {
         const user = userEvent.setup();
         const loadReturns = jest.fn().mockResolvedValue(undefined);
         const loadOrder = jest.fn().mockResolvedValue(undefined);
@@ -212,7 +212,7 @@ describe('ReturnsSection — state transitions', () => {
         await user.click(confirmedBtn);
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/state',
                 'PATCH',
                 { stateCode: RETURN_STATE.CONFIRMED },
@@ -223,7 +223,7 @@ describe('ReturnsSection — state transitions', () => {
 
     it('shows error when state transition fails', async () => {
         const user = userEvent.setup();
-        mockApiMutate.mockRejectedValueOnce(new Error('Transition denied'));
+        mockSdkMutate.mockRejectedValueOnce(new Error('Transition denied'));
         const setError = jest.fn();
 
         render(
@@ -263,7 +263,7 @@ describe('ReturnsSection — inline editing', () => {
         await user.tab(); // trigger blur
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
                 'PATCH',
                 { quantityReturned: '5' },
@@ -271,7 +271,7 @@ describe('ReturnsSection — inline editing', () => {
         });
     });
 
-    it('does not call apiMutate when quantity is unchanged on blur', async () => {
+    it('does not call apiCall when quantity is unchanged on blur', async () => {
         const user = userEvent.setup();
 
         render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
@@ -283,7 +283,7 @@ describe('ReturnsSection — inline editing', () => {
         await user.click(qtyInput);
         await user.tab();
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockSdkMutate).not.toHaveBeenCalled();
     });
 
     it('updates return line reason on blur when value changes', async () => {
@@ -304,7 +304,7 @@ describe('ReturnsSection — inline editing', () => {
         await user.tab();
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
                 'PATCH',
                 { reason: 'Wrong item' },
@@ -332,7 +332,7 @@ describe('ReturnsSection — inline editing', () => {
         await user.tab();
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
                 'PATCH',
                 { returnFee: '25.00' },
@@ -360,7 +360,7 @@ describe('ReturnsSection — delete line', () => {
         await user.click(screen.getByText('✕'));
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
                 'DELETE',
             );
@@ -377,7 +377,7 @@ describe('ReturnsSection — delete line', () => {
         render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
         await user.click(screen.getByText('✕'));
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockSdkMutate).not.toHaveBeenCalled();
         jest.restoreAllMocks();
     });
 });
@@ -434,7 +434,7 @@ describe('ReturnsSection — create return form', () => {
         await user.click(saveBtn);
 
         await waitFor(() => {
-            expect(mockApiMutate).toHaveBeenCalledWith(
+            expect(mockSdkMutate).toHaveBeenCalledWith(
                 '/api/sales-orders/so-001/returns',
                 'POST',
                 expect.objectContaining({
@@ -452,7 +452,7 @@ describe('ReturnsSection — create return form', () => {
 
     it('shows error when save fails', async () => {
         const user = userEvent.setup();
-        mockApiMutate.mockRejectedValueOnce(new Error('Save failed'));
+        mockSdkMutate.mockRejectedValueOnce(new Error('Save failed'));
         const setError = jest.fn();
 
         render(

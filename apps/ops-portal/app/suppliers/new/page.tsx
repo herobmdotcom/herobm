@@ -5,7 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
@@ -42,7 +42,8 @@ export default function NewSupplierPage() {
     setSubmitting(true);
 
     try {
-      const supplier = await apiMutate<any>('/api/suppliers', 'POST', dto);
+      const res = await api.suppliersControllerCreate(dto as any);
+      const supplier = res.data as any;
       toast.success(tCommon('toast.supplierCreated'));
       router.push(`/suppliers/${supplier.vendorId}`);
     } catch (err: any) {

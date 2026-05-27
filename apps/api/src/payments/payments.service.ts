@@ -176,6 +176,7 @@ export class PaymentsService {
       const [payment] = await tx
         .insert(paymentEntries)
         .values({
+          paymentId: dto.paymentId,
           paymentNumber,
           paymentType: dto.paymentType,
           partyType: dto.partyType,

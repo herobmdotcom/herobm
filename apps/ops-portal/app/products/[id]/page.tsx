@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, Fragment } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
@@ -35,6 +36,7 @@ const formatInt = (val: string | number | undefined | null) => {
 export default function ProductDetailPage() {
   const t = useTranslations();
   const tCommon = useTranslations('common');
+  const tStates = useTranslations('common.states');
   const router = useRouter();
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
@@ -95,8 +97,8 @@ export default function ProductDetailPage() {
   const fetchProduct = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      const data = await apiFetch<any>(`/api/products/${id}`);
-      setProduct(data);
+      const dataRes: any = await api.productsControllerFindOne(id as string);
+      const data = dataRes?.data || dataRes;
       setDto({
         productNumber: data.productNumber || '',
         name: data.name || '',
@@ -117,10 +119,10 @@ export default function ProductDetailPage() {
       let productIdsToFetch: string[] = [id as string];
       if (data.structureType === 'kit') {
         try {
-          const componentsData = await apiFetch<any>(`/api/products/${id}/components`);
-          if (componentsData?.data?.length > 0) {
-            setKitComponents(componentsData.data);
-            productIdsToFetch = componentsData.data.map((c: any) => c.childProductId);
+          const componentsData = await api.productsControllerGetComponents(id as string);
+          if ((componentsData?.data as any)?.length > 0) {
+            setKitComponents(componentsData.data as any);
+            productIdsToFetch = (componentsData.data as any).map((c: any) => c.childProductId);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');
@@ -129,8 +131,8 @@ export default function ProductDetailPage() {
         setKitComponents([]);
       }
 
-      const invData = await apiMutate<any>('/api/inventory/by-products-bulk', 'POST', { productIds: productIdsToFetch });
-      setInventoryLevels(invData?.data || []);
+      const invDataRes = await api.inventoryControllerFindByProductIdsBulk({ body: JSON.stringify({ productIds: productIdsToFetch }) });
+      setInventoryLevels((invDataRes?.data as any) || []);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -140,9 +142,9 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
-    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'ProductDetailPage'));
-    apiFetch<{ uomCode: string; description: string }[]>('/api/settings/uom-dictionary').then(setUomDictionary).catch((err) => reportError(err, 'ProductDetailPage'));
-    apiFetch<any>('/api/inventory/locations').then(res => setLocations(res.data || [])).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.uomDictionaryControllerFindAll().then((res: any) => setUomDictionary(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.inventoryControllerFindAllLocations({} as any).then((res: any) => setLocations(res.data || [])).catch((err) => reportError(err, 'ProductDetailPage'));
   }, [fetchProduct]);
 
   useEffect(() => {
@@ -164,7 +166,7 @@ export default function ProductDetailPage() {
     setSaving(true);
 
     try {
-      await apiMutate(`/api/products/${id}`, 'PATCH', updatedValues);
+      await api.productsControllerUpdate(id as string, updatedValues);
       await fetchProduct(false);
     } catch (err: any) {
       toast.error(err.message);
@@ -194,7 +196,7 @@ export default function ProductDetailPage() {
     if (!confirm(t('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/products/${id}/archive`, 'POST');
+      await api.productsControllerArchive(id as string);
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
@@ -207,7 +209,7 @@ export default function ProductDetailPage() {
   const unarchiveProduct = async () => {
     setSaving(true);
     try {
-      await apiMutate(`/api/products/${id}/unarchive`, 'POST');
+      await api.productsControllerUnarchive(id as string);
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
@@ -224,7 +226,7 @@ export default function ProductDetailPage() {
   const removeSupplier = async (vendorId: string, vendorName: string) => {
     if (!window.confirm(t('suppliers.confirmUnlink', { name: vendorName }))) return;
     try {
-      await apiMutate(`/api/products/${id}/suppliers/${vendorId}`, 'DELETE');
+      await api.productsControllerRemoveSupplier(id as string, vendorId);
       toast.success(t('suppliers.toast.unlinked'));
       setRefreshGrid(prev => prev + 1);
     } catch (err: any) {
@@ -238,7 +240,16 @@ export default function ProductDetailPage() {
     { field: 'supplierPartNumber', headerName: t('products.supplierModal.inputs.supplierPartNo'), width: 140 },
     { field: 'costPrice', headerName: t('products.supplierModal.inputs.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'discountPercent', headerName: tCommon('columns.discountPct'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
-    { field: 'stateCode', headerName: tCommon('columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
+    { 
+      field: 'stateCode', 
+      headerName: tCommon('columns.status'), 
+      width: 110, 
+      valueFormatter: (p: any) => {
+        if (!p.value) return '';
+        const s = String(p.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+      } 
+    },
     {
       headerName: '',
       field: 'vendorId',
@@ -397,11 +408,7 @@ export default function ProductDetailPage() {
             {product.stateCode && <StateBadge state={product.stateCode as ValidState} />}
           </>
         }
-        actions={
-          <>
-            <PageNav sections={visibleSections} />
-          </>
-        }
+        nav={<PageNav sections={visibleSections} />}
       />
     }
   >
@@ -579,7 +586,7 @@ export default function ProductDetailPage() {
                     disabled={!newBinLink.locationId || !newBinLink.binId || saving}
                     onClick={async () => {
                       try {
-                        await apiMutate(`/api/products/${id}/default-bins`, 'POST', newBinLink);
+                        await api.productsControllerLinkDefaultBin(id as string, newBinLink as any);
                         toast.success(t('products.storage.toastLinkAdded'));
                         setAddingBinLink(false);
                         setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
@@ -681,7 +688,7 @@ export default function ProductDetailPage() {
                                     className="btn btn-xs btn-primary bg-[#006b5c] border-none px-1.5"
                                     onClick={async () => {
                                       try {
-                                        await apiMutate(`/api/products/${id}/default-bins`, 'POST', editingBinData);
+                                        await api.productsControllerLinkDefaultBin(id as string, editingBinData as any);
                                         toast.success(t('products.storage.toastLinkUpdated', { defaultValue: 'Bin configuration updated' }));
                                         setEditingBinId(null);
                                         await fetchProduct(false);
@@ -739,7 +746,7 @@ export default function ProductDetailPage() {
                                         onClick={async () => {
                                           if (!window.confirm(t('products.storage.confirmRemoveLink', { bin: bin.binNumber, location: lvl.locationName }))) return;
                                           try {
-                                            await apiMutate(`/api/products/${id}/default-bins/${bin.productDefaultBinId}`, 'DELETE');
+                                            await api.productsControllerRemoveDefaultBin(id as string, bin.productDefaultBinId);
                                             toast.success(t('products.storage.toastLinkRemoved'));
                                             await fetchProduct(false);
                                           } catch (err: any) {
@@ -1201,10 +1208,10 @@ export default function ProductDetailPage() {
                   disabled={!newUomCode || !newUomRatio || saving}
                   onClick={async () => {
                     try {
-                      await apiMutate(`/api/products/${id}/uoms`, 'POST', {
+                      await api.productsControllerAddUom(id as string, {
                         uomCode: newUomCode,
                         ratio: newUomRatio,
-                      });
+                      } as any);
                       toast.success(t('products.toast.conversionAdded'));
                       setAddingUom(false);
                       setNewUomCode('');
@@ -1252,7 +1259,7 @@ export default function ProductDetailPage() {
                             onClick={async () => {
                               if (!window.confirm(t('products.confirmRemoveConversion', { uomCode: u.uomCode }))) return;
                               try {
-                                await apiMutate(`/api/products/${id}/uoms/${u.productUomId}`, 'DELETE');
+                                await api.productsControllerRemoveUom(id as string, u.productUomId);
                                 toast.success(t('products.toast.conversionRemoved'));
                                 await fetchProduct(false);
                               } catch (err: any) {

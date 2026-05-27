@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
+import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 /**
  * ShippingStatusSection — Read-only shipping status for the Sales Order detail page.
@@ -55,9 +56,10 @@ export default function ShippingStatusSection({ orderId }: Props) {
 
     useEffect(() => {
         setLoading(true);
-        apiFetch<ShippingContext>(`/api/sales-orders/${orderId}/shipping-context`)
+        // @ts-expect-error missing typings in SDK
+        api.orderPickingControllerGetShippingContext(orderId)
             .then(setContext)
-            .catch(err => setError(err.message))
+            .catch((err: any) => setError(err.message))
             .finally(() => setLoading(false));
     }, [orderId]);
 
@@ -110,83 +112,123 @@ export default function ShippingStatusSection({ orderId }: Props) {
             </div>
 
             {/* Lines Table */}
-            <table className="table-lines">
-                <thead>
-                    <tr>
-                        <th>{tShipping('columns.product')}</th>
-                        <th style={{ textAlign: 'right' }}>{tShipping('columns.ordered')}</th>
-                        <th style={{ textAlign: 'right' }}>{tShipping('columns.picked')}</th>
-                        <th style={{ textAlign: 'right' }}>{tShipping('columns.shipped')}</th>
-                        <th style={{ textAlign: 'right' }}>{tShipping('columns.available')}</th>
-                        <th style={{ textAlign: 'center' }}>{tCommon('columns.status')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {physicalLines.map(line => {
-                        const shipped = parseFloat(line.quantityShipped);
-                        const available = parseFloat(line.availableToShip);
-                        const ordered = parseFloat(line.quantity);
-                        const fullyShipped = shipped >= ordered;
+            <DataTable
+                data={physicalLines}
+                keyExtractor={(line: any) => line.salesOrderLineId}
+                columns={[
+                    { header: tShipping('columns.product') },
+                    { header: tShipping('columns.ordered'), align: 'right' },
+                    { header: tShipping('columns.picked'), align: 'right' },
+                    { header: tShipping('columns.shipped'), align: 'right' },
+                    { header: tShipping('columns.available'), align: 'right' },
+                    { header: tCommon('columns.status'), align: 'center' }
+                ]}
+                emptyMessage={tShipping('noPhysicalLines')}
+                renderCustomRow={(line: any) => {
+                    const shipped = parseFloat(line.quantityShipped);
+                    const available = parseFloat(line.availableToShip);
+                    const ordered = parseFloat(line.quantity);
+                    const fullyShipped = shipped >= ordered;
 
-                        return (
-                            <tr key={line.salesOrderLineId} className={fullyShipped ? 'opacity-60' : ''}>
-                                <td>
-                                    <div className="font-bold text-sm">
+                    return (
+                        <tr key={line.salesOrderLineId} className={fullyShipped ? 'opacity-60' : ''}>
+                            <td>
+                                <div className="font-bold text-sm">
+                                    {line.productId ? (
+                                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                            {line.productNumber}
+                                        </Link>
+                                    ) : line.productNumber}
+                                </div>
+                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {ordered.toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {parseFloat(line.quantityPicked).toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {shipped.toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                <span className={available > 0 ? 'font-semibold text-[var(--success)]' : 'text-[var(--text-muted)]'}>
+                                    {available.toLocaleString()}
+                                </span>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                                {fullyShipped ? (
+                                    <>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                                        <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                        {/* eslint-enable i18next/no-literal-string */}
+                                    </>
+                                ) : available > 0 ? (
+                                    <>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                        {/* eslint-enable i18next/no-literal-string */}
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                                        <span className="material-symbols-outlined text-[var(--text-muted)] text-base">hourglass_empty</span>
+                                        {/* eslint-enable i18next/no-literal-string */}
+                                    </>
+                                )}
+                            </td>
+                        </tr>
+                    );
+                }}
+                mobileCard={(line: any) => {
+                    const shipped = parseFloat(line.quantityShipped);
+                    const available = parseFloat(line.availableToShip);
+                    const ordered = parseFloat(line.quantity);
+                    const fullyShipped = shipped >= ordered;
+
+                    return (
+                        <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${fullyShipped ? 'opacity-60' : ''}`}>
+                            <div className="flex justify-between items-start mb-2 gap-2">
+                                <div className="flex-1 min-w-0">
+                                    <div className="font-bold text-[var(--accent)] text-sm mb-1 truncate">
                                         {line.productId ? (
-                                            <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                            <Link href={`/products/${line.productId}`} className="hover:underline">
                                                 {line.productNumber}
                                             </Link>
                                         ) : line.productNumber}
                                     </div>
-                                    <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {ordered.toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {parseFloat(line.quantityPicked).toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {shipped.toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    <span className={available > 0 ? 'font-semibold text-[var(--success)]' : 'text-[var(--text-muted)]'}>
-                                        {available.toLocaleString()}
-                                    </span>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
+                                    <div className="text-xs text-[var(--text-muted)] line-clamp-2 leading-relaxed">
+                                        {line.productDescription}
+                                    </div>
+                                </div>
+                                <div className="shrink-0 flex items-center">
                                     {fullyShipped ? (
-                                        <>
-                                            {/* eslint-disable i18next/no-literal-string */}
-                                            <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                                            {/* eslint-enable i18next/no-literal-string */}
-                                        </>
+                                        <span className="material-symbols-outlined text-[var(--success)] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                                     ) : available > 0 ? (
-                                        <>
-                                            {/* eslint-disable i18next/no-literal-string */}
-                                            <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
-                                            {/* eslint-enable i18next/no-literal-string */}
-                                        </>
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-[20px]">pending</span>
                                     ) : (
-                                        <>
-                                            {/* eslint-disable i18next/no-literal-string */}
-                                            <span className="material-symbols-outlined text-[var(--text-muted)] text-base">hourglass_empty</span>
-                                            {/* eslint-enable i18next/no-literal-string */}
-                                        </>
+                                        <span className="material-symbols-outlined text-[var(--text-muted)] text-[20px]">hourglass_empty</span>
                                     )}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                    {physicalLines.length === 0 && (
-                        <tr>
-                            <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                {tShipping('noPhysicalLines')}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                                </div>
+                            </div>
+                            
+                            <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col gap-1.5">
+                                <MobileCardField label={tShipping('columns.ordered')} value={ordered.toLocaleString()} />
+                                <MobileCardField label={tShipping('columns.picked')} value={parseFloat(line.quantityPicked).toLocaleString()} />
+                                <MobileCardField label={tShipping('columns.shipped')} value={shipped.toLocaleString()} />
+                                <MobileCardField 
+                                    label={tShipping('columns.available')} 
+                                    value={
+                                        <span className={available > 0 ? 'font-bold text-[var(--success)]' : 'font-medium text-slate-500'}>
+                                            {available.toLocaleString()}
+                                        </span>
+                                    } 
+                                />
+                            </div>
+                        </div>
+                    );
+                }}
+            />
 
             {/* Existing Shipments */}
             {context.shipments.length > 0 && (

@@ -3,7 +3,8 @@
 import { use, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -50,12 +51,12 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
 
   const loadShipment = () => {
     setLoading(true);
-    apiFetch<ShipmentDetail>(`/api/shipments/${id}`)
-      .then((res) => {
-        setShipment(res);
+    (api.globalShipmentsControllerFindOne(id) as any)
+      .then((res: any) => {
+        setShipment(res.data ? res.data : res);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         reportError(err, 'ShipmentDetailPage.loadShipment');
         setLoading(false);
       });
@@ -71,7 +72,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
 
     setIsCancelling(true);
     try {
-      await apiMutate(`/api/sales-orders/${shipment.salesOrderId}/shipments/${shipment.shipmentId}/cancel`, 'POST', {});
+      await api.orderShipmentsControllerCancelShipment(shipment.salesOrderId, shipment.shipmentId, { body: JSON.stringify({}) });
       loadShipment();
     } catch (err: any) {
       reportError(err, 'ShipmentDetailPage.handleCancel');
@@ -145,8 +146,9 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               className="btn btn-secondary btn-sm flex items-center"
               onClick={async () => {
                 try {
-                  const { apiFetchBlob } = await import('@/lib/api');
-                  const blob = await apiFetchBlob(`/api/reports/hooks/shipping-docket/run?id=${id}&context=shipment`, { method: 'POST' });
+                  const api = await import('@modbm/sdk');
+                  const res = await api.reportsControllerRunHook('shipping-docket', { id, context: 'shipment' });
+                  const blob = res.data as any as Blob;
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 } catch (err) {

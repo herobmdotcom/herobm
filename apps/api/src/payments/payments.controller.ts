@@ -7,8 +7,11 @@ import {
   UseGuards,
   Patch,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { PaymentsService } from './payments.service';
 import {
   CreatePaymentDto,
@@ -45,6 +48,12 @@ export class PaymentsController {
 
   @Post()
   @CasbinAction('write')
+  @UseInterceptors(IdempotencyInterceptor)
+  @Idempotent({
+    queryKey: 'payments',
+    pkField: 'paymentId',
+    idBodyPath: 'paymentId',
+  })
   async create(@Body() dto: CreatePaymentDto, @AuthUser() user: any) {
     return this.paymentsService.createPaymentEntry(dto, user.username);
   }

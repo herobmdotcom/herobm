@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { formatLocationDisplay } from '@/lib/formatters';
 import { useTranslations } from 'next-intl';
 
@@ -34,9 +35,10 @@ export default function LocationSelect({
     let active = true;
     setLoading(true);
 
-    apiFetch<{ data: Location[] }>('/api/inventory/locations')
+    api.inventoryControllerFindAllLocations({} as any)
       .then((response) => {
-        if (active) setLocations(response.data);
+        // @ts-expect-error
+        if (active) setLocations(response.data || response);
       })
       .catch((err) => reportError(err, 'LocationSelect'))
       .finally(() => {

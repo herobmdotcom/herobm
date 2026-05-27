@@ -46,3 +46,29 @@ export class JournalLineDto {
   @IsString()
   memo?: string;
 }
+
+import { Type } from 'class-transformer';
+import { ValidateNested, IsUUID, IsArray } from 'class-validator';
+
+export class CreateJournalEntryDto {
+  @IsUUID()
+  @IsNotEmpty()
+  journalEntryId!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => JournalLineDto)
+  lines!: JournalLineDto[];
+
+  @IsOptional()
+  @IsString()
+  memo?: string;
+
+  @IsOptional()
+  @IsString()
+  entryDate?: string;
+
+  @IsOptional()
+  @IsString()
+  actor?: string;
+}

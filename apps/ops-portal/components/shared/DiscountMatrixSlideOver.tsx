@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import SlideOver from './SlideOver';
@@ -55,12 +55,17 @@ export default function DiscountMatrixSlideOver({
     if (!ownerId) return;
     setLoading(true);
     try {
-      const [rulesData, pgData] = await Promise.all([
-        apiFetch<DiscountRule[]>(`/api/discount-matrix?${ownerParam}`),
-        apiFetch<ProductGroup[]>('/api/product-groups'),
+      const [rulesRes, pgRes] = await Promise.all([
+        api.discountMatrixControllerList({
+          customerGroupId: customerGroupId || undefined,
+          customerId: customerId || undefined,
+        } as any),
+        api.productGroupsControllerFindAll(),
       ]);
-      setRules(rulesData || []);
-      setProductGroups(pgData || []);
+      // @ts-expect-error
+      setRules(rulesRes.data || []);
+      // @ts-expect-error
+      setProductGroups(pgRes.data || []);
     } catch (err: any) {
       toast.error('Failed to load discount rules: ' + err.message);
     } finally {
@@ -85,13 +90,11 @@ export default function DiscountMatrixSlideOver({
   const handleSaveWildcard = async (value: string) => {
     try {
       if (wildcardRule) {
-        await apiMutate(
-          `/api/discount-matrix/${wildcardRule.discountMatrixId}`,
-          'PATCH',
-          { discountPercentage: value },
-        );
+        await api.discountMatrixControllerUpdate(wildcardRule.discountMatrixId, {
+          discountPercentage: value,
+        });
       } else {
-        await apiMutate('/api/discount-matrix', 'POST', {
+        await api.discountMatrixControllerCreate({
           customerGroupId: customerGroupId || undefined,
           customerId: customerId || undefined,
           discountPercentage: value,
@@ -106,7 +109,7 @@ export default function DiscountMatrixSlideOver({
 
   const handleSaveSpecific = async (ruleId: string, value: string) => {
     try {
-      await apiMutate(`/api/discount-matrix/${ruleId}`, 'PATCH', {
+      await api.discountMatrixControllerUpdate(ruleId, {
         discountPercentage: value,
       });
       toast.success(t('toasts.saved'));
@@ -119,7 +122,7 @@ export default function DiscountMatrixSlideOver({
   const handleAdd = async () => {
     if (!newDiscount) return;
     try {
-      await apiMutate('/api/discount-matrix', 'POST', {
+      await api.discountMatrixControllerCreate({
         customerGroupId: customerGroupId || undefined,
         customerId: customerId || undefined,
         productGroupId: newProductGroupId || undefined,
@@ -136,7 +139,7 @@ export default function DiscountMatrixSlideOver({
 
   const handleDelete = async (ruleId: string) => {
     try {
-      await apiMutate(`/api/discount-matrix/${ruleId}`, 'DELETE');
+      await api.discountMatrixControllerDelete(ruleId);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch (err: any) {

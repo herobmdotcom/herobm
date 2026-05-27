@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 interface CodesModalProps {
   isOpen: boolean;
@@ -132,9 +133,9 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
 
     setLoading(true);
     Promise.all([
-      apiFetch<CoaNode[]>('/api/gl/accounts?format=tree'),
-      apiFetch<CostCenter[]>('/api/settings/cost-centers'),
-      apiFetch<Activity[]>('/api/settings/activities'),
+      api.glControllerGetAccounts({ format: 'tree' }).then(res => res.data as unknown as CoaNode[]),
+      api.costCentersControllerFindAll().then(res => res.data as unknown as CostCenter[]),
+      api.activitiesControllerFindAll().then(res => res.data as unknown as Activity[]),
     ])
       .then(([coaData, ccData, actData]) => {
         setCoa(coaData);

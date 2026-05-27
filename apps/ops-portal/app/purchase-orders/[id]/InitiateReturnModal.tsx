@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 export default function InitiateReturnModal({
   isOpen,
@@ -48,13 +48,10 @@ export default function InitiateReturnModal({
         throw new Error('Please enter a return quantity for at least one item.');
       }
 
-      await apiFetch(`/api/purchase-orders/${orderId}/returns`, {
-        method: 'POST',
-        body: JSON.stringify({
-          notes,
-          lines: linesPayload,
-        }),
-      });
+      await api.purchaseReturnsControllerCreateReturn(orderId, {
+        notes,
+        lines: linesPayload,
+      } as any);
 
       onSuccess();
       onClose();

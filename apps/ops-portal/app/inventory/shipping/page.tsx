@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -87,9 +88,10 @@ export default function ShippingPage() {
     // ── Locations ────────────────────────────────────────────────
 
     useEffect(() => {
-        apiFetch<any>('/api/inventory/locations')
-            .then(response => {
-                const locs = response.data || [];
+        api.inventoryControllerFindAllLocations({} as any)
+            .then((response) => {
+                const res = response.data as any;
+                const locs = res.data || res || [];
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -103,13 +105,14 @@ export default function ShippingPage() {
 
     const loadOrders = useCallback(() => {
         setLoadingOrders(true);
-        const endpoint = selectedLocationId
-            ? `/api/sales-orders/shipping-queue?locationId=${selectedLocationId}`
-            : '/api/sales-orders/shipping-queue';
+        const params: any = {};
+        if (selectedLocationId) params.locationId = selectedLocationId;
 
-        apiFetch<ShippingOrder[]>(endpoint)
-            .then(data => setOrders(data || []))
-            .catch(err => {
+        api.orderPickingControllerGetShippingQueue(params)
+            .then(response => {
+                const data = response.data as any;
+                setOrders(data.data || data || []);
+            }).catch(err => {
                 reportError(err, t('errors.failedToLoadOrdersError'));
                 setOrders([]);
             })
@@ -134,8 +137,10 @@ export default function ShippingPage() {
 
         setLoadingContext(true);
         setError(null);
-        apiFetch<ShippingContext>(`/api/sales-orders/${selectedOrder.id}/shipping-context`)
-            .then((data) => {
+        api.orderPickingControllerGetShippingContext(selectedOrder.id)
+            .then((response) => {
+                const res = response.data as any;
+                const data = res.data || res;
                 setContext(data);
                 // Pre-fill ship quantities with available-to-ship
                 const defaults: Record<string, string> = {};
@@ -181,11 +186,11 @@ export default function ShippingPage() {
         setError(null);
 
         try {
-            await apiMutate(`/api/sales-orders/${selectedOrder.id}/shipments`, 'POST', {
+            await api.orderShipmentsControllerCreateShipment(selectedOrder.id, {
                 notes: notes || undefined,
                 trackingNumber: trackingNumber || undefined,
                 lines,
-            });
+            } as any);
             toast.success(t('toasts.shipmentCreated'));
             await loadContext();
             loadOrders();
@@ -484,8 +489,10 @@ export default function ShippingPage() {
                                                                     className="btn btn-secondary btn-sm flex items-center"
                                                                     onClick={async () => {
                                                                         try {
-                                                                            const { apiFetchBlob, reportError } = await import('@/lib/api');
-                                                                            const blob = await apiFetchBlob(`/api/reports/hooks/shipping-docket/run?id=${shipment.shipmentId}&context=shipment`, { method: 'POST' });
+                                                                            const { reportError } = await import('@/lib/api');
+                                                                            const api = await import('@modbm/sdk');
+                                                                            const res = await api.reportsControllerRunHook('shipping-docket', { id: shipment.shipmentId, context: 'shipment' });
+                                                                            const blob = res.data as Blob;
                                                                             const url = URL.createObjectURL(blob);
                                                                             window.open(url, '_blank');
                                                                         } catch (err) {

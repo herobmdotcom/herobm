@@ -7,7 +7,11 @@ import {
   customers as coreAccounts,
   salesOrders,
 } from '../drizzle/modbm-core-schema';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 
 export interface UnifiedOrderRow {
@@ -32,7 +36,8 @@ export class OrdersService {
     const {
       page,
       limit,
-      offset,
+      cursor,
+      direction,
       searchTerm,
       includeArchived,
       customerId,
@@ -95,7 +100,7 @@ export class OrdersService {
       .where(whereClause);
 
     // Fetch paginated rows with customer name and line totals
-    const rows = await this.db
+    let qb = this.db
       .select({
         id: salesOrders.salesOrderId,
         orderNumber: salesOrders.orderNumber,
@@ -113,10 +118,61 @@ export class OrdersService {
         coreAccounts,
         eq(salesOrders.customerId, coreAccounts.customerId),
       )
-      .where(whereClause)
-      .orderBy(desc(salesOrders.createdOn))
-      .limit(limit)
-      .offset(offset);
+      .$dynamic();
+
+    if (whereClause) {
+      qb = qb.where(whereClause);
+    }
+
+    const {
+      data: rows,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
+              and(
+                sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                sql`${salesOrders.salesOrderId} < ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
+              and(
+                sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                sql`${salesOrders.salesOrderId} > ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          orderFn(
+            sql`COALESCE(${salesOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp)`,
+          ),
+          orderFn(salesOrders.salesOrderId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn
+          ? row.createdOn.toISOString()
+          : '1970-01-01T00:00:00.000Z',
+        id: row.id,
+      }),
+    });
 
     // Aggregate line totals for the returned orders
     const orderIds = rows.map((r) => r.id);
@@ -150,6 +206,6 @@ export class OrdersService {
       currencyCode: r.currencyCode ?? 'EUR',
     }));
 
-    return { data, page, limit, total: Number(count) };
+    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
   }
 }

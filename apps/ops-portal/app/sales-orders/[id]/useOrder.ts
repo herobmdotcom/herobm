@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError, ApiError } from '@/lib/api';
+import { reportError, ApiError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { 
     SALES_ORDER_TRANSITIONS as STATE_TRANSITIONS,
@@ -55,9 +56,10 @@ export function useOrder(id: string) {
     const [locations, setLocations] = useState<{ locationId: string; name: string }[]>([]);
 
     useEffect(() => {
-        apiFetch<{ data: { locationId: string; name: string }[] }>('/api/inventory/locations')
-            .then(res => setLocations(res.data))
-            .catch(err => reportError(err, 'Locations_Fetch'));
+        // @ts-expect-error missing typings
+        api.inventoryControllerFindAllLocations()
+            .then((res: any) => setLocations(res.data || res))
+            .catch((err: any) => reportError(err, 'Locations_Fetch'));
     }, []);
 
     /* ── Editable header fields ──────────────────────────────────── */
@@ -97,12 +99,10 @@ export function useOrder(id: string) {
         if (showSpinner) setLoading(true);
         try {
             const [data, pData] = await Promise.all([
-                apiFetch<any>(
-                    `/api/sales-orders/${encodeURIComponent(id)}`,
-                ),
-                apiFetch<any>(
-                    `/api/sales-orders/${encodeURIComponent(id)}/picking`,
-                ).catch(() => null),
+                // @ts-expect-error missing typings
+                api.ordersControllerFindOne(encodeURIComponent(id)),
+                // @ts-expect-error missing typings
+                api.orderPickingControllerGetPickingSummary(encodeURIComponent(id)).catch(() => null),
             ]);
             setOrder(data?.data || data);
             setPickingSummary(pData?.data || pData);
@@ -127,7 +127,8 @@ export function useOrder(id: string) {
     const loadReturns = async () => {
         setReturnsLoading(true);
         try {
-            const data = await apiFetch<OrderReturn[]>(`/api/sales-orders/${encodeURIComponent(id)}/returns`);
+            // @ts-expect-error missing typings
+            const data = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
             setReturns(data);
         } catch {
             setReturns([]);
@@ -138,7 +139,8 @@ export function useOrder(id: string) {
 
     const loadInvoices = async () => {
         try {
-            const res = await apiFetch<any>(`/api/sales-orders/${encodeURIComponent(id)}/invoices`);
+            // @ts-expect-error missing typings
+            const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
             setInvoices(res?.data || res || []);
         } catch {
             setInvoices([]);
@@ -150,7 +152,8 @@ export function useOrder(id: string) {
     // Initial load
     useEffect(() => {
         loadOrder();
-        apiFetch<TaxCategory[]>('/api/tax-categories').then(setTaxCategories).catch((err) => reportError(err, 'OrderDetailPage'));
+        // @ts-expect-error missing typings
+        api.taxCategoriesControllerFindAll().then(setTaxCategories).catch((err: any) => reportError(err, 'OrderDetailPage'));
     }, [id]);
 
     // Load returns and invoices when order state involves invoicing
@@ -181,13 +184,9 @@ export function useOrder(id: string) {
         if (productIds.length === 0) return;
         
         setInventoryLoading(true);
-        apiMutate<{ data: InventoryLevel[] }>(
-            `/api/inventory/by-products-bulk`,
-            'POST',
-            { productIds }
-        )
-            .then((res) => setInventoryData(res.data))
-            .catch((err) => reportError(err, 'OrderDetailPage'))
+        api.inventoryControllerFindByProductIdsBulk({ body: JSON.stringify({ productIds }) })
+            .then((res: any) => setInventoryData(res.data || res))
+            .catch((err: any) => reportError(err, 'OrderDetailPage'))
             .finally(() => setInventoryLoading(false));
     }, [activeTab, order]);
 
@@ -208,11 +207,11 @@ export function useOrder(id: string) {
         if (!headerDirty) return;
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}`, 'PATCH', {
-                name: editName || null,
-                customerOrderNumber: editPO || null,
-                notes: editNotes || null,
-                fulfillmentLocationId: editFulfillmentLocationId || null,
+            await api.ordersControllerUpdate(id, {
+                name: editName || undefined,
+                customerOrderNumber: editPO || undefined,
+                notes: editNotes || undefined,
+                fulfillmentLocationId: editFulfillmentLocationId || undefined,
             });
             await loadOrder(undefined, false);
         } catch (err) {
@@ -224,10 +223,12 @@ export function useOrder(id: string) {
 
     const changeState = async (newState: string, generateBackorders?: boolean, acknowledged?: boolean) => {
         try {
-            await apiMutate(`/api/sales-orders/${id}/state`, 'PATCH', { 
-                stateCode: newState, 
-                generateBackorders,
-                discrepanciesAcknowledged: acknowledged
+            await api.ordersControllerChangeState(id, { 
+                body: JSON.stringify({
+                    stateCode: newState, 
+                    generateBackorders,
+                    discrepanciesAcknowledged: acknowledged
+                })
             });
             toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
             await loadOrder(undefined, false);
@@ -246,7 +247,7 @@ export function useOrder(id: string) {
         if (!confirm(tConfirm('archiveOrder'))) return;
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/archive`, 'POST');
+            await api.ordersControllerArchive(id);
             toast.success(tToast('orderArchived'));
             await loadOrder(undefined, false);
         } catch (err) {
@@ -259,7 +260,7 @@ export function useOrder(id: string) {
     const unarchiveOrder = async () => {
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/unarchive`, 'POST');
+            await api.ordersControllerUnarchive(id);
             toast.success(tToast('orderUnarchived'));
             await loadOrder(undefined, false);
         } catch (err) {
@@ -273,9 +274,9 @@ export function useOrder(id: string) {
         if (!order) return;
         setCopying(true);
         try {
-            const newOrder = await apiMutate<{ salesOrderId: string }>('/api/sales-orders', 'POST', {
+            const newOrder = await api.ordersControllerCreate({
                 name: order.name ? `Copy of ${order.name}` : undefined,
-                customerId: order.customerId || undefined,
+                customerId: order.customerId || '',
                 customerOrderNumber: order.customerOrderNumber || undefined,
                 notes: order.notes || undefined,
                 fulfillmentLocationId: order.fulfillmentLocationId || undefined,
@@ -289,7 +290,7 @@ export function useOrder(id: string) {
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
-            router.push(`/sales-orders/${(newOrder as any).id || newOrder.salesOrderId}`);
+            router.push(`/sales-orders/${(newOrder as any).salesOrderId || (newOrder as any).id || (newOrder as any).data?.salesOrderId || (newOrder as any).data?.id}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {
@@ -300,7 +301,7 @@ export function useOrder(id: string) {
     const updateLine = async (lineId: string, field: string, value: string) => {
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
+            await api.ordersControllerUpdateLine(id, lineId, { [field]: value } as any);
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -312,7 +313,7 @@ export function useOrder(id: string) {
     const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'PATCH', payload);
+            await api.ordersControllerUpdateLine(id, lineId, payload as any);
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -326,7 +327,7 @@ export function useOrder(id: string) {
         setSaving(true);
         setError('');
         try {
-            await apiMutate(`/api/sales-orders/${id}/lines/${lineId}`, 'DELETE');
+            await api.ordersControllerRemoveLine(id, lineId);
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
@@ -346,17 +347,18 @@ export function useOrder(id: string) {
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
-            const url = isPostConf 
-                ? `/api/sales-orders/${id}/post-confirmation-lines`
-                : `/api/sales-orders/${id}/lines`;
-            
-            await apiMutate(url, 'POST', {
+            const payload = {
                 productId: p.productId,
                 productDescription: p.name,
                 quantity: '1',
                 pricePerUnit: parseFloat(p.listPrice || p.tradePrice || '0').toFixed(2),
                 unitOfMeasure: 'EA',
-            });
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload as any);
+            } else {
+                await api.ordersControllerAddLine(id, payload as any);
+            }
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -370,17 +372,18 @@ export function useOrder(id: string) {
         setSaving(true);
         try {
             const isPostConf = isOrderDetailsEditable && !isOrderLinesEditable;
-            const url = isPostConf 
-                ? `/api/sales-orders/${id}/post-confirmation-lines`
-                : `/api/sales-orders/${id}/lines`;
-
-            await apiMutate(url, 'POST', {
+            const payload = {
                 productId: CUSTOM_LINE_ID,
                 productDescription: isPostConf ? 'Additional Charge' : '',
                 quantity: '1',
                 pricePerUnit: '0.00',
                 unitOfMeasure: 'EA',
-            });
+            };
+            if (isPostConf) {
+                await api.ordersControllerAddPostConfirmationLine(id, payload as any);
+            } else {
+                await api.ordersControllerAddLine(id, payload as any);
+            }
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -393,7 +396,7 @@ export function useOrder(id: string) {
         const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
         setSaving(true);
         try {
-            await apiMutate(`/api/sales-orders/${id}/post-confirmation-lines`, 'POST', {
+            await api.ordersControllerAddPostConfirmationLine(id, {
                 productId: CUSTOM_LINE_ID,
                 productDescription: 'Additional Charge',
                 quantity: '1',

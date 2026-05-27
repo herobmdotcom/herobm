@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 interface GlSettings {
   baseCurrency: string;
@@ -41,8 +42,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const data = await apiFetch<GlSettings>('/api/gl/settings');
-        setGl(data);
+        const res = await api.glControllerGetSettings();
+        // @ts-expect-error
+        setGl(res.data);
       } catch (err: any) {
         if (err.message !== 'Not authenticated' && err.status !== 401 && err.status !== 403) {
           reportError(err, 'SettingsProvider');

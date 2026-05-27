@@ -1,1 +1,0 @@
-ALTER TABLE "modbm_core"."sales_orders" ADD COLUMN IF NOT EXISTS "discrepancies_acknowledged" boolean DEFAULT false NOT NULL;

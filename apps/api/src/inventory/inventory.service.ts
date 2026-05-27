@@ -5,7 +5,17 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { ilike, or, eq, inArray, sql, and, isNull, desc } from 'drizzle-orm';
+import {
+  ilike,
+  or,
+  eq,
+  inArray,
+  sql,
+  and,
+  isNull,
+  desc,
+  asc,
+} from 'drizzle-orm';
 import { AppConfigService } from '../settings/app-config.service';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
@@ -34,7 +44,11 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import {
   calculateAvailableQuantity,
   MATCH_STATUS,
@@ -66,7 +80,8 @@ export class InventoryService {
   // =========================================================================
 
   async findAll(query?: PaginationQuery & { locationNo?: string }) {
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, cursor, direction, searchTerm } =
+      parsePagination(query);
 
     let qb = this.db
       .select({
@@ -102,10 +117,46 @@ export class InventoryService {
       qb = qb.where(eq(locations.code, query.locationNo));
     }
 
-    const rows = await qb.orderBy(products.name).limit(limit).offset(offset);
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${products.name} > ${c.name}`,
+              and(
+                eq(products.name, c.name),
+                sql`${inventoryLevels.inventoryLevelId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${products.name} < ${c.name}`,
+              and(
+                eq(products.name, c.name),
+                sql`${inventoryLevels.inventoryLevelId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(products.name),
+          orderFn(inventoryLevels.inventoryLevelId),
+        );
+      },
+      encodeRow: (row) => ({ name: row.productName, id: row.inventoryLevelId }),
+    });
 
     // Provide default backward-compatible fields
-    const mappedRows = rows.map((r) => ({
+    const mappedRows = data.map((r) => ({
       ...r,
       quantityAvailable: calculateAvailableQuantity(
         r.quantityOnHand,
@@ -116,7 +167,7 @@ export class InventoryService {
       defaultBinNumber: null,
     }));
 
-    return { data: mappedRows, page, limit };
+    return { data: mappedRows, page, limit, nextCursor, prevCursor };
   }
 
   /**
@@ -267,7 +318,8 @@ export class InventoryService {
   }
 
   async findBins(query?: PaginationQuery & { locationNo?: string }) {
-    const { page, limit, offset, searchTerm } = parsePagination(query);
+    const { page, limit, cursor, direction, searchTerm } =
+      parsePagination(query);
 
     let qb = this.db
       .select({
@@ -311,10 +363,56 @@ export class InventoryService {
       qb = qb.where(and(...filters));
     }
 
-    const rows = await qb
-      .orderBy(bins.binNumber, products.name)
-      .limit(limit)
-      .offset(offset);
+    const {
+      data: rows,
+      nextCursor,
+      prevCursor,
+    } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { bin: string; name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${bins.binNumber} > ${c.bin}`,
+              and(eq(bins.binNumber, c.bin), sql`${products.name} > ${c.name}`),
+              and(
+                eq(bins.binNumber, c.bin),
+                eq(products.name, c.name),
+                sql`${binContents.binContentId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${bins.binNumber} < ${c.bin}`,
+              and(eq(bins.binNumber, c.bin), sql`${products.name} < ${c.name}`),
+              and(
+                eq(bins.binNumber, c.bin),
+                eq(products.name, c.name),
+                sql`${binContents.binContentId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(bins.binNumber),
+          orderFn(products.name),
+          orderFn(binContents.binContentId),
+        );
+      },
+      encodeRow: (row) => ({
+        bin: row.binNumber,
+        name: row.productName,
+        id: row.binContentId,
+      }),
+    });
 
     const productIds = Array.from(new Set(rows.map((r) => r.productId)));
 
@@ -331,7 +429,7 @@ export class InventoryService {
       productUoms: allUoms.filter((u) => u.productId === row.productId),
     }));
 
-    return { data: rowsWithUoms, page, limit };
+    return { data: rowsWithUoms, page, limit, nextCursor, prevCursor };
   }
 
   async getPutawayContext(productId: string, locationId: string) {
@@ -929,7 +1027,7 @@ export class InventoryService {
       grConditions.push(eq(goodsReceived.locationId, locationId));
     }
 
-    let grQb = this.db
+    const grQb = this.db
       .select({
         id: goodsReceivedLines.goodsReceivedLineId,
         sourceType: sql<'goods_receipt'>`'goods_receipt'`,
@@ -961,7 +1059,7 @@ export class InventoryService {
       retConditions.push(eq(salesOrders.fulfillmentLocationId, locationId));
     }
 
-    let retQb = this.db
+    const retQb = this.db
       .select({
         id: salesOrderReturnLines.returnLineId,
         sourceType: sql<'sales_return'>`'sales_return'`,

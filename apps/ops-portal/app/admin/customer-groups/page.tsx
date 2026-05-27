@@ -4,7 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import DiscountMatrixSlideOver from '@/components/shared/DiscountMatrixSlideOver';
 
@@ -42,11 +42,11 @@ export default function AccountGroupsAdmin() {
     try {
       setLoading(true);
       const [data, customers, cc, act, rules] = await Promise.all([
-        apiFetch<any[]>('/api/customer-groups'),
-        apiFetch<any[]>('/api/gl/accounts'),
-        apiFetch<any[]>('/api/settings/cost-centers'),
-        apiFetch<any[]>('/api/settings/activities'),
-        apiFetch<any[]>('/api/discount-matrix?ownerType=account_group')
+        api.accountGroupsControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.glControllerGetAccounts({}).then((r: any) => r?.data?.data || r?.data || r || []),
+        api.costCentersControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.activitiesControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.discountMatrixControllerList({ ownerType: 'account_group' }).then((r: any) => r?.data?.data || r?.data || r || [])
       ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
@@ -96,10 +96,10 @@ export default function AccountGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await apiMutate(`/api/customer-groups/${editingId}`, 'PATCH', editForm);
+        await api.accountGroupsControllerUpdate(editingId, editForm as any);
         toast.success('Group updated');
       } else {
-        await apiMutate('/api/customer-groups', 'POST', editForm);
+        await api.accountGroupsControllerCreate(editForm as any);
         toast.success('Group created');
       }
       handleCancel();
@@ -112,7 +112,7 @@ export default function AccountGroupsAdmin() {
   const handleDelete = async (id: string) => {
     if(!confirm(tGlobalCommon('confirmDelete'))) return;
     try {
-      await apiMutate(`/api/customer-groups/${id}`, 'DELETE');
+      await api.accountGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch(err: any) {

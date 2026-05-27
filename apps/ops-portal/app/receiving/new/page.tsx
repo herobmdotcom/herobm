@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -112,17 +112,21 @@ function ReceivingFlow() {
     }
     setSaving(true);
 
+    const payload = {
+      vendorId,
+      locationId,
+      packingSlipNumber: packingSlipNumber || undefined,
+      notes: notes || undefined,
+      lines: draftLines.map((l) => ({
+        productId: l.productId,
+        quantityReceived: String(l.quantityReceived),
+      })),
+    };
+
     try {
-      const result = await apiMutate<any>('/api/goods-received', 'POST', {
-        vendorId,
-        locationId,
-        packingSlipNumber: packingSlipNumber || undefined,
-        notes: notes || undefined,
-        lines: draftLines.map((l) => ({
-          productId: l.productId,
           quantityReceived: String(l.quantityReceived),
         })),
-      });
+      }) }) as any;
 
       setCompletedLines(result.lines || []);
       toast.success(t('toast.confirmed'));

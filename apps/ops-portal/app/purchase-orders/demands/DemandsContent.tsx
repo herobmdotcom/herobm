@@ -9,10 +9,9 @@ import InternalTransferModal from './InternalTransferModal';
 import StockElsewhereCell from './StockElsewhereCell';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import { apiFetch, reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-import { PO_STATE } from '@modbm/core';
+import { PURCHASE_ORDER_STATE } from '@modbm/shared';
 
 export interface AvailableElsewhereEntry {
   locationId: string;
@@ -73,21 +72,16 @@ export default function DemandsContent() {
       field: 'purchaseOrderState',
       headerName: 'Status',
       width: 160,
-      cellRenderer: (params: ICellRendererParams<DemandRow>) => {
+      valueFormatter: (params: any) => {
         if (!params.data?.purchaseOrderId) {
-          return <span className="badge badge-warning">{tPurchase('demandsContent.pendingSupply')}</span>;
+          return tPurchase('demandsContent.pendingSupply');
         }
         
-        const badgeClass = params.data.purchaseOrderState === PO_STATE.DRAFT ? 'badge-draft' : 'badge-info';
-        const label = params.data.purchaseOrderState === PO_STATE.DRAFT ? tPurchase('demandsContent.draft') : tPurchase('demandsContent.ordered');
+        const label = params.data.purchaseOrderState === PURCHASE_ORDER_STATE.DRAFT ? tPurchase('demandsContent.draft') : tPurchase('demandsContent.ordered');
         const poNumber = params.data.purchaseOrderNumber || '';
         const displayPo = poNumber.length > 8 ? poNumber.substring(0, 8) + '...' : poNumber;
         
-        return (
-          <Link href={`/purchase-orders/${params.data.purchaseOrderId}`} className="hover:opacity-80 transition-opacity inline-flex items-center">
-            <span className={`badge ${badgeClass} cursor-pointer`} title={poNumber}>{label} {displayPo}</span>
-          </Link>
-        );
+        return `${label} ${displayPo}`;
       }
     },
     {

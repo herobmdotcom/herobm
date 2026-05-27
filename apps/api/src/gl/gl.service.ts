@@ -49,6 +49,7 @@ export class JournalMeta {
   memo?: string;
   entryDate?: string; // ISO date, defaults to today
   actor?: string;
+  journalEntryId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,17 +106,34 @@ export class GlService {
 
   // -------------------------------------------------------------------------
   // Core: Post a balanced journal entry
-  //
-  // When `tx` is provided, all queries and inserts run on the caller's
-  // transaction — no nested transaction is opened. This is the REQUIRED
-  // calling convention when the GL posting must be atomic with a parent
-  // business operation (e.g. goods receipt, shipment, invoice).
-  //
-  // When `tx` is omitted, a self-contained transaction is opened internally.
-  // This path is used only for standalone operations (manual journal entries,
-  // reconciliation adjustments) that have no parent transaction.
   // -------------------------------------------------------------------------
 
+  /**
+   * Posts a balanced journal entry to the general ledger.
+   *
+   * @param lines The debits and credits. Must sum to zero.
+   * @param meta Metadata for the journal entry (source type, memo, etc.)
+   * @param tx Optional but HIGHLY RECOMMENDED database transaction object.
+   *           When `tx` is provided, all queries and inserts run on the caller's
+   *           transaction. This is REQUIRED when the GL posting must be atomic
+   *           with a parent business operation (e.g. goods receipt, shipment, invoice).
+   *           When omitted, a self-contained transaction is opened internally (only for standalone ops).
+   *
+   * @example
+   * // Correct: Pass the tx object for atomic operations
+   * await this.db.transaction(async (tx) => {
+   *   await tx.insert(salesInvoices).values(...);
+   *   await this.glService.postJournalEntry(lines, meta, tx);
+   * });
+   *
+   * @example
+   * // Incorrect: Failing to pass the tx object inside an outer transaction will cause deadlocks
+   * // or silent partial commits in PGlite testing.
+   * await this.db.transaction(async (tx) => {
+   *   await tx.insert(salesInvoices).values(...);
+   *   await this.glService.postJournalEntry(lines, meta); // BAD!
+   * });
+   */
   async postJournalEntry(
     lines: JournalLineDto[],
     meta: JournalMeta,
@@ -219,6 +237,7 @@ export class GlService {
       const [entry] = await db
         .insert(glJournalEntries)
         .values({
+          journalEntryId: meta.journalEntryId,
           entryNumber,
           entryDate,
           memo: meta.memo,

@@ -25,6 +25,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
   const t = useTranslations();
   const tSales = useTranslations('salesOrders');
   const tCommon = useTranslations('common');
+  const tStates = useTranslations('common.states');
   const params = use(paramsPromise);
   const router = useRouter();
 
@@ -58,7 +59,11 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 110,
-      cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null,
+      valueFormatter: (p: any) => {
+        if (!p.value) return '';
+        const s = String(p.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+      },
     },
     { field: 'customerOrderNumber', headerName: tCommon('columns.customerPO'), width: 140 },
     {
@@ -90,7 +95,11 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
           field: 'stateCode', 
           headerName: tSales('columns.state', { defaultValue: 'State' }), 
           width: 140,
-          cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null,
+          valueFormatter: (p: any) => {
+            if (!p.value) return '';
+            const s = String(p.value).toLowerCase();
+            return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+          },
       },
   ], [tSales]);
 
@@ -151,9 +160,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             badges={
               <StateBadge state={customer.stateCode as ValidState} />
             }
-            actions={
-              <PageNav sections={visibleSections} />
-            }
+            nav={<PageNav sections={visibleSections} />}
           />
         }
       >
@@ -665,7 +672,9 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
                               {child.customerNumber} - {child.name}
                             </Link>
                           </div>
-                          <StateBadge state={child.stateCode as ValidState} />
+                          <span className="text-sm text-gray-500">
+                            {child.stateCode ? <StateName state={child.stateCode as ValidState} /> : ''}
+                          </span>
                         </div>
                       ))}
                     </div>

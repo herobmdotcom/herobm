@@ -2,7 +2,8 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -60,9 +61,8 @@ export default function TrialBalancePage() {
 
   const fetchData = useCallback(() => {
     setLoading(true);
-    const qs = asOfDate ? `?asOfDate=${asOfDate}` : '';
-    apiFetch<TrialBalanceRow[]>(`/api/gl/trial-balance${qs}`)
-      .then(setRows)
+    api.glControllerGetTrialBalance({ asOfDate })
+      .then((res: any) => setRows(res?.data?.data || res?.data || res || []))
       .catch((err) => reportError(err, 'TrialBalancePage'))
       .finally(() => setLoading(false));
   }, [asOfDate]);

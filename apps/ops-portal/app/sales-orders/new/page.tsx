@@ -10,10 +10,12 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
+import { MobileCardField } from '@/components/shared/DataTable';
 import { computeLinePrice, computeOrderTotals, calculateUomPriceAdjustment, resolveEffectiveDiscount } from '@modbm/shared';
 import type { DiscountRule } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -125,13 +127,14 @@ export default function NewOrderPage() {
 
   // Load locations on mount
   useEffect(() => {
-    apiFetch<{ data: Location[], defaultFulfillmentLocationId?: string }>('/api/inventory/locations')
+    api.inventoryControllerFindAllLocations({} as any)
       .then((res) => {
-        setLocations(res.data);
-        if (res.defaultFulfillmentLocationId) {
-          setFulfillmentLocationId(res.defaultFulfillmentLocationId);
-        } else if (res.data.length > 0) {
-          setFulfillmentLocationId(res.data[0].locationId);
+        const payload = res.data as any;
+        setLocations(payload.data);
+        if (payload.defaultFulfillmentLocationId) {
+          setFulfillmentLocationId(payload.defaultFulfillmentLocationId);
+        } else if (payload.data.length > 0) {
+          setFulfillmentLocationId(payload.data[0].locationId);
         }
       })
       .catch((err) => reportError(err, 'NewOrderPage_Locations'));
@@ -139,8 +142,11 @@ export default function NewOrderPage() {
 
   // Load GST categories on mount
   useEffect(() => {
-    apiFetch<TaxCategory[]>('/api/tax-categories')
-      .then(settaxCategories)
+    api.taxCategoriesControllerFindAll()
+      .then((res) => {
+        // @ts-expect-error
+        settaxCategories(res.data);
+      })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
 
@@ -160,9 +166,8 @@ export default function NewOrderPage() {
     // Fetch discount rules for this customer
     let rules: DiscountRule[] = [];
     try {
-      const q = new URLSearchParams({ customerId: a.customerId });
-      if (a.customerGroupId) q.set('customerGroupId', a.customerGroupId);
-      rules = await apiFetch<DiscountRule[]>(`/api/discount-matrix/resolve?${q.toString()}`);
+      const res = await api.discountMatrixControllerResolve({ customerId: a.customerId, customerGroupId: a.customerGroupId || undefined } as any);
+      rules = res.data as any;
       setDiscountRules(rules);
     } catch (err) {
       reportError(err, 'NewOrderPage_Rules');
@@ -266,7 +271,7 @@ export default function NewOrderPage() {
     setError('');
 
     try {
-      const order = await apiMutate<{ salesOrderId: string }>('/api/sales-orders', 'POST', {
+      const orderRes = await api.ordersControllerCreate({
         name: name || undefined,
         customerId,
         customerOrderNumber: customerOrderNumber || undefined,
@@ -284,7 +289,8 @@ export default function NewOrderPage() {
             unitOfMeasure: l.unitOfMeasure,
             fulfillmentLocationId: l.fulfillmentLocationId || fulfillmentLocationId || undefined,
           })),
-      });
+      } as any);
+      const order = orderRes.data as any;
       router.push(`/sales-orders/${order.salesOrderId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tSales('common.errors.failedToCreateOrder'));
@@ -505,7 +511,167 @@ export default function NewOrderPage() {
             </div>
           </div>
 
-          <table className="table-lines">
+          <div className="lg:hidden flex flex-col gap-3 w-full mt-4">
+            {lines.length === 0 ? (
+              <div className="text-center text-slate-500 py-4 px-3 bg-slate-50 rounded-lg border border-slate-100 text-sm">
+                {tSales('salesOrders.noLineItems')}
+              </div>
+            ) : (
+              lines.map((line, idx) => (
+                <div key={line.key} className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                  <div className="flex justify-between items-start gap-2 mb-2">
+                    <div className="font-semibold text-sm text-[var(--accent)]">
+                      {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                        <span>{line.productNumber}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{idx + 1}</div>
+                  </div>
+                  <div className="text-sm text-slate-600 font-medium mb-3">
+                    {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                      line.productDescription || '—'
+                    ) : (
+                      <input
+                        className="input w-full text-sm h-8 !py-1"
+                        value={line.productDescription || ''}
+                        onChange={(e) => updateLine(idx, 'productDescription', e.target.value)}
+                        placeholder={tSales('salesOrders.placeholders.customDescription')}
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                    <MobileCardField label={tSales('salesOrders.columns.qty')} value={
+                      <input
+                        className="input text-right w-24 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={line.quantity}
+                        onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                      />
+                    } />
+                    <MobileCardField label={tSales('salesOrders.columns.uom')} value={
+                      (() => {
+                        const uoms = line.productUoms || [];
+                        const defaultUom = line.baseUom || 'EA';
+                        const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+                        return (
+                          <select
+                            className="input text-right w-24 h-8 text-sm !py-1"
+                            value={line.unitOfMeasure || defaultUom}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              const oldVal = line.unitOfMeasure || defaultUom;
+                              if (newVal !== oldVal) {
+                                const oldO = selectOptions.find((o: any) => o.uomCode === oldVal);
+                                const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+                                const newO = selectOptions.find((o: any) => o.uomCode === newVal);
+                                const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+                                const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                                setLines((prev) =>
+                                  prev.map((l, i) =>
+                                    i === idx
+                                      ? {
+                                          ...l,
+                                          unitOfMeasure: newVal,
+                                          pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2),
+                                        }
+                                      : l
+                                  )
+                                );
+                              }
+                            }}
+                          >
+                            {selectOptions.map((o: any) => (
+                              <option key={o.uomCode} value={o.uomCode}>
+                                {o.uomCode}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()
+                    } />
+                    <MobileCardField label={tSales('salesOrders.columns.unitPrice')} value={
+                      <input
+                        className="input text-right w-24 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={line.pricePerUnit}
+                        onChange={(e) => updateLine(idx, 'pricePerUnit', e.target.value)}
+                        onBlur={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) updateLine(idx, 'pricePerUnit', val.toFixed(2));
+                        }}
+                      />
+                    } />
+                    <MobileCardField label={tSales('salesOrders.columns.discountPct')} value={
+                      <input
+                        className="input text-right w-20 h-8 text-sm !py-1"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={line.discountPercentage}
+                        onChange={(e) => updateLine(idx, 'discountPercentage', e.target.value)}
+                      />
+                    } />
+                    <MobileCardField label={tSales('salesOrders.columns.tax')} value={
+                      <select
+                        className="input text-right w-32 h-8 text-sm !py-1"
+                        value={line.taxCategoryId}
+                        onChange={(e) => updateLine(idx, 'taxCategoryId', e.target.value)}
+                      >
+                        {taxCategories.map((c) => (
+                          <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                            {getTaxLabel(c)}
+                          </option>
+                        ))}
+                      </select>
+                    } />
+                    <MobileCardField label={tSales('salesOrders.columns.amount')} value={
+                      <span className="font-bold text-[var(--accent)] text-base">{formatAmount(computeAmount(line), currencyCode)}</span>
+                    } />
+                    <div className="flex justify-end mt-2">
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={() => removeLine(idx)}
+                      >
+                        <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tSales('common.buttons.remove')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+            
+            {lines.length > 0 && (() => {
+              const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
+              return (
+                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm mt-2">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-sm font-semibold text-slate-500">{tSales('common.subtotal')}</span>
+                    <span className="text-sm font-semibold">{formatAmount(subtotal, currencyCode)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 pb-2 mb-2">
+                    <span className="text-sm font-semibold text-slate-500">
+                      {tSales('common.tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
+                    </span>
+                    <span className="text-sm font-semibold">{formatAmount(totalTax, currencyCode)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-base font-bold text-slate-700">{tSales('common.total')}</span>
+                    <span className="text-lg font-bold text-[var(--accent)]">{formatAmount(subtotal + totalTax, currencyCode)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="hidden lg:block overflow-x-auto w-full">
+            <table className="table-lines w-full">
             <thead>
               <tr>
                 <th style={{ width: 40 }}>{tSales('salesOrders.columns.lineNumber')}</th>
@@ -708,7 +874,8 @@ export default function NewOrderPage() {
                 );
               })()}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
         </div>
       </DetailsLayout>

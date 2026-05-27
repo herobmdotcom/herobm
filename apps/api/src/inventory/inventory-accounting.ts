@@ -368,7 +368,10 @@ class PerpetualAccountingStrategy implements InventoryAccountingStrategy {
 
   onSupplierDebitNote(ctx: GlPostingContext): InventoryGlResult | null {
     if (ctx.amount <= 0) return null;
-    const ap = this.requireAccount(this.accts.apAccountId || null, 'Accounts Payable');
+    const ap = this.requireAccount(
+      this.accts.apAccountId || null,
+      'Accounts Payable',
+    );
     const grni = this.requireAccount(this.accts.grniAccountId, 'GRNI');
     // Supplier Debit Note: DR Accounts Payable, CR GRNI
     return {

@@ -6,10 +6,7 @@ import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
 import { resolveSupplierRiskProfile } from '@/lib/supplier-risk';
-import SupplierStatusBadges from '@/components/suppliers/SupplierStatusBadges';
 
 interface UnifiedSupplierRow {
   vendorId: string;
@@ -28,6 +25,7 @@ interface UnifiedSupplierRow {
 export default function SuppliersContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
+  const tStates = useTranslations('common.states');
   const tSuppliers = useTranslations('suppliers');
 
   const columns = useMemo<ColDef[]>(() => [
@@ -55,26 +53,24 @@ export default function SuppliersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 250,
-      cellRenderer: (params: { data: any, value: string }) => {
-        if (!params.value || !params.data) return null;
+      valueFormatter: (params: any) => {
+        if (!params.value || !params.data) return '';
         
-        // Construct the expected profile shape for the status badge
-        const supplierProfile = {
-          isPurchasingBlocked: params.data.isPurchasingBlocked,
-          purchasingBlockReason: params.data.purchasingBlockReason,
-          isPaymentBlocked: params.data.isPaymentBlocked,
-          paymentBlockReason: params.data.paymentBlockReason,
-        };
-        const groupProfile = {
-          isPurchasingBlocked: params.data.groupIsPurchasingBlocked,
-          purchasingBlockReason: params.data.groupPurchasingBlockReason,
-          isPaymentBlocked: params.data.groupIsPaymentBlocked,
-          paymentBlockReason: params.data.groupPaymentBlockReason,
-        };
-
-        const resolvedProfile = resolveSupplierRiskProfile(supplierProfile, groupProfile, []);
-
-        return <SupplierStatusBadges profile={resolvedProfile} stateCode={params.value} mode="grid" />;
+        const s = String(params.value).toLowerCase();
+        let stateText = tStates.has(s as any) ? tStates(s as any) : String(params.value);
+        
+        const blocks = [];
+        if (params.data.isPurchasingBlocked || params.data.groupIsPurchasingBlocked) {
+            blocks.push('Purchasing Blocked');
+        }
+        if (params.data.isPaymentBlocked || params.data.groupIsPaymentBlocked) {
+            blocks.push('Payment Blocked');
+        }
+        
+        if (blocks.length > 0) {
+            stateText += ` (${blocks.join(', ')})`;
+        }
+        return stateText;
       },
     },
     {

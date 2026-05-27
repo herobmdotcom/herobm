@@ -55,19 +55,35 @@ export class TestOdooConnectionDto {
   port?: number;
 }
 
+export class DbConfigDto {
+  @IsOptional()
+  @IsString()
+  host?: string;
+
+  @IsOptional()
+  @IsString()
+  database?: string;
+
+  @IsOptional()
+  @IsString()
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  password?: string;
+
+  @IsOptional()
+  @IsNumber()
+  port?: number;
+}
+
 // ---------------------------------------------------------------------------
 // POST /api/setup/execute-elt
 // ---------------------------------------------------------------------------
 export class ExecuteEltDto {
   @IsOptional()
   @IsObject()
-  dbConfig?: {
-    host?: string;
-    database?: string;
-    username?: string;
-    password?: string;
-    port?: number;
-  };
+  dbConfig?: DbConfigDto;
 
   @IsOptional()
   abmImport?: boolean;
@@ -90,6 +106,10 @@ export class ExecuteEltDto {
   @IsOptional()
   @IsString()
   baseCurrency?: string;
+
+  @IsOptional()
+  @IsString()
+  defaultTaxCategoryCode?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -99,13 +119,7 @@ export class ExecuteSetupDto {
   /** Transient DB Config mapping overridable from the UI test phase */
   @IsOptional()
   @IsObject()
-  dbConfig?: {
-    host?: string;
-    database?: string;
-    username?: string;
-    password?: string;
-    port?: number;
-  };
+  dbConfig?: DbConfigDto;
 
   /** COA preset filename, e.g. 'au_standard.json' */
   @IsString()

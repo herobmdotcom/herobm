@@ -5,7 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { apiMutate, apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
@@ -45,7 +45,7 @@ export default function NewAccountPage() {
   const [taxCategories, settaxCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    apiFetch<any[]>('/api/tax-categories').then(settaxCategories).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: any) => settaxCategories(res.data)).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -53,7 +53,8 @@ export default function NewAccountPage() {
     setSubmitting(true);
 
     try {
-      const customer = await apiMutate<any>('/api/customers', 'POST', dto);
+      const res = await api.accountsControllerCreate(dto as any);
+      const customer = res.data as any;
       toast.success(t('toast.accountCreated'));
       router.push(`/customers/${customer.customerId}`);
     } catch (err: any) {

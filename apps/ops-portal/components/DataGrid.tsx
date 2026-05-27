@@ -6,10 +6,10 @@
  */
 import SharedDataGrid from '@/components/shared/DataGrid';
 import type { DataGridProps } from '@/components/shared/DataGrid';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
 
-type LocalProps<T> = Omit<DataGridProps<T>, 'apiFetch' | 'onError'>;
+type LocalProps<T> = Omit<DataGridProps<T>, 'onError'>;
 
 export default function DataGrid<T>(props: LocalProps<T>) {
-  return <SharedDataGrid<T> {...props} apiFetch={apiFetch} onError={reportError} />;
+  return <SharedDataGrid<T> {...props} onError={reportError} />;
 }

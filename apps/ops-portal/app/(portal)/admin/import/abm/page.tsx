@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
@@ -26,7 +27,8 @@ export default function AdminImportPage() {
     password: '',
     extractionMode: 'full' as 'full' | 'resume' | 'skip',
     defaultLocationCode: '',
-    baseCurrency: 'AUD'
+    baseCurrency: 'AUD',
+    defaultTaxCategoryCode: ''
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -34,6 +36,7 @@ export default function AdminImportPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [completedTables, setCompletedTables] = useState<string[] | null>(null);
   const [abmLocations, setAbmLocations] = useState<any[]>([]);
+  const [abmTaxCategories, setAbmTaxCategories] = useState<any[]>([]);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   
   const jobIdRef = useRef<string | null>(null);
@@ -56,7 +59,7 @@ export default function AdminImportPage() {
 
   useEffect(() => {
     if (step === 'preview') {
-      apiFetch<any>('/api/setup/resume-state')
+      api.setupControllerGetResumeState()
         .then(res => setCompletedTables(res?.completedTables || []))
         .catch(() => setCompletedTables([]));
     }
@@ -73,7 +76,7 @@ export default function AdminImportPage() {
   const handleTestConnection = async () => {
     try {
       setLoading(true);
-      const res = await apiMutate<any>('/api/setup/test-abm', 'POST', {
+      const res = await api.setupControllerTestAbm({
         host: config.host,
         port: parseInt(config.port, 10),
         database: config.database,
@@ -94,6 +97,16 @@ export default function AdminImportPage() {
            const mappedCurr = getCurrencyByAbmCode(res.preview.baseCurrencyAbmCode);
            setConfig(prev => ({ ...prev, baseCurrency: mappedCurr.code }));
         }
+        
+        const taxes = res.preview?.taxCategories || [];
+        setAbmTaxCategories(taxes);
+        if (taxes.length > 0) {
+          // Find tax category with highest rate > 0
+          const sortedTaxes = [...taxes].sort((a, b) => b.rate - a.rate);
+          const highestTax = sortedTaxes.find(t => t.rate > 0) || sortedTaxes[0];
+          setConfig(prev => ({ ...prev, defaultTaxCategoryCode: highestTax.code }));
+        }
+        
         setStep('preview');
       }
     } catch (err: any) {
@@ -118,13 +131,14 @@ export default function AdminImportPage() {
         skipExtraction: config.extractionMode === 'skip',
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,
+        defaultTaxCategoryCode: config.defaultTaxCategoryCode,
       };
 
       setStep('executing');
       setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
       setStatus('starting');
 
-      const res = await apiMutate<any>('/api/setup/execute-elt', 'POST', executePayload);
+      const res = await api.setupControllerExecuteElt(executePayload as any);
       jobIdRef.current = res.jobId;
       setStatus('running');
       startPolling(res.jobId);
@@ -138,7 +152,7 @@ export default function AdminImportPage() {
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await apiFetch<any>(`/api/setup/progress/${jobId}`);
+        const progressRes = await api.setupControllerGetProgress(jobId);
         if (progressRes) {
           if (progressRes.logs && progressRes.logs.length > 0) {
              setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progressRes.logs]);
@@ -296,6 +310,22 @@ export default function AdminImportPage() {
                 ))}
               </select>
             </div>
+            
+            {abmTaxCategories.length > 0 && (
+              <div className="col-span-2 mt-2">
+                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory', { fallback: 'Default Tax Category' })}</h2>
+                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc', { fallback: 'Select the default tax category to use when a category is missing or omitted.' })}</p>
+                <select
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                  value={config.defaultTaxCategoryCode}
+                  onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
+                >
+                  {abmTaxCategories.map(tax => (
+                    <option key={tax.code} value={tax.code}>{tax.name} ({tax.rate}%) - {tax.code}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions', { fallback: 'Execution Options' })}</h2>
@@ -449,8 +479,8 @@ export default function AdminImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
             onClick={() => {
-              apiFetch<any>('/api/setup/import-summary').then(summary => {
-                 setImportSummary(summary);
+              api.setupControllerGetImportSummary().then(summary => {
+                 setImportSummary(summary as any);
                  setStep('finalisation');
               }).catch(err => {
                  reportError(err, 'AdminImportPage.pollProgress.importSummary');

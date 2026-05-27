@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 
 interface GroupSelectProps {
@@ -27,9 +28,16 @@ export default function GroupSelect({
     let active = true;
     setLoading(true);
     
-    apiFetch<any[]>(`/api/${type}-groups`)
+    const fetchMap: Record<string, () => Promise<any>> = {
+      customer: api.accountGroupsControllerFindAll,
+      product: api.productGroupsControllerFindAll,
+      supplier: api.supplierGroupsControllerFindAll,
+    };
+
+    fetchMap[type]()
       .then((data) => {
-        if (active) setGroups(data);
+
+        if (active) setGroups(data.data || data);
       })
       .catch((err) => reportError(`Failed to fetch ${type} groups:`, err))
       .finally(() => {

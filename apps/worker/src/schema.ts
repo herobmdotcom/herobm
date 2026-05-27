@@ -27,4 +27,12 @@ export const suppliers = modbmCore.table('suppliers', {
   externalId: text('external_id'),
 });
 
+export const webhooks = modbmCore.table('webhooks', {
+  webhookId: uuid('webhook_id').primaryKey(),
+  targetUrl: text('target_url').notNull(),
+  eventTypes: jsonb('event_types').notNull(),
+  secretKey: text('secret_key').notNull(),
+  isActive: boolean('is_active').notNull(),
+});
+
 

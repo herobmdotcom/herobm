@@ -6,13 +6,13 @@ import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+
 
 export default function ProductsContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tProducts = useTranslations('products');
+  const tStates = useTranslations('common.states');
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'productNumber', headerName: tProducts('columns.productNumber'), width: 130, pinned: 'left' },
@@ -21,22 +21,12 @@ export default function ProductsContent() {
     { 
       field: 'productType', 
       headerName: 'Type', 
-      width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        const color = params.value === 'inventory' ? 'badge-info' : 'badge-secondary';
-        return <span className={`badge ${color}`}>{params.value}</span>;
-      }
+      width: 120
     },
     { 
       field: 'structureType', 
       headerName: 'Structure', 
-      width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        const color = params.value === 'kit' ? 'badge-warning' : 'badge-legacy';
-        return <span className={`badge ${color}`}>{params.value}</span>;
-      }
+      width: 120
     },
     { field: 'quantityOnHand', headerName: tProducts('columns.quantityOnHand'), width: 130, type: 'numericColumn',
       valueFormatter: (p: any) => p.value ? parseFloat(p.value).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0' },
@@ -59,9 +49,10 @@ export default function ProductsContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       }
     },
     { field: 'notes', headerName: tCommon('columns.notes'), width: 150, hide: true },

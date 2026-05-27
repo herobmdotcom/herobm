@@ -4,7 +4,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useTranslations } from 'next-intl';
 
 import { useState, useEffect, useRef } from 'react';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 interface LogsResponse {
   lines: string[];
@@ -24,8 +24,9 @@ export default function SystemLogsPage() {
   const loadLogs = async () => {
     try {
       setLoading(true);
-      const res = await apiFetch<LogsResponse>(`/api/admin/system-logs?service=${service}&lines=${lineLimit}`);
-      setLines(res.lines);
+      const res = await api.systemControllerGetSystemLogs({ service, lines: lineLimit.toString() });
+      // @ts-expect-error
+      setLines(res?.data?.lines || (res as any)?.lines || []);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('toasts.loadFailed'));

@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
 import CreateTransferSlideOver from './CreateTransferSlideOver';
 
 interface UnifiedTransferOrderRow {
@@ -24,6 +22,7 @@ export default function TransfersContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tTransfers = useTranslations('transfers');
+  const tStates = useTranslations('common.states');
   
   const [isSlideOverOpen, setIsSlideOverOpen] = useState(false);
   const [gridRefresher, setGridRefresher] = useState(0);
@@ -41,9 +40,10 @@ export default function TransfersContent() {
       field: 'stateCode',
       headerName: tTransfers('columns.status'),
       width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
     { field: 'notes', headerName: tTransfers('columns.notes'), width: 200 },

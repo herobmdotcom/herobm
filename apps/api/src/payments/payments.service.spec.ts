@@ -225,6 +225,7 @@ describe('PaymentsService', () => {
     it('should create a draft payment with correct PAY-YYYYMMDD-NNNN number', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -246,6 +247,7 @@ describe('PaymentsService', () => {
     it('should increment sequence number for payments on the same day', async () => {
       const p1 = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -260,6 +262,7 @@ describe('PaymentsService', () => {
 
       const p2 = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000002',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -272,7 +275,6 @@ describe('PaymentsService', () => {
         'admin',
       );
 
-      // Extract the sequence suffix
       const seq1 = parseInt(p1.paymentNumber.split('-').pop()!, 10);
       const seq2 = parseInt(p2.paymentNumber.split('-').pop()!, 10);
       expect(seq2).toBe(seq1 + 1);
@@ -287,6 +289,7 @@ describe('PaymentsService', () => {
     it('should submit and post GL journal with group-routed AR for customer receipt', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -329,6 +332,7 @@ describe('PaymentsService', () => {
     it('should submit and post GL journal with group-routed AP for supplier payment', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'pay',
           partyType: 'supplier',
           partyId: supplierId,
@@ -367,6 +371,7 @@ describe('PaymentsService', () => {
     it('should reject submitting a non-draft payment', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -400,6 +405,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: ungroupedId,
@@ -461,6 +467,7 @@ describe('PaymentsService', () => {
       // Create and submit a payment
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -609,6 +616,7 @@ describe('PaymentsService', () => {
     it('should cancel a submitted payment with no allocations', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -637,6 +645,7 @@ describe('PaymentsService', () => {
     it('should reject cancelling a draft payment', async () => {
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -680,6 +689,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -721,6 +731,7 @@ describe('PaymentsService', () => {
     it('should return partyName for customer payments', async () => {
       await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,
@@ -741,6 +752,7 @@ describe('PaymentsService', () => {
     it('should return partyName for supplier payments', async () => {
       await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'pay',
           partyType: 'supplier',
           partyId: supplierId,
@@ -789,6 +801,7 @@ describe('PaymentsService', () => {
 
       const payment = await service.createPaymentEntry(
         {
+          paymentId: '00000000-0000-0000-0000-000000000001',
           paymentType: 'receive',
           partyType: 'customer',
           partyId: customerId,

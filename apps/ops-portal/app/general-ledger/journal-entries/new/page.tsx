@@ -4,7 +4,8 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import CustomerSelect from '@/components/shared/CustomerSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
@@ -51,8 +52,11 @@ export default function NewJournalEntryPage() {
 
   useEffect(() => {
     // Fetch all required data for the dropdowns
-    apiFetch<GlAccount[]>('/api/gl/accounts?format=flat')
-      .then((res) => setAccounts(res.filter(a => !a.isGroup && a.isActive)))
+    api.glControllerGetAccounts({ format: 'flat' })
+      .then((res) => {
+        const payload = res.data as any;
+        setAccounts(payload.filter((a: any) => !a.isGroup && a.isActive));
+      })
       .catch((err) => reportError(err, 'NewJournalEntryPage - accounts'));
   }, []);
 
@@ -107,13 +111,10 @@ export default function NewJournalEntryPage() {
     }));
 
     try {
-      await apiFetch('/api/gl/journal-entries', {
-        method: 'POST',
-        body: JSON.stringify({
-          entryDate: date,
-          memo: memo || undefined,
-          lines: payloadLines,
-        }),
+      await api.glControllerCreateManualJournalEntry({
+        entryDate: date,
+        memo: memo || undefined,
+        lines: payloadLines as any,
       });
       router.push('/general-ledger/journal-entries');
     } catch (err) {

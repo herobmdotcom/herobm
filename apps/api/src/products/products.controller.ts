@@ -136,6 +136,7 @@ export class ProductsController {
   @Delete(':id/default-bins/:binLinkId')
   @CasbinAction('write')
   removeDefaultBin(
+    @Param('id') productId: string,
     @Param('binLinkId') binLinkId: string,
     @AuthUser() user: JwtUser,
   ) {

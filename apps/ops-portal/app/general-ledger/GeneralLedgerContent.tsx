@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import JournalEntrySlideOver, { JournalEntry } from './journal-entries/JournalEntrySlideOver';
 import CodesModal from './CodesModal';
@@ -61,10 +62,10 @@ export default function GeneralLedgerContent() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  // Load accounts for the filter dropdown
   useEffect(() => {
-    apiFetch<any[]>('/api/gl/accounts?format=flat')
-      .then((data) => {
+    api.glControllerGetAccounts({ format: 'flat' })
+      .then((res: any) => {
+        const data = res?.data || res || [];
         const leafAccounts = data.filter((a: any) => !a.isGroup);
         setAccounts(leafAccounts.map((a: any) => ({ accountCode: a.accountCode, name: a.name })));
       })
@@ -84,10 +85,17 @@ export default function GeneralLedgerContent() {
     params.set('page', String(page));
     params.set('limit', String(PAGE_SIZE));
     const qs = params.toString() ? `?${params}` : '';
-    apiFetch<{ data: GlEntry[]; total: number }>(`/api/gl/general-ledger${qs}`)
+    api.glControllerGetGeneralLedger({ 
+      account: accountCode, 
+      fromDate: fromDate, 
+      toDate: toDate, 
+      page: page, 
+      limit: PAGE_SIZE 
+    })
       .then((res) => {
-        setRows(res.data);
-        setTotal(res.total);
+        const payload = res.data as any;
+        setRows(payload.data);
+        setTotal(payload.total);
       })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));

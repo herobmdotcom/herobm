@@ -164,14 +164,12 @@ export class PurchaseDebitNotesService {
       .limit(1);
 
     const result = await this.db.transaction(async (tx: DrizzleDB) => {
-      const [updated] = await tx
-        .update(purchaseDebitNotes)
-        .set({
-          stateCode: PURCHASE_DEBIT_NOTE_STATE.POSTED,
-          modifiedOn: new Date(),
-        })
-        .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
-        .returning();
+      const updated = await this.changeDebitNoteStateInternal(
+        debitNoteId,
+        PURCHASE_DEBIT_NOTE_STATE.POSTED,
+        actor,
+        tx,
+      );
 
       // --- Financial Integration: Post Debit Note GL ---
       const accountingStrategy = getAccountingStrategy(
@@ -229,23 +227,80 @@ export class PurchaseDebitNotesService {
         );
       }
 
-      await emitEvent(tx as any, {
-        aggregateType: AggregateType.PURCHASE_ORDER,
-        aggregateId: po.purchaseOrderId,
-        eventType: EventType.STATUS_CHANGED,
-        payload: {
-          entity: 'debit_note',
-          entityId: debitNoteId,
-          debitNoteNumber: dn.debitNoteNumber,
-          from: dn.stateCode,
-          to: PURCHASE_DEBIT_NOTE_STATE.POSTED,
-        },
-        actor,
-      });
-
       return updated;
     });
 
     return result;
+  }
+
+  async changeDebitNoteState(
+    debitNoteId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    if (newState === PURCHASE_DEBIT_NOTE_STATE.POSTED) {
+      return this.postDebitNote(debitNoteId, actor);
+    }
+    return this.changeDebitNoteStateInternal(debitNoteId, newState, actor, tx);
+  }
+
+  private async changeDebitNoteStateInternal(
+    debitNoteId: string,
+    newState: string,
+    actor: string,
+    tx?: DrizzleDB,
+  ) {
+    if (!VALID_DN_STATES.includes(newState)) {
+      throw new BadRequestException(`Invalid debit note state: '${newState}'`);
+    }
+
+    const db = tx || this.db;
+    const [existing] = await db
+      .select({
+        stateCode: purchaseDebitNotes.stateCode,
+        debitNoteNumber: purchaseDebitNotes.debitNoteNumber,
+        purchaseOrderId: purchaseDebitNotes.purchaseOrderId,
+      })
+      .from(purchaseDebitNotes)
+      .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
+      .limit(1);
+
+    if (!existing) {
+      throw new NotFoundException(`Debit Note ${debitNoteId} not found`);
+    }
+
+    const allowed = PURCHASE_DEBIT_NOTE_TRANSITIONS[existing.stateCode];
+    if (!allowed || !allowed.includes(newState)) {
+      throw new BadRequestException(
+        `Cannot transition debit note from '${existing.stateCode}' to '${newState}'. Allowed transitions: ${allowed?.join(', ') || 'none'}`,
+      );
+    }
+
+    const [updated] = await db
+      .update(purchaseDebitNotes)
+      .set({
+        // eslint-disable-next-line no-restricted-syntax
+        stateCode: newState as any,
+        modifiedOn: new Date(),
+      })
+      .where(eq(purchaseDebitNotes.debitNoteId, debitNoteId))
+      .returning();
+
+    await emitEvent(db as any, {
+      aggregateType: AggregateType.PURCHASE_ORDER,
+      aggregateId: existing.purchaseOrderId,
+      eventType: EventType.STATUS_CHANGED,
+      payload: {
+        entity: 'debit_note',
+        entityId: debitNoteId,
+        debitNoteNumber: existing.debitNoteNumber,
+        from: existing.stateCode,
+        to: newState,
+      },
+      actor,
+    });
+
+    return updated;
   }
 }

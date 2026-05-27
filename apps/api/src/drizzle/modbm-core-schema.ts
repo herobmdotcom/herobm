@@ -987,7 +987,7 @@ export const zones = modbmCore.table(
 // ---------------------------------------------------------------------------
 // bins  (Physical storage locations within a location)
 // ---------------------------------------------------------------------------
-export const binTypeEnum = pgEnum('bin_type_enum', [
+export const binTypeEnum = modbmCore.enum('bin_type_enum', [
   'storage',
   'pick',
   'bulk',
@@ -1317,12 +1317,12 @@ export const discountMatrix = modbmCore.table(
 );
 
 // ---------------------------------------------------------------------------
-export const productTypeEnum = pgEnum('product_type', [
+export const productTypeEnum = modbmCore.enum('product_type', [
   'inventory',
   'non-stock',
   'service',
 ]);
-export const productStructureEnum = pgEnum('product_structure', [
+export const productStructureEnum = modbmCore.enum('product_structure', [
   'standard',
   'kit',
 ]);
@@ -2065,6 +2065,7 @@ export const appSettings = modbmCore.table('app_settings', {
     .notNull()
     .default('per_shipment'), // 'per_shipment' | 'final_invoice'
   creditLimitBehavior: text('credit_limit_behavior').notNull().default('soft'), // 'hard' (block creation) | 'soft' (allow draft, block dispatch)
+  apiRateLimit: numeric('api_rate_limit').notNull().default('1000'),
   setupCompletedAt: timestamp('setup_completed_at', { withTimezone: true }),
 });
 
@@ -2195,3 +2196,28 @@ export const dashboardTimeline = modbmCore
     createdOn: timestamp('created_on', { withTimezone: true }),
   })
   .existing();
+
+// ---------------------------------------------------------------------------
+// api_keys (Headless integrations)
+// ---------------------------------------------------------------------------
+export const apiKeys = modbmCore.table('api_keys', {
+  apiKeyId: uuid('api_key_id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  keyHash: text('key_hash').notNull(),
+  prefix: text('prefix').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdBy: text('created_by').notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});
+
+// ---------------------------------------------------------------------------
+// webhooks (Event dispatch targets)
+// ---------------------------------------------------------------------------
+export const webhooks = modbmCore.table('webhooks', {
+  webhookId: uuid('webhook_id').primaryKey().defaultRandom(),
+  targetUrl: text('target_url').notNull(),
+  eventTypes: jsonb('event_types').notNull(),
+  secretKey: text('secret_key').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdOn: timestamp('created_on', { withTimezone: true }).defaultNow(),
+});

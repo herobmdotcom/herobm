@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '../../lib/api';
+import * as api from '@modbm/sdk';
 import { formatAmount } from '../../lib/currency';
 import { MATCH_STATUS } from '@modbm/shared';
 
@@ -84,8 +84,9 @@ export default function POMatchingPanel({
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    apiFetch<PendingPOLine[]>(`/api/purchase-orders/pending-lines?vendorId=${vendorId}`)
+    api.purchaseOrdersControllerFindPendingLines({ vendorId } as any)
       .then((data) => {
+
         const lines = Array.isArray(data) ? data : (data as any).data || [];
         setRawLines(lines);
         // Auto-expand all POs if 3 or fewer, otherwise expand the first

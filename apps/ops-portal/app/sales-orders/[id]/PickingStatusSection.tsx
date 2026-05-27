@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 import Link from 'next/link';
+import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 /**
  * PickingStatusSection — Read-only picking status for the Sales Order detail page.
@@ -75,73 +76,108 @@ export default function PickingStatusSection({ pickingSummary }: Props) {
                 </div>
             </div>
 
-            <table className="table-lines">
-                <thead>
-                    <tr>
-                        <th>{tPicking('columns.product')}</th>
-                        <th style={{ textAlign: 'right' }}>{tPicking('columns.ordered')}</th>
-                        <th style={{ textAlign: 'right' }}>{tPicking('columns.picked')}</th>
-                        <th style={{ textAlign: 'right' }}>{tPicking('columns.remaining')}</th>
-                        <th style={{ textAlign: 'right' }}>{tPicking('columns.onHand')}</th>
-                        <th style={{ textAlign: 'center' }}>{tPicking('columns.status')}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {physicalLines.map(line => {
-                        const remaining = parseFloat(line.remaining);
-                        return (
-                            <tr key={line.salesOrderLineId} className={line.isFullyPicked ? 'opacity-60' : ''}>
-                                <td>
-                                    <div className="font-bold text-sm">
-                                        {line.productId ? (
-                                            <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                                                {line.productNumber}
-                                            </Link>
-                                        ) : line.productNumber}
-                                    </div>
-                                    <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {parseFloat(line.quantity).toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {parseFloat(line.quantityPicked).toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+            <DataTable
+                data={physicalLines}
+                keyExtractor={(line) => line.salesOrderLineId}
+                columns={[
+                    { header: tPicking('columns.product') },
+                    { header: tPicking('columns.ordered'), align: 'right' },
+                    { header: tPicking('columns.picked'), align: 'right' },
+                    { header: tPicking('columns.remaining'), align: 'right' },
+                    { header: tPicking('columns.onHand'), align: 'right' },
+                    { header: tPicking('columns.status'), align: 'center' }
+                ]}
+                emptyMessage={tPicking('noPhysicalLines')}
+                renderCustomRow={(line) => {
+                    const remaining = parseFloat(line.remaining);
+                    return (
+                        <tr key={line.salesOrderLineId} className={line.isFullyPicked ? 'opacity-60' : ''}>
+                            <td>
+                                <div className="font-bold text-sm">
+                                    {line.productId ? (
+                                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                            {line.productNumber}
+                                        </Link>
+                                    ) : line.productNumber}
+                                </div>
+                                <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {parseFloat(line.quantity).toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {parseFloat(line.quantityPicked).toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                <span className={remaining > 0 ? 'font-semibold text-[var(--warning)]' : 'text-[var(--text-muted)]'}>
+                                    {remaining.toLocaleString()}
+                                </span>
+                            </td>
+                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                {parseFloat(line.onHand).toLocaleString()}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                                {line.isFullyPicked ? (
+                                    <>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                                        <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                        {/* eslint-enable i18next/no-literal-string */}
+                                    </>
+                                ) : remaining > 0 ? (
+                                    <>
+                                        {/* eslint-disable i18next/no-literal-string */}
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                        {/* eslint-enable i18next/no-literal-string */}
+                                    </>
+                                ) : null}
+                            </td>
+                        </tr>
+                    );
+                }}
+                mobileCard={(line) => {
+                    const remaining = parseFloat(line.remaining);
+                    return (
+                        <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${line.isFullyPicked ? 'opacity-60' : ''}`}>
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                                <div className="font-semibold text-sm text-[var(--accent)]">
+                                    {line.productId ? (
+                                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                            {line.productNumber}
+                                        </Link>
+                                    ) : line.productNumber}
+                                </div>
+                                <div>
+                                    {line.isFullyPicked ? (
+                                        <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                                    ) : remaining > 0 ? (
+                                        <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
+                                    ) : null}
+                                </div>
+                            </div>
+                            <div className="text-sm text-slate-600 font-medium mb-3">
+                                {line.productDescription}
+                            </div>
+                            
+                            <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                <MobileCardField label={tPicking('columns.ordered')} value={
+                                    <span className="font-semibold">{parseFloat(line.quantity).toLocaleString()}</span>
+                                } />
+                                <MobileCardField label={tPicking('columns.picked')} value={
+                                    <span>{parseFloat(line.quantityPicked).toLocaleString()}</span>
+                                } />
+                                <MobileCardField label={tPicking('columns.remaining')} value={
                                     <span className={remaining > 0 ? 'font-semibold text-[var(--warning)]' : 'text-[var(--text-muted)]'}>
                                         {remaining.toLocaleString()}
                                     </span>
-                                </td>
-                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                    {parseFloat(line.onHand).toLocaleString()}
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    {line.isFullyPicked ? (
-                                        <>
-                                            {/* eslint-disable i18next/no-literal-string */}
-                                            <span className="material-symbols-outlined text-[var(--success)] text-base" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                                            {/* eslint-enable i18next/no-literal-string */}
-                                        </>
-                                    ) : remaining > 0 ? (
-                                        <>
-                                            {/* eslint-disable i18next/no-literal-string */}
-                                            <span className="material-symbols-outlined text-[var(--warning)] text-base">pending</span>
-                                            {/* eslint-enable i18next/no-literal-string */}
-                                        </>
-                                    ) : null}
-                                </td>
-                            </tr>
-                        );
-                    })}
-                    {physicalLines.length === 0 && (
-                        <tr>
-                            <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                {tPicking('noPhysicalLines')}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+                                } />
+                                <MobileCardField label={tPicking('columns.onHand')} value={
+                                    <span>{parseFloat(line.onHand).toLocaleString()}</span>
+                                } />
+                            </div>
+                        </div>
+                    );
+                }}
+            />
         </div>
     );
 }

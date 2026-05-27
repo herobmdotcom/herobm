@@ -1,0 +1,16 @@
+{
+  "name": "@modbm/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "orval"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "orval": "^7.3.0",
+    "typescript": "^5.0.0"
+  }
+}

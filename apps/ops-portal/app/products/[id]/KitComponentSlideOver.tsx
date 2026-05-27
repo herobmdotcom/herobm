@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
-import { apiMutate, apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 
 interface KitComponentSlideOverProps {
@@ -48,9 +48,9 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
         });
       } else {
         // Fetch existing components to determine next sequence number
-        apiFetch<{ data: any[] }>(`/api/products/${productId}/components`)
-          .then((res) => {
-            const maxSeq = res.data?.reduce((max, c) => Math.max(max, c.sequenceNumber || 0), 0) || 0;
+        api.productsControllerGetComponents(productId)
+          .then((res: any) => {
+            const maxSeq = res.data?.reduce((max: number, c: any) => Math.max(max, c.sequenceNumber || 0), 0) || 0;
             setDto({
               childProductId: '',
               childProductName: '',
@@ -84,21 +84,21 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
     setSaving(true);
     try {
       if (componentId) {
-        await apiMutate(`/api/products/${productId}/components/${componentId}`, 'PATCH', {
+        await api.productsControllerUpdateComponent(productId, componentId, {
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
           fractionalBehavior: dto.fractionalBehavior,
-        });
+        } as any);
         toast.success(t('toast.componentUpdated'));
       } else {
-        await apiMutate(`/api/products/${productId}/components`, 'POST', {
+        await api.productsControllerAddComponent(productId, {
           childProductId: dto.childProductId,
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
           fractionalBehavior: dto.fractionalBehavior,
-        });
+        } as any);
         toast.success(t('toast.componentAdded'));
       }
       onSaved();

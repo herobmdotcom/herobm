@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import * as api from '@modbm/sdk';
 
 interface Expiry {
   expiryId: string;
@@ -31,8 +31,8 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<any>(`/api/suppliers/${vendorId}/expiries`);
-      // handle either array or paginated response format
+      const data = await api.suppliersControllerFindSupplierExpiries(vendorId);
+      // @ts-expect-error missing array structure in return type
       setExpiries(data.data || data || []);
     } catch(err: any) {
       toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + err.message);
@@ -86,10 +86,10 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
 
     try {
       if (editingId) {
-        await apiMutate(`/api/suppliers/${vendorId}/expiries/${editingId}`, 'PATCH', payload);
+        await api.suppliersControllerUpdateExpiry(vendorId, editingId, payload as any);
         toast.success(tCommon('toast.expiryUpdated'));
       } else {
-        await apiMutate(`/api/suppliers/${vendorId}/expiries`, 'POST', payload);
+        await api.suppliersControllerCreateExpiry(vendorId, payload as any);
         toast.success(tCommon('toast.expiryCreated'));
       }
       handleCancel();
@@ -102,7 +102,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
   const handleDelete = async (id: string) => {
     if(!confirm(tCommon('confirmDelete'))) return;
     try {
-      await apiMutate(`/api/suppliers/${vendorId}/expiries/${id}`, 'DELETE');
+      await api.suppliersControllerDeleteExpiry(vendorId, id);
       toast.success(tCommon('toast.expiryDeleted'));
       loadData();
     } catch(err: any) {

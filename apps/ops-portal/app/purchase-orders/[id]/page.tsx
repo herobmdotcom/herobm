@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { calculateAvailableQuantity, PURCHASE_ORDER_STATE } from '@modbm/shared';
@@ -15,6 +15,7 @@ import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import PageNav from '@/components/shared/PageNav';
 import LocationSelect from '@/components/shared/LocationSelect';
+import { DataTable, MobileCardField, DataTableColumn } from '@/components/shared/DataTable';
 
 import type { TaxCategory } from './types';
 import { getTaxLabel } from './types';
@@ -89,6 +90,222 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   };
   const visibleSections = Object.values(sections).filter(s => s.show);
 
+  const lineColumns: DataTableColumn<any>[] = useMemo(() => [
+    {
+        header: tPurchase('columns.lineNumber'), width: 40,
+        render: (line: any) => <span className="text-slate-500 font-medium">#{line.lineNumber}</span>,
+        mobileCard: (line: any) => null
+    },
+    {
+        header: tPurchase('columns.product'),
+        render: (line: any) => (
+            <div className="font-semibold text-sm">
+                {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
+                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                        {line.productNumber || line.productId?.substring(0, 8)}
+                    </Link>
+                ) : (
+                    line.productNumber || line.productId?.substring(0, 8) || '—'
+                )}
+            </div>
+        )
+    },
+    {
+        header: tPurchase('columns.description'),
+        render: (line: any) => (
+            (!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
+                <input
+                    className="input w-full text-sm h-8"
+                    defaultValue={line.productDescription || ''}
+                    key={`desc-${line.purchaseOrderLineId}-${line.productDescription}`}
+                    onBlur={(e) => {
+                        if (e.target.value !== (line.productDescription || '')) {
+                            updateLine(line.purchaseOrderLineId, 'productDescription', e.target.value);
+                        }
+                    }}
+                    placeholder="Custom description..."
+                />
+            ) : (
+                <span className="text-sm">{line.productDescription || '—'}</span>
+            )
+        )
+    },
+    {
+        header: tPurchase('columns.qty'), width: 90, align: 'right',
+        render: (line: any) => (
+            isLinesEditable ? (
+                <input
+                    className="input text-right w-full h-8 text-sm"
+                    type="number"
+                    min="0"
+                    step="1"
+                    defaultValue={line.quantity}
+                    key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
+                    onBlur={(e) => {
+                        if (e.target.value !== line.quantity) {
+                            updateLine(line.purchaseOrderLineId, 'quantity', e.target.value);
+                        }
+                    }}
+                />
+            ) : <span className="text-sm tabular-nums">{line.quantity}</span>
+        ),
+        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.qty')} value={
+            isLinesEditable ? defaultRender : <span className="text-sm">{line.quantity} {line.unitOfMeasure || line.baseUom || 'EA'}</span>
+        } />
+    },
+    {
+        header: tPurchase('columns.uom'), width: 80, align: 'right',
+        render: (line: any) => {
+            if (!isLinesEditable) return <span className="text-sm tabular-nums">{line.unitOfMeasure || line.baseUom || 'EA'}</span>;
+            const uoms: ProductUom[] = line.productUoms || [];
+            const defaultUom = line.baseUom || 'EA';
+            const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
+            return (
+                <select
+                    className="input w-full h-8 text-sm text-right"
+                    value={line.unitOfMeasure || defaultUom}
+                    onChange={(e) => {
+                        const newVal = e.target.value;
+                        const oldVal = line.unitOfMeasure || defaultUom;
+                        if (newVal !== oldVal) {
+                            const oldO = selectOptions.find(o => o.uomCode === oldVal);
+                            const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
+                            const newO = selectOptions.find(o => o.uomCode === newVal);
+                            const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
+                            const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
+                            updateLineFields(line.purchaseOrderLineId, {
+                                unitOfMeasure: newVal,
+                                pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
+                            });
+                        }
+                    }}
+                >
+                    {selectOptions.map(o => (
+                        <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
+                    ))}
+                </select>
+            );
+        },
+        mobileCard: () => null
+    },
+    {
+        header: tPurchase('columns.unitPrice'), width: 110, align: 'right',
+        render: (line: any) => (
+            isLinesEditable ? (
+                <input
+                    className="input text-right w-full h-8 text-sm tabular-nums"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
+                    key={`price-${line.purchaseOrderLineId}-${line.pricePerUnit}`}
+                    onBlur={(e) => {
+                        const val = parseFloat(e.target.value);
+                        const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
+                        e.target.value = formatted;
+                        if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
+                            updateLine(line.purchaseOrderLineId, 'pricePerUnit', formatted);
+                        }
+                    }}
+                />
+            ) : <span className="text-sm tabular-nums">{formatAmount(parseFloat(line.pricePerUnit || '0'), order?.currencyCode || 'EUR')}</span>
+        ),
+        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
+    },
+    {
+        header: tPurchase('columns.discountPct' as any), width: 80, align: 'right',
+        render: (line: any) => (
+            isLinesEditable ? (
+                <input
+                    className="input text-right w-full h-8 text-sm tabular-nums"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    defaultValue={line.discountPercentage}
+                    key={`disc-${line.purchaseOrderLineId}-${line.discountPercentage}`}
+                    onBlur={(e) => {
+                        if (e.target.value !== line.discountPercentage) {
+                            updateLine(line.purchaseOrderLineId, 'discountPercentage', e.target.value);
+                        }
+                    }}
+                />
+            ) : <span className="text-sm tabular-nums">{parseFloat(line.discountPercentage || '0').toFixed(1)}%</span>
+        ),
+        mobileCard: (line: any, defaultRender: any) => (
+            isLinesEditable ? (
+                <MobileCardField label={tPurchase('columns.discountPct' as any)} value={defaultRender} />
+            ) : null
+        )
+    },
+    {
+        header: tPurchase('columns.tax' as any), width: 110, align: 'right',
+        render: (line: any) => (
+            isLinesEditable ? (
+                <select
+                    className="input w-full h-8 text-sm text-right"
+                    value={line.taxCategoryId || ''}
+                    onChange={(e) => updateLine(line.purchaseOrderLineId, 'taxCategoryId', e.target.value)}
+                >
+                    {taxCategories.map((c) => (
+                        <option key={c.taxCategoryId} value={c.taxCategoryId}>
+                            <TaxLabel category={c} />
+                        </option>
+                    ))}
+                </select>
+            ) : (
+                <span className="text-sm tabular-nums text-right block">
+                    {(() => {
+                        const c = taxCategories.find((cat) => cat.taxCategoryId === line.taxCategoryId);
+                        if (c) return <TaxLabel category={c} />;
+                        const amt = parseFloat(line.amount || '0');
+                        const tax = parseFloat(line.tax || '0');
+                        if (amt > 0 && tax > 0) {
+                            const pct = (tax / amt) * 100;
+                            return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
+                        }
+                        if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
+                        return '—';
+                    })()}
+                </span>
+            )
+        ),
+        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.tax' as any)} value={defaultRender} />
+    },
+    {
+        header: tPurchase('columns.amount'), width: 110, align: 'right',
+        render: (line: any) => (
+            <span className="font-bold tabular-nums">
+                {formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}
+            </span>
+        ),
+        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.amount')} value={
+            <span className="font-bold text-[var(--accent)] text-base">{formatAmount(parseFloat(line.amount || '0'), order?.currencyCode || 'EUR')}</span>
+        } />
+    },
+    ...(isLinesEditable ? [{
+        header: '', width: 50,
+        render: (line: any) => (
+            <button
+                className="btn btn-danger btn-sm"
+                onClick={() => removeLine(line.purchaseOrderLineId)}
+                title="Remove line"
+            >
+                <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
+            </button>
+        ),
+        mobileCard: (line: any) => (
+            <div className="flex justify-end mt-2">
+                <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => removeLine(line.purchaseOrderLineId)}
+                >
+                    <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} /> {tCommon('buttons.remove')}
+                </button>
+            </div>
+        )
+    }] : [])
+  ], [tPurchase, isLinesEditable, order?.currencyCode, taxCategories, updateLine, removeLine, updateLineFields, tCommon]);
 
   return (
     <>
@@ -106,9 +323,9 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             }}
             isSaving={saving}
             badges={<StateBadge state={order.stateCode as ValidState} />}
+            nav={<PageNav sections={visibleSections} />}
             actions={
               <>
-                <PageNav sections={visibleSections} />
                 {headerDirty && isHeaderEditable && (
                   <button className="btn btn-primary btn-sm" onClick={saveHeader} disabled={saving}>
                     {tPurchase('buttons.save')}
@@ -169,7 +386,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 {copying ? tCommon('copying') : tPurchase('buttons.copyOrder')}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     {tPurchase('labels.supplier')}
@@ -336,228 +553,17 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           </div>
 
           {activeTab === 'lines' ? (
-            <table className="table-lines">
-              <thead>
-                <tr>
-                  <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
-                  <th>{tPurchase('columns.product')}</th>
-                  <th>{tPurchase('columns.description')}</th>
-                  <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.qty')}</th>
-                  <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.uom')}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.unitPrice')}</th>
-                  <th style={{ width: 80, textAlign: 'right' }}>{tPurchase('columns.discountPct' as any)}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.tax' as any)}</th>
-                  <th style={{ width: 110, textAlign: 'right' }}>{tPurchase('columns.amount')}</th>
-                  {isLinesEditable && <th style={{ width: 50 }}></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {order.lines.map((line) => (
-                  <tr key={line.purchaseOrderLineId}>
-                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                      {line.productId && line.productId !== '00000000-0000-0000-0000-000000000000' ? (
-                        <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                          {line.productNumber || line.productId?.substring(0, 8)}
-                        </Link>
-                      ) : (
-                        line.productNumber || line.productId?.substring(0, 8) || '—'
-                      )}
-                    </td>
-                    <td>
-                      {(!line.productId || line.productId === '00000000-0000-0000-0000-000000000000') && isLinesEditable ? (
-                        <input
-                          className="input"
-                          style={{ width: '100%', fontSize: 13 }}
-                          defaultValue={line.productDescription || ''}
-                          key={`desc-${line.purchaseOrderLineId}-${line.productDescription}`}
-                          onBlur={(e) => {
-                            if (e.target.value !== (line.productDescription || '')) {
-                              updateLine(line.purchaseOrderLineId, 'productDescription', e.target.value);
-                            }
-                          }}
-                          placeholder="Custom description..."
-                        />
-                      ) : (
-                        line.productDescription || '—'
-                      )}
-                    </td>
-                    {isLinesEditable ? (
-                      <>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            step="1"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={line.quantity}
-                            key={`qty-${line.purchaseOrderLineId}-${line.quantity}`}
-                            onBlur={(e) => {
-                              if (e.target.value !== line.quantity) {
-                                updateLine(line.purchaseOrderLineId, 'quantity', e.target.value);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {(() => {
-                            const uoms: ProductUom[] = line.productUoms || [];
-                            const defaultUom = line.baseUom || 'EA';
-                            const selectOptions = uoms.length > 0 ? uoms : [{ uomCode: defaultUom, ratio: 1 }];
-                            return (
-                              <select
-                                className="input"
-                                style={{ width: '100%', fontSize: 13, textAlign: 'right' }}
-                                value={line.unitOfMeasure || defaultUom}
-                                onChange={(e) => {
-                                  const newVal = e.target.value;
-                                  const oldVal = line.unitOfMeasure || defaultUom;
-                                  if (newVal !== oldVal) {
-                                    const oldO = selectOptions.find(o => o.uomCode === oldVal);
-                                    const oldRatio = typeof oldO?.ratio === 'string' ? parseFloat(oldO.ratio) : (oldO?.ratio || 1);
-    
-                                    const newO = selectOptions.find(o => o.uomCode === newVal);
-                                    const newRatio = typeof newO?.ratio === 'string' ? parseFloat(newO.ratio) : (newO?.ratio || 1);
-    
-                                    const newPrice = calculateUomPriceAdjustment(line.pricePerUnit || 0, oldRatio, newRatio);
-                                    updateLineFields(line.purchaseOrderLineId, {
-                                      unitOfMeasure: newVal,
-                                      pricePerUnit: isNaN(newPrice) ? '0.00' : newPrice.toFixed(2)
-                                    });
-                                  }
-                                }}
-                              >
-                                {selectOptions.map(o => (
-                                  <option key={o.uomCode} value={o.uomCode}>{o.uomCode}</option>
-                                ))}
-                              </select>
-                            );
-                          })()}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={parseFloat(line.pricePerUnit || '0').toFixed(2)}
-                            key={`price-${line.purchaseOrderLineId}-${line.pricePerUnit}`}
-                            onBlur={(e) => {
-                              const val = parseFloat(e.target.value);
-                              const formatted = isNaN(val) ? '0.00' : val.toFixed(2);
-                              e.target.value = formatted;
-                              if (formatted !== parseFloat(line.pricePerUnit || '0').toFixed(2)) {
-                                updateLine(line.purchaseOrderLineId, 'pricePerUnit', formatted);
-                              }
-                            }}
-                          />
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            style={{ width: '100%', textAlign: 'right' }}
-                            defaultValue={line.discountPercentage}
-                            key={`disc-${line.purchaseOrderLineId}-${line.discountPercentage}`}
-                            onBlur={(e) => {
-                              if (e.target.value !== line.discountPercentage) {
-                                updateLine(line.purchaseOrderLineId, 'discountPercentage', e.target.value);
-                              }
-                            }}
-                          />
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {line.quantity}
-                        </td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {/* eslint-disable-next-line no-restricted-syntax */}
-                          {line.unitOfMeasure || line.baseUom || 'EA'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {formatAmount(parseFloat(line.pricePerUnit || '0'), order.currencyCode || 'EUR')}
-                        </td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                          {parseFloat(line.discountPercentage || '0').toFixed(1)}%
-                        </td>
-                      </>
-                    )}
-                    {isLinesEditable ? (
-                      <td style={{ textAlign: 'right' }}>
-                        <select
-                          className="input"
-                          style={{ width: '100%', fontSize: 12, textAlign: 'right' }}
-                          value={line.taxCategoryId || ''}
-                          onChange={(e) => updateLine(line.purchaseOrderLineId, 'taxCategoryId', e.target.value)}
-                        >
-                          {taxCategories.map((c) => (
-                            <option key={c.taxCategoryId} value={c.taxCategoryId}>
-                              <TaxLabel category={c} />
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                    ) : (
-                      <td style={{ textAlign: 'right', fontSize: 12 }}>
-                        {(() => {
-                          const c = taxCategories.find((c) => c.taxCategoryId === line.taxCategoryId);
-                          if (c) return <TaxLabel category={c} />;
-                          // Legacy derivation
-                          const amt = parseFloat(line.amount || '0');
-                          const tax = parseFloat(line.tax || '0');
-                          if (amt > 0 && tax > 0) {
-                            const pct = (tax / amt) * 100;
-                            return `${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%`;
-                          }
-                          if (amt > 0 && tax === 0) return tCommon('taxLabels.exempt');
-                          return '—';
-                        })()}
-                      </td>
-                    )}
-                    <td
-                      style={{
-                        textAlign: 'right',
-                        fontWeight: 600,
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {formatAmount(parseFloat(line.amount || '0'), order.currencyCode || 'EUR')}
-                    </td>
-                    {isLinesEditable && (
-                      <td>
-                        <button
-                          className="btn btn-danger btn-sm"
-                          onClick={() => removeLine(line.purchaseOrderLineId)}
-                          title="Remove line"
-                        >
-                          <span dangerouslySetInnerHTML={{ __html: '&#10005;' }} />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-                {order.lines.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={isLinesEditable ? 9 : 8}
-                      style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}
-                    >
-                      {tPurchase('noLineItems')}
-                    </td>
-                  </tr>
-                )}
-                {order.lines.length > 0 && (() => {
+            <DataTable
+              data={order.lines}
+              keyExtractor={(line) => line.purchaseOrderLineId}
+              columns={lineColumns}
+              emptyMessage={tPurchase('noLineItems')}
+              footer={
+                order.lines.length > 0 ? (() => {
                   const taxPct = subtotal > 0 ? (totalTax / subtotal) * 100 : 0;
                   return (
                     <>
-                      <tr style={{ borderTop: '2px solid var(--border)' }}>
+                      <tr className="hidden lg:table-row" style={{ borderTop: '2px solid var(--border)' }}>
                         <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('subtotal')}
                         </td>
@@ -566,7 +572,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </td>
                         {isLinesEditable && <td></td>}
                       </tr>
-                      <tr>
+                      <tr className="hidden lg:table-row">
                         <td colSpan={8} style={{ textAlign: 'right', fontWeight: 600, color: 'var(--text-muted)' }}>
                           {tCommon('tax')}{taxPct > 0 ? ` (${taxPct % 1 === 0 ? taxPct.toFixed(0) : taxPct.toFixed(1)}%)` : ''}
                         </td>
@@ -575,7 +581,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </td>
                         {isLinesEditable && <td></td>}
                       </tr>
-                      <tr style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
+                      <tr className="hidden lg:table-row" style={{ backgroundColor: 'rgba(59,130,246,0.02)' }}>
                         <td colSpan={8} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>
                           {tCommon('total')}
                         </td>
@@ -584,34 +590,48 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </td>
                         {isLinesEditable && <td></td>}
                       </tr>
+                      
+                      {/* Mobile summary */}
+                      <tr className="lg:hidden">
+                          <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('subtotal')}</td>
+                          <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, order.currencyCode || 'EUR')}</td>
+                      </tr>
+                      <tr className="lg:hidden">
+                          <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tCommon('tax')}</td>
+                          <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(totalTax, order.currencyCode || 'EUR')}</td>
+                      </tr>
+                      <tr className="lg:hidden">
+                          <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tCommon('total')}</td>
+                          <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{formatAmount(subtotal + totalTax, order.currencyCode || 'EUR')}</td>
+                      </tr>
                     </>
                   );
-                })()}
-              </tbody>
-            </table>
+                })() : null
+              }
+            />
           ) : activeTab === 'availability' ? (
             /* Availability tab */
             inventoryLoading ? (
               <p className="text-sm" style={{ color: 'var(--text-muted)', padding: '20px 0', textAlign: 'center' }}>{tPurchase('loadingInventory')}</p>
             ) : (
-              <table className="table-lines">
-                <thead>
-                  <tr>
-                    <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
-                    <th>{tPurchase('columns.product')}</th>
-                    <th>{tPurchase('columns.description')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.thisOrder')}</th>
-                    <th style={{ width: 100, textAlign: 'right' }}>{tPurchase('columns.location')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.onHand')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.committed')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.reserved')}</th>
-                    <th style={{ width: 90, textAlign: 'right' }}>{tPurchase('columns.available')}</th>
-                    <th style={{ width: 70, textAlign: 'center' }}>{tPurchase('columns.status')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.lines.map((line) => {
+              <DataTable
+                data={order.lines}
+                keyExtractor={(line) => line.purchaseOrderLineId}
+                columns={[
+                  { header: tPurchase('columns.lineNumber'), width: 40 },
+                  { header: tPurchase('columns.product') },
+                  { header: tPurchase('columns.description') },
+                  { header: tPurchase('columns.thisOrder'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.location'), width: 100, align: 'right' },
+                  { header: tPurchase('columns.onHand'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.committed'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.ordered'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.reserved'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.available'), width: 90, align: 'right' },
+                  { header: tPurchase('columns.status'), width: 70, align: 'center' }
+                ]}
+                emptyMessage={tPurchase('noLineItemsShort')}
+                renderCustomRow={(line) => {
                     const lineInventory = inventoryData.filter(
                       (inv) => inv.productId === line.productId,
                     );
@@ -703,69 +723,151 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                         </tr>
                       );
                     });
-                  })}
-                  {order.lines.length === 0 && (
-                    <tr>
-                      <td colSpan={10} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                        {tPurchase('noLineItemsShort')}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                }}
+                mobileCard={(line) => {
+                    const lineInventory = inventoryData.filter(
+                      (inv) => inv.productId === line.productId,
+                    );
+                    const totalAvail = lineInventory.reduce(
+                      (sum, inv) => sum + calculateAvailableQuantity(inv.quantityOnHand, inv.quantityCommitted, inv.quantityReserved), 0,
+                    );
+                    const orderedQty = parseFloat(line.quantity || '0');
+                    const canFulfil = totalAvail >= orderedQty;
+
+                    return (
+                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                            <div className="flex justify-between items-start gap-2 mb-2">
+                                <div className="font-semibold text-sm text-[var(--accent)]">
+                                    {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                </div>
+                                <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                            </div>
+                            <div className="text-sm text-slate-600 font-medium mb-3">
+                                {line.productDescription || '—'}
+                            </div>
+                            
+                            {lineInventory.length === 0 ? (
+                                <div className="text-sm text-amber-600 italic text-center py-2 bg-amber-50 rounded border border-amber-100">{tPurchase('noInventoryData')} ⚠</div>
+                            ) : (
+                                <>
+                                    <div className="flex justify-between items-center py-2 border-t border-slate-100">
+                                        <span className="text-xs font-medium text-slate-500">{tPurchase('columns.thisOrder')}</span>
+                                        <span className="text-sm font-semibold">{line.quantity}</span>
+                                    </div>
+                                    
+                                    <div className="mt-3 flex flex-col gap-2">
+                                        <span className="text-xs font-medium text-slate-500">{tPurchase('columns.location')}:</span>
+                                        {lineInventory.map((inv) => {
+                                            const avail = calculateAvailableQuantity(inv.quantityOnHand, inv.quantityCommitted, inv.quantityReserved);
+                                            return (
+                                                <div key={inv.inventoryLevelId} className="bg-slate-50 rounded p-2 text-xs flex flex-col gap-1 border border-slate-100">
+                                                    <div className="flex justify-between font-medium">
+                                                        <span>{inv.locationName || inv.locationNo}</span>
+                                                        <span className={avail > 0 ? 'text-emerald-600' : 'text-rose-600'}>{avail} avail</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-slate-500">
+                                                        <span>{parseFloat(inv.quantityOnHand || '0')} on hand</span>
+                                                        <span>{parseFloat(inv.quantityCommitted || '0')} cmt / {parseFloat(inv.quantityOnOrder || '0')} in</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    );
+                }}
+              />
             )
           ) : activeTab === 'status' ? (
             /* Status / Bill Summary tab */
             <div className="overflow-x-auto">
-                <table className="table-lines">
-                    <thead>
-                        <tr>
-                            <th style={{ width: 40 }}>{tPurchase('columns.lineNumber')}</th>
-                            <th>{tPurchase('columns.product')}</th>
-                            <th>{tPurchase('columns.description')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.ordered')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('allocated')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.received')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.billed')}</th>
-                            <th style={{ textAlign: 'right' }}>{tPurchase('columns.remaining')}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(order.lines || []).map(line => {
-                            const ordered = parseFloat(line.quantity || '0');
-                            const received = parseFloat(line.quantityReceived || '0');
-                            const allocated = allocations.reduce((sum, alloc) => {
-                                return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
-                            }, 0);
-                            const billed = invoices.reduce((sum, inv) => {
-                                const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
-                                return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
-                            }, 0);
-                            const remaining = Math.max(0, ordered - billed);
-                            return (
-                                <tr key={line.purchaseOrderLineId}>
-                                    <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
-                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                        {line.productNumber || line.productId?.substring(0, 8) || '—'}
-                                    </td>
-                                    <td>{line.productDescription || '—'}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: allocated > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: allocated > 0 ? 600 : 400 }}>{allocated}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: billed >= received && received > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: billed >= received && received > 0 ? 600 : 400 }}>{billed}</td>
-                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
-                                </tr>
-                            );
-                        })}
-                        {order.lines.length === 0 && (
-                          <tr>
-                            <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>
-                              {tPurchase('noLineItemsShort')}
-                            </td>
+              <DataTable
+                  data={order.lines || []}
+                  keyExtractor={(line) => line.purchaseOrderLineId}
+                  columns={[
+                      { header: tPurchase('columns.lineNumber'), width: 40 },
+                      { header: tPurchase('columns.product') },
+                      { header: tPurchase('columns.description') },
+                      { header: tPurchase('columns.ordered'), align: 'right' },
+                      { header: tPurchase('allocated'), align: 'right' },
+                      { header: tPurchase('columns.received'), align: 'right' },
+                      { header: tPurchase('columns.billed'), align: 'right' },
+                      { header: tPurchase('columns.remaining'), align: 'right' }
+                  ]}
+                  emptyMessage={tPurchase('noLineItemsShort')}
+                  renderCustomRow={(line) => {
+                      const ordered = parseFloat(line.quantity || '0');
+                      const received = parseFloat(line.quantityReceived || '0');
+                      const allocated = allocations.reduce((sum, alloc) => {
+                          return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
+                      }, 0);
+                      const billed = invoices.reduce((sum, inv) => {
+                          const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
+                          return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
+                      }, 0);
+                      const remaining = Math.max(0, ordered - billed);
+                      return (
+                          <tr key={line.purchaseOrderLineId}>
+                              <td style={{ color: 'var(--text-muted)' }}>{line.lineNumber}</td>
+                              <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                  {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                              </td>
+                              <td>{line.productDescription || '—'}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ordered}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: allocated > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: allocated > 0 ? 600 : 400 }}>{allocated}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: received >= ordered && ordered > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: received >= ordered && ordered > 0 ? 600 : 400 }}>{received}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: billed >= received && received > 0 ? 'var(--badge-shipped)' : undefined, fontWeight: billed >= received && received > 0 ? 600 : 400 }}>{billed}</td>
+                              <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: remaining === 0 ? 'var(--text-muted)' : undefined }}>{remaining}</td>
                           </tr>
-                        )}
-                    </tbody>
-                </table>
+                      );
+                  }}
+                  mobileCard={(line) => {
+                      const ordered = parseFloat(line.quantity || '0');
+                      const received = parseFloat(line.quantityReceived || '0');
+                      const allocated = allocations.reduce((sum, alloc) => {
+                          return sum + (alloc.purchaseOrderLineId === line.purchaseOrderLineId ? parseFloat(alloc.quantity) : 0);
+                      }, 0);
+                      const billed = invoices.reduce((sum, inv) => {
+                          const invLine = inv.lines?.find((il: any) => il.purchaseOrderLineId === line.purchaseOrderLineId);
+                          return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
+                      }, 0);
+                      const remaining = Math.max(0, ordered - billed);
+
+                      return (
+                          <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                              <div className="flex justify-between items-start gap-2 mb-2">
+                                  <div className="font-semibold text-sm text-[var(--accent)]">
+                                      {line.productNumber || line.productId?.substring(0, 8) || '—'}
+                                  </div>
+                                  <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{line.lineNumber}</div>
+                              </div>
+                              <div className="text-sm text-slate-600 font-medium mb-3">
+                                  {line.productDescription || '—'}
+                              </div>
+                              
+                              <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                  <MobileCardField label={tPurchase('columns.ordered')} value={
+                                      <span className="font-semibold">{ordered}</span>
+                                  } />
+                                  <MobileCardField label={tPurchase('allocated')} value={
+                                      <span className={allocated > 0 ? 'font-semibold text-emerald-600' : ''}>{allocated}</span>
+                                  } />
+                                  <MobileCardField label={tPurchase('columns.received')} value={
+                                      <span className={received >= ordered && ordered > 0 ? 'font-semibold text-emerald-600' : ''}>{received}</span>
+                                  } />
+                                  <MobileCardField label={tPurchase('columns.billed')} value={
+                                      <span className={billed >= received && received > 0 ? 'font-semibold text-emerald-600' : ''}>{billed}</span>
+                                  } />
+                                  <MobileCardField label={tPurchase('columns.remaining')} value={
+                                      <span className={remaining === 0 ? 'text-slate-400' : 'font-semibold text-amber-600'}>{remaining}</span>
+                                  } />
+                              </div>
+                          </div>
+                      );
+                  }}
+              />
             </div>
           ) : null}
         </div>

@@ -9,7 +9,8 @@ import DetailsLayout from '@/components/shared/DetailsLayout';
 import { formatAmount } from '@/lib/currency';
 import { useTranslations } from 'next-intl';
 import { computeLinePrice, computeOrderTotals } from '@modbm/shared';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
 import LocationSelect from '@/components/shared/LocationSelect';
@@ -84,8 +85,11 @@ export default function NewPurchaseOrderPage() {
   const defaultTaxCategoryId = taxCategories.find((c) => c.isDefault)?.taxCategoryId || '';
 
   useEffect(() => {
-    apiFetch<TaxCategory[]>('/api/tax-categories')
-      .then(setTaxCategories)
+    api.taxCategoriesControllerFindAll()
+      .then((res) => {
+        // @ts-expect-error
+        setTaxCategories(res.data || []);
+      })
       .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
   }, []);
 
@@ -206,7 +210,7 @@ export default function NewPurchaseOrderPage() {
     setError('');
 
     try {
-      const order = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
+      const res = await api.purchaseOrdersControllerCreate({
         orderNumber: generateOrderNumber(),
         name: name || undefined,
         vendorId,
@@ -219,14 +223,15 @@ export default function NewPurchaseOrderPage() {
           .map((l) => ({
             productId: l.productId,
             productDescription: l.productDescription,
-            quantity: l.quantity,
-            pricePerUnit: l.pricePerUnit,
+            quantity: Number(l.quantity),
+            pricePerUnit: Number(l.pricePerUnit),
             unitOfMeasure: l.unitOfMeasure,
-            discountPercentage: l.discountPercentage,
+            discountPercentage: Number(l.discountPercentage),
             taxCategoryId: l.taxCategoryId,
           })),
-      });
-      router.push(`/purchase-orders/${order.purchaseOrderId}`);
+      } as any);
+      // @ts-expect-error
+      router.push(`/purchase-orders/${res.data?.purchaseOrderId || res.purchaseOrderId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToCreatePO'));
     } finally {

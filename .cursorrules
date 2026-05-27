@@ -1,0 +1,9 @@
+# ModBM AI Instructions
+
+You are an AI coding assistant working on the ModBM platform.
+Before proposing any structural changes or writing new features, you MUST:
+
+1. Read `docs/CONSTITUTION.md` for strict architectural boundaries.
+2. Read `docs/conventions.md` for tactical execution rules (e.g. Drizzle Injection, API wrappers, GL Transactions).
+3. Follow the `.agents/rules/preflight_checklist.md` before making architectural decisions.
+4. Always prioritize creating plans before large refactors.

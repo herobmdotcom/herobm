@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 export interface SalesInvoiceDetails {
   invoiceId: string;
@@ -37,11 +38,12 @@ export function useSalesInvoice(id: string) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    apiFetch<SalesInvoiceDetails>(`/api/sales-invoices/${id}`)
-      .then((data) => {
+    // @ts-expect-error missing typings in SDK
+    api.invoiceDetailControllerGetSalesInvoicesGlobal(id)
+      .then((data: any) => {
         setInvoice(data);
       })
-      .catch((err) => {
+      .catch((err: any) => {
         reportError(err, 'useSalesInvoice');
         setError(err);
       })

@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { 
   PURCHASE_INVOICE_TRANSITIONS, 
@@ -93,8 +94,9 @@ export function useSupplierInvoice(id: string) {
 
   const loadInvoice = () => {
     setLoading(true);
-    apiFetch<PurchaseInvoiceDetails>(`/api/purchase-invoices/${id}`)
-      .then((data) => {
+    api.invoiceDetailControllerGetPurchaseBillDetails(id)
+      .then((res: any) => {
+        const data = res.data ? res.data : res;
         setInvoice(data);
         setEditSupplierInvoiceNumber(data.supplierInvoiceNumber || '');
         setEditReceiptFilename(data.receiptFilename || '');
@@ -110,8 +112,8 @@ export function useSupplierInvoice(id: string) {
 
   useEffect(() => {
     loadInvoice();
-    apiFetch<any[]>('/api/gl/accounts')
-      .then(setGlAccounts)
+    api.glControllerGetAccounts({} as any)
+      .then((res: any) => setGlAccounts(res.data || []))
       .catch(err => reportError(err, 'useSupplierInvoice'));
   }, [id, refreshKey]);
 
@@ -133,14 +135,14 @@ export function useSupplierInvoice(id: string) {
     if (!invoice) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}`, 'PATCH', {
+      await api.invoiceDetailControllerUpdateInvoice(id, {
         supplierInvoiceNumber: editSupplierInvoiceNumber || null,
         receiptFilename: editReceiptFilename || null,
         currencyCode: editCurrencyCode || 'EUR',
         taxAmount: editTaxAmount || '0.00',
         notes: editNotes || null,
         vendorId: newVendorId || editVendorId || invoice.vendorId,
-      });
+      } as any);
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to update invoice');
@@ -160,10 +162,10 @@ export function useSupplierInvoice(id: string) {
     }
 
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/state`, 'PATCH', { 
+      await api.invoiceDetailControllerChangeInvoiceState(id, { 
         stateCode: newState,
         discrepanciesAcknowledged: discrepancies.length > 0 ? isAcknowledged : undefined
-      });
+      } as any);
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to change state');
@@ -172,7 +174,7 @@ export function useSupplierInvoice(id: string) {
 
   const handleAutoMatch = async (purchaseOrderId: string) => {
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/auto-match`, 'POST', { purchaseOrderId });
+      await api.invoiceDetailControllerAutoMatchPurchaseOrder(id, { body: JSON.stringify({ purchaseOrderId }) });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to auto-match PO');
@@ -181,7 +183,7 @@ export function useSupplierInvoice(id: string) {
 
   const handlePanelMatch = async (invoiceLineId: string, purchaseOrderLineId: string) => {
     try {
-      await apiMutate(`/api/purchase-invoices/lines/${invoiceLineId}/resolve`, 'POST', { purchaseOrderLineId });
+      await api.invoiceDetailControllerResolveInvoiceLine(invoiceLineId, { body: JSON.stringify({ purchaseOrderLineId }) });
       loadInvoice();
       const nextUnmatched = invoice?.lines.find(
         (l) => l.lineId !== invoiceLineId && l.matchStatus !== MATCH_STATUS.MATCHED
@@ -195,7 +197,7 @@ export function useSupplierInvoice(id: string) {
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
+      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { body: JSON.stringify({ [field]: value }) });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to update line');
@@ -208,7 +210,7 @@ export function useSupplierInvoice(id: string) {
     if (!confirm('Are you sure you want to remove this line?')) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/lines/${lineId}`, 'DELETE');
+      await api.invoiceDetailControllerRemoveInvoiceLine(id, lineId);
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to remove line');
@@ -220,11 +222,11 @@ export function useSupplierInvoice(id: string) {
   const addBlankLine = async () => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/lines`, 'POST', {
+      await api.invoiceDetailControllerAddInvoiceLine(id, { body: JSON.stringify({
         description: '',
         quantityInvoiced: '1',
         pricePerUnit: '0.00'
-      });
+      }) });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to add line');
@@ -236,11 +238,11 @@ export function useSupplierInvoice(id: string) {
   const addRoundingLine = async () => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/lines`, 'POST', {
+      await api.invoiceDetailControllerAddInvoiceLine(id, { body: JSON.stringify({
         description: 'Rounding Adjustment',
         quantityInvoiced: '1',
         pricePerUnit: '0.00'
-      });
+      }) });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to add rounding line');
@@ -252,10 +254,10 @@ export function useSupplierInvoice(id: string) {
   const handleProductSelect = async (lineId: string, product: { productId: string; productNumber: string; name: string }) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-invoices/${id}/lines/${lineId}`, 'PATCH', {
+      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { body: JSON.stringify({
         productId: product.productId,
         description: product.name,
-      });
+      }) });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to set product');
@@ -267,7 +269,7 @@ export function useSupplierInvoice(id: string) {
   const handleUnresolve = async (lineId: string) => {
     if (!confirm('Are you sure you want to change this allocation?')) return;
     try {
-      await apiMutate(`/api/purchase-invoices/lines/${lineId}/unresolve`, 'POST');
+      await api.invoiceDetailControllerUnresolveInvoiceLine(lineId, { method: 'POST' });
       setRefreshKey(k => k + 1);
     } catch (err: any) {
       alert(err.message || 'Failed to unresolve allocation');

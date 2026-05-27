@@ -1,2 +1,0 @@
-ALTER TABLE "modbm_core"."gl_accounts" ADD COLUMN "is_bank_account" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "modbm_core"."gl_accounts" ADD COLUMN "metadata" jsonb DEFAULT '{}'::jsonb;

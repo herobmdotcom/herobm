@@ -6,10 +6,9 @@ import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
-  apiFetch,
-  apiMutate,
   reportError,
 } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import ActivityTimeline from '@/components/shared/ActivityTimeline';
 import StateBadge, { StateName } from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
@@ -75,6 +74,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const t = useTranslations('suppliers');
   const tCommon = useTranslations('common');
   const tSales = useTranslations('salesOrders');
+  const tStates = useTranslations('common.states');
   const tToast = useTranslations('toast');
   const tConfirm = useTranslations('confirm');
   const tSidebar = useTranslations('sidebar');
@@ -116,10 +116,12 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const loadSupplier = async (showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      const [data, termsData] = await Promise.all([
-        apiFetch<Supplier>(`/api/suppliers/${params.id}`),
-        apiFetch<any[]>('/api/settings/trading-terms').catch(() => []),
+      const dataRes: any = await Promise.all([
+        api.suppliersControllerFindOne(params.id),
+        api.tradingTermsControllerFindAll().catch(() => ({ data: [] })),
       ]);
+      const data = dataRes[0]?.data || dataRes[0];
+      const termsData = dataRes[1]?.data || dataRes[1] || [];
       setSupplier(data);
       setAvailableTradingTerms(termsData);
       
@@ -164,7 +166,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setError('');
     try {
       const payloadValue = value === '' ? null : value;
-      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { [field]: payloadValue });
+      await api.suppliersControllerUpdate(params.id, { [field]: payloadValue } as any);
       await loadSupplier(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
@@ -180,7 +182,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     setError('');
     try {
-      await apiMutate(`/api/suppliers/${params.id}`, 'PATCH', { stateCode: newState });
+      await api.suppliersControllerUpdate(params.id, { stateCode: newState } as any);
       await loadSupplier(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
@@ -193,7 +195,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     if (!confirm(tConfirm('archiveOrder'))) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/suppliers/${params.id}/archive`, 'POST');
+      await api.suppliersControllerArchive(params.id);
       toast.success(tToast('orderArchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
@@ -206,7 +208,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const unarchiveSupplier = async () => {
     setSaving(true);
     try {
-      await apiMutate(`/api/suppliers/${params.id}/unarchive`, 'POST');
+      await api.suppliersControllerUnarchive(params.id);
       toast.success(tToast('orderUnarchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
@@ -222,7 +224,16 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     { field: 'supplierPartNumber', headerName: t('products.columns.partNo'), width: 150 },
     { field: 'costPrice', headerName: t('products.columns.costPrice'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `$${parseFloat(p.value).toFixed(2)}` : '—' },
     { field: 'discountPercent', headerName: t('products.columns.discount'), type: 'numericColumn', width: 120, valueFormatter: (p: any) => p.value ? `${parseFloat(p.value)}%` : '—' },
-    { field: 'productStateCode', headerName: t('products.columns.status'), width: 110, cellRenderer: (p: { value: string }) => p.value ? <StateBadge state={p.value as ValidState} /> : null },
+    { 
+      field: 'productStateCode', 
+      headerName: t('products.columns.status'), 
+      width: 110, 
+      valueFormatter: (p: any) => {
+        if (!p.value) return '';
+        const s = String(p.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(p.value);
+      } 
+    },
   ], [t]);
 
   if (loading) {
@@ -302,11 +313,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             }}
             isSaving={saving}
             badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier as any)} stateCode={supplier.stateCode} />}
-            actions={
-              <>
-                <PageNav sections={visibleSections} />
-              </>
-            }
+            nav={<PageNav sections={visibleSections} />}
           />
         }
       >

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { MATCH_STATUS, PUTAWAY_STATUS } from '@modbm/shared';
 import { toast } from 'react-hot-toast';
@@ -75,12 +76,8 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
         return next;
       });
 
-      const params = new URLSearchParams();
-      if (line.productId) params.append('productId', line.productId);
-      if (line.vendorId) params.append('vendorId', line.vendorId);
-
-      apiFetch<any>(`/api/purchase-orders/pending-lines?${params.toString()}`)
-        .then((data) => {
+      api.purchaseOrdersControllerFindPendingLines(line.productId)
+        .then((data: any) => {
           const lines = Array.isArray(data) ? data : data.data || [];
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
 
@@ -95,7 +92,7 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
             return next;
           });
         })
-        .catch((err) => {
+        .catch((err: any) => {
           reportError(err, 'AllocationSlideOver.pendingPOs');
           setLineStates((prev) => {
             const next = new Map(prev);
@@ -177,10 +174,10 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     }
 
     try {
-      const result = await apiMutate<any>(`/api/goods-received/lines/${grLine.goodsReceivedLineId}/resolve`, 'POST', {
+      const result = await api.goodsReceivedControllerResolveAllocation(grLine.goodsReceivedLineId, { body: JSON.stringify({
         purchaseOrderLineId: poLine.purchaseOrderLineId,
         allocatedQuantity: qtyStr,
-      });
+      }) }) as any;
       // The API returns { success: true, splitLine: { ... } } if a split occurred
       const splitLineData = result?.data?.splitLine || result?.splitLine;
       

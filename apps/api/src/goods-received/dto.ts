@@ -5,6 +5,7 @@ import {
   IsArray,
   ValidateNested,
   IsNumberString,
+  IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -18,6 +19,10 @@ export class CreateGoodsReceivedLineDto {
 }
 
 export class CreateGoodsReceivedDto {
+  @IsUUID()
+  @IsNotEmpty()
+  goodsReceivedId!: string;
+
   @IsString()
   @IsNotEmpty()
   vendorId!: string;

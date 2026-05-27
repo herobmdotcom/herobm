@@ -51,11 +51,12 @@ export class PurchaseReturnsService {
 
   private readonly logger = new Logger(PurchaseReturnsService.name);
 
-  private async generateReturnNumber(): Promise<string> {
+  private async generateReturnNumber(tx?: DrizzleDB): Promise<string> {
+    const db = tx || this.db;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `PRT-${today}-`;
 
-    const result = await this.db
+    const result = await db
       .select({ returnNumber: purchaseOrderReturns.returnNumber })
       .from(purchaseOrderReturns)
       .where(sql`${purchaseOrderReturns.returnNumber} LIKE ${prefix + '%'}`)
@@ -70,11 +71,12 @@ export class PurchaseReturnsService {
     return `${prefix}${String(seq).padStart(4, '0')}`;
   }
 
-  private async generateShipmentNumber(): Promise<string> {
+  private async generateShipmentNumber(tx?: DrizzleDB): Promise<string> {
+    const db = tx || this.db;
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = `RSH-${today}-`;
 
-    const result = await this.db
+    const result = await db
       .select({ shipmentNumber: purchaseOrderReturnShipments.shipmentNumber })
       .from(purchaseOrderReturnShipments)
       .where(
@@ -267,7 +269,7 @@ export class PurchaseReturnsService {
       );
 
       // 2. Create the shipment record
-      const shipmentNumber = await this.generateShipmentNumber();
+      const shipmentNumber = await this.generateShipmentNumber(tx);
       const [shipment] = await tx
         .insert(purchaseOrderReturnShipments)
         .values({
@@ -370,11 +372,18 @@ export class PurchaseReturnsService {
         const [orderLine] = await tx
           .select({ pricePerUnit: purchaseOrderLineItems.pricePerUnit })
           .from(purchaseOrderLineItems)
-          .where(eq(purchaseOrderLineItems.purchaseOrderLineId, rl.purchaseOrderLineId))
+          .where(
+            eq(
+              purchaseOrderLineItems.purchaseOrderLineId,
+              rl.purchaseOrderLineId,
+            ),
+          )
           .limit(1);
-          
+
         if (orderLine && orderLine.pricePerUnit) {
-          totalValueReturned += parseFloat(orderLine.pricePerUnit) * parseFloat(rl.quantityReturned);
+          totalValueReturned +=
+            parseFloat(orderLine.pricePerUnit) *
+            parseFloat(rl.quantityReturned);
         }
 
         await tx.execute(

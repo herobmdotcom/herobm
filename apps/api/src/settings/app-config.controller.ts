@@ -21,7 +21,13 @@ export class AppConfigController {
 
   @Patch()
   @CasbinAction('write')
-  async update(@Body() dto: { defaultFulfillmentLocationId?: string }) {
+  async update(
+    @Body()
+    dto: {
+      defaultFulfillmentLocationId?: string;
+      apiRateLimit?: string;
+    },
+  ) {
     return this.appConfigService.update(dto);
   }
 }

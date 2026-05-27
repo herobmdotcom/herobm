@@ -3,7 +3,8 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -40,12 +41,12 @@ export default function SupplierGroupsAdmin() {
     try {
       setLoading(true);
       const [data, customers, cc, act] = await Promise.all([
-        apiFetch<any[]>('/api/supplier-groups'),
-        apiFetch<any[]>('/api/gl/accounts'),
-        apiFetch<any[]>('/api/settings/cost-centers'),
-        apiFetch<any[]>('/api/settings/activities')
+        api.supplierGroupsControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.glControllerGetAccounts({}).then((r: any) => r?.data?.data || r?.data || r || []),
+        api.costCentersControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.activitiesControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || [])
       ]);
-      const sorted = data.sort((a, b) => 
+      const sorted = data.sort((a: any, b: any) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
@@ -95,10 +96,10 @@ export default function SupplierGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await apiMutate(`/api/supplier-groups/${editingId}`, 'PATCH', editForm);
+        await api.supplierGroupsControllerUpdate(editingId, editForm);
         toast.success(t('toasts.updated'));
       } else {
-        await apiMutate('/api/supplier-groups', 'POST', editForm);
+        await api.supplierGroupsControllerCreate(editForm);
         toast.success(t('toasts.created'));
       }
       handleCancel();
@@ -112,7 +113,7 @@ export default function SupplierGroupsAdmin() {
   const handleDelete = async (id: string) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
-      await apiMutate(`/api/supplier-groups/${id}`, 'DELETE');
+      await api.supplierGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch(err: any) {

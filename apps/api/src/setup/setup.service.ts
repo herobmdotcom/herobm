@@ -618,9 +618,14 @@ export class SetupService {
       }
 
       const envOverride: Record<string, string> = {
-        DEFAULT_FULFILLMENT_LOCATION_CODE: defaultLocationCode,
+        DEFAULT_FULFILLMENT_LOCATION_CODE:
+          dto.defaultLocationCode || defaultLocationCode,
         INVENTORY_VALUATION_METHOD: inventoryValuationMethod,
       };
+
+      if (dto.defaultTaxCategoryCode) {
+        envOverride.DEFAULT_TAX_CATEGORY_CODE = dto.defaultTaxCategoryCode;
+      }
 
       const isOdoo = dto.odooImport === true;
       const prefix = isOdoo ? 'ODOO_PG' : 'ABM_MSSQL';

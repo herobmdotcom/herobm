@@ -85,7 +85,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: Promise<
             { }
             <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">{t('inventoryAsset')}</span>
             { }
-            <span style={{ fontWeight: 500, fontSize: 12 }}>{t('poNumberLabel', { number: line.purchaseOrderNumber })}</span>
+            <span style={{ fontWeight: 500, fontSize: 12 }}>{t('poNumberLabel', { number: line.purchaseOrderNumber || '' })}</span>
           </div>
           {isEditable && (
             <button

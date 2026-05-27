@@ -6,7 +6,8 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
 
-import { apiFetch, apiMutate, apiFetchBlob, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { SALES_ORDER_PICK_STATE } from '@modbm/shared';
 
@@ -90,7 +91,8 @@ export default function PickingPage() {
 
     // Fetch Locations
     useEffect(() => {
-        apiFetch<any>('/api/inventory/locations')
+        api.inventoryControllerFindAllLocations({} as any)
+            // @ts-expect-error missing type properties
             .then(response => {
                 const locs = response.data || [];
                 setLocations(locs);
@@ -105,13 +107,12 @@ export default function PickingPage() {
     // Fetch Pending Orders
     const loadOrders = useCallback(() => {
         setLoadingOrders(true);
-        const endpoint = selectedLocationId
-            ? `/api/sales-orders/picking-queue?locationId=${selectedLocationId}`
-            : '/api/sales-orders/picking-queue';
-            
-        apiFetch<UnifiedOrder[]>(endpoint)
+        const params: any = {};
+        if (selectedLocationId) params.locationId = selectedLocationId;
+
+        api.orderPickingControllerGetPickingQueue(params)
             .then(data => {
-                setPendingOrders(data || []);
+                setPendingOrders((data as any).data || data || []);
             })
             .catch(err => reportError(err, 'Failed to load pending orders'))
             .finally(() => setLoadingOrders(false));
@@ -141,10 +142,13 @@ export default function PickingPage() {
         setLoadingSummary(true);
         setError(null);
         
-        const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
-        
-        apiFetch<PickingSummary>(`${baseUrl}/${selectedOrder.id}/picking`)
-            .then((data) => {
+        const summaryPromise = selectedOrder.type === 'transfer_order' 
+            ? api.transfersControllerGetPickingSummary(selectedOrder.id) 
+            : api.orderPickingControllerGetPickingSummary(selectedOrder.id);
+            
+        summaryPromise
+            .then((res) => {
+                const data = res.data as any;
                 setPickingSummary(data);
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
@@ -185,11 +189,15 @@ export default function PickingPage() {
         setError(null);
 
         try {
-            const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
-            await apiMutate(`${baseUrl}/${selectedOrder.id}/picking/lines/${lineId}`, 'POST', {
-                quantity: input.quantity,
-                binId: input.binId
-            });
+            if (selectedOrder.type === 'transfer_order') {
+                await api.transfersControllerPickLine(selectedOrder.id, lineId, {
+                    body: JSON.stringify({ quantity: input.quantity, binId: input.binId })
+                });
+            } else {
+                await api.orderPickingControllerPickLine(selectedOrder.id, lineId, {
+                    body: JSON.stringify({ quantity: input.quantity, binId: input.binId })
+                });
+            }
             await loadSummary();
         } catch (err: any) {
             setError(err.message);
@@ -203,8 +211,11 @@ export default function PickingPage() {
         setIsSubmitting(true);
         setError(null);
         try {
-            const baseUrl = selectedOrder.type === 'transfer_order' ? '/api/transfers' : '/api/sales-orders';
-            await apiMutate(`${baseUrl}/${selectedOrder.id}/picking/picks/${pickId}`, 'DELETE');
+            if (selectedOrder.type === 'transfer_order') {
+                await api.transfersControllerCancelPick(selectedOrder.id, pickId);
+            } else {
+                await api.orderPickingControllerCancelPick(selectedOrder.id, pickId);
+            }
             await loadSummary();
         } catch (err: any) {
             setError(err.message);
@@ -219,8 +230,8 @@ export default function PickingPage() {
         try {
             const reportName = 'picking-slip';
             // Fallback for transfer orders without a dedicated slip yet
-            const urlStr = `/api/reports/hooks/${reportName}/run?id=${selectedOrder.id}&context=picking-slip`;
-            const blob = await apiFetchBlob(urlStr, { method: 'POST' });
+            const res = await api.reportsControllerRunHook(reportName, { id: selectedOrder.id, context: 'picking-slip' });
+            const blob = res.data as Blob;
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
         } catch (err: any) {

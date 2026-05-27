@@ -1,3 +1,0 @@
-ALTER TABLE "modbm_core"."report_hook_assignments" ADD COLUMN "context_slug" text;--> statement-breakpoint
-ALTER TABLE "modbm_core"."supplier_groups" ADD COLUMN "default_expense_account_id" uuid;--> statement-breakpoint
-ALTER TABLE "modbm_core"."supplier_groups" ADD CONSTRAINT "supplier_groups_default_expense_account_id_gl_accounts_gl_account_id_fk" FOREIGN KEY ("default_expense_account_id") REFERENCES "modbm_core"."gl_accounts"("gl_account_id") ON DELETE no action ON UPDATE no action;

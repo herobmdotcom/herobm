@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 
@@ -120,7 +121,7 @@ export default function DraftPOsModal({ isOpen, onClose, selectedDemands, onSucc
         };
       });
 
-      await apiMutate('/api/allocations/generate-pos', 'POST', { pos: posPayload });
+      await api.allocationsControllerGeneratePOs({ body: JSON.stringify({ pos: posPayload }) });
 
       toast.success(t('demands.posGeneratedSuccess'));
       onSuccess();

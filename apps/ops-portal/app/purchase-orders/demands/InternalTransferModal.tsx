@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import {
   buildInternalTransferSourceOptions,
@@ -51,11 +52,10 @@ export default function InternalTransferModal({
   useEffect(() => {
     if (!isOpen) return;
     const productId = selectedDemands[0]?.productId;
-    const url = productId
-      ? `/api/inventory/locations?productId=${encodeURIComponent(productId)}`
-      : `/api/inventory/locations`;
-    apiFetch<{ data: RawLocationWithAvailability[] }>(url)
+    const params = productId ? { productId } : {};
+    api.inventoryControllerFindAllLocations(params)
       .then((res) => {
+        // @ts-expect-error
         setLocations(res.data || []);
       })
       .catch((err) => reportError(err, 'InternalTransferModal'));
@@ -97,8 +97,7 @@ export default function InternalTransferModal({
     setIsSubmitting(true);
     try {
       const backorderIds = selectedDemands.map(d => d.id);
-      await apiFetch('/api/transfers/from-demands', {
-        method: 'POST',
+      await api.transfersControllerCreateTransferFromDemands({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sourceLocationId: selectedLocationId,

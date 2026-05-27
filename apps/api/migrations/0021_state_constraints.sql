@@ -1,4 +1,0 @@
-ALTER TABLE "modbm_core"."sales_orders" ADD CONSTRAINT "sales_order_state_check" CHECK (state_code IN ('draft', 'quoted', 'confirmed', 'picking', 'shipped', 'invoiced', 'cancelled', 'archived', 'legacy'));
-ALTER TABLE "modbm_core"."sales_order_returns" ADD CONSTRAINT "sales_order_return_state_check" CHECK (state_code IN ('draft', 'confirmed', 'processed', 'cancelled'));
-ALTER TABLE "modbm_core"."sales_order_shipments" ADD CONSTRAINT "sales_order_shipment_state_check" CHECK (state_code IN ('draft', 'dispatched', 'cancelled'));
-ALTER TABLE "modbm_core"."purchase_orders" ADD CONSTRAINT "purchase_order_state_check" CHECK (state_code IN ('draft', 'ordered', 'partially_received', 'received', 'invoiced', 'cancelled', 'legacy'));

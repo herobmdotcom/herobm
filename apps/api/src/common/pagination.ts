@@ -24,6 +24,16 @@ export class PaginationQuery {
   @Transform(({ value }) => (value ? Number(value) : undefined))
   page?: number;
 
+  /** Base64 encoded cursor */
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  /** Pagination direction */
+  @IsOptional()
+  @IsString()
+  direction?: 'next' | 'prev';
+
   /** Maximum results per page (default: 50, max: 100000) */
   @IsOptional()
   @Transform(({ value }) => (value ? Number(value) : undefined))
@@ -57,19 +67,17 @@ export class PaginationQuery {
 /**
  * Canonical paginated response.
  *
- * All list endpoints must return this shape: { data, page, limit, total }.
+ * All list endpoints must return this shape: { data, limit, total, nextCursor, prevCursor }.
  */
 export interface PaginatedResponse<T> {
   data: T[];
-  page: number;
   limit: number;
-  total: number;
+  page?: number;
+  total?: number; // Optional, total rows can be slow
+  nextCursor?: string;
+  prevCursor?: string;
 }
 
-/**
- * Parse canonical pagination params from a PaginationQuery.
- * Returns { page, limit, offset, searchTerm }.
- */
 export function parsePagination(query?: PaginationQuery) {
   const page = query?.page ?? 1;
   const limit = Math.min(query?.limit ?? 50, 100_000);
@@ -82,10 +90,13 @@ export function parsePagination(query?: PaginationQuery) {
   const states = query?.state
     ? query.state.split(',').map((s) => s.trim())
     : null;
+
   return {
     page,
-    limit,
     offset,
+    limit,
+    cursor: query?.cursor ? decodeCursor(query.cursor) : null,
+    direction: query?.direction ?? 'next',
     searchTerm,
     includeArchived,
     customerId,
@@ -93,6 +104,18 @@ export function parsePagination(query?: PaginationQuery) {
     purchaseOrderId,
     states,
   };
+}
+
+export function encodeCursor(payload: any): string {
+  return Buffer.from(JSON.stringify(payload)).toString('base64');
+}
+
+export function decodeCursor<T = any>(cursor: string): T | null {
+  try {
+    return JSON.parse(Buffer.from(cursor, 'base64').toString('utf8'));
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -123,4 +146,72 @@ export function paginate<T>(
     limit,
     total: items.length,
   };
+}
+
+/**
+ * Apply Keyset / Cursor pagination to a Drizzle QueryBuilder.
+ *
+ * IMPORTANT: You must provide a custom `applyWhere` callback because Drizzle ORM
+ * lacks a fully generic way to build `(colA > valA) OR (colA = valA AND colB > valB)`
+ * without losing type safety on the specific table columns.
+ *
+ * Example usage:
+ * ```ts
+ * const { data, nextCursor, prevCursor } = await withCursorPagination({
+ *   qb,
+ *   limit,
+ *   cursorObj,
+ *   direction,
+ *   applyWhere: (q, cursor, dir) => {
+ *     const op = dir === 'next' ? gt : lt;
+ *     return q.where(op(table.id, cursor.id));
+ *   },
+ *   applyOrderBy: (q, dir) => {
+ *     const op = dir === 'next' ? asc : desc;
+ *     return q.orderBy(op(table.id));
+ *   },
+ *   encodeRow: (row) => ({ id: row.id })
+ * });
+ * ```
+ */
+export async function withCursorPagination<T = any>({
+  qb,
+  limit,
+  cursorObj,
+  direction,
+  applyWhere,
+  applyOrderBy,
+  encodeRow,
+}: {
+  qb: any;
+  limit: number;
+  cursorObj: any;
+  direction: 'next' | 'prev';
+  applyWhere: (q: any, cursor: any, dir: 'next' | 'prev') => any;
+  applyOrderBy: (q: any, dir: 'next' | 'prev') => any;
+  encodeRow: (row: T) => any;
+}): Promise<{ data: T[]; nextCursor?: string; prevCursor?: string }> {
+  let query = qb;
+
+  if (cursorObj) {
+    query = applyWhere(query, cursorObj, direction);
+  }
+
+  query = applyOrderBy(query, direction);
+  query = query.limit(limit);
+
+  const rows = await query;
+
+  if (direction === 'prev') {
+    rows.reverse();
+  }
+
+  const nextCursor =
+    rows.length > 0
+      ? encodeCursor(encodeRow(rows[rows.length - 1]))
+      : undefined;
+  const prevCursor =
+    rows.length > 0 ? encodeCursor(encodeRow(rows[0])) : undefined;
+
+  return { data: rows, nextCursor, prevCursor };
 }

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useSettings } from '@/components/SettingsProvider';
@@ -133,12 +134,12 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     if (!paymentId) return;
     setLoading(true);
     try {
-      const res = await apiFetch<PaymentData>(`/api/payments/${paymentId}`);
+      const res = await api.paymentsControllerFindOne(paymentId) as unknown as PaymentData;
       setData(res);
 
       if (res.stateCode === PAYMENT_STATE.SUBMITTED) {
         setLoadingJournal(true);
-        apiFetch<any>(`/api/gl/journal-entries/source/payment_entry/${paymentId}`)
+        api.glControllerGetJournalEntryBySource('payment_entry', paymentId)
           .then(jrnl => setJournalEntry(jrnl))
           .catch(err => reportError(err, 'PaymentManagerSlideOver.loadLedgerImpact'))
           .finally(() => setLoadingJournal(false));
@@ -184,11 +185,9 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     setLoadingInvoices(true);
     try {
-      const endpoint = data.partyType === 'customer' 
-        ? `/api/sales-invoices?customerId=${data.partyId}` 
-        : `/api/purchase-invoices?vendorId=${data.partyId}`;
-      
-      const res = await apiFetch<{ data: any[] }>(endpoint);
+      const res = data.partyType === 'customer'
+        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId }) as unknown as { data: any[] }
+        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId }) as unknown as { data: any[] };
       
       const invoices = res.data
         .filter(inv => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
@@ -274,7 +273,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
         totalAmount: parseFloat(form.totalAmount),
         submitImmediately: true,
       };
-      await apiMutate('/api/payments', 'POST', payload);
+      await api.paymentsControllerCreate(payload as any);
       toast.success(t('manager.messages.paymentCreated'));
       onSaved();
     } catch (err: any) {
@@ -288,7 +287,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     if (!paymentId) return;
     setSubmitting(true);
     try {
-      await apiMutate(`/api/payments/${paymentId}/submit`, 'PATCH', {});
+      await api.paymentsControllerSubmit(paymentId);
       toast.success(t('manager.messages.paymentSubmitted'));
       loadPayment();
       onSaved(false);
@@ -311,7 +310,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     setSubmitting(true);
     try {
-      await apiMutate(`/api/payments/${paymentId}/cancel`, 'PATCH', {});
+      await api.paymentsControllerCancel(paymentId);
       toast.success(t('manager.messages.paymentCancelled'));
       loadPayment();
       onSaved(); // Refresh grid
@@ -350,7 +349,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
 
     setSubmitting(true);
     try {
-      await apiMutate(`/api/payments/${paymentId}/allocate`, 'PATCH', { allocations });
+      await api.paymentsControllerAllocate(paymentId, { allocations: allocations as any });
       toast.success(t('manager.messages.allocationsSaved'));
       loadPayment();
       onSaved(false);

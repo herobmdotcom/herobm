@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -43,11 +44,7 @@ export default function SplitEntryModal({ isOpen, onClose, reconciliationId, sel
 
     setSubmitting(true);
     try {
-      await apiFetch(`/api/gl/reconciliations/${reconciliationId}/lines/${selectedLine.journalLineId}/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isCleared: true, amount: val })
-      });
+      await api.reconciliationControllerToggleLine(reconciliationId, selectedLine.journalLineId, { isCleared: true, amount: val });
       toast.success(t('splitEntryForm.splitSuccess'));
       onSuccess();
       onClose();

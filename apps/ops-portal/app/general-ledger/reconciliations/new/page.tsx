@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 export default function NewReconciliationPage() {
@@ -21,8 +22,8 @@ export default function NewReconciliationPage() {
   useEffect(() => {
     async function fetchAccounts() {
       try {
-        const data = await apiFetch<any>('/api/gl/accounts');
-        setAccounts(data.data || data);
+        const data = await api.glControllerGetAccounts();
+        setAccounts((data.data as any) || data);
       } catch (err) {
         reportError(err, 'NewReconciliationFetchAccounts');
       }
@@ -34,16 +35,13 @@ export default function NewReconciliationPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const data = await apiFetch<any>('/api/gl/reconciliations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          glAccountId,
-          statementDate,
-          statementBalance: Number(statementBalance),
-          createdBy: 'System User', // Hardcoded for now
-        })
+      const res = await api.reconciliationControllerCreateReconciliation({
+        glAccountId,
+        statementDate,
+        statementBalance: Number(statementBalance),
+        createdBy: 'System User', // Hardcoded for now
       });
+      const data = res.data as any;
       
       router.push(`/general-ledger/reconciliations/${data.reconciliationId}`);
     } catch (err) {

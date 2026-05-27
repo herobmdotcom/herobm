@@ -5,7 +5,7 @@ import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import LocationSelect from '@/components/shared/LocationSelect';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 
 interface LineItem {
@@ -86,11 +86,11 @@ export default function CreateTransferSlideOver({ open, onClose, onCreated }: Cr
     
     try {
       setIsSubmitting(true);
-      await apiMutate('/api/transfers', 'POST', {
+      await api.transfersControllerCreate({
         sourceLocationId,
         destinationLocationId,
         notes,
-        lines: validLines.length > 0 ? validLines : undefined
+        lines: validLines
       });
       onCreated();
       onClose();

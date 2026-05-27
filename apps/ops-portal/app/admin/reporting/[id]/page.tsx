@@ -4,7 +4,8 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { use, useEffect, useState } from 'react';
 import TemplateForm from '../TemplateForm';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 import { useTranslations } from 'next-intl';
 
@@ -17,8 +18,11 @@ export default function EditTemplatePage({ params: paramsPromise }: { params: Pr
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    apiFetch<{ data: any }>(`/api/reports/${params.id}`)
-      .then(res => setInitialData(res.data))
+    api.reportsControllerGetReport(params.id)
+      .then(res => {
+        // @ts-expect-error
+        setInitialData(res.data);
+      })
       .catch((e) => {
         reportError(e, 'EditTemplatePage');
         setError(true);

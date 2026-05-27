@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
-import { toast } from 'react-hot-toast';
+import { reportError } from '@/lib/api';
+import toast from 'react-hot-toast';
+import * as api from '@modbm/sdk';
 import {
   PURCHASE_ORDER_TRANSITIONS as STATE_TRANSITIONS,
   PURCHASE_ORDER_LIFECYCLE as ORDER_LIFECYCLE,
@@ -137,13 +138,17 @@ export function usePurchaseOrder(id: string) {
   const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      const data = await apiFetch<OrderDetail>(
-        `/api/purchase-orders/${encodeURIComponent(id)}`,
-      );
+      const res: any = await api.purchaseOrdersControllerFindOne(id);
+      const data = res?.data || res;
+      // @ts-expect-error
       setOrder(data);
+      // @ts-expect-error
       setEditName(data.name || '');
+      // @ts-expect-error
       setEditReferenceNumber(data.referenceNumber || '');
+      // @ts-expect-error
       setEditNotes(data.notes || '');
+      // @ts-expect-error
       setEditLocationId(data.deliveryLocationId || null);
       setHeaderDirty(false);
 
@@ -161,8 +166,9 @@ export function usePurchaseOrder(id: string) {
   const loadReturns = async () => {
     setReturnsLoading(true);
     try {
-      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/returns`);
-      setReturns(data?.data || data || []);
+      const { data } = await api.purchaseReturnsControllerFindReturns(id);
+      // @ts-expect-error
+      setReturns(data || []);
     } catch {
       setReturns([]);
     } finally {
@@ -172,8 +178,9 @@ export function usePurchaseOrder(id: string) {
 
   const loadInvoices = async () => {
     try {
-      const data: any = await apiFetch(`/api/purchase-orders/${encodeURIComponent(id)}/invoices`);
-      setInvoices(data?.data || data || []);
+      const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
+      // @ts-expect-error
+      setInvoices(data || []);
     } catch {
       setInvoices([]);
     }
@@ -182,7 +189,8 @@ export function usePurchaseOrder(id: string) {
   const loadAllocations = async () => {
     setAllocationsLoading(true);
     try {
-      const { data } = await apiFetch<{ data: Allocation[] }>(`/api/allocations/by-po/${encodeURIComponent(id)}`);
+      const { data } = await api.allocationsControllerGetAllocationsByPo(id);
+      // @ts-expect-error
       setAllocations(data || []);
     } catch {
       setAllocations([]);
@@ -196,8 +204,9 @@ export function usePurchaseOrder(id: string) {
   // Initial load
   useEffect(() => {
     loadOrder();
-    apiFetch<TaxCategory[]>('/api/tax-categories')
-      .then(setTaxCategories)
+    api.taxCategoriesControllerFindAll()
+      // @ts-expect-error
+      .then(res => setTaxCategories(res.data || []))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
@@ -225,9 +234,7 @@ export function usePurchaseOrder(id: string) {
     const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
     if (productIds.length === 0) return;
     setInventoryLoading(true);
-    apiFetch<{ data: InventoryLevel[] }>(
-      `/api/inventory/by-products?productIds=${productIds.join(',')}`,
-    )
+    api.inventoryControllerFindByProductIds({ productIds: productIds.join(',') })
       .then((res) => setInventoryData(res.data))
       .catch((err) => reportError(err, 'OrderDetailPage'))
       .finally(() => setInventoryLoading(false));
@@ -250,12 +257,13 @@ export function usePurchaseOrder(id: string) {
     if (!headerDirty) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-orders/${id}`, 'PATCH', {
+      await api.purchaseOrdersControllerUpdate(id, {
         name: editName || null,
         referenceNumber: editReferenceNumber || null,
         notes: editNotes || null,
+        // @ts-expect-error
         deliveryLocationId: editLocationId || null,
-      });
+      } as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
@@ -266,7 +274,7 @@ export function usePurchaseOrder(id: string) {
 
   const changeState = async (newState: string) => {
     try {
-      await apiMutate(`/api/purchase-orders/${id}/state`, 'PATCH', { stateCode: newState });
+      await api.purchaseOrdersControllerChangeState(id, { stateCode: newState } as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
@@ -279,7 +287,7 @@ export function usePurchaseOrder(id: string) {
     try {
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const newOrder = await apiMutate<{ purchaseOrderId: string }>('/api/purchase-orders', 'POST', {
+      const { data: newOrder } = await api.purchaseOrdersControllerCreate({
         orderNumber: `PO-${today}-${rand}`,
         name: order.name ? `Copy of ${order.name}` : undefined,
         vendorId: order.vendorId || undefined,
@@ -295,7 +303,7 @@ export function usePurchaseOrder(id: string) {
           taxCategoryId: l.taxCategoryId || null,
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
-      });
+      } as any);
       router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
@@ -307,7 +315,7 @@ export function usePurchaseOrder(id: string) {
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', { [field]: value });
+      await api.purchaseOrdersControllerUpdateLine(id, lineId, { [field]: value } as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -319,7 +327,7 @@ export function usePurchaseOrder(id: string) {
   const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'PATCH', payload);
+      await api.purchaseOrdersControllerUpdateLine(id, lineId, payload as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -333,7 +341,7 @@ export function usePurchaseOrder(id: string) {
     setSaving(true);
     _setError('');
     try {
-      await apiMutate(`/api/purchase-orders/${id}/lines/${lineId}`, 'DELETE');
+      await api.purchaseOrdersControllerRemoveLine(id, lineId);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToRemoveLine'));
@@ -345,14 +353,14 @@ export function usePurchaseOrder(id: string) {
   const addLineFromProduct = async (p: Product) => {
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
+      await api.purchaseOrdersControllerAddLine(id, {
         productId: p.productId,
         productDescription: p.name,
         quantity: '1',
         pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         discountPercentage: '0',
         unitOfMeasure: 'EA',
-      });
+      } as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -365,14 +373,14 @@ export function usePurchaseOrder(id: string) {
     const CUSTOM_LINE_ID = '00000000-0000-0000-0000-000000000000';
     setSaving(true);
     try {
-      await apiMutate(`/api/purchase-orders/${id}/lines`, 'POST', {
+      await api.purchaseOrdersControllerAddLine(id, {
         productId: CUSTOM_LINE_ID,
         productDescription: '',
         quantity: '1',
         pricePerUnit: '0.00',
         discountPercentage: '0',
         unitOfMeasure: 'EA',
-      });
+      } as any);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));

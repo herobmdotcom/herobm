@@ -7,6 +7,7 @@ import {
   Patch,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -16,9 +17,11 @@ import {
 } from '../auth/casbin.guard';
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
-import { JournalLineDto } from './dto';
+import { JournalLineDto, CreateJournalEntryDto } from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@modbm/shared';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 
 @Controller('gl')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
@@ -130,20 +133,22 @@ export class GlController {
 
   @Post('journal-entries')
   @CasbinAction('write')
+  @UseInterceptors(IdempotencyInterceptor)
+  @Idempotent({
+    queryKey: 'glJournalEntries',
+    pkField: 'journalEntryId',
+    idBodyPath: 'journalEntryId',
+  })
   async createManualJournalEntry(
     @Body()
-    body: {
-      lines: JournalLineDto[];
-      memo?: string;
-      entryDate?: string;
-      actor?: string;
-    },
+    body: CreateJournalEntryDto,
   ) {
     const meta: JournalMeta = {
       sourceType: 'manual',
       memo: body.memo,
       entryDate: body.entryDate,
       actor: body.actor,
+      journalEntryId: body.journalEntryId,
     };
     return this.glService.postJournalEntry(body.lines, meta);
   }

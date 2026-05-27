@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
 import InitiateReturnModal from './InitiateReturnModal';
 
@@ -228,18 +228,21 @@ export default function ReturnsSection({
     const fetchReturns = async () => {
       try {
         setLoading(true);
-        const listData = await apiFetch<{ data: any[] }>(`/api/purchase-orders/${orderId}/returns?limit=50`);
+        const listData = await api.purchaseReturnsControllerFindReturns(orderId);
+        // @ts-expect-error
         const fetchedReturns = listData.data || [];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
+          // @ts-expect-error
           fetchedReturns.map((rec) => 
-            apiFetch<Return>(`/api/purchase-orders/${orderId}/returns/${rec.returnId}`)
+            api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
           )
         );
 
         if (active) {
-          setReturns(detailedReturns);
+          // @ts-expect-error
+          setReturns(detailedReturns.map(r => r.data));
         }
       } catch (err) {
         // safely ignore missing if not supported yet, or show empty
@@ -254,15 +257,15 @@ export default function ReturnsSection({
 
   const refreshReturns = () => {
     setLoading(true);
-    // this will re-trigger the useEffect if we had a dependency, but we can just call the api directly here if we want.
-    // the easiest is to just mutate a state variable or re-fetch.
-    apiFetch<{ data: any[] }>(`/api/purchase-orders/${orderId}/returns?limit=50`).then(async (listData) => {
+    api.purchaseReturnsControllerFindReturns(orderId).then(async (listData) => {
       const detailedReturns = await Promise.all(
+        // @ts-expect-error
         (listData.data || []).map((rec) => 
-          apiFetch<Return>(`/api/purchase-orders/${orderId}/returns/${rec.returnId}`)
+          api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )
       );
-      setReturns(detailedReturns);
+      // @ts-expect-error
+      setReturns(detailedReturns.map(r => r.data));
       setLoading(false);
     });
   };

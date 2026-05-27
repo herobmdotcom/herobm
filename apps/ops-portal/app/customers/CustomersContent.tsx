@@ -6,13 +6,13 @@ import Link from 'next/link';
 import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+
 
 export default function CustomersContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tAccounts = useTranslations('customers');
+  const tStates = useTranslations('common.states');
 
   const columns = useMemo<ColDef[]>(() => [
     { field: 'customerNumber', headerName: tAccounts('columns.customerNumber'), width: 120, pinned: 'left' },
@@ -34,9 +34,10 @@ export default function CustomersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       }
     },
     { field: 'TaxCategoryName', headerName: tCommon('columns.taxPosition'), width: 110, hide: true },

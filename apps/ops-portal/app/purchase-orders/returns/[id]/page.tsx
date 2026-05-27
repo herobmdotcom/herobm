@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
 
 export default function PurchaseReturnDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,10 +32,11 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
 
   useEffect(() => {
     let active = true;
-    apiFetch(`/api/purchase-returns/${id}`)
-      .then(data => {
+    api.globalPurchaseReturnsControllerGetPurchaseReturnById(id)
+      .then(res => {
         if (active) {
-          setReturnDetails(data);
+          // @ts-expect-error
+          setReturnDetails(res.data || res);
           // Default line prices to 0, they should fill this out or we can fetch PO line price.
           // For simplicity, they have to fill it out.
         }
@@ -70,15 +71,11 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         notes,
       };
 
-      const res = await apiFetch<any>(`/api/purchase-debit-notes`, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload as any);
 
       // After creation, optionally post it directly:
-      await apiFetch(`/api/purchase-debit-notes/${res.debitNoteId}/post`, {
-        method: 'POST',
-      });
+      // @ts-expect-error
+      await api.purchaseDebitNotesControllerPostDebitNote(res.data?.debitNoteId || res.debitNoteId);
 
       router.push(`/purchase-orders/${returnDetails.purchaseOrderId}`);
     } catch (err: any) {

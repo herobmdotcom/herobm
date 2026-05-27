@@ -40,6 +40,13 @@ export async function createMemoryDb(opts?: { skipSeeds?: boolean }) {
     ALTER TABLE "modbm_core"."purchase_invoices" ADD COLUMN IF NOT EXISTS "outstanding_amount" numeric DEFAULT '0' NOT NULL;
   `);
 
+  // Run extensions (Views, triggers, etc)
+  const extensionsSql = fs.readFileSync(
+    path.join(process.cwd(), 'src/drizzle/extensions.sql'),
+    'utf8',
+  );
+  await client.exec(extensionsSql);
+
   const db = drizzle(client, { schema });
 
   // Run the standard application seeds against the in-memory PGLite DB

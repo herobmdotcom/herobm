@@ -2,7 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo, Fragment } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -151,12 +151,15 @@ export default function FinancialSettingsPage() {
     try {
       setGlLoading(true);
       const [settingsRes, accountsRes] = await Promise.all([
-        apiFetch<any>('/api/gl/settings'),
-        apiFetch<any[]>('/api/gl/accounts')
+        api.glControllerGetSettings(),
+        api.glControllerGetAccounts({})
       ]);
-      setGlSettings(settingsRes || {});
-      setGlAccounts(accountsRes || []);
-      setSchemaObj(settingsRes?.accountMetadataSchema || { type: 'object', properties: {} });
+      // @ts-expect-error
+      setGlSettings(settingsRes.data || {});
+      // @ts-expect-error
+      setGlAccounts(accountsRes.data || []);
+      // @ts-expect-error
+      setSchemaObj(settingsRes.data?.accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
     } finally {
@@ -167,7 +170,9 @@ export default function FinancialSettingsPage() {
   const updateGlSetting = async (field: string, value: any) => {
     try {
       const payload = { [field]: value };
-      const updated = await apiMutate<any>('/api/gl/settings', 'PATCH', payload);
+      const res = await api.glControllerUpdateSettings({ body: JSON.stringify(payload) });
+      // @ts-expect-error
+      const updated = res.data;
       setGlSettings(Object.assign({}, glSettings || {}, updated || {}));
       toast.success('Settings updated');
     } catch (err: any) {
@@ -200,14 +205,16 @@ export default function FinancialSettingsPage() {
     try {
       const payload = { ...coaForm };
       if (coaEditingId) {
-        await apiMutate(`/api/gl/accounts/${coaEditingId}`, 'PATCH', {
-          name: payload.name,
-          isActive: payload.isActive,
-          isBankAccount: payload.isBankAccount
+        await api.glControllerUpdateAccount(coaEditingId, {
+          body: JSON.stringify({
+            name: payload.name,
+            isActive: payload.isActive,
+            isBankAccount: payload.isBankAccount
+          })
         });
         toast.success('Saved');
       } else {
-        await apiMutate('/api/gl/accounts', 'POST', payload);
+        await api.glControllerCreateAccount({ body: JSON.stringify(payload) });
         toast.success('Saved');
       }
       coaCancel(); loadGl();
@@ -219,8 +226,10 @@ export default function FinancialSettingsPage() {
   const loadTax = async () => {
     try {
       setTaxLoading(true);
-      const data = await apiFetch<TaxCategory[]>('/api/tax-categories');
-      setCategories(data.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+      const res = await api.taxCategoriesControllerFindAll();
+      const rawData: any = res.data;
+      const data = (rawData?.data || rawData || []) as TaxCategory[];
+      setCategories([...data].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + err.message);
     } finally {
@@ -236,10 +245,10 @@ export default function FinancialSettingsPage() {
     try {
       const payload = { ...taxForm };
       if (taxEditingId) {
-        await apiMutate(`/api/tax-categories/${taxEditingId}`, 'PATCH', payload);
+        await api.taxCategoriesControllerUpdate(taxEditingId, payload);
         toast.success(tSettings('toasts.taxUpdated'));
       } else {
-        await apiMutate('/api/tax-categories', 'POST', payload);
+        await api.taxCategoriesControllerCreate(payload);
         toast.success(tSettings('toasts.taxCreated'));
       }
       taxCancel(); loadTax();
@@ -248,7 +257,7 @@ export default function FinancialSettingsPage() {
 
   const taxDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteTax'))) return;
-    try { await apiMutate(`/api/tax-categories/${id}`, 'DELETE'); toast.success(tSettings('toasts.taxDeleted')); loadTax(); }
+    try { await api.taxCategoriesControllerRemove(id); toast.success(tSettings('toasts.taxDeleted')); loadTax(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -257,8 +266,9 @@ export default function FinancialSettingsPage() {
   const loadRates = async () => {
     try {
       setRateLoading(true);
-      const data = await apiFetch<ExchangeRate[]>('/api/settings/exchange-rates');
-      setRates(data);
+      const res = await api.exchangeRatesControllerFindAll();
+      const rawData: any = res.data;
+      setRates(rawData?.data || rawData || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.rates }) + ': ' + err.message);
     } finally {
@@ -283,10 +293,10 @@ export default function FinancialSettingsPage() {
         effectiveDate: rateForm.effectiveDate
       };
       if (rateEditingId) {
-        await apiMutate(`/api/settings/exchange-rates/${rateEditingId}`, 'PATCH', payload);
+        await api.exchangeRatesControllerUpdate(rateEditingId, payload);
         toast.success(tSettings('toasts.rateUpdated'));
       } else {
-        await apiMutate('/api/settings/exchange-rates', 'POST', payload);
+        await api.exchangeRatesControllerCreate(payload);
         toast.success(tSettings('toasts.rateCreated'));
       }
       rateCancel(); loadRates();
@@ -295,7 +305,7 @@ export default function FinancialSettingsPage() {
 
   const rateDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteRate'))) return;
-    try { await apiMutate(`/api/settings/exchange-rates/${id}`, 'DELETE'); toast.success(tSettings('toasts.rateDeleted')); loadRates(); }
+    try { await api.exchangeRatesControllerRemove(id); toast.success(tSettings('toasts.rateDeleted')); loadRates(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -304,8 +314,9 @@ export default function FinancialSettingsPage() {
   const loadCcs = async () => {
     try {
       setCcLoading(true);
-      const data = await apiFetch<CostCenter[]>('/api/settings/cost-centers');
-      setCcs(data);
+      const res = await api.costCentersControllerFindAll();
+      const rawData: any = res.data;
+      setCcs(rawData?.data || rawData || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.cc }) + ': ' + err.message);
     } finally {
@@ -326,10 +337,10 @@ export default function FinancialSettingsPage() {
         isActive: ccForm.isActive ?? true 
       };
       if (ccEditingId) {
-        await apiMutate(`/api/settings/cost-centers/${ccEditingId}`, 'PATCH', payload);
+        await api.costCentersControllerUpdate(ccEditingId, payload);
         toast.success(tSettings('toasts.ccUpdated'));
       } else {
-        await apiMutate('/api/settings/cost-centers', 'POST', payload);
+        await api.costCentersControllerCreate(payload);
         toast.success(tSettings('toasts.ccCreated'));
       }
       ccCancel(); loadCcs();
@@ -339,7 +350,7 @@ export default function FinancialSettingsPage() {
   const ccDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteCc'))) return;
     try { 
-      await apiMutate(`/api/settings/cost-centers/${id}`, 'DELETE'); 
+      await api.costCentersControllerRemove(id); 
       toast.success(tSettings('toasts.ccDeleted')); 
       loadCcs(); 
     }
@@ -349,8 +360,10 @@ export default function FinancialSettingsPage() {
   const handleImportCc = async (data: any[]) => {
     setIsImporting(true);
     try {
-      const res = await apiMutate<any>('/api/settings/cost-centers/import', 'POST', data);
-      toast.success(tSettings('toasts.importSuccess', { count: res.count }));
+      const res = await api.costCentersControllerImport(data);
+      // @ts-expect-error
+      const responseData = res.data;
+      toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadCcs();
     } catch (err: any) {
       toast.error(tSettings('toasts.importFailed', { message: err.message }));
@@ -364,8 +377,9 @@ export default function FinancialSettingsPage() {
   const loadActivities = async () => {
     try {
       setActivityLoading(true);
-      const data = await apiFetch<Activity[]>('/api/settings/activities');
-      setActivitiesData(data);
+      const res = await api.activitiesControllerFindAll();
+      const rawData: any = res.data;
+      setActivitiesData(rawData?.data || rawData || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.activity }) + ': ' + err.message);
     } finally {
@@ -386,10 +400,10 @@ export default function FinancialSettingsPage() {
         isActive: activityForm.isActive ?? true 
       };
       if (activityEditingId) {
-        await apiMutate(`/api/settings/activities/${activityEditingId}`, 'PATCH', payload);
+        await api.activitiesControllerUpdate(activityEditingId, payload);
         toast.success(tSettings('toasts.activityUpdated'));
       } else {
-        await apiMutate('/api/settings/activities', 'POST', payload);
+        await api.activitiesControllerCreate(payload);
         toast.success(tSettings('toasts.activityCreated'));
       }
       activityCancel(); loadActivities();
@@ -399,7 +413,7 @@ export default function FinancialSettingsPage() {
   const activityDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteActivity'))) return;
     try { 
-      await apiMutate(`/api/settings/activities/${id}`, 'DELETE'); 
+      await api.activitiesControllerRemove(id); 
       toast.success(tSettings('toasts.activityDeleted')); 
       loadActivities(); 
     }
@@ -409,8 +423,10 @@ export default function FinancialSettingsPage() {
   const handleImportActivity = async (data: any[]) => {
     setIsImporting(true);
     try {
-      const res = await apiMutate<any>('/api/settings/activities/import', 'POST', data);
-      toast.success(tSettings('toasts.importSuccess', { count: res.count }));
+      const res = await api.activitiesControllerImport(data);
+      // @ts-expect-error
+      const responseData = res.data;
+      toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadActivities();
     } catch (err: any) {
       toast.error(tSettings('toasts.importFailed', { message: err.message }));

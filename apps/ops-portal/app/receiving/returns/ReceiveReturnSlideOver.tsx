@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -45,10 +45,10 @@ export default function ReceiveReturnSlideOver({
                 .filter((l: any) => parseFloat(l.quantityReceived) > 0);
 
             if (linesToReceive.length > 0) {
-                await apiMutate(`/api/sales-orders/${returnRecord.salesOrderId}/returns/${returnRecord.returnId}/receive`, 'POST', {
+                await api.orderReturnsControllerReceiveReturn(returnRecord.salesOrderId, returnRecord.returnId, { body: JSON.stringify({
                     locationId: returnRecord.locationId,
                     lines: linesToReceive
-                });
+                }) });
             }
 
             onRefresh();

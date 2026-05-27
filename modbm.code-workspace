@@ -5,6 +5,16 @@
 		}
 	],
 	"settings": {
-		"makefile.configureOnOpen": false
+		"makefile.configureOnOpen": false,
+		"editor.formatOnSave": true,
+		"editor.codeActionsOnSave": {
+			"source.fixAll.eslint": "explicit"
+		},
+		"search.exclude": {
+			"**/dist": true,
+			"**/.next": true,
+			"**/.venv": true,
+			"**/*.log": true
+		}
 	}
 }

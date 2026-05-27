@@ -1,5 +1,14 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql, and, getTableColumns } from 'drizzle-orm';
+import {
+  eq,
+  ilike,
+  or,
+  sql,
+  and,
+  getTableColumns,
+  asc,
+  desc,
+} from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -13,7 +22,11 @@ import {
   inventoryLedger,
   productComponents,
 } from '../drizzle/modbm-core-schema';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { PRODUCT_STATE } from '@modbm/shared';
 
 @Injectable()
@@ -21,7 +34,7 @@ export class ProductsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     let qb = this.db
@@ -60,12 +73,46 @@ export class ProductsService {
       qb = qb.where(and(...conditions));
     }
 
-    const data = await qb
-      .orderBy(coreProducts.name)
-      .limit(limit)
-      .offset(offset);
+    // Keyset Pagination Setup
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${coreProducts.name} > ${c.name}`,
+              and(
+                eq(coreProducts.name, c.name),
+                sql`${coreProducts.productId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${coreProducts.name} < ${c.name}`,
+              and(
+                eq(coreProducts.name, c.name),
+                sql`${coreProducts.productId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(coreProducts.name),
+          orderFn(coreProducts.productId),
+        );
+      },
+      encodeRow: (row) => ({ name: row.name, id: row.productId }),
+    });
 
-    // Count query for total (same filters, no limit/offset)
+    // Count query for total (optional, could be removed later if too slow)
     let countQb = this.db
       .select({ count: sql<number>`count(*)` })
       .from(coreProducts)
@@ -77,7 +124,7 @@ export class ProductsService {
 
     const [{ count: total }] = await countQb;
 
-    return { data, page, limit, total: Number(total) };
+    return { data, page, limit, total: Number(total), nextCursor, prevCursor };
   }
 
   async findOne(id: string, tx?: DrizzleDB) {

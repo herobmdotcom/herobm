@@ -1,4 +1,4 @@
-.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e docs-generate schema-ref migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
+.PHONY: up down restart logs clean status ps nuke test-infra test-structural test-structural-local check-env extract extract-dry transform test-transform transform-select elt import-legacy extract-docker extract-docker-dry dev-api rebuild-api rebuild-portal dev-portal test-api test-api-cov test-api-e2e dev-docs-dbt dev-docs-schema dev-docs-api migrate migrate-status migrate-dry seed init init-env setup test-all build-all typecheck-portal build-api build-portal verify-api-only verify-portal check-logs-volume dev-local prod-local verify-local
 
 # Environment Profile Resolution
 # 1. Command Line explicit (make ... PROFILE=staging)
@@ -88,27 +88,15 @@ down-db:
 	$(COMPOSE_CMD) stop postgres-custom redis-broker
 	-podman rm -f postgres-custom redis-broker
 
-# FE + API Core (The standard full-container app stack)
-up-fe-api: check-logs-volume check-postgres-logs
+# Portal + API Core (The standard full-container app stack)
+up-portal-api: check-logs-volume check-postgres-logs
 	$(COMPOSE_CMD) up -d $(ARGS) custom-api ops-portal postgres-custom redis-broker
 
-down-fe-api:
+down-portal-api:
 	$(COMPOSE_CMD) stop custom-api ops-portal postgres-custom redis-broker
 	-podman rm -f custom-api ops-portal postgres-custom redis-broker
 
-# PLG (Prometheus, Loki, Grafana)
-up-plg: check-logs-volume check-postgres-logs
-	$(COMPOSE_CMD) --profile plg up -d $(ARGS)
 
-down-plg:
-	$(COMPOSE_CMD) --profile plg down
-
-# ERPNext Financial Core
-up-erpnext: check-logs-volume check-postgres-logs
-	$(COMPOSE_CMD) --profile erpnext --profile finance up -d
-
-down-erpnext:
-	$(COMPOSE_CMD) --profile erpnext --profile finance down
 
 # Queue Worker (Outbox relay)
 build-worker:
@@ -128,10 +116,10 @@ up-all: build-worker check-logs-volume check-postgres-logs
 down-all:
 	$(COMPOSE_CMD) --profile "*" down
 
-# Legacy aliases pointing to default FE+API core
-up: up-fe-api
-down: down-fe-api
-restart: down-all up-fe-api
+# Legacy aliases pointing to default Portal+API core
+up: up-portal-api
+down: down-portal-api
+restart: down-all up-portal-api
 
 logs:
 	$(COMPOSE_CMD) logs -f
@@ -201,10 +189,10 @@ transform-select:
 transform-refresh:
 	"$(DBT)" run --select $(MODEL) --full-refresh --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt: extract transform import-legacy schema-ref
+elt: extract transform import-legacy dev-docs-schema
 	"$(VENV_PYTHON)" tools/elt_report.py
 
-elt-no-extract: transform import-legacy schema-ref
+elt-no-extract: transform import-legacy dev-docs-schema
 	"$(VENV_PYTHON)" tools/elt_report.py
 
 import-legacy:
@@ -214,10 +202,10 @@ import-legacy:
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 	"$(DBT)" test --select tag:import --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
-elt-odoo: extract-odoo transform-odoo import-legacy-odoo schema-ref
+elt-odoo: extract-odoo transform-odoo import-legacy-odoo dev-docs-schema
 	"$(VENV_PYTHON)" tools/elt_report.py
 
-elt-odoo-no-extract: transform-odoo import-legacy-odoo schema-ref
+elt-odoo-no-extract: transform-odoo import-legacy-odoo dev-docs-schema
 	"$(VENV_PYTHON)" tools/elt_report.py
 
 import-legacy-odoo:
@@ -227,13 +215,25 @@ import-legacy-odoo:
 	"$(DBT)" run-operation sync_purchase_order_lines --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 	"$(DBT)" test --select tag:import --project-dir $(DBT_ODOO_DIR) --profiles-dir $(DBT_ODOO_DIR)
 
-# --- Schema Reference ---
+# --- Schema Reference & Docs ---
 
-docs-generate:
+dev-docs-dbt:
 	"$(VENV_PYTHON)" tools/dbt_docs_generate.py
 
-schema-ref: docs-generate
+dev-docs-schema: dev-docs-dbt
 	"$(VENV_PYTHON)" tools/generate_schema_reference.py
+
+dev-docs-api:
+	@echo "Generating OpenAPI spec from source..."
+	npx tsx --tsconfig apps/api/tsconfig.json apps/api/src/scripts/export-openapi.ts
+
+dev-generate-sdk: dev-docs-api
+	@echo "Generating TypeScript SDK..."
+	npm run generate --workspace=@modbm/sdk
+
+dev-db-generate:
+	@if [ -z "$(NAME)" ]; then echo "Error: NAME is required. Usage: make dev-db-generate NAME=migration_name"; exit 1; fi
+	npx tsx tools/generate_migration.ts $(NAME)
 
 # --- ELT Pipeline (Container) ---
 
@@ -345,7 +345,7 @@ build-shared:
 
 # --- Quality Gates & Verification ---
 
-verify-fe-api: typecheck-portal test-api test-api-e2e
+verify-portal-api: typecheck-portal test-api test-api-e2e
 
 test-deps:
 	python infra/tests/test_dependency_completeness.py
@@ -373,6 +373,7 @@ test-structural:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_config_drift.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_hardcoded_currency.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_lint_performance.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_sales_order_lines.ps1
 
 test-data:
 	"$(VENV_PYTHON)" infra/tests/test_data_counts.py
@@ -453,7 +454,7 @@ verify-db: migrate-status
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Admin User: ' || count(*) FROM modbm_core.users WHERE username = 'admin';"
 	@podman exec -i postgres-custom psql -U $(POSTGRES_USER) -d $(POSTGRES_DB) -t -A -c "SELECT 'Organization: ' || count(*) FROM modbm_core.organization;"
 
-verify-all: build-api verify-fe-api verify-db test-structural test-deps test-transform test-data
+verify-all: build-api verify-portal-api verify-db test-structural test-deps test-transform test-data
 
 test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_drizzle_schema_sync.ps1
@@ -474,4 +475,5 @@ test-structural-local:
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_context_packages.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_singleton_settings_integrity.ps1
 	@powershell -ExecutionPolicy Bypass -File infra/tests/test_lint_performance.ps1
+	@powershell -ExecutionPolicy Bypass -File infra/tests/test_no_duplicate_sales_order_lines.ps1
 verify-local: build-api typecheck-portal test-api test-api-e2e test-structural-local test-deps test-transform

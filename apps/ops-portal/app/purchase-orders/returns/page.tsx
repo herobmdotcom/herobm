@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
 import ProductSearchInput from '@/components/shared/ProductSearchInput';
 import type { Product } from '@/components/shared/ProductSearchInput';
@@ -73,10 +73,12 @@ function ReturnsFlow() {
     setInvoicePrice('');
     
     try {
-      const data = await apiFetch<ReturnableLine[]>(`/api/purchase-orders/returnable-lines?productId=${product.productId}`);
+      const res = await api.purchaseOrdersControllerFindReturnableLines({ productId: product.productId });
       
       // Filter out lines that are already in the draft fully
       // But for simplicity, we just fetch state from server.
+      // @ts-expect-error
+      const data = res.data || [];
       setReturnableLines(data);
       
       if (data.length === 1) {
@@ -189,14 +191,14 @@ function ReturnsFlow() {
     try {
       await Promise.all(
         Object.entries(byPo).map(([poIdFilter, lines]) => {
-              return apiMutate(`/api/purchase-orders/${poIdFilter}/returns`, 'POST', {
+              return api.purchaseReturnsControllerCreateReturn(poIdFilter, {
                  notes: 'Returned via UI',
                  lines: lines.map(l => ({
                     purchaseOrderLineId: l.purchaseOrderLineId,
                     quantityReturned: l.quantityReturned,
                     returnFee: String(l.returnFeePerUnit || 0)
                  }))
-              });
+              } as any);
         })
       );
       

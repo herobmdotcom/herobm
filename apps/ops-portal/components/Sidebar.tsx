@@ -138,6 +138,8 @@ export default function Sidebar() {
           ]
         },
         { href: '/admin/users', label: t('items.users'), icon: 'group' },
+        { href: '/admin/developers', label: 'Developers', icon: 'code' },
+        { href: '/admin/developers/api-reference', label: 'API Reference', icon: 'menu_book' },
         { 
           href: '/admin/import/csv', 
           label: 'Import', 

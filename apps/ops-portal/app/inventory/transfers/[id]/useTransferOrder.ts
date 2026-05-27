@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 export function useTransferOrder(id: string) {
   const [order, setOrder] = useState<any>(null);
@@ -15,7 +15,8 @@ export function useTransferOrder(id: string) {
   const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
-      const res: any = await apiFetch(`/api/transfers/${id}`);
+      const response = await api.transfersControllerFindOne(id);
+      const res = response.data as any;
       setOrder(res);
       setEditNotes(res.notes || '');
       setEditSourceLoc(res.sourceLocationId || '');
@@ -38,13 +39,10 @@ export function useTransferOrder(id: string) {
 
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          notes: editNotes !== order.notes ? editNotes : undefined,
-          sourceLocationId: editSourceLoc !== order.sourceLocationId ? editSourceLoc : undefined,
-          destinationLocationId: editDestLoc !== order.destinationLocationId ? editDestLoc : undefined,
-        }),
+      await api.transfersControllerUpdate(id, {
+        notes: editNotes !== order.notes ? editNotes : undefined,
+        sourceLocationId: editSourceLoc !== order.sourceLocationId ? editSourceLoc : undefined,
+        destinationLocationId: editDestLoc !== order.destinationLocationId ? editDestLoc : undefined,
       });
       await loadOrder();
     } catch (e: any) {
@@ -57,10 +55,7 @@ export function useTransferOrder(id: string) {
   const addLine = async (productId: string, quantity: number) => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/lines`, {
-        method: 'POST',
-        body: JSON.stringify({ productId, quantity }),
-      });
+      await api.transfersControllerAddLine(id, { productId, quantity: quantity.toString() });
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to add line');
@@ -72,10 +67,7 @@ export function useTransferOrder(id: string) {
   const updateLine = async (lineId: string, quantity: number) => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/lines/${lineId}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ quantity }),
-      });
+      await api.transfersControllerUpdateLine(id, lineId, { quantity: quantity.toString() });
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to update line');
@@ -87,9 +79,7 @@ export function useTransferOrder(id: string) {
   const removeLine = async (lineId: string) => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/lines/${lineId}`, {
-        method: 'DELETE',
-      });
+      await api.transfersControllerRemoveLine(id, lineId);
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to remove line');
@@ -101,7 +91,7 @@ export function useTransferOrder(id: string) {
   const shipOrder = async () => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/ship`, { method: 'POST' });
+      await api.transfersControllerShipTransferOrder(id);
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to ship order');
@@ -113,7 +103,7 @@ export function useTransferOrder(id: string) {
   const cancelOrder = async () => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/cancel`, { method: 'POST' });
+      await api.transfersControllerCancelTransferOrder(id);
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to cancel order');
@@ -125,10 +115,7 @@ export function useTransferOrder(id: string) {
   const receiveOrder = async (destinationBinId: string) => {
     try {
       setSaving(true);
-      await apiFetch(`/api/transfers/${id}/receive`, {
-        method: 'POST',
-        body: JSON.stringify({ destinationBinId }),
-      });
+      await api.transfersControllerReceiveTransferOrder(id, { body: JSON.stringify({ destinationBinId }) });
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to receive order');

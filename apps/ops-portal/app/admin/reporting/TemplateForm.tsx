@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, apiFetchBlob, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -32,18 +33,21 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
   const router = useRouter();
 
   useEffect(() => {
-    apiFetch<{ data: any[] }>('/api/reports/hooks').then(res => setAvailableHooks(res.data)).catch(() => {});
+    api.reportsControllerGetHooks().then(res => {
+      // @ts-expect-error
+      setAvailableHooks(res.data);
+    }).catch(() => {});
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       if (isNew) {
-        await apiMutate('/api/reports', 'POST', formData);
+        await api.reportsControllerCreateReport({ body: JSON.stringify(formData) });
         toast.success(t('toasts.created'));
         router.push('/admin/reporting');
       } else {
-        await apiMutate(`/api/reports/${initialData.id}`, 'PATCH', formData);
+        await api.reportsControllerUpdateReport(initialData.id, { body: JSON.stringify(formData) });
         toast.success(t('toasts.saved'));
         router.refresh();
       }
@@ -59,7 +63,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     
     setDeleting(true);
     try {
-      await apiMutate(`/api/reports/${initialData.id}`, 'DELETE');
+      await api.reportsControllerDeleteReport(initialData.id);
       toast.success(t('toasts.deleted'));
       router.push('/admin/reporting');
     } catch (e: any) {
@@ -71,17 +75,14 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
   const handlePreview = async () => {
     setPreviewing(true);
     try {
-      const blob = await apiFetchBlob('/api/reports/preview', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await api.reportsControllerPreviewReport({
         body: JSON.stringify({
           template: formData.template,
           hookSlug: previewVars.hookSlug,
           entityId: previewVars.entityId
         })
-      });
+      } as any);
+      const blob = (res as any).data;
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl(url);
     } catch (e: any) {
@@ -94,8 +95,10 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
   const handleRandomizeId = async () => {
     if (!previewVars.hookSlug) return;
     try {
-      const res = await apiFetch<{ data: { id: string | null } }>(`/api/reports/hooks/${previewVars.hookSlug}/random-id`);
-      if (res.data.id) {
+      const res = await api.reportsControllerGetRandomId(previewVars.hookSlug);
+      // @ts-expect-error
+      if (res.data?.id) {
+        // @ts-expect-error
         setPreviewVars(p => ({ ...p, entityId: res.data.id! }));
       }
     } catch (e) {
@@ -107,9 +110,10 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: '' }));
     if (newHookSlug) {
       // Automatically fetch a random ID when changing hooks
-      apiFetch<{ data: { id: string | null } }>(`/api/reports/hooks/${newHookSlug}/random-id`)
+      api.reportsControllerGetRandomId(newHookSlug)
         .then(res => {
-          if (res.data.id) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: res.data.id! }));
+          // @ts-expect-error
+          if (res.data?.id) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: res.data.id! }));
         })
         .catch(() => {});
     }

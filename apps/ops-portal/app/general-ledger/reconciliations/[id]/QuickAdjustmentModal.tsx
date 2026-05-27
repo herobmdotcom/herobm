@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { getCurrency } from '@/lib/currency';
 import toast from 'react-hot-toast';
@@ -35,8 +36,8 @@ export default function QuickAdjustmentModal({
 
   useEffect(() => {
     if (isOpen && accounts.length === 0) {
-      apiFetch<any>('/api/gl/accounts')
-        .then(res => setAccounts(res.data || res))
+      api.glControllerGetAccounts()
+        .then(res => setAccounts((res.data as any) || res))
         .catch(err => reportError(err, 'QuickAdjustmentModal_loadAccounts'));
     }
   }, [isOpen, accounts.length]);
@@ -50,16 +51,12 @@ export default function QuickAdjustmentModal({
 
     setLoading(true);
     try {
-      await apiFetch(`/api/gl/reconciliations/${reconciliationId}/adjustments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date,
-          amount: Number(amount),
-          type,
-          offsetAccountId,
-          memo
-        })
+      await api.reconciliationControllerCreateAdjustment(reconciliationId, {
+        date,
+        amount: Number(amount),
+        type,
+        offsetAccountId,
+        memo
       });
       onSuccess();
       onClose();

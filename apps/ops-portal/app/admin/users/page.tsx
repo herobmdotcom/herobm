@@ -2,7 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -74,8 +74,8 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<User[]>('/api/users');
-      setUsers(data);
+      const res: any = await api.usersControllerFindAll();
+      setUsers(res?.data || res || []);
     } catch (err: any) {
       toast.error(t('toasts.loadFailed') + ': ' + err.message);
     } finally {
@@ -144,10 +144,10 @@ export default function UsersPage() {
           return;
         }
         payload.username = form.username;
-        await apiMutate('/api/users', 'POST', payload);
+        await api.usersControllerCreate(payload);
         toast.success(t('toasts.created'));
       } else if (editingId) {
-        await apiMutate(`/api/users/${editingId}`, 'PATCH', payload);
+        await api.usersControllerUpdate(editingId, payload);
         toast.success(t('toasts.updated'));
       }
       cancel();
@@ -159,7 +159,7 @@ export default function UsersPage() {
 
   const toggleActive = async (user: User) => {
     try {
-      await apiMutate(`/api/users/${user.userId}/toggle-active`, 'PATCH');
+      await api.usersControllerToggleActive(user.userId);
       toast.success(t('toasts.toggled'));
       loadUsers();
     } catch (err: any) {
@@ -170,7 +170,7 @@ export default function UsersPage() {
   const deleteUser = async (user: User) => {
     if (!confirm(t('confirmDelete', { username: user.username }))) return;
     try {
-      await apiMutate(`/api/users/${user.userId}`, 'DELETE');
+      await api.usersControllerRemove(user.userId);
       toast.success(t('toasts.deleted'));
       loadUsers();
     } catch (err: any) {

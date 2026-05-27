@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -62,8 +63,11 @@ export default function JournalEntrySlideOver({ entry, onClose }: JournalEntrySl
     }
 
     setLoading(true);
-    apiFetch<any>(`/api/gl/journal-entries/${entry.journalEntryId}`)
-      .then((detail) => setLines(detail.lines || []))
+    api.glControllerGetJournalEntry(entry.journalEntryId)
+      .then((res) => {
+        const detail = res.data as any;
+        setLines(detail.lines || []);
+      })
       .catch((err) => reportError(err, 'JournalEntrySlideOver'))
       .finally(() => setLoading(false));
   }, [entry]);

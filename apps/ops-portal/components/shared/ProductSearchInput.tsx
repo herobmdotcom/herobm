@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '../../lib/api';
+import * as api from '@modbm/sdk';
 
 /**
  * ProductSearchInput — reusable product search with dropdown autocomplete.
@@ -64,10 +64,12 @@ export default function ProductSearchInput({
     const term = rawTerm.trim();
     if (!term || term.length < 2) { setResults([]); return; }
     try {
-      const data = await apiFetch<{ data: Product[] }>(
-        `/api/products?q=${encodeURIComponent(term)}&limit=10`,
+      const data = await api.customFetch<{ data: Product[] }>(
+        `/products?q=${encodeURIComponent(term)}&limit=10`,
+        { method: 'GET' }
       );
-      setResults(data.data);
+
+      setResults(data.data || data);
     } catch { setResults([]); }
   }, []);
 
@@ -81,8 +83,13 @@ export default function ProductSearchInput({
     setResults([]);
     try {
       // Fetch full details (including productUoms) from findOne before yielding
-      const details = await apiFetch<Product>(`/api/products/${p.productId}`);
-      onSelect(details);
+      const res = await api.productsControllerFindOne(p.productId);
+      const data = res as any;
+      if (data && data.data) {
+        onSelect(data.data as Product);
+      } else {
+        onSelect(data as Product);
+      }
     } catch {
       // Fallback to the shallow object if the detail fetch fails
       onSelect(p);

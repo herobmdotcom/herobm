@@ -5,7 +5,8 @@ import DataGrid from '@/components/DataGrid';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
 import { formatCompositeQuantity } from '@modbm/shared';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 
 interface Location {
   locationId: string;
@@ -24,14 +25,17 @@ export default function BinContentsView() {
 
   // Load locations and resolve default
   useEffect(() => {
-    apiFetch<{ data: Location[]; defaultFulfillmentLocationId?: string }>('/api/inventory/locations')
-      .then((res) => {
-        setLocations(res.data);
-        if (res.defaultFulfillmentLocationId) {
-          const defaultLoc = res.data.find((l) => l.locationId === res.defaultFulfillmentLocationId);
-          setSelectedLocationCode(defaultLoc?.code ?? res.data[0]?.code ?? null);
-        } else if (res.data.length > 0) {
-          setSelectedLocationCode(res.data[0].code);
+    api.inventoryControllerFindAllLocations({} as any)
+      .then((response) => {
+        const res = response.data as any;
+        const locs = Array.isArray(res) ? res : (res?.data || []);
+        setLocations(locs);
+        
+        if (res?.defaultFulfillmentLocationId) {
+          const defaultLoc = locs.find((l: any) => l.locationId === res.defaultFulfillmentLocationId);
+          setSelectedLocationCode(defaultLoc?.code ?? locs[0]?.code ?? null);
+        } else if (locs.length > 0) {
+          setSelectedLocationCode(locs[0].code);
         }
         setLocationsLoaded(true);
       })

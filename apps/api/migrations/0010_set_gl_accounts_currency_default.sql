@@ -1,1 +1,0 @@
-ALTER TABLE "modbm_core"."gl_accounts" ALTER COLUMN "currency_code" SET DEFAULT 'EUR';

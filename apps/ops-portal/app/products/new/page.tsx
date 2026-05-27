@@ -5,7 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import EntityHeader from '@/components/shared/EntityHeader';
 import DetailsLayout from '@/components/shared/DetailsLayout';
 import { useTranslations } from 'next-intl';
@@ -45,7 +45,7 @@ export default function NewProductPage() {
   });
 
   useEffect(() => {
-    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -58,7 +58,8 @@ export default function NewProductPage() {
       if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;
       if (!payload.productGroupId) delete payload.productGroupId;
 
-      const product = await apiMutate<any>('/api/products', 'POST', payload);
+      const res = await api.productsControllerCreate(payload as any);
+      const product = res.data as any;
       toast.success(t('toast.productCreated'));
       router.push(`/products/${product.productId}`);
     } catch (err: any) {

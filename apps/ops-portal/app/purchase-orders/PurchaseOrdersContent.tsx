@@ -7,8 +7,7 @@ import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
 import type { ColDef } from 'ag-grid-community';
 import { useTranslations } from 'next-intl';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+
 import { useSettings } from '@/components/SettingsProvider';
 
 interface UnifiedPurchaseOrderRow {
@@ -29,6 +28,7 @@ export default function PurchaseOrdersContent() {
   const router = useRouter();
   const tCommon = useTranslations('common');
   const tPurchase = useTranslations('purchaseOrders');
+  const tStates = useTranslations('common.states');
   const [days, setDays] = useState('90');
 
   const columns = useMemo<ColDef<UnifiedPurchaseOrderRow>[]>(() => [
@@ -44,9 +44,10 @@ export default function PurchaseOrdersContent() {
       field: 'stateCode',
       headerName: tCommon('columns.status'),
       width: 120,
-      cellRenderer: (params: any) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
     { field: 'referenceNumber', headerName: tPurchase('columns.referenceNumber'), width: 140 },

@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 
@@ -69,9 +70,10 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
         return next;
       });
 
-      apiFetch<any>(`/api/allocations/available-po-lines?productId=${encodeURIComponent(demand.productId)}`)
-        .then((data) => {
-          const lines = Array.isArray(data) ? data : data.data || [];
+      api.allocationsControllerGetAvailablePoLines({ productId: demand.productId })
+        .then((res) => {
+          // @ts-expect-error
+          const lines = Array.isArray(res.data) ? res.data : res.data?.data || [];
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
 
           setDemandStates((prev) => {
@@ -157,10 +159,12 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
     }
 
     try {
-      await apiMutate<any>(`/api/allocations/link-po`, 'POST', {
-        demandId: demand.id,
-        purchaseOrderLineId: poLine.purchaseOrderLineId,
-        quantity: qty,
+      await api.allocationsControllerLinkDemandToPo({
+        body: JSON.stringify({
+          demandId: demand.id,
+          purchaseOrderLineId: poLine.purchaseOrderLineId,
+          quantity: qty,
+        })
       });
       
       let splitDemand = null;

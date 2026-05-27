@@ -191,6 +191,7 @@ describe('GlController', () => {
   describe('POST /gl/journal-entries', () => {
     it('should create manual journal entry with correct meta', async () => {
       const body = {
+        journalEntryId: 'je-uuid-1',
         lines: [
           { accountCode: '1100', debit: 100, credit: 0 },
           { accountCode: '4100', debit: 0, credit: 100 },
@@ -200,31 +201,34 @@ describe('GlController', () => {
         actor: 'admin',
       };
 
-      await controller.createManualJournalEntry(body);
+      await controller.createManualJournalEntry(body as any);
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
         sourceType: 'manual',
         memo: 'Test JE',
         entryDate: '2026-03-22',
         actor: 'admin',
+        journalEntryId: 'je-uuid-1',
       });
     });
 
     it('should set sourceType to manual regardless of what body contains', async () => {
       const body = {
+        journalEntryId: 'je-uuid-2',
         lines: [
           { accountCode: '1100', debit: 50, credit: 0 },
           { accountCode: '4100', debit: 0, credit: 50 },
         ],
       };
 
-      await controller.createManualJournalEntry(body);
+      await controller.createManualJournalEntry(body as any);
 
       expect(glService.postJournalEntry).toHaveBeenCalledWith(body.lines, {
         sourceType: 'manual',
         memo: undefined,
         entryDate: undefined,
         actor: undefined,
+        journalEntryId: 'je-uuid-2',
       });
     });
   });

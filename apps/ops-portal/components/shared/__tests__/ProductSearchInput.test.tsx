@@ -1,19 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProductSearchInput from '../ProductSearchInput';
-import { apiFetch } from '../../../lib/api';
+import * as api from '@modbm/sdk';
 
 // Mock next-intl translations
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-// Mock our configured API fetcher
-jest.mock('../../../lib/api', () => ({
-  apiFetch: jest.fn(),
+// Mock sdk
+jest.mock('@modbm/sdk', () => ({
+  productsControllerFindAll: jest.fn(),
 }));
-
-const mockApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>;
 
 describe('ProductSearchInput', () => {
   beforeEach(() => {
@@ -22,7 +20,7 @@ describe('ProductSearchInput', () => {
 
   it('searches for products using the canonical ?q= parameter instead of ?search=', async () => {
     // Return empty results for the search endpoint
-    mockApiFetch.mockResolvedValueOnce({ data: [] });
+    (api.productsControllerFindAll as jest.Mock).mockResolvedValueOnce({ data: [] });
     
     const handleSelect = jest.fn();
     render(<ProductSearchInput onSelect={handleSelect} />);
@@ -35,11 +33,11 @@ describe('ProductSearchInput', () => {
     
     // Wait for the debounced search to fire (300ms delay in component)
     await waitFor(() => {
-      expect(mockApiFetch).toHaveBeenCalled();
+      expect(api.productsControllerFindAll).toHaveBeenCalled();
     }, { timeout: 1000 });
     
     // Assert exactly what URL the component requested
-    expect(mockApiFetch).toHaveBeenCalledWith('/api/products?q=wire&limit=10');
+    expect(api.productsControllerFindAll).toHaveBeenCalledWith({ q: 'wire', limit: 10 });
   });
 
 });

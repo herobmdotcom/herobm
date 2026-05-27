@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import * as api from '@modbm/sdk';
 
 import { useTranslations } from 'next-intl';
 
@@ -35,7 +36,8 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
   const loadReceptions = async () => {
     setLoading(true);
     try {
-      const { data } = await apiFetch<{ data: ReceptionLine[] }>(`/api/goods-received/lines?purchaseOrderId=${orderId}`);
+      const { data } = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId });
+      // @ts-expect-error
       setReceptions(data || []);
     } catch (err) {
       reportError(err, 'ReceptionsSection');
@@ -53,7 +55,7 @@ export default function ReceptionsSection({ orderId }: { orderId: string }) {
   const handleUnlink = async (lineId: string) => {
     if (!confirm(t('confirmUnlink'))) return;
     try {
-      await apiFetch(`/api/goods-received/lines/${lineId}/unresolve`, { method: 'POST' });
+      await api.goodsReceivedControllerUnresolveAllocation(lineId, { method: 'POST' });
       toast.success(t('success'));
       loadReceptions();
     } catch (err) {

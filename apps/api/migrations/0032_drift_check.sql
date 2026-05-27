@@ -1,2 +1,0 @@
-ALTER TABLE "modbm_core"."purchase_orders" DROP CONSTRAINT "purchase_order_state_check";--> statement-breakpoint
-ALTER TABLE "modbm_core"."purchase_orders" ADD CONSTRAINT "purchase_order_state_check" CHECK (state_code IN ('draft', 'ordered', 'partially_received', 'received', 'invoiced', 'cancelled', 'legacy', 'archived'));

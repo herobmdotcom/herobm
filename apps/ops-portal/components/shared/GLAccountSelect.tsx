@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 interface GLAccount {
@@ -43,15 +44,10 @@ export default function GLAccountSelect({
     let active = true;
     setLoading(true);
 
-    const queryParams = new URLSearchParams();
-    if (bankAccountOnly) {
-      queryParams.set('isBankAccount', 'true');
-    }
-    const qs = queryParams.toString() ? `?${queryParams.toString()}` : '';
-
-    apiFetch<GLAccount[]>(`/api/gl/accounts${qs}`)
-      .then((data) => {
-        if (active) setAccounts(data);
+    api.glControllerGetAccounts((bankAccountOnly ? { isBankAccount: 'true' } : {}) as any)
+      .then((res) => {
+        // @ts-expect-error
+        if (active) setAccounts(res.data);
       })
       .catch((err) => reportError(err, 'GLAccountSelect'))
       .finally(() => {

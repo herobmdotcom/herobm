@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { tDynamic } from '@/lib/i18n';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { GOODS_RECEIVED_STATE } from '@modbm/shared';
 
 interface ReceptionLine {
@@ -217,18 +217,24 @@ export default function ReceivingSection({
     const fetchReceptions = async () => {
       try {
         setLoading(true);
-        const listData = await apiFetch<{ data: any[] }>(`/api/purchase-orders/${orderId}/receptions?limit=50`);
-        const fetchedReceptions = listData.data || [];
+        const listData = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId });
+        // @ts-expect-error
+        const lines = listData.data || [];
+        
+        // Extract unique reception IDs
+        // @ts-expect-error
+        const grIds = Array.from(new Set<string>(lines.map(l => l.goodsReceivedId)));
         
         // Fetch full data including lines for each setup
         const detailedReceptions = await Promise.all(
-          fetchedReceptions.map((rec) => 
-            apiFetch<Reception>(`/api/purchase-orders/${orderId}/receptions/${rec.receptionId}`)
+          grIds.map((id) => 
+            api.goodsReceivedControllerFindOne(id)
           )
         );
 
         if (active) {
-          setReceptions(detailedReceptions);
+          // @ts-expect-error
+          setReceptions(detailedReceptions.map(r => r.data));
         }
       } catch (err) {
         // safely ignore missing if not supported yet, or show empty

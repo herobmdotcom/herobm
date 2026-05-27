@@ -1,2 +1,0 @@
-ALTER TABLE "modbm_core"."sales_order_shipments" ADD COLUMN "fulfillment_location_id" uuid;--> statement-breakpoint
-ALTER TABLE "modbm_core"."sales_order_shipments" ADD CONSTRAINT "sales_order_shipments_fulfillment_location_id_locations_location_id_fk" FOREIGN KEY ("fulfillment_location_id") REFERENCES "modbm_core"."locations"("location_id") ON DELETE no action ON UPDATE no action;

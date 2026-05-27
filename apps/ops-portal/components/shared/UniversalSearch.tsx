@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '../../lib/api';
+import * as api from '@modbm/sdk';
 
 interface SearchResult {
   id: string;
@@ -53,10 +53,9 @@ export default function UniversalSearch() {
       return;
     }
     try {
-      const data = await apiFetch<{ results: SearchResult[] }>(
-        `/api/dashboard/search?q=${encodeURIComponent(term)}`,
-      );
-      setResults(data.results);
+      const res = await api.dashboardControllerSearch({ q: term });
+      const payload: any = res.data;
+      setResults(payload.results || payload || []);
     } catch {
       setResults([]);
     }

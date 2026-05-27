@@ -2,7 +2,7 @@
 
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useState, useEffect, useMemo } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import EntityHeader from '@/components/shared/EntityHeader';
@@ -65,8 +65,10 @@ export default function SystemSettingsPage() {
   const loadOrg = async () => {
     try {
       setOrgLoading(true);
-      const data = await apiFetch<any>('/api/settings/organization');
-      setOrgForm(data);
+      const res = await api.organizationControllerGet();
+      // @ts-expect-error
+      const data = res.data;
+      setOrgForm(data || {});
       setIsOrgDirty(false);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.company') }) + ': ' + err.message);
@@ -77,19 +79,20 @@ export default function SystemSettingsPage() {
 
   const updateOrgField = (field: string, value: any) => {
     setOrgForm((prev: any) => {
-      if (prev[field] === value) return prev;
+      const p = prev || {};
+      if (p[field] === value) return p;
       setIsOrgDirty(true);
-      return { ...prev, [field]: value };
+      return { ...p, [field]: value };
     });
   };
 
   const saveOrgField = async () => {
-    if (orgSaving || !orgForm.name) return;
+    if (orgSaving || !orgForm?.name) return;
     orgSave();
   };
 
   const orgSave = async () => {
-    if (!orgForm.name || !isOrgDirty) return;
+    if (!orgForm?.name || !isOrgDirty) return;
     setIsOrgDirty(false);
     try {
       setOrgSaving(true);
@@ -97,7 +100,7 @@ export default function SystemSettingsPage() {
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
-      await apiMutate('/api/settings/organization', 'PATCH', payload);
+      await api.organizationControllerUpdate({ body: JSON.stringify(payload) });
     } catch (err: any) {
       toast.error(err.message, { id: 'org-save-error' });
     } finally {
@@ -108,11 +111,15 @@ export default function SystemSettingsPage() {
   const loadAppConfig = async () => {
     try {
       setAppLoading(true);
-      const [appData, locs] = await Promise.all([
-        apiFetch<any>('/api/settings/app'),
-        apiFetch<any>('/api/inventory/locations?limit=100')
+      const [appDataRes, locsRes] = await Promise.all([
+        api.appConfigControllerGet(),
+        api.inventoryControllerFindAllLocations({ limit: 100 })
       ]);
-      setAppForm(appData);
+      // @ts-expect-error
+      const appData = appDataRes.data;
+      // @ts-expect-error
+      const locs = locsRes.data;
+      setAppForm(appData || {});
       setLocations(locs?.data || locs || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + err.message);
@@ -124,7 +131,7 @@ export default function SystemSettingsPage() {
   const updateAppField = async (field: string, value: any) => {
     try {
       setAppForm((prev: any) => ({ ...prev, [field]: value }));
-      await apiMutate('/api/settings/app', 'PATCH', { [field]: value });
+      await api.appConfigControllerUpdate({ body: JSON.stringify({ [field]: value }) });
       toast.success(t('common.updated'));
     } catch (err: any) {
       toast.error(err.message);
@@ -136,8 +143,10 @@ export default function SystemSettingsPage() {
   const loadUom = async () => {
     try {
       setUomLoading(true);
-      const data = await apiFetch<UomEntry[]>('/api/settings/uom-dictionary');
-      setUoms(data);
+      const res = await api.uomDictionaryControllerFindAll();
+      // @ts-expect-error
+      const data: any = res.data;
+      setUoms(data?.data || data || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.uom') }) + ': ' + err.message);
     } finally {
@@ -153,10 +162,10 @@ export default function SystemSettingsPage() {
     if (!uomForm.uomCode || !uomForm.description) { toast.error(tCommon('errors.typeAndDateRequired')); return; }
     try {
       if (uomEditingCode) {
-        await apiMutate(`/api/settings/uom-dictionary/${uomEditingCode}`, 'PATCH', { description: uomForm.description });
+        await api.uomDictionaryControllerUpdate(uomEditingCode, { description: uomForm.description });
         toast.success(tSettings('toasts.uomUpdated'));
       } else {
-        await apiMutate('/api/settings/uom-dictionary', 'POST', { uomCode: uomForm.uomCode, description: uomForm.description });
+        await api.uomDictionaryControllerCreate({ uomCode: uomForm.uomCode, description: uomForm.description });
         toast.success(tSettings('toasts.uomCreated'));
       }
       uomCancel(); loadUom();
@@ -165,7 +174,7 @@ export default function SystemSettingsPage() {
 
   const uomDelete = async (code: string) => {
     if (!confirm(tSettings('confirmations.deleteUom', { code }))) return;
-    try { await apiMutate(`/api/settings/uom-dictionary/${code}`, 'DELETE'); toast.success(tSettings('toasts.uomDeleted')); loadUom(); }
+    try { await api.uomDictionaryControllerRemove(code); toast.success(tSettings('toasts.uomDeleted')); loadUom(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -174,8 +183,10 @@ export default function SystemSettingsPage() {
   const loadMacros = async () => {
     try {
       setMacroLoading(true);
-      const data = await apiFetch<Macro[]>('/api/macros');
-      setMacros(data);
+      const res = await api.macrosControllerFindAll({});
+      // @ts-expect-error
+      const data: any = res.data;
+      setMacros(data?.data || data || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + err.message);
     } finally {
@@ -198,10 +209,10 @@ export default function SystemSettingsPage() {
         content: macroForm.content,
       };
       if (macroEditingId) {
-        await apiMutate(`/api/macros/${macroEditingId}`, 'PATCH', payload);
+        await api.macrosControllerUpdate(macroEditingId, payload);
         toast.success(tSettings('toasts.macroUpdated'));
       } else {
-        await apiMutate('/api/macros', 'POST', payload);
+        await api.macrosControllerCreate(payload);
         toast.success(tSettings('toasts.macroCreated'));
       }
       macroCancel(); loadMacros();
@@ -210,7 +221,7 @@ export default function SystemSettingsPage() {
 
   const macroDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteMacro'))) return;
-    try { await apiMutate(`/api/macros/${id}`, 'DELETE'); toast.success(tSettings('toasts.macroDeleted')); loadMacros(); }
+    try { await api.macrosControllerRemove(id); toast.success(tSettings('toasts.macroDeleted')); loadMacros(); }
     catch (err: any) { toast.error(err.message); }
   };
 
@@ -291,7 +302,7 @@ export default function SystemSettingsPage() {
 
   const flushCache = async () => {
     try {
-      await apiMutate('/api/gl/settings/reload', 'POST');
+      await api.glControllerReloadSettings();
       toast.success('Settings cache flushed successfully.');
     } catch (err: any) {
       toast.error(err.message);
@@ -586,7 +597,7 @@ export default function SystemSettingsPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  {t('settings.fulfillmentHeading')}
+                  {tSettings('fulfillmentHeading')}
                 </label>
                 <select
                   className="input"
@@ -594,7 +605,7 @@ export default function SystemSettingsPage() {
                   onChange={(e) => updateAppField('defaultFulfillmentLocationId', e.target.value || null)}
                   disabled={appLoading}
                 >
-                  {!appForm?.defaultFulfillmentLocationId && <option value="">{t('settings.none')}</option>}
+                  {!appForm?.defaultFulfillmentLocationId && <option value="">{tSettings('none')}</option>}
                   {locations.map((loc) => (
                     <option key={loc.locationId || loc.id} value={loc.locationId || loc.id}>
                       {loc.name} ({loc.code})

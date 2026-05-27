@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { CasbinGuard } from './auth/casbin.guard';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { ApiThrottlerGuard } from './auth/api-throttler.guard';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { DrizzleModule } from './drizzle/drizzle.module';
@@ -30,6 +31,8 @@ import { MacrosModule } from './macros/macros.module';
 import { UsersModule } from './users/users.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PricingModule } from './pricing/pricing.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 
 @Module({
   imports: [
@@ -37,7 +40,10 @@ import { PricingModule } from './pricing/pricing.module';
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
     }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: 60000, limit: 60 },
+      { name: 'api', ttl: 60000, limit: 1000 },
+    ]),
     DrizzleModule,
     AuthModule,
     AccountsModule,
@@ -63,9 +69,12 @@ import { PricingModule } from './pricing/pricing.module';
     MacrosModule,
     UsersModule,
     PricingModule,
+    WebhooksModule,
+    ApiKeysModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: MetricsInterceptor },
+    { provide: APP_GUARD, useClass: ApiThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: CasbinGuard },
   ],

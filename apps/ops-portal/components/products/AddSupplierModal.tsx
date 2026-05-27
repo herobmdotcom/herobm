@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -65,8 +65,8 @@ export default function AddSupplierModal({
   const fetchSuppliers = async (q: string) => {
     setLoading(true);
     try {
-      const res = await apiFetch<any>(`/api/suppliers?limit=15&q=${encodeURIComponent(q)}`);
-      setSuppliers(res.data || []);
+      const res = await api.customFetch<any>(`/suppliers?limit=15&q=${encodeURIComponent(q)}`, { method: 'GET' });
+      setSuppliers(res.data?.data || []);
       setLastSearchQuery(q);
     } catch (err: any) {
       // quiet fail
@@ -100,7 +100,7 @@ export default function AddSupplierModal({
     setSubmitting(true);
     setError(null);
     try {
-      await apiMutate(`/api/products/${productId}/suppliers`, 'POST', {
+      await api.productsControllerAddSupplier(productId, {
         vendorId,
         supplierPartNumber: supplierPartNumber || undefined,
         costPrice: parseFloat(costPrice) || 0,

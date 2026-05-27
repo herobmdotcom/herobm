@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
 
@@ -43,9 +44,9 @@ export default function CsvImportPage() {
   };
 
   useEffect(() => {
-    apiFetch<any[]>('/api/setup/csv-metadata').then(data => {
-      setTables(data);
-      if (data.length > 0) setSelectedTable(data[0].id);
+    api.setupControllerGetCsvMetadata().then(data => {
+      setTables(data as any[]);
+      if ((data as any[]).length > 0) setSelectedTable((data as any[])[0].id);
     }).catch(err => toast.error('Failed to load table metadata'));
   }, []);
 
@@ -79,26 +80,14 @@ export default function CsvImportPage() {
       formData.append('strategy', strategy);
       formData.append('file', file);
 
-      // Using raw fetch instead of apiFetch because apiFetch is JSON-centric
-      const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-      const headers: any = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      // eslint-disable-next-line no-restricted-syntax
-      const res = await fetch('/api/setup/execute-csv', {
+      // Using SDK with FormData
+      const data = await api.setupControllerExecuteCsv({
         method: 'POST',
-        headers,
-        body: formData,
+        body: formData as any,
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.message || 'Failed to start job');
-      }
-
-      const data = await res.json();
-      jobIdRef.current = data.jobId;
-      startPolling(data.jobId);
+      jobIdRef.current = (data as any).jobId;
+      startPolling((data as any).jobId);
     } catch (err: any) {
       setStatus('failed');
       setErrorMsg(err.message);
@@ -111,7 +100,7 @@ export default function CsvImportPage() {
     
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await apiFetch<any>(`/api/setup/progress/${jobId}`);
+        const progressRes = await api.setupControllerGetProgress(jobId);
         if (progressRes) {
           if (progressRes.logs) {
             setLogs(progressRes.logs);
@@ -119,8 +108,8 @@ export default function CsvImportPage() {
           if (progressRes.status === 'completed' || progressRes.status === 'done') {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
-            apiFetch<any>('/api/setup/import-summary').then(summary => {
-               setImportSummary(summary);
+            api.setupControllerGetImportSummary().then(summary => {
+               setImportSummary(summary as any);
                setStep('finalisation');
             }).catch(err => {
                reportError(err, 'CsvImportPage.pollProgress.importSummary');

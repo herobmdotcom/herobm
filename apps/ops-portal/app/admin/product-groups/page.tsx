@@ -3,7 +3,8 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -40,10 +41,10 @@ export default function ProductGroupsAdmin() {
     try {
       setLoading(true);
       const [data, customers, cc, act] = await Promise.all([
-        apiFetch<any[]>('/api/product-groups'),
-        apiFetch<any[]>('/api/gl/accounts'),
-        apiFetch<any[]>('/api/settings/cost-centers'),
-        apiFetch<any[]>('/api/settings/activities')
+        api.productGroupsControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.glControllerGetAccounts({}).then((r: any) => r?.data?.data || r?.data || r || []),
+        api.costCentersControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
+        api.activitiesControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || [])
       ]);
       const sorted = data.sort((a, b) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
@@ -93,10 +94,10 @@ export default function ProductGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await apiMutate(`/api/product-groups/${editingId}`, 'PATCH', editForm);
+        await api.productGroupsControllerUpdate(editingId, editForm as any);
         toast.success(t('toasts.updated'));
       } else {
-        await apiMutate('/api/product-groups', 'POST', editForm);
+        await api.productGroupsControllerCreate(editForm as any);
         toast.success(t('toasts.created'));
       }
       handleCancel();
@@ -110,7 +111,7 @@ export default function ProductGroupsAdmin() {
   const handleDelete = async (id: string) => {
     if(!confirm(t('confirmDelete'))) return;
     try {
-      await apiMutate(`/api/product-groups/${id}`, 'DELETE');
+      await api.productGroupsControllerRemove(id);
       toast.success(t('toasts.deleted'));
       loadData();
     } catch(err: any) {

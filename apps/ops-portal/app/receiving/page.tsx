@@ -4,7 +4,8 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSettings } from '@/components/SettingsProvider';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
@@ -23,15 +24,15 @@ export default function GoodsReceivedListPage() {
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
 
     useEffect(() => {
-        apiFetch<any>('/api/inventory/locations')
-            .then(response => {
+        api.inventoryControllerFindAllLocations()
+            .then((response: any) => {
                 const locs = response.data || [];
                 setLocations(locs);
                 // For receiving, we default to the app default but allow "All" (which is empty string)
                 const defaultLocId = app?.defaultFulfillmentLocationId || (locs.length > 0 ? locs[0].locationId : '');
                 setSelectedLocationId(defaultLocId);
             })
-            .catch(err => reportError(err, 'GoodsReceivedListPage.loadLocations'));
+            .catch((err: any) => reportError(err, 'GoodsReceivedListPage.loadLocations'));
     }, [app?.defaultFulfillmentLocationId]);
 
     const [slideOverOpen, setSlideOverOpen] = useState(false);
@@ -59,7 +60,7 @@ export default function GoodsReceivedListPage() {
             const errors: string[] = [];
             for (const row of eligible) {
                 try {
-                    await apiMutate(`/api/goods-received/lines/${row.goodsReceivedLineId}/quarantine`, 'POST', { reason });
+                    await api.goodsReceivedControllerQuarantineAllocation(row.goodsReceivedLineId, { body: JSON.stringify({ reason }) });
                 } catch (err: any) {
                     errors.push(err.message || `Failed for ${row.receiptNumber}`);
                 }
@@ -88,7 +89,7 @@ export default function GoodsReceivedListPage() {
         }
 
         try {
-            await apiMutate(`/api/goods-received/${receiptId}/cancel`, 'POST');
+            await api.goodsReceivedControllerCancelReception(receiptId);
             triggerRefresh();
             setSelectedRows([]);
         } catch (err: any) {
@@ -140,21 +141,14 @@ export default function GoodsReceivedListPage() {
             field: 'putawayStatus',
             headerName: 'Putaway Status',
             width: 140,
-            cellRenderer: (p: any) => {
-                if (!p.value) return null;
-                let badgeClass = 'badge-secondary';
-                let label = p.value;
-                if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) { badgeClass = 'badge-cancelled'; label = 'Cancelled'; }
-                else if (p.value === PUTAWAY_STATUS.COMPLETED) { badgeClass = 'badge-success'; label = 'Completed'; }
-                else if (p.value === PUTAWAY_STATUS.QUARANTINED) { badgeClass = 'badge-danger'; label = 'Quarantined'; }
-                else if (p.value === PUTAWAY_STATUS.PENDING_PUTAWAY) { badgeClass = 'badge-info'; label = 'Pending'; }
-                else if (p.value === PUTAWAY_STATUS.AWAITING_MATCHING) { badgeClass = 'badge-warning'; label = 'Awaiting Match'; }
-                
-                return (
-                    <span className={`badge badge-sm ${badgeClass}`}>
-                        {label}
-                    </span>
-                );
+            valueFormatter: (p: any) => {
+                if (!p.value) return '';
+                if (p.data?.stateCode === GOODS_RECEIVED_STATE.CANCELLED) return 'Cancelled';
+                if (p.value === PUTAWAY_STATUS.COMPLETED) return 'Completed';
+                if (p.value === PUTAWAY_STATUS.QUARANTINED) return 'Quarantined';
+                if (p.value === PUTAWAY_STATUS.PENDING_PUTAWAY) return 'Pending';
+                if (p.value === PUTAWAY_STATUS.AWAITING_MATCHING) return 'Awaiting Match';
+                return p.value;
             }
         },
         { field: 'packingSlipNumber', headerName: t('columns.packingSlip'), width: 140 },

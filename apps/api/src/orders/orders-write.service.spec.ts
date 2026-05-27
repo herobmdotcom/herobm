@@ -237,6 +237,7 @@ describe('OrdersWriteService', () => {
         customer,
         product,
         validDto: {
+          salesOrderId: '00000000-0000-0000-0000-000000000001',
           customerId: customer.customerId,
           lines: [
             {
@@ -277,6 +278,7 @@ describe('OrdersWriteService', () => {
       const { customer, product } = await setupCreate();
       const result = await service.create(
         {
+          salesOrderId: '00000000-0000-0000-0000-000000000001',
           customerId: customer.customerId,
           lines: [
             {
@@ -353,6 +355,7 @@ describe('OrdersWriteService', () => {
     it('should create order with no lines', async () => {
       const { customer } = await setupCreate();
       const dto = {
+        salesOrderId: '00000000-0000-0000-0000-000000000001',
         customerId: customer.customerId,
         lines: [],
       };
@@ -1136,6 +1139,7 @@ describe('OrdersWriteService', () => {
     it('should explode kit on order create (Parent Price > 0)', async () => {
       // When parent price > 0, children are $0
       const dto = {
+        salesOrderId: '00000000-0000-0000-0000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1181,6 +1185,7 @@ describe('OrdersWriteService', () => {
     it('should explode kit on order create (Parent Price = 0)', async () => {
       // When parent price = 0, children use standard listPrice
       const dto = {
+        salesOrderId: '00000000-0000-0000-0000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1219,6 +1224,7 @@ describe('OrdersWriteService', () => {
     it('should scale child quantities and toggle prices on parent line update', async () => {
       // Create initial order with parent price > 0
       const createDto = {
+        salesOrderId: '00000000-0000-0000-0000-000000000001',
         customerId: customer.customerId,
         lines: [
           {
@@ -1270,6 +1276,7 @@ describe('OrdersWriteService', () => {
 
     it('should cascade deletion to child lines when parent kit is removed', async () => {
       const createDto = {
+        salesOrderId: '00000000-0000-0000-0000-000000000001',
         customerId: customer.customerId,
         lines: [
           {

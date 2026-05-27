@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { debounce } from 'lodash';
-import { apiFetch } from '../../lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 interface PurchaseOrder {
@@ -39,15 +39,16 @@ export default function POSearchInput({
 
   useEffect(() => {
     setLoading(true);
-    let url = `/api/purchase-orders?limit=20`;
+    let url = `/purchase-orders?limit=20`;
     if (vendorId) {
       url += `&vendorId=${vendorId}`;
     }
     if (search) {
       url += `&search=${encodeURIComponent(search)}`;
     }
-    apiFetch<any>(url)
+    api.customFetch<any>(url, { method: 'GET' })
       .then((data) => {
+
         const pos = Array.isArray(data) ? data : data.data || [];
         setResults(pos);
       })

@@ -13,9 +13,8 @@
 -- Suppress 'schema already exists' notices to keep logs clean
 SET client_min_messages = warning;
 
--- Application schema (orders, users, events — managed by tools/migrate.py)
-CREATE SCHEMA IF NOT EXISTS modbm_core;
+-- Application schema (orders, users, events — managed by Drizzle ORM generation)
+-- Drizzle automatically generates CREATE SCHEMA "modbm_core"; in the baseline migration.
 
 -- dbt schemas (staging views + mart tables — managed by dbt)
-CREATE SCHEMA IF NOT EXISTS staging;
-CREATE SCHEMA IF NOT EXISTS public_marts;
+-- DBT automatically creates required schemas on first run based on dbt_project.yml configuration.

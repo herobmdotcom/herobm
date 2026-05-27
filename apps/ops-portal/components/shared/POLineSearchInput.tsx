@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { apiFetch } from '../../lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 interface POLine {
@@ -43,14 +43,13 @@ export default function POLineSearchInput({
   useEffect(() => {
     if (!productId && !vendorId) return;
     setLoading(true);
-    let url = `/api/purchase-orders/pending-lines?`;
-    const params = new URLSearchParams();
-    if (productId) params.append('productId', productId);
-    if (vendorId) params.append('vendorId', vendorId);
-    url += params.toString();
+    const params: Record<string, string> = {};
+    if (productId) params.productId = productId;
+    if (vendorId) params.vendorId = vendorId;
     
-    apiFetch<any>(url)
+    api.purchaseOrdersControllerFindPendingLines(params as any)
       .then((data) => {
+        // @ts-expect-error
         const lines = Array.isArray(data) ? data : data.data || [];
         setAllLines(lines);
         setResults(lines);

@@ -6,6 +6,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { CasbinGuard } from './casbin.guard';
 
+import { ApiKeyStrategy } from './api-key.strategy';
+
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -22,7 +24,7 @@ import { CasbinGuard } from './casbin.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, CasbinGuard],
-  exports: [CasbinGuard, JwtStrategy, PassportModule],
+  providers: [AuthService, JwtStrategy, ApiKeyStrategy, CasbinGuard],
+  exports: [CasbinGuard, JwtStrategy, ApiKeyStrategy, PassportModule],
 })
 export class AuthModule {}

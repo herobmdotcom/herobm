@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 
 interface SettingsFile {
@@ -34,7 +34,9 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
   const loadFiles = async () => {
     try {
       setIsLoading(true);
-      const data = await apiFetch<SettingsFile[]>('/api/gl/tax-settings-files');
+      const res = await api.glControllerListTaxSettingsFiles();
+      // @ts-expect-error
+      const data = res.data;
       setFiles(data);
       if (data.length > 0) {
         setSelectedFile(data[0].filename);
@@ -50,8 +52,10 @@ export default function ImportTaxModal({ isOpen, onClose, onImportComplete }: Pr
     if (!selectedFile) return;
     try {
       setIsImporting(true);
-      const res = await apiMutate<{ created: number }>('/api/gl/seed-tax', 'POST', { filename: selectedFile });
-      toast.success(`Successfully imported ${res.created} tax categories.`);
+      const res = await api.glControllerSeedTaxSettings({ body: JSON.stringify({ filename: selectedFile }) });
+      // @ts-expect-error
+      const data = res.data;
+      toast.success(`Successfully imported ${data.created} tax categories.`);
       onImportComplete();
       onClose();
     } catch (err: any) {

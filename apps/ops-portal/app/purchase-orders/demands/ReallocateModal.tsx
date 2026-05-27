@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import {
   buildReallocateLocationOptions,
@@ -43,8 +44,9 @@ export default function ReallocateModal({
 
   useEffect(() => {
     if (isOpen) {
-      apiFetch<{ data: RawLocation[] }>('/api/inventory/locations')
+      api.inventoryControllerFindAllLocations({})
         .then((res) => {
+          // @ts-expect-error
           setLocations(res.data || []);
         })
         .catch((err) => reportError(err, 'Failed to load locations'));
@@ -85,8 +87,7 @@ export default function ReallocateModal({
     setIsSubmitting(true);
     try {
       for (const demand of selectedDemands) {
-        await apiFetch(`/api/allocations/${demand.id}/reallocate`, {
-          method: 'POST',
+        await api.allocationsControllerReallocateDemand(demand.id, {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ locationId: selectedLocationId }),
         });

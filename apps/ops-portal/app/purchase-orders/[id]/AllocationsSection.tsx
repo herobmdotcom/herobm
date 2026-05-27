@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
 import toast from 'react-hot-toast';
+import * as api from '@modbm/sdk';
 
 import { useTranslations } from 'next-intl';
 import type { Allocation } from './types';
@@ -23,7 +24,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
   const handleUnlink = async (id: string) => {
     if (!confirm(t('allocationsSection.confirmUnallocate'))) return;
     try {
-      await apiFetch(`/api/allocations/${id}/unlink`, { method: 'POST' });
+      await api.allocationsControllerUnlinkDemand(id);
       toast.success(t('allocationsSection.success'));
       onAllocationsChanged();
     } catch (err) {

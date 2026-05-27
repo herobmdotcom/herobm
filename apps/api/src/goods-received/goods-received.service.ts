@@ -27,9 +27,22 @@ import {
 import { InventoryService } from '../inventory/inventory.service';
 import { emitEvent } from '../common/emit-event';
 import { AggregateType, EventType } from '../common/event-types';
-import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
+import {
+  eq,
+  and,
+  sql,
+  desc,
+  or,
+  ilike,
+  asc,
+  getTableColumns,
+} from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { evaluatePOLifecycleRules } from '../purchase-orders/purchase-order-lifecycle-rules';
 import { AppConfigService } from '../settings/app-config.service';
 import { GlService } from '../gl/gl.service';
@@ -114,6 +127,7 @@ export class GoodsReceivedService {
       const [receipt] = await tx
         .insert(goodsReceived)
         .values({
+          goodsReceivedId: createDto.goodsReceivedId,
           receiptNumber,
           vendorId: createDto.vendorId,
           locationId: createDto.locationId,
@@ -763,7 +777,8 @@ export class GoodsReceivedService {
    * List all goods receipts with pagination and optional filtering.
    */
   async findAll(params: PaginationQuery) {
-    const { page, limit, offset, searchTerm, days } = parsePagination(params);
+    const { page, limit, cursor, direction, searchTerm, days } =
+      parsePagination(params);
 
     const conditions = [];
 
@@ -783,9 +798,7 @@ export class GoodsReceivedService {
       );
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const data = await this.db
+    let qb = this.db
       .select({
         receipt: goodsReceived,
         vendorName: suppliers.name,
@@ -793,16 +806,64 @@ export class GoodsReceivedService {
       })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(goodsReceived.createdOn));
+      .$dynamic();
 
-    const [{ count }] = await this.db
+    if (conditions.length > 0) {
+      qb = qb.where(and(...conditions));
+    }
+
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} < ${c.createdOn}`,
+              and(
+                eq(goodsReceived.createdOn, new Date(c.createdOn)),
+                sql`${goodsReceived.goodsReceivedId} < ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} > ${c.createdOn}`,
+              and(
+                eq(goodsReceived.createdOn, new Date(c.createdOn)),
+                sql`${goodsReceived.goodsReceivedId} > ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          orderFn(goodsReceived.createdOn),
+          orderFn(goodsReceived.goodsReceivedId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.receipt.createdOn.toISOString(),
+        id: row.receipt.goodsReceivedId,
+      }),
+    });
+
+    let countQb = this.db
       .select({ count: sql<number>`count(*)` })
       .from(goodsReceived)
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
-      .where(whereClause);
+      .$dynamic();
+
+    if (conditions.length > 0) {
+      countQb = countQb.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQb;
 
     // For each receipt, count match statuses
     const receiptIds = data.map((d) => d.receipt.goodsReceivedId);
@@ -850,6 +911,8 @@ export class GoodsReceivedService {
       page,
       limit,
       total: Number(count),
+      nextCursor,
+      prevCursor,
     };
   }
 
@@ -863,7 +926,8 @@ export class GoodsReceivedService {
     putawayStatus?: string,
     locationId?: string,
   ) {
-    const { page, limit, offset, searchTerm, days } = parsePagination(params);
+    const { page, limit, cursor, direction, searchTerm, days } =
+      parsePagination(params);
 
     const conditions = [];
 
@@ -900,14 +964,149 @@ export class GoodsReceivedService {
       );
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const data = await this.db
+    let qb = this.db
       .select({
-        line: goodsReceivedLines,
+        line: getTableColumns(goodsReceivedLines),
         receiptNumber: goodsReceived.receiptNumber,
         packingSlipNumber: goodsReceived.packingSlipNumber,
         vendorId: suppliers.vendorId,
+        vendorName: suppliers.name,
+        vendorNumber: suppliers.vendorNumber,
+        createdOn: goodsReceived.createdOn,
+        locationId: goodsReceived.locationId,
+        locationName: locations.name,
+        productNumber: products.productNumber,
+        productName: products.name,
+        orderNumber: purchaseOrders.orderNumber,
+        stateCode: goodsReceived.stateCode,
+      })
+      .from(goodsReceivedLines)
+      .leftJoin(
+        goodsReceived,
+        eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+      )
+      .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
+      .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .leftJoin(
+        purchaseOrders,
+        eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
+      )
+      .leftJoin(locations, eq(goodsReceived.locationId, locations.locationId))
+      .$dynamic();
+
+    if (conditions.length > 0) {
+      qb = qb.where(and(...conditions));
+    }
+
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              and(
+                eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+                sql`${goodsReceivedLines.goodsReceivedLineId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              and(
+                eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+                sql`${goodsReceivedLines.goodsReceivedLineId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        const tieBreaker = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(goodsReceived.createdOn),
+          tieBreaker(goodsReceivedLines.goodsReceivedLineId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn,
+        id: row.line.goodsReceivedLineId,
+      }),
+    });
+
+    let countQb = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(goodsReceivedLines)
+      .leftJoin(
+        goodsReceived,
+        eq(goodsReceivedLines.goodsReceivedId, goodsReceived.goodsReceivedId),
+      )
+      .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
+      .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
+      .$dynamic();
+
+    if (conditions.length > 0) {
+      countQb = countQb.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQb;
+
+    return {
+      data: data.map((d) => ({
+        ...d.line,
+        receiptNumber: d.receiptNumber,
+        packingSlipNumber: d.packingSlipNumber,
+        vendorId: d.vendorId,
+        vendorName: d.vendorName,
+        vendorNumber: d.vendorNumber,
+        createdOn: d.createdOn,
+        locationId: d.locationId,
+        locationName: d.locationName,
+        productNumber: d.productNumber,
+        productName: d.productName,
+        orderNumber: d.orderNumber,
+        stateCode: d.stateCode,
+      })),
+      page,
+      limit,
+      total: Number(count),
+      nextCursor,
+      prevCursor,
+    };
+  }
+
+  async getLines(query?: PaginationQuery & { productId?: string }) {
+    const { page, limit, cursor, direction, searchTerm } =
+      parsePagination(query);
+
+    const conditions = [];
+    if (query?.productId) {
+      conditions.push(eq(goodsReceivedLines.productId, query.productId));
+    }
+
+    if (searchTerm) {
+      conditions.push(
+        or(
+          ilike(goodsReceived.receiptNumber, `%${searchTerm}%`),
+          ilike(products.name, `%${searchTerm}%`),
+          ilike(products.productNumber, `%${searchTerm}%`),
+        ),
+      );
+    }
+
+    let qb = this.db
+      .select({
+        line: getTableColumns(goodsReceivedLines),
+        receiptNumber: goodsReceived.receiptNumber,
+        packingSlipNumber: goodsReceived.packingSlipNumber,
+        vendorId: goodsReceived.vendorId,
         vendorName: suppliers.name,
         createdOn: goodsReceived.createdOn,
         locationId: goodsReceived.locationId,
@@ -929,12 +1128,56 @@ export class GoodsReceivedService {
         eq(goodsReceivedLines.purchaseOrderId, purchaseOrders.purchaseOrderId),
       )
       .leftJoin(locations, eq(goodsReceived.locationId, locations.locationId))
-      .where(whereClause)
-      .limit(limit)
-      .offset(offset)
-      .orderBy(desc(goodsReceived.createdOn));
+      .$dynamic();
 
-    const [{ count }] = await this.db
+    if (conditions.length > 0) {
+      qb = qb.where(and(...conditions));
+    }
+
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        const cDate = c.createdOn;
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} < ${cDate}::timestamp`,
+              and(
+                eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+                sql`${goodsReceivedLines.goodsReceivedLineId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${goodsReceived.createdOn} > ${cDate}::timestamp`,
+              and(
+                eq(goodsReceived.createdOn, sql`${cDate}::timestamp`),
+                sql`${goodsReceivedLines.goodsReceivedLineId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        const tieBreaker = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(goodsReceived.createdOn),
+          tieBreaker(goodsReceivedLines.goodsReceivedLineId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn,
+        id: row.line.goodsReceivedLineId,
+      }),
+    });
+
+    let countQb = this.db
       .select({ count: sql<number>`count(*)` })
       .from(goodsReceivedLines)
       .leftJoin(
@@ -943,7 +1186,13 @@ export class GoodsReceivedService {
       )
       .leftJoin(products, eq(goodsReceivedLines.productId, products.productId))
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
-      .where(whereClause);
+      .$dynamic();
+
+    if (conditions.length > 0) {
+      countQb = countQb.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQb;
 
     return {
       data: data.map((d) => ({
@@ -963,6 +1212,8 @@ export class GoodsReceivedService {
       page,
       limit,
       total: Number(count),
+      nextCursor,
+      prevCursor,
     };
   }
 

@@ -17,6 +17,7 @@ import {
   type GridState,
   type ScrollState,
 } from "ag-grid-community";
+import * as api from '@modbm/sdk';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -94,8 +95,6 @@ export interface DataGridProps<T> {
   searchPlaceholder?: string;
   /** File name prefix for CSV export (default: "export") */
   exportFileName?: string;
-  /** Authenticated fetch function — must accept a URL and return parsed JSON with a `data` array */
-  apiFetch: <R = unknown>(path: string) => Promise<R>;
   /** Error reporter — called when data fetching fails */
   onError?: (err: unknown, component: string) => void;
   /** Optional callback when a row is clicked */
@@ -242,7 +241,6 @@ export default function DataGrid<T>({
   gridKey = "default-grid",
   searchPlaceholder,
   exportFileName = "export",
-  apiFetch,
   onError,
   onRowClicked,
   fetchAll = false,
@@ -269,7 +267,8 @@ export default function DataGrid<T>({
   const searchParams = useSearchParams();
 
   const qParam = urlPrefix ? `${urlPrefix}_q` : 'q';
-  const pageParam = urlPrefix ? `${urlPrefix}_page` : 'page';
+  const cursorParam = urlPrefix ? `${urlPrefix}_cursor` : 'cursor';
+  const dirParam = urlPrefix ? `${urlPrefix}_dir` : 'dir';
   const archivedParam = urlPrefix ? `${urlPrefix}_archived` : 'archived';
 
   // Merge saved grid state (columns etc. from localStorage) + scroll (from sessionStorage)
@@ -301,10 +300,10 @@ export default function DataGrid<T>({
   // Initialize state from URL params if available, falling back to defaults
   const [search, setSearch] = useState(() => searchParams?.get(qParam) ?? initialSearch ?? "");
   const [includeArchived, setIncludeArchived] = useState(() => searchParams?.get(archivedParam) === 'true');
-  const [page, setPage] = useState(() => {
-    const p = searchParams?.get(pageParam);
-    return p ? parseInt(p, 10) || 1 : 1;
-  });
+  const [cursor, setCursor] = useState<string | null>(() => searchParams?.get(cursorParam) ?? null);
+  const [direction, setDirection] = useState<'next' | 'prev'>(() => (searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [prevCursor, setPrevCursor] = useState<string | null>(null);
 
   // We are fully restored from URL synchronously
   const isRestored = true;
@@ -313,9 +312,9 @@ export default function DataGrid<T>({
   useEffect(() => {
     setSearch(searchParams?.get(qParam) ?? initialSearch ?? "");
     setIncludeArchived(searchParams?.get(archivedParam) === 'true');
-    const p = searchParams?.get(pageParam);
-    setPage(p ? parseInt(p, 10) || 1 : 1);
-  }, [searchParams, qParam, archivedParam, pageParam, initialSearch]);
+    setCursor(searchParams?.get(cursorParam) ?? null);
+    setDirection((searchParams?.get(dirParam) as 'next' | 'prev') ?? 'next');
+  }, [searchParams, qParam, archivedParam, cursorParam, dirParam, initialSearch]);
 
   // Sync local state TO URL (e.g., when user types or clicks next page)
   const firstRender = useRef(true);
@@ -331,9 +330,10 @@ export default function DataGrid<T>({
     // to avoid infinite loops when syncing back from URL
     const currentQ = searchParams?.get(qParam) ?? "";
     const currentArchived = searchParams?.get(archivedParam) === 'true';
-    const currentP = searchParams?.get(pageParam) ? parseInt(searchParams.get(pageParam)!, 10) : 1;
+    const currentCursor = searchParams?.get(cursorParam) ?? null;
+    const currentDir = searchParams?.get(dirParam) ?? 'next';
     
-    if (search === currentQ && includeArchived === currentArchived && page === currentP) {
+    if (search === currentQ && includeArchived === currentArchived && cursor === currentCursor && direction === currentDir) {
       return;
     }
 
@@ -345,12 +345,17 @@ export default function DataGrid<T>({
     if (includeArchived) params.set(archivedParam, 'true');
     else params.delete(archivedParam);
 
-    if (page > 1) params.set(pageParam, String(page));
-    else params.delete(pageParam);
+    if (cursor) {
+      params.set(cursorParam, cursor);
+      params.set(dirParam, direction);
+    } else {
+      params.delete(cursorParam);
+      params.delete(dirParam);
+    }
 
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
     window.history.replaceState(window.history.state, '', newUrl);
-  }, [search, includeArchived, page, qParam, archivedParam, pageParam, searchParams]);
+  }, [search, includeArchived, cursor, direction, qParam, archivedParam, cursorParam, dirParam, searchParams]);
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
@@ -435,21 +440,28 @@ export default function DataGrid<T>({
 
     setLoading(true);
     const params = new URLSearchParams();
-    params.set("page", String(page));
+    if (cursor) {
+      params.set("cursor", cursor);
+      params.set("direction", direction);
+    }
     params.set("limit", String(limit));
     if (search) params.set("q", search);
     if (includeArchived) params.set("includeArchived", "true");
 
     const separator = endpoint.includes('?') ? '&' : '?';
-    apiFetch<{ data: T[] }>(`${endpoint}${separator}${params}`)
-      .then((res) => {
-        setData(res.data);
-        setDisplayedRowCount(res.data.length);
-        onDataLoaded?.(res.data);
+    api.customFetch(`${endpoint.replace('/api', '')}${separator}${params}`, { method: 'GET' })
+      .then((res: any) => {
+        const body = res.data as { data: T[], nextCursor?: string, prevCursor?: string };
+        const safeData = Array.isArray(body) ? body : (body?.data || []);
+        setData(safeData);
+        setNextCursor(body?.nextCursor ?? null);
+        setPrevCursor(body?.prevCursor ?? null);
+        setDisplayedRowCount(safeData.length);
+        onDataLoaded?.(safeData);
       })
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
-  }, [endpoint, rowData, search, includeArchived, page, limit, apiFetch, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
+  }, [endpoint, rowData, search, includeArchived, cursor, direction, limit, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
@@ -578,7 +590,7 @@ export default function DataGrid<T>({
         value={search}
         onChange={(e) => {
           setSearch(e.target.value.trimStart());
-          setPage(1);
+          setCursor(null);
         }}
         onFocus={(e) => e.target.style.borderColor = "var(--accent)"}
         onBlur={(e) => {
@@ -806,7 +818,7 @@ export default function DataGrid<T>({
                       checked={includeArchived}
                       onChange={(e) => {
                         setIncludeArchived(e.target.checked);
-                        setPage(1);
+                        setCursor(null);
                       }}
                       style={{ accentColor: "var(--accent)" }}
                     />
@@ -830,8 +842,11 @@ export default function DataGrid<T>({
     return (
       <div className={wrapperClass}>
         <button
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}
+          onClick={() => {
+            setCursor(prevCursor);
+            setDirection('prev');
+          }}
+          disabled={!prevCursor}
           className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
           style={{
             background: "var(--bg-card)",
@@ -845,11 +860,14 @@ export default function DataGrid<T>({
           className="px-3 py-1.5 text-xs font-medium"
           style={{ color: "var(--text-muted)" }}
         >
-          {tGrid('page', { page: String(page) })}
+          {/* Using grid metadata if we want, or just empty space */}
         </span>
         <button
-          onClick={() => setPage((p) => p + 1)}
-          disabled={!data || data.length < limit}
+          onClick={() => {
+            setCursor(nextCursor);
+            setDirection('next');
+          }}
+          disabled={!nextCursor}
           className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
           style={{
             background: "var(--bg-card)",

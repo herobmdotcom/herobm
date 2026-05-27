@@ -1,5 +1,14 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, ilike, or, sql, and, asc, getTableColumns } from 'drizzle-orm';
+import {
+  eq,
+  ilike,
+  or,
+  sql,
+  and,
+  asc,
+  desc,
+  getTableColumns,
+} from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
 import type { DrizzleDB } from '../drizzle/drizzle.module';
 import {
@@ -8,7 +17,11 @@ import {
   customerGroups,
   taxCategories,
 } from '../drizzle/modbm-core-schema';
-import { PaginationQuery, parsePagination } from '../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../common/pagination';
 import { alias } from 'drizzle-orm/pg-core';
 
 import { CUSTOMER_STATE } from '@modbm/shared';
@@ -18,7 +31,7 @@ export class AccountsService {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, includeArchived } =
+    const { page, limit, cursor, direction, searchTerm, includeArchived } =
       parsePagination(query);
 
     const conditions = [];
@@ -40,14 +53,7 @@ export class AccountsService {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    // Count total matching rows
-    const [{ count }] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(customers)
-      .where(whereClause);
-
-    // Fetch paginated, sorted results
-    let q = this.db
+    let qb = this.db
       .select({
         ...getTableColumns(customers),
         customerGroupName: customerGroups.name,
@@ -66,19 +72,57 @@ export class AccountsService {
         taxCategories,
         eq(customers.taxCategoryId, taxCategories.taxCategoryId),
       )
-
-      .orderBy(asc(sql`lower(${customers.name})`))
-      .limit(limit)
-      .offset(offset)
       .$dynamic();
 
     if (whereClause) {
-      q = q.where(whereClause);
+      qb = qb.where(whereClause);
     }
 
-    const data = await q;
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { name: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`lower(${customers.name}) > lower(${c.name})`,
+              and(
+                sql`lower(${customers.name}) = lower(${c.name})`,
+                sql`${customers.customerId} > ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`lower(${customers.name}) < lower(${c.name})`,
+              and(
+                sql`lower(${customers.name}) = lower(${c.name})`,
+                sql`${customers.customerId} < ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? asc : desc;
+        return q.orderBy(
+          orderFn(sql`lower(${customers.name})`),
+          orderFn(customers.customerId),
+        );
+      },
+      encodeRow: (row) => ({ name: row.name, id: row.customerId }),
+    });
 
-    return { data, page, limit, total: Number(count) };
+    // Count total matching rows
+    const [{ count }] = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(customers)
+      .where(whereClause);
+
+    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
   }
 
   async findOne(id: string, tx?: DrizzleDB) {

@@ -7,7 +7,8 @@ import type { ColDef } from 'ag-grid-community';
 import QuickAdjustmentModal from './QuickAdjustmentModal';
 import SplitEntryModal from './SplitEntryModal';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import toast from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
 
@@ -64,8 +65,8 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
 
   const fetchDetails = useCallback(async () => {
     try {
-      const recRes = await apiFetch<any>(`/api/gl/reconciliations/${id}`);
-      setReconciliation(recRes);
+      const recRes = await api.reconciliationControllerGetReconciliation(id);
+      setReconciliation(recRes.data as any);
     } catch (err) {
       reportError(err, 'ReconciliationDetails');
     } finally {
@@ -79,11 +80,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
 
   const handleToggle = async (lineId: string, isCleared: boolean, amount?: number) => {
     try {
-      await apiFetch(`/api/gl/reconciliations/${id}/lines/${lineId}/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isCleared, amount })
-      });
+      await api.reconciliationControllerToggleLine(id, lineId, { isCleared, amount });
       // Refresh details to update variance and lines
       fetchDetails();
       setRefreshKey(k => k + 1);
@@ -102,9 +99,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     
     setPosting(true);
     try {
-      await apiFetch(`/api/gl/reconciliations/${id}/post`, {
-        method: 'POST'
-      });
+      await api.reconciliationControllerPostReconciliation(id);
       toast.success(t('postSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err) {
@@ -120,9 +115,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     
     setPosting(true);
     try {
-      await apiFetch(`/api/gl/reconciliations/${id}`, {
-        method: 'DELETE'
-      });
+      await api.reconciliationControllerDiscardReconciliation(id);
       toast.success(t('discardSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err: any) {

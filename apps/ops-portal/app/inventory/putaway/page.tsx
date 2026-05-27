@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import Link from 'next/link';
 
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useSettings } from '@/components/SettingsProvider';
 import { PUTAWAY_STATUS } from '@modbm/shared';
 
@@ -55,9 +56,10 @@ export default function PutawayPage() {
 
     // Fetch Locations
     useEffect(() => {
-        apiFetch<any>('/api/inventory/locations')
-            .then(response => {
-                const locs = response.data || [];
+        api.inventoryControllerFindAllLocations({} as any)
+            .then((response) => {
+                const res = response.data as any;
+                const locs = res.data || res || [];
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -75,9 +77,10 @@ export default function PutawayPage() {
         setSelectedLine(null);
         setContext(null);
 
-        apiFetch<any>(`/api/inventory/pending-putaway?locationId=${selectedLocationId}`)
-            .then(data => {
-                setPendingLines(data.data || []);
+        api.inventoryControllerGetPendingPutaway({ locationId: selectedLocationId })
+            .then(response => {
+                const data = response.data as any;
+                setPendingLines(data.data || data || []);
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));
@@ -92,17 +95,19 @@ export default function PutawayPage() {
 
         setLoadingContext(true);
         setError(null);
-        apiFetch<PutawayContext>(`/api/inventory/putaway-context?productId=${selectedLine.productId}&locationId=${selectedLocationId}`)
-            .then((data) => {
-                setContext(data);
-                if (data.primaryBinId) {
-                    setSelectedBinId(data.primaryBinId);
-                    setBinSearch(data.primaryBinNumber || '');
+        api.inventoryControllerGetPutawayContext({ productId: selectedLine.productId, locationId: selectedLocationId })
+            .then((response) => {
+                const data = response.data as any;
+                const contextData = data.data || data;
+                setContext(contextData);
+                if (contextData.primaryBinId) {
+                    setSelectedBinId(contextData.primaryBinId);
+                    setBinSearch(contextData.primaryBinNumber || '');
                 } else {
                     setSelectedBinId('');
                     setBinSearch('');
                 }
-                const expectedTotal = data.currentQuantity + parseFloat(selectedLine.quantity);
+                const expectedTotal = contextData.currentQuantity + parseFloat(selectedLine.quantity);
                 setNewTotalQuantity(expectedTotal.toString());
             })
             .catch(err => setError(err.message))
@@ -117,7 +122,7 @@ export default function PutawayPage() {
         setError(null);
 
         try {
-            await apiMutate('/api/inventory/putaway', 'POST', {
+            await api.inventoryControllerPutaway({
                 putaways: [
                     {
                         lineId: selectedLine.id,

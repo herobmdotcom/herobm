@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'react-hot-toast';
@@ -25,7 +26,8 @@ export default function OdooImportPage() {
     password: '',
     resumeExtraction: false,
     defaultLocationCode: '',
-    baseCurrency: 'EUR'
+    baseCurrency: 'EUR',
+    defaultTaxCategoryCode: ''
   });
   
   const [logs, setLogs] = useState<string[]>([]);
@@ -33,6 +35,7 @@ export default function OdooImportPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [completedTables, setCompletedTables] = useState<string[] | null>(null);
   const [odooLocations, setOdooLocations] = useState<any[]>([]);
+  const [odooTaxCategories, setOdooTaxCategories] = useState<any[]>([]);
   const [importSummary, setImportSummary] = useState<{products: number, customers: number, orders: number} | null>(null);
   
   const jobIdRef = useRef<string | null>(null);
@@ -55,8 +58,8 @@ export default function OdooImportPage() {
 
   useEffect(() => {
     if (step === 'preview') {
-      apiFetch<any>('/api/setup/resume-state-odoo')
-        .then(res => setCompletedTables(res?.completedTables || []))
+      api.setupControllerGetResumeStateOdoo()
+        .then(res => setCompletedTables((res as any)?.completedTables || []))
         .catch(() => setCompletedTables([]));
     }
     return () => {
@@ -72,7 +75,7 @@ export default function OdooImportPage() {
   const handleTestConnection = async () => {
     try {
       setLoading(true);
-      const res = await apiMutate<any>('/api/setup/test-odoo', 'POST', {
+      const res = await api.setupControllerTestOdoo({
         host: config.host,
         port: parseInt(config.port, 10),
         database: config.database,
@@ -92,6 +95,16 @@ export default function OdooImportPage() {
         if (res.preview?.baseCurrencyCode !== undefined) {
            setConfig(prev => ({ ...prev, baseCurrency: res.preview.baseCurrencyCode }));
         }
+        
+        const taxes = res.preview?.taxCategories || [];
+        setOdooTaxCategories(taxes);
+        if (taxes.length > 0) {
+          // Find tax category with highest rate > 0
+          const sortedTaxes = [...taxes].sort((a, b) => b.rate - a.rate);
+          const highestTax = sortedTaxes.find(t => t.rate > 0) || sortedTaxes[0];
+          setConfig(prev => ({ ...prev, defaultTaxCategoryCode: highestTax.code }));
+        }
+        
         setStep('preview');
       }
     } catch (err: any) {
@@ -115,13 +128,14 @@ export default function OdooImportPage() {
         resumeExtraction: config.resumeExtraction,
         defaultLocationCode: config.defaultLocationCode,
         baseCurrency: config.baseCurrency,
+        defaultTaxCategoryCode: config.defaultTaxCategoryCode,
       };
 
       setStep('executing');
       setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
       setStatus('starting');
 
-      const res = await apiMutate<any>('/api/setup/execute-elt', 'POST', executePayload);
+      const res = await api.setupControllerExecuteElt(executePayload as any);
       jobIdRef.current = res.jobId;
       setStatus('running');
       startPolling(res.jobId);
@@ -135,7 +149,7 @@ export default function OdooImportPage() {
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await apiFetch<any>(`/api/setup/progress/${jobId}`);
+        const progressRes = await api.setupControllerGetProgress(jobId);
         if (progressRes) {
           if (progressRes.logs && progressRes.logs.length > 0) {
              setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progressRes.logs]);
@@ -293,6 +307,22 @@ export default function OdooImportPage() {
                 ))}
               </select>
             </div>
+            
+            {odooTaxCategories.length > 0 && (
+              <div className="col-span-2 mt-2">
+                <h2 className="text-xl font-bold text-slate-800 mb-4">{t('defaultTaxCategory', { fallback: 'Default Tax Category' })}</h2>
+                <p className="text-sm text-slate-500 mb-4">{t('defaultTaxCategoryDesc', { fallback: 'Select the default tax category to use when a category is missing or omitted.' })}</p>
+                <select
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-[#006b5c] focus:ring-1 focus:ring-[#006b5c]"
+                  value={config.defaultTaxCategoryCode}
+                  onChange={(e) => setConfig({ ...config, defaultTaxCategoryCode: e.target.value })}
+                >
+                  {odooTaxCategories.map(tax => (
+                    <option key={tax.code} value={tax.code}>{tax.name} ({tax.rate}%) - {tax.code}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <h2 className="text-xl font-bold text-slate-800 mb-4">{t('sections.executionOptions', { fallback: 'Execution Options' })}</h2>
@@ -432,8 +462,8 @@ export default function OdooImportPage() {
         <div className="mt-4 flex items-center justify-center animate-in fade-in gap-6">
            <button
             onClick={() => {
-              apiFetch<any>('/api/setup/import-summary').then(summary => {
-                 setImportSummary(summary);
+              api.setupControllerGetImportSummary().then(summary => {
+                 setImportSummary(summary as any);
                  setStep('finalisation');
               }).catch(err => {
                  reportError(err, 'OdooImportPage.pollProgress.importSummary');

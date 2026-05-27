@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useAuth } from '@/components/AuthGate';
 import SlideOver from '@/components/shared/SlideOver';
 import toast from 'react-hot-toast';
@@ -61,22 +61,26 @@ export default function TopographyView() {
 
   const fetchLocations = () => {
     setLoading(true);
-    apiFetch<{ data: Location[] }>('/api/inventory/locations')
-      .then((res) => {
-        setLocations(res.data);
+    api.inventoryControllerFindAllLocations({} as any)
+      .then((response) => {
+        const res = response.data as any;
+        const data = Array.isArray(res) ? res : (res?.data || []);
+        setLocations(data);
       })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    apiFetch<{ data: Location[] }>('/api/inventory/locations')
-      .then((res) => {
-        setLocations(res.data);
+    api.inventoryControllerFindAllLocations({} as any)
+      .then((response) => {
+        const res = response.data as any;
+        const data = Array.isArray(res) ? res : (res?.data || []);
+        setLocations(data);
         // Auto-expand first location
-        if (res.data.length > 0) {
-          setExpandedLocations(new Set([res.data[0].locationId]));
-          if (res.data[0].zones.length > 0) {
-            setExpandedZones(new Set([res.data[0].zones[0].zoneId]));
+        if (data.length > 0) {
+          setExpandedLocations(new Set([data[0].locationId]));
+          if (data[0].zones.length > 0) {
+            setExpandedZones(new Set([data[0].zones[0].zoneId]));
           }
         }
       })
@@ -267,7 +271,7 @@ export default function TopographyView() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (confirm(tCommon('confirmDelete'))) {
-                                apiFetch(`/api/inventory/locations/${loc.locationId}`, { method: 'DELETE' })
+                                api.locationsControllerDeleteLocation(loc.locationId)
                                   .then(() => {
                                     toast.success(tCommon('deleted'));
                                     fetchLocations();
@@ -370,7 +374,7 @@ export default function TopographyView() {
                                         e.stopPropagation();
                                         if (zone.code === 'HANDLING') return;
                                         if (confirm(tCommon('confirmDelete'))) {
-                                          apiFetch(`/api/inventory/zones/${zone.zoneId}`, { method: 'DELETE' })
+                                          api.locationsControllerDeleteZone(zone.zoneId)
                                             .then(() => {
                                               toast.success(tCommon('deleted'));
                                               fetchLocations();
@@ -496,7 +500,7 @@ export default function TopographyView() {
                                                   onClick={() => {
                                                     if (bin.binNumber === 'RECEIVING' || bin.binNumber === 'SHIPPING') return;
                                                     if (confirm(tCommon('confirmDelete'))) {
-                                                      apiFetch(`/api/inventory/bins/${bin.binId}`, { method: 'DELETE' })
+                                                      api.locationsControllerDeleteBin(bin.binId)
                                                         .then(() => {
                                                           toast.success(tCommon('deleted'));
                                                           fetchLocations();
@@ -587,11 +591,12 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const method = editingLocation ? 'PATCH' : 'POST';
-    const url = editingLocation ? `/api/inventory/locations/${editingLocation.locationId}` : '/api/inventory/locations';
-    
     try {
-      await apiMutate(url, method, formData);
+      if (editingLocation) {
+        await api.locationsControllerUpdateLocation(editingLocation.locationId, { body: JSON.stringify(formData) });
+      } else {
+        await api.locationsControllerCreateLocation(formData as any);
+      }
       toast.success(editingLocation ? t('updated') : t('created'));
       onSuccess();
       onClose();
@@ -676,12 +681,12 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     e.preventDefault();
     if (!initialData) return;
     setLoading(true);
-    const method = initialData.zone ? 'PATCH' : 'POST';
-    const url = initialData.zone ? `/api/inventory/zones/${initialData.zone.zoneId}` : '/api/inventory/zones';
-    const body = initialData.zone ? formData : { ...formData, locationId: initialData.locationId };
-    
     try {
-      await apiMutate(url, method, body);
+      if (initialData.zone) {
+        await api.locationsControllerUpdateZone(initialData.zone.zoneId, { body: JSON.stringify(body) });
+      } else {
+        await api.locationsControllerCreateZone(body as any);
+      }
       toast.success(initialData.zone ? t('updated') : t('created'));
       onSuccess();
       onClose();
@@ -756,12 +761,12 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     e.preventDefault();
     if (!initialData) return;
     setLoading(true);
-    const method = initialData.bin ? 'PATCH' : 'POST';
-    const url = initialData.bin ? `/api/inventory/bins/${initialData.bin.binId}` : '/api/inventory/bins';
-    const body = initialData.bin ? formData : { ...formData, zoneId: initialData.zoneId };
-    
     try {
-      await apiMutate(url, method, body);
+      if (initialData.bin) {
+        await api.locationsControllerUpdateBin(initialData.bin.binId, { body: JSON.stringify(body) });
+      } else {
+        await api.locationsControllerCreateBin(body as any);
+      }
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();
       onClose();

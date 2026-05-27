@@ -20,12 +20,31 @@ jest.mock('react-hot-toast', () => ({
     toast: Object.assign(jest.fn(), { success: jest.fn(), error: jest.fn() }),
 }));
 
-const mockApiFetch = jest.fn();
-const mockApiMutate = jest.fn();
+const mockSdkFetch = jest.fn();
+const mockSdkMutate = jest.fn();
 jest.mock('@/lib/api', () => ({
-    apiFetch: (...args: any[]) => mockApiFetch(...args),
-    apiMutate: (...args: any[]) => mockApiMutate(...args),
     reportError: jest.fn(),
+}));
+
+jest.mock('@modbm/sdk', () => ({
+    __esModule: true,
+    ordersControllerFindOne: (...args: any[]) => mockSdkFetch(...args),
+    orderPickingControllerGetPickingSummary: (...args: any[]) => mockSdkFetch('/picking', ...args),
+    inventoryControllerFindAllLocations: () => mockSdkFetch('/locations'),
+    taxCategoriesControllerFindAll: () => mockSdkFetch('/tax-categories'),
+    ordersControllerUpdate: (...args: any[]) => mockSdkMutate('update', ...args),
+    ordersControllerChangeState: (...args: any[]) => mockSdkMutate('changeState', ...args),
+    ordersControllerUpdateLine: (...args: any[]) => mockSdkMutate('updateLine', ...args),
+    ordersControllerCreate: (...args: any[]) => mockSdkMutate('create', ...args),
+    ordersControllerArchive: (...args: any[]) => mockSdkMutate('archive', ...args),
+    ordersControllerUnarchive: (...args: any[]) => mockSdkMutate('unarchive', ...args),
+    ordersControllerRemoveLine: (...args: any[]) => mockSdkMutate('removeLine', ...args),
+    ordersControllerAddLine: (...args: any[]) => mockSdkMutate('addLine', ...args),
+    ordersControllerAddPostConfirmationLine: (...args: any[]) => mockSdkMutate('addPostConfirmationLine', ...args),
+    inventoryControllerFindByProductIdsBulk: (...args: any[]) => mockSdkMutate('inventoryBulk', ...args),
+    orderShipmentsControllerFindShipments: (...args: any[]) => mockSdkFetch('/shipments', ...args),
+    orderReturnsControllerFindReturns: (...args: any[]) => mockSdkFetch('/returns', ...args),
+    salesInvoiceControllerGetSalesInvoices: (...args: any[]) => mockSdkFetch('/invoices', ...args),
 }));
 
 import { useOrder } from '../useOrder';
@@ -86,12 +105,12 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
 }
 
 function setupMocks(order: OrderDetail) {
-    mockApiFetch.mockImplementation((url: string) => {
+    mockSdkFetch.mockImplementation((url: string) => {
         if (url.includes('/picking')) return Promise.resolve(null);
         if (url.includes('/tax-categories')) return Promise.resolve([]);
         return Promise.resolve(order);
     });
-    mockApiMutate.mockResolvedValue({});
+    mockSdkMutate.mockResolvedValue({});
 }
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -223,9 +242,9 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.saveHeader(); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001',
-            'PATCH',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'update',
+            'so-001',
             expect.objectContaining({ name: 'New Name' }),
         );
     });
@@ -236,10 +255,10 @@ describe('useOrder — mutations', () => {
  
         await act(async () => { await result.current.changeState(SALES_ORDER_STATE.QUOTED); });
  
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/state',
-            'PATCH',
-            { stateCode: SALES_ORDER_STATE.QUOTED },
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'changeState',
+            'so-001',
+            expect.objectContaining({ body: expect.any(String) }),
         );
     });
 
@@ -249,15 +268,16 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.updateLine('line-1', 'quantity', '20'); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/lines/line-1',
-            'PATCH',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'updateLine',
+            'so-001',
+            'line-1',
             { quantity: '20' },
         );
     });
 
     it('copyOrder calls POST and navigates to new order', async () => {
-        mockApiMutate.mockImplementation(async (url) => {
+        mockSdkMutate.mockImplementation(async (url) => {
             if (url === '/api/sales-orders') return { salesOrderId: 'so-002' };
             return {};
         });
@@ -267,9 +287,8 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.copyOrder(); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders',
-            'POST',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'create',
             expect.objectContaining({
                 name: 'Copy of Test Order',
                 customerId: 'cust-1',
@@ -289,9 +308,9 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.archiveOrder(); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/archive',
-            'POST',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'archive',
+            'so-001'
         );
 
         jest.restoreAllMocks();
@@ -302,11 +321,11 @@ describe('useOrder — mutations', () => {
 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-        mockApiMutate.mockClear();
+        mockSdkMutate.mockClear();
 
         await act(async () => { await result.current.archiveOrder(); });
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockSdkMutate).not.toHaveBeenCalled();
         jest.restoreAllMocks();
     });
 
@@ -316,9 +335,9 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.unarchiveOrder(); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/unarchive',
-            'POST',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'unarchive',
+            'so-001'
         );
     });
 
@@ -330,9 +349,10 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.removeLine('line-1'); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/lines/line-1',
-            'DELETE',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'removeLine',
+            'so-001',
+            'line-1'
         );
 
         jest.restoreAllMocks();
@@ -343,11 +363,11 @@ describe('useOrder — mutations', () => {
 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-        mockApiMutate.mockClear();
+        mockSdkMutate.mockClear();
 
         await act(async () => { await result.current.removeLine('line-1'); });
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockSdkMutate).not.toHaveBeenCalled();
         jest.restoreAllMocks();
     });
 
@@ -365,9 +385,9 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.addLineFromProduct(product as any); });
 
-        expect(mockApiMutate).toHaveBeenCalledWith(
-            '/api/sales-orders/so-001/lines',
-            'POST',
+        expect(mockSdkMutate).toHaveBeenCalledWith(
+            'addLine',
+            'so-001',
             expect.objectContaining({
                 productId: 'prod-new',
                 productDescription: 'New Product',
@@ -383,7 +403,7 @@ describe('useOrder — mutations', () => {
 
         const { result } = renderHook(() => useOrder('so-001'));
         await waitFor(() => expect(result.current.order).toBeTruthy());
-        mockApiMutate.mockClear();
+        mockSdkMutate.mockClear();
 
         // prod-1 is already in the order lines
         const duplicate = {
@@ -395,7 +415,7 @@ describe('useOrder — mutations', () => {
 
         await act(async () => { await result.current.addLineFromProduct(duplicate as any); });
 
-        expect(mockApiMutate).not.toHaveBeenCalled();
+        expect(mockSdkMutate).not.toHaveBeenCalled();
         expect(toast).toHaveBeenCalled();
     });
 
@@ -406,7 +426,7 @@ describe('useOrder — mutations', () => {
         act(() => result.current.setEditName('Changed'));
         await waitFor(() => expect(result.current.headerDirty).toBe(true));
 
-        mockApiMutate.mockRejectedValueOnce(new Error('Network error'));
+        mockSdkMutate.mockRejectedValueOnce(new Error('Network error'));
         await act(async () => { await result.current.saveHeader(); });
 
         expect(result.current.error).toBe('Network error');

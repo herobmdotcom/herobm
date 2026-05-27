@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiMutate, apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
 
 import type { OrderDetail, TaxCategory } from './types';
@@ -37,7 +38,8 @@ export default function InvoicesSection({
 
     useEffect(() => {
         if (orderId) {
-            apiFetch<{ data: any[] }>(`/api/goods-received/lines?purchaseOrderId=${orderId}`)
+            api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId })
+                // @ts-expect-error
                 .then(res => setReceiptLines(res.data || []))
                 .catch(err => reportError(err, 'InvoicesSection'));
         }

@@ -6,8 +6,11 @@ import {
   Param,
   Query,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { GoodsReceivedService } from './goods-received.service';
+import { Idempotent } from '../common/idempotency/idempotent.decorator';
+import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
 import { AuthGuard } from '@nestjs/passport';
 import { PaginationQuery } from '../common/pagination';
 import {
@@ -27,6 +30,12 @@ export class GoodsReceivedController {
 
   @Post()
   @CasbinAction('write')
+  @UseInterceptors(IdempotencyInterceptor)
+  @Idempotent({
+    queryKey: 'goodsReceived',
+    pkField: 'goodsReceivedId',
+    idBodyPath: 'goodsReceivedId',
+  })
   async create(
     @Body() createDto: CreateGoodsReceivedDto,
     @AuthUser() user: JwtUser,

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
+import { reportError } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 import { CUSTOMER_STATE } from '@modbm/shared';
 import type { ValidState } from '@/types/states';
@@ -72,10 +73,12 @@ export function useAccount(id: string) {
   const loadAccount = async () => {
     setLoading(true);
     try {
-      const [data, rules] = await Promise.all([
-        apiFetch<Customer>(`/api/customers/${id}`),
-        apiFetch<any[]>(`/api/discount-matrix?ownerType=customer&customerId=${id}`).catch(() => [])
+      const [dataRes, rulesRes] = await Promise.all([
+        api.accountsControllerFindOne(id),
+        api.discountMatrixControllerList({ ownerType: 'customer' as any, customerId: id }).catch(() => ({ data: [] }))
       ]);
+      const data = dataRes?.data || dataRes;
+      const rules = rulesRes?.data || rulesRes || [];
       setAccount(data);
       setDto(data);
       setHasDiscountRules(rules && rules.length > 0);
@@ -89,7 +92,7 @@ export function useAccount(id: string) {
 
   useEffect(() => {
     loadAccount();
-    apiFetch<any[]>('/api/tax-categories').then(setTaxCategories).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch(console.error);
   }, [id]);
 
   /* ── Field helpers ──────────────────────────────────────────── */
@@ -105,17 +108,14 @@ export function useAccount(id: string) {
     if (!isDirty || saving) return;
     setSaving(true);
     try {
-      const updated = await apiMutate<Customer>(
-        `/api/customers/${id}`,
-        'PATCH',
-        dto,
-      );
+      const res = await api.accountsControllerUpdate(id, dto as any);
+      const updated = res?.data || res;
       setAccount({ ...updated, events: customer?.events });
       setDto({ ...updated, events: customer?.events });
       setIsDirty(false);
       toast.success(t('toast.accountUpdated'));
       // Refresh to get updated events
-      const refreshed = await apiFetch<Customer>(`/api/customers/${id}`);
+      const refreshed = refreshedRes?.data || refreshedRes;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -140,17 +140,14 @@ export function useAccount(id: string) {
 
     setSaving(true);
     try {
-      const updated = await apiMutate<Customer>(
-        `/api/customers/${id}`,
-        'PATCH',
-        nextDto,
-      );
+      const res = await api.accountsControllerUpdate(id, nextDto as any);
+      const updated = res?.data || res;
       setAccount({ ...updated, events: customer?.events });
       setDto({ ...updated, events: customer?.events });
       setIsDirty(false);
       toast.success(t('toast.accountUpdated'));
       // Refresh events
-      const refreshed = await apiFetch<Customer>(`/api/customers/${id}`);
+      const refreshed = refreshedRes?.data || refreshedRes;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -166,9 +163,9 @@ export function useAccount(id: string) {
     if (!confirm(t('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
-      await apiMutate(`/api/customers/${id}/archive`, 'POST');
+      await api.accountsControllerArchive(id);
       toast.success(t('toast.orderArchived'));
-      const refreshed = await apiFetch<Customer>(`/api/customers/${id}`);
+      const refreshed = refreshedRes?.data || refreshedRes;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -181,9 +178,9 @@ export function useAccount(id: string) {
   const unarchiveAccount = async () => {
     setSaving(true);
     try {
-      await apiMutate(`/api/customers/${id}/unarchive`, 'POST');
+      await api.accountsControllerUnarchive(id);
       toast.success(t('toast.orderUnarchived'));
-      const refreshed = await apiFetch<Customer>(`/api/customers/${id}`);
+      const refreshed = refreshedRes?.data || refreshedRes;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {

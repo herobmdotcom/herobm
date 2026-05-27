@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { formatAmount } from '@/lib/currency';
 import { toast } from 'react-hot-toast';
+import { DataTable, MobileCardField } from '@/components/shared/DataTable';
 
 import type { OrderDetail, TaxCategory, SalesInvoice } from './types';
 import { computeLinePrice, SALES_ORDER_STATE } from '@modbm/shared';
@@ -66,10 +67,10 @@ export default function InvoicesSection({
             const lines = newInvoiceLines
                 .filter(l => l.quantityToInvoice && parseFloat(l.quantityToInvoice) > 0)
                 .map(l => ({ salesOrderLineId: l.salesOrderLineId, quantityToInvoice: parseFloat(l.quantityToInvoice) }));
-            await apiMutate(`/api/sales-orders/${orderId}/invoice`, 'POST', {
+            await api.salesInvoiceControllerCreateSalesInvoice(orderId, {
                 notes: newInvoiceNotes || undefined,
                 lines: lines.length > 0 ? lines : undefined,
-            });
+            } as any);
             toast.success(tToast('invoiceGenerated'));
             handleCancel();
             await loadInvoices();
@@ -122,42 +123,93 @@ export default function InvoicesSection({
                     <div style={{ marginBottom: 12 }}>
                         <input className="input w-full" placeholder="Invoice Notes (optional)" value={newInvoiceNotes} onChange={e => setNewInvoiceNotes(e.target.value)} />
                     </div>
-                    <table className="table-lines" style={{ marginBottom: 12 }}>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>{tSales('columns.product')}</th>
-                                <th>{tSales('columns.description')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.ordered')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.picked')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.shipped')}</th>
-                                <th style={{ textAlign: 'right' }}>{tSales('columns.invoiced')}</th>
-                                <th style={{ width: 110, textAlign: 'right' }}>{tSales('columns.qtyToInvoice')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {newInvoiceLines.map((nl, idx) => {
-                                const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
-                                const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
-                                const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
-                                const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
-                                const invoicedQty = invoices.reduce((sum, inv) => {
-                                    const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
-                                    return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
-                                }, 0);
+                    <DataTable
+                        data={newInvoiceLines}
+                        keyExtractor={(nl) => nl.salesOrderLineId}
+                        columns={[
+                            { header: '#', width: 40 },
+                            { header: tSales('columns.product') },
+                            { header: tSales('columns.description') },
+                            { header: tSales('columns.ordered'), align: 'right' },
+                            { header: tSales('columns.picked'), align: 'right' },
+                            { header: tSales('columns.shipped'), align: 'right' },
+                            { header: tSales('columns.invoiced'), align: 'right' },
+                            { header: tSales('columns.qtyToInvoice'), width: 110, align: 'right' }
+                        ]}
+                        renderCustomRow={(nl, idx) => {
+                            const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
+                            const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
+                            const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
+                            const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
+                            const invoicedQty = invoices.reduce((sum, inv) => {
+                                const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
+                                return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
+                            }, 0);
 
-                                return (
-                                    <tr key={nl.salesOrderLineId}>
-                                        <td style={{ color: 'var(--text-muted)' }}>{origLine?.lineNumber}</td>
-                                        <td style={{ fontWeight: 600, fontSize: 12 }}>
+                            return (
+                                <tr key={nl.salesOrderLineId}>
+                                    <td style={{ color: 'var(--text-muted)' }}>{origLine?.lineNumber}</td>
+                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                        {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
+                                    </td>
+                                    <td>{origLine?.productDescription || '—'}</td>
+                                    <td style={{ textAlign: 'right' }}>{origLine?.quantity}</td>
+                                    <td style={{ textAlign: 'right' }}>{pickedQty}</td>
+                                    <td style={{ textAlign: 'right' }}>{shippedQty}</td>
+                                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{invoicedQty}</td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <input
+                                            type="number" className="input" min="0" max={nl.maxQuantity} step="1"
+                                            style={{
+                                                width: 70, padding: '2px 6px', borderRadius: 4,
+                                                border: '1px solid var(--border)', background: 'var(--surface)',
+                                                color: 'var(--text)', fontSize: 13, textAlign: 'right',
+                                            }}
+                                            value={nl.quantityToInvoice}
+                                            onChange={e => { const updated = [...newInvoiceLines]; updated[idx].quantityToInvoice = e.target.value; setNewInvoiceLines(updated); }}
+                                            placeholder={nl.maxQuantity.toString()}
+                                        />
+                                    </td>
+                                </tr>
+                            );
+                        }}
+                        mobileCard={(nl, idx) => {
+                            const origLine = order.lines.find(l => l.salesOrderLineId === nl.salesOrderLineId);
+                            const pLine = pickingSummary?.lines?.find((pl: any) => pl.salesOrderLineId === nl.salesOrderLineId);
+                            const pickedQty = pLine && pLine.quantityPicked != null ? parseFloat(pLine.quantityPicked) : 0;
+                            const shippedQty = pLine && pLine.quantityShipped != null ? parseFloat(pLine.quantityShipped) : 0;
+                            const invoicedQty = invoices.reduce((sum, inv) => {
+                                const invLine = inv.lines?.find(il => il.salesOrderLineId === nl.salesOrderLineId);
+                                return sum + (invLine ? parseFloat(invLine.quantityInvoiced) : 0);
+                            }, 0);
+
+                            return (
+                                <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                    <div className="flex justify-between items-start gap-2 mb-2">
+                                        <div className="font-semibold text-sm text-[var(--accent)]">
                                             {origLine?.productNumber || origLine?.productId?.substring(0, 8) || '—'}
-                                        </td>
-                                        <td>{origLine?.productDescription || '—'}</td>
-                                        <td style={{ textAlign: 'right' }}>{origLine?.quantity}</td>
-                                        <td style={{ textAlign: 'right' }}>{pickedQty}</td>
-                                        <td style={{ textAlign: 'right' }}>{shippedQty}</td>
-                                        <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{invoicedQty}</td>
-                                        <td style={{ textAlign: 'right' }}>
+                                        </div>
+                                        <div className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-medium">#{origLine?.lineNumber}</div>
+                                    </div>
+                                    <div className="text-sm text-slate-600 font-medium mb-3">
+                                        {origLine?.productDescription || '—'}
+                                    </div>
+                                    
+                                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                        <MobileCardField label={tSales('columns.ordered')} value={
+                                            <span className="font-semibold">{origLine?.quantity}</span>
+                                        } />
+                                        <MobileCardField label={tSales('columns.picked')} value={
+                                            <span>{pickedQty}</span>
+                                        } />
+                                        <MobileCardField label={tSales('columns.shipped')} value={
+                                            <span>{shippedQty}</span>
+                                        } />
+                                        <MobileCardField label={tSales('columns.invoiced')} value={
+                                            <span className="text-[var(--text-muted)]">{invoicedQty}</span>
+                                        } />
+                                        <div className="flex justify-between items-center py-2">
+                                            <span className="text-xs font-medium text-slate-500">{tSales('columns.qtyToInvoice')}</span>
                                             <input
                                                 type="number" className="input" min="0" max={nl.maxQuantity} step="1"
                                                 style={{
@@ -169,12 +221,12 @@ export default function InvoicesSection({
                                                 onChange={e => { const updated = [...newInvoiceLines]; updated[idx].quantityToInvoice = e.target.value; setNewInvoiceLines(updated); }}
                                                 placeholder={nl.maxQuantity.toString()}
                                             />
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        }}
+                    />
                     
                     <div className="flex items-center gap-2">
                         <button className="btn btn-primary btn-sm" disabled={invoicing || newInvoiceLines.every(l => !l.quantityToInvoice || parseFloat(l.quantityToInvoice) <= 0)} onClick={handleGenerate}>
@@ -245,56 +297,103 @@ export default function InvoicesSection({
                             const grandTotal = subtotal + effectiveTaxTotal;
 
                             return (
-                                <table className="table-lines">
-                                    <thead>
-                                        <tr>
-                                            <th>{tSales('columns.product')}</th>
-                                            <th>{tSales('columns.description')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.qty')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.unitPrice')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.discountPct')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.tax')}</th>
-                                            <th style={{ textAlign: 'right' }}>{tSales('columns.amount')}</th>
+                                <DataTable
+                                    data={linePricing}
+                                    keyExtractor={({ il }, idx) => il.invoiceLineId || idx}
+                                    columns={[
+                                        { header: tSales('columns.product') },
+                                        { header: tSales('columns.description') },
+                                        { header: tSales('columns.qty'), align: 'right' },
+                                        { header: tSales('columns.unitPrice'), align: 'right' },
+                                        { header: tSales('columns.discountPct'), align: 'right' },
+                                        { header: tSales('columns.tax'), align: 'right' },
+                                        { header: tSales('columns.amount'), align: 'right' }
+                                    ]}
+                                    renderCustomRow={({ il, orderLine, disc, taxRate, pricing }) => (
+                                        <tr key={il.lineId || il.invoiceLineId}>
+                                            <td style={{ fontWeight: 600, fontSize: 12 }}>
+                                                {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                                            </td>
+                                            <td>{orderLine?.productDescription || '—'}</td>
+                                            <td style={{ textAlign: 'right' }}>{il.quantityInvoiced}</td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                                {formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}
+                                            </td>
+                                            <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                {disc.toFixed(1)}%
+                                            </td>
+                                            <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
+                                                {taxRate.toFixed(1)}%
+                                            </td>
+                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                                                {formatAmount(pricing.amount, cc)}
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {linePricing.map(({ il, orderLine, disc, taxRate, pricing }) => (
-                                                <tr key={il.lineId || il.invoiceLineId}>
-                                                    <td style={{ fontWeight: 600, fontSize: 12 }}>
-                                                        {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
-                                                    </td>
-                                                    <td>{orderLine?.productDescription || '—'}</td>
-                                                    <td style={{ textAlign: 'right' }}>{il.quantityInvoiced}</td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                                        {formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', color: disc > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                        {disc.toFixed(1)}%
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', color: taxRate > 0 ? 'inherit' : 'var(--text-muted)' }}>
-                                                        {taxRate.toFixed(1)}%
-                                                    </td>
-                                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
-                                                        {formatAmount(pricing.amount, cc)}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr style={{ borderTop: '1px solid var(--border)' }}>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.subtotal')}</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.tax')}</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tSales('totals.total')}</td>
-                                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                                    )}
+                                    mobileCard={({ il, orderLine, disc, taxRate, pricing }) => (
+                                        <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm">
+                                            <div className="flex justify-between items-start gap-2 mb-2">
+                                                <div className="font-semibold text-sm text-[var(--accent)]">
+                                                    {orderLine?.productNumber || orderLine?.productId?.substring(0, 8) || '—'}
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-slate-600 font-medium mb-3">
+                                                {orderLine?.productDescription || '—'}
+                                            </div>
+                                            
+                                            <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                                <MobileCardField label={tSales('columns.qty')} value={
+                                                    <span className="font-semibold">{il.quantityInvoiced}</span>
+                                                } />
+                                                <MobileCardField label={tSales('columns.unitPrice')} value={
+                                                    <span>{formatAmount(parseFloat(il.pricePerUnit || orderLine?.pricePerUnit || '0'), cc)}</span>
+                                                } />
+                                                {disc > 0 && (
+                                                    <MobileCardField label={tSales('columns.discountPct')} value={
+                                                        <span>{disc.toFixed(1)}%</span>
+                                                    } />
+                                                )}
+                                                {taxRate > 0 && (
+                                                    <MobileCardField label={tSales('columns.tax')} value={
+                                                        <span>{taxRate.toFixed(1)}%</span>
+                                                    } />
+                                                )}
+                                                <MobileCardField label={tSales('columns.amount')} value={
+                                                    <span className="font-bold text-[var(--accent)] text-base">{formatAmount(pricing.amount, cc)}</span>
+                                                } />
+                                            </div>
+                                        </div>
+                                    )}
+                                    footer={(
+                                        <>
+                                            <tr className="hidden lg:table-row" style={{ borderTop: '1px solid var(--border)' }}>
+                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.subtotal')}</td>
+                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(subtotal, cc)}</td>
+                                            </tr>
+                                            <tr className="hidden lg:table-row">
+                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 600, fontSize: 12, color: 'var(--text-muted)' }}>{tSales('totals.tax')}</td>
+                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{formatAmount(effectiveTaxTotal, cc)}</td>
+                                            </tr>
+                                            <tr className="hidden lg:table-row">
+                                                <td colSpan={6} style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>{tSales('totals.total')}</td>
+                                                <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, fontSize: 13 }}>{formatAmount(grandTotal, cc)}</td>
+                                            </tr>
+                                            
+                                            <tr className="lg:hidden">
+                                                <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tSales('totals.subtotal')}</td>
+                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(subtotal, cc)}</td>
+                                            </tr>
+                                            <tr className="lg:hidden">
+                                                <td className="py-1 text-xs font-medium text-slate-500 text-right pr-4">{tSales('totals.tax')}</td>
+                                                <td className="py-1 text-sm font-semibold text-right tabular-nums">{formatAmount(effectiveTaxTotal, cc)}</td>
+                                            </tr>
+                                            <tr className="lg:hidden">
+                                                <td className="py-2 text-sm font-bold text-[var(--accent)] text-right pr-4">{tSales('totals.total')}</td>
+                                                <td className="py-2 text-base font-bold text-[var(--accent)] text-right tabular-nums">{formatAmount(grandTotal, cc)}</td>
+                                            </tr>
+                                        </>
+                                    )}
+                                />
                             );
                         })()}
 

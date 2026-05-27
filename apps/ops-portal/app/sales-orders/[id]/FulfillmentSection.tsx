@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { apiFetch } from '@/lib/api';
+import { DataTable, MobileCardField } from '@/components/shared/DataTable';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
 
 /**
@@ -69,7 +70,6 @@ interface Props {
 
 export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
     const t = useTranslations('fulfillment');
-    const tShipping = useTranslations('shipping');
     const tCommon = useTranslations('common');
 
     const [shippingCtx, setShippingCtx] = useState<ShippingContext | null>(null);
@@ -77,15 +77,12 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
 
     useEffect(() => {
         setLoading(true);
-        apiFetch<ShippingContext>(`/api/sales-orders/${orderId}/shipping-context`)
-            .then(setShippingCtx)
+        api.orderPickingControllerGetShippingContext(orderId)
+            .then((res) => setShippingCtx(res.data as any))
             .catch(() => setShippingCtx(null))
             .finally(() => setLoading(false));
     }, [orderId]);
 
-    // Merge data: picking summary provides on-hand and remaining; shipping context provides shipped/available-to-ship.
-    // Use shipping context lines as the primary source (it has shipped + available).
-    // Enrich with on-hand from picking summary.
     const pickingMap = new Map(
         (pickingSummary?.lines ?? []).map(l => [l.salesOrderLineId, l])
     );
@@ -113,73 +110,117 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
                 </div>
             ) : (
                 <>
-                    <table className="table-lines">
-                        <thead>
-                            <tr>
-                                <th>{t('columns.product')}</th>
-                                <th style={{ textAlign: 'right' }}>{t('columns.ordered')}</th>
-                                <th style={{ textAlign: 'right' }}>{t('columns.picked')}</th>
-                                <th style={{ textAlign: 'right' }}>{t('columns.onHand')}</th>
-                                <th style={{ textAlign: 'right' }}>{t('columns.shipped')}</th>
-                                <th style={{ textAlign: 'right' }}>{t('columns.readyToShip')}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {physicalLines.map(line => {
-                                const ordered = parseFloat(line.quantity);
-                                const picked = parseFloat(line.quantityPicked);
-                                const shipped = parseFloat(line.quantityShipped);
-                                const available = parseFloat(line.availableToShip);
-                                const pickLine = pickingMap.get(line.salesOrderLineId);
-                                const onHand = pickLine ? parseFloat(pickLine.onHand) : null;
-                                const isPicked = picked >= ordered;
-                                const isShipped = shipped >= ordered;
+                    <DataTable
+                        data={physicalLines}
+                        keyExtractor={(line) => line.salesOrderLineId}
+                        columns={[
+                            { header: t('columns.product') },
+                            { header: t('columns.ordered'), align: 'right' },
+                            { header: t('columns.picked'), align: 'right' },
+                            { header: t('columns.onHand'), align: 'right' },
+                            { header: t('columns.shipped'), align: 'right' },
+                            { header: t('columns.readyToShip'), align: 'right' }
+                        ]}
+                        emptyMessage={t('noPhysicalLines')}
+                        renderCustomRow={(line: any, idx: number) => {
+                            const ordered = parseFloat(line.quantity);
+                            const picked = parseFloat(line.quantityPicked);
+                            const shipped = parseFloat(line.quantityShipped);
+                            const available = parseFloat(line.availableToShip);
+                            const pickLine = pickingMap.get(line.salesOrderLineId);
+                            const onHand = pickLine ? parseFloat(pickLine.onHand) : null;
+                            const isPicked = picked >= ordered;
+                            const isShipped = shipped >= ordered;
 
-                                return (
-                                    <tr key={line.salesOrderLineId} className={isShipped ? 'opacity-50' : ''}>
-                                        <td>
-                                            <div className="font-bold text-sm">
-                                                {line.productId ? (
-                                                    <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
-                                                        {line.productNumber}
-                                                    </Link>
-                                                ) : line.productNumber}
-                                            </div>
-                                            <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                            {ordered.toLocaleString()}
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                            <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
+                            return (
+                                <tr key={line.salesOrderLineId} className={isShipped ? 'opacity-50' : ''}>
+                                    <td>
+                                        <div className="font-bold text-sm">
+                                            {line.productId ? (
+                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                    {line.productNumber}
+                                                </Link>
+                                            ) : line.productNumber}
+                                        </div>
+                                        <div className="text-xs text-[var(--text-muted)] truncate max-w-[250px]">{line.productDescription}</div>
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                        {ordered.toLocaleString()}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                        <span className={isPicked ? 'text-[var(--success)]' : picked > 0 ? 'text-[var(--warning)]' : ''}>
+                                            {picked.toLocaleString()}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
+                                        {onHand !== null ? onHand.toLocaleString() : '—'}
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                        <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
+                                            {shipped.toLocaleString()}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                        <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
+                                            {available.toLocaleString()}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        }}
+                        mobileCard={(line: any) => {
+                            const ordered = parseFloat(line.quantity);
+                            const picked = parseFloat(line.quantityPicked);
+                            const shipped = parseFloat(line.quantityShipped);
+                            const available = parseFloat(line.availableToShip);
+                            const pickLine = pickingMap.get(line.salesOrderLineId);
+                            const onHand = pickLine ? parseFloat(pickLine.onHand) : null;
+                            const isPicked = picked >= ordered;
+                            const isShipped = shipped >= ordered;
+
+                            return (
+                                <div className={`bg-[var(--bg-card)] rounded-xl border border-[var(--border)] p-4 flex flex-col shadow-sm ${isShipped ? 'opacity-60' : ''}`}>
+                                    <div className="flex justify-between items-start gap-2 mb-2">
+                                        <div className="font-semibold text-sm text-[var(--accent)]">
+                                            {line.productId ? (
+                                                <Link href={`/products/${line.productId}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                                    {line.productNumber}
+                                                </Link>
+                                            ) : line.productNumber}
+                                        </div>
+                                    </div>
+                                    <div className="text-sm text-slate-600 font-medium mb-3">
+                                        {line.productDescription}
+                                    </div>
+                                    <div className="flex flex-col gap-0 border-t border-slate-100 pt-1">
+                                        <MobileCardField label={t('columns.ordered')} value={
+                                            <span className="font-semibold">{ordered.toLocaleString()}</span>
+                                        } />
+                                        <MobileCardField label={t('columns.picked')} value={
+                                            <span className={isPicked ? 'text-[var(--success)] font-semibold' : picked > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
                                                 {picked.toLocaleString()}
                                             </span>
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: 'var(--text-muted)' }}>
-                                            {onHand !== null ? onHand.toLocaleString() : '—'}
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                                            <span className={isShipped ? 'text-[var(--success)]' : shipped > 0 ? 'text-[var(--warning)]' : ''}>
+                                        } />
+                                        <MobileCardField label={t('columns.onHand')} value={
+                                            <span className="text-[var(--text-muted)]">
+                                                {onHand !== null ? onHand.toLocaleString() : '—'}
+                                            </span>
+                                        } />
+                                        <MobileCardField label={t('columns.shipped')} value={
+                                            <span className={isShipped ? 'text-[var(--success)] font-semibold' : shipped > 0 ? 'text-[var(--warning)] font-semibold' : ''}>
                                                 {shipped.toLocaleString()}
                                             </span>
-                                        </td>
-                                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                                        } />
+                                        <MobileCardField label={t('columns.readyToShip')} value={
                                             <span className={available > 0 ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}>
                                                 {available.toLocaleString()}
                                             </span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                            {physicalLines.length === 0 && (
-                                <tr>
-                                    <td colSpan={6} className="py-6 text-center text-sm text-[var(--text-muted)]">
-                                        {t('noPhysicalLines')}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                        } />
+                                    </div>
+                                </div>
+                            );
+                        }}
+                    />
 
                 </>
             )}

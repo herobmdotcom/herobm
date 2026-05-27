@@ -1,1 +1,0 @@
-ALTER TYPE "modbm_core"."bin_type_enum" ADD VALUE 'in_transit';

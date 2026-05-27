@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StateBadge from '@/components/StateBadge';
 import { ValidState } from '@/types/states';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
 
 interface ShipmentLine {
@@ -37,7 +38,8 @@ export default function ShipmentsSection({ orderId }: Props) {
 
     useEffect(() => {
         setLoading(true);
-        apiFetch<Shipment[]>(`/api/sales-orders/${orderId}/shipments`)
+        // @ts-expect-error missing typings in SDK
+        api.orderShipmentsControllerFindShipments(orderId)
             .then(setShipments)
             .catch((err) => reportError(err, 'ShipmentsSection'))
             .finally(() => setLoading(false));

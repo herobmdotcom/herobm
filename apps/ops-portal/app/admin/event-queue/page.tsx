@@ -3,7 +3,8 @@
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 import { useState, useEffect, Fragment } from 'react';
-import { apiFetch, apiMutate, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 interface SyncSummary {
@@ -59,8 +60,8 @@ export default function EventQueueDashboard() {
 
   const loadData = async () => {
     try {
-      const res = await apiFetch<SyncData>('/api/settings/external-sync?limit=100');
-      setData(res);
+      const res: any = await api.externalSyncControllerGetSyncStatus({ limit: 100 } as any);
+      setData(res?.data?.data || res?.data || res || null);
       setError('');
     } catch (err: any) {
       setError(err instanceof Error ? err.message : t('errors.loadFailed'));
@@ -89,10 +90,8 @@ export default function EventQueueDashboard() {
     setDrawerLoading(true);
     setDrawerExpandedId(null);
     try {
-      const res = await apiFetch<{ events: OutboxEvent[] }>(
-        `/api/settings/external-sync/events?type=${encodeURIComponent(eventType)}&status=failed&limit=50`,
-      );
-      setDrawerEvents(res.events);
+      const res: any = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: 50 } as any);
+      setDrawerEvents(res?.data?.events || res?.events || res?.data || res || []);
     } catch (err) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');
@@ -105,10 +104,7 @@ export default function EventQueueDashboard() {
     if (!confirm(t('confirmClear', { type: eventType }))) return;
     setClearing(eventType);
     try {
-      await apiMutate(
-        `/api/settings/external-sync/events?type=${encodeURIComponent(eventType)}`,
-        'DELETE',
-      );
+      await api.externalSyncControllerClearEventsByType({ type: eventType });
       // Close drawer if viewing that type
       if (drawerType === eventType) {
         setDrawerType(null);

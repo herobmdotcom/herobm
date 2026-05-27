@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
-import { apiFetch, apiMutate } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { toast } from 'react-hot-toast';
 
 interface ChartFile {
@@ -34,7 +34,9 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
   const loadCharts = async () => {
     try {
       setIsLoading(true);
-      const data = await apiFetch<ChartFile[]>('/api/gl/charts');
+      const res = await api.glControllerListCharts();
+      // @ts-expect-error
+      const data = res.data;
       setCharts(data);
       if (data.length > 0) {
         setSelectedFile(data[0].filename);
@@ -50,8 +52,10 @@ export default function ImportCoaModal({ isOpen, onClose, onImportComplete }: Pr
     if (!selectedFile) return;
     try {
       setIsImporting(true);
-      const res = await apiMutate<{ created: number }>('/api/gl/seed', 'POST', { filename: selectedFile });
-      toast.success(`Successfully imported ${res.created} accounts.`);
+      const res = await api.glControllerSeedChartOfAccounts({ body: JSON.stringify({ filename: selectedFile }) });
+      // @ts-expect-error
+      const data = res.data;
+      toast.success(`Successfully imported ${data.created} accounts.`);
       onImportComplete();
       onClose();
     } catch (err: any) {

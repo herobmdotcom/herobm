@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { useTranslations } from 'next-intl';
 
 export interface Supplier {
@@ -70,10 +70,12 @@ export default function SupplierSelect({
       return; 
     }
     try {
-      const data = await apiFetch<{ data: Supplier[] }>(
-        `/api/suppliers?q=${encodeURIComponent(term)}&limit=10`,
+      const data = await api.customFetch<{ data: Supplier[] }>(
+        `/suppliers?q=${encodeURIComponent(term)}&limit=10`,
+        { method: 'GET' }
       );
-      setFilteredSuppliers(data.data);
+
+      setFilteredSuppliers(data.data || data);
     } catch { 
       setFilteredSuppliers([]); 
     }

@@ -440,6 +440,7 @@ export class OrdersWriteService {
       const [order] = await tx
         .insert(salesOrders)
         .values({
+          salesOrderId: dto.salesOrderId,
           orderNumber,
           name: dto.name || orderNumber,
           customerId: dto.customerId,

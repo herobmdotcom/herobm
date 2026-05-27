@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import SlideOver from '@/components/shared/SlideOver';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { PURCHASE_RETURN_STATE } from '@modbm/shared';
 
 interface ShipReturnSlideOverProps {
@@ -27,12 +27,15 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     if (isOpen && returnRecord) {
       setLoading(true);
       setError(null);
-      apiFetch(`/api/purchase-orders/${returnRecord.purchaseOrderId}/returns/${returnRecord.returnId}`)
-        .then(data => {
-          setReturnDetails(data);
+      api.purchaseReturnsControllerFindReturn(returnRecord.purchaseOrderId, returnRecord.returnId)
+        .then((res: any) => {
+          setReturnDetails(res.data ? res.data : res);
+          setLoading(false);
         })
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false));
+        .catch((err: any) => {
+          setError(err.message);
+          setLoading(false);
+        });
     }
   }, [isOpen, returnRecord]);
 
@@ -40,9 +43,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     try {
       setActionLoading(true);
       setError(null);
-      await apiFetch(`/api/purchase-orders/${returnRecord.purchaseOrderId}/returns/${returnRecord.returnId}/stage`, {
-        method: 'POST',
-      });
+      await api.purchaseReturnsControllerStageReturn(returnRecord.purchaseOrderId, returnRecord.returnId, { body: JSON.stringify({}) });
       onRefresh();
       onClose();
     } catch (err: any) {
@@ -56,9 +57,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     try {
       setActionLoading(true);
       setError(null);
-      await apiFetch(`/api/purchase-orders/${returnRecord.purchaseOrderId}/returns/${returnRecord.returnId}/ship`, {
-        method: 'POST',
-      });
+      await api.purchaseReturnsControllerShipReturn(returnRecord.purchaseOrderId, returnRecord.returnId, { body: JSON.stringify({ trackingNumber }) });
       onRefresh();
       onClose();
     } catch (err: any) {

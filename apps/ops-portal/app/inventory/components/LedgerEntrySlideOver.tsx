@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { apiFetch, reportError } from '@/lib/api';
+import { reportError } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import SlideOver from '@/components/shared/SlideOver';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -44,8 +45,9 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
     }
 
     setLoading(true);
-    apiFetch<EntryDetails>(`/api/inventory/entries/${entryId}`)
-      .then(setDetails)
+    api.inventoryControllerGetEntryDetails(entryId)
+      // @ts-expect-error missing type properties
+      .then(res => setDetails(res.data))
       .catch((err) => reportError(err, 'LedgerEntrySlideOver'))
       .finally(() => setLoading(false));
   }, [entryId]);

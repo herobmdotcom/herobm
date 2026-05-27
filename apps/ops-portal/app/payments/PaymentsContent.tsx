@@ -4,9 +4,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import DataGrid from '@/components/DataGrid';
 import { formatAmount } from '@/lib/currency';
+import * as api from '@modbm/sdk';
 import type { ColDef } from 'ag-grid-community';
-import StateBadge from '@/components/StateBadge';
-import { ValidState } from '@/types/states';
+
 import { useSettings } from '@/components/SettingsProvider';
 import PaymentManagerSlideOver from './PaymentManagerSlideOver';
 import { PAYMENT_STATE } from '@modbm/shared';
@@ -39,6 +39,7 @@ export default function PaymentsContent() {
   const [isProcessingBatch, setIsProcessingBatch] = useState(false);
   const t = useTranslations('payments');
   const tCommon = useTranslations('common');
+  const tStates = useTranslations('common.states');
 
   const handleNext = useCallback(() => {
     if (!selectedPaymentId || payments.length === 0) return;
@@ -72,9 +73,10 @@ export default function PaymentsContent() {
       field: 'stateCode',
       headerName: 'Status',
       width: 110,
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        return <StateBadge state={params.value as ValidState} />;
+      valueFormatter: (params: any) => {
+        if (!params.value) return '';
+        const s = String(params.value).toLowerCase();
+        return tStates.has(s as any) ? tStates(s as any) : String(params.value);
       },
     },
     {
@@ -87,13 +89,6 @@ export default function PaymentsContent() {
         if (unalloc === total) return 'Unallocated';
         if (unalloc > 0) return 'Partial';
         return 'Fully Allocated';
-      },
-      cellRenderer: (params: { value: string }) => {
-        if (!params.value) return null;
-        let className = 'badge badge-legacy'; // Partial (gray)
-        if (params.value === 'Unallocated') className = 'badge badge-partially_paid'; // Amber
-        else if (params.value === 'Fully Allocated') className = 'badge badge-paid'; // Green
-        return <span className={className}>{params.value}</span>;
       }
     },
     {
@@ -146,7 +141,7 @@ export default function PaymentsContent() {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
     try {
-      const data = await apiMutate<any>('/api/payments/export-aba', 'POST', { paymentIds: selectedPayments.map(p => p.paymentId) });
+      const data = await api.paymentsControllerExportAba({ paymentIds: selectedPayments.map(p => p.paymentId) }) as any;
       
       // Download the file
       const blob = new Blob([data.fileContent], { type: 'text/plain' });
@@ -170,7 +165,11 @@ export default function PaymentsContent() {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
     try {
-      await apiMutate(`/api/payments/${endpoint}`, 'POST', { paymentIds: selectedPayments.map(p => p.paymentId) });
+      if (endpoint === 'confirm-exported') {
+        await api.paymentsControllerConfirmExported({ paymentIds: selectedPayments.map(p => p.paymentId) });
+      } else if (endpoint === 'reject-exported') {
+        await api.paymentsControllerRejectExported({ paymentIds: selectedPayments.map(p => p.paymentId) });
+      }
       window.dispatchEvent(new CustomEvent('grid-refresh-ops-payments'));
       setSelectedPayments([]);
     } catch (err: any) {

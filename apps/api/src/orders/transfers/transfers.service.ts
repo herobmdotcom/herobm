@@ -23,9 +23,13 @@ import {
   salesOrderLineItems,
   products as coreProducts,
 } from '../../drizzle/modbm-core-schema';
-import { eq, and, inArray, sum, sql, desc, or, ilike } from 'drizzle-orm';
+import { eq, and, inArray, sum, sql, desc, or, ilike, asc } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
-import { PaginationQuery, parsePagination } from '../../common/pagination';
+import {
+  PaginationQuery,
+  parsePagination,
+  withCursorPagination,
+} from '../../common/pagination';
 import {
   CreateTransferOrderDto,
   UpdateTransferOrderDto,
@@ -1013,7 +1017,8 @@ export class TransferService {
   // -------------------------------------------------------------------------
 
   async findAll(query?: PaginationQuery) {
-    const { page, limit, offset, searchTerm, states } = parsePagination(query);
+    const { page, limit, cursor, direction, searchTerm, states } =
+      parsePagination(query);
 
     const conditions = [];
 
@@ -1034,17 +1039,10 @@ export class TransferService {
       }
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-    const [{ count }] = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(transferOrders)
-      .where(whereClause);
-
     const destLoc = alias(locations, 'destLoc');
     const sourceLoc = alias(locations, 'sourceLoc');
 
-    const rows = await this.db
+    let qb = this.db
       .select({
         id: transferOrders.transferOrderId,
         orderNumber: transferOrders.orderNumber,
@@ -1066,12 +1064,65 @@ export class TransferService {
         destLoc,
         eq(transferOrders.destinationLocationId, destLoc.locationId),
       )
-      .where(whereClause)
-      .orderBy(desc(transferOrders.createdOn))
-      .limit(limit)
-      .offset(offset);
+      .$dynamic();
 
-    return { data: rows, page, limit, total: Number(count) };
+    if (conditions.length > 0) {
+      qb = qb.where(and(...conditions));
+    }
+
+    const { data, nextCursor, prevCursor } = await withCursorPagination({
+      qb,
+      limit,
+      cursorObj: cursor,
+      direction: direction,
+      applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
+        if (dir === 'next') {
+          return q.where(
+            or(
+              sql`${transferOrders.createdOn} < ${c.createdOn}`,
+              and(
+                eq(transferOrders.createdOn, new Date(c.createdOn)),
+                sql`${transferOrders.transferOrderId} < ${c.id}`,
+              ),
+            ),
+          );
+        } else {
+          return q.where(
+            or(
+              sql`${transferOrders.createdOn} > ${c.createdOn}`,
+              and(
+                eq(transferOrders.createdOn, new Date(c.createdOn)),
+                sql`${transferOrders.transferOrderId} > ${c.id}`,
+              ),
+            ),
+          );
+        }
+      },
+      applyOrderBy: (q, dir) => {
+        const orderFn = dir === 'next' ? desc : asc;
+        return q.orderBy(
+          orderFn(transferOrders.createdOn),
+          orderFn(transferOrders.transferOrderId),
+        );
+      },
+      encodeRow: (row) => ({
+        createdOn: row.createdOn.toISOString(),
+        id: row.id,
+      }),
+    });
+
+    let countQb = this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(transferOrders)
+      .$dynamic();
+
+    if (conditions.length > 0) {
+      countQb = countQb.where(and(...conditions));
+    }
+
+    const [{ count }] = await countQb;
+
+    return { data, page, limit, total: Number(count), nextCursor, prevCursor };
   }
 
   async findOne(id: string) {

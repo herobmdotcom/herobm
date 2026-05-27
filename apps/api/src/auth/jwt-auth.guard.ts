@@ -4,7 +4,7 @@ import { Reflector } from '@nestjs/core';
 import { SKIP_CASBIN } from './casbin.guard';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
+export class JwtAuthGuard extends AuthGuard(['jwt', 'api-key']) {
   constructor(private reflector: Reflector) {
     super();
   }
