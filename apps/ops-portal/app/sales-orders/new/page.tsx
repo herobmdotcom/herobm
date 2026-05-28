@@ -127,14 +127,14 @@ export default function NewOrderPage() {
 
   // Load locations on mount
   useEffect(() => {
-    api.inventoryControllerFindAllLocations({} as any)
+    api.inventoryControllerFindAllLocations({} )
       .then((res) => {
-        const payload = res.data as any;
-        setLocations(payload.data);
-        if (payload.defaultFulfillmentLocationId) {
-          setFulfillmentLocationId(payload.defaultFulfillmentLocationId);
-        } else if (payload.data.length > 0) {
-          setFulfillmentLocationId(payload.data[0].locationId);
+        const payload = res.data?.data || [];
+        setLocations(payload as unknown as Location[]);
+        if (res.data?.defaultFulfillmentLocationId) {
+          setFulfillmentLocationId(res.data.defaultFulfillmentLocationId);
+        } else if (payload[0]) {
+          setFulfillmentLocationId((payload[0] as any).locationId);
         }
       })
       .catch((err) => reportError(err, 'NewOrderPage_Locations'));
@@ -144,8 +144,7 @@ export default function NewOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        // @ts-expect-error
-        settaxCategories(res.data);
+        settaxCategories(res.data as unknown as TaxCategory[]);
       })
       .catch((err) => reportError(err, 'NewOrderPage'));
   }, []);
@@ -166,8 +165,8 @@ export default function NewOrderPage() {
     // Fetch discount rules for this customer
     let rules: DiscountRule[] = [];
     try {
-      const res = await api.discountMatrixControllerResolve({ customerId: a.customerId, customerGroupId: a.customerGroupId || undefined } as any);
-      rules = res.data as any;
+      const res = await api.discountMatrixControllerResolve({ customerId: a.customerId, customerGroupId: a.customerGroupId || '' });
+      rules = res.data as unknown as DiscountRule[];
       setDiscountRules(rules);
     } catch (err) {
       reportError(err, 'NewOrderPage_Rules');
@@ -272,6 +271,7 @@ export default function NewOrderPage() {
 
     try {
       const orderRes = await api.ordersControllerCreate({
+        salesOrderId: crypto.randomUUID(),
         name: name || undefined,
         customerId,
         customerOrderNumber: customerOrderNumber || undefined,
@@ -282,15 +282,15 @@ export default function NewOrderPage() {
           .map((l) => ({
             productId: l.productId,
             productDescription: l.productDescription,
-            quantity: l.quantity,
-            pricePerUnit: l.pricePerUnit,
-            discountPercentage: l.discountPercentage,
+            quantity: String(l.quantity),
+            pricePerUnit: String(l.pricePerUnit),
+            discountPercentage: String(l.discountPercentage),
             taxCategoryId: l.taxCategoryId || undefined,
             unitOfMeasure: l.unitOfMeasure,
             fulfillmentLocationId: l.fulfillmentLocationId || fulfillmentLocationId || undefined,
           })),
-      } as any);
-      const order = orderRes.data as any;
+      });
+      const order = orderRes.data;
       router.push(`/sales-orders/${order.salesOrderId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tSales('common.errors.failedToCreateOrder'));

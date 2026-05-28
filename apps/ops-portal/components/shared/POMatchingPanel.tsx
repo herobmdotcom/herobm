@@ -84,13 +84,13 @@ export default function POMatchingPanel({
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    api.purchaseOrdersControllerFindPendingLines({ vendorId } as any)
+    api.purchaseOrdersControllerFindPendingLines({ vendorId } as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
       .then((data) => {
 
-        const lines = Array.isArray(data) ? data : (data as any).data || [];
+        const lines = data as unknown as PendingPOLine[];
         setRawLines(lines);
         // Auto-expand all POs if 3 or fewer, otherwise expand the first
-        const poIds = [...new Set(lines.map((l: PendingPOLine) => l.purchaseOrderId))] as string[];
+        const poIds = [...new Set((lines as unknown as PendingPOLine[]).map((l: PendingPOLine) => l.purchaseOrderId))] as string[];
         if (poIds.length <= 3) {
           setExpandedPOs(new Set(poIds));
         } else if (poIds.length > 0) {

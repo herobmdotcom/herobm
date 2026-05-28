@@ -101,9 +101,11 @@ export class InventoryService {
       .leftJoin(locations, eq(inventoryLevels.locationId, locations.locationId))
       .$dynamic();
 
+    const filters = [];
+
     if (searchTerm) {
       const term = `%${searchTerm}%`;
-      qb = qb.where(
+      filters.push(
         or(
           ilike(products.name, term),
           ilike(products.productNumber, term),
@@ -114,7 +116,12 @@ export class InventoryService {
     }
 
     if (query?.locationNo) {
-      qb = qb.where(eq(locations.code, query.locationNo));
+      filters.push(eq(locations.code, query.locationNo));
+    }
+
+    const whereClause = filters.length > 0 ? and(...filters) : undefined;
+    if (whereClause) {
+      qb = qb.where(whereClause);
     }
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -123,27 +130,23 @@ export class InventoryService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${products.name} > ${c.name}`,
-              and(
-                eq(products.name, c.name),
-                sql`${inventoryLevels.inventoryLevelId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${products.name} < ${c.name}`,
-              and(
-                eq(products.name, c.name),
-                sql`${inventoryLevels.inventoryLevelId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${products.name} > ${c.name}`,
+                and(
+                  eq(products.name, c.name),
+                  sql`${inventoryLevels.inventoryLevelId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${products.name} < ${c.name}`,
+                and(
+                  eq(products.name, c.name),
+                  sql`${inventoryLevels.inventoryLevelId} < ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
@@ -359,8 +362,9 @@ export class InventoryService {
       filters.push(eq(locations.code, query.locationNo));
     }
 
-    if (filters.length > 0) {
-      qb = qb.where(and(...filters));
+    const whereClause = filters.length > 0 ? and(...filters) : undefined;
+    if (whereClause) {
+      qb = qb.where(whereClause);
     }
 
     const {
@@ -373,31 +377,33 @@ export class InventoryService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { bin: string; name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${bins.binNumber} > ${c.bin}`,
-              and(eq(bins.binNumber, c.bin), sql`${products.name} > ${c.name}`),
-              and(
-                eq(bins.binNumber, c.bin),
-                eq(products.name, c.name),
-                sql`${binContents.binContentId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${bins.binNumber} < ${c.bin}`,
-              and(eq(bins.binNumber, c.bin), sql`${products.name} < ${c.name}`),
-              and(
-                eq(bins.binNumber, c.bin),
-                eq(products.name, c.name),
-                sql`${binContents.binContentId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${bins.binNumber} > ${c.bin}`,
+                and(
+                  eq(bins.binNumber, c.bin),
+                  sql`${products.name} > ${c.name}`,
+                ),
+                and(
+                  eq(bins.binNumber, c.bin),
+                  eq(products.name, c.name),
+                  sql`${binContents.binContentId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${bins.binNumber} < ${c.bin}`,
+                and(
+                  eq(bins.binNumber, c.bin),
+                  sql`${products.name} < ${c.name}`,
+                ),
+                and(
+                  eq(bins.binNumber, c.bin),
+                  eq(products.name, c.name),
+                  sql`${binContents.binContentId} < ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;

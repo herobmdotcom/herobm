@@ -44,10 +44,9 @@ export default function GLAccountSelect({
     let active = true;
     setLoading(true);
 
-    api.glControllerGetAccounts((bankAccountOnly ? { isBankAccount: 'true' } : {}) as any)
+    api.glControllerGetAccounts(bankAccountOnly ? { isBankAccount: 'true' } as Parameters<typeof api.glControllerGetAccounts>[0] : {} as Parameters<typeof api.glControllerGetAccounts>[0])
       .then((res) => {
-        // @ts-expect-error
-        if (active) setAccounts(res.data);
+        if (active) setAccounts(res.data as unknown as GLAccount[]);
       })
       .catch((err) => reportError(err, 'GLAccountSelect'))
       .finally(() => {

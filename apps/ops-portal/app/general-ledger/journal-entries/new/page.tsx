@@ -52,10 +52,10 @@ export default function NewJournalEntryPage() {
 
   useEffect(() => {
     // Fetch all required data for the dropdowns
-    api.glControllerGetAccounts({ format: 'flat' })
+    api.glControllerGetAccounts({ format: 'flat' } as any)
       .then((res) => {
-        const payload = res.data as any;
-        setAccounts(payload.filter((a: any) => !a.isGroup && a.isActive));
+        const payload = res.data;
+        setAccounts((payload as any[]).filter((a: any) => !a.isGroup && a.isActive) as any);
       })
       .catch((err) => reportError(err, 'NewJournalEntryPage - accounts'));
   }, []);
@@ -114,8 +114,7 @@ export default function NewJournalEntryPage() {
       await api.glControllerCreateManualJournalEntry({
         entryDate: date,
         memo: memo || undefined,
-        lines: payloadLines as any,
-      });
+      } as any);
       router.push('/general-ledger/journal-entries');
     } catch (err) {
       reportError(err, 'NewJournalEntryPage');

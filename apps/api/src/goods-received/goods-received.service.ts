@@ -808,8 +808,10 @@ export class GoodsReceivedService {
       .leftJoin(suppliers, eq(goodsReceived.vendorId, suppliers.vendorId))
       .$dynamic();
 
-    if (conditions.length > 0) {
-      qb = qb.where(and(...conditions));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    if (whereClause) {
+      qb = qb.where(whereClause);
     }
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -818,27 +820,23 @@ export class GoodsReceivedService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${goodsReceived.createdOn} < ${c.createdOn}`,
-              and(
-                eq(goodsReceived.createdOn, new Date(c.createdOn)),
-                sql`${goodsReceived.goodsReceivedId} < ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${goodsReceived.createdOn} > ${c.createdOn}`,
-              and(
-                eq(goodsReceived.createdOn, new Date(c.createdOn)),
-                sql`${goodsReceived.goodsReceivedId} > ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${goodsReceived.createdOn} < ${c.createdOn}`,
+                and(
+                  eq(goodsReceived.createdOn, new Date(c.createdOn)),
+                  sql`${goodsReceived.goodsReceivedId} < ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${goodsReceived.createdOn} > ${c.createdOn}`,
+                and(
+                  eq(goodsReceived.createdOn, new Date(c.createdOn)),
+                  sql`${goodsReceived.goodsReceivedId} > ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;

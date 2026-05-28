@@ -1,4 +1,14 @@
 import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiProperty,
+  ApiConsumes,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Delete,
@@ -17,6 +27,23 @@ import type { DrizzleDB } from '../drizzle/drizzle.module';
 import { outbox } from '../drizzle/modbm-core-schema';
 import { desc, isNull, isNotNull, sql, count, eq, and } from 'drizzle-orm';
 
+export class SyncStatusResponseDto {
+  @ApiProperty() pending!: number;
+  @ApiProperty() processed!: number;
+  @ApiProperty() failed!: number;
+  @ApiProperty() recentEvents!: any[];
+}
+
+export class SyncEventsResponseDto {
+  @ApiProperty() data!: any[];
+}
+
+export class DeleteEventsResponseDto {
+  @ApiProperty() deleted!: number;
+  @ApiProperty() eventType!: string;
+}
+
+@ApiTags('Invoices')
 @Controller('settings/external-sync')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
@@ -28,6 +55,12 @@ export class ExternalSyncController {
    */
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Sync Status',
+    description:
+      'Retrieve summary counts and recent events for the external sync dashboard.',
+  })
+  @ApiOkResponse({ type: SyncStatusResponseDto })
   async getSyncStatus(@Query('limit') limitStr?: string) {
     const limit = Math.min(parseInt(limitStr || '50', 10), 200);
 
@@ -93,6 +126,12 @@ export class ExternalSyncController {
    */
   @Get('events')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Events By Type',
+    description:
+      'Retrieve pending or processed outbox events for a specific type.',
+  })
+  @ApiOkResponse({ type: SyncEventsResponseDto })
   async getEventsByType(
     @Query('type') eventType: string,
     @Query('status') status?: string,
@@ -136,6 +175,11 @@ export class ExternalSyncController {
    */
   @Delete('events')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Clear Events By Type',
+    description: 'Delete all pending or failed outbox events of a given type.',
+  })
+  @ApiOkResponse({ type: DeleteEventsResponseDto })
   async clearEventsByType(
     @Query('type') eventType: string,
     @Query('status') status?: string,

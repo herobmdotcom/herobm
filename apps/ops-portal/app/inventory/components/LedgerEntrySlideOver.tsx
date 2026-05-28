@@ -46,8 +46,7 @@ export default function LedgerEntrySlideOver({ entryId, onClose }: LedgerEntrySl
 
     setLoading(true);
     api.inventoryControllerGetEntryDetails(entryId)
-      // @ts-expect-error missing type properties
-      .then(res => setDetails(res.data))
+      .then(res => setDetails((res as unknown as { data: EntryDetails }).data))
       .catch((err) => reportError(err, 'LedgerEntrySlideOver'))
       .finally(() => setLoading(false));
   }, [entryId]);

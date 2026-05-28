@@ -24,7 +24,7 @@ export default function AllocationsSection({ orderId, allocations, loading, onAl
   const handleUnlink = async (id: string) => {
     if (!confirm(t('allocationsSection.confirmUnallocate'))) return;
     try {
-      await api.allocationsControllerUnlinkDemand(id);
+      await api.allocationsControllerUnlinkDemand(id, {});
       toast.success(t('allocationsSection.success'));
       onAllocationsChanged();
     } catch (err) {

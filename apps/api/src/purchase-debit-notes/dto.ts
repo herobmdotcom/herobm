@@ -56,3 +56,18 @@ export class CreateDebitNoteDto {
   @IsOptional()
   notes?: string;
 }
+
+export class EmptyBodyDto {}
+
+export class PurchaseDebitNoteResponseDto {
+  debitNoteId!: string;
+  debitNoteNumber!: string;
+  returnId!: string;
+  purchaseOrderId!: string;
+  stateCode!: string;
+  totalAmount!: string;
+  taxAmount!: string;
+  feeAmount!: string;
+  createdOn?: Date | null;
+  modifiedOn?: Date | null;
+}

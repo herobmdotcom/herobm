@@ -97,7 +97,7 @@ export default function LedgerView() {
             <option value={90}>{tInventory('filters.last90Days')}</option>
           </select>
         }
-        onRowClicked={(row: any) => setSelectedEntryId(row.entryId)}
+        onRowClicked={(row: unknown) => setSelectedEntryId((row as { entryId: string }).entryId)}
       />
 
       <LedgerEntrySlideOver

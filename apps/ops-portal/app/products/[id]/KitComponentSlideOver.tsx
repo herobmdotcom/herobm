@@ -44,7 +44,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: existingData.parentQuantity?.toString() || '1',
           quantity: existingData.quantity?.toString() || '1',
           sequenceNumber: existingData.sequenceNumber?.toString() || '1',
-          fractionalBehavior: existingData.fractionalBehavior || 'allow_fractional',
+          fractionalBehavior: existingData.fractionalBehavior || 'ALLOW_FRACTIONAL',
         });
       } else {
         // Fetch existing components to determine next sequence number
@@ -88,8 +88,8 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
-          fractionalBehavior: dto.fractionalBehavior,
-        } as any);
+          fractionalBehavior: dto.fractionalBehavior as any,
+        } );
         toast.success(t('toast.componentUpdated'));
       } else {
         await api.productsControllerAddComponent(productId, {
@@ -97,8 +97,8 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           parentQuantity: dto.parentQuantity,
           quantity: dto.quantity,
           sequenceNumber: parseInt(dto.sequenceNumber, 10),
-          fractionalBehavior: dto.fractionalBehavior,
-        } as any);
+          fractionalBehavior: dto.fractionalBehavior as any,
+        });
         toast.success(t('toast.componentAdded'));
       }
       onSaved();
@@ -120,7 +120,7 @@ export const KitComponentSlideOver: React.FC<KitComponentSlideOverProps> = ({
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </button>
-          <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleSave as any} disabled={saving}>
+          <button type="button" className="btn btn-primary bg-[#006b5c] hover:bg-[#005246] border-none text-white shadow-sm" onClick={handleSave} disabled={saving}>
             {saving ? (
               <><span className="loading loading-spinner loading-sm mr-2" />{tCommon('saving', { defaultValue: 'Saving...' })}</>
             ) : (

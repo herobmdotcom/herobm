@@ -9,7 +9,15 @@ import {
   Request,
   UseGuards,
   Query,
+  HttpCode,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiOkResponse,
+  ApiCreatedResponse,
+} from '@nestjs/swagger';
 import { SalesInvoiceService } from './sales-invoice.service';
 import { PurchaseInvoiceService } from './purchase-invoice.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,7 +26,16 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { CreateSalesInvoiceDto } from './dto';
+import {
+  CreateSalesInvoiceDto,
+  CreateStandaloneInvoiceDto,
+  ChangeInvoiceStateDto,
+  UpdateInvoiceLineDto,
+  ResolveInvoiceLineDto,
+  AutoMatchPurchaseOrderDto,
+} from './dto';
+
+export class EmptyBodyDto {}
 
 /**
  * Sales-order–scoped invoice endpoints (AR).
@@ -27,11 +44,17 @@ import { CreateSalesInvoiceDto } from './dto';
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('sales-orders')
+@ApiTags('Invoices')
 export class SalesInvoiceController {
   constructor(private readonly salesInvoiceService: SalesInvoiceService) {}
 
   @Post(':id/invoice')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Sales Invoice',
+    description: 'Create an invoice for a sales order',
+  })
+  @ApiCreatedResponse({ type: Object })
   async createSalesInvoice(
     @Param('id') id: string,
     @Body() dto: CreateSalesInvoiceDto,
@@ -43,6 +66,11 @@ export class SalesInvoiceController {
 
   @Get(':id/invoices')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Sales Invoices',
+    description: 'Retrieve invoices for a sales order',
+  })
+  @ApiOkResponse({ type: Object })
   async getSalesInvoices(@Param('id') id: string) {
     return { data: await this.salesInvoiceService.findByOrder(id) };
   }
@@ -55,6 +83,7 @@ export class SalesInvoiceController {
 @Controller('purchase-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('purchase-orders')
+@ApiTags('Invoices')
 export class PurchaseInvoiceController {
   constructor(
     private readonly purchaseInvoiceService: PurchaseInvoiceService,
@@ -62,6 +91,11 @@ export class PurchaseInvoiceController {
 
   @Get(':id/invoices')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchase Bills',
+    description: 'Retrieve purchase bills for a purchase order',
+  })
+  @ApiOkResponse({ type: Object })
   async getPurchaseBills(@Param('id') id: string) {
     return { data: await this.purchaseInvoiceService.findByOrder(id) };
   }
@@ -72,6 +106,7 @@ export class PurchaseInvoiceController {
  */
 @Controller()
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
+@ApiTags('Invoices')
 export class InvoiceDetailController {
   constructor(
     private readonly salesInvoiceService: SalesInvoiceService,
@@ -81,6 +116,11 @@ export class InvoiceDetailController {
   @Get('sales-invoices/:id')
   @CasbinResource('sales-orders')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Sales Invoice Details',
+    description: 'Retrieve details for a specific sales invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async getSalesInvoiceDetails(@Param('id') id: string) {
     return this.salesInvoiceService.findOne(id);
   }
@@ -88,6 +128,11 @@ export class InvoiceDetailController {
   @Get('sales-invoices')
   @CasbinResource('sales-orders')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get All Sales Invoices',
+    description: 'Retrieve all sales invoices across orders',
+  })
+  @ApiOkResponse({ type: Object })
   async getSalesInvoicesGlobal(
     @Query('days') days?: string,
     @Query('customerId') customerId?: string,
@@ -106,6 +151,11 @@ export class InvoiceDetailController {
   @Get('purchase-invoices')
   @CasbinResource('purchase-orders')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get All Purchase Invoices',
+    description: 'Retrieve all purchase invoices across orders',
+  })
+  @ApiOkResponse({ type: Object })
   async getPurchaseInvoicesGlobal(
     @Query('days') days?: string,
     @Query('vendorId') vendorId?: string,
@@ -124,6 +174,11 @@ export class InvoiceDetailController {
   @Get('purchase-invoices/:id')
   @CasbinResource('purchase-orders')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchase Invoice Details',
+    description: 'Retrieve details for a specific purchase invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async getPurchaseBillDetails(@Param('id') id: string) {
     return this.purchaseInvoiceService.findOne(id);
   }
@@ -131,8 +186,13 @@ export class InvoiceDetailController {
   @Post('purchase-invoices')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Draft Invoice',
+    description: 'Create a standalone draft purchase invoice',
+  })
+  @ApiCreatedResponse({ type: Object })
   async createDraftInvoice(
-    @Body() dto: import('./dto').CreateStandaloneInvoiceDto,
+    @Body() dto: CreateStandaloneInvoiceDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -142,6 +202,13 @@ export class InvoiceDetailController {
   @Post('purchase-invoices/:id/post')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Post Invoice',
+    description: 'Post a purchase invoice',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @ApiOkResponse({ type: Object })
   async postInvoice(@Param('id') id: string, @Request() req: any) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.postInvoice(id, actor);
@@ -150,28 +217,36 @@ export class InvoiceDetailController {
   @Patch('purchase-invoices/:id/state')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Change Invoice State',
+    description: 'Change the state of a purchase invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async changeInvoiceState(
     @Param('id') id: string,
-    @Body('stateCode') stateCode: string,
-    @Body('discrepanciesAcknowledged')
-    discrepanciesAcknowledged: boolean | undefined,
+    @Body() dto: ChangeInvoiceStateDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.changePurchaseInvoiceState(
       id,
-      stateCode,
+      dto.stateCode,
       actor,
-      discrepanciesAcknowledged,
+      dto.discrepanciesAcknowledged,
     );
   }
 
   @Patch('purchase-invoices/:id')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Invoice',
+    description: 'Update a purchase invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async updateInvoice(
     @Param('id') id: string,
-    @Body() dto: any,
+    @Body() dto: UpdateInvoiceLineDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -181,10 +256,15 @@ export class InvoiceDetailController {
   @Patch('purchase-invoices/:id/lines/:lineId')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Invoice Line',
+    description: 'Update a specific line item on a purchase invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async updateInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
-    @Body() dto: any,
+    @Body() dto: UpdateInvoiceLineDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -199,6 +279,11 @@ export class InvoiceDetailController {
   @Delete('purchase-invoices/:id/lines/:lineId')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Invoice Line',
+    description: 'Remove a line item from a purchase invoice',
+  })
+  @ApiOkResponse({ type: Object })
   async removeInvoiceLine(
     @Param('id') invoiceId: string,
     @Param('lineId') lineId: string,
@@ -211,9 +296,14 @@ export class InvoiceDetailController {
   @Post('purchase-invoices/:id/lines')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Invoice Line',
+    description: 'Add a new line item to a purchase invoice',
+  })
+  @ApiCreatedResponse({ type: Object })
   async addInvoiceLine(
     @Param('id') invoiceId: string,
-    @Body() dto: any,
+    @Body() dto: UpdateInvoiceLineDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
@@ -223,15 +313,21 @@ export class InvoiceDetailController {
   @Post('purchase-invoices/lines/:lineId/resolve')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Resolve Invoice Line',
+    description: 'Resolve a discrepancy on an invoice line',
+  })
+  @HttpCode(200)
+  @ApiOkResponse({ type: Object })
   async resolveInvoiceLine(
     @Param('lineId') lineId: string,
-    @Body('purchaseOrderLineId') purchaseOrderLineId: string,
+    @Body() dto: ResolveInvoiceLineDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.resolveInvoiceLine(
       lineId,
-      purchaseOrderLineId,
+      dto.purchaseOrderLineId,
       actor,
     );
   }
@@ -239,6 +335,13 @@ export class InvoiceDetailController {
   @Post('purchase-invoices/lines/:lineId/unresolve')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Unresolve Invoice Line',
+    description: 'Undo resolution of an invoice line discrepancy',
+  })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  @ApiOkResponse({ type: Object })
   async unresolveInvoiceLine(
     @Param('lineId') lineId: string,
     @Request() req: any,
@@ -250,15 +353,21 @@ export class InvoiceDetailController {
   @Post('purchase-invoices/:id/auto-match')
   @CasbinResource('purchase-orders')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Auto-Match Purchase Order',
+    description: 'Automatically match a purchase order',
+  })
+  @HttpCode(200)
+  @ApiOkResponse({ type: Object })
   async autoMatchPurchaseOrder(
     @Param('id') invoiceId: string,
-    @Body('purchaseOrderId') purchaseOrderId: string,
+    @Body() dto: AutoMatchPurchaseOrderDto,
     @Request() req: any,
   ) {
     const actor = req.user?.username || 'system';
     return this.purchaseInvoiceService.autoMatchPurchaseOrder(
       invoiceId,
-      purchaseOrderId,
+      dto.purchaseOrderId,
       actor,
     );
   }

@@ -10,14 +10,27 @@ import {
   Patch,
   Query,
 } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiTags,
+  ApiOperation,
+} from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TransferService } from './transfers.service';
-import { PaginationQuery } from '../../common/pagination';
+import { ApiPaginatedResponse, PaginationQuery } from '../../common/pagination';
 import {
   CreateTransferOrderDto,
   UpdateTransferOrderDto,
   CreateTransferOrderLineDto,
   UpdateTransferOrderLineDto,
+  TransferResponseDto,
+  TransferEventResponseDto,
+  TransferPickingSummaryResponseDto,
+  CreateTransferFromDemandsDto,
+  PickLineDto,
+  ReceiveTransferDto,
+  EmptyBodyDto,
 } from './dto';
 import {
   CasbinGuard,
@@ -27,6 +40,7 @@ import {
 import { AuthUser } from '../../auth/auth-user.decorator';
 import type { JwtUser } from '../../auth/auth-user.decorator';
 
+@ApiTags('Orders')
 @Controller('transfers')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('sales-orders')
@@ -35,8 +49,13 @@ export class TransfersController {
 
   @Post('from-demands')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create From Demands',
+    description: 'Create a new transfer order from open backorder demands.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async createTransferFromDemands(
-    @Body() body: { sourceLocationId: string; backorderIds: string[] },
+    @Body() body: CreateTransferFromDemandsDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.createTransferFromDemands(
@@ -48,22 +67,37 @@ export class TransfersController {
 
   @Get(':id/events')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Events',
+    description: 'Retrieve the event history for a specific transfer order.',
+  })
+  @ApiOkResponse({ type: TransferEventResponseDto, isArray: true })
   async findEvents(@Param('id') id: string) {
     return this.transferService.findEvents(id);
   }
 
   @Get(':id/picking')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Picking Summary',
+    description: 'Retrieve the picking summary for a transfer order.',
+  })
+  @ApiOkResponse({ type: TransferPickingSummaryResponseDto, isArray: true })
   async getPickingSummary(@Param('id') id: string) {
     return this.transferService.getPickingSummary(id);
   }
 
   @Post(':id/picking/lines/:lineId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Pick Transfer Line',
+    description: 'Record a picked quantity for a transfer order line item.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async pickLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
-    @Body() body: { binId: string; quantity: string },
+    @Body() body: PickLineDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.pickLine(
@@ -77,6 +111,11 @@ export class TransfersController {
 
   @Delete(':id/picking/picks/:pickId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Cancel Transfer Pick',
+    description: 'Cancel and revert a recorded pick for a transfer order.',
+  })
+  @ApiOkResponse({ type: TransferResponseDto })
   async cancelPick(
     @Param('id') id: string,
     @Param('pickId') pickId: string,
@@ -86,15 +125,29 @@ export class TransfersController {
   }
   @Post(':id/ship')
   @CasbinAction('write')
-  async shipTransferOrder(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Ship Transfer Order',
+    description: 'Mark a transfer order as shipped and dispatch inventory.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
+  async shipTransferOrder(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.transferService.shipTransferOrder(id, user.username);
   }
 
   @Post(':id/receive')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Receive Transfer Order',
+    description: 'Process the receipt of a transferred inventory.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async receiveTransferOrder(
     @Param('id') id: string,
-    @Body() body: { destinationBinId: string },
+    @Body() body: ReceiveTransferDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.receiveTransferOrder(
@@ -106,8 +159,14 @@ export class TransfersController {
 
   @Post(':id/cancel')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Cancel Transfer Order',
+    description: 'Cancel an open transfer order and revert any picks.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async cancelTransferOrder(
     @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.transferService.cancelTransferOrder(id, user.username);
@@ -115,18 +174,33 @@ export class TransfersController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find All Transfers',
+    description: 'Retrieve a paginated list of transfer orders.',
+  })
+  @ApiPaginatedResponse(TransferResponseDto)
   async findAll(@Query() query: PaginationQuery) {
     return this.transferService.findAll(query);
   }
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Transfer',
+    description: 'Retrieve detailed information for a specific transfer order.',
+  })
+  @ApiOkResponse({ type: TransferResponseDto })
   async findOne(@Param('id') id: string) {
     return this.transferService.findOne(id);
   }
 
   @Post()
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Transfer Order',
+    description: 'Create a new transfer order.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async create(
     @Body() body: CreateTransferOrderDto,
     @AuthUser() user: JwtUser,
@@ -136,6 +210,11 @@ export class TransfersController {
 
   @Patch(':id')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Transfer Order',
+    description: 'Modify the details of a draft transfer order.',
+  })
+  @ApiOkResponse({ type: TransferResponseDto })
   async update(
     @Param('id') id: string,
     @Body() body: UpdateTransferOrderDto,
@@ -146,6 +225,11 @@ export class TransfersController {
 
   @Post(':id/lines')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Transfer Line',
+    description: 'Add a new line item to a transfer order.',
+  })
+  @ApiCreatedResponse({ type: TransferResponseDto })
   async addLine(
     @Param('id') id: string,
     @Body() body: CreateTransferOrderLineDto,
@@ -156,6 +240,11 @@ export class TransfersController {
 
   @Patch(':id/lines/:lineId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Transfer Line',
+    description: 'Modify an existing line item on a transfer order.',
+  })
+  @ApiOkResponse({ type: TransferResponseDto })
   async updateLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
@@ -167,6 +256,11 @@ export class TransfersController {
 
   @Delete(':id/lines/:lineId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Transfer Line',
+    description: 'Delete a line item from a transfer order.',
+  })
+  @ApiOkResponse({ type: TransferResponseDto })
   async removeLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,

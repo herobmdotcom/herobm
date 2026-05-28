@@ -51,7 +51,7 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
 
   const loadShipment = () => {
     setLoading(true);
-    (api.globalShipmentsControllerFindOne(id) as any)
+    (api.globalShipmentsControllerFindOne(id) )
       .then((res: any) => {
         setShipment(res.data ? res.data : res);
         setLoading(false);
@@ -147,8 +147,8 @@ export default function ShipmentDetailPage({ params }: { params: Promise<{ id: s
               onClick={async () => {
                 try {
                   const api = await import('@modbm/sdk');
-                  const res = await api.reportsControllerRunHook('shipping-docket', { id, context: 'shipment' });
-                  const blob = res.data as any as Blob;
+                  const res = await api.reportsControllerRunHook('shipping-docket', {}, { id, context: 'shipment' });
+                  const blob = res.data as Blob;
                   const url = URL.createObjectURL(blob);
                   window.open(url, '_blank');
                 } catch (err) {

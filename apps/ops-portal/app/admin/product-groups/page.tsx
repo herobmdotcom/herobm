@@ -40,22 +40,23 @@ export default function ProductGroupsAdmin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, customers, cc, act] = await Promise.all([
-        api.productGroupsControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
-        api.glControllerGetAccounts({}).then((r: any) => r?.data?.data || r?.data || r || []),
-        api.costCentersControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
-        api.activitiesControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || [])
+      const [data, glAccs, cc, act] = await Promise.all([
+        api.productGroupsControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.glControllerGetAccounts({} as any).then((r: any) => r?.data || r || []),
+        api.costCentersControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.activitiesControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || [])
       ]);
-      const sorted = data.sort((a, b) => 
+      const sorted = (data as any[]).sort((a: any, b: any) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
-      setGlAccounts(customers || []);
-      setCostCenters(cc || []);
-      setActivities(act || []);
-    } catch(err: any) {
-      toast.error(t('toasts.loadFailed') + ': ' + err.message);
-      reportError(err, 'ProductGroupsAdmin_loadData');
+      setGlAccounts(glAccs as any[]);
+      setCostCenters(cc as any[]);
+      setActivities(act as any[]);
+    } catch(err: unknown) {
+      const e = err as Error;
+      toast.error(t('toasts.loadFailed') + ': ' + e.message);
+      reportError(e, 'ProductGroupsAdmin_loadData');
     } finally {
       setLoading(false);
     }
@@ -94,16 +95,15 @@ export default function ProductGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await api.productGroupsControllerUpdate(editingId, editForm as any);
+        await api.productGroupsControllerUpdate(editingId, editForm as unknown as api.UpdateProductGroupDto);
         toast.success(t('toasts.updated'));
       } else {
-        await api.productGroupsControllerCreate(editForm as any);
+        await api.productGroupsControllerCreate(editForm as unknown as api.CreateProductGroupDto);
         toast.success(t('toasts.created'));
       }
       handleCancel();
       loadData();
-    } catch(err: any) {
-      toast.error(err.message);
+    } catch (err) {
       reportError(err, 'ProductGroupsAdmin_handleSave');
     }
   };

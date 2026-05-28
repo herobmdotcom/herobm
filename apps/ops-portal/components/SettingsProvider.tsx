@@ -43,8 +43,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     async function fetchSettings() {
       try {
         const res = await api.glControllerGetSettings();
-        // @ts-expect-error
-        setGl(res.data);
+        setGl(res.data as unknown as GlSettings);
       } catch (err: any) {
         if (err.message !== 'Not authenticated' && err.status !== 401 && err.status !== 403) {
           reportError(err, 'SettingsProvider');

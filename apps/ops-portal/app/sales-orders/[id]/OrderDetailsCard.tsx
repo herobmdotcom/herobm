@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import * as api from '@modbm/sdk';
 import Link from 'next/link';
 import { SALES_ORDER_STATE } from '@modbm/shared';
 import { formatLocationDisplay } from '@/lib/formatters';
@@ -83,8 +84,8 @@ export default function OrderDetailsCard({
                                         className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
                                         onClick={async () => {
                                             try {
-                                                const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-confirmation/run?id=${order.id}&context=sales-order`, { method: 'POST' });
+                                                const response = await api.reportsControllerRunHook('sales-order-confirmation', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                                const blob = response.data as unknown as Blob;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
                                             } catch (err) {
@@ -101,8 +102,8 @@ export default function OrderDetailsCard({
                                         className="text-sm px-3 py-2 text-left hover:bg-[var(--bg-secondary)] rounded-md w-full transition-colors"
                                         onClick={async () => {
                                             try {
-                                                const { apiFetchBlob } = await import('@/lib/api');
-                                                const blob = await apiFetchBlob(`/api/reports/hooks/pro-forma-invoice/run?id=${order.id}&context=sales-order`, { method: 'POST' });
+                                                const response = await api.reportsControllerRunHook('pro-forma-invoice', {}, { id: order.salesOrderId!, context: 'sales-order' });
+                                                const blob = response.data as unknown as Blob;
                                                 const url = URL.createObjectURL(blob);
                                                 window.open(url, '_blank');
                                             } catch (err) {
@@ -206,7 +207,7 @@ export default function OrderDetailsCard({
                         onChange={(e) => setEditFulfillmentLocationId(e.target.value)}
                         onBlur={saveHeader}
                     >
-                        {locations.map((loc: { locationId: string; name: string; code?: string }) => (
+                        {(locations || []).map((loc: { locationId: string; name: string; code?: string }) => (
                             <option key={loc.locationId} value={loc.locationId}>
                                 {formatLocationDisplay(loc)}
                             </option>

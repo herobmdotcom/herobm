@@ -25,9 +25,9 @@ interface AccountSelectProps {
   excludeId?: string | null;
 }
 
-function useDebounce(fn: (...args: any[]) => void, delay: number) {
+function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return useCallback((...args: any[]) => {
+  return useCallback((...args: T) => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => fn(...args), delay);
   }, [fn, delay]);
@@ -74,15 +74,15 @@ export default function CustomerSelect({
       return; 
     }
     try {
-      const res = await api.customFetch<{ data: { data: Customer[] } }>(
+      const res = await api.customFetch<{ data?: Customer[] }>(
         `/customers?q=${encodeURIComponent(term)}&limit=10`,
         { method: 'GET' }
       );
       const data = res.data;
       if (excludeId) {
-        setFilteredAccounts(data?.data?.filter((c) => c.customerId !== excludeId) || []);
+        setFilteredAccounts(data?.filter((c: Customer) => c.customerId !== excludeId) || []);
       } else {
-        setFilteredAccounts(data?.data || []);
+        setFilteredAccounts(data || []);
       }
     } catch { 
       setFilteredAccounts([]); 

@@ -14,10 +14,20 @@ import { RETURN_STATE, RETURN_TRANSITIONS, RETURN_LIFECYCLE, SALES_ORDER_STATE }
 jest.mock('next-intl', () => ({
     useTranslations: () => (key: string) => key,
 }));
-
-const mockSdkMutate = jest.fn().mockResolvedValue({});
+const mockOrderReturnsControllerChangeReturnState = jest.fn().mockResolvedValue({});
+const mockOrderReturnsControllerUpdateReturnLine = jest.fn().mockResolvedValue({});
+const mockOrderReturnsControllerRemoveReturnLine = jest.fn().mockResolvedValue({});
+const mockOrderReturnsControllerCreateReturn = jest.fn().mockResolvedValue({});
+jest.mock('@modbm/sdk', () => ({
+    __esModule: true,
+    orderReturnsControllerChangeReturnState: (...args: any[]) => mockOrderReturnsControllerChangeReturnState(...args),
+    orderReturnsControllerUpdateReturnLine: (...args: any[]) => mockOrderReturnsControllerUpdateReturnLine(...args),
+    orderReturnsControllerRemoveReturnLine: (...args: any[]) => mockOrderReturnsControllerRemoveReturnLine(...args),
+    orderReturnsControllerCreateReturn: (...args: any[]) => mockOrderReturnsControllerCreateReturn(...args),
+    reportsControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
+}));
 jest.mock('@/lib/api', () => ({
-    apiCall: (...args: any[]) => mockSdkMutate(...args),
+    reportError: jest.fn(),
 }));
 
 jest.mock('@/lib/currency', () => ({
@@ -157,12 +167,12 @@ describe('ReturnsSection — rendering', () => {
 
     it('shows read-only quantity text for confirmed returns', () => {
         render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        expect(screen.getByText('2')).toBeInTheDocument();
+        expect(screen.getAllByText('2')[0]).toBeInTheDocument();
     });
 
     it('shows read-only reason text for confirmed returns', () => {
         render(<ReturnsSection {...defaultProps} returns={[confirmedReturn]} />);
-        expect(screen.getByText('Defective')).toBeInTheDocument();
+        expect(screen.getAllByText('Defective')[0]).toBeInTheDocument();
     });
 
     it('shows transition buttons matching allowed transitions for draft', () => {
@@ -212,10 +222,10 @@ describe('ReturnsSection — state transitions', () => {
         await user.click(confirmedBtn);
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns/ret-1/state',
-                'PATCH',
-                { stateCode: RETURN_STATE.CONFIRMED },
+            expect(mockOrderReturnsControllerChangeReturnState).toHaveBeenCalledWith(
+                'so-001',
+                'ret-1',
+                expect.objectContaining({ stateCode: 'confirmed' })
             );
         });
         await waitFor(() => expect(loadReturns).toHaveBeenCalled());
@@ -223,7 +233,7 @@ describe('ReturnsSection — state transitions', () => {
 
     it('shows error when state transition fails', async () => {
         const user = userEvent.setup();
-        mockSdkMutate.mockRejectedValueOnce(new Error('Transition denied'));
+        mockOrderReturnsControllerChangeReturnState.mockRejectedValueOnce(new Error('Transition denied'));
         const setError = jest.fn();
 
         render(
@@ -263,10 +273,11 @@ describe('ReturnsSection — inline editing', () => {
         await user.tab(); // trigger blur
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
-                'PATCH',
-                { quantityReturned: '5' },
+            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
+                'so-001',
+                'ret-1',
+                'rl-1',
+                expect.objectContaining({ quantityReturned: "5" })
             );
         });
     });
@@ -283,7 +294,7 @@ describe('ReturnsSection — inline editing', () => {
         await user.click(qtyInput);
         await user.tab();
 
-        expect(mockSdkMutate).not.toHaveBeenCalled();
+        expect(mockOrderReturnsControllerUpdateReturnLine).not.toHaveBeenCalled();
     });
 
     it('updates return line reason on blur when value changes', async () => {
@@ -298,16 +309,17 @@ describe('ReturnsSection — inline editing', () => {
             />,
         );
 
-        const reasonInput = screen.getByDisplayValue('Defective');
-        await user.clear(reasonInput);
-        await user.type(reasonInput, 'Wrong item');
+        const reasonInputs = screen.getAllByDisplayValue('Defective');
+        await user.clear(reasonInputs[0]);
+        await user.type(reasonInputs[0], 'Wrong item');
         await user.tab();
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
-                'PATCH',
-                { reason: 'Wrong item' },
+            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
+                'so-001',
+                'ret-1',
+                'rl-1',
+                expect.objectContaining({ reason: 'Wrong item' })
             );
         });
     });
@@ -332,10 +344,11 @@ describe('ReturnsSection — inline editing', () => {
         await user.tab();
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
-                'PATCH',
-                { returnFee: '25.00' },
+            expect(mockOrderReturnsControllerUpdateReturnLine).toHaveBeenCalledWith(
+                'so-001',
+                'ret-1',
+                'rl-1',
+                expect.objectContaining({ returnFee: '25.00' })
             );
         });
     });
@@ -360,9 +373,10 @@ describe('ReturnsSection — delete line', () => {
         await user.click(screen.getByText('✕'));
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns/ret-1/lines/rl-1',
-                'DELETE',
+            expect(mockOrderReturnsControllerRemoveReturnLine).toHaveBeenCalledWith(
+                'so-001',
+                'ret-1',
+                'rl-1'
             );
         });
         await waitFor(() => expect(loadReturns).toHaveBeenCalled());
@@ -377,7 +391,7 @@ describe('ReturnsSection — delete line', () => {
         render(<ReturnsSection {...defaultProps} returns={[draftReturn]} />);
         await user.click(screen.getByText('✕'));
 
-        expect(mockSdkMutate).not.toHaveBeenCalled();
+        expect(mockOrderReturnsControllerRemoveReturnLine).not.toHaveBeenCalled();
         jest.restoreAllMocks();
     });
 });
@@ -434,9 +448,8 @@ describe('ReturnsSection — create return form', () => {
         await user.click(saveBtn);
 
         await waitFor(() => {
-            expect(mockSdkMutate).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/returns',
-                'POST',
+            expect(mockOrderReturnsControllerCreateReturn).toHaveBeenCalledWith(
+                'so-001',
                 expect.objectContaining({
                     lines: expect.arrayContaining([
                         expect.objectContaining({
@@ -452,7 +465,7 @@ describe('ReturnsSection — create return form', () => {
 
     it('shows error when save fails', async () => {
         const user = userEvent.setup();
-        mockSdkMutate.mockRejectedValueOnce(new Error('Save failed'));
+        mockOrderReturnsControllerCreateReturn.mockRejectedValueOnce(new Error('Save failed'));
         const setError = jest.fn();
 
         render(
@@ -477,9 +490,9 @@ describe('ReturnsSection — create return form', () => {
         render(<ReturnsSection {...defaultProps} showCreateReturn={true} />);
 
         // Find the reason input by its placeholder
-        const reasonInput = screen.getByPlaceholderText('placeholders.reason');
-        await user.type(reasonInput, 'Broken item');
-        expect((reasonInput as HTMLInputElement).value).toBe('Broken item');
+        const reasonInputs = screen.getAllByPlaceholderText('placeholders.reason');
+        await user.type(reasonInputs[0], 'Broken item');
+        expect((reasonInputs[0] as HTMLInputElement).value).toBe('Broken item');
     });
 
     it('updates fee value in create form via onChange', async () => {

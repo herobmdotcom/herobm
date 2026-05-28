@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Param,
@@ -17,16 +24,22 @@ import {
   CreateProductDto,
   UpdateProductDto,
   LinkBinDto,
+  ProductResponseDto,
+  AddProductUomDto,
+  AddProductComponentDto,
+  UpdateProductComponentDto,
+  EmptyBodyDto,
 } from './dto';
 import {
   CasbinGuard,
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
-import { PaginationQuery } from '../common/pagination';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+@ApiTags('Products')
 @Controller('products')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('products')
@@ -38,24 +51,48 @@ export class ProductsController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Products',
+    description: 'Retrieve a paginated list of all products in the catalog.',
+  })
+  @ApiPaginatedResponse(ProductResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.productsService.findAll(query);
   }
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Product',
+    description:
+      'Retrieve detailed information for a specific product by its unique identifier.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(id);
   }
 
   @Post()
+  @ApiBody({ type: CreateProductDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Product',
+    description:
+      'Register a new product in the catalog with its initial details.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
   create(@Body() dto: CreateProductDto, @AuthUser() user: JwtUser) {
     return this.productsWriteService.create(dto, user.username);
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateProductDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Product',
+    description: 'Modify the details of an existing product.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
@@ -65,19 +102,46 @@ export class ProductsController {
   }
 
   @Post(':id/archive')
+  @ApiBody({ type: EmptyBodyDto })
   @CasbinAction('archive')
-  archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Archive Product',
+    description:
+      'Mark a product as archived to prevent it from being used in new transactions.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
+  archive(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.productsWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
+  @ApiBody({ type: EmptyBodyDto })
   @CasbinAction('archive')
-  unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Unarchive Product',
+    description: 'Restore an archived product to active status.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
+  unarchive(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.productsWriteService.unarchive(id, user.username);
   }
 
   @Post(':id/suppliers')
+  @ApiBody({ type: AddSupplierDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Product Supplier',
+    description: 'Link a supplier to a product for purchasing purposes.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
   addSupplier(
     @Param('id') productId: string,
     @Body() dto: AddSupplierDto,
@@ -88,6 +152,11 @@ export class ProductsController {
 
   @Delete(':id/suppliers/:vendorId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Product Supplier',
+    description: 'Unlink a supplier from a product.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   removeSupplier(
     @Param('id') productId: string,
     @Param('vendorId') vendorId: string,
@@ -101,17 +170,32 @@ export class ProductsController {
   }
 
   @Post(':id/uoms')
+  @ApiBody({ type: AddProductUomDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Product UOM',
+    description: 'Define a new Unit of Measure for the product.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
   addUom(
     @Param('id') productId: string,
-    @Body() dto: { uomCode: string; ratio: string; barcode?: string },
+    @Body() dto: AddProductUomDto,
     @AuthUser() user: JwtUser,
   ) {
-    return this.productsWriteService.addUom(productId, dto, user.username);
+    return this.productsWriteService.addUom(
+      productId,
+      dto as any,
+      user.username,
+    );
   }
 
   @Delete(':id/uoms/:uomId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Product UOM',
+    description: 'Delete a previously assigned Unit of Measure from a product.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   removeUom(
     @Param('id') productId: string,
     @Param('uomId') uomId: string,
@@ -119,8 +203,16 @@ export class ProductsController {
   ) {
     return this.productsWriteService.removeUom(productId, uomId, user.username);
   }
+
   @Post(':id/default-bins')
+  @ApiBody({ type: LinkBinDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Link Default Bin',
+    description:
+      'Assign a default storage bin to a product for inventory management.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
   linkDefaultBin(
     @Param('id') productId: string,
     @Body() dto: LinkBinDto,
@@ -128,13 +220,18 @@ export class ProductsController {
   ) {
     return this.productsWriteService.linkDefaultBin(
       productId,
-      dto,
+      dto as any,
       user.username,
     );
   }
 
   @Delete(':id/default-bins/:binLinkId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Default Bin',
+    description: 'Remove the default storage bin assignment from a product.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   removeDefaultBin(
     @Param('id') productId: string,
     @Param('binLinkId') binLinkId: string,
@@ -145,63 +242,67 @@ export class ProductsController {
 
   @Get(':id/components')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Components',
+    description:
+      'Retrieve the list of sub-components or ingredients that make up a product.',
+  })
+  @ApiPaginatedResponse(ProductResponseDto)
   getComponents(@Param('id') productId: string) {
     return this.productsService.getComponents(productId);
   }
 
   @Post(':id/components')
+  @ApiBody({ type: AddProductComponentDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Component',
+    description: 'Add a new sub-component to the product bill of materials.',
+  })
+  @ApiCreatedResponse({ type: ProductResponseDto })
   addComponent(
     @Param('id') productId: string,
     @Body()
-    dto: {
-      childProductId: string;
-      parentQuantity: string;
-      quantity: string;
-      sequenceNumber?: number;
-      fractionalBehavior?:
-        | 'allow_fractional'
-        | 'round_up'
-        | 'round_down'
-        | 'force_multiple';
-    },
+    dto: AddProductComponentDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.addComponent(
       productId,
-      dto,
+      dto as any,
       user.username,
     );
   }
 
   @Patch(':id/components/:componentId')
+  @ApiBody({ type: UpdateProductComponentDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Component',
+    description:
+      'Modify the details (like quantity) of an existing product component.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   updateComponent(
     @Param('id') productId: string,
     @Param('componentId') componentId: string,
-    @Body()
-    dto: {
-      parentQuantity?: string;
-      quantity?: string;
-      sequenceNumber?: number;
-      fractionalBehavior?:
-        | 'allow_fractional'
-        | 'round_up'
-        | 'round_down'
-        | 'force_multiple';
-    },
+    @Body() dto: UpdateProductComponentDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.productsWriteService.updateComponent(
       productId,
       componentId,
-      dto,
+      dto as any,
       user.username,
     );
   }
 
   @Delete(':id/components/:componentId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Component',
+    description: 'Remove a sub-component from the product bill of materials.',
+  })
+  @ApiOkResponse({ type: ProductResponseDto })
   removeComponent(
     @Param('id') productId: string,
     @Param('componentId') componentId: string,

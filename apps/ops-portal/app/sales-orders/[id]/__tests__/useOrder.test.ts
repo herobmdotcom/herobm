@@ -106,9 +106,9 @@ function makeOrder(overrides: Partial<OrderDetail> = {}): OrderDetail {
 
 function setupMocks(order: OrderDetail) {
     mockSdkFetch.mockImplementation((url: string) => {
-        if (url.includes('/picking')) return Promise.resolve(null);
-        if (url.includes('/tax-categories')) return Promise.resolve([]);
-        return Promise.resolve(order);
+        if (url.includes('/picking')) return Promise.resolve({ data: null });
+        if (url.includes('/tax-categories')) return Promise.resolve({ data: [] });
+        return Promise.resolve({ data: order });
     });
     mockSdkMutate.mockResolvedValue({});
 }
@@ -258,7 +258,7 @@ describe('useOrder — mutations', () => {
         expect(mockSdkMutate).toHaveBeenCalledWith(
             'changeState',
             'so-001',
-            expect.objectContaining({ body: expect.any(String) }),
+            expect.objectContaining({ stateCode: SALES_ORDER_STATE.QUOTED }),
         );
     });
 
@@ -277,8 +277,8 @@ describe('useOrder — mutations', () => {
     });
 
     it('copyOrder calls POST and navigates to new order', async () => {
-        mockSdkMutate.mockImplementation(async (url) => {
-            if (url === '/api/sales-orders') return { salesOrderId: 'so-002' };
+        mockSdkMutate.mockImplementation(async (action) => {
+            if (action === 'create') return { data: { salesOrderId: 'so-002' } };
             return {};
         });
 
@@ -310,7 +310,8 @@ describe('useOrder — mutations', () => {
 
         expect(mockSdkMutate).toHaveBeenCalledWith(
             'archive',
-            'so-001'
+            'so-001',
+            { body: {} }
         );
 
         jest.restoreAllMocks();
@@ -337,7 +338,8 @@ describe('useOrder — mutations', () => {
 
         expect(mockSdkMutate).toHaveBeenCalledWith(
             'unarchive',
-            'so-001'
+            'so-001',
+            { body: {} }
         );
     });
 
@@ -383,7 +385,7 @@ describe('useOrder — mutations', () => {
             tradePrice: '70.00',
         };
 
-        await act(async () => { await result.current.addLineFromProduct(product as any); });
+        await act(async () => { await result.current.addLineFromProduct(product as unknown as import('@modbm/sdk').ProductResponseDto); });
 
         expect(mockSdkMutate).toHaveBeenCalledWith(
             'addLine',
@@ -413,7 +415,7 @@ describe('useOrder — mutations', () => {
             listPrice: '50.00',
         };
 
-        await act(async () => { await result.current.addLineFromProduct(duplicate as any); });
+        await act(async () => { await result.current.addLineFromProduct(duplicate as unknown as import('@modbm/sdk').ProductResponseDto); });
 
         expect(mockSdkMutate).not.toHaveBeenCalled();
         expect(toast).toHaveBeenCalled();

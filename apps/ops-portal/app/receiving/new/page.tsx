@@ -15,6 +15,7 @@ import React from 'react';
 import LocationSelect from '@/components/shared/LocationSelect';
 import SupplierSelect from '@/components/shared/SupplierSelect';
 import { useTranslations } from 'next-intl';
+import { formatAmount } from '@/lib/currency';
 
 interface DraftLine {
   id: string;
@@ -124,11 +125,18 @@ function ReceivingFlow() {
     };
 
     try {
-          quantityReceived: String(l.quantityReceived),
-        })),
-      }) }) as any;
+      const result = await api.goodsReceivedControllerCreate(payload);
+      const returnedLines = (result.data as any)?.lines || [];
+      const mapped: CompletedLine[] = returnedLines.map((l: any) => ({
+        goodsReceivedLineId: l.goodsReceivedLineId,
+        productId: l.productId,
+        productNumber: l.productNumber || l.productId.substring(0,8),
+        productName: l.productDescription || '',
+        quantityReceived: l.quantityReceived,
+        matchStatus: l.matchStatus || 'unmatched',
+      }));
 
-      setCompletedLines(result.lines || []);
+      setCompletedLines(mapped);
       toast.success(t('toast.confirmed'));
       setCompleted(true);
     } catch (err: any) {

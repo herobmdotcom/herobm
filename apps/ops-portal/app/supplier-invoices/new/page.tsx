@@ -63,8 +63,8 @@ export default function NewPurchaseInvoicePage() {
   useEffect(() => {
     if (initialPurchaseOrderId) {
       Promise.all([
-        api.purchaseOrdersControllerFindOne(initialPurchaseOrderId).then(r => r.data as any),
-        api.purchaseInvoiceControllerGetPurchaseBills(initialPurchaseOrderId).then(r => r.data as any),
+        api.purchaseOrdersControllerFindOne(initialPurchaseOrderId).then(r => r.data),
+        api.purchaseInvoiceControllerGetPurchaseBills(initialPurchaseOrderId).then(r => r.data),
       ]).then(([order, invoicesRes]) => {
         setVendorId(order.vendorId || '');
         if (order.vendorName) {
@@ -72,15 +72,15 @@ export default function NewPurchaseInvoicePage() {
         }
         setCurrencyCode(order.currencyCode || baseCurrency || '');
 
-        const invoices = invoicesRes.data || [];
-        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines, invoices);
+        const invoices = (invoicesRes.data || []) as unknown as PurchaseInvoice[];
+        const linesToInvoice = calculatePurchaseInvoiceableQuantities(order.lines as any[], invoices);
         
         const prefilledLines: LineItem[] = linesToInvoice.map(lti => {
-          const poLine = order.lines.find(l => l.purchaseOrderLineId === lti.purchaseOrderLineId);
+          const poLine = order.lines?.find(l => l.purchaseOrderLineId === lti.purchaseOrderLineId);
           return {
             key: ++lineKey,
-            productId: poLine?.productId,
-            productNumber: poLine?.productNumber,
+            productId: poLine?.productId || '',
+            productNumber: poLine ? (poLine as any).productNumber || poLine?.productId?.substring(0,8) : '',
             productDescription: poLine?.productDescription || '',
             quantityInvoiced: lti.defaultQty,
             pricePerUnit: poLine?.pricePerUnit || '0',
@@ -141,7 +141,6 @@ export default function NewPurchaseInvoicePage() {
 
     try {
       const { data: invoice } = await api.invoiceDetailControllerCreateDraftInvoice({
-        body: JSON.stringify({
           vendorId,
           supplierInvoiceNumber,
           currencyCode,
@@ -150,16 +149,15 @@ export default function NewPurchaseInvoicePage() {
           taxAmount: totalTax,
           receiptFilename: receiptFilename || undefined,
           notes: notes || undefined,
-          lines: items.map((l: LineItem) => ({
+          lines: lines.map((l: LineItem) => ({
             description: l.productDescription,
             productId: l.productId,
             quantityInvoiced: parseFloat(l.quantityInvoiced),
             pricePerUnit: parseFloat(l.pricePerUnit),
             purchaseOrderLineId: l.purchaseOrderLineId,
           })),
-        })
       });
-      router.push(`/supplier-invoices/${(invoice as any).invoiceId}`);
+      router.push(`/supplier-invoices/${(invoice).invoiceId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToGenerateInvoice'));
     } finally {

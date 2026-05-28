@@ -185,13 +185,14 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     setLoadingInvoices(true);
     try {
+      const queryParams = { [data.partyType === 'customer' ? 'customerId' : 'vendorId']: data.partyId };
       const res = data.partyType === 'customer'
-        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ customerId: data.partyId }) as unknown as { data: any[] }
-        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ vendorId: data.partyId }) as unknown as { data: any[] };
+        ? await api.invoiceDetailControllerGetSalesInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any)
+        : await api.invoiceDetailControllerGetPurchaseInvoicesGlobal({ ...(queryParams as any), balanceStatus: 'unpaid' } as any);
       
-      const invoices = res.data
-        .filter(inv => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
-        .map(inv => ({
+      const invoices = (res as any).data
+        .filter((inv: any) => inv.stateCode !== SALES_INVOICE_STATE.PAID && inv.stateCode !== PURCHASE_INVOICE_STATE.PAID && parseFloat(inv.outstandingAmount) > 0)
+        .map((inv: any) => ({
           id: inv.invoiceId,
           invoiceNumber: inv.invoiceNumber,
           totalAmount: inv.totalAmount,
@@ -287,7 +288,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     if (!paymentId) return;
     setSubmitting(true);
     try {
-      await api.paymentsControllerSubmit(paymentId);
+      await api.paymentsControllerSubmit(paymentId, {});
       toast.success(t('manager.messages.paymentSubmitted'));
       loadPayment();
       onSaved(false);
@@ -310,7 +311,7 @@ export default function PaymentManagerSlideOver({ paymentId, onClose, onSaved, o
     
     setSubmitting(true);
     try {
-      await api.paymentsControllerCancel(paymentId);
+      await api.paymentsControllerCancel(paymentId, {});
       toast.success(t('manager.messages.paymentCancelled'));
       loadPayment();
       onSaved(); // Refresh grid

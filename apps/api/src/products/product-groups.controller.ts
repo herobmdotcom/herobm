@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Param,
@@ -15,8 +22,14 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { ProductGroupsService } from './product-groups.service';
-import { CreateProductGroupDto, UpdateProductGroupDto } from './dto';
+import {
+  CreateProductGroupDto,
+  UpdateProductGroupDto,
+  ProductGroupResponseDto,
+} from './dto';
+import { ApiPaginatedResponse } from '../common/pagination';
 
+@ApiTags('Setup')
 @Controller('product-groups')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
@@ -25,30 +38,57 @@ export class ProductGroupsController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Product Groups',
+    description: 'Retrieve all product groups configured in the system.',
+  })
+  @ApiPaginatedResponse(ProductGroupResponseDto)
   findAll() {
     return this.productGroupsService.findAll();
   }
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Product Group',
+    description: 'Retrieve details of a specific product group.',
+  })
+  @ApiOkResponse({ type: ProductGroupResponseDto })
   findOne(@Param('id') id: string) {
     return this.productGroupsService.findOne(id);
   }
 
   @Post()
+  @ApiBody({ type: CreateProductGroupDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Product Group',
+    description: 'Create a new product group for categorizing items.',
+  })
+  @ApiCreatedResponse({ type: ProductGroupResponseDto })
   create(@Body() dto: CreateProductGroupDto) {
     return this.productGroupsService.create(dto);
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateProductGroupDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Product Group',
+    description: 'Modify an existing product group.',
+  })
+  @ApiOkResponse({ type: ProductGroupResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateProductGroupDto) {
     return this.productGroupsService.update(id, dto);
   }
 
   @Delete(':id')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete Product Group',
+    description: 'Remove a product group from the system.',
+  })
+  @ApiOkResponse({ type: ProductGroupResponseDto })
   remove(@Param('id') id: string) {
     return this.productGroupsService.delete(id);
   }

@@ -8,6 +8,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 // ── PO Line DTOs ──
 
@@ -164,4 +165,68 @@ export class CreatePurchaseReturnDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePurchaseReturnLineDto)
   lines!: CreatePurchaseReturnLineDto[];
+}
+
+export class PurchaseOrderResponseDto {
+  purchaseOrderId!: string;
+  orderNumber!: string;
+  name?: string | null;
+  vendorId?: string | null;
+  deliveryLocationId!: string;
+  referenceNumber?: string | null;
+  stateCode!: string;
+  currencyCode!: string;
+  notes?: string | null;
+  customFields?: Record<string, any> | null;
+  createdBy?: string | null;
+  createdOn?: Date | null;
+  modifiedOn?: Date | null;
+
+  vendorName?: string;
+  @ApiProperty({ type: () => PurchaseOrderLineResponseDto, isArray: true, required: false })
+  lines?: PurchaseOrderLineResponseDto[];
+}
+
+export class PurchaseOrderLineResponseDto {
+  purchaseOrderLineId!: string;
+  purchaseOrderId!: string;
+  lineNumber!: number;
+  productId?: string | null;
+  productDescription?: string | null;
+  quantity!: string;
+  pricePerUnit!: string;
+  discountPercentage?: string | null;
+  amount?: string | null;
+  taxCategoryId!: string;
+  tax?: string | null;
+  totalAmount?: string | null;
+  unitOfMeasure?: string | null;
+  quantityReceived?: string | null;
+}
+
+export class EmptyBodyDto {}
+export class ChangeStateDto {
+  @IsString()
+  stateCode: string;
+}
+
+export class PurchaseReturnLineResponseDto {
+  returnLineId!: string;
+  returnId!: string;
+  purchaseOrderLineId!: string;
+  quantityReturned!: string;
+  reason?: string | null;
+  returnFee?: string | null;
+}
+
+export class PurchaseReturnResponseDto {
+  returnId!: string;
+  returnNumber!: string;
+  purchaseOrderId!: string;
+  stateCode!: string;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdOn?: Date | null;
+  modifiedOn?: Date | null;
+  lines?: PurchaseReturnLineResponseDto[];
 }

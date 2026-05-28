@@ -20,7 +20,6 @@ export default function EditTemplatePage({ params: paramsPromise }: { params: Pr
   useEffect(() => {
     api.reportsControllerGetReport(params.id)
       .then(res => {
-        // @ts-expect-error
         setInitialData(res.data);
       })
       .catch((e) => {

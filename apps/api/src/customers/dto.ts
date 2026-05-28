@@ -283,3 +283,61 @@ export class UpdateAccountGroupDto {
   @IsUUID()
   defaultActivityId?: string;
 }
+
+export class AccountResponseDto {
+  customerId!: string;
+  customerNumber!: string;
+  name!: string;
+  address1Line1?: string;
+  address1Line2?: string;
+  address1City?: string;
+  address1StateOrProvince?: string;
+  address1PostalCode?: string;
+  address1Country?: string;
+  telephone1?: string;
+  fax?: string;
+  emailAddress1?: string;
+  primaryContactName?: string;
+  primaryContactEmail?: string;
+  primaryContactPhone?: string;
+  customerGroupId?: string;
+  parentCustomerId?: string;
+  taxCategoryId?: string;
+  currencyCode!: string;
+  customerDiscount?: string;
+  notes?: string;
+  bankAccountName?: string;
+  bankBsb?: string;
+  bankAccountNumber?: string;
+  stateCode!: string;
+  sourceId?: string;
+  source!: string;
+  createdBy?: string;
+  createdOn?: Date;
+  modifiedOn?: Date;
+
+  customerGroupName?: string;
+  customerGroupCode?: string;
+  customerGroupTradingTermsId?: string;
+  customerGroupCreditLimit?: string;
+  customerGroupIsOnCreditHold?: boolean;
+  gstCategoryName?: string;
+  events?: any[];
+}
+
+export class AccountGroupResponseDto {
+  customerGroupId!: string;
+  groupCode!: string;
+  name!: string;
+  defaultDiscountPercentage?: string;
+  defaultArAccountId?: string;
+  defaultRevenueAccountId?: string;
+  defaultCostCenterId?: string;
+  defaultActivityId?: string;
+  isOnCreditHold?: boolean;
+  creditLimit?: string;
+  tradingTermsId?: string;
+  modifiedOn?: Date;
+}
+
+export class EmptyBodyDto {}

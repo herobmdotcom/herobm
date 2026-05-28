@@ -1,3 +1,10 @@
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Controller, Patch, Body, UseGuards, Get } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -6,27 +13,31 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { AppConfigService } from './app-config.service';
+import { AppConfigResponseDto, UpdateAppConfigDto } from './dto';
 
 @Controller('settings/app')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
+@ApiTags('System')
 export class AppConfigController {
   constructor(private readonly appConfigService: AppConfigService) {}
 
   @Get()
+  @ApiOkResponse({ type: AppConfigResponseDto })
   @CasbinAction('read')
+  @ApiOperation({ summary: 'get', description: 'get operation' })
   async get() {
     return this.appConfigService.getAppSettingsRaw();
   }
 
   @Patch()
+  @ApiBody({ type: UpdateAppConfigDto })
+  @ApiOkResponse({ type: AppConfigResponseDto })
   @CasbinAction('write')
+  @ApiOperation({ summary: 'update', description: 'update operation' })
   async update(
     @Body()
-    dto: {
-      defaultFulfillmentLocationId?: string;
-      apiRateLimit?: string;
-    },
+    dto: UpdateAppConfigDto,
   ) {
     return this.appConfigService.update(dto);
   }

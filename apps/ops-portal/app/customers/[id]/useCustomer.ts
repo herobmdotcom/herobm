@@ -8,43 +8,7 @@ import { toast } from 'react-hot-toast';
 import { CUSTOMER_STATE } from '@modbm/shared';
 import type { ValidState } from '@/types/states';
 
-/* ── Customer shape ───────────────────────────────────────────────── */
-
-export interface Customer {
-  customerId: string;
-  customerNumber: string;
-  name: string;
-  emailAddress1: string | null;
-  telephone1: string | null;
-  fax: string | null;
-  address1Line1: string | null;
-  address1Line2: string | null;
-  address1City: string | null;
-  address1StateOrProvince: string | null;
-  address1PostalCode: string | null;
-  address1Country: string | null;
-  primaryContactName: string | null;
-  primaryContactEmail: string | null;
-  primaryContactPhone: string | null;
-  customerGroupId: string | null;
-  taxCategoryId: string | null;
-  currencyCode: string;
-  customerDiscount: string | null;
-  stateCode: ValidState;
-  notes: string | null;
-  parentCustomerId: string | null;
-  parentCustomerName?: string | null;
-  childAccounts?: any[];
-
-  bankAccountName?: string | null;
-  bankBsb?: string | null;
-  bankAccountNumber?: string | null;
-
-  createdOn: string | null;
-  createdBy: string | null;
-  modifiedOn: string | null;
-  events?: any[];
-}
+export type Customer = api.AccountResponseDto & { parentCustomerName?: string | null; childAccounts?: unknown[] };
 
 /* ── Hook ────────────────────────────────────────────────────────── */
 
@@ -75,10 +39,10 @@ export function useAccount(id: string) {
     try {
       const [dataRes, rulesRes] = await Promise.all([
         api.accountsControllerFindOne(id),
-        api.discountMatrixControllerList({ ownerType: 'customer' as any, customerId: id }).catch(() => ({ data: [] }))
+        api.discountMatrixControllerList({ ownerType: 'customer', customerId: id } as any).catch(() => ({ data: [] }))
       ]);
-      const data = dataRes?.data || dataRes;
-      const rules = rulesRes?.data || rulesRes || [];
+      const data = dataRes.data;
+      const rules = rulesRes.data || [];
       setAccount(data);
       setDto(data);
       setHasDiscountRules(rules && rules.length > 0);
@@ -92,7 +56,7 @@ export function useAccount(id: string) {
 
   useEffect(() => {
     loadAccount();
-    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data)).catch(console.error);
   }, [id]);
 
   /* ── Field helpers ──────────────────────────────────────────── */
@@ -108,14 +72,15 @@ export function useAccount(id: string) {
     if (!isDirty || saving) return;
     setSaving(true);
     try {
-      const res = await api.accountsControllerUpdate(id, dto as any);
-      const updated = res?.data || res;
+      const res = await api.accountsControllerUpdate(id, dto as api.UpdateAccountDto);
+      const updated = res.data;
       setAccount({ ...updated, events: customer?.events });
       setDto({ ...updated, events: customer?.events });
       setIsDirty(false);
       toast.success(t('toast.accountUpdated'));
       // Refresh to get updated events
-      const refreshed = refreshedRes?.data || refreshedRes;
+      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -140,14 +105,15 @@ export function useAccount(id: string) {
 
     setSaving(true);
     try {
-      const res = await api.accountsControllerUpdate(id, nextDto as any);
-      const updated = res?.data || res;
+      const res = await api.accountsControllerUpdate(id, nextDto as api.UpdateAccountDto);
+      const updated = res.data;
       setAccount({ ...updated, events: customer?.events });
       setDto({ ...updated, events: customer?.events });
       setIsDirty(false);
       toast.success(t('toast.accountUpdated'));
       // Refresh events
-      const refreshed = refreshedRes?.data || refreshedRes;
+      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -163,9 +129,10 @@ export function useAccount(id: string) {
     if (!confirm(t('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
-      await api.accountsControllerArchive(id);
+      await api.accountsControllerArchive(id, {});
       toast.success(t('toast.orderArchived'));
-      const refreshed = refreshedRes?.data || refreshedRes;
+      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {
@@ -178,9 +145,10 @@ export function useAccount(id: string) {
   const unarchiveAccount = async () => {
     setSaving(true);
     try {
-      await api.accountsControllerUnarchive(id);
+      await api.accountsControllerUnarchive(id, {});
       toast.success(t('toast.orderUnarchived'));
-      const refreshed = refreshedRes?.data || refreshedRes;
+      const refreshedRes = await api.accountsControllerFindOne(id);
+      const refreshed = refreshedRes.data;
       setAccount(refreshed);
       setDto(refreshed);
     } catch (err: any) {

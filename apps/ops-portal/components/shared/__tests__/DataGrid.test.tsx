@@ -33,7 +33,7 @@ describe('DataGrid', () => {
   let mockCustomFetch: jest.SpyInstance;
 
   beforeEach(() => {
-    mockCustomFetch = jest.spyOn(api, 'customFetch').mockResolvedValue({ data: [] } as any);
+    mockCustomFetch = jest.spyOn(api, 'customFetch').mockResolvedValue({ data: [] } as never);
   });
 
   afterEach(() => {
@@ -68,7 +68,7 @@ describe('DataGrid — localStorage helpers', () => {
   });
 
   it('saveGridState + loadGridState round-trip', () => {
-    const state = { sort: { sortModel: [{ colId: 'name', sort: 'asc' as const }] } } as any;
+    const state = { sort: { sortModel: [{ colId: 'name', sort: 'asc' as const }] } } as never;
     saveGridState('test-grid', state);
     const loaded = loadGridState('test-grid');
     expect(loaded).toEqual(state);
@@ -84,7 +84,7 @@ describe('DataGrid — localStorage helpers', () => {
   });
 
   it('saveGridState strips scroll state before saving', () => {
-    const state = { scroll: { top: 100, left: 0 }, sort: { sortModel: [] } } as any;
+    const state = { scroll: { top: 100, left: 0 }, sort: { sortModel: [] } } as never;
     saveGridState('scroll-strip', state);
     const loaded = loadGridState('scroll-strip');
     expect(loaded).not.toHaveProperty('scroll');
@@ -92,7 +92,7 @@ describe('DataGrid — localStorage helpers', () => {
   });
 
   it('clearGridState removes the stored key', () => {
-    const state = { sort: { sortModel: [] } } as any;
+    const state = { sort: { sortModel: [] } } as never;
     saveGridState('to-clear', state);
     expect(loadGridState('to-clear')).not.toBeNull();
     clearGridState('to-clear');
@@ -102,7 +102,7 @@ describe('DataGrid — localStorage helpers', () => {
   it('saveGridState handles quota exceeded gracefully', () => {
     const origSetItem = localStorage.setItem;
     localStorage.setItem = () => { throw new DOMException('QuotaExceededError'); };
-    expect(() => saveGridState('full', { sort: { sortModel: [] } } as any)).not.toThrow();
+    expect(() => saveGridState('full', { sort: { sortModel: [] } } as never)).not.toThrow();
     localStorage.setItem = origSetItem;
   });
 });

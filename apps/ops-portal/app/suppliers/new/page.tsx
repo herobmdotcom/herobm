@@ -42,10 +42,10 @@ export default function NewSupplierPage() {
     setSubmitting(true);
 
     try {
-      const res = await api.suppliersControllerCreate(dto as any);
-      const supplier = res.data as any;
+      const res = await api.suppliersControllerCreate(dto as api.CreateSupplierDto);
+      const supplier = res.data;
       toast.success(tCommon('toast.supplierCreated'));
-      router.push(`/suppliers/${supplier.vendorId}`);
+      router.push(`/suppliers/${supplier.id}`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 interface CsvImportButtonProps {
-  onImport: (data: any[]) => void;
+  onImport: (data: Record<string, string>[]) => void;
   className?: string;
   disabled?: boolean;
 }
@@ -37,7 +37,7 @@ export default function CsvImportButton({ onImport, className, disabled }: CsvIm
         // For a true "Thin Glass" back-office tool, we might want a library later, 
         // but for settings import, simple split is usually sufficient or users can avoid commas.
         const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-        const obj: any = {};
+        const obj: Record<string, string> = {};
         headers.forEach((h, i) => {
           obj[h] = values[i];
         });

@@ -60,10 +60,10 @@ export default function EventQueueDashboard() {
 
   const loadData = async () => {
     try {
-      const res: any = await api.externalSyncControllerGetSyncStatus({ limit: 100 } as any);
-      setData(res?.data?.data || res?.data || res || null);
+      const res: unknown = await api.externalSyncControllerGetSyncStatus({ limit: '100' });
+      setData(((res as any)?.data || res || null) as any);
       setError('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('errors.loadFailed'));
       reportError(err, 'EventQueueDashboard_loadData');
     } finally {
@@ -90,9 +90,9 @@ export default function EventQueueDashboard() {
     setDrawerLoading(true);
     setDrawerExpandedId(null);
     try {
-      const res: any = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: 50 } as any);
-      setDrawerEvents(res?.data?.events || res?.events || res?.data || res || []);
-    } catch (err) {
+      const res: unknown = await api.externalSyncControllerGetEventsByType({ type: eventType, status: 'failed', limit: '50' });
+      setDrawerEvents((res as any)?.data?.events || (res as any)?.events || (res as any)?.data || res || []);
+    } catch (err: unknown) {
       setDrawerEvents([]);
       reportError(err, 'EventQueueDashboard_handleViewEvents');
     } finally {
@@ -104,7 +104,7 @@ export default function EventQueueDashboard() {
     if (!confirm(t('confirmClear', { type: eventType }))) return;
     setClearing(eventType);
     try {
-      await api.externalSyncControllerClearEventsByType({ type: eventType });
+      await api.externalSyncControllerClearEventsByType({ type: eventType, status: 'failed' });
       // Close drawer if viewing that type
       if (drawerType === eventType) {
         setDrawerType(null);

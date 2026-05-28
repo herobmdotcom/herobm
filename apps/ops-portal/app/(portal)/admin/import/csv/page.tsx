@@ -44,9 +44,10 @@ export default function CsvImportPage() {
   };
 
   useEffect(() => {
-    api.setupControllerGetCsvMetadata().then(data => {
-      setTables(data as any[]);
-      if ((data as any[]).length > 0) setSelectedTable((data as any[])[0].id);
+    api.setupControllerGetCsvMetadata().then((data: any) => {
+      const arr = data?.data || data || [];
+      setTables(arr);
+      if (arr.length > 0) setSelectedTable(arr[0].id);
     }).catch(err => toast.error('Failed to load table metadata'));
   }, []);
 
@@ -81,13 +82,10 @@ export default function CsvImportPage() {
       formData.append('file', file);
 
       // Using SDK with FormData
-      const data = await api.setupControllerExecuteCsv({
-        method: 'POST',
-        body: formData as any,
-      });
+      const data: any = await api.setupControllerExecuteElt(formData as any);
 
-      jobIdRef.current = (data as any).jobId;
-      startPolling((data as any).jobId);
+      jobIdRef.current = data.jobId;
+      startPolling(data.jobId);
     } catch (err: any) {
       setStatus('failed');
       setErrorMsg(err.message);
@@ -100,7 +98,7 @@ export default function CsvImportPage() {
     
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await api.setupControllerGetProgress(jobId);
+        const progressRes: any = await api.setupControllerGetProgress(jobIdRef.current as any) as any;
         if (progressRes) {
           if (progressRes.logs) {
             setLogs(progressRes.logs);
@@ -109,7 +107,7 @@ export default function CsvImportPage() {
             setStatus('completed');
             clearInterval(pollTimerRef.current);
             api.setupControllerGetImportSummary().then(summary => {
-               setImportSummary(summary as any);
+               setImportSummary(summary as unknown as import('@modbm/sdk').ImportSummaryDto);
                setStep('finalisation');
             }).catch(err => {
                reportError(err, 'CsvImportPage.pollProgress.importSummary');

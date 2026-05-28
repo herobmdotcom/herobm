@@ -193,3 +193,45 @@ export class BulkImportResultDto {
   @IsNumber()
   updated!: number;
 }
+import { ApiProperty } from '@nestjs/swagger';
+export class UomResponseDto {
+  @ApiProperty() uomCode!: string;
+  @ApiProperty() description!: string;
+}
+export class ActivityResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() code!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() isActive!: boolean;
+}
+export class CostCenterResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() code!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() isActive!: boolean;
+}
+export class ExchangeRateResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() currencyCode!: string;
+  @ApiProperty() currencyName!: string;
+  @ApiProperty() buyRate!: string;
+  @ApiProperty() sellRate!: string;
+  @ApiProperty() effectiveDate!: Date;
+}
+export class OrganizationResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+}
+export class AppConfigResponseDto {
+  @ApiProperty() defaultFulfillmentLocationId!: string;
+  @ApiProperty() apiRateLimit!: string;
+}
+export class UpdateAppConfigDto {
+  @ApiProperty({ required: false }) defaultFulfillmentLocationId?: string;
+  @ApiProperty({ required: false }) apiRateLimit?: string;
+}
+export class TradingTermResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+}
+export class EmptyBodyDto {}

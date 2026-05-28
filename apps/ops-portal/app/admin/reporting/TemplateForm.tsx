@@ -34,8 +34,7 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
 
   useEffect(() => {
     api.reportsControllerGetHooks().then(res => {
-      // @ts-expect-error
-      setAvailableHooks(res.data);
+      setAvailableHooks((res.data as unknown as unknown[]) || []);
     }).catch(() => {});
   }, []);
 
@@ -43,11 +42,11 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     setSaving(true);
     try {
       if (isNew) {
-        await api.reportsControllerCreateReport({ body: JSON.stringify(formData) });
+        await api.reportsControllerCreateReport(formData);
         toast.success(t('toasts.created'));
         router.push('/admin/reporting');
       } else {
-        await api.reportsControllerUpdateReport(initialData.id, { body: JSON.stringify(formData) });
+        await api.reportsControllerUpdateReport(initialData.id, formData);
         toast.success(t('toasts.saved'));
         router.refresh();
       }
@@ -75,14 +74,12 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
   const handlePreview = async () => {
     setPreviewing(true);
     try {
-      const res = await api.reportsControllerPreviewReport({
-        body: JSON.stringify({
-          template: formData.template,
-          hookSlug: previewVars.hookSlug,
-          entityId: previewVars.entityId
-        })
-      } as any);
-      const blob = (res as any).data;
+      const res = await api.reportsControllerPreview({
+        template: formData.template,
+        hookSlug: previewVars.hookSlug,
+        entityId: previewVars.entityId
+      });
+      const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl(url);
     } catch (e: any) {
@@ -96,13 +93,11 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     if (!previewVars.hookSlug) return;
     try {
       const res = await api.reportsControllerGetRandomId(previewVars.hookSlug);
-      // @ts-expect-error
-      if (res.data?.id) {
-        // @ts-expect-error
-        setPreviewVars(p => ({ ...p, entityId: res.data.id! }));
+      if ((res as unknown as { data: { id: string } }).data?.id || (res as unknown as { data: { data: { id: string } } }).data?.data?.id) {
+        setPreviewVars(p => ({ ...p, entityId: (res as unknown as { data: { data: { id: string } } }).data?.data?.id || (res as unknown as { data: { id: string } }).data?.id }));
       }
-    } catch (e) {
-      reportError(e, 'TemplateForm');
+    } catch (err) {
+      reportError(err, 'TemplateForm.randomizeId');
     }
   };
 
@@ -111,9 +106,9 @@ export function TemplateForm({ initialData, isNew }: { initialData?: any, isNew?
     if (newHookSlug) {
       // Automatically fetch a random ID when changing hooks
       api.reportsControllerGetRandomId(newHookSlug)
-        .then(res => {
-          // @ts-expect-error
-          if (res.data?.id) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: res.data.id! }));
+        .then((res: unknown) => {
+          const newId = (res as any)?.data?.data?.id || (res as any)?.data?.id;
+          if (newId) setPreviewVars(p => ({ ...p, hookSlug: newHookSlug, entityId: newId }));
         })
         .catch(() => {});
     }

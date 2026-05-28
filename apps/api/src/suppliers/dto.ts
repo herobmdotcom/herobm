@@ -416,3 +416,59 @@ export class UpdateSupplierExpiryDto {
   @IsString()
   notes?: string;
 }
+
+export class SupplierResponseDto {
+  id: string;
+  vendorNumber: string;
+  name: string;
+  address1Line1: string | null;
+  address1Line2: string | null;
+  address1City: string | null;
+  address1StateOrProvince: string | null;
+  address1PostalCode: string | null;
+  address1Country: string | null;
+  telephone1: string | null;
+  fax: string | null;
+  emailAddress1: string | null;
+  tradingTermsId: string | null;
+  earlyPaymentDiscount: string | null;
+  creditLimit: string | null;
+  isPurchasingBlocked: boolean;
+  purchasingBlockReason: string | null;
+  isPaymentBlocked: boolean;
+  paymentBlockReason: string | null;
+  blockNotes: string | null;
+  supplierGroupId: string | null;
+  currencyCode: string | null;
+  notes: string | null;
+  bankAccountName: string | null;
+  bankBsb: string | null;
+  bankAccountNumber: string | null;
+  stateCode: string | null;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class SupplierGroupResponseDto {
+  id: string;
+  groupCode: string;
+  name: string;
+  defaultApAccountId: string | null;
+  defaultExpenseAccountId: string | null;
+  tradingTermsId: string | null;
+  earlyPaymentDiscount: string | null;
+  creditLimit: string | null;
+  isPurchasingBlocked: boolean;
+  purchasingBlockReason: string | null;
+  isPaymentBlocked: boolean;
+  paymentBlockReason: string | null;
+  blockNotes: string | null;
+  defaultCostCenterId: string | null;
+  defaultActivityId: string | null;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class EmptyBodyDto {}

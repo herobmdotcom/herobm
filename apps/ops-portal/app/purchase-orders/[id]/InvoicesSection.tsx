@@ -38,9 +38,8 @@ export default function InvoicesSection({
 
     useEffect(() => {
         if (orderId) {
-            api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId })
-                // @ts-expect-error
-                .then(res => setReceiptLines(res.data || []))
+            api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as any)
+                .then(res => setReceiptLines((res.data as any)?.data || []))
                 .catch(err => reportError(err, 'InvoicesSection'));
         }
     }, [orderId]);
@@ -73,8 +72,8 @@ export default function InvoicesSection({
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex flex-col gap-1">
                                 <strong style={{ fontSize: 13 }}>{inv.invoiceNumber}</strong>
-                                {(inv as any).supplierinvoiceNumber && (
-                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierinvoiceNumber}</span>
+                                {(inv as any).supplierInvoiceNumber && (
+                                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('ref')} {(inv as any).supplierInvoiceNumber}</span>
                                 )}
                                 {(inv as any).receiptFilename && (
                                     <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tPurchase('file')} {(inv as any).receiptFilename}</span>

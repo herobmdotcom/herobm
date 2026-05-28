@@ -54,8 +54,8 @@ export default function UniversalSearch() {
     }
     try {
       const res = await api.dashboardControllerSearch({ q: term });
-      const payload: any = res.data;
-      setResults(payload.results || payload || []);
+      const payload = res.data as Record<string, unknown> | any[];
+      setResults((Array.isArray(payload) ? payload : (payload.results as SearchResult[])) || []);
     } catch {
       setResults([]);
     }

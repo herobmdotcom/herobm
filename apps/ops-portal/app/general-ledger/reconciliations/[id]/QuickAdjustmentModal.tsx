@@ -36,8 +36,8 @@ export default function QuickAdjustmentModal({
 
   useEffect(() => {
     if (isOpen && accounts.length === 0) {
-      api.glControllerGetAccounts()
-        .then(res => setAccounts((res.data as any) || res))
+      api.glControllerGetAccounts({} as any)
+        .then(res => setAccounts((res.data) || res))
         .catch(err => reportError(err, 'QuickAdjustmentModal_loadAccounts'));
     }
   }, [isOpen, accounts.length]);
@@ -54,7 +54,7 @@ export default function QuickAdjustmentModal({
       await api.reconciliationControllerCreateAdjustment(reconciliationId, {
         date,
         amount: Number(amount),
-        type,
+        type: type as any,
         offsetAccountId,
         memo
       });

@@ -22,8 +22,8 @@ export default function NewReconciliationPage() {
   useEffect(() => {
     async function fetchAccounts() {
       try {
-        const data = await api.glControllerGetAccounts();
-        setAccounts((data.data as any) || data);
+        const data = await api.glControllerGetAccounts({} as any);
+        setAccounts((data as any) || data);
       } catch (err) {
         reportError(err, 'NewReconciliationFetchAccounts');
       }
@@ -41,7 +41,7 @@ export default function NewReconciliationPage() {
         statementBalance: Number(statementBalance),
         createdBy: 'System User', // Hardcoded for now
       });
-      const data = res.data as any;
+      const data = res.data;
       
       router.push(`/general-ledger/reconciliations/${data.reconciliationId}`);
     } catch (err) {

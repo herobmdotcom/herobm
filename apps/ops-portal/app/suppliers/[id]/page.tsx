@@ -166,7 +166,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setError('');
     try {
       const payloadValue = value === '' ? null : value;
-      await api.suppliersControllerUpdate(params.id, { [field]: payloadValue } as any);
+      await api.suppliersControllerUpdate(params.id, { [field]: payloadValue } as api.UpdateSupplierDto);
       await loadSupplier(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
@@ -182,7 +182,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     setSaving(true);
     setError('');
     try {
-      await api.suppliersControllerUpdate(params.id, { stateCode: newState } as any);
+      await api.suppliersControllerUpdate(params.id, { stateCode: newState } as api.UpdateSupplierDto);
       await loadSupplier(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
@@ -195,7 +195,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
     if (!confirm(tConfirm('archiveOrder'))) return;
     setSaving(true);
     try {
-      await api.suppliersControllerArchive(params.id);
+      await api.suppliersControllerArchive(params.id, {});
       toast.success(tToast('orderArchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
@@ -208,7 +208,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
   const unarchiveSupplier = async () => {
     setSaving(true);
     try {
-      await api.suppliersControllerUnarchive(params.id);
+      await api.suppliersControllerUnarchive(params.id, {});
       toast.success(tToast('orderUnarchived'), { icon: '📦' });
       await loadSupplier(false);
     } catch (err: any) {
@@ -305,14 +305,14 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             title={supplier.name}
             subtitle={supplier.vendorNumber}
             onBack={() => {
-              if (document.referrer.includes(window.location.host)) {
+              if (window.history.length > 1) {
                 router.back();
               } else {
                 router.push('/suppliers');
               }
             }}
             isSaving={saving}
-            badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier as any)} stateCode={supplier.stateCode} />}
+            badges={<SupplierStatusBadges mode="header" profile={resolveSupplierRiskProfile(supplier)} stateCode={supplier.stateCode} />}
             nav={<PageNav sections={visibleSections} />}
           />
         }
@@ -730,7 +730,7 @@ export default function SupplierDetailPage({ params: paramsPromise }: { params: 
             </h3>
             <div className="flex gap-2 pt-2 pb-4">
               <SupplierStatusBadges 
-                profile={resolveSupplierRiskProfile(supplier as any)} 
+                profile={resolveSupplierRiskProfile(supplier)} 
                 stateCode={supplier.stateCode}
                 mode="header"
               />

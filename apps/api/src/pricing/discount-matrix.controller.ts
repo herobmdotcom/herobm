@@ -1,4 +1,14 @@
 import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiProperty,
+  ApiConsumes,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -17,8 +27,15 @@ import {
   CasbinAction,
 } from '../auth/casbin.guard';
 import { DiscountMatrixService } from './discount-matrix.service';
-import { CreateDiscountMatrixDto, UpdateDiscountMatrixDto } from './dto';
+import {
+  CreateDiscountMatrixDto,
+  UpdateDiscountMatrixDto,
+  DiscountMatrixResponseDto,
+  ResolveDiscountRuleDto,
+} from './dto';
 
+@ApiTags('DiscountMatrix')
+@ApiBearerAuth()
 @Controller('discount-matrix')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('settings')
@@ -32,6 +49,11 @@ export class DiscountMatrixController {
    */
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Rules',
+    description: 'Retrieve discount rules based on query filters.',
+  })
+  @ApiOkResponse({ type: [DiscountMatrixResponseDto] })
   async list(
     @Query('customerGroupId') customerGroupId?: string,
     @Query('customerId') customerId?: string,
@@ -59,6 +81,12 @@ export class DiscountMatrixController {
    */
   @Get('resolve')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Resolve Rules',
+    description:
+      'Retrieve the fully resolved discount rules for a specific customer.',
+  })
+  @ApiOkResponse({ type: [ResolveDiscountRuleDto] })
   async resolve(
     @Query('customerId') customerId: string,
     @Query('customerGroupId') customerGroupId?: string,
@@ -73,19 +101,43 @@ export class DiscountMatrixController {
   }
 
   @Post()
+  @ApiBody({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Rule',
+    description: 'Add a new discount rule to the matrix.',
+  })
+  @ApiCreatedResponse({ type: DiscountMatrixResponseDto })
   async create(@Body() dto: CreateDiscountMatrixDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
+  @ApiBody({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Rule',
+    description: 'Modify an existing discount rule.',
+  })
+  @ApiOkResponse({ type: DiscountMatrixResponseDto })
   async update(@Param('id') id: string, @Body() dto: UpdateDiscountMatrixDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete Rule',
+    description: 'Remove a discount rule from the matrix.',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        deleted: { type: 'boolean' },
+      },
+    },
+  })
   async delete(@Param('id') id: string) {
     return this.service.delete(id);
   }

@@ -56,9 +56,9 @@ export default function PutawayPage() {
 
     // Fetch Locations
     useEffect(() => {
-        api.inventoryControllerFindAllLocations({} as any)
+        api.inventoryControllerFindAllLocations({} )
             .then((response) => {
-                const res = response.data as any;
+                const res = response.data;
                 const locs = res.data || res || [];
                 setLocations(locs);
                 if (locs.length > 0) {
@@ -79,8 +79,8 @@ export default function PutawayPage() {
 
         api.inventoryControllerGetPendingPutaway({ locationId: selectedLocationId })
             .then(response => {
-                const data = response.data as any;
-                setPendingLines(data.data || data || []);
+                const data = response.data;
+                setPendingLines(data as any || []);
             })
             .catch(err => reportError(err, 'Failed to load pending lines'))
             .finally(() => setLoadingLines(false));
@@ -97,17 +97,17 @@ export default function PutawayPage() {
         setError(null);
         api.inventoryControllerGetPutawayContext({ productId: selectedLine.productId, locationId: selectedLocationId })
             .then((response) => {
-                const data = response.data as any;
-                const contextData = data.data || data;
-                setContext(contextData);
-                if (contextData.primaryBinId) {
-                    setSelectedBinId(contextData.primaryBinId);
-                    setBinSearch(contextData.primaryBinNumber || '');
+                const data = response.data;
+                const contextData = data || data;
+                setContext(contextData as any);
+                if ((contextData as any).primaryBinId) {
+                    setSelectedBinId((contextData as any).primaryBinId);
+                    setBinSearch((contextData as any).primaryBinNumber || '');
                 } else {
                     setSelectedBinId('');
                     setBinSearch('');
                 }
-                const expectedTotal = contextData.currentQuantity + parseFloat(selectedLine.quantity);
+                const expectedTotal = (contextData as any).currentQuantity + parseFloat(selectedLine.quantity);
                 setNewTotalQuantity(expectedTotal.toString());
             })
             .catch(err => setError(err.message))

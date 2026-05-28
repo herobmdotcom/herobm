@@ -44,10 +44,9 @@ export default function ReallocateModal({
 
   useEffect(() => {
     if (isOpen) {
-      api.inventoryControllerFindAllLocations({})
+      api.inventoryControllerFindAllLocations()
         .then((res) => {
-          // @ts-expect-error
-          setLocations(res.data || []);
+          setLocations((res.data?.data || []) as RawLocation[]);
         })
         .catch((err) => reportError(err, 'Failed to load locations'));
     }

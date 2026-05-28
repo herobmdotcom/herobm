@@ -77,16 +77,15 @@ function ReturnsFlow() {
       
       // Filter out lines that are already in the draft fully
       // But for simplicity, we just fetch state from server.
-      // @ts-expect-error
       const data = res.data || [];
-      setReturnableLines(data);
+      setReturnableLines(data as unknown as ReturnableLine[]);
       
-      if (data.length === 1) {
-        selectLine(data[0]);
-      } else if (poId && data.some((l: any) => l.purchaseOrderId === poId)) {
-         const matches = data.filter((l: any) => l.purchaseOrderId === poId);
-         if (matches.length === 1) {
-             selectLine(matches[0]);
+      if (data.length > 0) {
+        selectLine(data[0] as unknown as ReturnableLine);
+      } else if (poId) {
+        const matches = (data as any[]).filter((x: any) => x.purchaseOrderId === poId);
+        if (matches.length > 0) {
+             selectLine(matches[0] as unknown as ReturnableLine);
          }
       }
     } catch (err: any) {
@@ -195,10 +194,10 @@ function ReturnsFlow() {
                  notes: 'Returned via UI',
                  lines: lines.map(l => ({
                     purchaseOrderLineId: l.purchaseOrderLineId,
-                    quantityReturned: l.quantityReturned,
+                    quantityReturned: String(l.quantityReturned),
                     returnFee: String(l.returnFeePerUnit || 0)
                  }))
-              } as any);
+              });
         })
       );
       

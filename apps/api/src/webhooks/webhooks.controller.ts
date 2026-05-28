@@ -1,4 +1,14 @@
 import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiProperty,
+  ApiConsumes,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -21,7 +31,10 @@ import {
   CasbinResource,
   CasbinAction,
 } from '../auth/casbin.guard';
+import { CreateWebhookDto, UpdateWebhookDto, WebhookResponseDto } from './dto';
 
+@ApiTags('Webhooks')
+@ApiBearerAuth()
 @Controller('webhooks')
 @UseGuards(AuthGuard(['jwt', 'api-key']), CasbinGuard)
 @CasbinResource('webhooks')
@@ -30,13 +43,24 @@ export class WebhooksController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Webhooks',
+    description: 'Retrieves all registered outbound webhooks.',
+  })
+  @ApiOkResponse({ type: [WebhookResponseDto] })
   async list() {
     return this.db.select().from(webhooks);
   }
 
   @Post()
+  @ApiBody({ type: CreateWebhookDto })
   @CasbinAction('write')
-  async create(@Body() body: { targetUrl: string; eventTypes: string[] }) {
+  @ApiOperation({
+    summary: 'Create Webhook',
+    description: 'Registers a new webhook endpoint for system events.',
+  })
+  @ApiCreatedResponse({ type: WebhookResponseDto })
+  async create(@Body() body: CreateWebhookDto) {
     const { targetUrl, eventTypes } = body;
     const secretKey = randomBytes(32).toString('hex');
 
@@ -55,10 +79,15 @@ export class WebhooksController {
 
   @Put(':id')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Webhook',
+    description: 'Modifies an existing webhook configuration.',
+  })
+  @ApiOkResponse({ type: WebhookResponseDto })
   async update(
     @Param('id') id: string,
     @Body()
-    body: { targetUrl?: string; eventTypes?: string[]; isActive?: boolean },
+    body: UpdateWebhookDto,
   ) {
     const { targetUrl, eventTypes, isActive } = body;
 
@@ -78,6 +107,18 @@ export class WebhooksController {
 
   @Delete(':id')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Delete Webhook',
+    description: 'Removes a webhook subscription.',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+      },
+    },
+  })
   async remove(@Param('id') id: string) {
     const [deleted] = await this.db
       .delete(webhooks)

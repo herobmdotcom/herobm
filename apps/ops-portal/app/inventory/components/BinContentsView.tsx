@@ -25,9 +25,9 @@ export default function BinContentsView() {
 
   // Load locations and resolve default
   useEffect(() => {
-    api.inventoryControllerFindAllLocations({} as any)
+    api.inventoryControllerFindAllLocations({} )
       .then((response) => {
-        const res = response.data as any;
+        const res = response.data;
         const locs = Array.isArray(res) ? res : (res?.data || []);
         setLocations(locs);
         

@@ -97,8 +97,9 @@ export default function ProductDetailPage() {
   const fetchProduct = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
-      const dataRes: any = await api.productsControllerFindOne(id as string);
-      const data = dataRes?.data || dataRes;
+      const dataRes = await api.productsControllerFindOne(id as string);
+      const data = dataRes.data;
+      setProduct(data);
       setDto({
         productNumber: data.productNumber || '',
         name: data.name || '',
@@ -120,9 +121,9 @@ export default function ProductDetailPage() {
       if (data.structureType === 'kit') {
         try {
           const componentsData = await api.productsControllerGetComponents(id as string);
-          if ((componentsData?.data as any)?.length > 0) {
-            setKitComponents(componentsData.data as any);
-            productIdsToFetch = (componentsData.data as any).map((c: any) => c.childProductId);
+          if ((componentsData.data as any)?.data?.length) {
+            setKitComponents((componentsData.data as any).data);
+            productIdsToFetch = ((componentsData.data as any).data).map((c: any) => c.childProductId);
           }
         } catch (e) {
           reportError(e, 'ProductDetailPage');
@@ -131,8 +132,8 @@ export default function ProductDetailPage() {
         setKitComponents([]);
       }
 
-      const invDataRes = await api.inventoryControllerFindByProductIdsBulk({ body: JSON.stringify({ productIds: productIdsToFetch }) });
-      setInventoryLevels((invDataRes?.data as any) || []);
+      const invDataRes = await api.inventoryControllerFindByProductIdsBulk({ productIds: productIdsToFetch });
+      setInventoryLevels(invDataRes?.data || []);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -142,10 +143,10 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
-    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
-    api.uomDictionaryControllerFindAll().then((res: any) => setUomDictionary(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
-    api.inventoryControllerFindAllLocations({} as any).then((res: any) => setLocations(res.data || [])).catch((err) => reportError(err, 'ProductDetailPage'));
-  }, [fetchProduct]);
+    api.taxCategoriesControllerFindAll().then((res) => setTaxCategories(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.uomDictionaryControllerFindAll().then((res) => setUomDictionary(res.data)).catch((err) => reportError(err, 'ProductDetailPage'));
+    api.inventoryControllerFindAllLocations({ productId: id as string }).then((res) => setLocations((res.data?.data) || [])).catch((err) => reportError(err, 'ProductDetailPage'));
+  }, [fetchProduct, id]);
 
   useEffect(() => {
     if (!newBinLink.locationId) {
@@ -188,7 +189,7 @@ export default function ProductDetailPage() {
       payload.productType = 'non-stock';
     }
 
-    setDto((prev: any) => ({ ...prev, ...payload }));
+    setDto((prev: unknown) => ({ ...(prev as Record<string, unknown>), ...payload }));
     saveProduct(payload);
   };
 
@@ -196,7 +197,7 @@ export default function ProductDetailPage() {
     if (!confirm(t('confirm.archiveOrder'))) return;
     setSaving(true);
     try {
-      await api.productsControllerArchive(id as string);
+      await api.productsControllerArchive(id as string, {});
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
@@ -209,7 +210,7 @@ export default function ProductDetailPage() {
   const unarchiveProduct = async () => {
     setSaving(true);
     try {
-      await api.productsControllerUnarchive(id as string);
+      await api.productsControllerUnarchive(id as string, {});
       toast.success(t('toast.productUpdated'));
       await fetchProduct(false);
     } catch (err: any) {
@@ -396,7 +397,7 @@ export default function ProductDetailPage() {
         title={product.productNumber}
         subtitle={product.name}
         onBack={() => {
-          if (document.referrer.includes(window.location.host)) {
+          if (window.history.length > 1) {
             router.back();
           } else {
             router.push('/products');
@@ -586,7 +587,7 @@ export default function ProductDetailPage() {
                     disabled={!newBinLink.locationId || !newBinLink.binId || saving}
                     onClick={async () => {
                       try {
-                        await api.productsControllerLinkDefaultBin(id as string, newBinLink as any);
+                        await api.productsControllerLinkDefaultBin(id as string, newBinLink);
                         toast.success(t('products.storage.toastLinkAdded'));
                         setAddingBinLink(false);
                         setNewBinLink({ locationId: '', binId: '', isPrimaryPerLocation: true, minQty: '', maxQty: '' });
@@ -688,7 +689,7 @@ export default function ProductDetailPage() {
                                     className="btn btn-xs btn-primary bg-[#006b5c] border-none px-1.5"
                                     onClick={async () => {
                                       try {
-                                        await api.productsControllerLinkDefaultBin(id as string, editingBinData as any);
+                                        await api.productsControllerLinkDefaultBin(id as string, editingBinData);
                                         toast.success(t('products.storage.toastLinkUpdated', { defaultValue: 'Bin configuration updated' }));
                                         setEditingBinId(null);
                                         await fetchProduct(false);
@@ -1210,8 +1211,8 @@ export default function ProductDetailPage() {
                     try {
                       await api.productsControllerAddUom(id as string, {
                         uomCode: newUomCode,
-                        ratio: newUomRatio,
-                      } as any);
+                        ratio: String(newUomRatio),
+                      });
                       toast.success(t('products.toast.conversionAdded'));
                       setAddingUom(false);
                       setNewUomCode('');

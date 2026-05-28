@@ -1,3 +1,4 @@
+import { PICKABLE_BIN_TYPES } from '../inventory/inventory-math.utils';
 import {
   Injectable,
   Inject,
@@ -447,7 +448,7 @@ export class PickingService {
           JOIN modbm_core.zones z ON z.zone_id = b.zone_id
           WHERE bc.product_id = ${salesOrderLineItems.productId}
             AND z.location_id = ${salesOrderLineItems.fulfillmentLocationId}
-            AND b.bin_type IN ('storage', 'pick', 'bulk')
+            AND b.bin_type IN (${sql.raw(PICKABLE_BIN_TYPES.map((t: string) => `'${t}'`).join(', '))})
             AND b.is_unavailable = false
             AND b.is_bonded = false
         ), 0)`,
@@ -510,7 +511,7 @@ export class PickingService {
           JOIN modbm_core.zones z ON z.zone_id = b.zone_id
           WHERE bc.product_id = ${transferOrderLines.productId}
             AND z.location_id = ${transferOrders.sourceLocationId}
-            AND b.bin_type IN ('storage', 'pick', 'bulk')
+            AND b.bin_type IN (${sql.raw(PICKABLE_BIN_TYPES.map((t: string) => `'${t}'`).join(', '))})
             AND b.is_unavailable = false
             AND b.is_bonded = false
         ), 0)`,

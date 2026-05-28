@@ -44,8 +44,8 @@ export default function QuoteGenerationDialog({ isOpen, onClose, onGenerate }: Q
     setLoading(true);
     setError(null);
     try {
-      const res = await api.macrosControllerFindAll({ macroType: 'text_template' } as any);
-      const data = res.data as any;
+      const res = await api.macrosControllerFindAll({ macroType: 'text_template' } );
+      const data = res.data;
       const textMacros = data.filter((m: any) => m.macroType === 'text_template');
       setMacros(textMacros);
     } catch (err: any) {

@@ -91,11 +91,9 @@ export default function PickingPage() {
 
     // Fetch Locations
     useEffect(() => {
-        api.inventoryControllerFindAllLocations({} as any)
-            // @ts-expect-error missing type properties
-            .then(response => {
-                const locs = response.data || [];
-                setLocations(locs);
+        api.inventoryControllerFindAllLocations().then((res: any) => {
+                const locs = res.data;
+                setLocations(locs as any);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
                     setSelectedLocationId(defaultLocId);
@@ -148,12 +146,12 @@ export default function PickingPage() {
             
         summaryPromise
             .then((res) => {
-                const data = res.data as any;
-                setPickingSummary(data);
+                const data = res.data;
+                setPickingSummary(data as any);
                 
                 // Initialize default quantities (what's remaining and fits in a bin)
                 const defaultInputs: Record<string, { quantity: string, binId: string }> = {};
-                data.lines.forEach(line => {
+                (data as any).lines.forEach((line: any) => {
                     if (line.isPhysical && !line.isFullyPicked && parseFloat(line.remaining) > 0) {
                         const bestBin = line.availableBins[0];
                         if (bestBin) {
@@ -190,13 +188,9 @@ export default function PickingPage() {
 
         try {
             if (selectedOrder.type === 'transfer_order') {
-                await api.transfersControllerPickLine(selectedOrder.id, lineId, {
-                    body: JSON.stringify({ quantity: input.quantity, binId: input.binId })
-                });
+                await api.transfersControllerPickLine(selectedOrder.id, lineId, { quantity: input.quantity, binId: input.binId });
             } else {
-                await api.orderPickingControllerPickLine(selectedOrder.id, lineId, {
-                    body: JSON.stringify({ quantity: input.quantity, binId: input.binId })
-                });
+                await api.orderPickingControllerPickLine(selectedOrder.id, lineId, { quantity: input.quantity, binId: input.binId });
             }
             await loadSummary();
         } catch (err: any) {
@@ -228,10 +222,8 @@ export default function PickingPage() {
         if (!selectedOrder) return;
         setIsGeneratingPdf(true);
         try {
-            const reportName = 'picking-slip';
-            // Fallback for transfer orders without a dedicated slip yet
-            const res = await api.reportsControllerRunHook(reportName, { id: selectedOrder.id, context: 'picking-slip' });
-            const blob = res.data as Blob;
+            const response = await api.reportsControllerRunHook('picking-ticket', { shipmentId: selectedOrder.id }, { id: selectedOrder.id, context: 'picking-ticket' } as any);
+            const blob = response.data as Blob;
             const url = window.URL.createObjectURL(blob);
             window.open(url, '_blank');
         } catch (err: any) {

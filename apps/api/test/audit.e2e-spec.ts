@@ -41,6 +41,8 @@ describe('Audit Events (e2e)', () => {
           FOR r IN SELECT sales_order_id FROM modbm_core.sales_orders WHERE name LIKE 'E2E%'
           LOOP
               DELETE FROM modbm_core.sales_order_return_lines WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
+              DELETE FROM modbm_core.sales_credit_note_lines WHERE credit_note_id IN (SELECT credit_note_id FROM modbm_core.sales_credit_notes WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id));
+              DELETE FROM modbm_core.sales_credit_notes WHERE return_id IN (SELECT return_id FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_returns WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.sales_order_shipment_lines WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.shipment_events WHERE shipment_id IN (SELECT shipment_id FROM modbm_core.sales_order_shipments WHERE sales_order_id = r.sales_order_id);
@@ -48,6 +50,7 @@ describe('Audit Events (e2e)', () => {
               DELETE FROM modbm_core.sales_invoice_lines WHERE invoice_id IN (SELECT invoice_id FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_invoices WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.backorders WHERE sales_order_id = r.sales_order_id;
+              DELETE FROM modbm_core.sales_order_picks WHERE sales_order_line_id IN (SELECT sales_order_line_id FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id);
               DELETE FROM modbm_core.sales_order_lines WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.order_events WHERE sales_order_id = r.sales_order_id;
               DELETE FROM modbm_core.outbox WHERE aggregate_id = r.sales_order_id;

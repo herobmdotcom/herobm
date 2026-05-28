@@ -148,7 +148,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             title={customer.name}
             subtitle={customer.customerNumber}
             onBack={() => {
-              if (document.referrer.includes(window.location.host)) {
+              if (window.history.length > 1) {
                 router.back();
               } else {
                 router.push('/customers');
@@ -684,7 +684,7 @@ export default function AccountDetailPage({ params: paramsPromise }: { params: P
             </div>
 
           <div id="activity-section" className="card">
-            <ActivityTimeline events={customer.events || []} />
+            <ActivityTimeline events={((customer.events as any[]) || [])} />
           </div>
 
           {/* Bottom Actions */}

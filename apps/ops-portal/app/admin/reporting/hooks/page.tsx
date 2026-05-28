@@ -5,6 +5,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
+import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -39,11 +40,12 @@ function ReportingHooksRow(props: {
   const handleChange = async (newReportId: string) => {
     setUpdating(true);
     try {
-      await api.reportsControllerUpdateAssignment(assignment.hookSlug, { body: JSON.stringify({ reportId: newReportId }) });
+      await api.reportsControllerUpdateAssignment(assignment.hookSlug, { reportId: newReportId, contextSlug: assignment.contextSlug || '' });
+      toast.success(t('toast.success'));
       onUpdate();
-    } catch (e) {
+    } catch (e: any) {
       reportError(e, 'ReportingHooksRow');
-      alert(t('errors.updateFailed') + (e as any).message);
+      alert(t('errors.updateFailed') + e.message);
     } finally {
       setUpdating(false);
     }
@@ -99,10 +101,8 @@ export default function ReportingHooksPage() {
         api.reportsControllerGetAssignments(),
         api.reportsControllerGetAllReports()
       ]);
-      // @ts-expect-error
-      setAssignments(assignRes.data);
-      // @ts-expect-error
-      setTemplates(templRes.data);
+      setAssignments((assignRes.data as unknown as Assignment[]) || []);
+      setTemplates((templRes.data as unknown as ReportTemplate[]) || []);
     } catch (e) {
       reportError(e, 'ReportingHooksPage');
     } finally {

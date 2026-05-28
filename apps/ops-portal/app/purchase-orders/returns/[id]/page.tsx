@@ -35,7 +35,6 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
     api.globalPurchaseReturnsControllerGetPurchaseReturnById(id)
       .then(res => {
         if (active) {
-          // @ts-expect-error
           setReturnDetails(res.data || res);
           // Default line prices to 0, they should fill this out or we can fetch PO line price.
           // For simplicity, they have to fill it out.
@@ -71,11 +70,10 @@ export default function PurchaseReturnDetailPage({ params }: { params: Promise<{
         notes,
       };
 
-      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload as any);
+      const res = await api.purchaseDebitNotesControllerCreateDebitNote(payload );
 
       // After creation, optionally post it directly:
-      // @ts-expect-error
-      await api.purchaseDebitNotesControllerPostDebitNote(res.data?.debitNoteId || res.debitNoteId);
+      await api.purchaseDebitNotesControllerPostDebitNote((res as unknown as { data?: { debitNoteId: string } }).data?.debitNoteId || (res as unknown as { debitNoteId: string }).debitNoteId, {});
 
       router.push(`/purchase-orders/${returnDetails.purchaseOrderId}`);
     } catch (err: any) {

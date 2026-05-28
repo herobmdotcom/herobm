@@ -55,3 +55,57 @@ export class UpdateTransferOrderLineDto {
   @IsNumberString()
   quantity?: string;
 }
+
+export class CreateTransferFromDemandsDto {
+  @IsString()
+  @IsNotEmpty()
+  sourceLocationId!: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  backorderIds!: string[];
+}
+
+export class PickLineDto {
+  @IsString()
+  @IsNotEmpty()
+  binId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  quantity!: string;
+}
+
+export class ReceiveTransferDto {
+  @IsString()
+  @IsNotEmpty()
+  destinationBinId!: string;
+}
+
+export class EmptyBodyDto {}
+
+export class TransferResponseDto {
+  id!: string;
+  transferNumber!: string;
+  sourceLocationId!: string;
+  destinationLocationId!: string;
+  status!: string;
+  notes?: string;
+  createdAt!: Date;
+  updatedAt!: Date;
+}
+
+export class TransferEventResponseDto {
+  id!: string;
+  transferOrderId!: string;
+  eventType!: string;
+  eventData!: any;
+  createdAt!: Date;
+}
+
+export class TransferPickingSummaryResponseDto {
+  lineId!: string;
+  productId!: string;
+  orderedQuantity!: string;
+  pickedQuantity!: string;
+}

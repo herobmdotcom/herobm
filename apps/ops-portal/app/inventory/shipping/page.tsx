@@ -88,10 +88,10 @@ export default function ShippingPage() {
     // ── Locations ────────────────────────────────────────────────
 
     useEffect(() => {
-        api.inventoryControllerFindAllLocations({} as any)
+        api.inventoryControllerFindAllLocations({} )
             .then((response) => {
-                const res = response.data as any;
-                const locs = res.data || res || [];
+                const res = response.data;
+                const locs = (res as any)?.data || res || [];
                 setLocations(locs);
                 if (locs.length > 0) {
                     const defaultLocId = app?.defaultFulfillmentLocationId || locs[0].locationId;
@@ -110,8 +110,8 @@ export default function ShippingPage() {
 
         api.orderPickingControllerGetShippingQueue(params)
             .then(response => {
-                const data = response.data as any;
-                setOrders(data.data || data || []);
+                const data = response.data;
+                setOrders((data as any)?.data || []);
             }).catch(err => {
                 reportError(err, t('errors.failedToLoadOrdersError'));
                 setOrders([]);
@@ -139,12 +139,12 @@ export default function ShippingPage() {
         setError(null);
         api.orderPickingControllerGetShippingContext(selectedOrder.id)
             .then((response) => {
-                const res = response.data as any;
-                const data = res.data || res;
+                const res = response.data;
+                const data = (res as any).data || res;
                 setContext(data);
                 // Pre-fill ship quantities with available-to-ship
                 const defaults: Record<string, string> = {};
-                data.lines.forEach(line => {
+                data.lines.forEach((line: any) => {
                     const available = parseFloat(line.availableToShip);
                     if (available > 0) {
                         defaults[line.salesOrderLineId] = String(available);
@@ -190,7 +190,7 @@ export default function ShippingPage() {
                 notes: notes || undefined,
                 trackingNumber: trackingNumber || undefined,
                 lines,
-            } as any);
+            });
             toast.success(t('toasts.shipmentCreated'));
             await loadContext();
             loadOrders();
@@ -491,7 +491,7 @@ export default function ShippingPage() {
                                                                         try {
                                                                             const { reportError } = await import('@/lib/api');
                                                                             const api = await import('@modbm/sdk');
-                                                                            const res = await api.reportsControllerRunHook('shipping-docket', { id: shipment.shipmentId, context: 'shipment' });
+                                                                            const res = await api.reportsControllerRunHook('shipping-docket', { shipmentId: shipment.shipmentId }, { id: shipment.shipmentId, context: 'shipment' } as any);
                                                                             const blob = res.data as Blob;
                                                                             const url = URL.createObjectURL(blob);
                                                                             window.open(url, '_blank');

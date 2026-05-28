@@ -43,7 +43,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     try {
       setActionLoading(true);
       setError(null);
-      await api.purchaseReturnsControllerStageReturn(returnRecord.purchaseOrderId, returnRecord.returnId, { body: JSON.stringify({}) });
+      await api.purchaseReturnsControllerStageReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {} );
       onRefresh();
       onClose();
     } catch (err: any) {
@@ -57,7 +57,7 @@ export default function ShipReturnSlideOver({ isOpen, onClose, returnRecord, onR
     try {
       setActionLoading(true);
       setError(null);
-      await api.purchaseReturnsControllerShipReturn(returnRecord.purchaseOrderId, returnRecord.returnId, { body: JSON.stringify({ trackingNumber }) });
+      await api.purchaseReturnsControllerShipReturn(returnRecord.purchaseOrderId, returnRecord.returnId, {});
       onRefresh();
       onClose();
     } catch (err: any) {

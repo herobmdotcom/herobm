@@ -1,7 +1,8 @@
+/* eslint-disable no-restricted-syntax */
 "use client";
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { AgGridReact } from "ag-grid-react";
 import {
@@ -130,7 +131,7 @@ export interface DataGridProps<T> {
   /** Number to trigger a refresh without unmounting the grid */
   refreshTrigger?: number;
   /** Context object passed directly into AgGridReact context to be available to cell renderers */
-  context?: any;
+  context?: unknown;
   /** Callback to determine if a row is selectable */
   isRowSelectable?: (node: import('ag-grid-community').IRowNode<T>) => boolean;
   /** Callback when data is successfully loaded */
@@ -155,23 +156,23 @@ export function numericFormatter(params: { value: unknown }) {
 }
 
 function getCellValue<T>(col: ColDef<T>, row: T) {
-  let rawValue = col.field ? (row as any)[col.field] : undefined;
+  let rawValue = col.field ? (row as Record<string, unknown>)[col.field] : undefined;
   if (col.valueGetter) {
     if (typeof col.valueGetter === 'function') {
-      rawValue = col.valueGetter({ data: row, getValue: () => undefined } as any);
+      rawValue = col.valueGetter({ data: row, getValue: () => undefined } as never);
     }
   }
 
   let formattedValue = rawValue;
   if (col.valueFormatter) {
     if (typeof col.valueFormatter === 'function') {
-      formattedValue = col.valueFormatter({ value: rawValue, data: row } as any);
+      formattedValue = col.valueFormatter({ value: rawValue, data: row } as never);
     }
   }
 
   if (col.cellRenderer) {
     if (typeof col.cellRenderer === 'function') {
-      const Renderer = col.cellRenderer as any;
+      const Renderer = col.cellRenderer as React.ElementType;
       return <Renderer value={rawValue} data={row} />;
     }
   }
@@ -204,8 +205,8 @@ function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns:
     >
       <div className="flex justify-between items-start gap-4">
         <div>
-          {secondaryVal && <div className="text-[11px] text-slate-500 font-bold tracking-wider uppercase mb-1">{primaryVal}</div>}
-          <div className="text-[15px] font-bold text-[#041627] leading-tight">{secondaryVal || primaryVal}</div>
+          <div className="text-[13px] text-slate-500 font-medium whitespace-nowrap mb-0.5">{primaryVal as React.ReactNode}</div>
+          <div className="text-[11px] text-slate-400 max-w-[200px] truncate">{secondaryVal as React.ReactNode}</div>
         </div>
       </div>
       
@@ -214,7 +215,7 @@ function GenericMobileCard<T>({ row, columns, onRowClicked }: { row: T; columns:
           {displayedCols.map(({col, val}, idx) => (
             <div key={col.field || col.headerName || idx} className="flex justify-between items-start gap-4 text-[13px]">
               <span className="text-slate-500">{col.headerName}</span>
-              <span className="font-medium text-[#041627] text-right">{val}</span>
+              <span className="font-medium text-[#041627] text-right">{val as React.ReactNode}</span>
             </div>
           ))}
           {isTruncated && (
@@ -263,6 +264,7 @@ export default function DataGrid<T>({
 }: DataGridProps<T>) {
   const tGrid = useTranslations('common.grid');
   const gridRef = useRef<AgGridReact<T>>(null);
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -354,8 +356,8 @@ export default function DataGrid<T>({
     }
 
     const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
-    window.history.replaceState(window.history.state, '', newUrl);
-  }, [search, includeArchived, cursor, direction, qParam, archivedParam, cursorParam, dirParam, searchParams]);
+    router.replace(newUrl, { scroll: false });
+  }, [search, includeArchived, cursor, direction, qParam, archivedParam, cursorParam, dirParam, searchParams, router]);
 
   /* ── Column picker dropdown state ────────────────────────────────── */
   const [colPickerOpen, setColPickerOpen] = useState(false);
@@ -462,6 +464,23 @@ export default function DataGrid<T>({
       .catch((err) => onError?.(err, "DataGrid"))
       .finally(() => setLoading(false));
   }, [endpoint, rowData, search, includeArchived, cursor, direction, limit, onError, refreshTrigger, internalRefresh, onDataLoaded, isRestored]);
+
+  // Restore scroll position on mobile after data loads
+  useEffect(() => {
+    if (!loading && data && data.length > 0 && gridKey && isMobile) {
+      const key = `datagrid-mobile-scroll-${gridKey}`;
+      const savedScroll = sessionStorage.getItem(key);
+      if (savedScroll) {
+        const main = document.querySelector('main');
+        if (main) {
+          requestAnimationFrame(() => {
+            main.scrollTop = parseInt(savedScroll, 10);
+          });
+          sessionStorage.removeItem(key);
+        }
+      }
+    }
+  }, [loading, data, gridKey, isMobile]);
 
   /** Enhance columns: add header tooltips, cell tooltips, and numeric parsing */
   const enhancedColumns = useMemo(
@@ -846,7 +865,7 @@ export default function DataGrid<T>({
             setCursor(prevCursor);
             setDirection('prev');
           }}
-          disabled={!prevCursor}
+          disabled={!cursor || !prevCursor}
           className="px-3 py-1.5 rounded text-xs cursor-pointer disabled:opacity-30"
           style={{
             background: "var(--bg-card)",
@@ -915,8 +934,19 @@ export default function DataGrid<T>({
       <div className="lg:hidden flex-1 w-full flex flex-col gap-3 pb-24">
         {renderPaginationControls(true)}
         {data?.map((row, idx) => {
-          const key = rowIdField ? String((row as any)[rowIdField as keyof T]) : idx;
-          return <GenericMobileCard key={key} row={row} columns={enhancedColumns} onRowClicked={onRowClicked} />;
+          const key = rowIdField ? String((row as Record<keyof T, unknown>)[rowIdField as keyof T]) : idx;
+          return <GenericMobileCard 
+            key={key} 
+            row={row} 
+            columns={enhancedColumns} 
+            onRowClicked={onRowClicked ? (r) => {
+              const main = document.querySelector('main');
+              if (main && gridKey) {
+                sessionStorage.setItem(`datagrid-mobile-scroll-${gridKey}`, String(main.scrollTop));
+              }
+              onRowClicked(r);
+            } : undefined} 
+          />;
         })}
         {data && data.length > 0 && renderPaginationControls(true)}
       </div>

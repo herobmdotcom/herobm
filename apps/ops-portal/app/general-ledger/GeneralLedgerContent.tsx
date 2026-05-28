@@ -63,11 +63,11 @@ export default function GeneralLedgerContent() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   useEffect(() => {
-    api.glControllerGetAccounts({ format: 'flat' })
-      .then((res: any) => {
-        const data = res?.data || res || [];
-        const leafAccounts = data.filter((a: any) => !a.isGroup);
-        setAccounts(leafAccounts.map((a: any) => ({ accountCode: a.accountCode, name: a.name })));
+    api.glControllerGetAccounts({ format: 'flat' } as any)
+      .then((res: unknown) => {
+        const data = (res as any)?.data || res || [];
+        const leafAccounts = data.filter((a: unknown) => !(a as { isGroup: boolean }).isGroup);
+        setAccounts(leafAccounts.map((a: unknown) => ({ accountCode: (a as { accountCode: string }).accountCode, name: (a as { name: string }).name })));
       })
       .catch((err) => reportError(err, 'GeneralLedgerPage'));
   }, []);
@@ -89,13 +89,13 @@ export default function GeneralLedgerContent() {
       account: accountCode, 
       fromDate: fromDate, 
       toDate: toDate, 
-      page: page, 
-      limit: PAGE_SIZE 
+      page: page.toString(), 
+      limit: PAGE_SIZE.toString() 
     })
       .then((res) => {
-        const payload = res.data as any;
-        setRows(payload.data);
-        setTotal(payload.total);
+        const payload = res.data;
+        setRows(payload.data as any);
+        setTotal(payload.total as any);
       })
       .catch((err) => reportError(err, 'GeneralLedgerContent'))
       .finally(() => setLoading(false));

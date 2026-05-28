@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Post,
   Body,
@@ -17,7 +24,7 @@ const MAX_URL_LEN = 500;
 const MAX_COMPONENT_LEN = 100;
 
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-import { ClientErrorDto } from './dto';
+import { ClientErrorDto, EmptyBodyDto } from './dto';
 
 /**
  * Telemetry ingestion endpoint for client-side errors.
@@ -34,6 +41,7 @@ import { ClientErrorDto } from './dto';
  *
  * See ADV-032 for the security analysis of this endpoint.
  */
+@ApiTags('Telemetry')
 @Controller('telemetry')
 @SkipCasbin()
 @UseGuards(ThrottlerGuard)
@@ -42,8 +50,14 @@ export class TelemetryController {
   private readonly logger = new Logger('ClientTelemetry');
 
   @Post('client-errors')
+  @ApiBody({ type: ClientErrorDto })
+  @ApiCreatedResponse({ type: EmptyBodyDto })
   @SkipCasbin()
   @HttpCode(204)
+  @ApiOperation({
+    summary: 'Report Client Error',
+    description: 'Ingests frontend application errors for monitoring.',
+  })
   reportClientError(@Body() dto: ClientErrorDto): void {
     if (!dto || !dto.message) {
       throw new BadRequestException('message is required');

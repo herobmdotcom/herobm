@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Post,
   Get,
@@ -11,17 +18,26 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { SkipCasbin } from './casbin.guard';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
-import { LoginDto } from './dto';
+import { LoginDto, LoginResponseDto, MeResponseDto } from './dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 @SkipCasbin()
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
+  @ApiBody({ type: LoginDto })
   @SkipCasbin()
   @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Throttle({
+    default: { limit: process.env.NODE_ENV === 'test' ? 100 : 5, ttl: 60000 },
+  })
+  @ApiOperation({
+    summary: 'Login User',
+    description: 'Authenticates a user and returns a JWT token.',
+  })
+  @ApiCreatedResponse({ type: LoginResponseDto })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto.username, dto.password);
   }
@@ -30,6 +46,12 @@ export class AuthController {
   @Get('me')
   @SkipCasbin()
   @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Get Current User',
+    description:
+      'Returns the identity and role of the currently authenticated user.',
+  })
+  @ApiOkResponse({ type: MeResponseDto })
   me(@Request() req: any) {
     return {
       username: req.user.username,

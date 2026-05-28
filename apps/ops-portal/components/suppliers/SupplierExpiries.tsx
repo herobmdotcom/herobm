@@ -32,8 +32,7 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     try {
       setLoading(true);
       const data = await api.suppliersControllerFindSupplierExpiries(vendorId);
-      // @ts-expect-error missing array structure in return type
-      setExpiries(data.data || data || []);
+      setExpiries(data as unknown as Expiry[]);
     } catch(err: any) {
       toast.error(tCommon('errors.failedToLoadExpiries') + ': ' + err.message);
     } finally {
@@ -79,17 +78,17 @@ export default function SupplierExpiries({ vendorId, isEditable }: Props) {
     const dateObj = new Date(editForm.expiryDate);
     
     const payload = {
-      expiryType: editForm.expiryType,
+      expiryType: editForm.expiryType as api.CreateSupplierExpiryDto['expiryType'],
       expiryDate: dateObj.toISOString(),
-      notes: editForm.notes || null,
+      notes: editForm.notes || undefined,
     };
 
     try {
       if (editingId) {
-        await api.suppliersControllerUpdateExpiry(vendorId, editingId, payload as any);
+        await api.suppliersControllerUpdateExpiry(vendorId, editingId, payload);
         toast.success(tCommon('toast.expiryUpdated'));
       } else {
-        await api.suppliersControllerCreateExpiry(vendorId, payload as any);
+        await api.suppliersControllerCreateExpiry(vendorId, payload);
         toast.success(tCommon('toast.expiryCreated'));
       }
       handleCancel();

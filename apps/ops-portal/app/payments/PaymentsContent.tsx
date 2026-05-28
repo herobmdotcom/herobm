@@ -141,10 +141,10 @@ export default function PaymentsContent() {
     if (selectedPayments.length === 0) return;
     setIsProcessingBatch(true);
     try {
-      const data = await api.paymentsControllerExportAba({ paymentIds: selectedPayments.map(p => p.paymentId) }) as any;
+      const response = await api.paymentsControllerExportAba({ paymentIds: selectedPayments.map(p => p.paymentId) });
       
       // Download the file
-      const blob = new Blob([data.fileContent], { type: 'text/plain' });
+      const blob = new Blob([(response as any)?.fileContent], { type: 'text/plain' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;

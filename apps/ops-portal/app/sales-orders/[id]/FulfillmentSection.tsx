@@ -78,7 +78,7 @@ export default function FulfillmentSection({ orderId, pickingSummary }: Props) {
     useEffect(() => {
         setLoading(true);
         api.orderPickingControllerGetShippingContext(orderId)
-            .then((res) => setShippingCtx(res.data as any))
+            .then((res) => setShippingCtx(res.data as unknown as ShippingContext))
             .catch(() => setShippingCtx(null))
             .finally(() => setLoading(false));
     }, [orderId]);

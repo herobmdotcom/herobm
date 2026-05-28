@@ -19,7 +19,7 @@ interface Product {
   tradePrice: string;
   standardCost?: string | null;
   baseUom?: string | null;
-  productUoms?: any[];
+  productUoms?: unknown[];
   productGroupId?: string | null;
 }
 
@@ -64,12 +64,12 @@ export default function ProductSearchInput({
     const term = rawTerm.trim();
     if (!term || term.length < 2) { setResults([]); return; }
     try {
-      const data = await api.customFetch<{ data: Product[] }>(
+      const res = await api.customFetch<{ data?: Product[] }>(
         `/products?q=${encodeURIComponent(term)}&limit=10`,
         { method: 'GET' }
       );
 
-      setResults(data.data || data);
+      setResults((res.data || res) as Product[]);
     } catch { setResults([]); }
   }, []);
 
@@ -84,11 +84,11 @@ export default function ProductSearchInput({
     try {
       // Fetch full details (including productUoms) from findOne before yielding
       const res = await api.productsControllerFindOne(p.productId);
-      const data = res as any;
-      if (data && data.data) {
-        onSelect(data.data as Product);
+      const data = res;
+      if (data) {
+        onSelect(data as unknown as Product);
       } else {
-        onSelect(data as Product);
+        onSelect(data as unknown as Product);
       }
     } catch {
       // Fallback to the shallow object if the detail fetch fails

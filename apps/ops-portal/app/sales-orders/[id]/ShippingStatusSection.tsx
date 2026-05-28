@@ -56,10 +56,9 @@ export default function ShippingStatusSection({ orderId }: Props) {
 
     useEffect(() => {
         setLoading(true);
-        // @ts-expect-error missing typings in SDK
         api.orderPickingControllerGetShippingContext(orderId)
-            .then(setContext)
-            .catch((err: any) => setError(err.message))
+            .then((res) => setContext(res.data as unknown as ShippingContext))
+            .catch((err: unknown) => setError((err as Error).message))
             .finally(() => setLoading(false));
     }, [orderId]);
 

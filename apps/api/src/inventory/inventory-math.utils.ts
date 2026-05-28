@@ -1,3 +1,5 @@
+export const PICKABLE_BIN_TYPES = ['storage', 'pick', 'bulk'] as const;
+
 export interface BinState {
   binType: string | null;
   isUnavailable: boolean | null;
@@ -22,7 +24,7 @@ export function isPickableBin(bin: {
   if (!bin.binType) {
     return false;
   }
-  return ['storage', 'pick', 'bulk'].includes(bin.binType);
+  return (PICKABLE_BIN_TYPES as readonly string[]).includes(bin.binType);
 }
 
 /**

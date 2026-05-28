@@ -45,10 +45,10 @@ export default function ReceiveReturnSlideOver({
                 .filter((l: any) => parseFloat(l.quantityReceived) > 0);
 
             if (linesToReceive.length > 0) {
-                await api.orderReturnsControllerReceiveReturn(returnRecord.salesOrderId, returnRecord.returnId, { body: JSON.stringify({
+                await api.orderReturnsControllerReceiveReturn(returnRecord.salesOrderId, returnRecord.returnId, {
                     locationId: returnRecord.locationId,
                     lines: linesToReceive
-                }) });
+                } );
             }
 
             onRefresh();

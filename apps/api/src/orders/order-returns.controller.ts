@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -25,6 +32,7 @@ import {
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+@ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('sales-orders')
@@ -32,7 +40,13 @@ export class OrderReturnsController {
   constructor(private readonly returnsWriteService: ReturnsWriteService) {}
 
   @Post(':id/returns')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Return',
+    description: 'Create a new customer return (RMA) against a sales order.',
+  })
   createReturn(
     @Param('id') id: string,
     @Body() body: CreateReturnDto,
@@ -42,19 +56,35 @@ export class OrderReturnsController {
   }
 
   @Get(':id/returns')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Order Returns',
+    description: 'Retrieve all returns associated with a specific sales order.',
+  })
   findReturns(@Param('id') id: string) {
     return this.returnsWriteService.findByOrder(id);
   }
 
   @Get(':id/returns/:returnId')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Return',
+    description: 'Retrieve detailed information for a specific return.',
+  })
   findReturn(@Param('id') _id: string, @Param('returnId') returnId: string) {
     return this.returnsWriteService.findOne(returnId);
   }
 
   @Patch(':id/returns/:returnId')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Return',
+    description: 'Modify the details or metadata of an existing return.',
+  })
   updateReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
@@ -65,24 +95,35 @@ export class OrderReturnsController {
   }
 
   @Patch(':id/returns/:returnId/state')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Change Return State',
+    description: 'Update the processing state of a sales return.',
+  })
   changeReturnState(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
-    @Body('stateCode') stateCode: string,
-    @Body('locationId') locationId: string | undefined,
+    @Body() dto: import('./dto').ChangeReturnStateDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.returnsWriteService.changeReturnState(
       returnId,
-      stateCode,
+      dto.stateCode,
       user.username,
-      locationId,
+      dto.locationId,
     );
   }
 
   @Post(':id/returns/:returnId/lines')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Return Line',
+    description: 'Add a new line item to a sales return.',
+  })
   addReturnLine(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
@@ -97,7 +138,13 @@ export class OrderReturnsController {
   }
 
   @Patch(':id/returns/:returnId/lines/:lineId')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Return Line',
+    description: 'Modify an existing line item on a sales return.',
+  })
   updateReturnLine(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
@@ -114,7 +161,13 @@ export class OrderReturnsController {
   }
 
   @Post(':id/returns/:returnId/receive')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Receive Return',
+    description: 'Process the receipt of returned goods into inventory.',
+  })
   receiveReturn(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,
@@ -129,7 +182,12 @@ export class OrderReturnsController {
   }
 
   @Delete(':id/returns/:returnId/lines/:lineId')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Return Line',
+    description: 'Delete a line item from a sales return.',
+  })
   removeReturnLine(
     @Param('id') _id: string,
     @Param('returnId') returnId: string,

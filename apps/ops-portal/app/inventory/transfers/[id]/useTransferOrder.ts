@@ -15,8 +15,12 @@ export function useTransferOrder(id: string) {
   const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.transfersControllerFindOne(id);
-      const res = response.data as any;
+      const results = await Promise.all([
+        api.transfersControllerFindOne(id).then((res: any) => res.data),
+        api.inventoryControllerFindAllLocations().then((res: any) => res.data?.data || []),
+        (api as any).transfersControllerFindLines(id).then((res: any) => res.data?.data || []),
+      ]);
+      const res = results[0] as any;
       setOrder(res);
       setEditNotes(res.notes || '');
       setEditSourceLoc(res.sourceLocationId || '');
@@ -91,7 +95,7 @@ export function useTransferOrder(id: string) {
   const shipOrder = async () => {
     try {
       setSaving(true);
-      await api.transfersControllerShipTransferOrder(id);
+      await api.transfersControllerShipTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to ship order');
@@ -103,7 +107,7 @@ export function useTransferOrder(id: string) {
   const cancelOrder = async () => {
     try {
       setSaving(true);
-      await api.transfersControllerCancelTransferOrder(id);
+      await api.transfersControllerCancelTransferOrder(id, {} as unknown as import('@modbm/sdk').EmptyBodyDto);
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to cancel order');
@@ -115,7 +119,7 @@ export function useTransferOrder(id: string) {
   const receiveOrder = async (destinationBinId: string) => {
     try {
       setSaving(true);
-      await api.transfersControllerReceiveTransferOrder(id, { body: JSON.stringify({ destinationBinId }) });
+      await api.transfersControllerReceiveTransferOrder(id, { destinationBinId });
       await loadOrder();
     } catch (e: any) {
       setError(e.message || 'Failed to receive order');

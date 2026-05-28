@@ -12,6 +12,12 @@ interface GroupSelectProps {
   placeholder?: string;
 }
 
+interface GroupItem {
+  groupCode: string;
+  name: string;
+  [key: string]: unknown;
+}
+
 export default function GroupSelect({
   type,
   value,
@@ -20,7 +26,7 @@ export default function GroupSelect({
   className,
   placeholder,
 }: GroupSelectProps) {
-  const [groups, setGroups] = useState<any[]>([]);
+  const [groups, setGroups] = useState<GroupItem[]>([]);
   const [loading, setLoading] = useState(true);
   const t = useTranslations('common');
 
@@ -28,18 +34,16 @@ export default function GroupSelect({
     let active = true;
     setLoading(true);
     
-    const fetchMap: Record<string, () => Promise<any>> = {
+    const fetchMap: Record<string, any> = {
       customer: api.accountGroupsControllerFindAll,
       product: api.productGroupsControllerFindAll,
       supplier: api.supplierGroupsControllerFindAll,
     };
 
-    fetchMap[type]()
-      .then((data) => {
-
-        if (active) setGroups(data.data || data);
+    fetchMap[type]().then((data: any) => {
+        if (active) setGroups(data.data);
       })
-      .catch((err) => reportError(`Failed to fetch ${type} groups:`, err))
+      .catch((err: any) => reportError(`Failed to fetch ${type} groups:`, err))
       .finally(() => {
         if (active) setLoading(false);
       });
@@ -60,7 +64,7 @@ export default function GroupSelect({
     >
       <option value="">{loading ? t('loadingEllipsis') : placeholder || t('selectNone')}</option>
       {groups.map((g) => (
-        <option key={g[idField]} value={g[idField]}>
+        <option key={String(g[idField])} value={String(g[idField])}>
           {g.groupCode} — {g.name}
         </option>
       ))}

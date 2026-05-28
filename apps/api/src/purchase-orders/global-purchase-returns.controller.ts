@@ -1,4 +1,14 @@
 import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiProperty,
+  ApiConsumes,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Param,
@@ -22,15 +32,41 @@ import {
   suppliers,
 } from '../drizzle/modbm-core-schema';
 import { eq, desc, inArray } from 'drizzle-orm';
+import {
+  PurchaseReturnResponseDto,
+  PurchaseReturnLineResponseDto,
+} from './dto';
+
+export class GlobalPurchaseReturnDto extends PurchaseReturnResponseDto {
+  @ApiProperty({ required: false })
+  orderNumber?: string;
+  @ApiProperty({ required: false })
+  vendorName?: string;
+  @ApiProperty({ required: false })
+  vendorId?: string;
+  @ApiProperty({ required: false })
+  currencyCode?: string;
+}
+
+export class GlobalPurchaseReturnsListDto {
+  @ApiProperty({ type: [GlobalPurchaseReturnDto] })
+  data: GlobalPurchaseReturnDto[];
+}
 
 @Controller('purchase-returns')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('purchase-orders')
+@ApiTags('PurchaseReturns')
 export class GlobalPurchaseReturnsController {
   constructor(@Inject(DRIZZLE) private db: DrizzleDB) {}
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Purchase Returns',
+    description: 'Retrieve a list of purchase returns based on state.',
+  })
+  @ApiOkResponse({ type: GlobalPurchaseReturnsListDto })
   async getPurchaseReturns(@Query('stateCode') stateCodeStr?: string) {
     let query = this.db
       .select({
@@ -70,6 +106,11 @@ export class GlobalPurchaseReturnsController {
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchase Return',
+    description: 'Retrieve details for a specific purchase return.',
+  })
+  @ApiOkResponse({ type: GlobalPurchaseReturnDto })
   async getPurchaseReturnById(@Param('id') id: string) {
     const [ret] = await this.db
       .select({

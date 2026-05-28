@@ -72,8 +72,7 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
       api.allocationsControllerGetAvailablePoLines({ productId: demand.productId })
         .then((res) => {
-          // @ts-expect-error
-          const lines = Array.isArray(res.data) ? res.data : res.data?.data || [];
+          const lines = (res.data as any)?.data || [];
           const poIds = [...new Set(lines.map((l: any) => l.purchaseOrderId))] as string[];
 
           setDemandStates((prev) => {
@@ -160,11 +159,9 @@ export default function LinkToPOSlideOver({ isOpen, onClose, demands, onRefresh 
 
     try {
       await api.allocationsControllerLinkDemandToPo({
-        body: JSON.stringify({
-          demandId: demand.id,
-          purchaseOrderLineId: poLine.purchaseOrderLineId,
-          quantity: qty,
-        })
+        demandId: demand.id,
+        purchaseOrderLineId: poLine.purchaseOrderLineId,
+        quantity: qty,
       });
       
       let splitDemand = null;

@@ -25,8 +25,7 @@ export default function SystemLogsPage() {
     try {
       setLoading(true);
       const res = await api.systemControllerGetSystemLogs({ service, lines: lineLimit.toString() });
-      // @ts-expect-error
-      setLines(res?.data?.lines || (res as any)?.lines || []);
+      setLines((res as any)?.data?.lines || (res as any)?.lines || []);
       setError('');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('toasts.loadFailed'));

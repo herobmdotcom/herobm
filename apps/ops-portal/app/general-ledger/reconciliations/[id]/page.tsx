@@ -66,7 +66,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
   const fetchDetails = useCallback(async () => {
     try {
       const recRes = await api.reconciliationControllerGetReconciliation(id);
-      setReconciliation(recRes.data as any);
+      setReconciliation(recRes.data );
     } catch (err) {
       reportError(err, 'ReconciliationDetails');
     } finally {
@@ -99,7 +99,7 @@ export default function ReconciliationDetailsPage({ params }: { params: Promise<
     
     setPosting(true);
     try {
-      await api.reconciliationControllerPostReconciliation(id);
+      await api.reconciliationControllerPostReconciliation(id, {});
       toast.success(t('postSuccess'));
       router.push('/general-ledger/reconciliations');
     } catch (err) {

@@ -217,13 +217,11 @@ export default function ReceivingSection({
     const fetchReceptions = async () => {
       try {
         setLoading(true);
-        const listData = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId });
-        // @ts-expect-error
-        const lines = listData.data || [];
+        const res = await api.goodsReceivedControllerFindAllLines({ purchaseOrderId: orderId } as any);
+        const lines = (res.data as any)?.data || [];
         
         // Extract unique reception IDs
-        // @ts-expect-error
-        const grIds = Array.from(new Set<string>(lines.map(l => l.goodsReceivedId)));
+        const grIds = Array.from(new Set<string>((lines as unknown[]).map((l: any) => l.goodsReceivedId)));
         
         // Fetch full data including lines for each setup
         const detailedReceptions = await Promise.all(
@@ -233,8 +231,7 @@ export default function ReceivingSection({
         );
 
         if (active) {
-          // @ts-expect-error
-          setReceptions(detailedReceptions.map(r => r.data));
+          setReceptions(detailedReceptions.map(r => (r as unknown as { data: Reception }).data || (r as unknown as Reception)));
         }
       } catch (err) {
         // safely ignore missing if not supported yet, or show empty

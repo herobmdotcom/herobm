@@ -45,7 +45,7 @@ export default function NewProductPage() {
   });
 
   useEffect(() => {
-    api.taxCategoriesControllerFindAll().then((res: any) => setTaxCategories(res.data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => setTaxCategories((res as { data: unknown[] }).data)).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -58,10 +58,10 @@ export default function NewProductPage() {
       if (!payload.salesTaxCategoryId) delete payload.salesTaxCategoryId;
       if (!payload.productGroupId) delete payload.productGroupId;
 
-      const res = await api.productsControllerCreate(payload as any);
-      const product = res.data as any;
+      const res = await api.productsControllerCreate(payload);
+      const product = res.data;
       toast.success(t('toast.productCreated'));
-      router.push(`/products/${product.productId}`);
+      router.push(`/products/${product.id}`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {

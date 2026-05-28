@@ -40,7 +40,7 @@ export class ApiKeyStrategy extends PassportStrategy(Strategy, 'api-key') {
           userId: key.apiKeyId,
           username: `api_key_${key.name.replace(/\s+/g, '_').toLowerCase()}`,
           sub: key.apiKeyId,
-          roles: ['admin'], // Temporarily grant admin to all API keys until fine-grained UI is built
+          role: 'admin', // Temporarily grant admin to all API keys until fine-grained UI is built
         };
       }
     }

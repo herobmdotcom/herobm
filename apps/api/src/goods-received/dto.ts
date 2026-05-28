@@ -19,9 +19,9 @@ export class CreateGoodsReceivedLineDto {
 }
 
 export class CreateGoodsReceivedDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  goodsReceivedId!: string;
+  goodsReceivedId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -53,4 +53,68 @@ export class ResolveAllocationDto {
   @IsOptional()
   @IsNumberString()
   allocatedQuantity?: string;
+}
+
+export class GoodsReceivedResponseDto {
+  goodsReceivedId!: string;
+  receiptNumber!: string;
+  vendorId!: string;
+  locationId!: string;
+  packingSlipNumber?: string;
+  notes?: string;
+  stateCode!: string;
+  createdBy?: string;
+  createdOn?: Date;
+  modifiedOn?: Date;
+
+  vendorName?: string;
+  vendorNumber?: string;
+  totalLines?: number;
+  matchedLines?: number;
+}
+
+export class GoodsReceivedLineResponseDto {
+  goodsReceivedLineId!: string;
+  goodsReceivedId!: string;
+  productId!: string;
+  purchaseOrderLineId?: string;
+  purchaseOrderId?: string;
+  quantityReceived!: string;
+  matchStatus!: string;
+  putawayStatus!: string;
+  createdOn?: Date;
+  modifiedOn?: Date;
+
+  receiptNumber?: string;
+  packingSlipNumber?: string;
+  vendorId?: string;
+  vendorName?: string;
+  vendorNumber?: string;
+  locationId?: string;
+  locationName?: string;
+  productNumber?: string;
+  productName?: string;
+  orderNumber?: string;
+  stateCode?: string;
+}
+
+export class PaginatedGoodsReceivedDto {
+  data!: GoodsReceivedResponseDto[];
+  meta!: any;
+}
+
+export class PaginatedGoodsReceivedLineDto {
+  data!: GoodsReceivedLineResponseDto[];
+  meta!: any;
+}
+
+export class CancelReceptionResponseDto {
+  success!: boolean;
+}
+
+export class EmptyBodyDto {}
+
+export class ResolveAllocationResponseDto {
+  success!: boolean;
+  splitLine?: any;
 }

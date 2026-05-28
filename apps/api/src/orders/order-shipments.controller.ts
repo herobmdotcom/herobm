@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -20,10 +27,12 @@ import {
   UpdateShipmentDto,
   AddShipmentLineDto,
   UpdateShipmentLineDto,
+  ShipmentResponseDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
+@ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('sales-orders')
@@ -31,7 +40,13 @@ export class OrderShipmentsController {
   constructor(private readonly shipmentService: ShipmentService) {}
 
   @Post(':id/shipments')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Shipment',
+    description: 'Create a new shipment for a sales order.',
+  })
   createShipment(
     @Param('id') id: string,
     @Body() body: CreateShipmentDto,
@@ -41,13 +56,24 @@ export class OrderShipmentsController {
   }
 
   @Get(':id/shipments')
+  @ApiOkResponse({ type: ShipmentResponseDto, isArray: true })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Order Shipments',
+    description:
+      'Retrieve all shipments associated with a specific sales order.',
+  })
   findShipments(@Param('id') id: string) {
     return this.shipmentService.findByOrder(id);
   }
 
   @Get(':id/shipments/:shipmentId')
+  @ApiOkResponse({ type: ShipmentResponseDto })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Shipment',
+    description: 'Retrieve detailed information for a specific shipment.',
+  })
   findShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
@@ -56,7 +82,13 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Shipment',
+    description: 'Modify the details of an existing shipment.',
+  })
   updateShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
@@ -67,22 +99,34 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId/state')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Change Shipment State',
+    description: 'Update the processing state of a shipment.',
+  })
   changeShipmentState(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
-    @Body('stateCode') stateCode: string,
+    @Body() dto: import('./dto').ChangeShipmentStateDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.shipmentService.changeShipmentState(
       shipmentId,
-      stateCode,
+      dto.stateCode,
       user.username,
     );
   }
 
   @Post(':id/shipments/:shipmentId/cancel')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Cancel Shipment',
+    description: 'Cancel an open shipment and revert picked inventory.',
+  })
   cancelShipment(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
@@ -92,7 +136,13 @@ export class OrderShipmentsController {
   }
 
   @Post(':id/shipments/:shipmentId/lines')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Shipment Line',
+    description: 'Add a new line item to a shipment.',
+  })
   addShipmentLine(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
@@ -107,7 +157,13 @@ export class OrderShipmentsController {
   }
 
   @Patch(':id/shipments/:shipmentId/lines/:lineId')
+  @ApiBody({ type: Object })
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Shipment Line',
+    description: 'Modify an existing line item on a shipment.',
+  })
   updateShipmentLine(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,
@@ -124,7 +180,12 @@ export class OrderShipmentsController {
   }
 
   @Delete(':id/shipments/:shipmentId/lines/:lineId')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Shipment Line',
+    description: 'Delete a line item from a shipment.',
+  })
   removeShipmentLine(
     @Param('id') _id: string,
     @Param('shipmentId') shipmentId: string,

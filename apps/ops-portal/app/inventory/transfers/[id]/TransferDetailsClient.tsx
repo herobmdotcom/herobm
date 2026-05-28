@@ -61,7 +61,7 @@ export default function TransferDetailsClient({ id }: { id: string }) {
     TRANSFER_ORDER_STATE.CONFIRMED,
     TRANSFER_ORDER_STATE.PICKING,
     TRANSFER_ORDER_STATE.SHIPPED,
-  ].includes(order.stateCode as any);
+  ].includes(order.stateCode );
   const headerDirty = order.notes !== editNotes;
 
   const handleCancel = async () => {

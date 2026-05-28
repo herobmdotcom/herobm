@@ -8,7 +8,9 @@ async function bootstrap() {
   // Use pglite to avoid needing a real postgres DB for this script
   process.env.USE_PGLITE = 'true';
   process.env.JWT_SECRET = 'dummy_secret_for_openapi_generation';
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn'],
+  });
   const config = new DocumentBuilder()
     .setTitle('ModBM API')
     .setDescription('Core Forgeron API System endpoints')
@@ -25,4 +27,7 @@ async function bootstrap() {
   console.log('Written OpenAPI spec to', outPath);
   await app.close();
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('FATAL ERROR:', err);
+  process.exit(1);
+});

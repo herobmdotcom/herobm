@@ -183,12 +183,12 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
 
     const handleGenerateQuote = async (text: string) => {
         try {
-            const { apiFetchBlob } = await import('@/lib/api');
-            const blob = await apiFetchBlob(`/api/reports/hooks/sales-order-quote/run?id=${id}&context=sales-order`, { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quoteIntroText: text })
-            });
+            const response = await api.reportsControllerRunHook(
+                'sales-order-quote', 
+                { quoteIntroText: text }, 
+                { id, context: 'sales-order' }
+            );
+            const blob = response.data as unknown as Blob;
             const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
             loadOrder(); // Reload to show the new timeline event
@@ -238,14 +238,14 @@ export default function SalesOrderPage({ params }: { params: Promise<{ id: strin
                         title={order.orderNumber}
                         subtitle={order.name || tSales('untitledOrder')}
                         onBack={() => {
-                          if (document.referrer.includes(window.location.host)) {
+                          if (window.history.length > 1) {
                             router.back();
                           } else {
                             router.push('/sales-orders');
                           }
                         }}
                         isSaving={saving}
-                        badges={<StateBadge state={order.stateCode as ValidState} />}
+                        badges={order.stateCode ? <StateName state={order.stateCode as any} /> : ''}
                         nav={<PageNav sections={visibleSections} />}
                         actions={
                             <>

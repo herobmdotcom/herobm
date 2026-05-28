@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Post,
   Get,
@@ -34,6 +41,7 @@ import {
 } from '../drizzle/modbm-core-schema';
 import { sql, eq, and, inArray } from 'drizzle-orm';
 
+@ApiTags('Orders')
 @Controller('allocations')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('purchase-orders')
@@ -44,7 +52,13 @@ export class AllocationsController {
   ) {}
 
   @Get('open')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Open Demands',
+    description:
+      'Retrieve pending or awaiting-receipt backorders across all sales orders.',
+  })
   async getOpenDemands() {
     const openDemands = await this.db
       .select({
@@ -185,7 +199,13 @@ export class AllocationsController {
   }
 
   @Get('by-po/:poId')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get PO Allocations',
+    description:
+      'Retrieve all backorder allocations linked to a specific purchase order.',
+  })
   async getAllocationsByPo(@Param('poId') poId: string) {
     const allocations = await this.db
       .select({
@@ -210,28 +230,51 @@ export class AllocationsController {
   }
 
   @Get('available-po-lines')
+  @ApiOkResponse({ type: Object })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Available PO Lines',
+    description:
+      'Find open purchase order lines for a specific product to allocate against.',
+  })
   async getAvailablePoLines(@Query('productId') productId: string) {
     const lines = await this.backordersService.getAvailablePoLines(productId);
     return { data: lines };
   }
 
   @Post('link-po')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
-  async linkDemandToPo(@Body() payload: any, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Link Demand To PO',
+    description:
+      'Manually allocate a backorder demand to an open purchase order line.',
+  })
+  async linkDemandToPo(
+    @Body() payload: import('./dto').LinkDemandToPoDto,
+    @AuthUser() user: JwtUser,
+  ) {
     const actor = user?.username || 'system';
     const { demandId, purchaseOrderLineId, quantity } = payload;
     await this.backordersService.linkDemandToPo(
       demandId,
       purchaseOrderLineId,
-      quantity,
+      Number(quantity),
       actor,
     );
     return { success: true };
   }
 
   @Post('resolve')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Resolve Open Demands',
+    description:
+      'Run the MRP engine to automatically resolve backorder demands.',
+  })
   async resolveOpenDemands(@AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.resolveOpenDemands(actor);
@@ -239,7 +282,14 @@ export class AllocationsController {
   }
 
   @Post(':id/unlink')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Unlink Demand',
+    description:
+      'Remove the link between a backorder demand and its allocated purchase order.',
+  })
   async unlinkDemand(@Param('id') id: string, @AuthUser() user: JwtUser) {
     const actor = user?.username || 'system';
     await this.backordersService.unlinkDemand(id, actor);
@@ -247,28 +297,53 @@ export class AllocationsController {
   }
 
   @Post(':id/reallocate')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Reallocate Demand',
+    description:
+      'Change the fulfillment location for an open backorder demand.',
+  })
   async reallocateDemand(
     @Param('id') id: string,
-    @Body('locationId') locationId: string,
+    @Body() dto: import('./dto').ReallocateDemandDto,
     @AuthUser() user: JwtUser,
   ) {
     const actor = user?.username || 'system';
-    await this.backordersService.reallocateDemand(id, locationId, actor);
+    await this.backordersService.reallocateDemand(id, dto.locationId, actor);
     return { success: true };
   }
 
   @Post('generate-pos')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
-  async generatePOs(@Body() payload: any, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Generate POs',
+    description: 'Bulk create purchase orders from open backorder demands.',
+  })
+  async generatePOs(
+    @Body() payload: import('./dto').GeneratePOsDto,
+    @AuthUser() user: JwtUser,
+  ) {
     const actor = user?.username || 'system';
     await this.backordersService.generatePOsFromDemands(payload, actor);
     return { success: true };
   }
 
   @Post('generate-transfers')
+  @ApiBody({ type: Object })
+  @ApiCreatedResponse({ type: Object })
   @CasbinAction('write')
-  async generateTransfers(@Body() payload: any, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Generate Transfers',
+    description: 'Bulk create inventory transfers from open backorder demands.',
+  })
+  async generateTransfers(
+    @Body() payload: import('./dto').GenerateTransfersDto,
+    @AuthUser() user: JwtUser,
+  ) {
     const actor = user?.username || 'system';
     await this.backordersService.generateTransfersFromDemands(payload, actor);
     return { success: true };

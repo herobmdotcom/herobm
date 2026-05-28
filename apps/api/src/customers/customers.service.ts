@@ -84,27 +84,23 @@ export class AccountsService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`lower(${customers.name}) > lower(${c.name})`,
-              and(
-                sql`lower(${customers.name}) = lower(${c.name})`,
-                sql`${customers.customerId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`lower(${customers.name}) < lower(${c.name})`,
-              and(
-                sql`lower(${customers.name}) = lower(${c.name})`,
-                sql`${customers.customerId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`lower(${customers.name}) > lower(${c.name})`,
+                and(
+                  sql`lower(${customers.name}) = lower(${c.name})`,
+                  sql`${customers.customerId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`lower(${customers.name}) < lower(${c.name})`,
+                and(
+                  sql`lower(${customers.name}) = lower(${c.name})`,
+                  sql`${customers.customerId} < ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;

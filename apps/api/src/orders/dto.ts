@@ -8,6 +8,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 // ── Order Line DTOs ──
 
@@ -260,4 +261,156 @@ export class UpdateShipmentLineDto {
   @IsOptional()
   @IsNumberString()
   quantityShipped?: string;
+}
+
+export class OrderResponseDto {
+  salesOrderId!: string;
+  orderNumber!: string;
+  name?: string | null;
+  customerId!: string;
+  customerOrderNumber?: string | null;
+  fulfillmentLocationId!: string;
+  stateCode!: string;
+  currencyCode!: string;
+  notes?: string | null;
+  customFields?: Record<string, any> | null;
+  discrepanciesAcknowledged!: boolean;
+  sourceId?: string | null;
+  source!: string;
+  createdBy?: string | null;
+  createdOn?: Date | null;
+  modifiedOn?: Date | null;
+}
+
+export class EmptyBodyDto {}
+
+export class ChangeOrderStateDto {
+  @IsString()
+  @IsNotEmpty()
+  stateCode!: string;
+
+  @IsOptional()
+  generateBackorders?: boolean;
+
+  @IsOptional()
+  discrepanciesAcknowledged?: boolean;
+}
+
+export class ReallocateDemandDto {
+  @IsUUID()
+  locationId!: string;
+}
+
+export class LinkDemandToPoDto {
+  @IsUUID()
+  demandId!: string;
+
+  @IsUUID()
+  purchaseOrderLineId!: string;
+
+  @IsNumberString()
+  quantity!: string;
+}
+
+export class GeneratePoLineDto {
+  @IsUUID()
+  productId!: string;
+
+  @IsNumberString()
+  quantity!: string;
+
+  @IsNumberString()
+  pricePerUnit!: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID(undefined, { each: true })
+  backorderIds?: string[];
+}
+
+export class GeneratePoDto {
+  @IsUUID()
+  vendorId!: string;
+
+  @IsOptional()
+  @IsString()
+  currencyCode?: string;
+
+  @IsOptional()
+  @IsUUID()
+  deliveryLocationId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  soNumbers?: string[];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GeneratePoLineDto)
+  lines!: GeneratePoLineDto[];
+}
+
+export class GeneratePOsDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GeneratePoDto)
+  pos!: GeneratePoDto[];
+}
+
+export class GenerateTransfersDto {
+  @IsOptional()
+  @IsArray()
+  transfers?: any[];
+}
+
+export class PickOrderLineDto {
+  @IsUUID()
+  binId!: string;
+
+  @IsNumberString()
+  quantity!: string;
+}
+
+export class ChangeReturnStateDto {
+  @IsString()
+  stateCode!: string;
+
+  @IsOptional()
+  @IsUUID()
+  locationId?: string;
+}
+
+export class ChangeShipmentStateDto {
+  @IsString()
+  stateCode!: string;
+}
+
+export class ShipmentLineResponseDto {
+  shipmentLineId!: string;
+  shipmentId!: string;
+  orderLineId!: string;
+  productId!: string;
+  quantity!: string;
+}
+
+export class ShipmentResponseDto {
+  shipmentId!: string;
+  shipmentNumber!: string;
+  orderId!: string;
+  stateCode!: string;
+  trackingNumber?: string;
+  carrierId?: string;
+  notes?: string;
+  createdOn?: Date;
+  @ApiProperty({ type: () => ShipmentLineResponseDto, isArray: true, required: false })
+  lines?: ShipmentLineResponseDto[];
+}
+
+export class ShippingContextDto {
+  @ApiProperty({ type: () => Object, isArray: true })
+  lines!: any[];
+
+  @ApiProperty({ type: () => ShipmentResponseDto, isArray: true })
+  shipments!: ShipmentResponseDto[];
 }

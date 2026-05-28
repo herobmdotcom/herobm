@@ -38,9 +38,8 @@ export default function ShipmentsSection({ orderId }: Props) {
 
     useEffect(() => {
         setLoading(true);
-        // @ts-expect-error missing typings in SDK
         api.orderShipmentsControllerFindShipments(orderId)
-            .then(setShipments)
+            .then((res) => setShipments(res.data as unknown as Shipment[]))
             .catch((err) => reportError(err, 'ShipmentsSection'))
             .finally(() => setLoading(false));
     }, [orderId]);

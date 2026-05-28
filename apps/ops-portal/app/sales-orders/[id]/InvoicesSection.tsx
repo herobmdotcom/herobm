@@ -70,7 +70,7 @@ export default function InvoicesSection({
             await api.salesInvoiceControllerCreateSalesInvoice(orderId, {
                 notes: newInvoiceNotes || undefined,
                 lines: lines.length > 0 ? lines : undefined,
-            } as any);
+            } );
             toast.success(tToast('invoiceGenerated'));
             handleCancel();
             await loadInvoices();
@@ -90,7 +90,7 @@ export default function InvoicesSection({
                     <span className="material-symbols-outlined">request_quote</span>
                     Invoices
                 </h3>
-                {[SALES_ORDER_STATE.SHIPPED, SALES_ORDER_STATE.PICKING].includes(order.stateCode as any) && !showCreateInvoice && (
+                {['shipped', 'picking'].includes(order.stateCode as any) && !showCreateInvoice && (
                     <button
                         className="btn btn-secondary btn-sm"
                         disabled={(() => {
@@ -249,8 +249,8 @@ export default function InvoicesSection({
                                 className="btn btn-secondary btn-sm"
                                 onClick={async () => {
                                     try {
-                                        const { apiFetchBlob } = await import('@/lib/api');
-                                        const blob = await apiFetchBlob(`/api/reports/hooks/sales-invoice/run?id=${inv.invoiceId}&context=sales-invoice`, { method: 'POST' });
+                                        const response = await api.reportsControllerRunHook('sales-invoice', {}, { id: inv.invoiceId, context: 'sales-invoice' });
+                                        const blob = response.data as unknown as Blob;
                                         const url = URL.createObjectURL(blob);
                                         window.open(url, '_blank');
                                     } catch (err) {

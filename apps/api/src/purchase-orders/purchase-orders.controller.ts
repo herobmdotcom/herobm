@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -9,12 +16,13 @@ import {
   Query,
   UseGuards,
   UseInterceptors,
+  HttpCode,
 } from '@nestjs/common';
 import { PurchaseOrdersService } from './purchase-orders.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
-import { PaginationQuery } from '../common/pagination';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import {
   CasbinGuard,
   CasbinResource,
@@ -25,6 +33,10 @@ import {
   UpdatePurchaseOrderDto,
   CreatePurchaseOrderLineDto,
   UpdatePurchaseOrderLineDto,
+  PurchaseOrderResponseDto,
+  PurchaseOrderLineResponseDto,
+  EmptyBodyDto,
+  ChangeStateDto,
 } from './dto';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
@@ -32,12 +44,19 @@ import type { JwtUser } from '../auth/auth-user.decorator';
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @Controller('purchase-orders')
 @CasbinResource('purchase-orders')
+@ApiTags('PurchaseOrders')
 export class PurchaseOrdersController {
   constructor(private readonly purchaseOrdersService: PurchaseOrdersService) {}
 
   @Post()
+  @ApiBody({ type: CreatePurchaseOrderDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Purchase Order',
+    description: 'Create a new purchase order.',
+  })
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiCreatedResponse({ type: PurchaseOrderResponseDto })
   @Idempotent({
     queryKey: 'purchaseOrders',
     pkField: 'purchaseOrderId',
@@ -55,12 +74,22 @@ export class PurchaseOrdersController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Purchase Orders',
+    description: 'Retrieve a paginated list of purchase orders.',
+  })
+  @ApiPaginatedResponse(PurchaseOrderResponseDto)
   async findAll(@Query() query: PaginationQuery) {
     return this.purchaseOrdersService.findAll(query);
   }
 
   @Get('pending-lines')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Pending Lines',
+    description: 'Find purchase order lines pending receipt.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderLineResponseDto, isArray: true })
   async findPendingLines(
     @Query('productId') productId?: string,
     @Query('vendorId') vendorId?: string,
@@ -70,18 +99,34 @@ export class PurchaseOrdersController {
 
   @Get('returnable-lines')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Returnable Lines',
+    description: 'Find purchase order lines eligible for return.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderLineResponseDto, isArray: true })
   async findReturnableLines(@Query('productId') productId: string) {
     return this.purchaseOrdersService.findReturnableLines(productId);
   }
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Purchase Order',
+    description: 'Retrieve a specific purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async findOne(@Param('id') id: string) {
     return this.purchaseOrdersService.findOne(id);
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdatePurchaseOrderDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Purchase Order',
+    description: 'Update an existing purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async update(
     @Param('id') id: string,
     @Body() updatePurchaseOrderDto: UpdatePurchaseOrderDto,
@@ -95,33 +140,67 @@ export class PurchaseOrdersController {
   }
 
   @Patch(':id/state')
+  @ApiBody({ type: ChangeStateDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Change Order State',
+    description: 'Update the state of a purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async changeState(
     @Param('id') id: string,
-    @Body('stateCode') stateCode: string,
+    @Body() body: ChangeStateDto,
     @AuthUser() user: JwtUser,
   ) {
     return this.purchaseOrdersService.changePurchaseOrderState(
       id,
-      stateCode as any,
+      body.stateCode as any,
       user.username,
     );
   }
 
   @Post(':id/archive')
   @CasbinAction('archive')
-  async archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Archive Purchase Order',
+    description: 'Archive a purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  async archive(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.purchaseOrdersService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
   @CasbinAction('archive')
-  async unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
+  @ApiOperation({
+    summary: 'Unarchive Purchase Order',
+    description: 'Restore an archived purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
+  @HttpCode(200)
+  async unarchive(
+    @Param('id') id: string,
+    @Body() body: EmptyBodyDto,
+    @AuthUser() user: JwtUser,
+  ) {
     return this.purchaseOrdersService.unarchive(id, user.username);
   }
 
   @Post(':id/lines')
+  @ApiBody({ type: CreatePurchaseOrderLineDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Order Line',
+    description: 'Add a new line item to a purchase order.',
+  })
+  @ApiCreatedResponse({ type: PurchaseOrderResponseDto })
   async addLine(
     @Param('id') id: string,
     @Body() body: CreatePurchaseOrderLineDto,
@@ -131,7 +210,13 @@ export class PurchaseOrdersController {
   }
 
   @Patch(':id/lines/:lineId')
+  @ApiBody({ type: UpdatePurchaseOrderLineDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Order Line',
+    description: 'Modify a specific line item on a purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async updateLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
@@ -148,6 +233,11 @@ export class PurchaseOrdersController {
 
   @Delete(':id/lines/:lineId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Order Line',
+    description: 'Delete a line item from a purchase order.',
+  })
+  @ApiOkResponse({ type: PurchaseOrderResponseDto })
   async removeLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,

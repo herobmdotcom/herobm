@@ -87,8 +87,7 @@ export default function NewPurchaseOrderPage() {
   useEffect(() => {
     api.taxCategoriesControllerFindAll()
       .then((res) => {
-        // @ts-expect-error
-        setTaxCategories(res.data || []);
+        setTaxCategories((res.data as unknown as TaxCategory[]) || []);
       })
       .catch((err) => reportError(err, 'NewPurchaseOrderPage'));
   }, []);
@@ -211,11 +210,12 @@ export default function NewPurchaseOrderPage() {
 
     try {
       const res = await api.purchaseOrdersControllerCreate({
+        purchaseOrderId: crypto.randomUUID(),
         orderNumber: generateOrderNumber(),
         name: name || undefined,
         vendorId,
         currencyCode,
-        deliveryLocationId: deliveryLocationId || undefined,
+        deliveryLocationId: deliveryLocationId || '',
         referenceNumber: referenceNumber || undefined,
         notes: notes || undefined,
         lines: lines
@@ -223,15 +223,14 @@ export default function NewPurchaseOrderPage() {
           .map((l) => ({
             productId: l.productId,
             productDescription: l.productDescription,
-            quantity: Number(l.quantity),
-            pricePerUnit: Number(l.pricePerUnit),
+            quantity: String(l.quantity),
+            pricePerUnit: String(l.pricePerUnit),
             unitOfMeasure: l.unitOfMeasure,
-            discountPercentage: Number(l.discountPercentage),
-            taxCategoryId: l.taxCategoryId,
+            discountPercentage: String(l.discountPercentage),
+            taxCategoryId: l.taxCategoryId || undefined,
           })),
-      } as any);
-      // @ts-expect-error
-      router.push(`/purchase-orders/${res.data?.purchaseOrderId || res.purchaseOrderId}`);
+      });
+      router.push(`/purchase-orders/${res.data.purchaseOrderId}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('common.errors.failedToCreatePO'));
     } finally {
@@ -429,8 +428,8 @@ export default function NewPurchaseOrderPage() {
                 <th style={{ width: 90, textAlign: 'right' }}>{t('purchaseOrders.columns.qty')}</th>
                 <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.uom')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.unitPrice')}</th>
-                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.discountPct' as any)}</th>
-                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.taxCategory' as any)}</th>
+                <th style={{ width: 80, textAlign: 'right' }}>{t('purchaseOrders.columns.discountPct')}</th>
+                <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.taxCategory')}</th>
                 <th style={{ width: 110, textAlign: 'right' }}>{t('purchaseOrders.columns.amount')}</th>
                 <th style={{ width: 50 }}></th>
               </tr>

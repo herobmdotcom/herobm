@@ -133,7 +133,7 @@ export default function CodesModal({ isOpen, onClose }: CodesModalProps) {
 
     setLoading(true);
     Promise.all([
-      api.glControllerGetAccounts({ format: 'tree' }).then(res => res.data as unknown as CoaNode[]),
+      api.glControllerGetAccounts({ format: 'tree' } as any).then((res: unknown) => (res as { data: unknown }).data as unknown as CoaNode[]),
       api.costCentersControllerFindAll().then(res => res.data as unknown as CostCenter[]),
       api.activitiesControllerFindAll().then(res => res.data as unknown as Activity[]),
     ])

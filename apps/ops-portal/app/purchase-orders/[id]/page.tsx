@@ -56,30 +56,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 
   useDocumentTitle(order ? (order.name ? `${order.orderNumber} - ${order.name}` : order.orderNumber) : null);
 
-  if (loading) {
-    return (
-      <>
-        <div className="flex items-center justify-center flex-1">
-          <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
-        </div>
-      </>
-    );
-  }
 
-  if (!order) {
-    return (
-      <>
-        <div className="flex flex-col items-center justify-center flex-1">
-          <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
-            {error || tPurchase('orderNotFound')}
-          </p>
-          <button className="btn btn-secondary" onClick={() => router.push('/purchase-orders')}>
-            {tPurchase('backToOrders')}
-          </button>
-        </div>
-      </>
-    );
-  }
 
   const sections = {
     details: { id: 'details-section', label: 'Details', show: true },
@@ -213,7 +190,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.unitPrice')} value={defaultRender} />
     },
     {
-        header: tPurchase('columns.discountPct' as any), width: 80, align: 'right',
+        header: tPurchase('columns.discountPct' ), width: 80, align: 'right',
         render: (line: any) => (
             isLinesEditable ? (
                 <input
@@ -234,12 +211,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
         ),
         mobileCard: (line: any, defaultRender: any) => (
             isLinesEditable ? (
-                <MobileCardField label={tPurchase('columns.discountPct' as any)} value={defaultRender} />
+                <MobileCardField label={tPurchase('columns.discountPct')} value={defaultRender} />
             ) : null
         )
     },
     {
-        header: tPurchase('columns.tax' as any), width: 110, align: 'right',
+        header: tPurchase('columns.tax'), width: 110, align: 'right',
         render: (line: any) => (
             isLinesEditable ? (
                 <select
@@ -270,7 +247,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                 </span>
             )
         ),
-        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.tax' as any)} value={defaultRender} />
+        mobileCard: (line: any, defaultRender: any) => <MobileCardField label={tPurchase('columns.tax')} value={defaultRender} />
     },
     {
         header: tPurchase('columns.amount'), width: 110, align: 'right',
@@ -307,6 +284,31 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     }] : [])
   ], [tPurchase, isLinesEditable, order?.currencyCode, taxCategories, updateLine, removeLine, updateLineFields, tCommon]);
 
+  if (loading) {
+    return (
+      <>
+        <div className="flex items-center justify-center flex-1">
+          <p style={{ color: 'var(--text-muted)' }}>{tCommon('loading')}</p>
+        </div>
+      </>
+    );
+  }
+
+  if (!order) {
+    return (
+      <>
+        <div className="flex flex-col items-center justify-center flex-1">
+          <p className="text-lg mb-2" style={{ color: 'var(--danger)' }}>
+            {error || tPurchase('orderNotFound')}
+          </p>
+          <button className="btn btn-secondary" onClick={() => router.push('/purchase-orders')}>
+            {tPurchase('backToOrders')}
+          </button>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <DetailsLayout
@@ -315,7 +317,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             title={order.orderNumber}
             subtitle={order.name || tPurchase('untitledOrder')}
             onBack={() => {
-              if (document.referrer.includes(window.location.host)) {
+              if (window.history.length > 1) {
                 router.back();
               } else {
                 router.push('/purchase-orders');
@@ -896,7 +898,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           taxCategories={taxCategories}
           setError={setError}
           loadInvoices={loadInvoices}
-          loadOrder={loadOrder as any}
+          loadOrder={loadOrder}
         />
 
         {/* Audit timeline */}

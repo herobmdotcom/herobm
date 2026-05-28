@@ -51,7 +51,7 @@ export default function InitiateReturnModal({
       await api.purchaseReturnsControllerCreateReturn(orderId, {
         notes,
         lines: linesPayload,
-      } as any);
+      } );
 
       onSuccess();
       onClose();

@@ -46,10 +46,10 @@ export default function POSearchInput({
     if (search) {
       url += `&search=${encodeURIComponent(search)}`;
     }
-    api.customFetch<any>(url, { method: 'GET' })
+    api.customFetch<unknown>(url, { method: 'GET' })
       .then((data) => {
 
-        const pos = Array.isArray(data) ? data : data.data || [];
+        const pos = data as unknown as PurchaseOrder[];
         setResults(pos);
       })
       .catch(() => {
@@ -104,7 +104,6 @@ export default function POSearchInput({
       
       {showDropdown && (
         <>
-          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
           <div
             style={{
               position: 'fixed',

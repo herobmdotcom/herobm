@@ -7,6 +7,7 @@ import {
   IsIn,
 } from 'class-validator';
 import { binTypeEnum } from '../drizzle/modbm-core-schema';
+import { PartialType } from '@nestjs/swagger';
 
 export class CreateLocationDto {
   @IsString()
@@ -74,4 +75,42 @@ export class CreateBinDto {
   @IsOptional()
   @IsBoolean()
   isUnavailable?: boolean;
+}
+
+export class UpdateLocationDto extends PartialType(CreateLocationDto) {}
+export class UpdateZoneDto extends PartialType(CreateZoneDto) {}
+export class UpdateBinDto extends PartialType(CreateBinDto) {}
+
+export class LocationResponseDto {
+  id!: string;
+  code!: string;
+  name!: string;
+  addressLine1?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postCode?: string;
+  createdAt!: Date;
+  updatedAt!: Date;
+}
+
+export class ZoneResponseDto {
+  id!: string;
+  locationId!: string;
+  code!: string;
+  name!: string;
+  createdAt!: Date;
+  updatedAt!: Date;
+}
+
+export class BinResponseDto {
+  id!: string;
+  zoneId!: string;
+  binNumber!: string;
+  binType?: string;
+  isConsignment?: boolean;
+  isBonded?: boolean;
+  isUnavailable?: boolean;
+  createdAt!: Date;
+  updatedAt!: Date;
 }

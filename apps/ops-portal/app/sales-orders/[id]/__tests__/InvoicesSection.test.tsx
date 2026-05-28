@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 /**
  * InvoicesSection.test.tsx
  *
@@ -16,10 +17,12 @@ jest.mock('next-intl', () => ({
 
 const mockCreateInvoice = jest.fn().mockResolvedValue({});
 jest.mock('@/lib/api', () => ({
-    
-    
-    apiFetchBlob: jest.fn().mockResolvedValue(new Blob(['pdf'], { type: 'application/pdf' })),
     reportError: jest.fn(),
+}));
+
+jest.mock('@modbm/sdk', () => ({
+    salesInvoiceControllerCreateSalesInvoice: jest.fn().mockResolvedValue({}),
+    reportsControllerRunHook: jest.fn().mockResolvedValue({ data: new Blob(['pdf'], { type: 'application/pdf' }) })
 }));
 
 jest.mock('react-hot-toast', () => ({
@@ -118,7 +121,7 @@ describe('InvoicesSection — rendering', () => {
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         expect(screen.getByText('INV-001')).toBeInTheDocument();
         // Invoice line table renders with product description
-        expect(screen.getByText('Widget')).toBeInTheDocument();
+        expect(screen.getAllByText('Widget').length).toBeGreaterThan(0);
     });
 
 
@@ -225,11 +228,11 @@ describe('InvoicesSection — create invoice form', () => {
         await user.click(screen.getByText('buttons.createInvoice'));
         await user.click(screen.getByText('buttons.generateInvoice'));
 
+        const api = require('@modbm/sdk');
         await waitFor(() => {
-            expect(mockCreateInvoice).toHaveBeenCalledWith(
-                '/api/sales-orders/so-001/invoice',
-                'POST',
-                expect.objectContaining({}),
+            expect(api.salesInvoiceControllerCreateSalesInvoice).toHaveBeenCalledWith(
+                'so-001',
+                expect.objectContaining({ lines: expect.any(Array) })
             );
         });
 
@@ -256,7 +259,8 @@ describe('InvoicesSection — create invoice form', () => {
     it('shows error when generation fails', async () => {
         const user = userEvent.setup();
         jest.spyOn(window, 'confirm').mockReturnValue(true);
-        mockCreateInvoice.mockRejectedValueOnce(new Error('Invoice generation failed'));
+        const api = require('@modbm/sdk');
+        api.salesInvoiceControllerCreateSalesInvoice.mockRejectedValueOnce(new Error('Invoice generation failed'));
 
         const setError = jest.fn();
         render(<InvoicesSection {...defaultProps} pickingSummary={picking} setError={setError} />);
@@ -294,12 +298,12 @@ describe('InvoicesSection — PDF download', () => {
         render(<InvoicesSection {...defaultProps} invoices={[invoice]} />);
         await user.click(screen.getByText('buttons.printInvoice'));
 
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { apiFetchBlob } = require('@/lib/api');
+        const api = require('@modbm/sdk');
         await waitFor(() => {
-            expect(apiFetchBlob).toHaveBeenCalledWith(
-                expect.stringContaining('id=inv-1'),
-                expect.any(Object)
+            expect(api.reportsControllerRunHook).toHaveBeenCalledWith(
+                'sales-invoice',
+                {},
+                expect.objectContaining({ id: 'inv-1', context: 'sales-invoice' })
             );
             expect(mockOpen).toHaveBeenCalledWith('blob:mock-url', '_blank');
         });
@@ -332,7 +336,7 @@ describe('InvoicesSection — invoice line table', () => {
         const amounts = screen.getAllByText('AUD 250.00');
         expect(amounts.length).toBeGreaterThanOrEqual(1);
         // Check subtotal row is present
-        expect(screen.getByText('totals.subtotal')).toBeInTheDocument();
+        expect(screen.getAllByText('totals.subtotal').length).toBeGreaterThan(0);
         // Check total row
         expect(screen.getAllByText('AUD 250.00').length).toBeGreaterThan(0);
     });

@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -25,8 +32,11 @@ import {
   UpdateOrderDto,
   CreateOrderLineDto,
   UpdateOrderLineDto,
+  OrderResponseDto,
+  EmptyBodyDto,
+  ChangeOrderStateDto,
 } from './dto';
-import { PaginationQuery } from '../common/pagination';
+import { PaginationQuery, ApiPaginatedResponse } from '../common/pagination';
 import { AuthUser } from '../auth/auth-user.decorator';
 import type { JwtUser } from '../auth/auth-user.decorator';
 
@@ -39,6 +49,7 @@ import type { JwtUser } from '../auth/auth-user.decorator';
  * - OrderShipmentsController → /sales-orders/:id/shipments/*
  * - SalesInvoiceController  → /sales-orders/:id/invoice (in InvoicesModule)
  */
+@ApiTags('Orders')
 @Controller('sales-orders')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('sales-orders')
@@ -54,12 +65,22 @@ export class OrdersController {
 
   @Get()
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find All Orders',
+    description: 'Retrieve a paginated list of sales orders globally.',
+  })
+  @ApiPaginatedResponse(OrderResponseDto)
   findAll(@Query() query: PaginationQuery) {
     return this.ordersService.findAll(query);
   }
 
   @Get(':id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Find Order',
+    description: 'Retrieve detailed information for a specific sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
   findOne(@Param('id') id: string) {
     return this.ordersWriteService.findOne(id);
   }
@@ -69,8 +90,14 @@ export class OrdersController {
   // -------------------------------------------------------------------------
 
   @Post()
+  @ApiBody({ type: CreateOrderDto })
   @CasbinAction('write')
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiOperation({
+    summary: 'Create Order',
+    description: 'Create a new sales order with or without line items.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
   @Idempotent({
     queryKey: 'salesOrders',
     pkField: 'salesOrderId',
@@ -81,7 +108,13 @@ export class OrdersController {
   }
 
   @Patch(':id')
+  @ApiBody({ type: UpdateOrderDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Order',
+    description: 'Modify the details or metadata of an existing sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
   update(
     @Param('id') id: string,
     @Body() body: UpdateOrderDto,
@@ -91,37 +124,59 @@ export class OrdersController {
   }
 
   @Patch(':id/state')
+  @ApiBody({ type: ChangeOrderStateDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Change Order State',
+    description: 'Update the processing state of a sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
   async changeState(
     @Param('id') id: string,
-    @Body('stateCode') stateCode: string,
+    @Body() dto: ChangeOrderStateDto,
     @AuthUser() user: JwtUser,
-    @Body('generateBackorders') generateBackorders?: boolean,
-    @Body('discrepanciesAcknowledged') discrepanciesAcknowledged?: boolean,
   ) {
     return this.ordersWriteService.changeSalesOrderState(
       id,
-      stateCode,
+      dto.stateCode,
       user.username,
-      generateBackorders,
-      discrepanciesAcknowledged,
+      dto.generateBackorders,
+      dto.discrepanciesAcknowledged,
     );
   }
 
   @Post(':id/archive')
+  @ApiBody({ type: EmptyBodyDto })
   @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Archive Order',
+    description: 'Mark a sales order as archived.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
   archive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.ordersWriteService.archive(id, user.username);
   }
 
   @Post(':id/unarchive')
+  @ApiBody({ type: EmptyBodyDto })
   @CasbinAction('archive')
+  @ApiOperation({
+    summary: 'Unarchive Order',
+    description: 'Restore an archived sales order.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
   unarchive(@Param('id') id: string, @AuthUser() user: JwtUser) {
     return this.ordersWriteService.unarchive(id, user.username);
   }
 
   @Post(':id/lines')
+  @ApiBody({ type: CreateOrderLineDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Order Line',
+    description: 'Add a new line item to a draft sales order.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
   addLine(
     @Param('id') id: string,
     @Body() body: CreateOrderLineDto,
@@ -131,7 +186,13 @@ export class OrdersController {
   }
 
   @Patch(':id/lines/:lineId')
+  @ApiBody({ type: UpdateOrderLineDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Order Line',
+    description: 'Modify an existing line item on a sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
   updateLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
@@ -143,6 +204,11 @@ export class OrdersController {
 
   @Delete(':id/lines/:lineId')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Remove Order Line',
+    description: 'Delete a line item from a sales order.',
+  })
+  @ApiOkResponse({ type: OrderResponseDto })
   removeLine(
     @Param('id') id: string,
     @Param('lineId') lineId: string,
@@ -152,7 +218,13 @@ export class OrdersController {
   }
 
   @Post(':id/post-confirmation-lines')
+  @ApiBody({ type: CreateOrderLineDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Add Post-Confirmation Line',
+    description: 'Add a new line item to a confirmed sales order.',
+  })
+  @ApiCreatedResponse({ type: OrderResponseDto })
   addPostConfirmationLine(
     @Param('id') id: string,
     @Body() body: CreateOrderLineDto,

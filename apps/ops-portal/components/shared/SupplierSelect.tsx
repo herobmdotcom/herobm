@@ -19,9 +19,9 @@ interface SupplierSelectProps {
   initialSearchTerm?: string;
 }
 
-function useDebounce(fn: (...args: any[]) => void, delay: number) {
+function useDebounce<T extends unknown[]>(fn: (...args: T) => void, delay: number) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  return useCallback((...args: any[]) => {
+  return useCallback((...args: T) => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => fn(...args), delay);
   }, [fn, delay]);
@@ -70,12 +70,12 @@ export default function SupplierSelect({
       return; 
     }
     try {
-      const data = await api.customFetch<{ data: Supplier[] }>(
+      const res = await api.customFetch<{ data?: Supplier[] }>(
         `/suppliers?q=${encodeURIComponent(term)}&limit=10`,
         { method: 'GET' }
       );
 
-      setFilteredSuppliers(data.data || data);
+      setFilteredSuppliers((res.data || res) as Supplier[]);
     } catch { 
       setFilteredSuppliers([]); 
     }

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax */
 import React from 'react';
 
 export interface DataTableColumn<T> {
@@ -63,7 +64,7 @@ export function DataTable<T>({
                     if (col.render) {
                       content = col.render(row, i);
                     } else if (col.accessor) {
-                      content = typeof col.accessor === 'function' ? col.accessor(row) : String(row[col.accessor] as any);
+                      content = typeof col.accessor === 'function' ? col.accessor(row) : String(row[col.accessor as keyof T] as unknown);
                     }
                     
                     return (

@@ -35,10 +35,11 @@ export default function LocationSelect({
     let active = true;
     setLoading(true);
 
-    api.inventoryControllerFindAllLocations({} as any)
+    api.inventoryControllerFindAllLocations()
       .then((response) => {
-        // @ts-expect-error
-        if (active) setLocations(response.data || response);
+        if (active) {
+          setLocations(response.data?.data || []);
+        }
       })
       .catch((err) => reportError(err, 'LocationSelect'))
       .finally(() => {

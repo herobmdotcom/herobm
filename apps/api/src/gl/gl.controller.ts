@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Post,
@@ -17,12 +24,32 @@ import {
 } from '../auth/casbin.guard';
 import { GlService, JournalMeta } from './gl.service';
 import { CoaLoaderService } from './coa-loader.service';
-import { JournalLineDto, CreateJournalEntryDto } from './dto';
+import {
+  JournalLineDto,
+  CreateJournalEntryDto,
+  GlAccountResponseDto,
+  JournalEntryResponseDto,
+  TrialBalanceResponseDto,
+  GeneralLedgerResponseDto,
+  SettingsResponseDto,
+  SuccessMessageResponseDto,
+  ArrayResponseDto,
+  CreateAccountRequestDto,
+  UpdateAccountRequestDto,
+  SeedRequestDto,
+  SeedTaxRequestDto,
+  EmptyBodyDto,
+  PaginatedJournalEntriesDto,
+  PaginatedGeneralLedgerDto,
+  UpdateGLSettingsDto,
+} from './dto';
 import { AppConfigService } from '../settings/app-config.service';
 import { GLAccountType } from '@modbm/shared';
 import { Idempotent } from '../common/idempotency/idempotent.decorator';
 import { IdempotencyInterceptor } from '../common/idempotency/idempotency.interceptor';
+import { ApiPaginatedResponse } from '../common/pagination';
 
+@ApiTags('GL')
 @Controller('gl')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('gl')
@@ -39,6 +66,11 @@ export class GlController {
 
   @Get('accounts')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Accounts',
+    description: 'Retrieve the chart of accounts or a flat list of accounts.',
+  })
+  @ApiOkResponse({ type: [GlAccountResponseDto] })
   async getAccounts(
     @Query('format') format?: string,
     @Query('isBankAccount') isBankAccount?: string,
@@ -58,34 +90,32 @@ export class GlController {
   }
 
   @Post('accounts')
+  @ApiBody({ type: CreateAccountRequestDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Account',
+    description: 'Create a new general ledger account.',
+  })
+  @ApiCreatedResponse({ type: GlAccountResponseDto })
   async createAccount(
     @Body()
-    body: {
-      accountCode: string;
-      name: string;
-      accountType: GLAccountType;
-      parentAccountId?: string;
-      isGroup?: boolean;
-      isBankAccount?: boolean;
-      currencyCode?: string;
-      metadata?: Record<string, any>;
-    },
+    body: CreateAccountRequestDto,
   ) {
-    return this.glService.createAccount(body);
+    return this.glService.createAccount(body as any);
   }
 
   @Patch('accounts/:id')
+  @ApiBody({ type: UpdateAccountRequestDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Update Account',
+    description: 'Modify an existing general ledger account.',
+  })
+  @ApiOkResponse({ type: GlAccountResponseDto })
   async updateAccount(
     @Param('id') id: string,
     @Body()
-    body: {
-      name?: string;
-      isActive?: boolean;
-      isBankAccount?: boolean;
-      metadata?: Record<string, any>;
-    },
+    body: UpdateAccountRequestDto,
   ) {
     return this.glService.updateAccount(id, body);
   }
@@ -95,7 +125,13 @@ export class GlController {
   // -------------------------------------------------------------------------
 
   @Get('journal-entries')
+  @ApiOkResponse({ type: PaginatedJournalEntriesDto })
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Journal Entries',
+    description: 'Retrieve a paginated list of journal entries.',
+  })
+  @ApiPaginatedResponse(JournalEntryResponseDto)
   async getJournalEntries(
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
@@ -118,12 +154,22 @@ export class GlController {
 
   @Get('journal-entries/:id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Journal Entry',
+    description: 'Retrieve a specific journal entry by ID.',
+  })
+  @ApiOkResponse({ type: JournalEntryResponseDto })
   async getJournalEntry(@Param('id') id: string) {
     return this.glService.getJournalEntry(id);
   }
 
   @Get('journal-entries/source/:type/:id')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Source Entry',
+    description: 'Find a journal entry by its source transaction type and ID.',
+  })
+  @ApiOkResponse({ type: JournalEntryResponseDto })
   async getJournalEntryBySource(
     @Param('type') type: string,
     @Param('id') id: string,
@@ -132,13 +178,19 @@ export class GlController {
   }
 
   @Post('journal-entries')
+  @ApiBody({ type: CreateJournalEntryDto })
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Create Manual Entry',
+    description: 'Post a new manual journal entry to the ledger.',
+  })
   @UseInterceptors(IdempotencyInterceptor)
   @Idempotent({
     queryKey: 'glJournalEntries',
     pkField: 'journalEntryId',
     idBodyPath: 'journalEntryId',
   })
+  @ApiCreatedResponse({ type: JournalEntryResponseDto })
   async createManualJournalEntry(
     @Body()
     body: CreateJournalEntryDto,
@@ -159,12 +211,24 @@ export class GlController {
 
   @Get('trial-balance')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Trial Balance',
+    description:
+      'Calculate and retrieve the trial balance as of a specific date.',
+  })
+  @ApiOkResponse({ type: [TrialBalanceResponseDto] })
   async getTrialBalance(@Query('asOfDate') asOfDate?: string) {
     return this.glService.getTrialBalance(asOfDate);
   }
 
   @Get('general-ledger')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get General Ledger',
+    description:
+      'Retrieve the general ledger line items for specific accounts and date ranges.',
+  })
+  @ApiPaginatedResponse(GeneralLedgerResponseDto)
   async getGeneralLedger(
     @Query('account') accountCode?: string,
     @Query('fromDate') fromDate?: string,
@@ -189,13 +253,23 @@ export class GlController {
 
   @Get('settings')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get Settings',
+    description: 'Retrieve the current general ledger settings.',
+  })
+  @ApiOkResponse({ type: SettingsResponseDto })
   async getSettings() {
     return this.glService.getSettings();
   }
 
   @Patch('settings')
   @CasbinAction('write')
-  async updateSettings(@Body() body: any) {
+  @ApiOperation({
+    summary: 'Update Settings',
+    description: 'Update the general ledger configuration settings.',
+  })
+  @ApiOkResponse({ type: SettingsResponseDto })
+  async updateSettings(@Body() body: UpdateGLSettingsDto) {
     const updated = await this.glService.updateSettings(body);
     // Automatically reload app config cache since settings changed
     await this.appConfig.reload();
@@ -204,6 +278,12 @@ export class GlController {
 
   @Post('settings/reload')
   @CasbinAction('write')
+  @ApiOperation({
+    summary: 'Reload Settings',
+    description: 'Force a reload of the application configuration cache.',
+  })
+  @ApiCreatedResponse({ type: SuccessMessageResponseDto })
+  @ApiBody({ type: EmptyBodyDto })
   async reloadSettings() {
     await this.appConfig.reload();
     return { success: true, message: 'Settings cache reloaded successfully.' };
@@ -211,26 +291,50 @@ export class GlController {
 
   @Get('charts')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Charts',
+    description: 'Get available predefined chart of accounts templates.',
+  })
+  @ApiOkResponse({ type: ArrayResponseDto })
   async listCharts() {
     return this.coaLoader.listAvailableCharts();
   }
 
   @Post('seed')
+  @ApiBody({ type: SeedRequestDto })
   @CasbinAction('write')
-  async seedChartOfAccounts(@Body() body?: { filename?: string }) {
+  @ApiOperation({
+    summary: 'Seed Chart of Accounts',
+    description:
+      'Initialize the chart of accounts from a predefined template file.',
+  })
+  @ApiCreatedResponse({ type: SuccessMessageResponseDto })
+  async seedChartOfAccounts(@Body() body: SeedRequestDto) {
     const filename = body?.filename || 'au_standard.json';
     return this.coaLoader.loadFromFile(filename);
   }
 
   @Get('tax-settings-files')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'List Tax Settings',
+    description: 'Get available predefined tax configuration templates.',
+  })
+  @ApiOkResponse({ type: ArrayResponseDto })
   async listTaxSettingsFiles() {
     return this.coaLoader.listAvailableTaxSettings();
   }
 
   @Post('seed-tax')
+  @ApiBody({ type: SeedTaxRequestDto })
   @CasbinAction('write')
-  async seedTaxSettings(@Body() body: { filename: string }) {
+  @ApiOperation({
+    summary: 'Seed Tax Settings',
+    description:
+      'Initialize tax rates and rules from a predefined template file.',
+  })
+  @ApiCreatedResponse({ type: SuccessMessageResponseDto })
+  async seedTaxSettings(@Body() body: SeedTaxRequestDto) {
     return this.coaLoader.loadTaxSettingsFromFile(body.filename);
   }
 }

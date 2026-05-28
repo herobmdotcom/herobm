@@ -60,7 +60,7 @@ export default function AdminImportPage() {
   useEffect(() => {
     if (step === 'preview') {
       api.setupControllerGetResumeState()
-        .then(res => setCompletedTables(res?.completedTables || []))
+        .then((res: unknown) => setCompletedTables((res as { completedTables?: string[] })?.completedTables || []))
         .catch(() => setCompletedTables([]));
     }
     return () => {
@@ -76,7 +76,7 @@ export default function AdminImportPage() {
   const handleTestConnection = async () => {
     try {
       setLoading(true);
-      const res = await api.setupControllerTestAbm({
+      const res: any = await api.setupControllerTestAbm({
         host: config.host,
         port: parseInt(config.port, 10),
         database: config.database,
@@ -138,7 +138,7 @@ export default function AdminImportPage() {
       setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
       setStatus('starting');
 
-      const res = await api.setupControllerExecuteElt(executePayload as any);
+      const res: any = await api.setupControllerExecuteElt(executePayload as any);
       jobIdRef.current = res.jobId;
       setStatus('running');
       startPolling(res.jobId);
@@ -152,7 +152,7 @@ export default function AdminImportPage() {
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await api.setupControllerGetProgress(jobId);
+        const progressRes: any = await api.setupControllerGetProgress(jobId);
         if (progressRes) {
           if (progressRes.logs && progressRes.logs.length > 0) {
              setLogs([`--- Initializing ABM Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progressRes.logs]);
@@ -480,7 +480,7 @@ export default function AdminImportPage() {
            <button
             onClick={() => {
               api.setupControllerGetImportSummary().then(summary => {
-                 setImportSummary(summary as any);
+                 setImportSummary(summary as unknown as import('@modbm/sdk').ImportSummaryDto);
                  setStep('finalisation');
               }).catch(err => {
                  reportError(err, 'AdminImportPage.pollProgress.importSummary');

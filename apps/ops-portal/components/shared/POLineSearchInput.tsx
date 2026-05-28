@@ -16,7 +16,7 @@ interface POLine {
 interface POLineSearchInputProps {
   productId?: string;
   vendorId?: string;
-  onSelect: (poLineId: string, line?: any) => void;
+  onSelect: (poLineId: string, line?: POLine) => void;
   placeholder?: string;
   style?: React.CSSProperties;
   disabled?: boolean;
@@ -47,10 +47,9 @@ export default function POLineSearchInput({
     if (productId) params.productId = productId;
     if (vendorId) params.vendorId = vendorId;
     
-    api.purchaseOrdersControllerFindPendingLines(params as any)
+    api.purchaseOrdersControllerFindPendingLines(params as Parameters<typeof api.purchaseOrdersControllerFindPendingLines>[0])
       .then((data) => {
-        // @ts-expect-error
-        const lines = Array.isArray(data) ? data : data.data || [];
+        const lines = data as unknown as POLine[];
         setAllLines(lines);
         setResults(lines);
         if (lines.length > 0) {

@@ -105,7 +105,7 @@ export default function ReturnsSection({
                 }));
             await api.orderReturnsControllerCreateReturn(orderId, {
                 notes: newReturnNotes || undefined,
-                lines: lines as any,
+                lines: lines ,
             });
             handleCancel();
             await loadReturns();
@@ -529,7 +529,7 @@ export default function ReturnsSection({
                                                     }
                                                     try {
                                                         await api.orderReturnsControllerChangeReturnState(orderId, ret.returnId, {
-                                                            body: JSON.stringify({ stateCode: s })
+                                                            stateCode: s
                                                         });
                                                         await loadReturns();
                                                         await loadOrder(undefined, false);
@@ -545,8 +545,8 @@ export default function ReturnsSection({
                                             className="btn btn-secondary btn-sm"
                                             onClick={async () => {
                                                 try {
-                                                    const { apiFetchBlob } = await import('@/lib/api');
-                                                    const blob = await apiFetchBlob(`/api/reports/hooks/return-slip/run?id=${ret.returnId}&context=sales-return`, { method: 'POST' });
+                                                    const response = await api.reportsControllerRunHook('return-slip', {}, { id: ret.returnId, context: 'sales-return' });
+                                                    const blob = response.data as unknown as Blob;
                                                     const url = URL.createObjectURL(blob);
                                                     window.open(url, '_blank');
                                                 } catch (err) {
@@ -561,8 +561,8 @@ export default function ReturnsSection({
                                                 className="btn btn-secondary btn-sm"
                                                 onClick={async () => {
                                                     try {
-                                                        const { apiFetchBlob } = await import('@/lib/api');
-                                                        const blob = await apiFetchBlob(`/api/reports/hooks/sales-return-credit/run?id=${ret.returnId}&context=sales-return`, { method: 'POST' });
+                                                        const response = await api.reportsControllerRunHook('sales-return-credit', {}, { id: ret.returnId, context: 'sales-return' });
+                                                        const blob = response.data as unknown as Blob;
                                                         const url = URL.createObjectURL(blob);
                                                         window.open(url, '_blank');
                                                     } catch (err) {
@@ -650,7 +650,7 @@ export default function ReturnsSection({
                                                                             orderId,
                                                                             ret.returnId,
                                                                             rl.returnLineId,
-                                                                            { quantityReturned: e.target.value } as any
+                                                                            { quantityReturned: e.target.value }
                                                                         );
                                                                         await loadReturns();
                                                                     } catch (err) {
@@ -686,7 +686,7 @@ export default function ReturnsSection({
                                                                             orderId,
                                                                             ret.returnId,
                                                                             rl.returnLineId,
-                                                                            { reason: e.target.value } as any
+                                                                            { reason: e.target.value }
                                                                         );
                                                                         await loadReturns();
                                                                     } catch (err) {
@@ -719,7 +719,7 @@ export default function ReturnsSection({
                                                                             orderId,
                                                                             ret.returnId,
                                                                             rl.returnLineId,
-                                                                            { returnFee: formatted } as any
+                                                                            { returnFee: formatted }
                                                                         );
                                                                         await loadReturns();
                                                                     } catch (err) {
@@ -826,7 +826,7 @@ export default function ReturnsSection({
                                                                                 orderId,
                                                                                 ret.returnId,
                                                                                 rl.returnLineId,
-                                                                                { quantityReturned: e.target.value } as any
+                                                                                { quantityReturned: e.target.value }
                                                                             );
                                                                             await loadReturns();
                                                                         } catch (err) {
@@ -855,7 +855,7 @@ export default function ReturnsSection({
                                                                                 orderId,
                                                                                 ret.returnId,
                                                                                 rl.returnLineId,
-                                                                                { reason: e.target.value } as any
+                                                                                { reason: e.target.value }
                                                                             );
                                                                             await loadReturns();
                                                                         } catch (err) {
@@ -890,7 +890,7 @@ export default function ReturnsSection({
                                                                                 orderId,
                                                                                 ret.returnId,
                                                                                 rl.returnLineId,
-                                                                                { returnFee: formatted } as any
+                                                                                { returnFee: formatted }
                                                                             );
                                                                             await loadReturns();
                                                                         } catch (err) {

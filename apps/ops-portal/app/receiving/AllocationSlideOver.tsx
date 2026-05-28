@@ -174,12 +174,12 @@ export default function AllocationSlideOver({ isOpen, onClose, grLines, onRefres
     }
 
     try {
-      const result = await api.goodsReceivedControllerResolveAllocation(grLine.goodsReceivedLineId, { body: JSON.stringify({
+      const result = await api.goodsReceivedControllerResolveAllocation(grLine.goodsReceivedLineId, {
         purchaseOrderLineId: poLine.purchaseOrderLineId,
         allocatedQuantity: qtyStr,
-      }) }) as any;
+      });
       // The API returns { success: true, splitLine: { ... } } if a split occurred
-      const splitLineData = result?.data?.splitLine || result?.splitLine;
+      const splitLineData = result?.data?.splitLine;
       
       let splitLine = null;
       if (splitLineData) {

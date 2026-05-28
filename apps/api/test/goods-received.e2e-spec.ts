@@ -417,7 +417,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const productStock = res.body.data.find(
+      const productStock = res.body.find(
         (p: any) => p.productId === appProductId,
       );
       expect(productStock).toBeDefined();
@@ -491,7 +491,7 @@ describe('API E2E — Goods Received (Dock Manifest)', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      const productStock = finalRes.body.data.find(
+      const productStock = finalRes.body.find(
         (p: any) => p.productId === appProductId,
       );
       expect(productStock).toBeDefined();

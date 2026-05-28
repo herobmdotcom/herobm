@@ -102,7 +102,7 @@ export function usePurchaseOrder(id: string) {
       (l: any) => parseFloat(l.quantityReceived || '0') > 0,
     );
     return [...allowedTransitions]
-      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED].includes(state as any))
+      .filter(state => ![PURCHASE_ORDER_STATE.RECEIVED, PURCHASE_ORDER_STATE.PARTIALLY_RECEIVED].some(s => s === state))
       .filter(state => {
         if (state === PURCHASE_ORDER_STATE.CANCELLED && anyReceived) return false;
         if (state === PURCHASE_ORDER_STATE.CLOSED_SHORT && !anyReceived) return false;
@@ -138,17 +138,12 @@ export function usePurchaseOrder(id: string) {
   const loadOrder = async (autoTransitions?: any[], showSpinner = true) => {
     if (showSpinner) setLoading(true);
     try {
-      const res: any = await api.purchaseOrdersControllerFindOne(id);
+      const res = await api.purchaseOrdersControllerFindOne(id);
       const data = res?.data || res;
-      // @ts-expect-error
-      setOrder(data);
-      // @ts-expect-error
+      setOrder(data as unknown as OrderDetail);
       setEditName(data.name || '');
-      // @ts-expect-error
       setEditReferenceNumber(data.referenceNumber || '');
-      // @ts-expect-error
       setEditNotes(data.notes || '');
-      // @ts-expect-error
       setEditLocationId(data.deliveryLocationId || null);
       setHeaderDirty(false);
 
@@ -167,8 +162,7 @@ export function usePurchaseOrder(id: string) {
     setReturnsLoading(true);
     try {
       const { data } = await api.purchaseReturnsControllerFindReturns(id);
-      // @ts-expect-error
-      setReturns(data || []);
+      setReturns(data as unknown as OrderReturn[] || []);
     } catch {
       setReturns([]);
     } finally {
@@ -179,8 +173,7 @@ export function usePurchaseOrder(id: string) {
   const loadInvoices = async () => {
     try {
       const { data } = await api.purchaseInvoiceControllerGetPurchaseBills(id);
-      // @ts-expect-error
-      setInvoices(data || []);
+      setInvoices(data as unknown as PurchaseInvoice[] || []);
     } catch {
       setInvoices([]);
     }
@@ -190,8 +183,7 @@ export function usePurchaseOrder(id: string) {
     setAllocationsLoading(true);
     try {
       const { data } = await api.allocationsControllerGetAllocationsByPo(id);
-      // @ts-expect-error
-      setAllocations(data || []);
+      setAllocations(data as unknown as Allocation[] || []);
     } catch {
       setAllocations([]);
     } finally {
@@ -205,8 +197,7 @@ export function usePurchaseOrder(id: string) {
   useEffect(() => {
     loadOrder();
     api.taxCategoriesControllerFindAll()
-      // @ts-expect-error
-      .then(res => setTaxCategories(res.data || []))
+      .then(res => setTaxCategories(res.data as unknown as TaxCategory[] || []))
       .catch((err) => reportError(err, 'OrderDetailPage'));
   }, [id]);
 
@@ -219,11 +210,11 @@ export function usePurchaseOrder(id: string) {
       PURCHASE_ORDER_STATE.INVOICED, 
       PURCHASE_ORDER_STATE.LEGACY, 
       PURCHASE_ORDER_STATE.ARCHIVED
-    ].includes(order?.stateCode as any || '')) {
+    ].some(s => s === order?.stateCode)) {
       loadInvoices();
       loadAllocations();
     }
-    if ([PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.LEGACY].includes(order?.stateCode as any || '')) {
+    if ([PURCHASE_ORDER_STATE.INVOICED, PURCHASE_ORDER_STATE.LEGACY].some(s => s === order?.stateCode)) {
       loadReturns();
     }
   }, [order?.stateCode]);
@@ -234,8 +225,8 @@ export function usePurchaseOrder(id: string) {
     const productIds = [...new Set(order.lines.map((l) => l.productId).filter(Boolean))];
     if (productIds.length === 0) return;
     setInventoryLoading(true);
-    api.inventoryControllerFindByProductIds({ productIds: productIds.join(',') })
-      .then((res) => setInventoryData(res.data))
+    api.inventoryControllerFindByProductIds({ productIds: productIds.join(','), locationId: '' })
+      .then((res) => setInventoryData(res.data || []))
       .catch((err) => reportError(err, 'OrderDetailPage'))
       .finally(() => setInventoryLoading(false));
   }, [activeTab, order]);
@@ -258,12 +249,11 @@ export function usePurchaseOrder(id: string) {
     setSaving(true);
     try {
       await api.purchaseOrdersControllerUpdate(id, {
-        name: editName || null,
-        referenceNumber: editReferenceNumber || null,
-        notes: editNotes || null,
-        // @ts-expect-error
-        deliveryLocationId: editLocationId || null,
-      } as any);
+        name: editName || undefined,
+        referenceNumber: editReferenceNumber || undefined,
+        notes: editNotes || undefined,
+        deliveryLocationId: editLocationId || undefined,
+      });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateOrder'));
@@ -274,7 +264,7 @@ export function usePurchaseOrder(id: string) {
 
   const changeState = async (newState: string) => {
     try {
-      await api.purchaseOrdersControllerChangeState(id, { stateCode: newState } as any);
+      await api.purchaseOrdersControllerChangeState(id, { stateCode: newState });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToChangeState'));
@@ -288,22 +278,23 @@ export function usePurchaseOrder(id: string) {
       const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
       const { data: newOrder } = await api.purchaseOrdersControllerCreate({
+        purchaseOrderId: crypto.randomUUID(),
         orderNumber: `PO-${today}-${rand}`,
         name: order.name ? `Copy of ${order.name}` : undefined,
-        vendorId: order.vendorId || undefined,
-        deliveryLocationId: order.deliveryLocationId || undefined,
+        vendorId: order.vendorId || '',
+        deliveryLocationId: order.deliveryLocationId || '',
         currencyCode: order.currencyCode || 'EUR',
         notes: order.notes || undefined,
         lines: order.lines.map((l) => ({
           productId: l.productId,
           productDescription: l.productDescription,
-          quantity: l.quantity,
-          pricePerUnit: l.pricePerUnit,
-          discountPercentage: l.discountPercentage || '0',
-          taxCategoryId: l.taxCategoryId || null,
+          quantity: String(l.quantity),
+          pricePerUnit: String(l.pricePerUnit),
+          discountPercentage: String(l.discountPercentage || '0'),
+          taxCategoryId: l.taxCategoryId || undefined,
           unitOfMeasure: l.unitOfMeasure || 'EA',
         })),
-      } as any);
+      });
       router.push(`/purchase-orders/${newOrder.purchaseOrderId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
@@ -315,7 +306,7 @@ export function usePurchaseOrder(id: string) {
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await api.purchaseOrdersControllerUpdateLine(id, lineId, { [field]: value } as any);
+      await api.purchaseOrdersControllerUpdateLine(id, lineId, { [field]: value });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -327,7 +318,7 @@ export function usePurchaseOrder(id: string) {
   const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
     setSaving(true);
     try {
-      await api.purchaseOrdersControllerUpdateLine(id, lineId, payload as any);
+      await api.purchaseOrdersControllerUpdateLine(id, lineId, payload);
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -360,7 +351,7 @@ export function usePurchaseOrder(id: string) {
         pricePerUnit: parseFloat(p.standardCost || p.tradePrice || p.listPrice || '0').toFixed(2),
         discountPercentage: '0',
         unitOfMeasure: 'EA',
-      } as any);
+      });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));
@@ -380,7 +371,7 @@ export function usePurchaseOrder(id: string) {
         pricePerUnit: '0.00',
         discountPercentage: '0',
         unitOfMeasure: 'EA',
-      } as any);
+      });
       await loadOrder(undefined, false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tCommon('errors.failedToAddLine'));

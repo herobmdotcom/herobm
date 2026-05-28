@@ -22,7 +22,7 @@ export default function PageNav({ sections }: PageNavProps) {
   
   return (
     <div
-        className="flex flex-col gap-1 items-end mr-5 self-center hidden md:flex"
+        className="flex flex-col gap-1 items-end self-center hidden md:flex"
         onMouseLeave={() => setHoveredSubId(null)}
     >
         {/* Top Row: Sub-pages & Direct anchors */}

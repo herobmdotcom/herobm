@@ -45,7 +45,7 @@ export default function NewAccountPage() {
   const [taxCategories, settaxCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    api.taxCategoriesControllerFindAll().then((res: any) => settaxCategories(res.data)).catch(console.error);
+    api.taxCategoriesControllerFindAll().then((res: unknown) => settaxCategories((res as { data: unknown[] }).data)).catch(console.error);
   }, []);
 
   const handleSubmit = async () => {
@@ -53,8 +53,8 @@ export default function NewAccountPage() {
     setSubmitting(true);
 
     try {
-      const res = await api.accountsControllerCreate(dto as any);
-      const customer = res.data as any;
+      const res = await api.accountsControllerCreate(dto);
+      const customer = res.data;
       toast.success(t('toast.accountCreated'));
       router.push(`/customers/${customer.customerId}`);
     } catch (err: any) {

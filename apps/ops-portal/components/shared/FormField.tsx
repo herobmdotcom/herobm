@@ -4,8 +4,8 @@ import { useTranslations } from 'next-intl';
 export interface FormFieldProps {
   type: 'string' | 'number' | 'integer' | 'boolean' | 'enum';
   title: string;
-  value: any;
-  onChange: (val: any) => void;
+  value: unknown;
+  onChange: (val: unknown) => void;
   required?: boolean;
   readOnly?: boolean;
   options?: string[]; // For enum
@@ -51,7 +51,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         <input
           type="number"
           className="input flex-1"
-          value={value ?? ''}
+          value={(value as string | number) ?? ''}
           onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
           disabled={readOnly}
           placeholder={description || ''}
@@ -68,7 +68,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         </label>
         <select
           className="input flex-1"
-          value={value ?? ''}
+          value={(value as string | number) ?? ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={readOnly}
         >
@@ -92,7 +92,7 @@ export const FormField: React.FC<FormFieldProps> = ({
       <input
         type="text"
         className="input flex-1"
-        value={value ?? ''}
+        value={(value as string | number) ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={readOnly}
         placeholder={description || ''}

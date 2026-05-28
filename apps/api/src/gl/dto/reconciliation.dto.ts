@@ -56,3 +56,44 @@ export class CreateAdjustmentDto {
   @IsNotEmpty()
   memo: string;
 }
+
+export class ReconciliationListResponseDto {
+  data!: any[];
+}
+
+export class CreateReconciliationResponseDto {
+  reconciliationId!: string;
+}
+
+export class ReconciliationDetailResponseDto {
+  reconciliationId!: string;
+  glAccountId!: string;
+  accountName!: string;
+  statementDate!: string;
+  statementBalance!: number;
+  status!: string;
+  openingBalance!: number;
+  clearedBalance!: number;
+  variance!: number;
+}
+
+export class UnreconciledLinesResponseDto {
+  data!: any[];
+}
+
+export class ToggleLineResponseDto {
+  success!: boolean;
+}
+
+export class PostReconciliationResponseDto {
+  success!: boolean;
+}
+
+export class DiscardReconciliationResponseDto {
+  success!: boolean;
+}
+
+export class CreateAdjustmentResponseDto {
+  success!: boolean;
+  journalEntryId!: string;
+}

@@ -172,7 +172,7 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    const physicalStock = inventoryRes.body.data.find(
+    const physicalStock = inventoryRes.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     expect(parseFloat(physicalStock?.quantityOnHand || '0')).toBe(0);
@@ -181,7 +181,7 @@ describe('Inventory Cycle (e2e)', () => {
       .get(`/api/inventory/by-products?productIds=${productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const stockAfter = invResAfter.body.data.find(
+    const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // QOH is 0 because the received goods are in the RECEIVING bin, which is excluded from availability
@@ -275,7 +275,7 @@ describe('Inventory Cycle (e2e)', () => {
       .get(`/api/inventory/by-products?productIds=${productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const stockAfter = invResAfter.body.data.find(
+    const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // The picking occurred from the RECEIVING bin (excluded) into the SHIPPING bin (excluded),
@@ -339,7 +339,7 @@ describe('Inventory Cycle (e2e)', () => {
       .get(`/api/inventory/by-products?productIds=${productId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
-    const stockAfter = invResAfter.body.data.find(
+    const stockAfter = invResAfter.body.find(
       (d: any) => d.productId === productId && d.locationId === locationId,
     );
     // QOH remains 0 because returns are received into the RECEIVING dock bin
@@ -354,12 +354,12 @@ describe('Inventory Cycle (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(invRes.body.data).toBeDefined();
-    expect(Array.isArray(invRes.body.data)).toBe(true);
+    expect(invRes.body).toBeDefined();
+    expect(Array.isArray(invRes.body)).toBe(true);
 
     // After all operations, the available stock across all locations is 0.
     // The physical 12 items (10 received + 2 returned) are in the receiving dock, and 4 in shipping, none in storage.
-    const totalQoh = invRes.body.data.reduce(
+    const totalQoh = invRes.body.reduce(
       (sum: number, row: any) => sum + parseFloat(row.quantityOnHand || '0'),
       0,
     );

@@ -332,27 +332,23 @@ export class PurchaseOrdersService {
       direction: direction,
       applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
         const cDate = c.createdOn;
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
-              and(
-                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                sql`${purchaseOrders.purchaseOrderId} < ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
-              and(
-                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
-                sql`${purchaseOrders.purchaseOrderId} > ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) < ${cDate}::timestamp`,
+                and(
+                  sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                  sql`${purchaseOrders.purchaseOrderId} < ${c.id}`,
+                ),
+              )
+            : or(
+                sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) > ${cDate}::timestamp`,
+                and(
+                  sql`COALESCE(${purchaseOrders.createdOn}, '1970-01-01T00:00:00.000Z'::timestamp) = ${cDate}::timestamp`,
+                  sql`${purchaseOrders.purchaseOrderId} > ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;

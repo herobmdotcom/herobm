@@ -61,21 +61,21 @@ export default function TopographyView() {
 
   const fetchLocations = () => {
     setLoading(true);
-    api.inventoryControllerFindAllLocations({} as any)
+    api.inventoryControllerFindAllLocations({} )
       .then((response) => {
-        const res = response.data as any;
+        const res = response.data;
         const data = Array.isArray(res) ? res : (res?.data || []);
-        setLocations(data);
+        setLocations(data as any);
       })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    api.inventoryControllerFindAllLocations({} as any)
+    api.inventoryControllerFindAllLocations({})
       .then((response) => {
-        const res = response.data as any;
+        const res = response.data;
         const data = Array.isArray(res) ? res : (res?.data || []);
-        setLocations(data);
+        setLocations(data as any);
         // Auto-expand first location
         if (data.length > 0) {
           setExpandedLocations(new Set([data[0].locationId]));
@@ -593,9 +593,9 @@ function LocationModal({ isOpen, onClose, onSuccess, editingLocation }: { isOpen
     setLoading(true);
     try {
       if (editingLocation) {
-        await api.locationsControllerUpdateLocation(editingLocation.locationId, { body: JSON.stringify(formData) });
+        await api.locationsControllerUpdateLocation(editingLocation.locationId, formData);
       } else {
-        await api.locationsControllerCreateLocation(formData as any);
+        await api.locationsControllerCreateLocation(formData);
       }
       toast.success(editingLocation ? t('updated') : t('created'));
       onSuccess();
@@ -683,9 +683,9 @@ function ZoneModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolea
     setLoading(true);
     try {
       if (initialData.zone) {
-        await api.locationsControllerUpdateZone(initialData.zone.zoneId, { body: JSON.stringify(body) });
+        await api.locationsControllerUpdateZone(initialData.zone.zoneId, formData);
       } else {
-        await api.locationsControllerCreateZone(body as any);
+        await api.locationsControllerCreateZone({ ...formData, locationId: initialData.locationId });
       }
       toast.success(initialData.zone ? t('updated') : t('created'));
       onSuccess();
@@ -763,9 +763,9 @@ function BinModal({ isOpen, onClose, onSuccess, initialData }: { isOpen: boolean
     setLoading(true);
     try {
       if (initialData.bin) {
-        await api.locationsControllerUpdateBin(initialData.bin.binId, { body: JSON.stringify(body) });
+        await api.locationsControllerUpdateBin(initialData.bin.binId, formData as any);
       } else {
-        await api.locationsControllerCreateBin(body as any);
+        await api.locationsControllerCreateBin({ ...formData, zoneId: initialData.zoneId } as any);
       }
       toast.success(initialData.bin ? tCommon('updated') : tCommon('created'));
       onSuccess();

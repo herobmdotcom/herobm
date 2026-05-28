@@ -1,4 +1,11 @@
 import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBody,
+} from '@nestjs/swagger';
+import {
   Controller,
   Get,
   Query,
@@ -13,17 +20,25 @@ import {
 } from '../auth/casbin.guard';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SystemLogResponseDto } from './dto';
 
 /**
  * Endpoint for streaming backend logs securely to the frontend Ops Portal.
  * Bypasses direct Docker socket exposure per Constitution (§ Inspector).
  */
+@ApiTags('System')
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), CasbinGuard)
 @CasbinResource('system_logs')
 export class SystemController {
   @Get('system-logs')
   @CasbinAction('read')
+  @ApiOperation({
+    summary: 'Get System Logs',
+    description:
+      'Retrieves tail of raw system logs for administrative monitoring.',
+  })
+  @ApiOkResponse({ type: SystemLogResponseDto })
   getSystemLogs(
     @Query('service') service?: string,
     @Query('lines') lines?: string,

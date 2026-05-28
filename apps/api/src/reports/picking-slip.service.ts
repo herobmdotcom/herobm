@@ -1,3 +1,4 @@
+import { PICKABLE_BIN_TYPES } from '../inventory/inventory-math.utils';
 import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { DRIZZLE } from '../drizzle/drizzle.module';
@@ -272,7 +273,7 @@ export class PickingSlipService {
           and(
             inArray(binContents.productId, productIds),
             eq(bins.isUnavailable, false),
-            inArray(bins.binType, ['storage', 'pick', 'bulk']),
+            inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
           ),
         );
 

@@ -7,6 +7,7 @@ import {
   IsIn,
   IsObject,
   IsBoolean,
+  IsArray,
 } from 'class-validator';
 
 // ---------------------------------------------------------------------------
@@ -211,4 +212,99 @@ export class ExecuteSetupDto {
   @IsOptional()
   @IsString()
   confirmReset?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Setup Response DTOs
+// ---------------------------------------------------------------------------
+import { ApiProperty } from '@nestjs/swagger';
+
+export class TestConnectionResultDto {
+  @ApiProperty()
+  @IsBoolean()
+  success: boolean;
+
+  @ApiProperty()
+  @IsString()
+  message: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  preview?: any;
+}
+
+export class ResumeStateDto {
+  @ApiProperty({ type: [String] })
+  @IsString({ each: true })
+  completedTables: string[];
+}
+
+export class JobResultDto {
+  @ApiProperty()
+  @IsString()
+  jobId: string;
+}
+
+export class ImportSummaryDto {
+  @ApiProperty()
+  @IsNumber()
+  products: number;
+
+  @ApiProperty()
+  @IsNumber()
+  customers: number;
+
+  @ApiProperty()
+  @IsNumber()
+  orders: number;
+}
+
+export class CsvMetadataDto {
+  @IsString()
+  id: string;
+
+  @IsString()
+  name: string;
+
+  @IsString()
+  uniqueKey: string;
+
+  @IsString({ each: true })
+  columns: string[];
+}
+
+export class ExecuteCsvDto {
+  @IsString()
+  tableName: string;
+
+  @IsString()
+  strategy: string;
+}
+
+export class JobProgressDto {
+  @ApiProperty()
+  @IsString()
+  status: string;
+
+  @ApiProperty({ type: [Object], required: false })
+  @IsArray()
+  progress: any[];
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  logs: string[];
+}
+
+export class SetupValidationDto {
+  @ApiProperty()
+  @IsString()
+  status: string;
+
+  @ApiProperty({ type: Object, required: false })
+  @IsObject()
+  metrics: Record<string, any>;
+
+  @ApiProperty({ type: Object, required: false })
+  @IsObject()
+  dataCounts: Record<string, number>;
 }

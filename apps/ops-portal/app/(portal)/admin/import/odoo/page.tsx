@@ -59,7 +59,7 @@ export default function OdooImportPage() {
   useEffect(() => {
     if (step === 'preview') {
       api.setupControllerGetResumeStateOdoo()
-        .then(res => setCompletedTables((res as any)?.completedTables || []))
+        .then((res: any) => setCompletedTables((res?.completedTables as string[]) || []))
         .catch(() => setCompletedTables([]));
     }
     return () => {
@@ -75,7 +75,7 @@ export default function OdooImportPage() {
   const handleTestConnection = async () => {
     try {
       setLoading(true);
-      const res = await api.setupControllerTestOdoo({
+      const res: any = await api.setupControllerTestOdoo({
         host: config.host,
         port: parseInt(config.port, 10),
         database: config.database,
@@ -135,7 +135,7 @@ export default function OdooImportPage() {
       setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`]);
       setStatus('starting');
 
-      const res = await api.setupControllerExecuteElt(executePayload as any);
+      const res: any = await (api as any).setupControllerExecuteElt(executePayload as any);
       jobIdRef.current = res.jobId;
       setStatus('running');
       startPolling(res.jobId);
@@ -149,7 +149,7 @@ export default function OdooImportPage() {
   const startPolling = (jobId: string) => {
     pollTimerRef.current = setInterval(async () => {
       try {
-        const progressRes = await api.setupControllerGetProgress(jobId);
+        const progressRes: any = await api.setupControllerGetProgress(jobId);
         if (progressRes) {
           if (progressRes.logs && progressRes.logs.length > 0) {
              setLogs([`--- Initializing Odoo Extract-Load-Transform pipeline ---`, `Submitting secure authorized configuration...`, ...progressRes.logs]);
@@ -463,7 +463,7 @@ export default function OdooImportPage() {
            <button
             onClick={() => {
               api.setupControllerGetImportSummary().then(summary => {
-                 setImportSummary(summary as any);
+                 setImportSummary(summary as unknown as import('@modbm/sdk').ImportSummaryDto);
                  setStep('finalisation');
               }).catch(err => {
                  reportError(err, 'OdooImportPage.pollProgress.importSummary');

@@ -64,18 +64,53 @@ export class PaginationQuery {
   purchaseOrderId?: string;
 }
 
+import { applyDecorators, Type } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  getSchemaPath,
+  ApiProperty,
+  ApiExtraModels,
+  ApiHideProperty,
+} from '@nestjs/swagger';
+
 /**
  * Canonical paginated response.
  *
  * All list endpoints must return this shape: { data, limit, total, nextCursor, prevCursor }.
  */
-export interface PaginatedResponse<T> {
+export class PaginatedResponse<T> {
   data: T[];
+  @ApiProperty()
   limit: number;
+  @ApiProperty({ required: false })
   page?: number;
+  @ApiProperty({ required: false })
   total?: number; // Optional, total rows can be slow
+  @ApiProperty({ required: false })
   nextCursor?: string;
+  @ApiProperty({ required: false })
   prevCursor?: string;
+}
+
+export function ApiPaginatedResponse<TModel extends Type<any>>(model: TModel) {
+  return applyDecorators(
+    ApiExtraModels(PaginatedResponse, model),
+    ApiOkResponse({
+      schema: {
+        allOf: [
+          { $ref: getSchemaPath(PaginatedResponse) },
+          {
+            properties: {
+              data: {
+                type: 'array',
+                items: { $ref: getSchemaPath(model) },
+              },
+            },
+          },
+        ],
+      },
+    }),
+  );
 }
 
 export function parsePagination(query?: PaginationQuery) {
@@ -198,20 +233,36 @@ export async function withCursorPagination<T = any>({
   }
 
   query = applyOrderBy(query, direction);
-  query = query.limit(limit);
+  query = query.limit(limit + 1);
 
-  const rows = await query;
+  const rawRows = await query;
+  const hasMore = rawRows.length > limit;
+  const rows = hasMore ? rawRows.slice(0, limit) : rawRows;
 
   if (direction === 'prev') {
     rows.reverse();
   }
 
-  const nextCursor =
-    rows.length > 0
-      ? encodeCursor(encodeRow(rows[rows.length - 1]))
-      : undefined;
-  const prevCursor =
-    rows.length > 0 ? encodeCursor(encodeRow(rows[0])) : undefined;
+  let nextCursor: string | undefined;
+  let prevCursor: string | undefined;
+
+  if (direction === 'next') {
+    nextCursor =
+      hasMore && rows.length > 0
+        ? encodeCursor(encodeRow(rows[rows.length - 1]))
+        : undefined;
+    prevCursor =
+      cursorObj && rows.length > 0
+        ? encodeCursor(encodeRow(rows[0]))
+        : undefined;
+  } else {
+    prevCursor =
+      hasMore && rows.length > 0 ? encodeCursor(encodeRow(rows[0])) : undefined;
+    nextCursor =
+      rows.length > 0
+        ? encodeCursor(encodeRow(rows[rows.length - 1]))
+        : undefined;
+  }
 
   return { data: rows, nextCursor, prevCursor };
 }

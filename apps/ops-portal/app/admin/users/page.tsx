@@ -74,8 +74,8 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const res: any = await api.usersControllerFindAll();
-      setUsers(res?.data || res || []);
+      const res: unknown = await api.usersControllerFindAll();
+      setUsers((res as any)?.data || res || []);
     } catch (err: any) {
       toast.error(t('toasts.loadFailed') + ': ' + err.message);
     } finally {
@@ -159,7 +159,7 @@ export default function UsersPage() {
 
   const toggleActive = async (user: User) => {
     try {
-      await api.usersControllerToggleActive(user.userId);
+      await api.usersControllerToggleActive(user.userId, {});
       toast.success(t('toasts.toggled'));
       loadUsers();
     } catch (err: any) {

@@ -74,3 +74,17 @@ export class UpdateUserDto {
   @MaxLength(255)
   email?: string;
 }
+
+export class UserResponseDto {
+  id: string;
+  username: string;
+  role: string;
+  isActive: boolean;
+  displayName: string | null;
+  email: string | null;
+  tenantId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class EmptyBodyDto {}

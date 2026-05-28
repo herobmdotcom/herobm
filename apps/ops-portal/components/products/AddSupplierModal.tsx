@@ -66,7 +66,7 @@ export default function AddSupplierModal({
     setLoading(true);
     try {
       const res = await api.customFetch<any>(`/suppliers?limit=15&q=${encodeURIComponent(q)}`, { method: 'GET' });
-      setSuppliers(res.data?.data || []);
+      setSuppliers(res.data || []);
       setLastSearchQuery(q);
     } catch (err: any) {
       // quiet fail

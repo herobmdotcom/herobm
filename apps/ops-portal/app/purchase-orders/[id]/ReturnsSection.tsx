@@ -228,21 +228,18 @@ export default function ReturnsSection({
     const fetchReturns = async () => {
       try {
         setLoading(true);
-        const listData = await api.purchaseReturnsControllerFindReturns(orderId);
-        // @ts-expect-error
-        const fetchedReturns = listData.data || [];
+        const listData = await api.purchaseReturnsControllerFindReturns(orderId) ;
+        const fetchedReturns = Array.isArray(listData) ? listData : (listData as any)?.data || [];
         
         // Fetch full data including lines for each setup
         const detailedReturns = await Promise.all(
-          // @ts-expect-error
-          fetchedReturns.map((rec) => 
+          fetchedReturns.map((rec: any) => 
             api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
           )
         );
 
         if (active) {
-          // @ts-expect-error
-          setReturns(detailedReturns.map(r => r.data));
+          setReturns((detailedReturns.map(r => (r).data || r)) as unknown as Return[]);
         }
       } catch (err) {
         // safely ignore missing if not supported yet, or show empty
@@ -257,15 +254,14 @@ export default function ReturnsSection({
 
   const refreshReturns = () => {
     setLoading(true);
-    api.purchaseReturnsControllerFindReturns(orderId).then(async (listData) => {
+    api.purchaseReturnsControllerFindReturns(orderId).then(async (listData: unknown) => {
+      const fetchedReturns: any[] = (listData as any).data || listData || [];
       const detailedReturns = await Promise.all(
-        // @ts-expect-error
-        (listData.data || []).map((rec) => 
+        fetchedReturns.map((rec) => 
           api.purchaseReturnsControllerFindReturn(orderId, rec.returnId)
         )
       );
-      // @ts-expect-error
-      setReturns(detailedReturns.map(r => r.data));
+      setReturns(detailedReturns.map(r => (r as any).data || r) as any);
       setLoading(false);
     });
   };

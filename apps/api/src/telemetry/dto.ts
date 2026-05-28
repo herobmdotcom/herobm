@@ -17,3 +17,5 @@ export class ClientErrorDto {
   @IsUrl({ require_tld: false })
   url?: string;
 }
+
+export class EmptyBodyDto {}

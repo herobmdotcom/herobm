@@ -47,8 +47,8 @@ export default tseslint.config(
         'error',
         {
           // ADV-047: Ensure DTO properties have validation decorators (requires them to have at least one decorator)
-          selector: "ClassDeclaration[id.name=/.*Dto/] > ClassBody > PropertyDefinition:not(:has(Decorator))",
-          message: "ADV-047: All DTO properties must have at least one @class-validator decorator (e.g., @IsString, @IsOptional) so the global ValidationPipe whitelist doesn't strip them."
+          selector: "ClassDeclaration[id.name=/.*Dto$/][id.name!=/.*ResponseDto$/][id.name!='EmptyBodyDto'][id.name!=/^Global.*Dto$/][id.name!=/^Paginated.*Dto$/] > ClassBody > PropertyDefinition:not(:has(Decorator))",
+          message: "ADV-047: All Request DTO properties must have at least one @class-validator decorator (e.g., @IsString, @IsOptional) so the global ValidationPipe whitelist doesn't strip them."
         },
         {
           // ADV-047 (Addendum): Ensure DTO classes are exported

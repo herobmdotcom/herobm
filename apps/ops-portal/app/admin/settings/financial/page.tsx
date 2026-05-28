@@ -152,14 +152,11 @@ export default function FinancialSettingsPage() {
       setGlLoading(true);
       const [settingsRes, accountsRes] = await Promise.all([
         api.glControllerGetSettings(),
-        api.glControllerGetAccounts({})
+        api.glControllerGetAccounts({} as any)
       ]);
-      // @ts-expect-error
-      setGlSettings(settingsRes.data || {});
-      // @ts-expect-error
-      setGlAccounts(accountsRes.data || []);
-      // @ts-expect-error
-      setSchemaObj(settingsRes.data?.accountMetadataSchema || { type: 'object', properties: {} });
+      setGlSettings(settingsRes.data);
+      setGlAccounts(accountsRes.data);
+      setSchemaObj((settingsRes.data as any).accountMetadataSchema || { type: 'object', properties: {} });
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.gl }) + ': ' + err.message);
     } finally {
@@ -167,13 +164,12 @@ export default function FinancialSettingsPage() {
     }
   };
 
-  const updateGlSetting = async (field: string, value: any) => {
+  const updateGlSetting = async (field: string, value: unknown) => {
     try {
       const payload = { [field]: value };
-      const res = await api.glControllerUpdateSettings({ body: JSON.stringify(payload) });
-      // @ts-expect-error
+      const res = await api.glControllerUpdateSettings(payload);
       const updated = res.data;
-      setGlSettings(Object.assign({}, glSettings || {}, updated || {}));
+      setGlSettings(Object.assign({}, glSettings || {}, updated));
       toast.success('Settings updated');
     } catch (err: any) {
       toast.error(err.message);
@@ -196,7 +192,7 @@ export default function FinancialSettingsPage() {
     setSchemaEditorOpen(true);
   };
 
-  const coaEdit = (acct: any) => { setCoaEditingId(acct.glAccountId); setCoaForm({ ...acct }); setCoaCreating(false); };
+  const coaEdit = (acct: unknown) => { setCoaEditingId((acct as { glAccountId: string }).glAccountId); setCoaForm({ ...(acct as object) }); setCoaCreating(false); };
   const coaCreate = (parentId?: string, parentAccountType?: string) => { setCoaCreating(true); setCoaEditingId(null); setCoaForm({ accountCode: '', name: '', accountType: parentAccountType || GL_ACCOUNT_TYPE.EXPENSE, parentAccountId: parentId || null, isGroup: false, isBankAccount: false, currencyCode: 'AUD', isActive: true }); };
   const coaCancel = () => { setCoaEditingId(null); setCoaCreating(false); };
 
@@ -205,16 +201,10 @@ export default function FinancialSettingsPage() {
     try {
       const payload = { ...coaForm };
       if (coaEditingId) {
-        await api.glControllerUpdateAccount(coaEditingId, {
-          body: JSON.stringify({
-            name: payload.name,
-            isActive: payload.isActive,
-            isBankAccount: payload.isBankAccount
-          })
-        });
+        await api.glControllerUpdateAccount(coaEditingId, payload);
         toast.success('Saved');
       } else {
-        await api.glControllerCreateAccount({ body: JSON.stringify(payload) });
+        await api.glControllerCreateAccount(payload);
         toast.success('Saved');
       }
       coaCancel(); loadGl();
@@ -227,9 +217,8 @@ export default function FinancialSettingsPage() {
     try {
       setTaxLoading(true);
       const res = await api.taxCategoriesControllerFindAll();
-      const rawData: any = res.data;
-      const data = (rawData?.data || rawData || []) as TaxCategory[];
-      setCategories([...data].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+      const data = res.data;
+      setCategories([...data].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })) as unknown as TaxCategory[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.tax }) + ': ' + err.message);
     } finally {
@@ -267,8 +256,7 @@ export default function FinancialSettingsPage() {
     try {
       setRateLoading(true);
       const res = await api.exchangeRatesControllerFindAll();
-      const rawData: any = res.data;
-      setRates(rawData?.data || rawData || []);
+      setRates(res.data as unknown as ExchangeRate[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.rates }) + ': ' + err.message);
     } finally {
@@ -315,8 +303,7 @@ export default function FinancialSettingsPage() {
     try {
       setCcLoading(true);
       const res = await api.costCentersControllerFindAll();
-      const rawData: any = res.data;
-      setCcs(rawData?.data || rawData || []);
+      setCcs(res.data as unknown as CostCenter[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.cc }) + ': ' + err.message);
     } finally {
@@ -350,7 +337,7 @@ export default function FinancialSettingsPage() {
   const ccDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteCc'))) return;
     try { 
-      await api.costCentersControllerRemove(id); 
+      await api.costCentersControllerDelete(id); 
       toast.success(tSettings('toasts.ccDeleted')); 
       loadCcs(); 
     }
@@ -361,7 +348,6 @@ export default function FinancialSettingsPage() {
     setIsImporting(true);
     try {
       const res = await api.costCentersControllerImport(data);
-      // @ts-expect-error
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadCcs();
@@ -378,8 +364,7 @@ export default function FinancialSettingsPage() {
     try {
       setActivityLoading(true);
       const res = await api.activitiesControllerFindAll();
-      const rawData: any = res.data;
-      setActivitiesData(rawData?.data || rawData || []);
+      setActivitiesData(res.data as unknown as Activity[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: areaMap.activity }) + ': ' + err.message);
     } finally {
@@ -413,7 +398,7 @@ export default function FinancialSettingsPage() {
   const activityDelete = async (id: string) => {
     if (!confirm(tSettings('confirmations.deleteActivity'))) return;
     try { 
-      await api.activitiesControllerRemove(id); 
+      await api.activitiesControllerDelete(id); 
       toast.success(tSettings('toasts.activityDeleted')); 
       loadActivities(); 
     }
@@ -424,7 +409,6 @@ export default function FinancialSettingsPage() {
     setIsImporting(true);
     try {
       const res = await api.activitiesControllerImport(data);
-      // @ts-expect-error
       const responseData = res.data;
       toast.success(tSettings('toasts.importSuccess', { count: responseData.count }));
       loadActivities();

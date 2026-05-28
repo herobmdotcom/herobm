@@ -6,6 +6,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useSettings } from '@/components/SettingsProvider';
 import { reportError } from '@/lib/api';
 import * as api from '@modbm/sdk';
+import toast from 'react-hot-toast';
 import DataGrid from '@/components/DataGrid';
 import Link from 'next/link';
 import POAllocationCell from './POAllocationCell';
@@ -24,7 +25,7 @@ export default function GoodsReceivedListPage() {
     const [selectedLocationId, setSelectedLocationId] = useState<string>('');
 
     useEffect(() => {
-        api.inventoryControllerFindAllLocations()
+        api.inventoryControllerFindAllLocations({} )
             .then((response: any) => {
                 const locs = response.data || [];
                 setLocations(locs);
@@ -60,7 +61,10 @@ export default function GoodsReceivedListPage() {
             const errors: string[] = [];
             for (const row of eligible) {
                 try {
-                    await api.goodsReceivedControllerQuarantineAllocation(row.goodsReceivedLineId, { body: JSON.stringify({ reason }) });
+                    if (reason) {
+                        await api.inventoryControllerToggleQuarantine(row.goodsReceivedLineId, { reason } as unknown as import('@modbm/sdk').ToggleQuarantineDto);
+                        toast.success('Line quarantined successfully');
+                    }
                 } catch (err: any) {
                     errors.push(err.message || `Failed for ${row.receiptNumber}`);
                 }
@@ -89,7 +93,7 @@ export default function GoodsReceivedListPage() {
         }
 
         try {
-            await api.goodsReceivedControllerCancelReception(receiptId);
+            await api.goodsReceivedControllerCancelReception(receiptId, {});
             triggerRefresh();
             setSelectedRows([]);
         } catch (err: any) {

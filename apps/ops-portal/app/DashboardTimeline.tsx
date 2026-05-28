@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { apiFetch } from '@/lib/api';
+import * as api from '@modbm/sdk';
 import { EventType } from './TimelineSettingsSlideOver';
 import Link from 'next/link';
 
@@ -65,10 +65,9 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
 
     async function fetchTimeline() {
       try {
-        const queryParams = new URLSearchParams({ types: enabledEvents.join(',') }).toString();
-        const result = await apiFetch<{ events: TimelineEvent[] }>(`/api/dashboard/timeline?${queryParams}`);
+        const result = await api.dashboardControllerGetTimeline({ types: enabledEvents.join(','), limit: '20' } as any);
         if (mounted) {
-          setData(result);
+          setData(result.data as unknown as { events: TimelineEvent[] });
           setError(false);
         }
       } catch (err) {
@@ -146,7 +145,7 @@ export default function DashboardTimeline({ enabledEvents }: Props) {
               </div>
               
               <div className="text-[13px] opacity-80 mt-1" style={{ color: 'var(--text-muted)' }}>
-                {t(`types.${evt.eventType}` as any)}
+                {t(('types.' + evt.eventType) as any)}
                 {evt.actor && (
                   <span className="opacity-70 ml-1">
                     {tCommon('by')} {evt.actor}

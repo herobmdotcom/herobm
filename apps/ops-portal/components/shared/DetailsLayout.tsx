@@ -5,7 +5,7 @@ import React from 'react';
 export default function DetailsLayout({ header, children }: { header: React.ReactNode, children: React.ReactNode }) {
   return (
     <div className="flex-1 flex flex-col h-full w-full overflow-hidden">
-      <div className="px-4 lg:px-6 pt-4 lg:pt-6 shrink-0 pb-3 border-b border-[rgba(196,198,205,0.2)] bg-white">
+      <div className="px-4 lg:px-6 py-4 lg:py-6 shrink-0 border-b border-[rgba(196,198,205,0.2)] bg-white">
         <div className="w-full">
           {header}
         </div>

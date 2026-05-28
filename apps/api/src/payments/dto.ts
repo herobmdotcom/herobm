@@ -85,3 +85,29 @@ export class BatchPaymentActionDto {
   @IsString({ each: true })
   paymentIds: string[];
 }
+
+export class PaymentResponseDto {
+  paymentId: string;
+  paymentNumber: string;
+  paymentType: string;
+  partyType: string;
+  partyId: string;
+  paymentDate: Date | string;
+  modeOfPayment: string;
+  totalAmount: string | number;
+  unallocatedAmount: string | number;
+  stateCode: string;
+  currencyCode: string;
+  glAccountBank: string;
+  referenceNumber: string | null;
+  createdOn: Date | string;
+  createdBy: string;
+  partyName: string;
+}
+export class ExportAbaResponseDto {
+  fileContent: string;
+}
+export class ConfirmRejectResponseDto {
+  success: boolean;
+}
+export class EmptyBodyDto {}

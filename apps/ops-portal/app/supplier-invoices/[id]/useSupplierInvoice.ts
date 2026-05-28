@@ -96,7 +96,7 @@ export function useSupplierInvoice(id: string) {
     setLoading(true);
     api.invoiceDetailControllerGetPurchaseBillDetails(id)
       .then((res: any) => {
-        const data = res.data ? res.data : res;
+        const data = (res as any).data ? (res as any).data : res;
         setInvoice(data);
         setEditSupplierInvoiceNumber(data.supplierInvoiceNumber || '');
         setEditReceiptFilename(data.receiptFilename || '');
@@ -112,8 +112,8 @@ export function useSupplierInvoice(id: string) {
 
   useEffect(() => {
     loadInvoice();
-    api.glControllerGetAccounts({} as any)
-      .then((res: any) => setGlAccounts(res.data || []))
+    api.glControllerGetAccounts({} as unknown as Parameters<typeof api.glControllerGetAccounts>[0])
+      .then((res: unknown) => setGlAccounts((res as { data: unknown[] }).data || []))
       .catch(err => reportError(err, 'useSupplierInvoice'));
   }, [id, refreshKey]);
 
@@ -142,7 +142,7 @@ export function useSupplierInvoice(id: string) {
         taxAmount: editTaxAmount || '0.00',
         notes: editNotes || null,
         vendorId: newVendorId || editVendorId || invoice.vendorId,
-      } as any);
+      } as unknown as import('@modbm/sdk').UpdatePurchaseInvoiceDto);
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to update invoice');
@@ -165,7 +165,7 @@ export function useSupplierInvoice(id: string) {
       await api.invoiceDetailControllerChangeInvoiceState(id, { 
         stateCode: newState,
         discrepanciesAcknowledged: discrepancies.length > 0 ? isAcknowledged : undefined
-      } as any);
+      } as unknown as Parameters<typeof api.invoiceDetailControllerChangeInvoiceState>[1]);
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to change state');
@@ -174,7 +174,7 @@ export function useSupplierInvoice(id: string) {
 
   const handleAutoMatch = async (purchaseOrderId: string) => {
     try {
-      await api.invoiceDetailControllerAutoMatchPurchaseOrder(id, { body: JSON.stringify({ purchaseOrderId }) });
+      await api.invoiceDetailControllerAutoMatchPurchaseOrder(id, { purchaseOrderId });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to auto-match PO');
@@ -183,7 +183,7 @@ export function useSupplierInvoice(id: string) {
 
   const handlePanelMatch = async (invoiceLineId: string, purchaseOrderLineId: string) => {
     try {
-      await api.invoiceDetailControllerResolveInvoiceLine(invoiceLineId, { body: JSON.stringify({ purchaseOrderLineId }) });
+      await api.invoiceDetailControllerResolveInvoiceLine(invoiceLineId, { purchaseOrderLineId });
       loadInvoice();
       const nextUnmatched = invoice?.lines.find(
         (l) => l.lineId !== invoiceLineId && l.matchStatus !== MATCH_STATUS.MATCHED
@@ -197,7 +197,7 @@ export function useSupplierInvoice(id: string) {
   const updateLine = async (lineId: string, field: string, value: string) => {
     setSaving(true);
     try {
-      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { body: JSON.stringify({ [field]: value }) });
+      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { [field]: value });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to update line');
@@ -222,11 +222,7 @@ export function useSupplierInvoice(id: string) {
   const addBlankLine = async () => {
     setSaving(true);
     try {
-      await api.invoiceDetailControllerAddInvoiceLine(id, { body: JSON.stringify({
-        description: '',
-        quantityInvoiced: '1',
-        pricePerUnit: '0.00'
-      }) });
+      await api.invoiceDetailControllerAddInvoiceLine(id, { description: '', quantityInvoiced: 1, pricePerUnit: 0 });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to add line');
@@ -238,11 +234,7 @@ export function useSupplierInvoice(id: string) {
   const addRoundingLine = async () => {
     setSaving(true);
     try {
-      await api.invoiceDetailControllerAddInvoiceLine(id, { body: JSON.stringify({
-        description: 'Rounding Adjustment',
-        quantityInvoiced: '1',
-        pricePerUnit: '0.00'
-      }) });
+      await api.invoiceDetailControllerAddInvoiceLine(id, { description: 'Rounding Adjustment', quantityInvoiced: 1, pricePerUnit: 0 });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to add rounding line');
@@ -254,10 +246,10 @@ export function useSupplierInvoice(id: string) {
   const handleProductSelect = async (lineId: string, product: { productId: string; productNumber: string; name: string }) => {
     setSaving(true);
     try {
-      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, { body: JSON.stringify({
+      await api.invoiceDetailControllerUpdateInvoiceLine(id, lineId, {
         productId: product.productId,
         description: product.name,
-      }) });
+      });
       loadInvoice();
     } catch (err: any) {
       alert(err.message || 'Failed to set product');

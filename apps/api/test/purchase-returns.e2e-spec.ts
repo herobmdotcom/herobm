@@ -227,11 +227,22 @@ describe('API E2E — Purchase Order Returns', () => {
     });
 
     it('POST /returns/:id/action — actions the return (deducts inventory)', async () => {
-      const res = await request(app.getHttpServer())
+      // Stage the return first
+      await request(app.getHttpServer())
         .post(
-          `/api/purchase-orders/${purchaseOrderId}/returns/${returnId}/action`,
+          `/api/purchase-orders/${purchaseOrderId}/returns/${returnId}/stage`,
         )
         .set('Authorization', `Bearer ${adminToken}`)
+        .send({})
+        .expect(201);
+
+      // Ship the return
+      const res = await request(app.getHttpServer())
+        .post(
+          `/api/purchase-orders/${purchaseOrderId}/returns/${returnId}/ship`,
+        )
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({})
         .expect(201);
 
       expect(res.body.returnId).toBe(returnId);

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsNotEmpty,
@@ -48,4 +49,24 @@ export class UpdateTaxCategoryDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+}
+
+export class TaxCategoryResponseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  code!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty({ required: false })
+  rate?: string;
+
+  @ApiProperty()
+  isDefault!: boolean;
 }

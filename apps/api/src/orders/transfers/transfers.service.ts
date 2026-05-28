@@ -1,3 +1,4 @@
+import { PICKABLE_BIN_TYPES } from '../../inventory/inventory-math.utils';
 import {
   Injectable,
   BadRequestException,
@@ -262,7 +263,7 @@ export class TransferService {
               and(
                 eq(binContents.productId, line.productId),
                 eq(zones.locationId, order.sourceLocationId),
-                inArray(bins.binType, ['storage', 'pick', 'bulk']),
+                inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
                 eq(bins.isUnavailable, false),
                 eq(bins.isBonded, false),
               ),
@@ -333,7 +334,7 @@ export class TransferService {
               where: eq(transferOrders.transferOrderId, transferOrderId),
             }))!.sourceLocationId,
           ),
-          inArray(bins.binType, ['storage', 'pick', 'bulk']),
+          inArray(bins.binType, [...PICKABLE_BIN_TYPES]),
           eq(bins.isUnavailable, false),
           eq(bins.isBonded, false),
         ),
@@ -1066,8 +1067,9 @@ export class TransferService {
       )
       .$dynamic();
 
-    if (conditions.length > 0) {
-      qb = qb.where(and(...conditions));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    if (whereClause) {
+      qb = qb.where(whereClause);
     }
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -1076,27 +1078,23 @@ export class TransferService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { createdOn: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${transferOrders.createdOn} < ${c.createdOn}`,
-              and(
-                eq(transferOrders.createdOn, new Date(c.createdOn)),
-                sql`${transferOrders.transferOrderId} < ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${transferOrders.createdOn} > ${c.createdOn}`,
-              and(
-                eq(transferOrders.createdOn, new Date(c.createdOn)),
-                sql`${transferOrders.transferOrderId} > ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${transferOrders.createdOn} < ${c.createdOn}`,
+                and(
+                  eq(transferOrders.createdOn, new Date(c.createdOn)),
+                  sql`${transferOrders.transferOrderId} < ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${transferOrders.createdOn} > ${c.createdOn}`,
+                and(
+                  eq(transferOrders.createdOn, new Date(c.createdOn)),
+                  sql`${transferOrders.transferOrderId} > ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? desc : asc;

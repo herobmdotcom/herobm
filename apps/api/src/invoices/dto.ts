@@ -88,3 +88,43 @@ export class CreateStandaloneInvoiceDto {
   @Type(() => CreateStandaloneInvoiceLineDto)
   lines?: CreateStandaloneInvoiceLineDto[];
 }
+
+export class ChangeInvoiceStateDto {
+  @IsString()
+  stateCode!: string;
+
+  @IsOptional()
+  discrepanciesAcknowledged?: boolean;
+}
+
+export class ResolveInvoiceLineDto {
+  @IsUUID()
+  purchaseOrderLineId!: string;
+}
+
+export class AutoMatchPurchaseOrderDto {
+  @IsUUID()
+  purchaseOrderId!: string;
+}
+
+export class UpdateInvoiceLineDto {
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsUUID()
+  productId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  glAccountId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  quantityInvoiced?: number;
+
+  @IsOptional()
+  @IsNumber()
+  pricePerUnit?: number;
+}

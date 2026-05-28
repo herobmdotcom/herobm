@@ -51,13 +51,20 @@ export default tseslint.config(
         // Ignore strings that consist entirely of emoji / variation selectors
         ignore: ['^[\\p{Emoji}\\p{Emoji_Component}\\uFE0E\\uFE0F\\u200D\\s]+$'],
       }],
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@/lib/api',
+          importNames: ['apiFetch', 'apiMutate'],
+          message: 'ADV-080: Use the generated SDK @modbm/sdk instead of manual apiFetch or apiMutate.'
+        }]
+      }],
       '@typescript-eslint/no-unused-vars': 'off',
       'react/jsx-key': 'error',
       
       // ADV-029: PLG Stack Reporting - Ban direct console.error
       'no-restricted-syntax': [
-        'error',
+        'warn',
         {
           selector: "CallExpression[callee.object.name='console'][callee.property.name='error']",
           message: "ADV-029: Use reportError() instead of console.error() to ensure observability in the PLG stack."

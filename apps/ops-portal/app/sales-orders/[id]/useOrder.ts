@@ -56,10 +56,11 @@ export function useOrder(id: string) {
     const [locations, setLocations] = useState<{ locationId: string; name: string }[]>([]);
 
     useEffect(() => {
-        // @ts-expect-error missing typings
         api.inventoryControllerFindAllLocations()
-            .then((res: any) => setLocations(res.data || res))
-            .catch((err: any) => reportError(err, 'Locations_Fetch'));
+            .then((res) => {
+                setLocations((res.data?.data || []) as { locationId: string; name: string }[]);
+            })
+            .catch((err) => reportError(err, 'Locations_Fetch'));
     }, []);
 
     /* ── Editable header fields ──────────────────────────────────── */
@@ -99,23 +100,22 @@ export function useOrder(id: string) {
         if (showSpinner) setLoading(true);
         try {
             const [data, pData] = await Promise.all([
-                // @ts-expect-error missing typings
                 api.ordersControllerFindOne(encodeURIComponent(id)),
-                // @ts-expect-error missing typings
                 api.orderPickingControllerGetPickingSummary(encodeURIComponent(id)).catch(() => null),
             ]);
-            setOrder(data?.data || data);
-            setPickingSummary(pData?.data || pData);
-            setEditName(data?.data?.name || data?.name || '');
-            setEditPO(data?.data?.customerOrderNumber || data?.customerOrderNumber || '');
-            setEditNotes(data?.data?.notes || data?.notes || '');
-            setEditFulfillmentLocationId(data?.data?.fulfillmentLocationId || data?.fulfillmentLocationId || '');
-            setDiscrepanciesAcknowledged(data?.data?.discrepanciesAcknowledged || data?.discrepanciesAcknowledged || false);
+            const orderData = data as any;
+            setOrder(orderData);
+            setEditName(orderData?.name || '');
+            setEditPO(orderData?.customerOrderNumber || '');
+            setEditNotes(orderData?.notes || '');
+            setEditFulfillmentLocationId(orderData?.fulfillmentLocationId || '');
+            setDiscrepanciesAcknowledged(orderData?.discrepanciesAcknowledged || false);
+            setPickingSummary(pData?.data);
             setHeaderDirty(false);
 
             if (autoTransitions && autoTransitions.length > 0) {
                 const tr = autoTransitions[0];
-                toast(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as any), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
+                toast(tToast('orderMovedToReason', { state: tCommon(`states.${tr.to}` as Parameters<typeof tCommon>[0]), reason: tr.reason.toLowerCase() }), { icon: '🔄' });
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToLoadOrder'));
@@ -127,9 +127,8 @@ export function useOrder(id: string) {
     const loadReturns = async () => {
         setReturnsLoading(true);
         try {
-            // @ts-expect-error missing typings
             const data = await api.orderReturnsControllerFindReturns(encodeURIComponent(id));
-            setReturns(data);
+            setReturns(data as unknown as OrderReturn[] || []);
         } catch {
             setReturns([]);
         } finally {
@@ -139,9 +138,8 @@ export function useOrder(id: string) {
 
     const loadInvoices = async () => {
         try {
-            // @ts-expect-error missing typings
             const res = await api.salesInvoiceControllerGetSalesInvoices(encodeURIComponent(id));
-            setInvoices(res?.data || res || []);
+            setInvoices(res?.data as unknown as SalesInvoice[] || []);
         } catch {
             setInvoices([]);
         }
@@ -152,18 +150,14 @@ export function useOrder(id: string) {
     // Initial load
     useEffect(() => {
         loadOrder();
-        // @ts-expect-error missing typings
-        api.taxCategoriesControllerFindAll().then(setTaxCategories).catch((err: any) => reportError(err, 'OrderDetailPage'));
+        api.taxCategoriesControllerFindAll()
+            .then(res => setTaxCategories(res.data as unknown as TaxCategory[] || []))
+            .catch(err => reportError(err, 'OrderDetailPage'));
     }, [id]);
 
     // Load returns and invoices when order state involves invoicing
     useEffect(() => {
-        if ([
-            SALES_ORDER_STATE.SHIPPED, 
-            SALES_ORDER_STATE.PICKING, 
-            SALES_ORDER_STATE.INVOICED, 
-            SALES_ORDER_STATE.LEGACY
-        ].includes(order?.stateCode as any || '')) {
+        if (['invoiced', 'legacy', 'picking', 'shipped'].some(s => s === order?.stateCode)) {
             loadInvoices();
         }
         if ([
@@ -171,7 +165,7 @@ export function useOrder(id: string) {
             SALES_ORDER_STATE.SHIPPED,
             SALES_ORDER_STATE.INVOICED, 
             SALES_ORDER_STATE.LEGACY
-        ].includes(order?.stateCode as any || '')) {
+        ].some(s => s === order?.stateCode)) {
             loadReturns();
         }
     }, [order?.stateCode]);
@@ -184,8 +178,8 @@ export function useOrder(id: string) {
         if (productIds.length === 0) return;
         
         setInventoryLoading(true);
-        api.inventoryControllerFindByProductIdsBulk({ body: JSON.stringify({ productIds }) })
-            .then((res: any) => setInventoryData(res.data || res))
+        api.inventoryControllerFindByProductIdsBulk({ productIds })
+            .then((res: unknown) => setInventoryData(((res as { data: unknown[] }).data || res) as InventoryLevel[]))
             .catch((err: any) => reportError(err, 'OrderDetailPage'))
             .finally(() => setInventoryLoading(false));
     }, [activeTab, order]);
@@ -224,13 +218,11 @@ export function useOrder(id: string) {
     const changeState = async (newState: string, generateBackorders?: boolean, acknowledged?: boolean) => {
         try {
             await api.ordersControllerChangeState(id, { 
-                body: JSON.stringify({
-                    stateCode: newState, 
-                    generateBackorders,
-                    discrepanciesAcknowledged: acknowledged
-                })
+                stateCode: newState, 
+                generateBackorders,
+                discrepanciesAcknowledged: acknowledged
             });
-            toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as any) }), { icon: '🔄' });
+            toast(tToast('orderMovedTo', { state: tCommon(`states.${newState}` as Parameters<typeof tCommon>[0]) }), { icon: '🔄' });
             await loadOrder(undefined, false);
         } catch (err: any) {
             const isApiError = err && (err.status === 409 || err.name === 'ApiError');
@@ -247,7 +239,7 @@ export function useOrder(id: string) {
         if (!confirm(tConfirm('archiveOrder'))) return;
         setSaving(true);
         try {
-            await api.ordersControllerArchive(id);
+            await api.ordersControllerArchive(id, { body: {} });
             toast.success(tToast('orderArchived'));
             await loadOrder(undefined, false);
         } catch (err) {
@@ -260,7 +252,7 @@ export function useOrder(id: string) {
     const unarchiveOrder = async () => {
         setSaving(true);
         try {
-            await api.ordersControllerUnarchive(id);
+            await api.ordersControllerUnarchive(id, { body: {} });
             toast.success(tToast('orderUnarchived'));
             await loadOrder(undefined, false);
         } catch (err) {
@@ -275,6 +267,7 @@ export function useOrder(id: string) {
         setCopying(true);
         try {
             const newOrder = await api.ordersControllerCreate({
+                salesOrderId: crypto.randomUUID(),
                 name: order.name ? `Copy of ${order.name}` : undefined,
                 customerId: order.customerId || '',
                 customerOrderNumber: order.customerOrderNumber || undefined,
@@ -283,14 +276,14 @@ export function useOrder(id: string) {
                 lines: order.lines.map((l) => ({
                     productId: l.productId && l.productId !== '' ? l.productId : '00000000-0000-0000-0000-000000000000',
                     productDescription: l.productDescription,
-                    quantity: l.quantity,
-                    pricePerUnit: l.pricePerUnit,
-                    discountPercentage: l.discountPercentage || '0',
+                    quantity: String(l.quantity),
+                    pricePerUnit: String(l.pricePerUnit),
+                    discountPercentage: String(l.discountPercentage || '0'),
                     taxCategoryId: l.taxCategoryId || undefined,
                     unitOfMeasure: l.unitOfMeasure || 'EA',
                 })),
             });
-            router.push(`/sales-orders/${(newOrder as any).salesOrderId || (newOrder as any).id || (newOrder as any).data?.salesOrderId || (newOrder as any).data?.id}`);
+            router.push(`/sales-orders/${newOrder.data.salesOrderId}`);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToCopy'));
         } finally {
@@ -301,7 +294,7 @@ export function useOrder(id: string) {
     const updateLine = async (lineId: string, field: string, value: string) => {
         setSaving(true);
         try {
-            await api.ordersControllerUpdateLine(id, lineId, { [field]: value } as any);
+            await api.ordersControllerUpdateLine(id, lineId, { [field]: value });
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -313,7 +306,7 @@ export function useOrder(id: string) {
     const updateLineFields = async (lineId: string, payload: Record<string, any>) => {
         setSaving(true);
         try {
-            await api.ordersControllerUpdateLine(id, lineId, payload as any);
+            await api.ordersControllerUpdateLine(id, lineId, payload);
             await loadOrder(undefined, false);
         } catch (err) {
             setError(err instanceof Error ? err.message : tCommon('errors.failedToUpdateLine'));
@@ -355,9 +348,9 @@ export function useOrder(id: string) {
                 unitOfMeasure: 'EA',
             };
             if (isPostConf) {
-                await api.ordersControllerAddPostConfirmationLine(id, payload as any);
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
             } else {
-                await api.ordersControllerAddLine(id, payload as any);
+                await api.ordersControllerAddLine(id, payload);
             }
             await loadOrder(undefined, false);
         } catch (err) {
@@ -380,9 +373,9 @@ export function useOrder(id: string) {
                 unitOfMeasure: 'EA',
             };
             if (isPostConf) {
-                await api.ordersControllerAddPostConfirmationLine(id, payload as any);
+                await api.ordersControllerAddPostConfirmationLine(id, payload);
             } else {
-                await api.ordersControllerAddLine(id, payload as any);
+                await api.ordersControllerAddLine(id, payload);
             }
             await loadOrder(undefined, false);
         } catch (err) {
@@ -415,9 +408,11 @@ export function useOrder(id: string) {
     /* ── Computed values ─────────────────────────────────────────── */
 
     const isOrderDetailsEditable =
-        ![SALES_ORDER_STATE.CANCELLED, SALES_ORDER_STATE.LEGACY, SALES_ORDER_STATE.ARCHIVED].includes(order?.stateCode as any ?? '');
+        !['cancelled', 'legacy', 'archived'].includes((order?.stateCode as string) ?? '');
 
-    const isOrderLinesEditable = order?.stateCode === SALES_ORDER_STATE.DRAFT;
+    const isOrderLinesEditable = order?.stateCode === 'draft';
+
+    const isHeaderEditable = (order?.stateCode as unknown) !== 'archived' && (order?.stateCode as unknown) !== 'cancelled' && (order?.stateCode as unknown) !== 'legacy';
 
     const allowedTransitions = STATE_TRANSITIONS[order?.stateCode ?? ''] || [];
 

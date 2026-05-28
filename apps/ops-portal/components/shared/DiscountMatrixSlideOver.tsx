@@ -57,17 +57,15 @@ export default function DiscountMatrixSlideOver({
     try {
       const [rulesRes, pgRes] = await Promise.all([
         api.discountMatrixControllerList({
-          customerGroupId: customerGroupId || undefined,
-          customerId: customerId || undefined,
-        } as any),
+          ...(customerGroupId ? { customerGroupId } : {}),
+          ...(customerId ? { customerId } : {}),
+        } as Parameters<typeof api.discountMatrixControllerList>[0]),
         api.productGroupsControllerFindAll(),
       ]);
-      // @ts-expect-error
-      setRules(rulesRes.data || []);
-      // @ts-expect-error
-      setProductGroups(pgRes.data || []);
-    } catch (err: any) {
-      toast.error('Failed to load discount rules: ' + err.message);
+      setRules(rulesRes.data);
+      setProductGroups(pgRes.data as unknown as ProductGroup[]);
+    } catch (err: unknown) {
+      toast.error('Failed to load discount rules: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setLoading(false);
     }
@@ -95,15 +93,15 @@ export default function DiscountMatrixSlideOver({
         });
       } else {
         await api.discountMatrixControllerCreate({
-          customerGroupId: customerGroupId || undefined,
-          customerId: customerId || undefined,
+          ...(customerGroupId ? { customerGroupId } : {}),
+          ...(customerId ? { customerId } : {}),
           discountPercentage: value,
-        });
+        } as Parameters<typeof api.discountMatrixControllerCreate>[0]);
       }
       toast.success(t('toasts.saved'));
       loadData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -114,8 +112,8 @@ export default function DiscountMatrixSlideOver({
       });
       toast.success(t('toasts.saved'));
       loadData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -123,17 +121,17 @@ export default function DiscountMatrixSlideOver({
     if (!newDiscount) return;
     try {
       await api.discountMatrixControllerCreate({
-        customerGroupId: customerGroupId || undefined,
-        customerId: customerId || undefined,
-        productGroupId: newProductGroupId || undefined,
-        discountPercentage: newDiscount,
-      });
+            ...(customerGroupId ? { customerGroupId } : {}),
+            ...(customerId ? { customerId } : {}),
+            productGroupId: newProductGroupId,
+            discountPercentage: newDiscount,
+          } as Parameters<typeof api.discountMatrixControllerCreate>[0]);
       toast.success(t('toasts.saved'));
       setNewProductGroupId('');
       setNewDiscount('');
       loadData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -142,8 +140,8 @@ export default function DiscountMatrixSlideOver({
       await api.discountMatrixControllerDelete(ruleId);
       toast.success(t('toasts.deleted'));
       loadData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : String(err));
     }
   };
 

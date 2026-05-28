@@ -38,12 +38,11 @@ export function useSalesInvoice(id: string) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    // @ts-expect-error missing typings in SDK
-    api.invoiceDetailControllerGetSalesInvoicesGlobal(id)
-      .then((data: any) => {
-        setInvoice(data);
+    api.invoiceDetailControllerGetSalesInvoiceDetails(id)
+      .then((res) => {
+        setInvoice((res.data as unknown) as SalesInvoiceDetails);
       })
-      .catch((err: any) => {
+      .catch((err) => {
         reportError(err, 'useSalesInvoice');
         setError(err);
       })

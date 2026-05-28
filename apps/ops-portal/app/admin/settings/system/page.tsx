@@ -66,7 +66,6 @@ export default function SystemSettingsPage() {
     try {
       setOrgLoading(true);
       const res = await api.organizationControllerGet();
-      // @ts-expect-error
       const data = res.data;
       setOrgForm(data || {});
       setIsOrgDirty(false);
@@ -78,8 +77,8 @@ export default function SystemSettingsPage() {
   };
 
   const updateOrgField = (field: string, value: any) => {
-    setOrgForm((prev: any) => {
-      const p = prev || {};
+    setOrgForm((prev: unknown) => {
+      const p = (prev as Record<string, any>) || {};
       if (p[field] === value) return p;
       setIsOrgDirty(true);
       return { ...p, [field]: value };
@@ -100,7 +99,7 @@ export default function SystemSettingsPage() {
       Object.keys(payload).forEach(key => {
         if (payload[key] === '') payload[key] = null;
       });
-      await api.organizationControllerUpdate({ body: JSON.stringify(payload) });
+      await api.organizationControllerUpdate(payload);
     } catch (err: any) {
       toast.error(err.message, { id: 'org-save-error' });
     } finally {
@@ -113,14 +112,10 @@ export default function SystemSettingsPage() {
       setAppLoading(true);
       const [appDataRes, locsRes] = await Promise.all([
         api.appConfigControllerGet(),
-        api.inventoryControllerFindAllLocations({ limit: 100 })
+        api.inventoryControllerFindAllLocations()
       ]);
-      // @ts-expect-error
-      const appData = appDataRes.data;
-      // @ts-expect-error
-      const locs = locsRes.data;
-      setAppForm(appData || {});
-      setLocations(locs?.data || locs || []);
+      setAppForm(appDataRes.data);
+      setLocations((locsRes.data as any) || []);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: 'App Config' }) + ': ' + err.message);
     } finally {
@@ -130,8 +125,8 @@ export default function SystemSettingsPage() {
 
   const updateAppField = async (field: string, value: any) => {
     try {
-      setAppForm((prev: any) => ({ ...prev, [field]: value }));
-      await api.appConfigControllerUpdate({ body: JSON.stringify({ [field]: value }) });
+      setAppForm((prev: unknown) => ({ ...(prev as Record<string, unknown>), [field]: value }));
+      await api.appConfigControllerUpdate({ [field]: value } as unknown as import('@modbm/sdk').UpdateAppConfigDto);
       toast.success(t('common.updated'));
     } catch (err: any) {
       toast.error(err.message);
@@ -144,9 +139,7 @@ export default function SystemSettingsPage() {
     try {
       setUomLoading(true);
       const res = await api.uomDictionaryControllerFindAll();
-      // @ts-expect-error
-      const data: any = res.data;
-      setUoms(data?.data || data || []);
+      setUoms(res.data);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.uom') }) + ': ' + err.message);
     } finally {
@@ -183,10 +176,8 @@ export default function SystemSettingsPage() {
   const loadMacros = async () => {
     try {
       setMacroLoading(true);
-      const res = await api.macrosControllerFindAll({});
-      // @ts-expect-error
-      const data: any = res.data;
-      setMacros(data?.data || data || []);
+      const mRes = await api.macrosControllerFindAll({} as any);
+      setMacros(mRes.data as unknown as Macro[]);
     } catch (err: any) {
       toast.error(tSettings('toasts.loadFailed', { area: tSettings('sections.macros') }) + ': ' + err.message);
     } finally {
@@ -302,7 +293,7 @@ export default function SystemSettingsPage() {
 
   const flushCache = async () => {
     try {
-      await api.glControllerReloadSettings();
+      await api.glControllerReloadSettings({} as unknown as import('@modbm/sdk').EmptyBodyDto);
       toast.success('Settings cache flushed successfully.');
     } catch (err: any) {
       toast.error(err.message);

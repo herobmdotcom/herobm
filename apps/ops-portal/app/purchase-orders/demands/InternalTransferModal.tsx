@@ -55,8 +55,7 @@ export default function InternalTransferModal({
     const params = productId ? { productId } : {};
     api.inventoryControllerFindAllLocations(params)
       .then((res) => {
-        // @ts-expect-error
-        setLocations(res.data || []);
+        setLocations((res.data?.data || []) as RawLocationWithAvailability[]);
       })
       .catch((err) => reportError(err, 'InternalTransferModal'));
   }, [isOpen, selectedDemands]);
@@ -98,11 +97,8 @@ export default function InternalTransferModal({
     try {
       const backorderIds = selectedDemands.map(d => d.id);
       await api.transfersControllerCreateTransferFromDemands({
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sourceLocationId: selectedLocationId,
-          backorderIds,
-        }),
+        sourceLocationId: selectedLocationId,
+        backorderIds,
       });
 
       toast.success('Internal Transfer order created successfully');

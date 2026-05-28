@@ -66,8 +66,9 @@ export class SuppliersService {
       );
     }
 
-    if (conditions.length > 0) {
-      qb = qb.where(and(...conditions));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    if (whereClause) {
+      qb = qb.where(whereClause);
     }
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -76,27 +77,23 @@ export class SuppliersService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${coreSuppliers.name} > ${c.name}`,
-              and(
-                eq(coreSuppliers.name, c.name),
-                sql`${coreSuppliers.vendorId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${coreSuppliers.name} < ${c.name}`,
-              and(
-                eq(coreSuppliers.name, c.name),
-                sql`${coreSuppliers.vendorId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${coreSuppliers.name} > ${c.name}`,
+                and(
+                  eq(coreSuppliers.name, c.name),
+                  sql`${coreSuppliers.vendorId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${coreSuppliers.name} < ${c.name}`,
+                and(
+                  eq(coreSuppliers.name, c.name),
+                  sql`${coreSuppliers.vendorId} < ${c.id}`,
+                ),
+              );
+        return q.where(whereClause ? and(whereClause, cursorCond) : cursorCond);
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
@@ -190,6 +187,7 @@ export class SuppliersService {
     const { supplierExpiries } =
       await import('../drizzle/modbm-core-schema.js');
 
+    const whereClause = eq(supplierExpiries.vendorId, vendorId);
     const qb = this.db
       .select({
         expiryId: supplierExpiries.expiryId,
@@ -200,7 +198,7 @@ export class SuppliersService {
         createdOn: supplierExpiries.createdOn,
       })
       .from(supplierExpiries)
-      .where(eq(supplierExpiries.vendorId, vendorId))
+      .where(whereClause)
       .$dynamic();
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -210,27 +208,23 @@ export class SuppliersService {
       direction: direction,
       applyWhere: (q, c: { date: string; id: string }, dir) => {
         const cDate = c.date;
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${supplierExpiries.expiryDate} > ${cDate}::timestamp`,
-              and(
-                eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
-                sql`${supplierExpiries.expiryId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${supplierExpiries.expiryDate} < ${cDate}::timestamp`,
-              and(
-                eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
-                sql`${supplierExpiries.expiryId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${supplierExpiries.expiryDate} > ${cDate}::timestamp`,
+                and(
+                  eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
+                  sql`${supplierExpiries.expiryId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${supplierExpiries.expiryDate} < ${cDate}::timestamp`,
+                and(
+                  eq(supplierExpiries.expiryDate, sql`${cDate}::timestamp`),
+                  sql`${supplierExpiries.expiryId} < ${c.id}`,
+                ),
+              );
+        return q.where(and(whereClause, cursorCond));
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
@@ -259,6 +253,7 @@ export class SuppliersService {
     const { productSuppliers, products } =
       await import('../drizzle/modbm-core-schema.js');
 
+    const whereClause = eq(productSuppliers.vendorId, vendorId);
     const qb = this.db
       .select({
         productSupplierId: productSuppliers.productSupplierId,
@@ -276,7 +271,7 @@ export class SuppliersService {
       })
       .from(productSuppliers)
       .innerJoin(products, eq(productSuppliers.productId, products.productId))
-      .where(eq(productSuppliers.vendorId, vendorId))
+      .where(whereClause)
       .$dynamic();
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -285,27 +280,23 @@ export class SuppliersService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${products.name} > ${c.name}`,
-              and(
-                eq(products.name, c.name),
-                sql`${productSuppliers.productSupplierId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${products.name} < ${c.name}`,
-              and(
-                eq(products.name, c.name),
-                sql`${productSuppliers.productSupplierId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${products.name} > ${c.name}`,
+                and(
+                  eq(products.name, c.name),
+                  sql`${productSuppliers.productSupplierId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${products.name} < ${c.name}`,
+                and(
+                  eq(products.name, c.name),
+                  sql`${productSuppliers.productSupplierId} < ${c.id}`,
+                ),
+              );
+        return q.where(and(whereClause, cursorCond));
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;
@@ -337,6 +328,7 @@ export class SuppliersService {
     const { productSuppliers, suppliers } =
       await import('../drizzle/modbm-core-schema.js');
 
+    const whereClause = eq(productSuppliers.productId, productId);
     const qb = this.db
       .select({
         productSupplierId: productSuppliers.productSupplierId,
@@ -353,7 +345,7 @@ export class SuppliersService {
       })
       .from(productSuppliers)
       .innerJoin(suppliers, eq(productSuppliers.vendorId, suppliers.vendorId))
-      .where(eq(productSuppliers.productId, productId))
+      .where(whereClause)
       .$dynamic();
 
     const { data, nextCursor, prevCursor } = await withCursorPagination({
@@ -362,27 +354,23 @@ export class SuppliersService {
       cursorObj: cursor,
       direction: direction,
       applyWhere: (q, c: { name: string; id: string }, dir) => {
-        if (dir === 'next') {
-          return q.where(
-            or(
-              sql`${suppliers.name} > ${c.name}`,
-              and(
-                eq(suppliers.name, c.name),
-                sql`${productSuppliers.productSupplierId} > ${c.id}`,
-              ),
-            ),
-          );
-        } else {
-          return q.where(
-            or(
-              sql`${suppliers.name} < ${c.name}`,
-              and(
-                eq(suppliers.name, c.name),
-                sql`${productSuppliers.productSupplierId} < ${c.id}`,
-              ),
-            ),
-          );
-        }
+        const cursorCond =
+          dir === 'next'
+            ? or(
+                sql`${suppliers.name} > ${c.name}`,
+                and(
+                  eq(suppliers.name, c.name),
+                  sql`${productSuppliers.productSupplierId} > ${c.id}`,
+                ),
+              )
+            : or(
+                sql`${suppliers.name} < ${c.name}`,
+                and(
+                  eq(suppliers.name, c.name),
+                  sql`${productSuppliers.productSupplierId} < ${c.id}`,
+                ),
+              );
+        return q.where(and(whereClause, cursorCond));
       },
       applyOrderBy: (q, dir) => {
         const orderFn = dir === 'next' ? asc : desc;

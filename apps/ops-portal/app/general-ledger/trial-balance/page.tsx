@@ -62,7 +62,7 @@ export default function TrialBalancePage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     api.glControllerGetTrialBalance({ asOfDate })
-      .then((res: any) => setRows(res?.data?.data || res?.data || res || []))
+      .then((res: unknown) => setRows(((res as { data?: unknown[] })?.data as any) || (res as any) || []))
       .catch((err) => reportError(err, 'TrialBalancePage'))
       .finally(() => setLoading(false));
   }, [asOfDate]);

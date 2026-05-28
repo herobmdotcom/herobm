@@ -42,20 +42,20 @@ export default function AccountGroupsAdmin() {
     try {
       setLoading(true);
       const [data, customers, cc, act, rules] = await Promise.all([
-        api.accountGroupsControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
-        api.glControllerGetAccounts({}).then((r: any) => r?.data?.data || r?.data || r || []),
-        api.costCentersControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
-        api.activitiesControllerFindAll().then((r: any) => r?.data?.data || r?.data || r || []),
-        api.discountMatrixControllerList({ ownerType: 'account_group' }).then((r: any) => r?.data?.data || r?.data || r || [])
+        api.accountGroupsControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.glControllerGetAccounts({} as any).then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.costCentersControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.activitiesControllerFindAll().then((r: unknown) => (r as { data?: unknown[] })?.data || r || []),
+        api.discountMatrixControllerList({ ownerType: 'account_group' } as any).then((r: unknown) => (r as { data?: unknown[] })?.data || r || [])
       ]);
-      const sorted = data.sort((a, b) => 
+      const sorted = (data as any[]).sort((a: any, b: any) => 
         (a.groupCode || '').localeCompare(b.groupCode || '', undefined, { numeric: true })
       );
       setGroups(sorted);
-      setGlAccounts(customers || []);
-      setCostCenters(cc || []);
-      setActivities(act || []);
-      setMatrixRules(rules || []);
+      setGlAccounts(customers as any[]);
+      setCostCenters(cc as any[]);
+      setActivities(act as any[]);
+      setMatrixRules(rules as any[]);
     } catch(err: any) {
       toast.error('Failed to load groups: ' + err.message);
     } finally {
@@ -96,10 +96,10 @@ export default function AccountGroupsAdmin() {
     }
     try {
       if (editingId) {
-        await api.accountGroupsControllerUpdate(editingId, editForm as any);
+        await api.accountGroupsControllerUpdate(editingId, editForm as unknown as import('@modbm/sdk').UpdateAccountGroupDto);
         toast.success('Group updated');
       } else {
-        await api.accountGroupsControllerCreate(editForm as any);
+        await api.accountGroupsControllerCreate(editForm as unknown as import('@modbm/sdk').CreateAccountGroupDto);
         toast.success('Group created');
       }
       handleCancel();

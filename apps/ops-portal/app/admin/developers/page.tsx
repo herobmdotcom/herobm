@@ -66,8 +66,8 @@ export default function DevelopersPage() {
 
   const updateAppField = async (field: string, value: any) => {
     try {
-      setAppForm((prev: any) => ({ ...(prev || {}), [field]: value }));
-      await api.appConfigControllerUpdate({ body: JSON.stringify({ [field]: value }) });
+      setAppForm((prev: unknown) => ({ ...((prev as Record<string, unknown>) || {}), [field]: value }));
+      await api.appConfigControllerUpdate({ [field]: value });
       toast.success('Updated successfully');
     } catch (err: any) {
       toast.error(err.message);
@@ -78,10 +78,9 @@ export default function DevelopersPage() {
     try {
       setKeysLoading(true);
       const res = await api.apiKeysControllerList();
-      // @ts-expect-error DTO misses exact properties in Swagger
-      setApiKeys(res.data || []);
-    } catch (err: any) {
-      toast.error('Failed to load API keys: ' + err.message);
+      setApiKeys((res.data as ApiKey[]) || []);
+    } catch (err: unknown) {
+      toast.error('Failed to load API keys: ' + (err as Error).message);
     } finally {
       setKeysLoading(false);
     }
@@ -91,10 +90,9 @@ export default function DevelopersPage() {
     try {
       setWebhooksLoading(true);
       const res = await api.webhooksControllerList();
-      // @ts-expect-error DTO misses exact properties in Swagger
-      setWebhooks(res.data || []);
-    } catch (err: any) {
-      toast.error('Failed to load Webhooks: ' + err.message);
+      setWebhooks((res.data as Webhook[]) || []);
+    } catch (err: unknown) {
+      toast.error('Failed to load Webhooks: ' + (err as Error).message);
     } finally {
       setWebhooksLoading(false);
     }
@@ -114,9 +112,8 @@ export default function DevelopersPage() {
       return;
     }
     try {
-      const res = await api.apiKeysControllerCreate({ body: JSON.stringify(keyForm) });
+      const res = await api.apiKeysControllerCreate(keyForm);
       toast.success('API Key created');
-      // @ts-expect-error Missing response typing
       setNewSecret(res.data.secretKey);
       setKeyCreating(false);
       setKeyForm({ name: '' });
@@ -144,10 +141,8 @@ export default function DevelopersPage() {
     }
     try {
       await api.webhooksControllerCreate({
-        body: JSON.stringify({
-          targetUrl: webhookForm.targetUrl,
-          eventTypes: webhookForm.eventTypes.split(',').map(s => s.trim()).filter(Boolean),
-        }),
+        targetUrl: webhookForm.targetUrl,
+        eventTypes: webhookForm.eventTypes.split(',').map(s => s.trim()).filter(Boolean),
       });
       toast.success('Webhook created');
       setWebhookCreating(false);

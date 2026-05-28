@@ -23,7 +23,7 @@ export function tDynamic(
   values?: Record<string, string>,
 ): string {
   if (t.has(key)) {
-    return values ? (t as any)(key, values) : (t as any)(key);
+    return values ? (t as Function)(key, values) : (t as Function)(key);
   }
   if (fallback !== undefined) return fallback;
   // Auto-fallback: take last segment, replace underscores, capitalise first letter
